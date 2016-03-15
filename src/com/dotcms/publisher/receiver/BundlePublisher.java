@@ -23,6 +23,22 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
+/**
+ * This publisher will be in charge of retrieving the bundle, un-zipping it, and
+ * saving the different contents in it based on a pre-defined list of content
+ * handler classes.
+ * <p>
+ * An {@link IHandler} class provides the logic to import the new content, based
+ * on its specified business rules. These handlers read the respective data
+ * files (i.e., a Container handler will only read Container data files),
+ * retrieve the Java objects that they represent, and imports their content in
+ * the destination server.
+ * 
+ * @author Alberto
+ * @version 1.0
+ * @since Oct 26, 2012
+ *
+ */
 public class BundlePublisher extends Publisher {
 
     private PublishAuditAPI auditAPI = null;
@@ -46,29 +62,21 @@ public class BundlePublisher extends Publisher {
         handlers = new ArrayList<IHandler>();
         handlers.add(new BundleXMLascHandler( config ));
         //The order is really important
-        /**
-         * ISSUE #2244: https://github.com/dotCMS/dotCMS/issues/2244
-         *
-         */
         handlers.add( new UserHandler( config ) );
         handlers.add( new CategoryHandler( config ) );
         handlers.add( new HostHandler( config ) );
         handlers.add( new FolderHandler( config ) );
         handlers.add( new WorkflowHandler( config ) );
 
-        if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES" ) ) {
+        if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES", true) ) {
             handlers.add( new StructureHandler( config ) );
-            /**
-             * ISSUE #2222: https://github.com/dotCMS/dotCMS/issues/2222
-             *
-             */
             handlers.add( new RelationshipHandler( config ) );
         }
 
         handlers.add( new ContainerHandler( config ) );
         handlers.add( new TemplateHandler( config ) );
         handlers.add( new HTMLPageHandler( config ) );
-
+        handlers.add(new RuleHandler(config));
         handlers.add( new LanguageHandler( config ) );
         handlers.add( new LanguageVariablesHandler( config ) );
         handlers.add( new ContentHandler( config ) );
@@ -294,4 +302,5 @@ public class BundlePublisher extends Publisher {
             }
         }
     }
+
 }

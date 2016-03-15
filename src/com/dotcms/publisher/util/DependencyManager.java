@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -26,6 +28,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -33,6 +36,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -46,6 +50,27 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * The main purpose of this class is to determine all possible content
+ * dependencies associated to the asset(s) the user wants to push via the Push
+ * Publish feature. Including the dependencies makes sure that pushing an asset
+ * will not fail when saved in the destination server(s).
+ * <p>
+ * Most of the assets in dotCMS <b>MUST</b> be associated to another parent
+ * structure. For example, pushing a Content Page requires the bundle to include
+ * information regarding the Site (host) in was created in, its folder,
+ * template, containers, contentlets, and so on. Whereas pushing a Language only
+ * needs the language information and the push will work correctly.
+ * <p>
+ * The Dependency Manager analyzes the type of each asset to push and includes
+ * dependent information in the bundle. This way, it can be seen by users
+ * exactly the same in both the sender and receiver servers.
+ * 
+ * @author Daniel Silva
+ * @version 1.0
+ * @since Jan 11, 2013
+ *
+ */
 public class DependencyManager {
 
 	private DependencySet hosts;
@@ -59,6 +84,7 @@ public class DependencyManager {
 	private DependencySet relationships;
 	private DependencySet workflows;
 	private DependencySet languages;
+	private DependencySet rules;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -75,11 +101,14 @@ public class DependencyManager {
 	private PushPublisherConfig config;
 
 	/**
-	 * Initializes for a given {@link PushPublisherConfig Config} the list of dependencies this manager<br/>
-	 * needs to satisfy
+	 * Initializes the list of dependencies that this manager needs to satisfy,
+	 * based on the {@link PushPublisherConfig} specified for the bundle.
 	 *
-	 * @param user   The user who requested to create this Bundle
-	 * @param config Class that have the main configuration values for the Bundle we are trying to create
+	 * @param user
+	 *            - The user requesting the generation of the bundle.
+	 * @param config
+	 *            - The main configuration values for the bundle we are trying
+	 *            to create.
 	 */
 	public DependencyManager(User user, PushPublisherConfig config) {
 		this.config = config;
@@ -96,6 +125,7 @@ public class DependencyManager {
 		links = new DependencySet(config.getId(),"links",config.isDownloading(), isPublish);
 		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish);
 		languages = new DependencySet(config.getId(),"languages",config.isDownloading(), isPublish);
+		this.rules = new DependencySet(config.getId(), PushPublisherConfig.AssetTypes.RULES.toString(), config.isDownloading(), isPublish);
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -112,11 +142,18 @@ public class DependencyManager {
 	}
 
 	/**
-	 * Initial method to start search for dependencies, it start identifying the type of assets the user wants to<br/>
-	 * remote publish and base on those types the dependencies will be search and found.
-	 *
-	 * @throws DotDataException   If fails retrieving dependency objects
-	 * @throws DotBundleException If fails trying to set the Contentlets dependencies
+	 * Initializes the main mechanism to search for dependencies. It starts with
+	 * the identification of the type of assets in the queue, and their
+	 * dependencies will be searched and found base on those types.
+	 * 
+	 * @throws DotSecurityException
+	 *             The specified user does not have the required permissions to
+	 *             perform the action.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 * @throws DotBundleException
+	 *             An error occurred when generating the bundle data.
 	 */
 	public void setDependencies() throws DotSecurityException, DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
@@ -245,7 +282,7 @@ public class DependencyManager {
 				} else {
 					workflows.add(asset.getAsset(),scheme.getModDate());
 				}
-			} else if (asset.getType().equals(Language.ASSET_TYPE)) {
+			} else if (asset.getType().equals(PusheableAsset.LANGUAGE.getType())) {
 				Language language = APILocator.getLanguageAPI()
 						.getLanguage(asset.getAsset());
 				if (language == null || !UtilMethods.isSet(language.getLanguage())) {
@@ -255,6 +292,17 @@ public class DependencyManager {
 							+ " is not present in the database, not Pushed");
 				} else {
 					languages.add(asset.getAsset());
+				}
+			} else if (asset.getType().equals(PusheableAsset.RULE.getType())) {
+				Rule rule = APILocator.getRulesAPI()
+							.getRuleById(asset.getAsset(), user, false);
+				if (rule != null && StringUtils.isNotBlank(rule.getId())) {
+					this.rules.add(asset.getAsset());
+				} else {
+					Logger.warn(getClass(), "Rule id: "
+							+ (asset.getAsset() != null ? asset.getAsset()
+									: "N/A")
+							+ " is not present in the database, not Pushed.");
 				}
 			}
 		}
@@ -273,12 +321,11 @@ public class DependencyManager {
 		setHostDependencies();
         setFolderDependencies();
         setHTMLPagesDependencies();
+        setRuleDependencies();
         setTemplateDependencies();
         setContainerDependencies();
         setStructureDependencies();
         setLinkDependencies();
-
-        
         setContentDependencies();
 
 		config.setHostSet(hosts);
@@ -292,6 +339,7 @@ public class DependencyManager {
 		config.setRelationships(relationships);
 		config.setWorkflows(workflows);
 		config.setLanguages(languages);
+		config.setRules(this.rules);
 	}
 
 	/**
@@ -449,6 +497,13 @@ public class DependencyManager {
 		}
 	}
 
+	/**
+	 * 
+	 * @param folderList
+	 * @throws DotIdentifierStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private void setFolderListDependencies(List<Folder> folderList) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		for (Folder f : folderList) {
 
@@ -818,8 +873,12 @@ public class DependencyManager {
 		}
 	}
 
-
-
+	/**
+	 * 
+	 * @param stInode
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
 		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
 		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
@@ -860,7 +919,12 @@ public class DependencyManager {
 		}
 	}
 
-
+	/**
+	 * 
+	 * @param cons
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private void processList(Set<Contentlet> cons) throws DotDataException, DotSecurityException {
 		Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 		Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
@@ -904,7 +968,6 @@ public class DependencyManager {
 						if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
 							value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
 						}
-						//Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
 						Identifier id = APILocator.getIdentifierAPI().find(value);
 						if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
 							contentsWithDependenciesToProcess.addAll(
@@ -1004,6 +1067,31 @@ public class DependencyManager {
 					+ e.getMessage() + ": Unable to pull content", e);
 		}
 
+	}
+
+	/**
+	 * Collects the different dependent objects that are required for pushing
+	 * {@link Rule} objects. The required dependencies of a rule are:
+	 * <ol>
+	 * <li>The Site (host) they were created on.</li>
+	 * </ol>
+	 */
+	private void setRuleDependencies() {
+		String ruleToProcess = "";
+		final RulesAPI rulesAPI = APILocator.getRulesAPI();
+		final HostAPI hostAPI = APILocator.getHostAPI();
+		try {
+			for (String ruleId : this.rules) {
+				// Adding Site (host) dependency
+				final Rule rule = rulesAPI.getRuleById(ruleId, user, false);
+				final Host host = hostAPI.find(rule.getParent(), user, false);
+				hosts.addOrClean(host.getIdentifier(), host.getModDate());
+			}
+		} catch (DotDataException e) {
+			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
+		}
 	}
 
 }
