@@ -267,7 +267,7 @@ public class StructureFactory {
 					+ ") AND ";
 		}
 		
-		condition += " true ";
+		condition += " 1=1 ";
 		List<Structure> all = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, condition, orderBy, limit,
 				offset, direction);
 		if (!allowedStructsOnly) {
