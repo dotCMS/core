@@ -60,7 +60,7 @@ public class UsersBrowserConditionlet extends Conditionlet<UsersBrowserCondition
             .option(Browser.IE.getName())
             .option(Browser.OPERA.getName())
             .option(Browser.SAFARI.getName())
-//            .option(Browser.)
+            .option(Browser.EDGE.getName())
 
     );
 
