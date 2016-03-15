@@ -1,10 +1,8 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.eu.bitwalker.useragentutils.Browser;
-import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
-import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.UserAgent;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionlet.Instance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -62,7 +60,7 @@ public class UsersBrowserConditionlet extends Conditionlet<UsersBrowserCondition
             .option(Browser.IE.getName())
             .option(Browser.OPERA.getName())
             .option(Browser.SAFARI.getName())
-            .option("Edge")
+//            .option(Browser.)
 
     );
 
@@ -75,17 +73,20 @@ public class UsersBrowserConditionlet extends Conditionlet<UsersBrowserCondition
     
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String browser = lookupBrowser(request);
+        String browser = lookupBrowser(request, instance);
         return instance.comparison.perform(browser.toLowerCase(), instance.browser.toLowerCase());
     }
     
-    private String lookupBrowser(HttpServletRequest request) {
+    private String lookupBrowser(HttpServletRequest request, Instance instance) {
         String browser = "unknown";
         try {
             String userAgentInfo = request.getHeader("User-Agent");
             UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
             if (agent != null && agent.getBrowser() != null) {
-                browser = agent.getBrowser().getName().replaceAll("[0-9]*$", "").trim();//remove version number of the browser name
+                browser = agent.getBrowser().getName().replaceAll("[0-9]*$", "").trim();//remove version number of the browser name e.g Firefox4
+                if(browser.toLowerCase().contains(instance.browser.toLowerCase())){// avoid issues with the device e.g Chrome_Mobile
+                	browser = instance.browser;
+                }
             }
         } catch (Exception e) {
             Logger.error(UsersBrowserConditionlet.class, "Could not obtain browser from request. Using 'unknown': " + request.getRequestURL());
