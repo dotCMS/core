@@ -30,11 +30,16 @@ import static org.junit.Assert.assertNull;
  */
 public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
 
-    private List<HttpCookie> historyCookiesAsString;
+    private UsersSiteVisitsUtilTest usersSiteVisitsUtilTest;
+
+    @Before
+    public void innerInit () {
+        usersSiteVisitsUtilTest = new UsersSiteVisitsUtilTest(request);
+    }
 
     @Before
     public void cleanCookies(){
-        historyCookiesAsString = null;
+        usersSiteVisitsUtilTest.clean();
     }
 
     protected Condition getCondition(String id, String value) {
@@ -46,68 +51,6 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         return condition;
     }
 
-    private URLConnection makeNewSessionRequest(String url) throws IOException {
-        return makeRequest(url, true);
-    }
-
-    private URLConnection makeRequest(String url) throws IOException {
-        return makeRequest(url, false);
-    }
-
-    private URLConnection makeRequest(String url, boolean deleteOncePerVisitCookie) throws IOException {
-
-        if ( deleteOncePerVisitCookie && historyCookiesAsString != null){
-            historyCookiesAsString = deleteOncePerVisitCookie( historyCookiesAsString );
-        }
-
-        //Execute some requests and validate the responses
-        ApiRequest apiRequest = new ApiRequest(request);
-
-        URLConnection conn = apiRequest.makeRequest(url, null, CookieUtilTest.getCookiesAsString(historyCookiesAsString));
-        List<HttpCookie> cookies = CookieUtilTest.getCookies(conn);
-
-        if ( historyCookiesAsString != null && cookies != null) {
-            historyCookiesAsString = joinCookies(cookies);
-        }else if (cookies != null){
-            historyCookiesAsString = cookies;
-        }
-
-        return conn;
-    }
-
-    private List<HttpCookie> joinCookies(List<HttpCookie> cookies) {
-
-        List<HttpCookie> aux = new ArrayList<>();
-
-        for (HttpCookie historyCookie : historyCookiesAsString) {
-
-            HttpCookie toAdd = historyCookie;
-            boolean remove = false;
-
-            for (HttpCookie newCookie : cookies) {
-                if (historyCookie.getName().equals( newCookie.getName() )){
-                    toAdd = newCookie;
-                    remove = true;
-                    break;
-                }
-            }
-
-            aux.add( toAdd );
-
-            if (remove){
-                try {
-                    cookies.remove(toAdd);
-                }catch(Exception e){
-                    System.out.println();
-                }
-            }
-        }
-
-        aux.addAll(cookies);
-        return aux;
-    }
-
-
     private void testEqualsComparison (Rule.FireOn fireOn) throws IOException {
 
         Condition condition = getCondition(EQUAL.getId(), "2");
@@ -116,17 +59,15 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
-
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
     }
 
     public void testLessThanComparison (Rule.FireOn fireOn) throws IOException {
@@ -137,17 +78,15 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        assertNull("Specified response header should be present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
     }
 
     public void testGreaterThanComparison (Rule.FireOn fireOn) throws IOException {
@@ -158,20 +97,18 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        assertEquals("Specified response header should be NOT present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
     }
 
     public void testLessThanOrEqualsComparison (Rule.FireOn fireOn) throws IOException {
@@ -182,21 +119,17 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
-
-
-        conn = makeNewSessionRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        assertNull("Specified response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
     public void testGreaterThanOrEqualsComparison (Rule.FireOn fireOn) throws IOException {
@@ -206,21 +139,17 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String randomKey = keyAndValu[0];
         String value = keyAndValu[1];
 
-
-        URLConnection conn = makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        assertEquals("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
-
-        conn = makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        assertEquals("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
     }
 
     @Test
@@ -274,27 +203,5 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         testGreaterThanOrEqualsComparison( Rule.FireOn.EVERY_PAGE );
     }
 
-    private String[] getCookiesToNextRequest(URLConnection conn, String[] cookiesAsString) {
-        String[] newCookiesAsString = CookieUtilTest.getCookiesAsString(conn);
 
-        if (newCookiesAsString == null) {
-            return cookiesAsString;
-        }else{
-            return newCookiesAsString;
-        }
-    }
-
-    private List<HttpCookie> deleteOncePerVisitCookie(List<HttpCookie> cookies) {
-
-        List<HttpCookie> result = new ArrayList<>();
-
-        for (HttpCookie httpCookie : cookies) {
-            if (!httpCookie.getName().equals( WebKeys.ONCE_PER_VISIT_COOKIE )){
-                result.add( httpCookie );
-            }
-        }
-
-
-        return result;
-    }
 }

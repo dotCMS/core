@@ -34,7 +34,7 @@ public class UsersSiteVisitsConditionletTest {
         request = Mockito.mock(HttpServletRequest.class);
         Cookie[] cookies = new Cookie[1];
         cookies[ 0 ] = CookieUtil.createSiteVisitsCookie();
-        cookies[ 0 ].setValue("3");
+        cookies[ 0 ].setValue("2");
         Mockito.when(request.getCookies()).thenReturn(cookies);
 
         // Mock the response
