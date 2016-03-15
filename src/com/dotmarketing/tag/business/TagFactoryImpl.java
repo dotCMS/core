@@ -625,7 +625,16 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(inode);
         dc.addParam(fieldVarName);
 
-        return convertForTags(dc.loadObjectResults());
+        List<Tag> tags = convertForTags(dc.loadObjectResults());
+
+        //And add the results to the cache
+        for ( Tag tag : tags ) {
+            if ( tagCache.get(tag.getTagId()) == null ) {
+                tagCache.put(tag);
+            }
+        }
+
+        return tags;
     }
 
     /**

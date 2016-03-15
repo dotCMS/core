@@ -110,7 +110,7 @@ var tagsMap = {};
 var lastLength = 0;
 var contentSearchField;
 
-function suggestTagsForSearch(e, searchField) {
+function suggestTagsForSearch(e, searchField, hostInSession) {
 	if (searchField) {
 		contentSearchField = searchField;
 	}
@@ -146,6 +146,14 @@ function suggestTagsForSearch(e, searchField) {
 	//in frontend, check for hidden field with host identifier
 	if (dojo.byId("currentHostIdForTagSuggestion")) {
 		selectedHostOrFolderId = dojo.byId("currentHostIdForTagSuggestion").value;
+	}
+
+	/*
+     NOTE: The hostInSession parameter will be passed only when searching tags in the content search so it is safe to use it
+     as the final host value filter for the getSuggestedTag method.
+	 */
+	if (hostInSession) {
+		selectedHostOrFolderId = hostInSession;
 	}
 
 	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
