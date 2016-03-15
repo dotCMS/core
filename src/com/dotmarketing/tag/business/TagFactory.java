@@ -174,4 +174,12 @@ public interface TagFactory {
      */
     public List<Tag> getTagsByInode ( String inode ) throws DotDataException;
 
+    /**
+     * Gets all tags associated to given inode and field var name
+     * @param inode inode of the object tagged
+     * @param fieldVarName velocity var name of a field
+     * @return a list with all the tags associated with the given inode and field var name
+     * @throws DotDataException
+     */
+    public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException;
 }

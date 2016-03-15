@@ -1,5 +1,7 @@
 package com.dotmarketing.tag.business;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -611,6 +613,19 @@ public class TagFactoryImpl implements TagFactory {
         }
 
         return tags;
+    }
+
+    @Override
+    public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(inode));
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(fieldVarName));
+        //Execute the search
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT t.* FROM tag t JOIN tag_inode ti ON t.tag_id = ti.tag_id WHERE ti.inode = ? and ti.field_var_name = ?");
+        dc.addParam(inode);
+        dc.addParam(fieldVarName);
+
+        return convertForTags(dc.loadObjectResults());
     }
 
     /**

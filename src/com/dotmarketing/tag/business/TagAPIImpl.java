@@ -458,6 +458,11 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
+    public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
+        return tagFactory.getTagsByInodeAndFieldVarName(inode, fieldVarName);
+    }
+
+    @Override
     public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagInodesByTagId(tagId);
     }
