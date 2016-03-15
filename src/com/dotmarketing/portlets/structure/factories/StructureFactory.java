@@ -261,9 +261,9 @@ public class StructureFactory {
 	 */
 	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly,
 			String condition, String orderBy, int limit, int offset, String direction) throws DotDataException {
-		condition = (UtilMethods.isSet(condition.trim())) ? condition + " AND " : "";
+		condition = (UtilMethods.isSet(condition.trim())) ? condition + " " : "";
 		if (LicenseUtil.getLevel() < 200) {
-			condition += "structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", " + Structure.STRUCTURE_TYPE_PERSONA
+			condition += " AND structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", " + Structure.STRUCTURE_TYPE_PERSONA
 					+ ") ";
 		}
 		List<Structure> all = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, condition, orderBy, limit,
