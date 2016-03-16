@@ -28,6 +28,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.liferay.portal.model.User;
 
@@ -203,7 +204,7 @@ public class ConditionResource {
 
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
-        }  catch (DotDataException | DotRuntimeException e) {
+        }  catch (DotDataException | DotRuntimeException | RuleConstructionFailedException e ) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
@@ -219,7 +220,7 @@ public class ConditionResource {
             condition= conditionTransform.applyRestToApp(restCondition, condition);
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
-        } catch (DotDataException | DotRuntimeException e) {
+        } catch (DotDataException | DotRuntimeException | RuleConstructionFailedException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
