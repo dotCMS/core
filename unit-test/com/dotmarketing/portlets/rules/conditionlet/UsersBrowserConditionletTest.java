@@ -59,6 +59,17 @@ public class UsersBrowserConditionletTest {
         UsersBrowserConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
         // Correct, the User-Agent Browser is not the selected one
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+
+        Mockito.when(request.getHeader("User-Agent")).thenReturn(Browser.EDGE.getName());
+
+        Map<String, ParameterModel> parametersE = new HashMap<>();
+        parametersE.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
+        parametersE.put(UsersBrowserConditionlet.BROWSER_KEY,
+                new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Edge"));
+
+        UsersBrowserConditionlet.Instance instanceE = conditionlet.instanceFrom(parameters);
+        // Correct, the User-Agent Browser is not the selected one
+        Assert.assertTrue(conditionlet.evaluate(request, response, instanceE));
     }
     
     @Test
