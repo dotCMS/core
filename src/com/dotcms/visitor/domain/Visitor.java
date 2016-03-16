@@ -3,7 +3,7 @@ package com.dotcms.visitor.domain;
 import com.dotcms.repackage.com.google.common.collect.HashMultiset;
 import com.dotcms.repackage.com.google.common.collect.Multiset;
 import com.dotcms.repackage.com.google.common.collect.Multisets;
-import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
+import eu.bitwalker.useragentutils.DeviceType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
