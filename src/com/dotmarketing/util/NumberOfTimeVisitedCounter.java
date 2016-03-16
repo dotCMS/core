@@ -35,6 +35,10 @@ public abstract class NumberOfTimeVisitedCounter {
             siteVisitsCookie.setPath("/");
             response.addCookie(siteVisitsCookie);
         }
+    }
 
+    public static int getNumberSiteVisits( HttpServletRequest request ){
+        String cookieValue = UtilMethods.getCookieValue(request.getCookies(), WebKeys.SITE_VISITS_COOKIE);
+        return (UtilMethods.isSet(cookieValue)) ?  Integer.parseInt(cookieValue) : 0;
     }
 }

@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNull;
 /**
  * Created by freddyrodriguez on 10/3/16.
  */
-public abstract class ConditionletFTest {
+public abstract class  ConditionletFTest {
 
     protected Random random = new Random();
     protected HttpServletRequest request;

@@ -5,35 +5,31 @@ import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.util.WebKeys;
 
-import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EQUAL;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN_OR_EQUAL;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN_OR_EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 
-public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsConditionlet.Instance> {
+public class NumberOfTimesPreviouslyVisitedConditionlet extends Conditionlet<NumberOfTimesPreviouslyVisitedConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	public static final String SITE_VISITS_KEY = "site-visits";
-	
+
 	private static final ParameterDefinition<NumericType> siteVisitsValue =
 			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
-	
-	public UsersSiteVisitsConditionlet() {
-        super("api.ruleengine.system.conditionlet.SiteVisits",
+
+	public NumberOfTimesPreviouslyVisitedConditionlet() {
+        super("api.ruleengine.system.conditionlet.NumberOfTimesPreviouslyVisited",
               new ComparisonParameterDefinition(2, EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN_OR_EQUAL),
               siteVisitsValue);
     }
@@ -41,12 +37,15 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	@Override
 	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+		int siteVisits = NumberOfTimeVisitedCounter.getNumberSiteVisits( request );
 
-		String siteVisits = String.valueOf( NumberOfTimeVisitedCounter.getNumberSiteVisits( request ) );
+		if (siteVisits != 0){
+			siteVisits--;
+		}
+
 		String siteVisitsValue = instance.siteVisits;
 
-		return instance.comparison.perform(siteVisits, siteVisitsValue);
-		
+		return instance.comparison.perform(String.valueOf(siteVisits), siteVisitsValue);
 	}
 
     @Override
@@ -59,7 +58,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
     	private final String siteVisits;
     	private final Comparison<String> comparison;
     	
-    	private Instance(UsersSiteVisitsConditionlet definition, Map<String, ParameterModel> parameters){
+    	private Instance(NumberOfTimesPreviouslyVisitedConditionlet definition, Map<String, ParameterModel> parameters){
     		this.siteVisits = parameters.get(SITE_VISITS_KEY).getValue();
     		String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
     		try {

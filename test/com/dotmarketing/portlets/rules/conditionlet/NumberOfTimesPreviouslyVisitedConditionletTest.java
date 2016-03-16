@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.WebKeys;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,12 +19,12 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 /**
  * Created by freddyrodriguez on 10/3/16.
  */
-public class UsersSiteVisitsConditionletTest {
+public class NumberOfTimesPreviouslyVisitedConditionletTest {
 
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession httpSessionMock;
-    private UsersSiteVisitsConditionlet conditionlet = new UsersSiteVisitsConditionlet();
+    private NumberOfTimesPreviouslyVisitedConditionlet conditionlet = new NumberOfTimesPreviouslyVisitedConditionlet();
 
     @Before
     public void before () {
@@ -34,7 +32,7 @@ public class UsersSiteVisitsConditionletTest {
         request = Mockito.mock(HttpServletRequest.class);
         Cookie[] cookies = new Cookie[1];
         cookies[ 0 ] = CookieUtil.createSiteVisitsCookie();
-        cookies[ 0 ].setValue("2");
+        cookies[ 0 ].setValue("3");
         Mockito.when(request.getCookies()).thenReturn(cookies);
 
         // Mock the response
@@ -54,7 +52,7 @@ public class UsersSiteVisitsConditionletTest {
         parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
                 new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
 
-        UsersSiteVisitsConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
@@ -76,7 +74,7 @@ public class UsersSiteVisitsConditionletTest {
         parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
                 new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-        UsersSiteVisitsConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
@@ -107,7 +105,7 @@ public class UsersSiteVisitsConditionletTest {
         parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
                 new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
 
-        UsersSiteVisitsConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
@@ -139,7 +137,7 @@ public class UsersSiteVisitsConditionletTest {
         parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
                 new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-        UsersSiteVisitsConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
@@ -170,7 +168,7 @@ public class UsersSiteVisitsConditionletTest {
         parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
                 new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
 
-        UsersSiteVisitsConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
