@@ -114,9 +114,9 @@ function suggestTagsForSearch(e, searchField, hostInSession) {
 	if (searchField) {
 		contentSearchField = searchField;
 	}
-	if (!tagVelocityVarName || tagVelocityVarName == "") {
-		tagVelocityVarName = e.target.id;
-	}
+
+    tagVelocityVarName = e.target.id;
+
 	if (!tagsContainer || tagsContainer == "") {
 		tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
 	}
@@ -190,6 +190,16 @@ function closeSuggetionBox(e) {
 			e.target.blur();
 		}
 	}, 100)
+}
+
+function removeAllTags() {
+    var tags = query(".tagLink");
+    if (tags.length) {
+        for (i = 0; tags.length > i; i++) {
+            var tagToRemove = tags[i];
+            clearTag(tagToRemove);
+        }
+    }
 }
 
 function removeLastTag() {
@@ -285,7 +295,9 @@ function clearSuggestTagsForSearch() {
 			dojo.style(suggestedDiv, "display", "none");
 		}
 		if (suggestedDiv) {
-			dojo.byId(suggestedDiv).innerHTML = "";
+            if (dojo.byId(suggestedDiv)) {
+                dojo.byId(suggestedDiv).innerHTML = "";
+            }
 		}
 		dojo.byId(tagVelocityVarName).focus();
 		tagVelocityVarName = null;
