@@ -192,6 +192,16 @@ function closeSuggetionBox(e) {
 	}, 100)
 }
 
+function removeAllTags() {
+    var tags = query(".tagLink");
+    if (tags.length) {
+        for (i = 0; tags.length > i; i++) {
+            var tagToRemove = tags[i];
+            clearTag(tagToRemove);
+        }
+    }
+}
+
 function removeLastTag() {
 	var tags = query(".tagLink");
 	if (tags.length) {
@@ -285,7 +295,9 @@ function clearSuggestTagsForSearch() {
 			dojo.style(suggestedDiv, "display", "none");
 		}
 		if (suggestedDiv) {
-			dojo.byId(suggestedDiv).innerHTML = "";
+            if (dojo.byId(suggestedDiv)) {
+                dojo.byId(suggestedDiv).innerHTML = "";
+            }
 		}
 		dojo.byId(tagVelocityVarName).focus();
 		tagVelocityVarName = null;

@@ -589,7 +589,10 @@
           }else if(type=='tag'){
                         var fieldId = selectedStruct + fieldContentlet + "Field";
                         var searchFieldId = selectedStruct + "." + fieldContentlet + "Field";
+
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
+                        dijit.registry.remove(selectedStruct + fieldContentlet + "Field");
+
                         var result = [
                             "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
@@ -2035,15 +2038,25 @@
                                                 opt.selected = false;
                                           }
                                   } else {
-                                          formField.value = "";
-                                          var temp = dijit.byId(formField.id);
-                                          temp.attr('value','');
-                                          if(temp){
-					                        try{
-					                           temp.setDisplayedValue('');
-					                         }catch(e){console.log(e);}
+
+                                          var dotCurrentFieldType = formField.getAttribute("dotfieldtype");
+                                          if (dotCurrentFieldType && dotCurrentFieldType == "tag") {
+                                              //Clean up the tag search field
+                                              clearSuggestTagsForSearch();
+                                              removeAllTags();
+                                          } else {
+
+                                              formField.value = "";
+
+                                              var temp = dijit.byId(formField.id);
+                                              temp.attr('value','');
+                                              if(temp){
+                                                try{
+                                                   temp.setDisplayedValue('');
+                                                 }catch(e){console.log(e);}
+                                              }
 					                      }
-					                    }
+                                  }
                         }
                 }
 
