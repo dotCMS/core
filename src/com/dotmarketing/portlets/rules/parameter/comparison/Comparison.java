@@ -2,6 +2,11 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import com.dotmarketing.portlets.rules.conditionlet.Location;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet;
+import org.mockito.cglib.core.Local;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Location.*;
 import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
 import java.util.Collection;
@@ -22,6 +27,8 @@ public class Comparison<T> {
     public static final Comparison<Comparable> GREATER_THAN = new GreaterThanComparison();
     public static final Comparison<Comparable<Object>> LESS_THAN_OR_EQUAL = new LessThanOrEqualComparison();
     public static final Comparison<Comparable<Object>> GREATER_THAN_OR_EQUAL = new GreaterThanOrEqualComparison();
+    public static final Comparison<Location> WITHIN_DISTANCE = new WithinDistanceComparison();
+    public static final Comparison<Location> NOT_WITHIN_DISTANCE = new NotWithinDistanceComparison();
     public static final Comparison<String> NETMASK = new NetmaskComparison();
 
     public static final Comparison[] NUMERIC_COMPARATION = {EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL,
@@ -67,6 +74,10 @@ public class Comparison<T> {
 
     public boolean perform(T argA, T argB, T argC) {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with three argument values.");
+    }
+
+    public boolean perform(Location argA, Location argB, double argC, UnitOfDistance unitOfDistance) {
+        throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed.");
     }
 
     public static class ComparisonOption extends Option {
