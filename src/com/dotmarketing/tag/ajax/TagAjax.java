@@ -59,13 +59,7 @@ public class TagAjax {
 	    		String tagName = tagNameToken.nextToken().trim();
 
 	    		try{
-					Tag tagByNameAndHost = APILocator.getTagAPI().getTagByNameAndHost(tagName, hostId);
-
-					if ( tagByNameAndHost == null){
-						throw new TagAlreadyExistsException( tagName );
-					}
-
-					Tag createdTag = APILocator.getTagAPI().saveTag(tagName, userId, hostId);
+					Tag createdTag = APILocator.getTagAPI().getTagAndCreate(tagName, userId, hostId);
 					String tagStorageForHost = "";
 	    			Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 

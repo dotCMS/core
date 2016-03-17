@@ -262,7 +262,7 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.rollbackTransaction();
             }
 
-            throw new GenericSavingTagException( e );
+            throw new GenericTagException( e );
         }
     }
 
