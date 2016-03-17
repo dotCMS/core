@@ -289,7 +289,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the CacheOSGIService
-            CacheProviderAPI cacheProviderAPI = APILocator.getCacheProviderPI();
+            CacheProviderAPI cacheProviderAPI = APILocator.getCacheProviderAPI();
             if ( cacheProviderAPI != null ) {
 
                 serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());

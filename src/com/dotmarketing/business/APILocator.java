@@ -287,7 +287,7 @@ public class APILocator extends Locator<APIIndex>{
 		return (WorkflowAPI) getInstance(APIIndex.WORKFLOW_API);
 	}
 
-	public static CacheProviderAPI getCacheProviderPI () {
+	public static CacheProviderAPI getCacheProviderAPI () {
 		return (CacheProviderAPI) getInstance(APIIndex.CACHE_PROVIDER_API);
 	}
 

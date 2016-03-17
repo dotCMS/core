@@ -78,7 +78,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 		try {
 			//Initializing all the Cache providers
-			cacheProviderAPI = APILocator.getCacheProviderPI();
+			cacheProviderAPI = APILocator.getCacheProviderAPI();
 			cacheProviderAPI.init();
 		} catch ( Exception e ) {
 			throw new DotRuntimeException("Error initializing Cache providers", e);
