@@ -603,7 +603,20 @@
                         dojo.addOnLoad(function() {
                           var tagField = dojo.byId(fieldId);
                           dojo.connect(tagField, "onkeyup", function(e) {
-                            suggestTagsForSearch(e, searchFieldId);
+
+                            <%
+                                //Search for the selected host
+                                String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                if(UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts")) {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
+                            <%
+                                } else {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId);
+                            <%
+                                }
+                            %>
                           });
                           dojo.connect(tagField, "onblur", closeSuggetionBox);
                           if (value.length) {
