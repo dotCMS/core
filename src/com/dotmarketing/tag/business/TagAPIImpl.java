@@ -209,6 +209,10 @@ public class TagAPIImpl implements TagAPI {
 
         boolean localTransaction = false;
 
+        if (tagName == null || tagName.length() > 255){
+            throw new InvalidTagNameLengthException( tagName );
+        }
+
         try {
 
             //Check for a transaction and start one if required
@@ -257,7 +261,8 @@ public class TagAPIImpl implements TagAPI {
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
-            throw e;
+
+            throw new GenericTagException( e );
         }
     }
 
