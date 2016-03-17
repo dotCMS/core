@@ -114,9 +114,9 @@ function suggestTagsForSearch(e, searchField, hostInSession) {
 	if (searchField) {
 		contentSearchField = searchField;
 	}
-	if (!tagVelocityVarName || tagVelocityVarName == "") {
-		tagVelocityVarName = e.target.id;
-	}
+
+    tagVelocityVarName = e.target.id;
+
 	if (!tagsContainer || tagsContainer == "") {
 		tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
 	}
