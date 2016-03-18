@@ -31,7 +31,7 @@ import {
   <div flex layout="column" class="cw-conditions">
     <div layout="row"
          class="cw-condition-row"
-         *ngFor="var condition of conditions; var i=index">
+         *ngFor="#condition of group?._conditions; var i=index">
       <rule-condition flex layout="row"
                       [condition]="condition"
                       [conditionTypes]="conditionTypes"
@@ -42,7 +42,7 @@ import {
                       (updateConditionOperator)="updateConditionOperator.emit($event)"
                       ></rule-condition>
       <div class="cw-btn-group cw-add-btn">
-        <div class="ui basic icon buttons" *ngIf="i === (conditions.length - 1)">
+        <div class="ui basic icon buttons" *ngIf="i === (group?._conditions.length - 1)">
           <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="onCreateCondition()" [disabled]="!condition.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
@@ -60,7 +60,6 @@ export class ConditionGroupComponent {
   private static I8N_BASE:string = 'api.sites.ruleengine.rules'
 
   @Input() group:ConditionGroupModel
-  @Input() conditions:ConditionModel[]
 
   @Input() groupIndex:number = 0
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
@@ -74,14 +73,16 @@ export class ConditionGroupComponent {
   @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
   @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
 
-
-
   private resources:I18nService
   private _rsrcCache:{[key:string]:Observable<string>}
 
   constructor(resources:I18nService) {
     this.resources = resources
     this._rsrcCache = {}
+  }
+
+  ngOnChanges(changes){
+    console.log("ConditionGroupComponent", "ngOnChanges", changes)
   }
 
   rsrc(subkey:string) {

@@ -46,8 +46,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
       <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
-  <rule *ngFor="var rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
-         [conditionGroups]="rule._conditionGroups"
+  <rule *ngFor="#rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
          [ruleActions]="rule._ruleActions"
          [ruleActionTypes]="ruleActionTypes"
          [conditionTypes]="conditionTypes"
@@ -65,6 +64,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
         (deleteRuleAction)="deleteRuleAction.emit($event)"
         
         (createCondition)="createCondition.emit($event)"
+        (createConditionGroup)="createConditionGroup.emit($event)"
         (onUpdateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
         (updateConditionType)="updateConditionType.emit($event)"
         (updateConditionParameter)="updateConditionParameter.emit($event)"
@@ -95,6 +95,7 @@ export class RuleEngineComponent {
   @Output() updateRuleActionType:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
   @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
 
+  @Output() createConditionGroup:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
   @Output() updateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
 
   @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)

@@ -1,6 +1,6 @@
 import {EventEmitter, Injectable} from 'angular2/core'
 import {Http, Response, RequestMethod, Request} from 'angular2/http'
-import {Observable} from 'rxjs/Rx'
+import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
 import {
@@ -8,6 +8,7 @@ import {
     CLIENTS_ONLY_MESSAGES, SERVER_RESPONSE_ERROR
 } from "../system/http-response-util";
 import {ServerSideFieldModel, ServerSideTypeModel} from "./ServerSideFieldModel";
+import {I18nService} from "../system/locale/I18n";
 
 
 export const RULE_CREATE = 'RULE_CREATE'
@@ -239,12 +240,34 @@ export class RuleService {
   private _conditionTypesEndpointUrl:string
   private _ruleActionTypesEndpointUrl:string
 
-  constructor(private _apiRoot:ApiRoot, private _http:Http) {
+  ruleActionTypes$:BehaviorSubject<ServerSideTypeModel[]> =  new BehaviorSubject([]);
+  conditionTypes$:BehaviorSubject<ServerSideTypeModel[]> =  new BehaviorSubject([]);
+
+  private _ruleActions:{[key:string]:ActionModel} = {}
+  private _conditions:{[key:string]:ConditionModel} = {}
+
+  _ruleActionTypes:{[key:string]:ServerSideTypeModel} = {}
+  private _ruleActionTypesAry:ServerSideTypeModel[] = []
+
+  _conditionTypes:{[key:string]:ServerSideTypeModel} = {}
+  private _conditionTypesAry:ServerSideTypeModel[] = []
+
+
+  constructor(private _apiRoot:ApiRoot, private _http:Http, private _resources:I18nService) {
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
     this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
     this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`
     this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`
 
+    this._preCacheCommonResources(_resources)
+    this.loadActionTypes().subscribe((types:ServerSideTypeModel[])=> this.ruleActionTypes$.next(types))
+    this.loadConditionTypes().subscribe((types:ServerSideTypeModel[])=> this.conditionTypes$.next(types))
+  }
+
+  private _preCacheCommonResources(resources:I18nService) {
+    resources.get('api.sites.ruleengine').subscribe((rsrc)=> {})
+    resources.get('api.ruleengine.system').subscribe((rsrc)=> {})
+    resources.get('api.system.ruleengine').subscribe((rsrc)=> {})
   }
 
   createRule(body:RuleModel):Observable<RuleModel|CwError> {
@@ -318,6 +341,57 @@ export class RuleService {
   }
 
 
+  private loadActionTypes():Observable<ServerSideTypeModel[]> {
+    let obs
+    if(this._ruleActionTypesAry.length){
+      obs = Observable.fromArray(this._ruleActionTypesAry)
+    } else {
+      return this._doLoadRuleActionTypes().map((types:ServerSideTypeModel[])=> {
+        types.sort(RuleService.alphaSort('key'))
+        types.forEach(type => {
+          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
+          this._ruleActionTypes[type.key] = type
+        })
+        this._ruleActionTypesAry = types
+        return types
+      })
+    }
+    return obs
+  }
+
+  _doLoadRuleActionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method:RequestMethod.Get,
+      url: this._ruleActionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+  private loadConditionTypes():Observable<ServerSideTypeModel[]> {
+    let obs
+    if(this._conditionTypesAry.length){
+      obs = Observable.fromArray(this._conditionTypesAry)
+    } else {
+      return this._doLoadConditionTypes().map((types:ServerSideTypeModel[])=> {
+        types.sort(RuleService.alphaSort('key'))
+        types.forEach(type => {
+          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
+          this._conditionTypes[type.key] = type
+        })
+        this._conditionTypesAry = types
+        return types
+      })
+    }
+    return obs
+  }
+
+
+  _doLoadConditionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method:RequestMethod.Get,
+      url: this._conditionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
   request(options:any):Observable<RuleModel[]|ServerSideTypeModel[]|CwError|RuleModel|IConditionGroup> {
     options.headers = this._apiRoot.getDefaultRequestHeaders();
     var source = options.body
@@ -389,13 +463,30 @@ export class RuleService {
     })
   }
 
+
+  static alphaSort(key) {
+    return (a, b) => {
+      let x
+      if(a[key] > b[key]) {
+        x = 1
+      } else if(a[key] < b[key]){
+        x = -1
+      }
+      else {
+        x = 0
+      }
+      return x
+    }
+  }
+
   static fromServerServersideTypesTransformFn(typesMap):ServerSideTypeModel[]{
-    return Object.keys(typesMap).map((key:string) => {
+    let types = Object.keys(typesMap).map((key:string) => {
       let json:any = typesMap[key]
       json.key = key
       return ServerSideTypeModel.fromJson(json)
     })
+    console.log("RuleService", "fromServerServersideTypesTransformFn - loaded", types)
+    return types.filter((type)=> type.key != 'CountRulesActionlet')
   }
-
 }
 

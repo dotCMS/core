@@ -20,7 +20,8 @@ import {
     RULE_RULE_ACTION_UPDATE_TYPE,
     RULE_RULE_ACTION_UPDATE_PARAMETER,
     V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
-    RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE
+    RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE,
+    RULE_CONDITION_GROUP_CREATE
 } from "../../../api/rule-engine/Rule";
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
@@ -93,7 +94,7 @@ var rsrc = {
           <button class="ui button cw-delete-rule" aria-label="Delete Rule" (click)="deleteRuleClicked($event)">
             <i class="trash icon"></i>
           </button>
-          <button class="ui button cw-add-group" arial-label="Add Group" (click)="addGroup(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
+          <button class="ui button cw-add-group" arial-label="Add Group" (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
@@ -101,10 +102,9 @@ var rsrc = {
     </div>
   </div>
   <div class="cw-accordion-body" *ngIf="rule._expanded">
-    <condition-group *ngFor="var group of conditionGroups; var i=index"
+    <condition-group *ngFor="#group of rule._conditionGroups; var i=index"
                      [rule]="rule"
                      [group]="group"
-                     [conditions]="group._conditions"
                      [conditionTypes]="conditionTypes"
                      [groupIndex]="i"
                      (createCondition)="createCondition.emit($event)"
@@ -139,7 +139,7 @@ var rsrc = {
 </div>
 </form>
 `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.Default
 })
 class RuleComponent {
   @Input() rule:RuleModel
@@ -150,7 +150,6 @@ class RuleComponent {
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
 
-  @Input() conditionGroups:ConditionGroupModel[]
   @Input() hidden:boolean = false
 
   @Output() deleteRule:EventEmitter<RuleActionEvent> = new EventEmitter(false)
@@ -165,10 +164,10 @@ class RuleComponent {
   @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
 
   @Output() onUpdateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+  @Output() createConditionGroup:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
 
-
-  @Output() createCondition:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() deleteCondition:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() deleteCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
   @Output() updateConditionType:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
   @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
   @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
@@ -235,6 +234,7 @@ class RuleComponent {
   }
 
   ngOnChanges(change) {
+    console.log("RuleComponent", "ngOnChanges", change, change.rule)
     if (change.rule) {
       let rule = this.rule
       let ctrl:Control = <Control>this.formModel.controls['name']
@@ -281,8 +281,15 @@ class RuleComponent {
   }
 
   onDeleteCondition(event:ConditionActionEvent, conditionGroup:ConditionGroupModel){
+    debugger
     Object.assign(event.payload, { rule:this.rule, conditionGroup:conditionGroup })
     this.deleteCondition.emit( event )
+  }
+
+  onCreateConditionGroupClicked(){
+    let len = this.rule._conditionGroups.length
+    let priority:number = len ? this.rule._conditionGroups[len - 1].priority : 1;
+    this.createConditionGroup.emit({type:RULE_CONDITION_GROUP_CREATE, payload:{rule:this.rule, priority}})
   }
 
   onCreateCondition(event:ConditionActionEvent){
@@ -327,9 +334,9 @@ class RuleComponent {
     let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey)
     if (!noWarn) {
       noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted()
-      noWarn = noWarn && this.conditionGroups.length === 1
+      noWarn = noWarn && this.rule._conditionGroups.length === 1
       if (noWarn) {
-        let conditions = this.conditionGroups[0].conditions
+        let conditions = this.rule._conditionGroups[0].conditions
         let keys = Object.keys(conditions)
         noWarn = noWarn && (keys.length === 0)
       }

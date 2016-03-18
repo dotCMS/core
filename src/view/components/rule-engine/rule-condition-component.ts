@@ -75,25 +75,28 @@ export class ConditionComponent {
   constructor(private _resources:I18nService) {
   }
 
-  ngOnChanges(change){
-
-    if (change.condition){
-      console.log("ConditionComponent", "ngOnChanges-condition", change.condition.currentValue)
-      if (this.typeDropdown && this.condition.type) {
-        if(this.condition.type.key != 'NoSelection') {
-          this.typeDropdown.value = this.condition.type.key
+  ngOnChanges(change) {
+    try {
+      if (change.condition) {
+        console.log("ConditionComponent", "ngOnChanges-condition", change.condition.currentValue)
+        if (this.typeDropdown && this.condition.type) {
+          if (this.condition.type.key != 'NoSelection') {
+            this.typeDropdown.value = this.condition.type.key
+          }
         }
       }
-    }
-    if(change.conditionTypes && !this.typeDropdown){
-      this.typeDropdown = {
-        options: [],
-        placeholder: this._resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder"),
+      if (change.conditionTypes && !this.typeDropdown) {
+        this.typeDropdown = {
+          options: [],
+          placeholder: this._resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder"),
+        }
+        Object.keys(this.conditionTypes).forEach(key => {
+          let type = this.conditionTypes[key]
+          this.typeDropdown.options.push(type._opt)
+        })
       }
-      Object.keys(this.conditionTypes).forEach(key => {
-        let type = this.conditionTypes[key]
-        this.typeDropdown.options.push(type._opt)
-      })
+    } catch (e) {
+      console.error("ConditionComponent", "ngOnChanges", e)
     }
   }
 

@@ -2,7 +2,7 @@ import {Component, EventEmitter} from 'angular2/core'
 import {CORE_DIRECTIVES} from 'angular2/common'
 import {
     RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel,
-    RuleEngineState
+    RuleEngineState, RULE_CONDITION_CREATE
 } from "../../../api/rule-engine/Rule"
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {ServerSideFieldModel, ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
@@ -33,7 +33,7 @@ export interface TypeChangeEvent extends CwChangeEvent {
 
 export interface RuleActionEvent {type:string, payload:{rule?:RuleModel, value?:string|boolean}}
 export interface RuleActionActionEvent extends RuleActionEvent {payload:{rule?:RuleModel, value?:string|boolean, ruleAction?: ActionModel, index?:number, name?:string}}
-export interface ConditionGroupActionEvent extends RuleActionEvent {payload:{rule?:RuleModel, value?:string|boolean, conditionGroup?: ConditionGroupModel, index?:number}}
+export interface ConditionGroupActionEvent extends RuleActionEvent {payload:{rule?:RuleModel, value?:string|boolean, conditionGroup?: ConditionGroupModel, index?:number, priority?:number}}
 export interface ConditionActionEvent extends RuleActionEvent {
   payload:{
     rule?:RuleModel,
@@ -53,8 +53,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
   template: `
     <cw-rule-engine
       [rules]="rules"
-      [ruleActionTypes]="_ruleActionTypes"
-      [conditionTypes]="_conditionTypes"
+      [ruleActionTypes]="_ruleService._ruleActionTypes"
+      [conditionTypes]="_ruleService._conditionTypes"
       [loading]="state.loading"
       (createRule)="onCreateRule($event)"
       (deleteRule)="onDeleteRule($event)"
@@ -68,6 +68,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
       (updateRuleActionParameter)="onUpdateRuleActionParameter($event)"
       (deleteRuleAction)="onDeleteRuleAction($event)"
       
+      (createConditionGroup)="onCreateConditionGroup($event)"
       (createCondition)="onCreateCondition($event)"
       (updateConditionType)="onUpdateConditionType($event)"
       (updateConditionParameter)="onUpdateConditionParameter($event)"
@@ -81,9 +82,6 @@ export class RuleEngineContainer {
   rules:RuleModel[] = []
 
   state:RuleEngineState = new RuleEngineState()
-
-  private _ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
-  private _conditionTypes:{[key:string]: ServerSideTypeModel} = {}
 
   rules$:EventEmitter<RuleModel[]> = new EventEmitter()
   ruleActions$:EventEmitter<ActionModel[]> = new EventEmitter()
@@ -100,11 +98,7 @@ export class RuleEngineContainer {
       console.log("RuleEngineContainer", "rules$.subscribe", rules)
       this.rules = rules
     })
-    this.preCacheCommonResources(_resources)
     this.initRules()
-    this.initActionTypes()
-    this.initConditionTypes()
-
   }
 
   private preCacheCommonResources(resources:I18nService) {
@@ -121,26 +115,6 @@ export class RuleEngineContainer {
       });
       this.rules$.emit(rules)
       this.state.loading = false
-    })
-  }
-
-  private initActionTypes() {
-    this._ruleService.getRuleActionTypes().subscribe((types:ServerSideTypeModel[])=> {
-      types.forEach(type => {
-        type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
-        this._ruleActionTypes[type.key] = type
-      })
-    })
-  }
-
-  private initConditionTypes() {
-    this._ruleService.getConditionTypes().subscribe((types:ServerSideTypeModel[])=> {
-      types.sort(this.alphaSort('key'))
-      console.log("RuleEngineContainer", "initConditionTypes", types)
-      types.forEach(type => {
-        type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
-        this._conditionTypes[type.key] = type
-      })
     })
   }
 
@@ -229,11 +203,11 @@ export class RuleEngineContainer {
         obs2 = Observable.from(rule._conditionGroups)
       }
       let obs3:Observable<ConditionGroupModel> = obs2.flatMap(
-          (group:ConditionGroupModel) => this._conditionService.listForGroup(group, this._conditionTypes),
+          (group:ConditionGroupModel) => this._conditionService.listForGroup(group, this._ruleService._conditionTypes),
           (group:ConditionGroupModel, conditions:ConditionModel[])=> {
             if (conditions) {
               conditions.forEach((condition:ConditionModel)=> {
-                condition.type = this._conditionTypes[condition.conditionlet]
+                condition.type = this._ruleService._conditionTypes[condition.conditionlet]
               })
             }
             group._conditions = conditions
@@ -263,7 +237,7 @@ export class RuleEngineContainer {
       })
 
       if (rule._ruleActions.length == 0) {
-        this._ruleActionService.allAsArray(rule.key, Object.keys(rule.ruleActions), this._ruleActionTypes).subscribe((actions) => {
+        this._ruleActionService.allAsArray(rule.key, Object.keys(rule.ruleActions), this._ruleService._ruleActionTypes).subscribe((actions) => {
           rule._ruleActions = actions
           if (rule._ruleActions.length === 0) {
             let action = new ActionModel(null, new ServerSideTypeModel(), 1)
@@ -302,9 +276,7 @@ export class RuleEngineContainer {
         }
       })
     }
-
   }
-
 
   onUpdateRuleActionType(event:RuleActionActionEvent) {
     console.log("RuleEngineContainer", "onUpdateRuleActionType")
@@ -312,7 +284,7 @@ export class RuleEngineContainer {
       let ruleAction = event.payload.ruleAction
       let rule = event.payload.rule
       let idx = event.payload.index
-      let type:ServerSideTypeModel = this._ruleActionTypes[<string>event.payload.value]
+      let type:ServerSideTypeModel = this._ruleService._ruleActionTypes[<string>event.payload.value]
       rule._ruleActions[idx] = new ActionModel(ruleAction.key, type, ruleAction.priority)
       this.patchAction(rule, ruleAction)
     } catch (e) {
@@ -328,13 +300,11 @@ export class RuleEngineContainer {
   }
   
   onCreateConditionGroup(event:ConditionGroupActionEvent) {
+    console.log("RuleEngineContainer", "onCreateConditionGroup")
     let rule = event.payload.rule
-    let groupCount = rule._conditionGroups.length
-    let priority = groupCount ? rule._conditionGroups[groupCount - 1].priority + 1 : 1
-    let group = new ConditionGroupModel({operator: 'AND', priority:1})
-
+    let group = new ConditionGroupModel({operator: 'AND', priority:event.payload.priority})
+    group._conditions.push(new ConditionModel({priority: 1, _type: new ServerSideTypeModel(), operator: 'AND'}))
     rule._conditionGroups.push(group)
-    rule._conditionGroups.sort(this.prioritySortFn)
   }
 
   onUpdateConditionGroupOperator(event:ConditionGroupActionEvent) {
@@ -367,7 +337,7 @@ export class RuleEngineContainer {
       let group = event.payload.conditionGroup
       let rule = event.payload.rule
       let idx = event.payload.index
-      let type:ServerSideTypeModel = this._conditionTypes[<string>event.payload.value]
+      let type:ServerSideTypeModel = this._ruleService._conditionTypes[<string>event.payload.value]
       // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
       condition = new ConditionModel({id: condition.key, _type: type, priority:condition.priority})
       group._conditions[idx] = condition
