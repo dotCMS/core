@@ -9,23 +9,23 @@ public class Location implements Comparable {
         KILOMETERS
     }
 
-    private final float latitude;
-    private final float longitude;
+    private final double latitude;
+    private final double longitude;
 
     private final static double EARTH_DIAMETER = 2 * 6378.2;
     private final static double PI = 3.14159265;
     private final static double RAD_CONVERT = PI / 180;
 
-    public Location(float latitude, float longitude) {
+    public Location(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
 
-    public float getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 
-    public float getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
@@ -33,10 +33,10 @@ public class Location implements Comparable {
         double deltaLat, deltaLon;
         double temp;
 
-        float lat1 = latitude;
-        float lon1 = longitude;
-        float lat2 = loc.latitude;
-        float lon2 = loc.longitude;
+        double lat1 = latitude;
+        double lon1 = longitude;
+        double lat2 = loc.latitude;
+        double lon2 = loc.longitude;
 
         // convert degrees to radians
         lat1 *= RAD_CONVERT;
