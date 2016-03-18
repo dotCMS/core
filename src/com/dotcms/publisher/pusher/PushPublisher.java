@@ -101,8 +101,6 @@ public class PushPublisher extends Publisher {
 			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(config.getId());
-
-
 			Client client = RestClientBuilder.newClient();
 
 			//Updating audit table
@@ -169,19 +167,14 @@ public class PushPublisher extends Publisher {
 	        						"Returned "+response.getStatus()+ " status code " +
 	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
 	        				failedEnvironment |= true;
-
 	        			}
 	        		} catch(Exception e) {
-
 	        			// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
 	        			if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
 	        				APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
 	        			}
 	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-
 	        			String error = 	"An error occured for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
-
-
 	        			detail.setInfo(error);
 	        			failedEnvironment |= true;
 
@@ -195,13 +188,10 @@ public class PushPublisher extends Publisher {
 				if(failedEnvironment) {
 					errorCounter++;
 				}
-
-
 			}
 
 			if(errorCounter==0) {
 				//Updating audit table
-		        currentStatusHistory.setPublishEnd(new Date());
 				PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 				pubAuditAPI.updatePublishAuditStatus(config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);

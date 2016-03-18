@@ -25,7 +25,7 @@ import java.util.zip.GZIPInputStream;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
- * saving the different contents in it based on a pre-defined list of content
+ * saving the different contents in it based on a predefined list of content
  * handler classes.
  * <p>
  * An {@link IHandler} class provides the logic to import the new content, based
@@ -42,20 +42,13 @@ import java.util.zip.GZIPInputStream;
 public class BundlePublisher extends Publisher {
 
     private PublishAuditAPI auditAPI = null;
+    
     boolean bundleSuccess = true;
 
     private List<IHandler> handlers = new ArrayList<IHandler>();
 
-    /**
-     * Initializes this Publisher adding all the handlers that can interact with a Bundle.
-     *
-     * @param config Class that have the main configuration values for the Bundle we are trying to publish
-     * @return This bundle configuration ({@link PublisherConfig})
-     * @throws DotPublishingException If fails initializing this Publisher Handlers
-     */
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
-
         if ( LicenseUtil.getLevel() < 200 ) {
             throw new RuntimeException( "need an enterprise licence to run this" );
         }
@@ -67,38 +60,36 @@ public class BundlePublisher extends Publisher {
         handlers.add( new HostHandler( config ) );
         handlers.add( new FolderHandler( config ) );
         handlers.add( new WorkflowHandler( config ) );
-
         if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES", true) ) {
             handlers.add( new StructureHandler( config ) );
             handlers.add( new RelationshipHandler( config ) );
         }
-
         handlers.add( new ContainerHandler( config ) );
         handlers.add( new TemplateHandler( config ) );
         handlers.add( new HTMLPageHandler( config ) );
-        handlers.add(new RuleHandler(config));
         handlers.add( new LanguageHandler( config ) );
         handlers.add( new LanguageVariablesHandler( config ) );
         handlers.add( new ContentHandler( config ) );
         handlers.add( new ContentWorkflowHandler( config ) );
         handlers.add( new OSGIHandler( config ) );
         handlers.add( new LinkHandler( config ) );
-
+        handlers.add(new RuleHandler(config));
         auditAPI = PublishAuditAPI.getInstance();
-
         this.config = super.init( config );
         return this.config;
     }
 
-    /**
-     * Processes a Bundle, in order to do that it: Un-compress the Bundle file, then each handler for this Publisher will check if inside<br/>
-     * the bundle there is content it needs to be handle as each {@link IHandler Handler} handles a different type of content, and finally<br/>
-     * after the "handle" for each Handler the status are set depending if was a successful operation or not.
-     *
-     * @param status Current status of the Publishing process
-     * @return This bundle configuration ({@link PublisherConfig})
-     * @throws DotPublishingException If fails Handling any on the elements of this bundle
-     */
+	/**
+	 * Processes the contents of a bundle. The process consists of uncompressing
+	 * the bundle file, and having each {@link IHandler} class analyze and
+	 * process the corresponding data files.
+	 *
+	 * @param status
+	 *            - Current status of the publishing process.
+	 * @return This bundle configuration ({@link PublisherConfig}).
+	 * @throws DotPublishingException
+	 *             An error occurred when handling the contents of this bundle.
+	 */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
         if ( LicenseUtil.getLevel() < 300 ) {
@@ -188,7 +179,7 @@ public class BundlePublisher extends Publisher {
                 detail.setStackTrace( ExceptionUtils.getStackTrace( e ) );
                 String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
                 currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-                currentStatusHistory.setBundleEnd( new Date() );
+                currentStatusHistory.setPublishEnd( new Date() );
                 currentStatusHistory.setAssets( assetsDetails );
 
                 auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory );
@@ -204,7 +195,7 @@ public class BundlePublisher extends Publisher {
             detail.setInfo( "Everything ok" );
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-            currentStatusHistory.setBundleEnd( new Date() );
+            currentStatusHistory.setPublishEnd( new Date() );
             currentStatusHistory.setAssets( assetsDetails );
             auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory );
             HibernateUtil.commitTransaction();
@@ -220,7 +211,6 @@ public class BundlePublisher extends Publisher {
         return config;
     }
 
-
     @SuppressWarnings ("rawtypes")
     @Override
     public List<Class> getBundlers () {
@@ -229,13 +219,16 @@ public class BundlePublisher extends Publisher {
         return list;
     }
 
-    /**
-     * Untars a given tar bundle file in order process the content on it.
-     *
-     * @param bundle   Compressed Bundle file
-     * @param path
-     * @param fileName
-     */
+	/**
+	 * Untars the given bundle file in order process its contents.
+	 *
+	 * @param bundle
+	 *            - The {@link InputStream} containing the bundle.
+	 * @param path
+	 *            - The location where the bundle will be uncompressed.
+	 * @param fileName
+	 *            - The file name of the bundle.
+	 */
     private void untar ( InputStream bundle, String path, String fileName ) {
         TarEntry entry;
         TarInputStream inputStream = null;
