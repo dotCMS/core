@@ -28,8 +28,14 @@ import com.liferay.portal.model.User;
 import java.util.*;
 
 /**
- * Implement the PublishQueueAPI abstract class methods
- * @author Oswaldo
+ * Provides utility methods to interact with asset information added to the
+ * Publishing Queue. When the user selects one or more assets to be pushed, they
+ * are added to a queue that the Push Publishing mechanism uses to add them to a
+ * specific bundle and sends them to the destination server(s).
+ * 
+ * @author Alberto
+ * @version 1.0
+ * @since Oct 10, 2012
  *
  */
 public class PublisherAPIImpl extends PublisherAPI{
@@ -38,6 +44,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static PublisherAPIImpl instance= null;
 
+	/**
+	 * Returns a single instance of this class.
+	 * 
+	 * @return An instance of {@link PublisherAPI}.
+	 */
 	public static PublisherAPIImpl getInstance() {
 		if(instance==null){
 			instance = new PublisherAPIImpl();
@@ -45,6 +56,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 		return instance;
 	}
+
+	/**
+	 * 
+	 */
 	protected PublisherAPIImpl(){
 		mapper = new PublishQueueMapper();
 	}
@@ -57,6 +72,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 										"publish_date, "+
 										"type, "+
 										"bundle_id ";
+
 	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?" ;
 
 	private static final String INSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
@@ -138,9 +154,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 
                       //First verify what kind of element we want to publish in order to avoid unnecessary calls
                       if ( identifier.contains( "user_" ) ) {//Trying to publish a user
-                          type = "user";
+                          type = PusheableAsset.USER.getType();
                       } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
-                          type = "osgi";
+                          type = PusheableAsset.OSGI.getType();
                       } else {
 
                           Identifier iden = APILocator.getIdentifierAPI().find( identifier );
@@ -153,7 +169,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   for ( Structure s : sts ) {
                                       if ( s.getInode().equals( identifier ) ) {
                                           st = s;
-                                          type = "structure";
+                                          type = PusheableAsset.CONTENT_TYPE.getType();
                                       }
                                   }
                                   if ( UtilMethods.isSet( st ) ) {
@@ -165,13 +181,9 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   }
                                   Folder folder;
 
-                                  /**
-                                   * ISSUE 2244: https://github.com/dotCMS/dotCMS/issues/2244
-                                   *
-                                   */
                                   // check if it is a category
                                   if ( !UtilMethods.isSet(type) && CATEGORY.equals( identifier ) ) {
-                                      type = "category";
+                                      type = PusheableAsset.CATEGORY.getType();
                                   } // check if it is a language
                                   else if(!UtilMethods.isSet(type) && APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
                                       type = PusheableAsset.LANGUAGE.getType();
@@ -187,13 +199,12 @@ public class PublisherAPIImpl extends PublisherAPI{
                                           appendError( errorsList, ErrorType.PERMISSION, user, "Folder", folder.getName(), folder.getIdentifier() );
                                           continue;
                                       }
-
-                                      type = "folder";
+                                      type = PusheableAsset.FOLDER.getType();
                                   }
                               } catch ( Exception ex ) {
                             	  try {
 									if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
-										  type = "workflow";
+										  type = PusheableAsset.WORKFLOW.getType();
 									  }
 									} catch (DotDataException e) {
 										// The identifier to process cannot be 
@@ -207,7 +218,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   appendError( errorsList, ErrorType.PERMISSION, user, iden.getAssetType(), null, iden.getId() );
                                   continue;
                               }
-                              type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
+                              type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? PusheableAsset.SITE.getType() : iden.getAssetType();
                           }
                       }
 

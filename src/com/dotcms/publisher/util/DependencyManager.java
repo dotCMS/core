@@ -27,12 +27,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -94,6 +96,7 @@ public class DependencyManager {
 	private Set<String> containersSet;
 	private Set<String> contentsSet;
 	private Set<String> linksSet;
+	private Set<String> ruleSet;
 	private Set<String> solvedStructures;
 
 	private User user;
@@ -136,6 +139,7 @@ public class DependencyManager {
 		containersSet = new HashSet<String>();
 		contentsSet = new HashSet<String>();
 		linksSet = new HashSet<String>();
+		this.ruleSet = new HashSet<String>();
 		solvedStructures = new HashSet<String>();
 
 		this.user = user;
@@ -159,7 +163,7 @@ public class DependencyManager {
 		List<PublishQueueElement> assets = config.getAssets();
 
 		for (PublishQueueElement asset : assets) {
-			if(asset.getType().equals("htmlpage")) {
+			if(asset.getType().equals(PusheableAsset.HTMLPAGE.getType())) {
 				try {
 					HTMLPage page = APILocator.getHTMLPageAPI().loadLivePageById(asset.getAsset(), user, false);
 
@@ -178,7 +182,7 @@ public class DependencyManager {
 					Logger.error(getClass(), "Couldn't add the HtmlPage to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
 				}
 
-			} else if(asset.getType().equals("structure")) {
+			} else if(asset.getType().equals(PusheableAsset.CONTENT_TYPE.getType())) {
 				try {
 					Structure st = CacheLocator.getContentTypeCache().getStructureByInode(asset.getAsset());
 					
@@ -193,7 +197,7 @@ public class DependencyManager {
 					Logger.error(getClass(), "Couldn't add the Structure to the Bundle. Bundle ID: " + config.getId() + ", Structure ID: " + asset.getAsset(), e);
 				}
 
-			} else if(asset.getType().equals("template")) {
+			} else if(asset.getType().equals(PusheableAsset.TEMPLATE.getType())) {
 				try {
 					Template t = APILocator.getTemplateAPI().findLiveTemplate(asset.getAsset(), user, false);
 
@@ -210,7 +214,7 @@ public class DependencyManager {
 				} catch (Exception e) {
 					Logger.error(getClass(), "Couldn't add the Template to the Bundle. Bundle ID: " + config.getId() + ", Template ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("containers")) {
+			} else if(asset.getType().equals(PusheableAsset.CONTAINER.getType())) {
 				try {
 					Container c = (Container) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
 
@@ -228,7 +232,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Container to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("folder")) {
+			} else if(asset.getType().equals(PusheableAsset.FOLDER.getType())) {
 				try {
 					Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
 					
@@ -242,7 +246,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("host")) {
+			} else if(asset.getType().equals(PusheableAsset.SITE.getType())) {
 				try {
 					Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
 					
@@ -256,7 +260,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("links")) {
+			} else if(asset.getType().equals(PusheableAsset.LINK.getType())) {
 				try {
 					Link link = (Link) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
 					
@@ -274,7 +278,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("workflow")) {
+			} else if(asset.getType().equals(PusheableAsset.WORKFLOW.getType())) {
 				WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(asset.getAsset());
 				
 				if(scheme == null){
@@ -297,7 +301,8 @@ public class DependencyManager {
 				Rule rule = APILocator.getRulesAPI()
 							.getRuleById(asset.getAsset(), user, false);
 				if (rule != null && StringUtils.isNotBlank(rule.getId())) {
-					this.rules.add(asset.getAsset());
+					this.rules.add(rule.getId());
+					this.ruleSet.add(rule.getId());
 				} else {
 					Logger.warn(getClass(), "Rule id: "
 							+ (asset.getAsset() != null ? asset.getAsset()
@@ -321,12 +326,12 @@ public class DependencyManager {
 		setHostDependencies();
         setFolderDependencies();
         setHTMLPagesDependencies();
-        setRuleDependencies();
         setTemplateDependencies();
         setContainerDependencies();
         setStructureDependencies();
         setLinkDependencies();
         setContentDependencies();
+        setRuleDependencies();
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -398,29 +403,31 @@ public class DependencyManager {
 	}
 
 	/**
-	 * For given Host adds its dependencies:
+	 * Collects the different dependent objects that are required for pushing
+	 * {@link Host} objects. The required dependencies of a site are:
 	 * <ul>
-	 * <li>Templates</li>
-	 * <li>Containers</li>
-	 * <li>Contentlets</li>
-	 * <li>Structures</li>
-	 * <li>Folders</li>
+	 * <li>Templates.</li>
+	 * <li>Containers.</li>
+	 * <li>Contentlets.</li>
+	 * <li>Content Types.</li>
+	 * <li>Folders.</li>
+	 * <li>Rules.</li>
 	 * </ul>
 	 */
 	private void setHostDependencies () {
 		try {
 			for (String id : hostsSet) {
-				Host h = APILocator.getHostAPI().find(id, user, false);
+				final Host h = APILocator.getHostAPI().find(id, user, false);
 
 				// Template dependencies
-				List<Template> templateList = APILocator.getTemplateAPI().findTemplatesAssignedTo(h);
+				final List<Template> templateList = APILocator.getTemplateAPI().findTemplatesAssignedTo(h);
 				for (Template template : templateList) {
 					templates.addOrClean( template.getIdentifier(), template.getModDate());
 					templatesSet.add(template.getIdentifier());
 				}
 
 				// Container dependencies
-				List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
+				final List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
 				for (Container container : containerList) {
 					containers.addOrClean( container.getIdentifier(), container.getModDate());
 					containersSet.add(container.getIdentifier());
@@ -429,32 +436,36 @@ public class DependencyManager {
 				// Content dependencies
 				String luceneQuery = "+conHost:" + h.getIdentifier();
 
-				List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
+				final List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
 				for (Contentlet contentlet : contentList) {
 					contents.addOrClean( contentlet.getIdentifier(), contentlet.getModDate());
 					contentsSet.add(contentlet.getIdentifier());
 				}
 
 				// Structure dependencies
-				List<Structure> structuresList = StructureFactory.getStructuresUnderHost(h, user, false);
+				final List<Structure> structuresList = StructureFactory.getStructuresUnderHost(h, user, false);
 				for (Structure structure : structuresList) {
 					structures.addOrClean( structure.getInode(), structure.getModDate());
 					structuresSet.add(structure.getInode());
 				}
 
 				// Folder dependencies
-				List<Folder> folderList = APILocator.getFolderAPI().findFoldersByHost(h, user, false);
+				final List<Folder> folderList = APILocator.getFolderAPI().findFoldersByHost(h, user, false);
 				for (Folder folder : folderList) {
 					folders.addOrClean( folder.getInode(), folder.getModDate());
 					foldersSet.add(folder.getInode());
 				}
+				
+				// Rule dependencies
+				final List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(h, user, false);
+				for (final Rule rule : ruleList) {
+					this.rules.add(rule.getId());
+					this.ruleSet.add(rule.getId());
+				}
 			}
-
 		} catch (DotSecurityException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -565,15 +576,9 @@ public class DependencyManager {
 	}
 
 	/**
-	 * For given HTMLPages adds its dependencies:
-	 * <ul>
-	 * <li>Hosts</li>
-	 * <li>Folders</li>
-	 * <li>Templates</li>
-	 * <li>Containers</li>
-	 * <li>Structures</li>
-	 * <li>Contentlet</li>
-	 * </ul>
+	 * Traverses the list of selected contentlets that are being pushed and
+	 * determines which of them are actually {@link IHTMLPage} objects. After
+	 * that, the respective dependencies will be retrieved and added acordingly.
 	 */
 	private void setHTMLPagesDependencies() {
 		try {
@@ -600,17 +605,18 @@ public class DependencyManager {
 	}
 
 	/**
-	 * For given HTMLPages adds its dependencies:
+	 * Collects the different dependent objects that are required for pushing
+	 * {@link IHTMLPage} objects. The required dependencies of a page are:
 	 * <ul>
-	 * <li>Hosts</li>
-	 * <li>Folders</li>
-	 * <li>Templates</li>
-	 * <li>Containers</li>
-	 * <li>Structures</li>
-	 * <li>Contentlet</li>
+	 * <li>Host.</li>
+	 * <li>Template.</li>
+	 * <li>Containers.</li>
+	 * <li>Content Types.</li>
+	 * <li>Contentlets.</li>
+	 * <li>Rules.</li>
 	 * </ul>
-	 *
-	 * @param idsToWork List of pages to process
+	 * 
+	 * @param idsToWork
 	 */
 	private void setHTMLPagesDependencies(Set<String> idsToWork) {
 
@@ -728,12 +734,17 @@ public class DependencyManager {
                         }
                     }
 				}
+				
+				// Rule dependencies
+				final List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(workingPage, user, false);
+				for (final Rule rule : ruleList) {
+					this.rules.add(rule.getId());
+					this.ruleSet.add(rule.getId());
+				}
 			}
 		} catch (DotSecurityException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -1071,21 +1082,41 @@ public class DependencyManager {
 
 	/**
 	 * Collects the different dependent objects that are required for pushing
-	 * {@link Rule} objects. The required dependencies of a rule are:
+	 * {@link Rule} objects. The required dependency of a rule is either:
 	 * <ol>
-	 * <li>The Site (host) they were created on.</li>
+	 * <li>The Site (host) they were created in.</li>
+	 * <li>Or the Content Page they were created in.</li>
 	 * </ol>
 	 */
 	private void setRuleDependencies() {
 		String ruleToProcess = "";
 		final RulesAPI rulesAPI = APILocator.getRulesAPI();
 		final HostAPI hostAPI = APILocator.getHostAPI();
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		try {
 			for (String ruleId : this.rules) {
-				// Adding Site (host) dependency
-				final Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-				final Host host = hostAPI.find(rule.getParent(), user, false);
-				hosts.addOrClean(host.getIdentifier(), host.getModDate());
+				final Rule rule = rulesAPI.getRuleById(ruleId, this.user, false);
+				ruleToProcess = ruleId;
+				final List<Contentlet> contentlets = contentletAPI.searchByIdentifier(
+						"+identifier:" + rule.getParent(), 1, 0, null, this.user, false);
+				if (contentlets != null && contentlets.size() > 0) {
+					final Contentlet parent = contentlets.get(0);
+					// If the parent of the rule is a Site...
+					if (parent.isHost()) {
+						final Host host = hostAPI.find(rule.getParent(), this.user, false);
+						this.hosts.addOrClean(host.getIdentifier(), host.getModDate());
+						this.hostsSet.add(host.getIdentifier());
+					}
+					// If the parent of the rule is a Content Page...
+					else if (parent.isHTMLPage()) {
+						this.contents.addOrClean(parent.getIdentifier(), parent.getModDate());
+						this.contentsSet.add(parent.getIdentifier());
+					} else {
+						throw new DotDataException("The parent ID [" + parent.getIdentifier() + "] is a non-valid parent.");
+					}
+				} else {
+					throw new DotDataException("The parent ID [" + rule.getParent() + "] cannot be found for Rule [" + rule.getId() + "]");
+				}
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
