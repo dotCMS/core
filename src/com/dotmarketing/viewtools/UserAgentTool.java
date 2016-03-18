@@ -23,8 +23,12 @@ public class UserAgentTool implements ViewTool {
 		if(obj instanceof ViewContext){
 			HttpServletRequest req = ((ViewContext) obj).getRequest();
 
-			this.userAgent = UserAgent.parseUserAgentString(req.getHeader("User-Agent"));
+			init( req );
 		}
+	}
+
+	public void init(HttpServletRequest req) {
+		this.userAgent = UserAgent.parseUserAgentString(req.getHeader("User-Agent"));
 	}
 
 	public UserAgent getAgent() {

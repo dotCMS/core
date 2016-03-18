@@ -589,7 +589,10 @@
           }else if(type=='tag'){
                         var fieldId = selectedStruct + fieldContentlet + "Field";
                         var searchFieldId = selectedStruct + "." + fieldContentlet + "Field";
+
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
+                        dijit.registry.remove(selectedStruct + fieldContentlet + "Field");
+
                         var result = [
                             "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
@@ -603,7 +606,20 @@
                         dojo.addOnLoad(function() {
                           var tagField = dojo.byId(fieldId);
                           dojo.connect(tagField, "onkeyup", function(e) {
-                            suggestTagsForSearch(e, searchFieldId);
+
+                            <%
+                                //Search for the selected host
+                                String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                if(UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts")) {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
+                            <%
+                                } else {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId);
+                            <%
+                                }
+                            %>
                           });
                           dojo.connect(tagField, "onblur", closeSuggetionBox);
                           if (value.length) {
@@ -2022,15 +2038,25 @@
                                                 opt.selected = false;
                                           }
                                   } else {
-                                          formField.value = "";
-                                          var temp = dijit.byId(formField.id);
-                                          temp.attr('value','');
-                                          if(temp){
-					                        try{
-					                           temp.setDisplayedValue('');
-					                         }catch(e){console.log(e);}
+
+                                          var dotCurrentFieldType = formField.getAttribute("dotfieldtype");
+                                          if (dotCurrentFieldType && dotCurrentFieldType == "tag") {
+                                              //Clean up the tag search field
+                                              clearSuggestTagsForSearch();
+                                              removeAllTags();
+                                          } else {
+
+                                              formField.value = "";
+
+                                              var temp = dijit.byId(formField.id);
+                                              temp.attr('value','');
+                                              if(temp){
+                                                try{
+                                                   temp.setDisplayedValue('');
+                                                 }catch(e){console.log(e);}
+                                              }
 					                      }
-					                    }
+                                  }
                         }
                 }
 
