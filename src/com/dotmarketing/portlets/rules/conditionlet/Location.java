@@ -21,14 +21,6 @@ public class Location implements Comparable {
         this.longitude = longitude;
     }
 
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
     public double distance(Location loc) {
         double deltaLat, deltaLon;
         double temp;

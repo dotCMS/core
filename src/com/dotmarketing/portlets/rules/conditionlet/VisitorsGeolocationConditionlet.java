@@ -39,10 +39,10 @@ public class VisitorsGeolocationConditionlet extends Conditionlet<VisitorsGeoloc
     private final GeoIp2CityDbUtil geoIp2Util;
 
     private static final ParameterDefinition<NumericType> distance = new ParameterDefinition<>(
-        1, DISTANCE_KEY, new NumericInput<>(new NumericType()));
+        3, DISTANCE_KEY, new NumericInput<>(new NumericType()));
 
     private static final ParameterDefinition<TextType> unitOfDistance = new ParameterDefinition<>(
-        2, UNIT_OF_DISTANCE_KEY, new DropdownInput(new TextType().maxLength(10))
+        4, UNIT_OF_DISTANCE_KEY, new DropdownInput(new TextType().maxLength(10))
             .minSelections(1)
             .maxSelections(1)
             .option(Location.UnitOfDistance.MILES.name())
@@ -51,10 +51,10 @@ public class VisitorsGeolocationConditionlet extends Conditionlet<VisitorsGeoloc
     );
 
     private static final ParameterDefinition<TextType> latitude = new ParameterDefinition<>(
-            3, LATITUDE_KEY, new TextInput<>(new TextType()));
+            5, LATITUDE_KEY, new TextInput<>(new TextType()));
 
     private static final ParameterDefinition<TextType> longitude = new ParameterDefinition<>(
-            4, LONGITUDE_KEY, new TextInput<>(new TextType()));
+            6, LONGITUDE_KEY, new TextInput<>(new TextType()));
 
     public VisitorsGeolocationConditionlet() {
         this(GeoIp2CityDbUtil.getInstance());
