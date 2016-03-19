@@ -155,12 +155,12 @@ function hideNotifications() {
 
 	 	if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) { %>
 			<div class="rfloat" id="userFilter">
-				<a href="#" id="onlyMe" onclick="showNotifications(false,true)" class="" ><%= LanguageUtil.get(pageContext, "notifications_show_only_me") %></a>
+				<a href="#" id="onlyMe" onclick="showNotifications(false,true)" class="" ><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "notifications_show_only_me") %></a>
 				&nbsp;
-				<a href="#" id="showAll" onclick="showNotifications(true,true)" class="" ><%= LanguageUtil.get(pageContext, "notifications_show_all") %></a>
+				<a href="#" id="showAll" onclick="showNotifications(true,true)" class="" ><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "notifications_show_all") %></a>
 			</div>
 		<% } %>
-		<div><h3><%= LanguageUtil.get(pageContext, "notifications_title") %></h3></div>
+		<div><h3><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "notifications_title") %></h3></div>
 	</div>
 	<hr>
 	<div id="notificationsGrid" ></div>
