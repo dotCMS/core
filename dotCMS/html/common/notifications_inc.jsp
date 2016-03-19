@@ -1,5 +1,5 @@
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.liferay.portal.model.User"%>
+
+<%@page import="com.liferay.portal.util.CookieKeys"%>
 
 <style>
 .notification-flyout{position:absolute;right:30px;top:34px;width:425px;font-size: 85%;border:1px solid #d0d0d0;border-top:0;background:#fff;z-index:9998;-moz-box-shadow:0px 2px 10px rgba(0, 0, 0, 0.2);-webkit-box-shadow:0px 2px 10px rgba(0, 0, 0, 0.2);box-shadow:0px 2px 10px rgba(0, 0, 0, 0.2);}
@@ -39,21 +39,54 @@ var messageFormatter = function(value, index) {
 
 };
 
-function checkNotifications() {
-	var xhrArgs = {
-			url : "/api/notification/getNewNotificationsCount/",
-			handleAs : "json",
-			sync: false,
-			load : function(data) {
-				refreshNotificationIcon(data.newNotificationsCount);
-			},
-			error : function(error) {
-				console.log(error);
-			}
-		}
 
+function checkNotifications() {
+	if(notificationsRunning){
+		return;
+	}
+	startNotification();
+
+	
+	var xhrArgs = {
+		url : "/api/notification/getNewNotificationsCount/",
+		handleAs : "json",
+		sync: false,
+		failOk:true,
+		load : function(data) {
+			stopNotification();
+			refreshNotificationIcon(data.newNotificationsCount);
+
+		},
+		error : function(error) {
+			
+			if(error.status){
+				if(error.status>400){
+					console.log("unauthorized, going to login page");
+					top.window.location="/html/portal/login.jsp?r=" + Math.random();
+				}
+			}
+			else{
+				console.log("dotCMS gone away, trying again in 20 sec");
+			}
+			
+			//try again in twenty seconds
+			setTimeout(stopNotification, 20000);
+
+
+		}
+	}
 	var deferred = dojo.xhrGet(xhrArgs);
 }
+
+var notificationsRunning=false;
+
+function stopNotification(){
+	notificationsRunning=false;
+}
+function startNotification(){
+	notificationsRunning=true;
+}
+
 
 function refreshNotificationIcon(count) {
 
