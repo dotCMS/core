@@ -28,7 +28,7 @@ public class SetResponseHeaderActionlet extends RuleActionlet<SetResponseHeaderA
 
     public SetResponseHeaderActionlet() {
         super(I18N_BASE,
-              new ParameterDefinition<>(1, HEADER_KEY, new TextInput<>(new TextType().minLength(1))),
+              new ParameterDefinition<>(1, HEADER_KEY, new TextInput<>(new TextType().required())),
               new ParameterDefinition<>(2, HEADER_VALUE, new TextInput<>(new TextType())));
     }
 

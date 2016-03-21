@@ -1,40 +1,33 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.StandardConstraints;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
 
 /**
  * @author Geoff M. Granum
  */
-public class NumericType extends DataType {
-
-    private Integer maxValue;
-    private Integer minValue;
+public class NumericType extends DataType<Number> {
 
     public NumericType() {
         super("numeric", "api.system.type.numeric");
     }
 
-    public NumericType maxValue(int maxValue) {
-        this.maxValue = maxValue;
-        return this;
+    public NumericType required(){
+        return this.restrict(StandardConstraints.required);
     }
 
-    public NumericType minValue(int minValue) {
-        this.minValue = minValue;
-        return this;
+    public NumericType maxValue(double maxValue) {
+        return this.restrict(StandardConstraints.max(maxValue));
     }
 
-    public Integer getMaxValue() {
-        return maxValue;
-    }
-
-    public Integer getMinValue() {
-        return minValue;
+    public NumericType minValue(double minValue) {
+        return this.restrict(StandardConstraints.min(minValue));
     }
 
     @Override
-    public Object convert(String from) {
-        return null;
+    public Number convert(String from) {
+        return StringUtils.isEmpty(from) ? 0.0 : Double.parseDouble(from);
     }
 
     @Override
@@ -48,6 +41,11 @@ public class NumericType extends DataType {
             }
         }
         // blank might mean zero.
+    }
+
+    @Override
+    public NumericType restrict(TypeConstraint restriction) {
+        return (NumericType)super.restrict(restriction);
     }
 }
  

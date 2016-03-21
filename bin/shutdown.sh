@@ -92,10 +92,6 @@ MEMSET=`echo $JAVA_OPTS | grep '\-Xmx'`
 if [ -z "$MEMSET" ]; then
     export JAVA_OPTS="$JAVA_OPTS -Xmx1G"
 fi
-MEMSET=`echo $JAVA_OPTS | grep '\-XX:PermSize'`
-if [ -z "$MEMSET" ]; then
-    export JAVA_OPTS="$JAVA_OPTS -XX:PermSize=196m"
-fi
 
 echo "Using DOTCMS_HOME = $DOTCMS_HOME"
 echo "Using DOTSERVER = $DOTSERVER"

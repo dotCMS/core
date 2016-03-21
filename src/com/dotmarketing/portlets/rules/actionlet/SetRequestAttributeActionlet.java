@@ -28,7 +28,7 @@ public class SetRequestAttributeActionlet extends RuleActionlet<SetRequestAttrib
 
     public SetRequestAttributeActionlet() {
         super(I18N_BASE,
-              new ParameterDefinition<>(1, REQUEST_KEY, new TextInput<>(new TextType().minLength(1))),
+              new ParameterDefinition<>(1, REQUEST_KEY, new TextInput<>(new TextType().required())),
               new ParameterDefinition<>(2, REQUEST_VALUE, new TextInput<>(new TextType())));
     }
 

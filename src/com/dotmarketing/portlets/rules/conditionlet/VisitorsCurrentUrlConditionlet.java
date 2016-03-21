@@ -53,7 +53,7 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 	}
 
 	private static final ParameterDefinition<TextType> patternUrl = new ParameterDefinition<>(3, PATTERN_URL_INPUT_KEY,
-            new TextInput<TextType>(new TextType().minLength(1)));
+            new TextInput<>(new TextType().required()));
 
 	@Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
@@ -88,8 +88,6 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 	 * IS_NOT and ENDS_WITH to ensure that the user can use STARTS_WITH or REGEXP without
 	 * affecting top tier folders structure so STARTS_WITH '/folder/' means everything under
 	 * the folder not only '/folder/index'. </li></ul>
-	 * @param baseUrl
-	 * @return
 	 */
 	public String processUrl(String baseUrl, String index, Instance instance){
 		String processedUrl = baseUrl;

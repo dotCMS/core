@@ -35,80 +35,80 @@ public class RequestParameterConditionletTest {
     public Object[][] compareCases() {
         List<TestCase> data = Lists.newArrayList();
 
-        data.add(new TestCase("Comparison 'Exists' should eval true for header value == '' and user value == ''.")
+        data.add(new TestCase("Comparison 'Exists' should eval true for parameter value == '' and user value == ''.")
                  .withComparison(Comparison.EXISTS)
                  .withMockedActualValue("key", "")
-                 .withHeader("key", "")
+                 .withParameter("key", "")
                  .shouldBeTrue()
         );
-        data.add(new TestCase("Comparison 'Exists' should eval false for header value == null and user value == ''.")
+        data.add(new TestCase("Comparison 'Exists' should eval false for parameter value == null and user value == ''.")
                      .withComparison(Comparison.EXISTS)
                      .withMockedActualValue("key", null)
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeFalse()
 
         );
         /* Is */
-        data.add(new TestCase("Comparison 'Is' should eval true for header value == '' and user value == ''.")
+        data.add(new TestCase("Comparison 'Is' should eval true for parameter value == '' and user value == ''.")
                      .withComparison(Comparison.IS)
                      .withMockedActualValue("key", "")
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeTrue()
         );
 
-        data.add(new TestCase("Comparison 'Is' should eval true for header value == '1' and user value == '1'.")
+        data.add(new TestCase("Comparison 'Is' should eval true for parameter value == '1' and user value == '1'.")
                      .withComparison(Comparison.IS)
                      .withMockedActualValue("key", "")
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeTrue()
         );
 
-        data.add(new TestCase("Comparison 'Is' should eval false for header value == '1' and user value == ''.")
+        data.add(new TestCase("Comparison 'Is' should eval false for parameter value == '1' and user value == ''.")
                      .withComparison(Comparison.IS)
                      .withMockedActualValue("key", "1")
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeFalse()
         );
 
-        data.add(new TestCase("Comparison 'Is' should not be case sensitive - should eval true for header value == 'One' and user value == 'one'.")
+        data.add(new TestCase("Comparison 'Is' should not be case sensitive - should eval true for parameter value == 'One' and user value == 'one'.")
                      .withComparison(Comparison.IS)
                      .withMockedActualValue("key", "One")
-                     .withHeader("key", "one")
+                     .withParameter("key", "one")
                      .shouldBeTrue()
         );
         /* Is Not */
-        data.add(new TestCase("Comparison 'Is Not' should eval false for header value == '' and user value == ''.")
+        data.add(new TestCase("Comparison 'Is Not' should eval false for parameter value == '' and user value == ''.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", "")
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeFalse()
         );
 
-        data.add(new TestCase("Comparison 'Is Not' should eval false for header value == '1' and user value == '1'.")
+        data.add(new TestCase("Comparison 'Is Not' should eval false for parameter value == '1' and user value == '1'.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", "")
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeFalse()
         );
 
-        data.add(new TestCase("Comparison 'Is Not' should eval true for header value == '1' and user value == ''.")
+        data.add(new TestCase("Comparison 'Is Not' should eval true for parameter value == '1' and user value == ''.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", "1")
-                     .withHeader("key", "")
+                     .withParameter("key", "")
                      .shouldBeTrue()
         );
 
-        data.add(new TestCase("Comparison 'Is Not' should eval true for header value == null and user value == 'any'.")
+        data.add(new TestCase("Comparison 'Is Not' should eval true for parameter value == null and user value == 'any'.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", null)
-                     .withHeader("key", "any")
+                     .withParameter("key", "any")
                      .shouldBeTrue()
         );
 
-        data.add(new TestCase("Comparison 'Is Not' should not be case sensitive - should eval false for header value == 'One' and user value == 'one'.")
+        data.add(new TestCase("Comparison 'Is Not' should not be case sensitive - should eval false for parameter value == 'One' and user value == 'one'.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", "One")
-                     .withHeader("key", "one")
+                     .withParameter("key", "one")
                      .shouldBeFalse()
         );
         /* Starts With  */
@@ -117,74 +117,70 @@ public class RequestParameterConditionletTest {
         String description;
         mockedActual = "This is a test of the Request Parameter Conditionlet";
         userValue = "this is a ";
-        description = String.format("Comparison 'Starts With' should eval true for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        description = String.format("Comparison 'Starts With' should eval true for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.STARTS_WITH)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeTrue()
         );
         mockedActual = "This is a test of the Request Parameter Conditionlet";
         userValue = "this is not";
-        description = String.format("Comparison 'Starts With' should eval false for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        description = String.format("Comparison 'Starts With' should eval false for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.STARTS_WITH)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeFalse()
         );
         /* Ends With */
         mockedActual = "This is a test of the Request Parameter Conditionlet";
         userValue = "Conditionlet";
-        description = String.format("Comparison 'Ends With' should eval true for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        description = String.format("Comparison 'Ends With' should eval true for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.ENDS_WITH)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeTrue()
         );
         mockedActual = "This is a test of the Request Parameter Conditionlet";
         userValue = "test";
-        description = String.format("Comparison 'Ends With' should eval false for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        description = String.format("Comparison 'Ends With' should eval false for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.ENDS_WITH)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeFalse()
         );
         /* Contains */
         mockedActual = "This is a test of the Request Parameter Conditionlet";
         userValue = "test of";
-        description = String.format("Comparison 'Contains' should eval true for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        description = String.format("Comparison 'Contains' should eval true for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.CONTAINS)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeTrue()
         );
         mockedActual = "This is a test of the Request Parameter Conditionlet";
         userValue = "bob";
-        description = String.format("Comparison 'Ends With' should eval false for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        description = String.format("Comparison 'Ends With' should eval false for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.CONTAINS)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeFalse()
         );
         /* Matches Regex */
         mockedActual = "This is a test of the Request Parameter Conditionlet";
-        userValue = ".*test.*Parameter";
-        description = String.format("Comparison 'Regex' should eval true for header value == '%s' and user value == '%s'.", mockedActual, userValue);
+        userValue = ".*test.*Parameter.*";
+        description = String.format("Comparison 'Regex' should eval true for parameter value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.REGEX)
                      .withMockedActualValue("key", mockedActual)
-                     .withHeader("key", userValue)
+                     .withParameter("key", userValue)
                      .shouldBeTrue()
         );
-
-
-
-
         return TestUtil.toCaseArray(data);
     }
 
@@ -227,14 +223,14 @@ public class RequestParameterConditionletTest {
             return this;
         }
 
-        TestCase withHeader(String key, String value) {
+        TestCase withParameter(String key, String value) {
             params.put(PARAMETER_NAME_KEY, new ParameterModel(PARAMETER_NAME_KEY, key));
             params.put(PARAMETER_VALUE_KEY, new ParameterModel(PARAMETER_VALUE_KEY, value));
             return this;
         }
 
         TestCase withMockedActualValue(String key, String value){
-            when(this.request.getHeader(key)).thenReturn(value);
+            when(this.request.getParameter(key)).thenReturn(value);
             return this;
         }
 
