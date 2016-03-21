@@ -1,6 +1,5 @@
-import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
-import {ActionModel} from '../../api/rule-engine/Action';
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {ActionModel} from "./Rule";
 
 
 describe('Unit.api.rule-engine.Action', function () {

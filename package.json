@@ -1,4 +1,5 @@
 {
+  "name": "Core-Web",
   "version": "3.5.0-beta",
   "description": "DotCMS Core-Web: ReST Client API and UI Components",
   "repository": {
@@ -44,7 +45,7 @@
     "serve-index": "^1.6.3",
     "serve-static": "~1.10.x",
     "through2": "^2.x.x",
-    "typescript": "^1.7.5"
+    "typescript": "1.8.9"
   },
   "scripts": {
     "tsc": "tsc -p src -w",
@@ -66,16 +67,16 @@
     "webdriver-start": "webdriver-manager start"
   },
   "dependencies": {
+    "angular-material": "1.0.2",
     "angular2": "2.0.0-beta.0",
-    "angular-material": "^1.0.1",
-    "core-js": "^1.2.x",
-    "es6-promise": "^3.0.2",
-    "es6-shim": "^0.34.0",
+    "core-js": "1.2.6",
+    "es6-promise": "3.1.2",
+    "es6-shim": "0.34.4",
     "jquery": "2.1.4",
     "reflect-metadata": "^0.1.2",
     "rxjs": "5.0.0-beta.0",
     "systemjs": "0.19.17",
     "whatwg-fetch": "^0.x.x",
-    "zone.js": "^0.5.0"
+    "zone.js": "0.5.15"
   }
 }

@@ -1,7 +1,8 @@
-import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/core';
-import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
-import { CORE_DIRECTIVES,  } from 'angular2/common';
+import {ElementRef, Component, Directive, EventEmitter, Optional} from 'angular2/core';
+import { Host, AfterViewInit, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
+import {CORE_DIRECTIVES, ControlValueAccessor, NgControl,} from 'angular2/common';
 import {BehaviorSubject, Observable} from 'rxjs/Rx'
+import {isBlank} from "angular2/src/facade/lang";
 
 
 /**
@@ -11,7 +12,6 @@ import {BehaviorSubject, Observable} from 'rxjs/Rx'
  *
  * @todo ggranum: Extract semantic UI components into a separate github repo and include them via npm.
  */
-
 var $ = window['$']
 
 const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
@@ -28,13 +28,14 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
 
 @Component({
   selector: 'cw-input-dropdown',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  directives: [CORE_DIRECTIVES],
   template: `<div class="ui fluid selection dropdown search ng-valid"
-     [ngClass]="{required:minSelections > 0, multiple: maxSelections > 1}"
+     [class.required]="minSelections > 0"
+     [class.multiple]="maxSelections > 1"
      tabindex="0"
      (change)="$event.stopPropagation()"
      (blur)="$event.stopPropagation()">
-  <input type="hidden" [name]="name" [value]="value" />
+  <input type="hidden" [name]="name" [value]="_modelValue" />
   <i class="dropdown icon"></i>
   <div class="default text">{{placeholder}}</div>
   <div class="menu" tabindex="-1">
@@ -45,38 +46,73 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   </div>
 </div>
   `,
-  directives: [CORE_DIRECTIVES]
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Dropdown implements AfterViewInit, OnDestroy {
+export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor  {
 
-  @Input() value:string
   @Input() name:string
   @Input() placeholder:string
   @Input() allowAdditions:boolean
   @Input() minSelections:number
   @Input() maxSelections:number
 
-  @Output() change:EventEmitter<any>
+  @Output() change:EventEmitter<any> = new EventEmitter()
+  @Output() touch:EventEmitter<any> = new EventEmitter()
+
+  onChange:Function = (  ) => { }
+  onTouched:Function = (  ) => { }
+  private _modelValue:string
+
 
   private _optionsAry:InputOption[] = []
   private _options:BehaviorSubject<InputOption[]>
   private elementRef:ElementRef
   private _$dropdown:any
 
-  constructor(elementRef:ElementRef) {
+  constructor(elementRef:ElementRef, @Optional() control:NgControl) {
+    if(control && !control.valueAccessor){
+      control.valueAccessor = this;
+    }
     this.placeholder = ""
     this.allowAdditions = false
     this.minSelections = 0
     this.maxSelections = 1
-    this.change = new EventEmitter()
     this._options = new BehaviorSubject(this._optionsAry);
     this.elementRef = elementRef
   }
 
-  ngOnChanges(change) {
-    if (change.value ) {
-      this.applyValue(this.value)
+  @Input()
+  set value(value: string) {
+    this._modelValue = value;
+  }
+
+  writeValue(value:any) {
+    this._modelValue = isBlank(value) ? '' : value
+    this.applyValue(this._modelValue)
+  }
+
+  registerOnChange(fn) {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn) {
+    this.onTouched = fn;
+  }
+
+  fireChange($event){
+    if(this.change){
+      this.change.emit($event)
+      this.onChange($event)
     }
+  }
+
+  fireTouch($event){
+    this.touch.emit($event)
+    this.onTouched($event)
+  }
+
+  ngOnChanges(change) {
+
   }
 
   private applyValue(value) {
@@ -97,11 +133,10 @@ export class Dropdown implements AfterViewInit, OnDestroy {
     })
   }
 
-
   addOption(option:InputOption) {
     this._optionsAry = this._optionsAry.concat(option)
     this._options.next(this._optionsAry)
-    if(option.value === this.value){
+    if(option.value === this._modelValue){
       this.refreshDisplayText(option.label)
     }
   }
@@ -139,7 +174,7 @@ export class Dropdown implements AfterViewInit, OnDestroy {
 
       onChange: (value, text, $choice)=> {
         badSearch = null
-        return this.onChange(value, text, $choice)
+        return this.onChangeSemantic(value, text, $choice)
       },
       onAdd: (addedValue, addedText, $addedChoice)=> {
         return this.onAdd(addedValue, addedText, $addedChoice)
@@ -167,10 +202,10 @@ export class Dropdown implements AfterViewInit, OnDestroy {
         if(badSearch !== null){
           badSearch = null
           this._$dropdown.children('input.search')[0].value = ''
-          if(!this.value || (this.value && this.value.length === 0)){
+          if(!this._modelValue || (this._modelValue && this._modelValue.length === 0)){
             this._$dropdown.dropdown('set text', this.placeholder)
           } else {
-            this._$dropdown.dropdown('set selected', this.value)
+            this._$dropdown.dropdown('set selected', this._modelValue)
           }
         }
         return this.onHide()
@@ -212,11 +247,9 @@ export class Dropdown implements AfterViewInit, OnDestroy {
    * @param text
    * @param $choice
    */
-  onChange(value, text, $choice) {
-    this.value = value
-    if (this.change) {
-        this.change.emit(this.value)
-    }
+  onChangeSemantic(value, text, $choice) {
+    this._modelValue = value
+    this.fireChange(value)
   }
 
   /**
@@ -272,6 +305,8 @@ export class Dropdown implements AfterViewInit, OnDestroy {
    * Is called before a dropdown is hidden. If false is returned, dropdown will not be hidden.
    */
   onHide() {
+    this.touch.emit(this._modelValue)
+    this.onTouched()
   }
 }
 

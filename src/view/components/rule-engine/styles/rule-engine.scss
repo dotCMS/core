@@ -12,42 +12,132 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
+@mixin valid-and-dirty-or-touched {
+  border-left: 1px solid rgba(34, 36, 38, 0.15);
+  transition-property: border-left, border-left-width;
+  transition-delay: 1s;
+  transition-duration: 600ms;
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+
+@mixin valid-and-dirty-or-touched-focused {
+  border-left: 5px solid $primary-one;
+  transition-property: border-left;
+  transition-delay: 0s;
+  transition-duration: 0s;
+}
+
+
+@mixin invalid-and-dirty-or-touched {
+  border-left: 5px solid $warn;
+  border-color: $warn
+}
+
+@mixin invalid-and-pristine-or-untouched {
+  border-left: 5px solid $foreground-active;
+}
+
+$finder-s-input: '.ui.input input';
+
+.cw-loading {
+  background-color: rgba(10, 10, 10, 0.35);
+  width:100%;
+  height:100%;
+}
+
 .ui.fluid.input input:hover {
   border-color: rgba(34, 36, 38, 0.35);
   box-shadow: none;
 }
 
-.ng-dirty {
-  &.ng-valid input:focus,
-  &input:focus.ng-valid,
-  &.ui.input input:focus.ng-valid,
-  &.ng-valid .ui.input input:focus,
-  &.ui.dropdown.ng-valid,
-  &.ui.selection.dropdown.ng-valid,
-  &.required.ui.dropdown.ng-valid {
-    border-left: 5px solid $primary-one;
-    transition-property: border-left;
+.cw-rule-status-text {
+  margin-top: .2em;
+  margin-right: 2em;
+}
+
+.cw-saved {
+  .ui.checkbox input:checked ~ .box:after, .ui.checkbox input:checked ~ label:after {
+    background-color: $primary-one;
+    border: .5em solid white;
+  }
+  .cw-rule-status-text {
+    opacity: 0;
+    transition-property: opacity;
+    transition-delay: 1s;
+    transition-duration: 2s;
+    transition-timing-function: cubic-bezier(1, 0.1, 0, 1);
+  }
+}
+
+.cw-saving {
+  .ui.checkbox input:checked ~ .box:after, .ui.checkbox input:checked ~ label:after {
+    background-color: $background-tertiary;
+  }
+  .cw-rule-status-text {
+    opacity: 1;
+    transition-property: opacity;
     transition-delay: 0s;
     transition-duration: 0s;
-}}
+  }
+}
 
-.ng-dirty {
-  &.ng-valid input,
-  &input.ng-valid,
-  &.ui.input input.ng-valid,
-  &.ng-valid .ui.input input,
-  &.ui.dropdown.ng-valid,
-  &.ui.selection.dropdown.ng-valid,
-  &.required.ui.dropdown.ng-valid {
-    border-left: 1px solid rgba(34, 36, 38, 0.15);
-    transition-property: border-left, border-left-width;
-    transition-delay: 1s;
-    transition-duration: 600ms;
-    transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }}
+/* Semantic Text input box. */
 
-.ng-invalid input, input.ng-invalid, .ui.input input.ng-invalid, .ng-invalid .ui.input input, .ui.selection.dropdown.ng-invalid {
-  border-left: 5px solid $warn
+.ng-dirty.ng-valid input:focus,
+.ng-dirty.ng-valid .ui.input input:focus,
+  input:focus.ng-valid.ng-dirty,
+.ng-dirty.ui.input input:focus.ng-valid,
+.ng-dirty.ng-valid .ui.input input:focus,
+.ng-dirty.ui.selection.dropdown.ng-valid {
+    @include valid-and-dirty-or-touched-focused
+  }
+
+
+.ng-touched.ng-valid .ui.selection.dropdown.search.visible {
+  @include valid-and-dirty-or-touched-focused
+}
+
+
+.ng-dirty.ng-valid input,
+input.ng-dirty.ng-valid,
+.ng-dirty.ui.input input.ng-valid,
+.ng-dirty.ng-valid .ui.input input,
+.ng-dirty.ui.dropdown.ng-valid,
+.ng-dirty.ui.selection.dropdown.ng-valid,
+.ng-touched.ng-valid .ui.selection.dropdown.search {
+  @include valid-and-dirty-or-touched
+}
+
+
+
+
+// Untouched fields that aren't yet valid.
+.ng-untouched.ng-pristine.ng-invalid {
+  #{$finder-s-input}, // Text Input fields
+  .ui.selection.dropdown.search // Drop down fields
+  {
+    @include invalid-and-pristine-or-untouched
+  }
+}
+
+// Touched but unmodified (pristine) fields that aren't valid.
+.ng-touched.ng-pristine.ng-invalid {
+  #{$finder-s-input}, // Text Input fields
+  .ui.selection.dropdown.search // Drop down fields
+  {
+    @include invalid-and-dirty-or-touched
+  }
+}
+
+
+// Dirty fields that aren't valid.
+.ng-dirty.ng-invalid {
+  #{$finder-s-input}, // Text Input fields
+  .ui.selection.dropdown.search // Drop down fields
+  {
+    @include invalid-and-dirty-or-touched
+  }
 }
 
 .cw-rule-engine {
@@ -57,6 +147,10 @@ $primary-one: #209021;
       background-color: $background-tertiary;
       color: $foreground-tertiary;
     }
+  }
+
+  .cw-btn-group .ui.basic.buttons .ui.button:focus {
+    border: 1px solid #96C8DA;
   }
 }
 
@@ -133,9 +227,21 @@ $primary-one: #209021;
   .cw-rule-caret {
     min-width: 1.25em;
     max-width: 1.25em;
-    margin-left: .5em;
+    margin-left: 0;
   }
 
+  .cw-rule-cloud {
+    min-width: 1.0em;
+    max-width: 1.0em;
+    margin-left: .5em;
+    margin-right: .25em;
+    color:white;
+    text-shadow: 1px 1px 8px #555555;
+    &.out-of-sync {
+      color:red;
+      text-shadow: 1px 1px 8px black;
+    }
+  }
   .cw-fire-on-label {
     font-weight: bold;
     margin-right: .5em;

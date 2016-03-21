@@ -1,40 +1,219 @@
-import {Http} from 'angular2/http'
 import {EventEmitter, Injectable} from 'angular2/core'
-import {Observable} from 'rxjs/Rx'
+import {Http, Response, RequestMethod, Request} from 'angular2/http'
+import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
-
-import {ConditionGroupService, ConditionGroupModel} from "./ConditionGroup";
-import {CwModel} from "../util/CwModel";
-import {EntitySnapshot} from "../persistence/EntityBase";
-import {EntityMeta} from "../persistence/EntityBase";
 import {ApiRoot} from "../persistence/ApiRoot";
-import {ActionService} from "./Action";
+import {
+    hasContent, ResponseError, CwError, NETWORK_CONNECTION_ERROR, UNKNOWN_RESPONSE_ERROR,
+    CLIENTS_ONLY_MESSAGES, SERVER_RESPONSE_ERROR
+} from "../system/http-response-util";
+import {ServerSideFieldModel, ServerSideTypeModel} from "./ServerSideFieldModel";
 import {I18nService} from "../system/locale/I18n";
 
 
-export class RuleModel extends CwModel {
-  snapshot:EntitySnapshot // annoying hack, this should die.
+export const RULE_CREATE = 'RULE_CREATE'
+export const RULE_DELETE = 'RULE_DELETE'
+export const RULE_UPDATE_NAME = 'RULE_UPDATE_NAME'
+export const RULE_UPDATE_ENABLED_STATE = 'RULE_UPDATE_ENABLED_STATE'
+
+export const V_RULE_UPDATE_EXPANDED_STATE = 'V_RULE_UPDATE_EXPANDED_STATE'
+
+export const RULE_UPDATE_FIRE_ON = 'RULE_UPDATE_FIRE_ON'
+
+export const RULE_RULE_ACTION_CREATE = 'RULE_RULE_ACTION_CREATE'
+export const RULE_RULE_ACTION_DELETE = 'RULE_RULE_ACTION_DELETE'
+export const RULE_RULE_ACTION_UPDATE_TYPE = 'RULE_RULE_ACTION_UPDATE_TYPE'
+export const RULE_RULE_ACTION_UPDATE_PARAMETER = 'RULE_RULE_ACTION_UPDATE_PARAMETER'
+
+export const RULE_CONDITION_GROUP_UPDATE_OPERATOR = 'RULE_CONDITION_GROUP_UPDATE_OPERATOR'
+export const RULE_CONDITION_GROUP_DELETE = 'RULE_CONDITION_GROUP_DELETE'
+export const RULE_CONDITION_GROUP_CREATE = 'RULE_CONDITION_GROUP_CREATE'
+
+export const RULE_CONDITION_CREATE = 'RULE_CONDITION_CREATE'
+export const RULE_CONDITION_DELETE = 'RULE_CONDITION_DELETE'
+export const RULE_CONDITION_UPDATE_TYPE = 'RULE_CONDITION_UPDATE_TYPE'
+export const RULE_CONDITION_UPDATE_PARAMETER = 'RULE_CONDITION_UPDATE_PARAMETER'
+export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR'
+
+var idCounter = 1000
+export function getNextId():string {
+  return 'tempId' + ++idCounter
+}
+
+export class RuleEngineState {
+  loading:boolean = true
+  saving:boolean = false
+  hasError:boolean = false
+  filter:string = ''
+  deleting:boolean = false
+}
+
+
+export interface IRecord {
+  _id?:string,
+  _saving?:boolean
+  _saved?:boolean
+  deleting?:boolean
+  errors?:any
+  set?(string, any):any
+}
+
+export interface IRuleAction extends IRecord {
+  id?:string
+  priority:number,
+  type?:string
+  parameters?:{[key:string]:any},
+  owningRule?:string,
+  _owningRule?:RuleModel
+}
+
+export interface ICondition extends IRecord {
+  id?:string
+  conditionlet?:string
+  type?:string
+  priority?:number,
+  operator?:string
+  parameters?:{[key:string]:any}
+  _type?:ServerSideTypeModel
+}
+
+export interface IConditionGroup extends IRecord {
+  id?:string
+  priority:number,
+  operator:string
+  conditions?:any
+}
+
+export interface IRule extends IRecord {
+  priority?:number
+  name?:string
+  fireOn?:string
+  enabled?:boolean
+  conditionGroups?:any
+  ruleActions?:any
+  set?(string, any):IRule
+  id?:string
+  _saving?:boolean
+  _saved?:boolean
+  deleting?:boolean
+  _id?:string
+  _expanded?:boolean
+  _ruleActions?:ActionModel[]
+  _conditionGroups?:ConditionGroupModel[]
+  _ruleActionsLoaded?:boolean
+  _errors?:CwError[]
+}
+
+
+export interface ParameterModel {
+  key:string
+  value:string
+  priority:number
+}
+
+
+export class ActionModel extends ServerSideFieldModel {
+  owningRule:string
+  _owningRule:RuleModel
+
+  constructor(key:string, type:ServerSideTypeModel, priority:number = 1) {
+    super(key, type, priority)
+    this.priority = priority || 1
+    this.type = type
+  }
+
+  isValid():boolean {
+    try {
+      return super.isValid()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+export class ConditionModel extends ServerSideFieldModel {
+  operator:string = 'AND'
+  conditionlet:string
+
+  constructor(iCondition:ICondition) {
+    super(iCondition.id, iCondition._type)
+    this.conditionlet = iCondition.conditionlet
+    this.key = iCondition.id
+    this.priority = iCondition.priority || 1
+    this.type = iCondition._type
+    this.operator = iCondition.operator || 'AND'
+  }
+
+  isValid() {
+    try {
+      return !!this.getParameterValue('comparison') && super.isValid()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+export class ConditionGroupModel {
+
+  key:string
+  priority:number
+
+  operator:string
+  conditions:{ [key:string]:boolean }
+  _id:string
+  _conditions:ConditionModel[] = []
+
+  constructor(iGroup:IConditionGroup) {
+    Object.assign(this, iGroup)
+    this.key = iGroup.id
+    this._id = this.key != null ? this.key : getNextId()
+    this.conditions = iGroup.conditions || {}
+  }
+
+  isPersisted() {
+    return this.key != null
+  }
+
+  isValid() {
+    let valid = this.operator && (this.operator === 'AND' || this.operator === 'OR')
+    return valid
+  }
+}
+
+export class RuleModel {
+  key:string
   name:string
-  enabled:boolean
+  enabled:boolean = false
+  priority:number
   fireOn:string
-  groups:{ [key: string]: ConditionGroupModel }
-  actions:{ [key: string]: boolean }
+  conditionGroups:{ [key:string]:ConditionGroupModel } = {}
+  ruleActions:{ [key:string]:boolean } = {}
 
-  constructor(key:string, name:string = '', fireOn:string = 'EVERY_PAGE') {
-    super(key)
-    this.name = name
-    this.fireOn = fireOn
-    this.enabled = false
-    this.actions = {}
-    this.groups = {}
+  _id:string
+  _expanded:boolean = false
+  _conditionGroups:ConditionGroupModel[] = []
+  _ruleActions:ActionModel[] = []
+  _saved:boolean = true
+  _saving:boolean = false
+  _deleting:boolean = true
+  _errors:{[key:string]:any}
+
+
+  constructor(iRule:IRule) {
+    Object.assign(this, iRule)
+    this.key = iRule.id
+    this._id = this.key != null ? this.key : getNextId()
+    let conGroups = Object.keys(iRule.conditionGroups || {})
+    conGroups.forEach((groupId) => {
+      let g = this.conditionGroups[groupId]
+      let mg = new ConditionGroupModel(Object.assign({id: groupId}, g))
+      this.conditionGroups[groupId] = mg
+      this._conditionGroups.push(mg)
+    })
   }
 
-  addGroup(group:ConditionGroupModel) {
-    this.groups[group.key] = group
-  }
-
-  removeGroup(group:ConditionGroupModel) {
-    delete this.groups[group.key]
+  isPersisted() {
+    return this.key != null
   }
 
   isValid() {
@@ -42,137 +221,278 @@ export class RuleModel extends CwModel {
     valid = valid && this.name.trim().length > 0
     return valid
   }
-
-  static fromJson(key:string, json:any):RuleModel {
-    let rule = new RuleModel(key, json.name, json.fireOn);
-    rule.enabled = json.enabled
-    rule.priority = json.priority
-
-    return rule;
-  }
 }
 
+export const DEFAULT_RULE:IRule = {
+  priority: 1,
+  name: null,
+  fireOn: "EVERY_PAGE",
+  enabled: false,
+  conditionGroups: {},
+  ruleActions: {},
+  _id: -1 + '',
+  _expanded: false,
+  _ruleActions: [],
+  _conditionGroups: []
+
+}
 
 @Injectable()
 export class RuleService {
-  ref:EntityMeta
-  private _rsrcService:I18nService;
+  private _rulesEndpointUrl:string
+  private _actionsEndpointUrl:string
+  private _conditionTypesEndpointUrl:string
+  private _ruleActionTypesEndpointUrl:string
 
-  http:Http
-  apiRoot:ApiRoot
-  rules;
+  ruleActionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
+  conditionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
 
-  constructor(apiRoot:ApiRoot,
-              http:Http,
-              actionService:ActionService,
-              conditionGroupService:ConditionGroupService,
-              rsrcService:I18nService) {
-    this.apiRoot = apiRoot
-    this.http = http
-    this.ref = apiRoot.defaultSite.child('ruleengine/rules')
-    this._rsrcService = rsrcService
+  private _ruleActions:{[key:string]:ActionModel} = {}
+  private _conditions:{[key:string]:ConditionModel} = {}
+
+  _ruleActionTypes:{[key:string]:ServerSideTypeModel} = {}
+  private _ruleActionTypesAry:ServerSideTypeModel[] = []
+
+  _conditionTypes:{[key:string]:ServerSideTypeModel} = {}
+  private _conditionTypesAry:ServerSideTypeModel[] = []
+
+
+  constructor(private _apiRoot:ApiRoot, private _http:Http, private _resources:I18nService) {
+    this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
+    this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
+    this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`
+    this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`
+
+    this._preCacheCommonResources(_resources)
+    this.loadActionTypes().subscribe((types:ServerSideTypeModel[])=> this.ruleActionTypes$.next(types))
+    this.loadConditionTypes().subscribe((types:ServerSideTypeModel[])=> this.conditionTypes$.next(types))
+  }
+
+  private _preCacheCommonResources(resources:I18nService) {
+    resources.get('api.sites.ruleengine').subscribe((rsrc)=> {})
+    resources.get('api.ruleengine.system').subscribe((rsrc)=> {})
+    resources.get('api.system.ruleengine').subscribe((rsrc)=> {})
+  }
+
+  createRule(body:RuleModel):Observable<RuleModel|CwError> {
+    return this.request({
+      body: RuleService.fromClientRuleTransformFn(body),
+      method: RequestMethod.Post,
+      url: this._rulesEndpointUrl
+    }).map((result:RuleModel)=> {
+      body.key = result['id'] // @todo:ggranum type the POST result correctly.
+      return Object.assign({}, DEFAULT_RULE, body, result)
+    });
+  }
+
+  deleteRule(ruleId:string):Observable<{success:boolean}|CwError> {
+    return this.request({
+      method: RequestMethod.Delete,
+      url: `${this._rulesEndpointUrl}/${ruleId}`
+    }).map((result)=> {
+      return {success: true}
+    });
+  }
+
+  loadRules():Observable<RuleModel[]|CwError> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._rulesEndpointUrl
+    }).map(RuleService.fromServerRulesTransformFn);
   }
 
 
-  static toJson(rule:RuleModel):any {
-    let json:any = {}
-    json.key = rule.key
-    json.enabled = rule.enabled
-    json.fireOn = rule.fireOn
-    json.name = rule.name
-    json.priority = rule.priority
-    json.conditionGroups = ConditionGroupService.toJsonList(rule.groups)
-    json.ruleActions = rule.actions
-    return json
+  loadRule(id:string):Observable<RuleModel|CwError> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: `${this._rulesEndpointUrl}/${id}`
+    }).map((result)=> {
+      return Object.assign({key: id}, DEFAULT_RULE, result)
+    })
   }
 
-  static fromSnapshot(key, snapshot:EntitySnapshot):RuleModel {
-    let rule = new RuleModel(key)
-    let val:any = snapshot.val()
-    rule.snapshot = snapshot
-    rule.enabled = val.enabled
-    rule.fireOn = val.fireOn
-    rule.name = val.name
-    rule.priority = val.priority
-    rule.actions = val.ruleActions
-    let groups = snapshot.child('conditionGroups')
-    if (groups.exists()) {
-      groups.forEach((groupSnap) => {
-        rule.addGroup(ConditionGroupService._fromSnapshot(rule, groupSnap))
-      })
+  updateRule(id:string, rule:RuleModel):Observable<RuleModel|CwError> {
+    let result
+    if (!id) {
+      result = this.createRule(rule)
     }
-    return rule
-
-  }
-
-  get(key:string, cb:Function) {
-    this.ref.child(key).once('value', (snap) => {
-      let rule = RuleService.fromSnapshot(key, snap)
-      cb(rule)
-    }, (e)=> {
-      throw e
-    })
-  }
-
-  list():Observable<Array<RuleModel>> {
-    let emitter = new EventEmitter()
-    this.ref.once('value', (snap) => {
-      let rules = snap['val']()
-      let parsed = []
-      Object.keys(rules).forEach((key) => {
-        let rule = RuleService.fromSnapshot(key, snap.child(key))
-        parsed.push(rule)
-      })
-      emitter.emit(parsed)
-    }, (e)=> {
-      console.log("RuleService", "list", "error", e)
-      throw e
-    })
-    return emitter
-  }
-
-  add(rule:RuleModel, cb:Function = null) {
-    this.ref.push(RuleService.toJson(rule), (e, resultSnapshot) => {
-      if (e) {
-        throw e
-      }
-      rule.snapshot = resultSnapshot
-      rule.key = resultSnapshot.key()
-      if (cb) {
-        cb(rule)
-      }
-    })
-  }
-
-  save(rule:RuleModel, cb:Function = null) {
-    if (!rule.isValid()) {
-      throw new Error("Rule is not valid, cannot save.")
+    else {
+      result = this.request({
+        body: RuleService.fromClientRuleTransformFn(rule),
+        method: RequestMethod.Put,
+        url: `${this._rulesEndpointUrl}/${id}`
+      }).map((result)=> {
+        let r = Object.assign({}, DEFAULT_RULE, result)
+        r.id = id
+        return r
+      });
     }
-    if (!rule.isPersisted()) {
-      this.add(rule, cb)
+    return result
+  }
+
+  getConditionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._conditionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+  getRuleActionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._ruleActionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+
+  private loadActionTypes():Observable<ServerSideTypeModel[]> {
+    let obs
+    if (this._ruleActionTypesAry.length) {
+      obs = Observable.fromArray(this._ruleActionTypesAry)
     } else {
-      this.ref.child(rule.key).set(RuleService.toJson(rule), ()=> {
-        if (cb) {
-          cb(rule)
-        }
+      return this._doLoadRuleActionTypes().map((types:ServerSideTypeModel[])=> {
+        types.sort(RuleService.alphaSort('key'))
+        types.forEach(type => {
+          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
+          this._ruleActionTypes[type.key] = type
+        })
+        this._ruleActionTypesAry = types
+        return types
       })
+    }
+    return obs
+  }
+
+  _doLoadRuleActionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._ruleActionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+  private loadConditionTypes():Observable<ServerSideTypeModel[]> {
+    let obs
+    if (this._conditionTypesAry.length) {
+      obs = Observable.fromArray(this._conditionTypesAry)
+    } else {
+      return this._doLoadConditionTypes().map((types:ServerSideTypeModel[])=> {
+        types.sort(RuleService.alphaSort('key'))
+        types.forEach(type => {
+          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
+          this._conditionTypes[type.key] = type
+        })
+        this._conditionTypesAry = types
+        return types
+      })
+    }
+    return obs
+  }
+
+
+  _doLoadConditionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._conditionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+  request(options:any):Observable<RuleModel[]|ServerSideTypeModel[]|CwError|RuleModel|IConditionGroup> {
+    options.headers = this._apiRoot.getDefaultRequestHeaders();
+    var source = options.body
+    if (options.body) {
+      if (typeof options.body !== 'string') {
+        options.body = JSON.stringify(options.body);
+      }
+      options.headers.append('Content-Type', 'application/json')
+    }
+    var request = new Request(options)
+    return this._http.request(request)
+        .map((resp:Response) => {
+          return hasContent(resp) ? resp.json() : resp
+        })
+        .catch((response:Response, original:Observable<any>):Observable<any> => {
+          if (response) {
+            if (response.status === 500) {
+              if (response.text() && response.text().indexOf("ECONNREFUSED") >= 0) {
+                throw new CwError(NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR], request, response, source)
+              } else {
+                throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source)
+              }
+            }
+            else if (response.status === 404) {
+              console.error("Could not execute request: 404 path not valid.", options.url)
+              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source)
+            } else {
+              console.log("Could not execute request: Response status code: ", response.status, 'error:', response, options.url)
+              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source)
+            }
+          }
+          return null
+        })
+  }
+
+  static fromServerRulesTransformFn(ruleMap):RuleModel[] {
+    return Object.keys(ruleMap).map((id:string) => {
+      let r:IRule = ruleMap[id]
+      r.id = id
+      return new RuleModel(r)
+    })
+  }
+
+  static fromClientRuleTransformFn(rule:RuleModel):any {
+    let sendRule = Object.assign({}, DEFAULT_RULE, rule)
+    sendRule.key = rule.key
+    delete sendRule.id
+    sendRule.conditionGroups = {}
+    sendRule._conditionGroups.forEach((conditionGroup:ConditionGroupModel)=> {
+      if (conditionGroup.key) {
+        let sendGroup = {
+          operator: conditionGroup.operator,
+          priority: conditionGroup.priority,
+          conditions: {}
+        }
+        conditionGroup._conditions.forEach((condition:ConditionModel)=> {
+          sendGroup.conditions[condition.key] = true
+        })
+        sendRule.conditionGroups[conditionGroup.key] = sendGroup
+      }
+    })
+    RuleService.removeMeta(sendRule)
+    return sendRule;
+  }
+
+  static removeMeta(entity:any) {
+    Object.keys(entity).forEach((key)=> {
+      if (key[0] == '_') {
+        delete entity[key]
+      }
+    })
+  }
+
+
+  static alphaSort(key) {
+    return (a, b) => {
+      let x
+      if (a[key] > b[key]) {
+        x = 1
+      } else if (a[key] < b[key]) {
+        x = -1
+      }
+      else {
+        x = 0
+      }
+      return x
     }
   }
 
-  remove(rule:RuleModel, cb:Function=null) {
-    if (rule.isPersisted()) {
-      rule.snapshot.ref().remove((key)=> {
-        if(cb){
-          cb()
-        }
-      }).catch((e) => {
-        console.log("Error removing rule", e)
-        if(cb){
-          cb(e)
-        }
-        throw e
-      })
-    }
+  static fromServerServersideTypesTransformFn(typesMap):ServerSideTypeModel[] {
+    let types = Object.keys(typesMap).map((key:string) => {
+      let json:any = typesMap[key]
+      json.key = key
+      return ServerSideTypeModel.fromJson(json)
+    })
+    console.log("RuleService", "fromServerServersideTypesTransformFn - loaded", types)
+    return types.filter((type)=> type.key != 'CountRulesActionlet')
   }
 }
 

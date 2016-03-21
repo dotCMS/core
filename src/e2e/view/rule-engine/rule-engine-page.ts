@@ -12,7 +12,7 @@ import {
 
 export class RulePage extends Page {
   filterBox:ElementFinder
-  addRuleButton:TestButton
+  private _addRuleButton:TestButton
   ruleEls:ElementArrayFinder
 
   constructor(locale:string = null) {
@@ -21,10 +21,21 @@ export class RulePage extends Page {
       this.queryParams['locale'] = locale
     }
     this.filterBox = element(by.css('.filter.icon + INPUT'))
-    this.addRuleButton = new TestButton(element(by.css('.cw-button-add')))
+    this._addRuleButton = new TestButton(element(by.css('.cw-button-add')))
     this.ruleEls = element.all(by.tagName('rule'))
   }
 
+  setFilter(text:string){
+    return this.filterBox.sendKeys(text);
+  }
+
+  getFilter():webdriver.promise.Promise<string>{
+    return this.filterBox.getAttribute('value')
+  }
+
+  getFilterPlaceholder():webdriver.promise.Promise<string>{
+    return this.filterBox.getAttribute('placeholder')
+  }
   suppressAlerts(value:boolean){
     this.queryParams['suppressAlerts'] = value ? 'true' : 'false'
   }
@@ -33,12 +44,16 @@ export class RulePage extends Page {
     return browser.sleep(timeout)
   }
 
+  saveAndReload():webdriver.promise.Promise<Page>{
+    return this.waitForSave().then(() => this.navigateTo() )
+  }
+
   addRule(nameSuffix:string=null):webdriver.promise.Promise<TestRuleComponent> {
     var name = "e2e-" + browser['browserName'] + '-' + new Date().getTime()
     if(nameSuffix){
       name = name + '-' + nameSuffix
     }
-    return this.addRuleButton.click().then(()=> {
+    return this._addRuleButton.click().then(()=> {
       let rule = this.firstRule()
       rule.setName(name)
       rule.fireOn.el.click()
@@ -121,8 +136,16 @@ export class TestRuleComponent {
 
   getName():webdriver.promise.Promise<string>{
     let v = this.nameEl.getValue()
-    v.then( name => this.name = name)
+    v = v.then( name => this.name = name)
     return v
+  }
+
+  getFireOn():webdriver.promise.Promise<string>{
+    return this.fireOn.getValueText()
+  }
+
+  setFireOn(value:string):webdriver.promise.Promise<void>{
+    return this.fireOn.setSearch(value)
   }
 
   isShowingBody():webdriver.promise.Promise<boolean> {
@@ -182,9 +205,9 @@ export class TestRuleComponent {
   ):TestRequestHeaderCondition {
     let condGroup = this.lastGroup()
     let conditionDef:TestRequestHeaderCondition = new TestRequestHeaderCondition(condGroup.last().el)
-    conditionDef.typeSelect.setSearch("Request Hea", this.fireOn.el)
+    conditionDef.typeSelect.setSearch("Request Hea")
     conditionDef.setHeaderKey(key)
-    conditionDef.setComparison(condition, conditionDef.headerValueTF.el)
+    conditionDef.setComparison(condition)
     conditionDef.setHeaderValue(value)
     if(!isAnd){
       conditionDef.toggleLogicalTest()
@@ -208,7 +231,7 @@ export class TestRuleComponent {
     return actionDef
   }
 
-  newSetPersonaAction(value?:string):TestPersonaAction{
+  newSetPersonaAction(value?:string):TestPersonaAction {
     let actionDef:TestPersonaAction= new TestPersonaAction(this.actionEls.last())
     actionDef.typeSelect.setSearch(TestPersonaAction.TYPE_NAME)
     this.fireOn.el.click()
@@ -240,6 +263,9 @@ export class TestRuleComponent {
     } else {
       result = this.removeBtn.optShiftClick()
     }
+    result.then(( ) => {
+      return browser.sleep(250)
+    })
     return result
   }
 
@@ -363,8 +389,8 @@ export class TestConditionComponent extends TestRuleInputRow {
    * @param next The target to navigate to after setting the seach, in order to trigger a change event.
    * @returns {webdriver.promise.Promise<void>}
    */
-  setComparison(to:string, next:ElementFinder):webdriver.promise.Promise<void>{
-    return this.compareDD.setSearch(to, next)
+  setComparison(to:string):webdriver.promise.Promise<void>{
+    return this.compareDD.setSearch(to)
   }
 
   toggleLogicalTest():protractor.promise.Promise<void>{
@@ -432,11 +458,11 @@ export class TestResponseHeaderAction extends TestActionComponent {
     return this.headerValueTF.getValue()
   }
   setHeaderKey(val:string):webdriver.promise.Promise<void>{
-    return this.headerKeyTF.setValue(val)
+    return this.headerKeyTF.setValue(val, this.headerValueTF.el)
   }
 
   setHeaderValue(val:string):webdriver.promise.Promise<void>{
-    return this.headerValueTF.setValue(val)
+    return this.headerValueTF.setValue(val, this.headerKeyTF.el)
   }
 }
 
@@ -464,7 +490,7 @@ export class TestSetRequestAttributeAction extends TestActionComponent {
   }
 
   setAttributeValue(val:string):webdriver.promise.Promise<void>{
-    return this.attributeValueTF.setValue(val)
+    return this.attributeValueTF.setValue(val, this.attributeKeyTF.el)
   }
 
 }

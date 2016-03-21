@@ -1,5 +1,5 @@
 import {Injectable} from 'angular2/core';
-import {Http, HTTP_PROVIDERS, RequestOptions, Headers} from 'angular2/http';
+import {Http} from 'angular2/http';
 import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../../persistence/ApiRoot";
@@ -112,12 +112,13 @@ export class I18nService {
   }
 
   getForLocale(locale:string, msgKey:string, forceText:boolean=true, defaultValue:any="-error loading resource-"):Observable<TreeNode|any> {
+    msgKey = locale + '.' + msgKey
     let path = msgKey.split('.')
     let cNode = this.root.$descendant(path)
     if (!cNode.$isLoaded() && !cNode.$isLoading()) {
       let promise = new Promise((resolve, reject)=> {
         console.log("I18n", "Requesting: ", msgKey)
-        this.makeRequest(locale + '/' + path.join('/')).catch((err:any, source:Observable<any>)=>{
+        this.makeRequest(path.join('/')).catch((err:any, source:Observable<any>)=>{
           if(err && err.status === 404){
             console.log("Missing Resource: '" , msgKey, "'")
           } else {
@@ -133,11 +134,14 @@ export class I18nService {
         })
       })
       cNode.$markAsLoading(promise)
+    } else {
+      // console.log("I18n", "Awaiting: ", msgKey)
+
     }
     return Observable.defer(()=> {
       return Observable.create((obs:Observer<string>  )=> {
         if (cNode._loading == null) {
-          console.log("I18n", "Failed: ", msgKey, "=", cNode)
+          // console.log("I18n", "Failed: ", msgKey, "=", cNode)
           obs.next("-I18nLoadFailed-")
           obs.complete()
         } else {
@@ -146,7 +150,7 @@ export class I18nService {
             if(!cNode.$isLeaf() ){
                 if(forceText){
                   v = defaultValue
-                  console.log("Misconfigured resource:", msgKey )
+                  // console.log("Misconfigured resource:", msgKey )
                 } else {
                   v = cNode
                 }

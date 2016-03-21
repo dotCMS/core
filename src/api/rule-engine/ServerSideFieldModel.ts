@@ -1,22 +1,8 @@
-import {EventEmitter, Injectable} from 'angular2/core';
-import {Observable, ConnectableObservable} from 'rxjs/Rx'
-
-import {RuleModel} from "./Rule";
 import {CwModel} from "../util/CwModel";
-import {ApiRoot} from "../persistence/ApiRoot";
-import {CwChangeEvent} from "../util/CwEvent";
 import {ParameterDefinition} from "../util/CwInputModel";
-import {CwInputDefinition} from "../util/CwInputModel";
-
-export interface ParameterModel {
-  key:string
-  value:string
-  priority:number
-}
+import {ParameterModel} from "./Rule";
 
 export class ServerSideFieldModel extends CwModel {
-  comparison:string
-  operator:string
   private _type:ServerSideTypeModel
   parameters:{[key:string]: ParameterModel}
   parameterDefs:{[key:string]: ParameterDefinition}
@@ -26,9 +12,7 @@ export class ServerSideFieldModel extends CwModel {
     super(key)
     this.parameters = {}
     this.parameterDefs = {}
-    this.operator = 'AND'
-    this.priority = priority || 1
-    this.type = type
+  
   }
 
   get type():ServerSideTypeModel {
@@ -53,7 +37,7 @@ export class ServerSideFieldModel extends CwModel {
 
   setParameter(key:string, value:any, priority:number = 1) {
     if (this.parameterDefs[key] === undefined) {
-      console.log("Unsupported parameter: ", key)
+      console.log("Unsupported parameter: ", key, "Valid parameters: ", Object.keys(this.parameterDefs))
       return;
     }
     this.parameters[key] = {key: key, value: value, priority: priority}
@@ -90,41 +74,35 @@ export class ServerSideFieldModel extends CwModel {
         let paramDef = this.getParameterDef(key)
         let param = this.parameters[key]
         var value = param.value;
-        valid = valid && paramDef.inputType.verify(value).valid
+        try {
+          valid = valid && ( paramDef.inputType.verify(value) == null )
+        } catch (e) {
+          console.error(e)
+        }
       })
     }
     valid = valid && this._type && this._type.key && this._type.key != 'NoSelection'
-    console.log("validate => Result: ", valid)
-
     return valid
   }
-
-  toJson():any {
-    return {
-      comparison: this.comparison,
-      typeId: this._type.i18nKey,
-      operator: this.operator,
-      parameters: this.parameters,
-      parameterDefs: this.parameterDefs
-    }
-  }
-
 }
 
 
-export class ServerSideTypeModel extends CwModel{
+export class ServerSideTypeModel{
 
+  key:string
+  priority:number
   i18nKey:string
   parameters:{ [key:string]:ParameterDefinition}
+  _opt:any
 
   constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:any = {}) {
-    super(key ? key : 'NoSelection')
+    this.key = key ? key : 'NoSelection'
     this.i18nKey = i18nKey
     this.parameters = parameters
   }
 
   isValid():boolean {
-    return this.isPersisted() && !!this.i18nKey && !!this.parameters
+    return !!this.i18nKey && !!this.parameters
   }
 
   static fromJson(json:any):ServerSideTypeModel {

@@ -1,31 +1,20 @@
 import {Injectable} from 'angular2/core';
 import {Headers, RequestOptions} from 'angular2/http';
-
-import {EntityMeta} from "./EntityBase";
-import {DataStore} from "./DataStore";
 import {UserModel} from "../auth/UserModel";
-
-var instanceOfApiRoot = null
 
 @Injectable()
 export class ApiRoot {
   // Points to {baseUrl}/api/v1
-  root:EntityMeta;
-  defaultSite:EntityMeta;
+  defaultSiteUrl:string
   baseUrl:string = "http://localhost:8080/";
   siteId:string = '48190c8c-42c4-46af-8d1a-0cd5db894797'
   authUser:UserModel;
-  resourceRef:EntityMeta
-  dataStore:DataStore
   authToken:string
   hideFireOn:boolean = false;
 
-
-  constructor(authUser:UserModel, dataStore:DataStore) {
+  constructor(authUser:UserModel) {
     this.authUser = authUser
-    this.dataStore = dataStore;
     this.authToken = ApiRoot.createAuthToken(authUser)
-    dataStore.setAuth(authUser.username, authUser.password)
     try {
       let query = document.location.search.substring(1);
       let siteId = ApiRoot.parseQueryParam(query, "realmId");
@@ -41,26 +30,34 @@ export class ApiRoot {
       let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
       console.log('Proxy server Base URL set to ', baseUrl)
       this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
-      this.resourceRef = this.root.child('system/i18n')
       this.configureUser(query, authUser)
     } catch (e) {
-      console.log("Could not set baseUrl automatically.")
+      console.log("Could not set baseUrl automatically.", e)
     }
-    instanceOfApiRoot = this;
   }
 
   private configureUser(query:string, user:UserModel):void {
-    let suppressAlerts = ApiRoot.parseQueryParam(query, "suppressAlerts") === 'true'
-    user.suppressAlerts = suppressAlerts
+    user.suppressAlerts = ApiRoot.parseQueryParam(query, "suppressAlerts") === 'true'
+  }
+
+  getDefaultRequestHeaders():Headers {
+    var headers = new Headers();
+    headers.append("com.dotmarketing.session_host", this.siteId)
+    headers.append('Accept', 'application/json')
+    if (this.authToken) {
+      headers.append('Authorization', this.authToken)
+    }
+    return headers
   }
 
   getDefaultRequestOptions():RequestOptions {
-
     var headers = new Headers();
     headers.append("com.dotmarketing.session_host", this.siteId)
     if (this.authToken) {
       headers.append('Authorization', this.authToken);
     }
+    headers.append('Content-Type', 'application/json')
+
     return new RequestOptions({
       headers: headers
     })
@@ -100,16 +97,7 @@ export class ApiRoot {
     } else {
       throw new Error("Invalid proxy server base url: '" + url + "'")
     }
-    this.root = new EntityMeta(this.baseUrl + 'api/v1')
-    this.defaultSite = this.root.child('sites/' + this.siteId)
+    this.defaultSiteUrl = this.baseUrl + 'api/v1/sites/' + this.siteId
   }
 
-
-  getRoot():EntityMeta {
-    return this.root
-  }
-
-  static instance(){
-    return instanceOfApiRoot
-  }
 }
