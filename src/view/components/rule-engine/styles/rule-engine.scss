@@ -82,16 +82,17 @@ $finder-s-input: '.ui.input input';
   }
 }
 
+/* Semantic Text input box. */
 
-.ng-dirty {
-  &.ng-valid input:focus,
-  input:focus.ng-valid&,
-  &.ui.input input:focus.ng-valid,
-  &.ng-valid .ui.input input:focus,
-  &.ui.selection.dropdown.ng-valid {
+.ng-dirty.ng-valid input:focus,
+.ng-dirty.ng-valid .ui.input input:focus,
+  input:focus.ng-valid.ng-dirty,
+.ng-dirty.ui.input input:focus.ng-valid,
+.ng-dirty.ng-valid .ui.input input:focus,
+.ng-dirty.ui.selection.dropdown.ng-valid {
     @include valid-and-dirty-or-touched-focused
   }
-}
+
 
 .ng-touched.ng-valid .ui.selection.dropdown.search.visible {
   @include valid-and-dirty-or-touched-focused

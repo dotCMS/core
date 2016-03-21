@@ -147,7 +147,14 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onCreateRule", event)
     let priority = this.rules.length ? this.rules[0].priority + 1 : 1;
     let rule = new RuleModel({ priority})
+    let group = new ConditionGroupModel({priority:1, operator:'AND'})
+    group._conditions.push(new ConditionModel({_type: new ServerSideTypeModel()}))
+    rule._conditionGroups.push(group)
+    let action = new ActionModel(null, new ServerSideTypeModel())
+    action._owningRule = rule
+    rule._ruleActions.push()
     rule._saved = false
+    rule._expanded = true
     this.rules$.emit([rule].concat(this.rules))
   }
   
@@ -393,6 +400,7 @@ export class RuleEngineContainer {
       rule._saved = true
     }
     else {
+      console.error(errors)
       rule._errors = errors
     }
   }

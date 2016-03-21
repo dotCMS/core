@@ -80,7 +80,7 @@ var rsrc = {
       </cw-input-dropdown>
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
-      <span class="cw-rule-status-text" >{{statusText()}}</span>
+      <span class="cw-rule-status-text" title="{{statusText()}}">{{statusText(30)}}</span>
       <cw-toggle-input class="cw-input"
                        [on-text]="rsrc('inputs.onOff.on.label') | async"
                        [off-text]="rsrc('inputs.onOff.off.label') | async"
@@ -119,7 +119,7 @@ var rsrc = {
         {{rsrc('inputs.action.firesActions') | async}}
       </div>
       <div flex layout="column" class="cw-rule-actions">
-        <div layout="row" class="cw-action-row" *ngFor="var ruleAction of ruleActions; #i=index">
+        <div layout="row" class="cw-action-row" *ngFor="#ruleAction of ruleActions; #i=index">
           <rule-action flex layout="row" [action]="ruleAction" [index]="i" 
               [ruleActionTypes]="ruleActionTypes"
               (updateRuleActionType)="onUpdateRuleActionType($event)"
@@ -251,7 +251,7 @@ class RuleComponent {
 
   }
 
-  statusText() {
+  statusText(length:number=0) {
     let t = "";
     if (this.saved)
     { t = "All changes saved"
@@ -259,7 +259,10 @@ class RuleComponent {
     else if(this.saving){
       t = "Saving..."
     } else if(this.errors){
-      t = this.errors['invalid'] || "Unsaved changes..."
+      t = this.errors['invalid'] || this.errors['serverError'] || "Unsaved changes..."
+    }
+    if(length){
+      t = t.substring(0, length) + '...'
     }
     return t;
   }

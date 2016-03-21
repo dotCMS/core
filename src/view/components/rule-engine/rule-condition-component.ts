@@ -78,7 +78,6 @@ export class ConditionComponent {
   ngOnChanges(change) {
     try {
       if (change.condition) {
-        console.log("ConditionComponent", "ngOnChanges-condition", change.condition.currentValue)
         if (this.typeDropdown && this.condition.type) {
           if (this.condition.type.key != 'NoSelection') {
             this.typeDropdown.value = this.condition.type.key

@@ -15,6 +15,7 @@ import {
 
 @Component({
   selector: 'condition-group',
+  directives: [CORE_DIRECTIVES, ConditionComponent],
   template: `<div class="cw-rule-group">
   <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
     {{rsrc('inputs.group.whenConditions.label') | async}}
@@ -52,8 +53,7 @@ import {
   </div>
 </div>
 
-`,
-  directives: [CORE_DIRECTIVES, ConditionComponent]
+`
 })
 export class ConditionGroupComponent {
 
@@ -82,7 +82,9 @@ export class ConditionGroupComponent {
   }
 
   ngOnChanges(changes){
-    console.log("ConditionGroupComponent", "ngOnChanges", changes)
+    if(changes.group && this.group && this.group._conditions.length === 0){
+      this.group._conditions.push(new ConditionModel({_type: new ServerSideTypeModel()}))
+    }
   }
 
   rsrc(subkey:string) {
