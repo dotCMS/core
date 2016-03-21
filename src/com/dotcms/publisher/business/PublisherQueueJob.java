@@ -192,7 +192,8 @@ public class PublisherQueueJob implements StatefulJob {
 			try {
 
 				PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
-
+				Date publishStart = null;
+				Date publishEnd = null;
 				//There is no need to keep checking after MAX_NUM_TRIES.
 				if ( localHistory.getNumTries() <= (MAX_NUM_TRIES + 1) ) {
 					Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
@@ -214,6 +215,8 @@ public class PublisherQueueJob implements StatefulJob {
 															.path("get")
 															.path(bundleAudit.getBundleId()).request().get(String.class));
 									if ( remoteHistory != null ) {
+										publishStart = remoteHistory.getPublishStart();
+										publishEnd = remoteHistory.getPublishEnd();
 										endpointTrackingMap.putAll(remoteHistory
 												.getEndpointsMap());
 										for ( String remoteGroupId : remoteHistory
@@ -268,6 +271,8 @@ public class PublisherQueueJob implements StatefulJob {
 							countGroupFailed++;
 						}
 					}
+					localHistory.setPublishStart(publishStart);
+					localHistory.setPublishEnd(publishEnd);
 					if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (countGroupFailed > 0 || countGroupPublishing > 0) ) {
 						// If bundle cannot be installed after [MAX_NUM_TRIES] tries
 						// and some groups could not be published

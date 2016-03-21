@@ -518,10 +518,11 @@ td {font-size: 100%;}
         <div style="text-align: center">
                 <span  id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
                 </span>
+
+                <ul id="addTagErrorMessagesList" style="color:red; font-size:11px; font-family: verdana; " ></ul>
         </div>
         <dl>
             <dt></dt>
-            <dd><ul id="addTagErrorMessagesList"></ul></dd>
 
             <dt><%= LanguageUtil.get(pageContext, "tag") %>:</dt>
             <dd><input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>

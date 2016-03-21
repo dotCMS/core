@@ -43,7 +43,7 @@ public class PublishAuditUtil {
 
             User user = APILocator.getUserAPI().getSystemUser();
 
-            if ( PusheableAsset.CONTENTLET.getType().equals( assetType ) || PusheableAsset.HOST.getType().equals( assetType ) ) {
+            if ( PusheableAsset.CONTENTLET.getType().equals( assetType ) || PusheableAsset.SITE.getType().equals( assetType ) ) {
                 sw.append( findContentletByIdentifier(id).getTitle() );
             } else if ( PusheableAsset.FOLDER.getType().equals( assetType ) ) {
                 sw.append( APILocator.getFolderAPI().find( id, user, false ).getName() );

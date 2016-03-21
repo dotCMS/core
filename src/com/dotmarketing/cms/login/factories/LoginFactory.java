@@ -299,7 +299,7 @@ public class LoginFactory {
             // if passwords match
             if (match) {
             	HttpSession ses = request.getSession();
-
+            	ses.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
                 // session stuff
                 ses.setAttribute(WebKeys.CMS_USER, user);
 
@@ -463,7 +463,7 @@ public class LoginFactory {
         request.getSession().removeAttribute(WebKeys.LOGGED_IN_USER_CATS);
         request.getSession().removeAttribute(WebKeys.LOGGED_IN_USER_TAGS);
         request.getSession().removeAttribute(WebKeys.USER_FAVORITES);
-
+        request.getSession().removeAttribute(WebKeys.VISITOR);
         /*Custom Code*/
         if(useSalesForceLoginFilter){
         	request.getSession().removeAttribute(SalesForceUtils.ACCESS_TOKEN);
