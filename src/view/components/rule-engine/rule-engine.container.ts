@@ -152,7 +152,7 @@ export class RuleEngineContainer {
     rule._conditionGroups.push(group)
     let action = new ActionModel(null, new ServerSideTypeModel())
     action._owningRule = rule
-    rule._ruleActions.push()
+    rule._ruleActions.push(action)
     rule._saved = false
     rule._expanded = true
     this.rules$.emit([rule].concat(this.rules))
