@@ -21,7 +21,7 @@ import {
     RULE_RULE_ACTION_UPDATE_PARAMETER,
     V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
     RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE,
-    RULE_CONDITION_GROUP_CREATE
+    RULE_CONDITION_GROUP_CREATE, RuleService, IBundle
 } from "../../../api/rule-engine/Rule";
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
@@ -55,17 +55,27 @@ var rsrc = {
       <i class="close icon" (click)="toggleAddToBundleModal($event)"></i>
       <div class="header">Add to Bundle</div>
       <div class="content">
-        <div class="field">
-          <select class="ui search dropdown">
-            <option>Select a option</option>
-          </select>
-        </div>
+        <cw-input-dropdown
+          flex="none"
+          placeholder="Pick a Bundle"
+          (click)="$event.stopPropagation()"
+          (change)="setSelectedBundle($event)">
+          <cw-input-option
+              value="new"
+              label="Add new bundle"
+              ></cw-input-option>
+          <cw-input-option
+              *ngFor="#opt of bundleStores"
+              [value]="opt.id"
+              [label]="opt.name"
+              ></cw-input-option>
+        </cw-input-dropdown>
       </div>
       <div class="actions">
         <div class="ui black deny button" (click)="toggleAddToBundleModal($event)">
           Cancel
         </div>
-        <div class="ui positive right labeled icon button">
+        <div class="ui positive right labeled icon button" (click)="addRuleToBundle($event)">
           Add to Bundle
           <i class="checkmark icon"></i>
         </div>
@@ -209,20 +219,28 @@ class RuleComponent {
   resources:I18nService
   private showExtraMenu:Boolean;
   private showAddToBundle:Boolean;
+  private ruleService:RuleService;
+  private bundleStores:IBundle[];
+  private bundleStoreSelected:IBundle;
+  private addNewBundle:Boolean
 
 
   constructor(fb:FormBuilder,
               user:UserModel,
               elementRef:ElementRef,
               resources:I18nService,
-              apiRoot:ApiRoot) {
+              apiRoot:ApiRoot,
+              ruleService:RuleService) {
     this._user = user
     this.elementRef = elementRef
     this.resources = resources
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
     this.showExtraMenu = false
-    this.showAddToBundle = false;
+    this.showAddToBundle = false
+    this.ruleService = ruleService
+    this.bundleStores = []
+    this.bundleStoreSelected = null
 
 
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
@@ -386,9 +404,44 @@ class RuleComponent {
 
   toggleAddToBundleModal(event:any) {
     event.stopPropagation()
-    this.showAddToBundle = !this.showAddToBundle
+
+    if (!this.bundleStores.length) {
+      this.ruleService.getBundleStores().subscribe((data:IBundle[]) => {
+        this.bundleStores = data;
+        this.showAddToBundle = !this.showAddToBundle
+      });
+    } else {
+      this.showAddToBundle = !this.showAddToBundle
+    }
+
     if (this.showExtraMenu) {
       this.showExtraMenu = false
+    }
+  }
+
+  addRuleToBundle(event:any) {
+    event.stopPropagation()
+
+    this.ruleService.addRuleToBundle(this.rule._id, {id: this.bundleStoreSelected.id, name: this.bundleStoreSelected.name}).subscribe((result:any)=> {
+      if (!result.errors) {
+        this.showAddToBundle = false;
+      } else {
+        console.log("Show error to user") //TODO: need to show error to use
+      }
+    })
+  }
+
+  setSelectedBundle(bundleId:string) {
+    if (bundleId === "new") {
+      console.log("Add new bundle")
+      // TODO: need to be able to add new bundles
+    } else {
+      let self = this;
+      this.bundleStores.forEach(function(bundle) {
+        if (bundle.id === bundleId) {
+          self.bundleStoreSelected = bundle
+        }
+      })
     }
   }
 }

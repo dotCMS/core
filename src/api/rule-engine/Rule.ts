@@ -394,7 +394,6 @@ export class RuleService {
   }
 
   addRuleToBundle(ruleId:string, bundle:IBundle):Observable<{errorMessages:string[],total:number,errors:number}> {
-    // TODO: how to get the bundle store async?
     return this.request({
       body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
       method: RequestMethod.Post,
@@ -413,7 +412,7 @@ export class RuleService {
     })
   }
 
-  getBundleStores():Observable<any[]> {
+  getBundleStores():Observable<IBundle[]> {
     return this.getLoggedUser().flatMap((user:IUser) => {
       return this.request({
         method: RequestMethod.Get,
@@ -538,9 +537,6 @@ export class RuleService {
   }
 
   static fromServerBundleTransformFn(data):IBundle[] {
-    debugger;
-    console.log('LOADING BUNDLE STORES');
-    console.log(data.items);
     return data.items || [];
   }
 
