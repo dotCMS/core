@@ -1,5 +1,5 @@
 import {EventEmitter, Injectable} from 'angular2/core'
-import {Http, Response, RequestMethod, Request} from 'angular2/http'
+import {Http, Response, RequestMethod, Request, Headers} from 'angular2/http'
 import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
@@ -448,13 +448,18 @@ export class RuleService {
   }
 
   request(options:any):Observable<any> {
-    options.headers = Object.assign({}, this._apiRoot.getDefaultRequestHeaders(), options.headers || {"Content-Type": "application/json"});
+    let headers:Headers = this._apiRoot.getDefaultRequestHeaders()
+    let tempHeaders = options.headers ? options.headers : {"Content-Type": "application/json"}
+    Object.keys(tempHeaders).forEach((key)=>{
+      headers.set(key, tempHeaders[key])
+    })
     var source = options.body
     if (options.body) {
       if (typeof options.body !== 'string') {
         options.body = JSON.stringify(options.body);
       }
     }
+    options.headers = headers
 
     var request = new Request(options)
     return this._http.request(request)
