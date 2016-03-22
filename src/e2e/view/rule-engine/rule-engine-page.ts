@@ -149,9 +149,7 @@ export class TestRuleComponent {
   }
 
   isShowingBody():webdriver.promise.Promise<boolean> {
-    return this.mainBody.getAttribute('class').then(v=> {
-      return v == null ? false : v.indexOf('cw-hidden') == -1
-    })
+    return this.mainBody.isPresent()
   }
 
   expand():webdriver.promise.Promise<void> {
