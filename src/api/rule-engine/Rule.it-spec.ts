@@ -13,6 +13,8 @@ import {HTTP_PROVIDERS} from "angular2/http";
 import {Observable} from "rxjs/Observable";
 import {CwError} from "../system/http-response-util";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {IUser} from "./Rule";
+import {IBundle} from "./Rule";
 
 
 var injector = Injector.resolveAndCreate([
@@ -373,6 +375,37 @@ describe('Integration.api.rule-engine.RuleService', function () {
       done()
     })
   })
+
+  it("Should get logged user information", function (done) {
+    ruleService.getLoggedUser().subscribe((user:IUser)=> {
+      expect(user).toEqual({
+        firstName: "Admin",
+        lastName: "User",
+        roleId: "e7d4e34e-5127-45fc-8123-d48b62d510e3",
+        userId: "dotcms.org.1"
+      }, "We get user information correctly");
+      done()
+    })
+  })
+
+  it("Should get bundle store information", function (done) {
+    ruleService.getBundleStores().subscribe((bundles:IBundle[])=> {
+      expect(bundles).toBeDefined()
+      done()
+    })
+  })
+
+  it("Should add rule to bundle", function (done) {
+    ruleService.addRuleToBundle("0862904c-105d-4d8d-8991-e7ec34b132ae", {id: "bundleTest", name: "bundleTest"}).subscribe((result:any)=> {
+      console.log('RULE ADDED BITCH');
+      console.log(result);
+      expect(result.errors).toBe(0);
+      expect(result.total).toBe(1);
+      done()
+    })
+  })
+
+
 
 
 });

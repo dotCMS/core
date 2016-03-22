@@ -58,6 +58,18 @@ export interface IRecord {
   set?(string, any):any
 }
 
+export interface IUser {
+  firstName?: string,
+  lastName?: string,
+  roleId?: string,
+  userId?: string
+}
+
+export interface IBundle {
+  name?: string,
+  id?: string
+}
+
 export interface IRuleAction extends IRecord {
   id?:string
   priority:number,
@@ -243,6 +255,10 @@ export class RuleService {
   private _actionsEndpointUrl:string
   private _conditionTypesEndpointUrl:string
   private _ruleActionTypesEndpointUrl:string
+  private _bundleStoreUrl:string
+  private _loggedUserUrl:string
+  private _addToBundleUrl:string
+
 
   ruleActionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
   conditionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
@@ -258,10 +274,15 @@ export class RuleService {
 
 
   constructor(private _apiRoot:ApiRoot, private _http:Http, private _resources:I18nService) {
+    //this.loggedUser = this.getLoggedUser();
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
     this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
     this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`
     this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`
+    this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid` //TODO: dotcms.org.1 fmontes get this user id dinamically
+    this._loggedUserUrl = `${this._apiRoot.baseUrl}api/user/getloggedinuser/`
+    this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`
+
 
     this._preCacheCommonResources(_resources)
     this.loadActionTypes().subscribe((types:ServerSideTypeModel[])=> this.ruleActionTypes$.next(types))
@@ -300,6 +321,8 @@ export class RuleService {
       url: this._rulesEndpointUrl
     }).map(RuleService.fromServerRulesTransformFn);
   }
+
+
 
 
   loadRule(id:string):Observable<RuleModel|CwError> {
@@ -370,6 +393,36 @@ export class RuleService {
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
 
+  addRuleToBundle(ruleId:string, bundle:IBundle):Observable<{errorMessages:string[],total:number,errors:number}> {
+    // TODO: how to get the bundle store async?
+    return this.request({
+      body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
+      method: RequestMethod.Post,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      url: this._addToBundleUrl
+    })
+  }
+
+
+  getLoggedUser():Observable<IUser> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._loggedUserUrl,
+    })
+  }
+
+  getBundleStores():Observable<any[]> {
+    return this.getLoggedUser().flatMap((user:IUser) => {
+      return this.request({
+        method: RequestMethod.Get,
+        url: `${this._bundleStoreUrl}/${user.userId}`,
+      }).map(RuleService.fromServerBundleTransformFn)
+    })
+  }
+
+
   private loadConditionTypes():Observable<ServerSideTypeModel[]> {
     let obs
     if (this._conditionTypesAry.length) {
@@ -388,7 +441,6 @@ export class RuleService {
     return obs
   }
 
-
   _doLoadConditionTypes():Observable<ServerSideTypeModel[]> {
     return this.request({
       method: RequestMethod.Get,
@@ -396,15 +448,15 @@ export class RuleService {
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
 
-  request(options:any):Observable<RuleModel[]|ServerSideTypeModel[]|CwError|RuleModel|IConditionGroup> {
-    options.headers = this._apiRoot.getDefaultRequestHeaders();
+  request(options:any):Observable<any> {
+    options.headers = Object.assign({}, this._apiRoot.getDefaultRequestHeaders(), options.headers || {"Content-Type": "application/json"});
     var source = options.body
     if (options.body) {
       if (typeof options.body !== 'string') {
         options.body = JSON.stringify(options.body);
       }
-      options.headers.append('Content-Type', 'application/json')
     }
+
     var request = new Request(options)
     return this._http.request(request)
         .map((resp:Response) => {
@@ -483,6 +535,13 @@ export class RuleService {
       }
       return x
     }
+  }
+
+  static fromServerBundleTransformFn(data):IBundle[] {
+    debugger;
+    console.log('LOADING BUNDLE STORES');
+    console.log(data.items);
+    return data.items || [];
   }
 
   static fromServerServersideTypesTransformFn(typesMap):ServerSideTypeModel[] {

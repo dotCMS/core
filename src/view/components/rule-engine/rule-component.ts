@@ -37,7 +37,6 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
-
 var rsrc = {
   fireOn: {
     EVERY_PAGE: 'Every Page',
@@ -51,6 +50,28 @@ var rsrc = {
   selector: 'rule',
   directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
+  <div class="ui dimmer modals page transition visible active" *ngIf="showAddToBundle">
+    <div class="ui modal" style="display: block; width: 400px; margin: -103px 0 0 -200px;">
+      <i class="close icon" (click)="toggleAddToBundleModal($event)"></i>
+      <div class="header">Add to Bundle</div>
+      <div class="content">
+        <div class="field">
+          <select class="ui search dropdown">
+            <option>Select a option</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="ui black deny button" (click)="toggleAddToBundleModal($event)">
+          Cancel
+        </div>
+        <div class="ui positive right labeled icon button">
+          Add to Bundle
+          <i class="checkmark icon"></i>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
@@ -91,13 +112,17 @@ var rsrc = {
       </cw-toggle-input>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button cw-delete-rule" aria-label="Delete Rule" (click)="deleteRuleClicked($event)">
-            <i class="trash icon"></i>
+          <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="toggleExtraMenu($event)">
+            <i class="ellipsis vertical icon"></i>
           </button>
           <button class="ui button cw-add-group" arial-label="Add Group" (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
+      </div>
+      <div class="ui vertical menu" *ngIf="showExtraMenu">
+        <a class="item" (click)=toggleAddToBundleModal($event)>Add to bundle</a>
+        <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
   </div>
@@ -182,6 +207,8 @@ class RuleComponent {
   private _rsrcCache:{[key:string]:Observable<string>}
   private _user:UserModel
   resources:I18nService
+  private showExtraMenu:Boolean;
+  private showAddToBundle:Boolean;
 
 
   constructor(fb:FormBuilder,
@@ -194,6 +221,8 @@ class RuleComponent {
     this.resources = resources
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
+    this.showExtraMenu = false
+    this.showAddToBundle = false;
 
 
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
@@ -347,6 +376,19 @@ class RuleComponent {
 
     if (noWarn || confirm('Are you sure you want delete this rule?')) {
       this.deleteRule.emit({type: RULE_DELETE, payload: {rule: this.rule}})
+    }
+  }
+
+  toggleExtraMenu(event:any) {
+    event.stopPropagation()
+    this.showExtraMenu = !this.showExtraMenu
+  }
+
+  toggleAddToBundleModal(event:any) {
+    event.stopPropagation()
+    this.showAddToBundle = !this.showAddToBundle
+    if (this.showExtraMenu) {
+      this.showExtraMenu = false
     }
   }
 }
