@@ -14,8 +14,8 @@ import java.util.Collection;
 public class Comparison<T> {
 
     public static final Comparison<Object> EXISTS = new Exists();
-    public static final Comparison<Comparable> IS = new Is();
-    public static final Comparison<Comparable> IS_NOT = new IsNot();
+    public static final Comparison<Object> IS = new Is();
+    public static final Comparison<Object> IS_NOT = new IsNot();
     public static final Comparison<String> STARTS_WITH = new StartsWith();
     public static final Comparison<String> ENDS_WITH = new EndsWith();
     public static final Comparison<String> CONTAINS = new Contains();
