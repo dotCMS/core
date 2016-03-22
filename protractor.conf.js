@@ -55,7 +55,7 @@ exports.config = {
 
     /* The following lets us use the browsername in our tests */
     browser.getCapabilities().then(function (cap) {
-      browser.browserName = cap.caps_.browserName;
+      browser.browserName = cap.get('browserName');
     });
 
     /* The following lets us grab a hostname for our target test server from a single location. */

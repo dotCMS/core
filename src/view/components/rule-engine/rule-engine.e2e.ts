@@ -338,7 +338,6 @@ export function initSpec(TestUtil) {
             rulePage.navigateTo()
             rule = rulePage.findRule(name)
             rule.expand().then(()=> {
-              console.log("initSpec", "effff")
               expect(rule.getGroup(1).getLogicalOperator()).toBe("OR")
               expect(rule.getGroup(2).getLogicalOperator()).toBe("OR")
               rule.remove().then(done)

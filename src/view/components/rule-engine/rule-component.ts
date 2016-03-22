@@ -142,7 +142,7 @@ var rsrc = {
                      [group]="group"
                      [conditionTypes]="conditionTypes"
                      [groupIndex]="i"
-                     (createCondition)="createCondition.emit($event)"
+                     (createCondition)="onCreateCondition($event)"
                      (deleteCondition)="onDeleteCondition($event, group)"
                      (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
                      (updateConditionType)="onUpdateConditionType($event, group)"
@@ -331,7 +331,6 @@ class RuleComponent {
   }
 
   onDeleteCondition(event:ConditionActionEvent, conditionGroup:ConditionGroupModel){
-    debugger
     Object.assign(event.payload, { rule:this.rule, conditionGroup:conditionGroup })
     this.deleteCondition.emit( event )
   }
@@ -343,6 +342,7 @@ class RuleComponent {
   }
 
   onCreateCondition(event:ConditionActionEvent){
+    console.log("RuleComponent", "onCreateCondition")
     Object.assign(event.payload, { rule:this.rule })
     this.createCondition.emit( event )
   }
