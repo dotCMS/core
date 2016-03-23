@@ -385,17 +385,22 @@ function addTagValue(tag) {
 	if (contentSearchField) {
 		var contentSearchFieldEl = document.getElementById(contentSearchField)
 
-		if (contentSearchFieldEl.value.length) {
-			contentSearchFieldEl.value += ", ";
+		if (contentSearchFieldEl) {
+			if (contentSearchFieldEl.value.length) {
+				contentSearchFieldEl.value += ", ";
+			}
+			contentSearchFieldEl.value += tag;
+
+			contentSearchFieldEl.onchange();
 		}
-		contentSearchFieldEl.value += tag;
-		contentSearchFieldEl.onchange();
 	}
 
-	if (tagValues.value.length) {
-		tagValues.value += ", ";
+	if (tagValues && tagValues.value) {
+		if (tagValues.value.length) {
+			tagValues.value += ", ";
+		}
+		tagValues.value += tag;
 	}
-	tagValues.value += tag;
 }
 
 function clearTag(e) {
@@ -502,7 +507,7 @@ function removeTagValue(tagToRemove) {
 	tagToRemove = LTrim(tagToRemove);
 
 	var tagValues = document.getElementById(tagVelocityVarName + "Content");
-	if (tagValues.value.length) {
+	if (tagValues && tagValues.value.length) {
 		var tagsExisting = tagValues.value.split(",");
 		var updatedTagValues = [];
 

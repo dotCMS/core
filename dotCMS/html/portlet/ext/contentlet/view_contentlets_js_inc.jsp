@@ -423,6 +423,7 @@
                     <% }%>
 
                 var type = field["fieldFieldType"];
+
             if(type=='checkbox'){
                    //checkboxes fields
                     var option = field["fieldValues"].split("\r\n");
@@ -593,39 +594,29 @@
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
                         dijit.registry.remove(selectedStruct + fieldContentlet + "Field");
 
+                        <%
+                            // Search for the selected host
+                            String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                            boolean isSelectedHost = UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts");
+                        %>
+
                         var result = [
                             "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
-                            "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
+                            "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" onkeyup=\"tagOnKeyUp('" + searchFieldId + "'<%=isSelectedHost ? ",'" + selectedHost + "'": ""%>)\"/>",
                             "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
                             "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
                             "</div>"
                         ].join("");
 
-                        dojo.addOnLoad(function() {
-                          var tagField = dojo.byId(fieldId);
-                          dojo.connect(tagField, "onkeyup", function(e) {
-
-                            <%
-                                //Search for the selected host
-                                String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-                                if(UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts")) {
-                            %>
-                                    suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
-                            <%
-                                } else {
-                            %>
-                                    suggestTagsForSearch(e, searchFieldId);
-                            <%
-                                }
-                            %>
-                          });
-                          dojo.connect(tagField, "onblur", closeSuggetionBox);
-                          if (value.length) {
-                            fillExistingTags(fieldId, value, searchFieldId);
-                          }
-                        })
+                        var self = this;
+                        this[fieldId] = function (){
+                            if (value.length) {
+                                fillExistingTags(fieldId, value, searchFieldId);
+                            }
+                        };
+                        document.addEventListener('search_fields_table_update_done', this[fieldId]);
 
                         setDotFieldTypeStr = setDotFieldTypeStr
                                             + "dojo.attr("
@@ -694,6 +685,15 @@
 
         }
 
+
+        function tagOnKeyUp(searchFieldId, selectedHost){
+            var event = window.event || arguments.callee.caller.arguments[0]
+            console.log('event', event);
+            console.log('searchFieldId', searchFieldId);
+            console.log('selectedHost', selectedHost);
+
+            suggestTagsForSearch(event, searchFieldId, selectedHost);
+        }
 
 		function updateSelectedStructAux(){
 			structureInode = dijit.byId('selectedStructAux').value;
@@ -1282,6 +1282,8 @@
                         htmlstr += "<div class='clear'></div>";
                 }
                 $('search_fields_table').update(htmlstr);
+                document.dispatchEvent(new Event('search_fields_table_update_done'));
+
                 <%if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)){%>
                   if(hasHostField){
                      dojo.byId("filterSystemHostTable").style.display = "";
@@ -1393,6 +1395,7 @@
 
 	            if(dijit.byId('structure_inode')) {
 	              structureInode  = dijit.byId('structure_inode').getValue();
+                  console.log('structureInode', structureInode);
 	            }
 
                 if(structureInode ==""){
