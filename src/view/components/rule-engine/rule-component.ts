@@ -21,7 +21,7 @@ import {
     RULE_RULE_ACTION_UPDATE_PARAMETER,
     V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
     RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE,
-    RULE_CONDITION_GROUP_CREATE, RuleService, IBundle
+    RULE_CONDITION_GROUP_CREATE, RuleService
 } from "../../../api/rule-engine/Rule";
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
@@ -34,6 +34,7 @@ import {
     RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
 } from "./rule-engine.container";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {PushPublishDialogContainer} from "../common/push-publish/push-publish-dialog-container";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -48,40 +49,17 @@ var rsrc = {
 
 @Component({
   selector: 'rule',
-  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption],
+  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle,
+    RuleActionComponent,
+    ConditionGroupComponent,
+    InputText,
+    Dropdown,
+    InputOption,
+    PushPublishDialogContainer],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
-  <div class="ui dimmer modals page transition visible active" *ngIf="showAddToBundle">
-    <div class="ui modal" style="display: block; width: 400px; margin: -103px 0 0 -200px;">
-      <i class="close icon" (click)="toggleAddToBundleModal($event)"></i>
-      <div class="header">Add to Bundle</div>
-      <div class="content">
-        <cw-input-dropdown
-          flex="none"
-          placeholder="Pick a Bundle"
-          (click)="$event.stopPropagation()"
-          (change)="setSelectedBundle($event)">
-          <cw-input-option
-              value="new"
-              label="Add new bundle"
-              ></cw-input-option>
-          <cw-input-option
-              *ngFor="#opt of bundleStores"
-              [value]="opt.id"
-              [label]="opt.name"
-              ></cw-input-option>
-        </cw-input-dropdown>
-      </div>
-      <div class="actions">
-        <div class="ui black deny button" (click)="toggleAddToBundleModal($event)">
-          Cancel
-        </div>
-        <div class="ui positive right labeled icon button" (click)="addRuleToBundle($event)">
-          Add to Bundle
-          <i class="checkmark icon"></i>
-        </div>
-      </div>
-    </div>
-  </div>
+  <cw-push-publish-dialog-container 
+      [assetId]="rule.id" 
+      [hidden]="!showPushPublishDialog"> </cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
@@ -122,7 +100,7 @@ var rsrc = {
       </cw-toggle-input>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="toggleExtraMenu($event)">
+          <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">
             <i class="ellipsis vertical icon"></i>
           </button>
           <button class="ui button cw-add-group" arial-label="Add Group" (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
@@ -130,8 +108,8 @@ var rsrc = {
           </button>
         </div>
       </div>
-      <div class="ui vertical menu" *ngIf="showExtraMenu">
-        <a class="item" (click)=toggleAddToBundleModal($event)>Add to bundle</a>
+      <div class="ui vertical menu" *ngIf="showMoreMenu">
+        <a class="item" (click)="showPushPublishDialog = true; $event.stopPropagation()">Add to bundle</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -211,37 +189,22 @@ class RuleComponent {
 
   hideFireOn:boolean
   formModel:ControlGroup
-  elementRef:ElementRef
 
   private fireOn:any
   private _rsrcCache:{[key:string]:Observable<string>}
-  private _user:UserModel
-  resources:I18nService
-  private showExtraMenu:Boolean;
-  private showAddToBundle:Boolean;
-  private ruleService:RuleService;
-  private bundleStores:IBundle[];
-  private bundleStoreSelected:IBundle;
-  private addNewBundle:Boolean
+
+  showMoreMenu:boolean = false
+  showPushPublishDialog:boolean=false
 
 
-  constructor(fb:FormBuilder,
-              user:UserModel,
-              elementRef:ElementRef,
-              resources:I18nService,
-              apiRoot:ApiRoot,
-              ruleService:RuleService) {
-    this._user = user
-    this.elementRef = elementRef
-    this.resources = resources
+  constructor(private _user:UserModel,
+              public elementRef:ElementRef,
+              public resources:I18nService,
+              public ruleService:RuleService,
+              public apiRoot:ApiRoot,
+              fb:FormBuilder) {
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
-    this.showExtraMenu = false
-    this.showAddToBundle = false
-    this.ruleService = ruleService
-    this.bundleStores = []
-    this.bundleStoreSelected = null
-
 
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
     this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
@@ -397,53 +360,7 @@ class RuleComponent {
     }
   }
 
-  toggleExtraMenu(event:any) {
-    event.stopPropagation()
-    this.showExtraMenu = !this.showExtraMenu
-  }
 
-  toggleAddToBundleModal(event:any) {
-    event.stopPropagation()
-
-    if (!this.bundleStores.length) {
-      this.ruleService.getBundleStores().subscribe((data:IBundle[]) => {
-        this.bundleStores = data;
-        this.showAddToBundle = !this.showAddToBundle
-      });
-    } else {
-      this.showAddToBundle = !this.showAddToBundle
-    }
-
-    if (this.showExtraMenu) {
-      this.showExtraMenu = false
-    }
-  }
-
-  addRuleToBundle(event:any) {
-    event.stopPropagation()
-
-    this.ruleService.addRuleToBundle(this.rule._id, {id: this.bundleStoreSelected.id, name: this.bundleStoreSelected.name}).subscribe((result:any)=> {
-      if (!result.errors) {
-        this.showAddToBundle = false;
-      } else {
-        console.log("Show error to user") //TODO: need to show error to use
-      }
-    })
-  }
-
-  setSelectedBundle(bundleId:string) {
-    if (bundleId === "new") {
-      console.log("Add new bundle")
-      // TODO: need to be able to add new bundles
-    } else {
-      let self = this;
-      this.bundleStores.forEach(function(bundle) {
-        if (bundle.id === bundleId) {
-          self.bundleStoreSelected = bundle
-        }
-      })
-    }
-  }
 }
 
 export {RuleComponent}

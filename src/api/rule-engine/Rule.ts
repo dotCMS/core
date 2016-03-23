@@ -272,6 +272,8 @@ export class RuleService {
   _conditionTypes:{[key:string]:ServerSideTypeModel} = {}
   private _conditionTypesAry:ServerSideTypeModel[] = []
 
+  bundles$:BehaviorSubject<IBundle[]> = new BehaviorSubject([]);
+  private _bundlesAry:IBundle[] = []
 
   constructor(private _apiRoot:ApiRoot, private _http:Http, private _resources:I18nService) {
     //this.loggedUser = this.getLoggedUser();
@@ -321,9 +323,6 @@ export class RuleService {
       url: this._rulesEndpointUrl
     }).map(RuleService.fromServerRulesTransformFn);
   }
-
-
-
 
   loadRule(id:string):Observable<RuleModel|CwError> {
     return this.request({
@@ -412,7 +411,20 @@ export class RuleService {
     })
   }
 
-  getBundleStores():Observable<IBundle[]> {
+  loadBundleStores(){
+    let obs
+    if (this._bundlesAry.length) {
+      obs = Observable.fromArray(this._bundlesAry)
+    } else {
+      obs = this._doLoadBundleStores().map((bundles:IBundle[])=> {
+        this._bundlesAry = bundles
+        return bundles
+      })
+    }
+    obs.subscribe((bundles) => this.bundles$.next(bundles))
+  }
+
+  _doLoadBundleStores():Observable<IBundle[]> {
     return this.getLoggedUser().flatMap((user:IUser) => {
       return this.request({
         method: RequestMethod.Get,
@@ -420,7 +432,6 @@ export class RuleService {
       }).map(RuleService.fromServerBundleTransformFn)
     })
   }
-
 
   private loadConditionTypes():Observable<ServerSideTypeModel[]> {
     let obs

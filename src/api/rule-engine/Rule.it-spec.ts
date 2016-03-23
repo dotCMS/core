@@ -389,7 +389,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   })
 
   it("Should get bundle store information", function (done) {
-    ruleService.getBundleStores().subscribe((bundles:IBundle[])=> {
+    ruleService._doLoadBundleStores().subscribe((bundles:IBundle[])=> {
       expect(bundles).toBeDefined()
       done()
     })
