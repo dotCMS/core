@@ -82,6 +82,24 @@ var project = {
       'angular-material/': [
         { dev: 'angular-material.layouts.css', prod: 'angular-material.layouts.min.css', out: 'angular-material.layouts.css' }
       ],
+      'angular2-google-maps/': [
+        { dev: 'bundles/angular2-google-maps.js', prod: 'bundles/angular2-google-maps.min.js', out: 'bundles/angular2-google-maps.js' },
+        { dev: 'core.js', prod: 'core.js', out: 'core.js' },
+        { dev: 'directives.js', prod: 'directives.js', out: 'directives.js' },
+        { dev: 'directives-const.js', prod: 'directives-const.js', out: 'directives-const.js' },
+        { dev: 'events.js', prod: 'events.js', out: 'events.js' },
+        { dev: 'services.js', prod: 'services.js', out: 'services.js' },
+        { all: 'directives/google-map.js' },
+        { all: 'directives/google-map-info-window.js' },
+        { all: 'directives/google-map-marker.js' },
+        { all: 'services/google-maps-api-wrapper.js' },
+        { all: 'services/google-maps-types.js' },
+        { all: 'services/info-window-manager.js' },
+        { all: 'services/marker-manager.js' },
+        { all: 'services/maps-api-loader/lazy-maps-api-loader.js'},
+        { all: 'services/maps-api-loader/maps-api-loader.js' },
+        { all: 'services/maps-api-loader/noop-maps-api-loader.js' }
+      ],
       'core-js/client/': [
         { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
       ],
@@ -111,7 +129,8 @@ var project = {
     libKeys.forEach(function(basePath) {
       var lib = libs[basePath]
       lib.forEach(function(libFile){
-        if(libFile[config.buildTarget] != null) {
+        // build target is either dev or prod; we're counting the number of file copy promises we'll need to wait for.
+        if((libFile[config.buildTarget] != null) || (libFile['all'] != null)) {
           count++
         }
       })
@@ -121,11 +140,12 @@ var project = {
     libKeys.forEach(function(basePath) {
       var lib = libs[basePath]
       lib.forEach(function(libFile){
-        var inFile = libFile[config.buildTarget]
+        var inFile = libFile[config.buildTarget] || libFile['all']
         if(inFile) {
-          gulp.src('./node_modules/' + basePath + libFile[config.buildTarget])
+          gulp.src('./node_modules/' + basePath + inFile)
               .pipe(rename(function (path) {
-                path.basename = libFile.out.substring(0, libFile.out.lastIndexOf("."))
+                var outFile = libFile['out'] || libFile['all']
+                path.basename = outFile.substring(0, outFile.lastIndexOf("."))
                 return path
               }))
               .pipe(gulp.dest(baseOutPath + basePath)).on('finish', done);

@@ -1,10 +1,8 @@
-import {Attribute, Component, View} from 'angular2/core'
+import {Attribute, Component} from 'angular2/core'
 import {GoogleMapDialogComponent} from "./google-map-dialog.component";
 
 @Component({
-  selector: 'demo'
-})
-@View({
+  selector: 'demo',
   directives: [GoogleMapDialogComponent],
   template: `
     <cw-google-map-dialog-component [hidden]="!showingMap" [apiKey]="apiKey"></cw-google-map-dialog-component>
@@ -27,6 +25,5 @@ export class App {
     this.apiKey = "AIzaSyBqi1S9mgFHW7J-PkAp1hd1VWRKILgkL-8"
     console.log("App", "toggleMap", this.showingMap)
   }
-
 
 }
