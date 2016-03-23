@@ -325,6 +325,11 @@ function animateExitingTag(tagSuggested) {
 
 function useThisTagForSearch(e) {
 	var tagLink = e.target;
+
+	if(tagLink.className == 'tagIcon'){
+		tagLink = tagLink.parentNode;
+	}
+
 	var tagSuggested = tagLink.text || tagLink.value.replace(",", "");
 	var tagExists = isTagAdded(tagSuggested);
 	if (tagExists) {

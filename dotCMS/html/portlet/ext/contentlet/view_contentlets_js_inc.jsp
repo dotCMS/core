@@ -688,9 +688,6 @@
 
         function tagOnKeyUp(searchFieldId, selectedHost){
             var event = window.event || arguments.callee.caller.arguments[0]
-            console.log('event', event);
-            console.log('searchFieldId', searchFieldId);
-            console.log('selectedHost', selectedHost);
 
             suggestTagsForSearch(event, searchFieldId, selectedHost);
         }
