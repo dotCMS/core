@@ -3,25 +3,25 @@ import {CORE_DIRECTIVES} from "angular2/common";
 import {ModalDialogComponent} from "../dialog-component";
 import {IBundle, RuleService} from "../../../../api/rule-engine/Rule";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
+
+// TODO: by default selected first value in dropdown
 @Component({
-  selector: 'cw-push-publish-dialog-component',
+  selector: 'cw-add-to-bundle-dialog-component',
   directives: [CORE_DIRECTIVES, ModalDialogComponent, Dropdown, InputOption],
   template: `<cw-modal-dialog
     [headerText]="'Add to Bundle'"
-    [okText]="'Add to Bundle'"
+    [okText]="'Add'"
     [hidden]="hidden"
     [okEnabled]="selectedBundle != null"
+    [errorMessage]="errorMessage"
     (ok)="addToBundle.emit(selectedBundle)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
-      flex="90"
-      placeholder="Pick a Bundle"
+      flex
+      [value]="bundleStores[0]?.id"
+      allowAdditions="true"
       (click)="$event.stopPropagation()"
       (change)="setSelectedBundle($event)">
-    <cw-input-option
-        value="new"
-        label="Add new bundle"
-    ></cw-input-option>
     <cw-input-option
         *ngFor="#opt of bundleStores"
         [value]="opt.id"
@@ -33,9 +33,9 @@ import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 })
 export class PushPublishDialogComponent {
   @Input() hidden:boolean = false
-
   @Input() bundleStores:IBundle[];
   @Input() addNewBundle:boolean
+  @Input() errorMessage:string = null
 
 
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
@@ -52,7 +52,8 @@ export class PushPublishDialogComponent {
 
 
   ngOnChanges(change){
-    if(change.bundleStores){
+    if (change.bundleStores) {
+      this.selectedBundle = change.bundleStores.currentValue[0];
       console.log("PushPublishDialogComponent", "ngOnChanges", change.bundleStores.currentValue)
     }
   }
@@ -60,17 +61,15 @@ export class PushPublishDialogComponent {
 
 
   setSelectedBundle(bundleId:string) {
-    if (bundleId === "new") {
-      console.log("Add new bundle")
-      // TODO: need to be able to add new bundles
-    } else {
-      this.selectedBundle = null
-      this.bundleStores.forEach((bundle) => {
-        if (bundle.id === bundleId) {
-          this.selectedBundle = bundle
-        }
-      })
+    this.selectedBundle = {
+      id: bundleId,
+      name: bundleId
     }
+    this.bundleStores.forEach((bundle) => {
+      if (bundle.id === bundleId) {
+        this.selectedBundle = bundle
+      }
+    })
   }
 }
 
