@@ -11,13 +11,14 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 
 abstract class OSGIBaseAJAX extends AjaxAction {
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+		if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
     		return ;
     	}
 		
