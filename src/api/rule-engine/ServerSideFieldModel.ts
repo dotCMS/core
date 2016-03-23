@@ -70,7 +70,7 @@ export class ServerSideFieldModel extends CwModel {
   isValid():boolean {
     let valid = true
     if (this.parameterDefs) {
-      Object.keys(this.parameterDefs).forEach(key=> {
+      Object.keys(this.parameterDefs).some(key=> {
         let paramDef = this.getParameterDef(key)
         let param = this.parameters[key]
         var value = param.value;
@@ -78,6 +78,9 @@ export class ServerSideFieldModel extends CwModel {
           valid = valid && ( paramDef.inputType.verify(value) == null )
         } catch (e) {
           console.error(e)
+        }
+        if(paramDef.inputType.name == 'comparison' && paramDef.inputType.options[value].rightHandArgCount == 0){
+          return true;
         }
       })
     }
