@@ -36,10 +36,10 @@ public class SessionAttributeConditionlet extends Conditionlet<SessionAttributeC
     public static final String SESSION_VALUE = "sessionValue";
 
     private static final ParameterDefinition<TextType> sessionKey = new ParameterDefinition<>(
-        1, SESSION_KEY,new TextInput<>(new TextType().minLength(1)));
+        1, SESSION_KEY,new TextInput<>(new TextType().required()));
 
     private static final ParameterDefinition<TextType> sessionValue = new ParameterDefinition<>(
-        2, SESSION_VALUE, new TextInput<>(new TextType())
+        2, SESSION_VALUE, new TextInput<>(new TextType().required())
     );
 
     public SessionAttributeConditionlet() {
