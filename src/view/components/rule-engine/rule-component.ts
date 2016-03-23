@@ -59,7 +59,9 @@ var rsrc = {
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
   <cw-push-publish-dialog-container 
       [assetId]="rule.id" 
-      [hidden]="!showPushPublishDialog"> </cw-push-publish-dialog-container>
+      [hidden]="!showPushPublishDialog"
+      (close)="showPushPublishDialog = false; showMoreMenu=false"
+      > </cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >

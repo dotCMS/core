@@ -39,8 +39,7 @@ export class PushPublishDialogContainer {
 
 
   addToBundle(bundle:IBundle) {
-    debugger
-    this.ruleService.addRuleToBundle(this.assetId, event).subscribe((result:any)=> {
+    this.ruleService.addRuleToBundle(this.assetId, bundle).subscribe((result:any)=> {
       if (!result.errors) {
         this.hidden = false;
       } else {

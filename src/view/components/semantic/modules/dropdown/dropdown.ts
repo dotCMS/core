@@ -39,7 +39,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   <i class="dropdown icon"></i>
   <div class="default text">{{placeholder}}</div>
   <div class="menu" tabindex="-1">
-    <div *ngFor="var opt of _options | async" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
+    <div *ngFor="#opt of _options | async" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
       <i [ngClass]="opt.icon" ></i>
       {{opt.label}}
     </div>
@@ -133,6 +133,13 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     })
   }
 
+  hasOption(option:InputOption):boolean {
+    let x = this._optionsAry.filter((opt)=>{
+      return option.value == opt.value
+    })
+    return x.length !== 0
+  }
+
   addOption(option:InputOption) {
     this._optionsAry = this._optionsAry.concat(option)
     this._options.next(this._optionsAry)
@@ -143,7 +150,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
 
   updateOption(option:InputOption){
     this._optionsAry = this._optionsAry.filter((opt)=>{
-      return opt !== option
+      return opt.value !== option.value
     })
     this.addOption(option)
   }
@@ -328,7 +335,11 @@ export class InputOption {
 
   ngOnChanges(change) {
     if (!this._isRegistered) {
-      this._dropdown.addOption(this);
+      if(this._dropdown.hasOption(this)){
+        this._dropdown.updateOption(this);
+      } else{
+        this._dropdown.addOption(this);
+      }
       this._isRegistered = true;
     } else {
       if(!this.label){
