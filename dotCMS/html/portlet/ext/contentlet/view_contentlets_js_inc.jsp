@@ -604,9 +604,10 @@
                             "</div>"
                         ].join("");
 
-                        document.addEventListener('search_fields_table_update_done', function (e) {
+                        var self = this;
+                        this[fieldId] = function (e) {
 
-                            document.removeEventListener('search_fields_table_update_done', this);
+                            document.removeEventListener('search_fields_table_update_done', self[fieldId]);
                             console.log("fieldId", fieldId);
                             var tagField = dojo.byId(fieldId);
                             console.log("tagField", tagField);
@@ -629,11 +630,10 @@
                             });
                             dojo.connect(tagField, "onblur", closeSuggetionBox);
                             if (value.length) {
-                            fillExistingTags(fieldId, value, searchFieldId);
+                                fillExistingTags(fieldId, value, searchFieldId);
                             }
-
-
-                        })
+                        };
+                        document.addEventListener('search_fields_table_update_done', this[fieldId]);
 
                         setDotFieldTypeStr = setDotFieldTypeStr
                                             + "dojo.attr("
