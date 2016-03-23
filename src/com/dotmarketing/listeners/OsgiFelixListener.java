@@ -18,21 +18,42 @@ public class OsgiFelixListener implements ServletContextListener {
 		// delay init 30 sec
 		final int delay = Config.getIntProperty("felix.osgi.init.delay", 30000);
 		
+		final boolean waitForDotCMS = Config.getBooleanProperty("felix.osgi.wait.for.dotcms", true);
+		
+		
 		if (Config.getBooleanProperty("felix.osgi.enable", true)) {
-			if (delay > 0) { // if we spin up a new thread to init OSGI
+			if (delay > 0 || waitForDotCMS) { // if we spin up a new thread to init OSGI
 				class OsgiInitThread extends Thread {
 					 OsgiInitThread(){
-						 super.setName("OSGI Startup Thread - delaying init:" + delay + "ms");
+						 if(waitForDotCMS){
+							 super.setName("OSGI Startup Thread - delaying init " + delay + "ms");
+						 }
+						 else{
+							 super.setName("OSGI Startup Thread - waiting for dotCMS init");
+						 }
+						 
 					 }
 					@Override
 					public void run() {
-						try {
-							Thread.sleep(delay);
-							initializeOsgi(context);
-						} catch (InterruptedException e) {
-							Logger.error(OsgiFelixListener.class, e.getMessage(), e);
-							//throw new DotRuntimeException(e.getMessage(),e);
+						
+						if(waitForDotCMS){
+							while((System.getProperty(WebKeys.DOTCMS_STARTED_UP) == null)){
+								try {
+									Thread.sleep(1000);
+								} catch (InterruptedException e) {
+									Logger.error(OsgiFelixListener.class, e.getMessage(), e);
+								}
+							}
 						}
+						else{
+							try {
+								Thread.sleep(delay);
+							} catch (InterruptedException e) {
+								Logger.error(OsgiFelixListener.class, e.getMessage(), e);
+								//throw new DotRuntimeException(e.getMessage(),e);
+							}
+						}
+						initializeOsgi(context);
 					}
 				}
 				OsgiInitThread thread = new OsgiInitThread();

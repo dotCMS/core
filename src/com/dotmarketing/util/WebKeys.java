@@ -694,4 +694,7 @@ public final class WebKeys {
 	
 	public static final String OSGI_ENABLED="felix.osgi.enabled";
 	
+	
+	public static final String DOTCMS_STARTED_UP="dotcms.started.up";
+	
 }
