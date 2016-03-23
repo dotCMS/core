@@ -15,6 +15,7 @@ import {CwError} from "../system/http-response-util";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 import {IUser} from "./Rule";
 import {IBundle} from "./Rule";
+import {IPublishEnvironment} from "./Rule";
 
 
 var injector = Injector.resolveAndCreate([
@@ -397,15 +398,26 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("Should add rule to bundle", function (done) {
     ruleService.addRuleToBundle("0862904c-105d-4d8d-8991-e7ec34b132ae", {id: "bundleTest", name: "bundleTest"}).subscribe((result:any)=> {
-      console.log('RULE ADDED BITCH');
-      console.log(result);
+      expect(result.errors).toBe(0)
+      expect(result.total).toBe(1)
+      done()
+    })
+  })
+
+  it("Should get push publish environments", function (done) {
+    ruleService._doLoadPublishEnvironments().subscribe((publishEnvironments:IPublishEnvironment[])=> {
+      console.log(publishEnvironments);
+      expect(publishEnvironments).toBeDefined()
+      done()
+    })
+  })
+
+  it("Should push publish rule directly", function (done) {
+    ruleService.pushPublishRule("0862904c-105d-4d8d-8991-e7ec34b132ae", "34e427cf-d7e4-4ff2-8b5f-b432bf0f60e5").subscribe((result:any)=> {
       expect(result.errors).toBe(0);
       expect(result.total).toBe(1);
       done()
     })
   })
-
-
-
 
 });

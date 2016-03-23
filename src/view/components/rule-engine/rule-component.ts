@@ -34,7 +34,8 @@ import {
     RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
 } from "./rule-engine.container";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
-import {PushPublishDialogContainer} from "../common/push-publish/add-to-bundle-dialog-container";
+import {AddToBundleDialogContainer} from "../common/push-publish/add-to-bundle-dialog-container";
+import {PushPublishDialogContainer} from "../common/push-publish/push-publish-dialog-container"
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -55,13 +56,17 @@ var rsrc = {
     InputText,
     Dropdown,
     InputOption,
+    AddToBundleDialogContainer,
     PushPublishDialogContainer],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
   <cw-add-to-bundle-dialog-container
-      [assetId]="rule.id" 
+      [assetId]="rule.id"
+      [hidden]="!showAddToBundleDialog"
+      (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
+  <cw-push-publish-dialog-container
+      [assetId]="rule.id"
       [hidden]="!showPushPublishDialog"
-      (close)="showPushPublishDialog = false; showMoreMenu=false"
-      > </cw-add-to-bundle-dialog-container>
+      (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
@@ -111,7 +116,8 @@ var rsrc = {
         </div>
       </div>
       <div class="ui vertical menu" *ngIf="showMoreMenu">
-        <a class="item" (click)="showPushPublishDialog = true; $event.stopPropagation()">Add to bundle</a>
+        <a class="item" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
+        <a class="item" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -196,7 +202,8 @@ class RuleComponent {
   private _rsrcCache:{[key:string]:Observable<string>}
 
   showMoreMenu:boolean = false
-  showPushPublishDialog:boolean=false
+  showAddToBundleDialog:boolean = false
+  showPushPublishDialog:boolean = false
 
 
   constructor(private _user:UserModel,

@@ -1,28 +1,27 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
 import {ModalDialogComponent} from "../dialog-component";
-import {IBundle, RuleService} from "../../../../api/rule-engine/Rule";
+import {IPublishEnvironment, RuleService} from "../../../../api/rule-engine/Rule";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 
 @Component({
-  selector: 'cw-add-to-bundle-dialog-component',
+  selector: 'cw-push-publish-dialog-component',
   directives: [CORE_DIRECTIVES, ModalDialogComponent, Dropdown, InputOption],
   template: `<cw-modal-dialog
-    [headerText]="'Add to Bundle'"
-    [okText]="'Add'"
+    [headerText]="'Push Publish'"
+    [okText]="'Push'"
     [hidden]="hidden"
-    [okEnabled]="selectedBundle != null"
+    [okEnabled]="selectedEnvironment != null"
     [errorMessage]="errorMessage"
-    (ok)="addToBundle.emit(selectedBundle)"
+    (ok)="doPushPublish.emit(selectedEnvironment)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
       flex
-      [value]="bundleStores[0]?.id"
-      allowAdditions="true"
+      [value]="environmentStores[0]?.id"
       (click)="$event.stopPropagation()"
-      (change)="setSelectedBundle($event)">
+      (change)="setselectedEnvironment($event)">
     <cw-input-option
-        *ngFor="#opt of bundleStores"
+        *ngFor="#opt of environmentStores"
         [value]="opt.id"
         [label]="opt.name"
     ></cw-input-option>
@@ -30,36 +29,28 @@ import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 </cw-modal-dialog>`
   , changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddToBundleDialogComponent {
+export class PushPublishDialogComponent {
   @Input() hidden:boolean = false
-  @Input() bundleStores:IBundle[];
+  @Input() environmentStores:IPublishEnvironment[];
   @Input() errorMessage:string = null
 
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
-  @Output() addToBundle:EventEmitter<IBundle> = new EventEmitter(false)
+  @Output() doPushPublish:EventEmitter<IPublishEnvironment> = new EventEmitter(false)
 
-  public selectedBundle:IBundle;
+  public selectedEnvironmentId:string;
 
   constructor() { }
 
   ngOnChanges(change){
-    if (change.bundleStores) {
-      this.selectedBundle = change.bundleStores.currentValue[0];
-      console.log("AddToBundleDialogComponent", "ngOnChanges", change.bundleStores.currentValue)
+    if (change.environmentStores) {
+      this.selectedEnvironment = change.environmentStores.currentValue[0];
+      console.log("PushPublishDialogComponent", "ngOnChanges", change.environmentStores.currentValue)
     }
   }
 
-  setSelectedBundle(bundleId:string) {
-    this.selectedBundle = {
-      id: bundleId,
-      name: bundleId
-    }
-    this.bundleStores.forEach((bundle) => {
-      if (bundle.id === bundleId) {
-        this.selectedBundle = bundle
-      }
-    })
+  setselectedEnvironment(environmentId:string) {
+    this.selectedEnvironmentId = environmentId
   }
 }
 
