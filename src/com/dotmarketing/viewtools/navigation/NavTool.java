@@ -97,6 +97,7 @@ public class NavTool implements ViewTool {
             List<String> folderIds=new ArrayList<String>();
             result.setChildren(children);
             result.setChildrenFolderIds(folderIds);
+            result.setShowOnMenu(folder.isShowOnMenu());
 
             List menuItems;
             if(path.equals("/"))
