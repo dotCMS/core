@@ -13,6 +13,9 @@ import {HTTP_PROVIDERS} from "angular2/http";
 import {Observable} from "rxjs/Observable";
 import {CwError} from "../system/http-response-util";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {IUser} from "./Rule";
+import {IBundle} from "./Rule";
+import {IPublishEnvironment} from "./Rule";
 
 
 var injector = Injector.resolveAndCreate([
@@ -374,5 +377,47 @@ describe('Integration.api.rule-engine.RuleService', function () {
     })
   })
 
+  it("Should get logged user information", function (done) {
+    ruleService.getLoggedUser().subscribe((user:IUser)=> {
+      expect(user).toEqual({
+        firstName: "Admin",
+        lastName: "User",
+        roleId: "e7d4e34e-5127-45fc-8123-d48b62d510e3",
+        userId: "dotcms.org.1"
+      }, "We get user information correctly");
+      done()
+    })
+  })
+
+  it("Should get bundle store information", function (done) {
+    ruleService._doLoadBundleStores().subscribe((bundles:IBundle[])=> {
+      expect(bundles).toBeDefined()
+      done()
+    })
+  })
+
+  it("Should add rule to bundle", function (done) {
+    ruleService.addRuleToBundle("0862904c-105d-4d8d-8991-e7ec34b132ae", {id: "bundleTest", name: "bundleTest"}).subscribe((result:any)=> {
+      expect(result.errors).toBe(0)
+      expect(result.total).toBe(1)
+      done()
+    })
+  })
+
+  it("Should get push publish environments", function (done) {
+    ruleService._doLoadPublishEnvironments().subscribe((publishEnvironments:IPublishEnvironment[])=> {
+      console.log(publishEnvironments);
+      expect(publishEnvironments).toBeDefined()
+      done()
+    })
+  })
+
+  it("Should push publish rule directly", function (done) {
+    ruleService.pushPublishRule("0862904c-105d-4d8d-8991-e7ec34b132ae", "34e427cf-d7e4-4ff2-8b5f-b432bf0f60e5").subscribe((result:any)=> {
+      expect(result.errors).toBe(0);
+      expect(result.total).toBe(1);
+      done()
+    })
+  })
 
 });

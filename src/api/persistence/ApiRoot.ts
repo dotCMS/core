@@ -44,6 +44,7 @@ export class ApiRoot {
     var headers = new Headers();
     headers.append("com.dotmarketing.session_host", this.siteId)
     headers.append('Accept', 'application/json')
+    //headers.append('Content-Type', 'application/json')
     if (this.authToken) {
       headers.append('Authorization', this.authToken)
     }

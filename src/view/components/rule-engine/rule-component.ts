@@ -21,7 +21,7 @@ import {
     RULE_RULE_ACTION_UPDATE_PARAMETER,
     V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
     RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE,
-    RULE_CONDITION_GROUP_CREATE
+    RULE_CONDITION_GROUP_CREATE, RuleService
 } from "../../../api/rule-engine/Rule";
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
@@ -34,10 +34,11 @@ import {
     RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
 } from "./rule-engine.container";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {AddToBundleDialogContainer} from "../common/push-publish/add-to-bundle-dialog-container";
+import {PushPublishDialogContainer} from "../common/push-publish/push-publish-dialog-container"
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
-
 var rsrc = {
   fireOn: {
     EVERY_PAGE: 'Every Page',
@@ -49,8 +50,23 @@ var rsrc = {
 
 @Component({
   selector: 'rule',
-  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption],
+  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle,
+    RuleActionComponent,
+    ConditionGroupComponent,
+    InputText,
+    Dropdown,
+    InputOption,
+    AddToBundleDialogContainer,
+    PushPublishDialogContainer],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
+  <cw-add-to-bundle-dialog-container
+      [assetId]="rule.id"
+      [hidden]="!showAddToBundleDialog"
+      (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
+  <cw-push-publish-dialog-container
+      [assetId]="rule.id"
+      [hidden]="!showPushPublishDialog"
+      (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
@@ -91,13 +107,18 @@ var rsrc = {
       </cw-toggle-input>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button cw-delete-rule" aria-label="Delete Rule" (click)="deleteRuleClicked($event)">
-            <i class="trash icon"></i>
+          <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">
+            <i class="ellipsis vertical icon"></i>
           </button>
           <button class="ui button cw-add-group" arial-label="Add Group" (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
+      </div>
+      <div class="ui vertical menu" *ngIf="showMoreMenu">
+        <a class="item" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
+        <a class="item" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
+        <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
   </div>
@@ -176,25 +197,23 @@ class RuleComponent {
 
   hideFireOn:boolean
   formModel:ControlGroup
-  elementRef:ElementRef
 
   private fireOn:any
   private _rsrcCache:{[key:string]:Observable<string>}
-  private _user:UserModel
-  resources:I18nService
+
+  showMoreMenu:boolean = false
+  showAddToBundleDialog:boolean = false
+  showPushPublishDialog:boolean = false
 
 
-  constructor(fb:FormBuilder,
-              user:UserModel,
-              elementRef:ElementRef,
-              resources:I18nService,
-              apiRoot:ApiRoot) {
-    this._user = user
-    this.elementRef = elementRef
-    this.resources = resources
+  constructor(private _user:UserModel,
+              public elementRef:ElementRef,
+              public resources:I18nService,
+              public ruleService:RuleService,
+              public apiRoot:ApiRoot,
+              fb:FormBuilder) {
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
-
 
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
     this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
@@ -349,6 +368,8 @@ class RuleComponent {
       this.deleteRule.emit({type: RULE_DELETE, payload: {rule: this.rule}})
     }
   }
+
+
 }
 
 export {RuleComponent}

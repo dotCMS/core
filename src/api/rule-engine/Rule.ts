@@ -1,5 +1,5 @@
 import {EventEmitter, Injectable} from 'angular2/core'
-import {Http, Response, RequestMethod, Request} from 'angular2/http'
+import {Http, Response, RequestMethod, Request, Headers} from 'angular2/http'
 import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
@@ -56,6 +56,23 @@ export interface IRecord {
   deleting?:boolean
   errors?:any
   set?(string, any):any
+}
+
+export interface IUser {
+  firstName?: string,
+  lastName?: string,
+  roleId?: string,
+  userId?: string
+}
+
+export interface IBundle {
+  name?: string,
+  id?: string
+}
+
+export interface IPublishEnvironment {
+  name?: string,
+  id?: string
 }
 
 export interface IRuleAction extends IRecord {
@@ -243,6 +260,12 @@ export class RuleService {
   private _actionsEndpointUrl:string
   private _conditionTypesEndpointUrl:string
   private _ruleActionTypesEndpointUrl:string
+  private _bundleStoreUrl:string
+  private _loggedUserUrl:string
+  private _addToBundleUrl:string
+  private _pushEnvironementsUrl:string
+  private _pushRuleUrl:string
+
 
   ruleActionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
   conditionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
@@ -256,12 +279,22 @@ export class RuleService {
   _conditionTypes:{[key:string]:ServerSideTypeModel} = {}
   private _conditionTypesAry:ServerSideTypeModel[] = []
 
+  bundles$:BehaviorSubject<IBundle[]> = new BehaviorSubject([]);
+  environments$:BehaviorSubject<IDBEnvironment[]> = new BehaviorSubject([]);
+  private _bundlesAry:IBundle[] = []
+  private _environmentsAry:IDBEnvironment[] = []
 
   constructor(private _apiRoot:ApiRoot, private _http:Http, private _resources:I18nService) {
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
     this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
     this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`
     this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`
+    this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid` //TODO: dotcms.org.1 fmontes get this user id dinamically
+    this._loggedUserUrl = `${this._apiRoot.baseUrl}api/user/getloggedinuser/`
+    this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`
+    this._pushEnvironementsUrl = `${this._apiRoot.baseUrl}api/environment/loadenvironments/roleId`
+    this._pushRuleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`
+
 
     this._preCacheCommonResources(_resources)
     this.loadActionTypes().subscribe((types:ServerSideTypeModel[])=> this.ruleActionTypes$.next(types))
@@ -300,7 +333,6 @@ export class RuleService {
       url: this._rulesEndpointUrl
     }).map(RuleService.fromServerRulesTransformFn);
   }
-
 
   loadRule(id:string):Observable<RuleModel|CwError> {
     return this.request({
@@ -370,6 +402,100 @@ export class RuleService {
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
 
+  addRuleToBundle(ruleId:string, bundle:IBundle):Observable<{errorMessages:string[],total:number,errors:number}> {
+    return this.request({
+      body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
+      method: RequestMethod.Post,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      url: this._addToBundleUrl
+    })
+  }
+
+  getLoggedUser():Observable<IUser> {
+    return this.request({
+      method: RequestMethod.Get,
+      url: this._loggedUserUrl,
+    })
+  }
+
+  loadBundleStores(){
+    let obs
+    if (this._bundlesAry.length) {
+      obs = Observable.fromArray(this._bundlesAry)
+    } else {
+      obs = this._doLoadBundleStores().map((bundles:IBundle[])=> {
+        this._bundlesAry = bundles
+        return bundles
+      })
+    }
+    obs.subscribe((bundles) => this.bundles$.next(bundles))
+  }
+
+  _doLoadBundleStores():Observable<IBundle[]> {
+    return this.getLoggedUser().flatMap((user:IUser) => {
+      return this.request({
+        method: RequestMethod.Get,
+        url: `${this._bundleStoreUrl}/${user.userId}`,
+      }).map(RuleService.fromServerBundleTransformFn)
+    })
+  }
+
+  loadPublishEnvironments() {
+    let obs
+    if (this._environmentsAry.length) {
+      obs = Observable.fromArray(this._environmentsAry)
+    } else {
+      obs = this._doLoadPublishEnvironments().map((environments:IDBEnvironment[])=> {
+        this._environmentsAry = environments
+        return environments
+      })
+    }
+    obs.subscribe((environments) => this.environments$.next(environments))
+  }
+
+  _doLoadPublishEnvironments():Observable<IPublishEnvironment[]> {
+    return this.getLoggedUser().flatMap((user:IUser) => {
+      return this.request({
+        method: RequestMethod.Get,
+        url: `${this._pushEnvironementsUrl}/${user.roleId}/?name=0`,
+      }).map(RuleService.fromServerEnvironmentTransformFn)
+    })
+  }
+
+  private getFormattedDate(date:Date) {
+    let month = (date.getMonth() + 1).toString()
+    month += month.length < 2 ? "0" + month : month
+    return `${month}-${date.getDate()}-${date.getFullYear()}`
+  }
+
+  private getPublishRuleData(ruleId:string, environmentId:string) {
+    let resul:string = "";
+    resul += `assetIdentifier=${ruleId}`
+    resul += `&remotePublishDate=${this.getFormattedDate(new Date())}`
+    resul += "&remotePublishTime=00-00"
+    resul += `&remotePublishExpireDate=${this.getFormattedDate(new Date())}`
+    resul += "&remotePublishExpireTime=00-00"
+    resul += "&iWantTo=publish"
+    resul += `&whoToSend=${environmentId}`
+    resul += "&bundleName="
+    resul += "&bundleSelect="
+    resul += "&forcePush=false"
+    return resul
+  }
+
+  pushPublishRule(ruleId:string, environmentId:string):Observable<{errorMessages:string[],total:number,bundleId:string,errors:number}> {
+    return this.request({
+      body: this.getPublishRuleData(ruleId, environmentId),
+      method: RequestMethod.Post,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      url: this._pushRuleUrl
+    })
+  }
+
   private loadConditionTypes():Observable<ServerSideTypeModel[]> {
     let obs
     if (this._conditionTypesAry.length) {
@@ -388,7 +514,6 @@ export class RuleService {
     return obs
   }
 
-
   _doLoadConditionTypes():Observable<ServerSideTypeModel[]> {
     return this.request({
       method: RequestMethod.Get,
@@ -396,15 +521,20 @@ export class RuleService {
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
 
-  request(options:any):Observable<RuleModel[]|ServerSideTypeModel[]|CwError|RuleModel|IConditionGroup> {
-    options.headers = this._apiRoot.getDefaultRequestHeaders();
+  request(options:any):Observable<any> {
+    let headers:Headers = this._apiRoot.getDefaultRequestHeaders()
+    let tempHeaders = options.headers ? options.headers : {"Content-Type": "application/json"}
+    Object.keys(tempHeaders).forEach((key)=>{
+      headers.set(key, tempHeaders[key])
+    })
     var source = options.body
     if (options.body) {
       if (typeof options.body !== 'string') {
         options.body = JSON.stringify(options.body);
       }
-      options.headers.append('Content-Type', 'application/json')
     }
+    options.headers = headers
+
     var request = new Request(options)
     return this._http.request(request)
         .map((resp:Response) => {
@@ -469,7 +599,6 @@ export class RuleService {
     })
   }
 
-
   static alphaSort(key) {
     return (a, b) => {
       let x
@@ -483,6 +612,16 @@ export class RuleService {
       }
       return x
     }
+  }
+
+  static fromServerBundleTransformFn(data):IBundle[] {
+    return data.items || [];
+  }
+
+  static fromServerEnvironmentTransformFn(data):IPublishEnvironment[] {
+    // Endpoint return extra empty environment
+    data.shift()
+    return data
   }
 
   static fromServerServersideTypesTransformFn(typesMap):ServerSideTypeModel[] {

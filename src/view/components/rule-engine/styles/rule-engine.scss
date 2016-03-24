@@ -202,6 +202,19 @@ input.ng-dirty.ng-valid,
 
   .cw-header-actions {
     margin-right: .5em;
+    position: relative;
+
+    .cw-btn-group .ui.basic.buttons .ui.button:focus {
+      border: none;
+    }
+
+    .ui.vertical.menu {
+      position: absolute;
+      right: 0;
+      top: 25px;
+      z-index: 4;
+    }
+
   }
 
   .cw-type-dropdown {
