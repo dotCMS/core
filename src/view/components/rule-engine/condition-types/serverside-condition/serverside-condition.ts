@@ -207,7 +207,7 @@ export class ServersideCondition {
   private getTextInput(param, paramDef, i18nBaseKey:string) {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     let placeholderKey = rsrcKey + '.placeholder'
-    let control = this.createNgControl(paramDef, param)
+    let control = ServerSideFieldModel.createNgControl(this.componentInstance, param.key)
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
@@ -216,25 +216,12 @@ export class ServersideCondition {
     }
   }
 
-  private createNgControl(paramDef, param):Control {
-    let vFn:Function[] = paramDef.inputType.dataType.validators()
-    vFn.push(CustomValidators.noQuotes())
-    let control = new Control(
-        this.componentInstance.getParameterValue(param.key),
-        Validators.compose(vFn))
-
-    control.statusChanges.subscribe((value) => {
-
-    })
-    return control
-  }
-
   private getDateTimeInput(param, paramDef, i18nBaseKey:string) {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     return {
       name: param.key,
       value: this.componentInstance.getParameterValue(param.key),
-      control: this.createNgControl(paramDef, param ),
+      control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
       required: paramDef.inputType.dataType['minLength'] > 0,
       visible: true
     }
@@ -250,7 +237,7 @@ export class ServersideCondition {
       currentValue = currentValue.replace(/["']/g, '')
       this.componentInstance.setParameter(param.key, currentValue)
     }
-    const control = this.createNgControl(paramDef, param)
+    const control = ServerSideFieldModel.createNgControl(this.componentInstance, param.key)
     let input:any = {
       value: currentValue,
       name: param.key,
@@ -314,7 +301,7 @@ export class ServersideCondition {
     let input:any = {
       value: currentValue,
       name: param.key,
-      control: this.createNgControl(paramDef, param),
+      control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       options: opts,
       minSelections: inputType.minSelections,

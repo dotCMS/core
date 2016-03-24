@@ -12,6 +12,17 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
+// generic transform
+@mixin transform($transforms) {
+  -moz-transform: $transforms;
+  -o-transform: $transforms;
+  -ms-transform: $transforms;
+  -webkit-transform: $transforms;
+  transform: $transforms;
+}
+
+
+
 @mixin valid-and-dirty-or-touched {
   border-left: 1px solid rgba(34, 36, 38, 0.15);
   transition-property: border-left, border-left-width;
@@ -432,4 +443,29 @@ input.ng-dirty.ng-valid,
     width: 2em;
   }
 
+}
+
+.ui.modal.cw-modal-dialog2{
+  display: block;
+  margin: -103px 0 0 -200px;
+  height:600px;
+  width:400px;
+}
+
+
+.ui.modal.cw-modal-dialog {
+  display: block;
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  top: 50%;
+  left: 50%;
+  height:60%;
+  width:50%;
+  @include transform(translate(-50%, -50%));
+}
+
+.cw-modal-dialog .cw-dialog-body {
+  height:100%;
+  width:100%;
 }

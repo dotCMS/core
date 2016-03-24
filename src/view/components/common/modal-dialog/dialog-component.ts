@@ -5,7 +5,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
   directives: [CORE_DIRECTIVES],
   template: `
   <div class="ui dimmer modals page transition visible active" *ngIf="!hidden">
-    <div class="ui modal" style="display: block; width: 400px; margin: -103px 0 0 -200px;">
+    <div class="ui modal cw-modal-dialog">
       <i class="close icon" (click)="cancel.emit({isCanceled:true})"></i>
       <div class="header">{{headerText}}</div>
       <ng-content></ng-content>

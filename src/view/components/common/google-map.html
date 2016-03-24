@@ -13,15 +13,9 @@
   <script src="../../../thirdparty/semantic/dist/semantic.js"></script>
   <script src="../../../thirdparty/core-js/client/shim.js"></script>
 
-  <script src="../../../thirdparty/angular2-google-maps/bundles/angular2-google-maps.js"></script>
-
-
   <script>
     System.config({
       packages: {
-        'angular2-google-maps': {
-          defaultExtension: 'js'
-        },
         app: {
           format: 'register',
           defaultExtension: 'js'
@@ -44,7 +38,6 @@
         }
       },
       map: {
-        "angular2-google-maps": "/build/thirdparty/angular2-google-maps",
         "api": "/build/api",
         "whatwg-fetch": "../../../../thirdparty/whatwg-fetch/fetch.js"
       }

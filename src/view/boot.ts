@@ -1,6 +1,5 @@
 import {bootstrap}    from 'angular2/platform/browser'
 import {HTTP_PROVIDERS} from 'angular2/http'
-import {ANGULAR2_GOOGLE_MAPS_PROVIDERS} from "angular2-google-maps/core";
 
 import {ApiRoot} from '../api/persistence/ApiRoot'
 import {UserModel} from "../api/auth/UserModel"
@@ -18,6 +17,5 @@ bootstrap(RuleEngineContainer, [
   ActionService,
   ConditionGroupService,
   ConditionService,
-  HTTP_PROVIDERS,
-  ANGULAR2_GOOGLE_MAPS_PROVIDERS
+  HTTP_PROVIDERS
 ]);

@@ -45,11 +45,12 @@
     "serve-index": "^1.6.3",
     "serve-static": "~1.10.x",
     "through2": "^2.x.x",
-    "typescript": "1.8.9"
+    "typescript": "1.8.9",
+    "typings": "^0.7.9"
   },
   "scripts": {
-    "tsc": "tsc -p src -w",
-    "tsc-no": "tsc -p src",
+    "tsc": "tsc -p ./ -w",
+    "tsc-no": "tsc -p ./",
     "start": "live-server--port=8180 --open=src",
     "serve": "gulp serve || true",
     "dev": "gulp serve --open=/build/index.html",
@@ -69,7 +70,6 @@
   "dependencies": {
     "angular-material": "1.0.2",
     "angular2": "2.0.0-beta.0",
-    "angular2-google-maps": "^0.9.0",
     "core-js": "1.2.6",
     "es6-promise": "3.1.2",
     "es6-shim": "0.34.4",

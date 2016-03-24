@@ -10,12 +10,14 @@ import {
     RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_TYPE,
     RULE_CONDITION_DELETE, RULE_CONDITION_GROUP_UPDATE_OPERATOR, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
 } from "../../../api/rule-engine/Rule";
+import {VisitorsLocationComponent} from "./custom-types/visitors-location/visitors-location.component";
 
 
 @Component({
   selector: 'rule-condition',
   directives: [CORE_DIRECTIVES,
     ServersideCondition,
+    VisitorsLocationComponent,
     Dropdown,
     InputOption
   ],
@@ -40,6 +42,11 @@ import {
   <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
     <template [ngSwitchWhen]="'NoSelection'">
       <div class="cw-condition-component"></div>
+    </template>
+    <template [ngSwitchWhen]="'VisitorsGeolocationConditionlet'">
+      <cw-visitors-location-component
+          [componentInstance]="condition"
+          (parameterValueChange)="onParameterValueChange($event)"></cw-visitors-location-component>
     </template>
     <template ngSwitchDefault>
       <cw-serverside-condition class="cw-condition-component"

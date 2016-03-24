@@ -49,7 +49,7 @@ if(config.args.env){
   }
 }
 
-var typescriptProject = ts.createProject(config.srcDir + '/tsconfig.json');
+var typescriptProject = ts.createProject('./tsconfig.json');
 
 var project = {
   server: null,
@@ -82,30 +82,21 @@ var project = {
       'angular-material/': [
         { dev: 'angular-material.layouts.css', prod: 'angular-material.layouts.min.css', out: 'angular-material.layouts.css' }
       ],
-      'angular2-google-maps/': [
-        { dev: 'bundles/angular2-google-maps.js', prod: 'bundles/angular2-google-maps.min.js', out: 'bundles/angular2-google-maps.js' },
-        { dev: 'core.js', prod: 'core.js', out: 'core.js' },
-        { dev: 'directives.js', prod: 'directives.js', out: 'directives.js' },
-        { dev: 'directives-const.js', prod: 'directives-const.js', out: 'directives-const.js' },
-        { dev: 'events.js', prod: 'events.js', out: 'events.js' },
-        { dev: 'services.js', prod: 'services.js', out: 'services.js' },
-        { all: 'directives/google-map.js' },
-        { all: 'directives/google-map-info-window.js' },
-        { all: 'directives/google-map-marker.js' },
-        { all: 'services/google-maps-api-wrapper.js' },
-        { all: 'services/google-maps-types.js' },
-        { all: 'services/info-window-manager.js' },
-        { all: 'services/marker-manager.js' },
-        { all: 'services/maps-api-loader/lazy-maps-api-loader.js'},
-        { all: 'services/maps-api-loader/maps-api-loader.js' },
-        { all: 'services/maps-api-loader/noop-maps-api-loader.js' }
-      ],
       'core-js/client/': [
         { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
       ],
       'es6-shim/': [
         { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
       ],
+      // '@ngrx/store/dist/': [
+      //   { dev: 'store.js', prod: 'store.js', out: 'store.js' }
+      // ],
+      // 'immutable/dist/': [
+      //   { dev: 'immutable.js', prod: 'immutable.min.js', out: 'immutable.js' }
+      // ],
+      // 'normalizr/dist/': [
+      //   { dev: 'normalizr.min.js', prod: 'normalizr.min.js', out: 'normalizr.js' }
+      // ],
       'jquery/dist/': [
         { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
         { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
