@@ -1,105 +1,93 @@
-import { ChangeDetectionStrategy, Component, View, EventEmitter, ElementRef, Input, Output, Provider, Renderer, forwardRef} from 'angular2/core';
-import { CORE_DIRECTIVES, NG_VALUE_ACCESSOR, ControlValueAccessor } from 'angular2/common';
-
-import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
-
-const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
-    NG_VALUE_ACCESSOR, {useExisting: forwardRef(() => InputDate), multi: true}));
+import {bootstrap} from 'angular2/bootstrap'
+import {
+    Attribute,
+    ChangeDetectionStrategy,
+    Component,
+    Directive,
+    ElementRef,
+    EventEmitter,
+    Input,
+    Output,
+    Optional
+} from 'angular2/core'
+import {Control, Validators, NgControl, ControlValueAccessor} from 'angular2/common'
+import {isBlank} from 'angular2/src/facade/lang';
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
  */
-
 @Component({
   selector: 'cw-input-date',
+  host: {'role': 'text'},
   changeDetection: ChangeDetectionStrategy.OnPush,
-  bindings: [CW_TEXT_VALUE_ACCESSOR]
-})
-@View({
-  template: `
-<div class="ui fluid input" [ngClass]="{disabled: disabled, icon: icon, required: required}">
-  <input type="datetime-local" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
-    [required]="required"
-    (input)="onChange($event.target.value)"
-    (change)="$event.stopPropagation(); onChange($event.target.value)"
-    (blur)="$event.stopPropagation(); onBlur($event.target.value)"
-    (focus)="onFocus($event.target.value)">
-  <i [ngClass]="icon" *ngIf="icon"></i>
+  template: `<div flex layout="row" layout-wrap class="ui fluid input"  [ngClass]="{disabled: disabled, icon: icon, required: required}">
+    <input flex
+           type="datetime-local"
+           [value]="_modelValue"
+           [disabled]="disabled"
+           tabindex="{{tabIndex || ''}}"
+           placeholder="{{placeholder}}"
+           (blur)="onBlur($event)"
+           (change)="$event.stopPropagation()"
+           (input)="onChange($event.target.value)" />
+    <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
   `,
-  directives: [CORE_DIRECTIVES]
+  directives: []
 })
-export class InputDate implements ControlValueAccessor  {
-
-  onChange = (_) => {
-    this.change.emit(_)
-  };
-  onTouched = () => {
-  };
+export class InputDate implements ControlValueAccessor {
 
   private static DEFAULT_VALUE:string = InputDate._defaultValue()
   @Input()  value:string = InputDate.DEFAULT_VALUE
-  @Input()  placeholder:string = ""
-  @Input()  icon:string
-  @Input()  disabled:boolean = false
-  @Input()  focused:boolean = false
-  @Input()  required:boolean = false
-  @Input()  errorMessage:string
-  @Output() change:EventEmitter<any>
-  @Output() blur:EventEmitter<any>
-  @Output() focus:EventEmitter<any>
+  @Input() placeholder:string = ""
+  @Input() type:string = ""
+  @Input() icon:string
+  @Input() disabled:boolean = false
+  @Input() focused:boolean = false
+  @Input() tabIndex:number = null
+  @Input() required:boolean = false
 
-  constructor(private _renderer:Renderer, private _elementRef:ElementRef) {
+  @Output() blur:EventEmitter<any> = new EventEmitter()
 
-    this.change = new EventEmitter()
-    this.blur = new EventEmitter()
-    this.focus = new EventEmitter()
+  errorMessage:string
+  onChange:Function
+  onTouched:Function
+
+  private _modelValue:any
+
+  constructor( @Optional() control:NgControl, private _elementRef:ElementRef) {
+    if(control){
+      control.valueAccessor = this;
+    }
   }
 
   ngOnChanges(change) {
-    if (change.value && change.value.currentValue === null) {
-      this.value = InputDate.DEFAULT_VALUE
-    }
-    if(change.placeholder && !change.placeholder.currentValue){
-      this.placeholder = "Enter an ISO DateTime"
-    }
     if (change.focused) {
       let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
       if (f) {
         let el = this._elementRef.nativeElement
         el.children[0].children[0].focus()
       }
-      this.focused = false;
     }
   }
+
 
   onBlur(value) {
     this.onTouched()
     this.blur.emit(value)
   }
 
-  onFocus(value) {
-    this.focus.emit(value)
+  writeValue(value:any) {
+    this._modelValue = isBlank(value) ? '' : value
+    this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
   }
 
-  writeValue(value:string):void {
-    this.value = isBlank(value) ? '' : value
-    console.log("writing value: ", value, " ==> ", this.value)
+  registerOnChange(fn) {
+    this.onChange = fn;
   }
 
-  registerOnChange(fn:(_:any) => void):void {
-    this.onChange = (_:any) => {
-      console.log("Value changed: ", _)
-      fn(_)
-      this.change.emit(_)
-    }
-  }
-
-  registerOnTouched(fn:() => void):void {
-    this.onTouched = () => {
-      console.log("Touched")
-      fn()
-    }
+  registerOnTouched(fn) {
+    this.onTouched = fn;
   }
 
   private static _defaultValue():string {

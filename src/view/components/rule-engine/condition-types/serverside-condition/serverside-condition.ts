@@ -82,11 +82,14 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                      flex
                     layout-fill
                      class="cw-input"
+                     [ngFormControl]="input.control"
                      [class.cw-last]="islast"
                      [placeholder]="input.placeholder | async"
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
-                     (blur)="onBlur(input)"></cw-input-date>
+                     (blur)="onBlur(input)"
+                     #gInput="ngForm"
+      ></cw-input-date>
     </template>
   </div>
 </form>`
