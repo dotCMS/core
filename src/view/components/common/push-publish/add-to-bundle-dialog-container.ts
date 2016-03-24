@@ -3,6 +3,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
 import {IBundle, RuleService} from "../../../../api/rule-engine/Rule";
 import {AddToBundleDialogComponent} from "./add-to-bundle-dialog-component";
 import {BehaviorSubject} from "rxjs/Rx";
+
 @Component({
   selector: 'cw-add-to-bundle-dialog-container',
   directives: [CORE_DIRECTIVES, AddToBundleDialogComponent],
@@ -11,7 +12,7 @@ import {BehaviorSubject} from "rxjs/Rx";
   [bundleStores]="ruleService.bundles$ | async"
   [hidden]="hidden"
   [errorMessage]="errorMessage | async"
-  (cancel)="hidden = true; close.emit($event); "
+  (cancel)="hidden = true; close.emit($event); errorMessage = null;"
   (addToBundle)="addToBundle($event)"
   ></cw-add-to-bundle-dialog-component>`
   , changeDetection: ChangeDetectionStrategy.OnPush
@@ -39,13 +40,12 @@ export class AddToBundleDialogContainer {
 
   addToBundle(bundle:IBundle) {
     this.ruleService.addRuleToBundle(this.assetId, bundle).subscribe((result:any)=> {
-        if (!result.errors) {
-          this.close.emit({isCanceled:false})
-          this.errorMessage = null
-        } else {
-          // TODO: error message is not showing the first time
-          this.errorMessage.next("Sorry there was an error please try again")
-        }
+      if (!result.errors) {
+        this.close.emit({isCanceled:false})
+        this.errorMessage = null
+      } else {
+        this.errorMessage.next("Sorry there was an error please try again")
+      }
     })
   }
 

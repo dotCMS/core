@@ -2,6 +2,7 @@ import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "a
 import {CORE_DIRECTIVES} from "angular2/common";
 import {IPublishEnvironment, RuleService} from "../../../../api/rule-engine/Rule";
 import {PushPublishDialogComponent} from "./push-publish-dialog-component";
+import {BehaviorSubject} from "rxjs/Rx";
 
 @Component({
   selector: 'cw-push-publish-dialog-container',
@@ -10,8 +11,8 @@ import {PushPublishDialogComponent} from "./push-publish-dialog-component";
   <cw-push-publish-dialog-component
   [environmentStores]="ruleService.environments$ | async"
   [hidden]="hidden"
-  [errorMessage]="errorMessage"
-  (cancel)="hidden = true; close.emit($event); "
+  [errorMessage]="errorMessage | async"
+  (cancel)="hidden = true; close.emit($event); errorMessage = null;"
   (doPushPublish)="doPushPublish($event)"
   ></cw-push-publish-dialog-component>`
   , changeDetection: ChangeDetectionStrategy.OnPush
@@ -23,7 +24,7 @@ export class PushPublishDialogContainer {
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
 
-  private errorMessage:string
+  errorMessage:BehaviorSubject<string> = new BehaviorSubject(null)
 
   environmentStores:IPublishEnvironment[] = []
 
@@ -39,13 +40,12 @@ export class PushPublishDialogContainer {
 
   doPushPublish(environment:IPublishEnvironment) {
     this.ruleService.pushPublishRule(this.assetId, environment.id).subscribe((result:any)=> {
-        if (!result.errors) {
-          this.close.emit(true) // TODO: check this warning in the console
-          this.errorMessage = null
-        } else {
-          // TODO: error message is not showing the first time
-          this.errorMessage = "Sorry there was an error please try again"
-        }
+      if (!result.errors) {
+        this.close.emit({isCanceled:false})
+        this.errorMessage = null
+      } else {
+        this.errorMessage.next("Sorry there was an error please try again")
+      }
     })
   }
 

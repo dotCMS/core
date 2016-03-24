@@ -13,13 +13,13 @@ import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
     [hidden]="hidden"
     [okEnabled]="selectedEnvironment != null"
     [errorMessage]="errorMessage"
-    (ok)="doPushPublish.emit(selectedEnvironment)"
+    (ok)="doPushPublish.emit(selectedEnvironmentId)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
       flex
       [value]="environmentStores[0]?.id"
       (click)="$event.stopPropagation()"
-      (change)="setselectedEnvironment($event)">
+      (change)="setSelectedEnvironment($event)">
     <cw-input-option
         *ngFor="#opt of environmentStores"
         [value]="opt.id"
@@ -44,12 +44,12 @@ export class PushPublishDialogComponent {
 
   ngOnChanges(change){
     if (change.environmentStores) {
-      this.selectedEnvironment = change.environmentStores.currentValue[0];
+      this.selectedEnvironmentId = change.environmentStores.currentValue[0];
       console.log("PushPublishDialogComponent", "ngOnChanges", change.environmentStores.currentValue)
     }
   }
 
-  setselectedEnvironment(environmentId:string) {
+  setSelectedEnvironment(environmentId:string) {
     this.selectedEnvironmentId = environmentId
   }
 }
