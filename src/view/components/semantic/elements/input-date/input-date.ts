@@ -38,7 +38,6 @@ import {isBlank} from 'angular2/src/facade/lang';
 export class InputDate implements ControlValueAccessor {
 
   private static DEFAULT_VALUE:string = InputDate._defaultValue()
-  @Input()  value:string = InputDate.DEFAULT_VALUE
   @Input() placeholder:string = ""
   @Input() type:string = ""
   @Input() icon:string
@@ -78,7 +77,7 @@ export class InputDate implements ControlValueAccessor {
   }
 
   writeValue(value:any) {
-    this._modelValue = isBlank(value) ? '' : value
+    this._modelValue = isBlank(value) ? InputDate.DEFAULT_VALUE : value
     this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
   }
 
