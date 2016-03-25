@@ -7,6 +7,7 @@ import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
@@ -27,34 +28,64 @@ import java.util.Map;
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
+/**
+ * Conditionlet expects all input to be in Meters. The unit type exists to inform the UI what should be displayed to the user
+ */
 public class VisitorsGeolocationConditionlet extends Conditionlet<VisitorsGeolocationConditionlet.Instance>{
 
+    public enum UnitOfDistance {
+        MILES("mi"),
+        METERS("m"),
+        KILOMETERS("km");
+
+        public final String abbreviation;
+
+        UnitOfDistance(String abbreviation) {
+            this.abbreviation = abbreviation;
+        }
+
+        static UnitOfDistance fromAbbreviation(String abbreviation){
+            UnitOfDistance result = null;
+            for (UnitOfDistance unit : UnitOfDistance.values()) {
+                if(unit.abbreviation.equals(abbreviation)){
+                    result = unit;
+                    break;
+                }
+            }
+            if(result == null){
+                throw new RuleEngineException("No UnitOfDistance with abbreviation '%s'", abbreviation);
+            }
+            return result;
+        }
+
+    }
 	private static final long serialVersionUID = 1L;
 
-    public static final String DISTANCE_KEY = "distance";
-    public static final String UNIT_OF_DISTANCE_KEY = "unit-of-distance";
+    public static final String RADIUS_KEY = "radius";
+    public static final String RADIUS_UNIT_KEY = "preferredDisplayUnits";
     public static final String LATITUDE_KEY = "latitude";
     public static final String LONGITUDE_KEY = "longitude";
 
     private final GeoIp2CityDbUtil geoIp2Util;
 
     private static final ParameterDefinition<NumericType> distance = new ParameterDefinition<>(
-        3, DISTANCE_KEY, new NumericInput<>(new NumericType()));
+        3, RADIUS_KEY, new NumericInput<>(new NumericType().required().minValue(10).maxValue(40000)));
 
     private static final ParameterDefinition<TextType> unitOfDistance = new ParameterDefinition<>(
-        4, UNIT_OF_DISTANCE_KEY, new DropdownInput(new TextType().maxLength(10))
+        4, RADIUS_UNIT_KEY, new DropdownInput(new TextType().required().maxLength(10))
             .minSelections(1)
             .maxSelections(1)
-            .option(Location.UnitOfDistance.MILES.name())
-            .option(Location.UnitOfDistance.KILOMETERS.name()),
-            Location.UnitOfDistance.MILES.name()
+            .option(UnitOfDistance.MILES.abbreviation)
+            .option(UnitOfDistance.METERS.abbreviation)
+            .option(UnitOfDistance.KILOMETERS.abbreviation),
+        UnitOfDistance.MILES.abbreviation
     );
 
     private static final ParameterDefinition<TextType> latitude = new ParameterDefinition<>(
-            5, LATITUDE_KEY, new TextInput<>(new TextType()));
+            5, LATITUDE_KEY, new TextInput<>(new TextType().required()));
 
     private static final ParameterDefinition<TextType> longitude = new ParameterDefinition<>(
-            6, LONGITUDE_KEY, new TextInput<>(new TextType()));
+            6, LONGITUDE_KEY, new TextInput<>(new TextType().required()));
 
     public VisitorsGeolocationConditionlet() {
         this(GeoIp2CityDbUtil.getInstance());
@@ -72,7 +103,8 @@ public class VisitorsGeolocationConditionlet extends Conditionlet<VisitorsGeoloc
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
         Location visitorsLocation = lookupLocation(request);
         Location inputLocation = new Location(instance.latitude, instance.longitude);
-        return instance.comparison.perform(visitorsLocation, inputLocation, instance.distance, instance.unitOfDistance);
+        //noinspection unchecked
+        return instance.comparison.perform(visitorsLocation, inputLocation, instance.distance);
     }
 
     private Location lookupLocation(HttpServletRequest request) {
@@ -95,22 +127,26 @@ public class VisitorsGeolocationConditionlet extends Conditionlet<VisitorsGeoloc
     public static class Instance implements RuleComponentInstance {
 
         public final double distance;
-        public final Location.UnitOfDistance unitOfDistance;
+        public final UnitOfDistance unitOfDistance;
         public final double latitude;
         public final double longitude;
         public final Comparison comparison;
 
         public Instance(Conditionlet definition, Map<String, ParameterModel> parameters) {
             checkState(parameters != null && parameters.size() == 5,
-                       "Visitors Location Condition requires parameters %s, %s, %s, %s and %s.", COMPARISON_KEY, DISTANCE_KEY, UNIT_OF_DISTANCE_KEY, LATITUDE_KEY, LONGITUDE_KEY );
+                       "Visitors Location Condition requires parameters %s, %s, %s, %s and %s.", COMPARISON_KEY,
+                       RADIUS_KEY, RADIUS_UNIT_KEY, LATITUDE_KEY, LONGITUDE_KEY );
             assert parameters != null;
-            this.distance = Double.parseDouble(parameters.get(DISTANCE_KEY).getValue());
-            this.unitOfDistance = Location.UnitOfDistance.valueOf(parameters.get(UNIT_OF_DISTANCE_KEY).getValue());
+            this.distance = Double.parseDouble(parameters.get(RADIUS_KEY).getValue());
+            this.unitOfDistance = UnitOfDistance.fromAbbreviation(parameters.get(RADIUS_UNIT_KEY).getValue());
             this.latitude = Double.parseDouble(parameters.get(LATITUDE_KEY).getValue());
             this.longitude = Double.parseDouble(parameters.get(LONGITUDE_KEY).getValue());
             String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
             try {
-                this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
+                this.comparison = ((ComparisonParameterDefinition)definition
+                    .getParameterDefinitions()
+                    .get(COMPARISON_KEY))
+                    .comparisonFrom(comparisonValue);
             } catch (ComparisonNotPresentException e) {
                 throw new ComparisonNotSupportedException("The comparison '%s' is not supported on Condition type '%s'",
                                                           comparisonValue,

@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotmarketing.portlets.rules.conditionlet.Location;
-import com.dotmarketing.portlets.rules.conditionlet.Location.UnitOfDistance;
 
+/**
+ * All distances / lengths are in meters.
+ */
 public class NotWithinDistanceComparison extends Comparison<Location> {
 
     public NotWithinDistanceComparison() {
@@ -10,7 +12,7 @@ public class NotWithinDistanceComparison extends Comparison<Location> {
     }
 
     @Override
-    public boolean perform(Location argA, Location argB, double distance, UnitOfDistance unitOfDistance) {
-        return !argB.within(argA, distance, unitOfDistance);
+    public boolean perform(Location argA, Location argB, double distance) {
+        return !argB.within(argA, distance);
     }
 }
