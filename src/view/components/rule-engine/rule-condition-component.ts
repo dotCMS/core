@@ -1,4 +1,4 @@
-import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
+import { Component, EventEmitter, Input, Output} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
@@ -8,16 +8,16 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
 import {I18nService} from "../../../api/system/locale/I18n";
 import {
     RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_TYPE,
-    RULE_CONDITION_DELETE, RULE_CONDITION_GROUP_UPDATE_OPERATOR, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
+    RULE_CONDITION_DELETE, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
 } from "../../../api/rule-engine/Rule";
-import {VisitorsLocationComponent} from "./custom-types/visitors-location/visitors-location.component";
+import {VisitorsLocationContainer} from "./custom-types/visitors-location/visitors-location.container";
 
 
 @Component({
   selector: 'rule-condition',
   directives: [CORE_DIRECTIVES,
     ServersideCondition,
-    VisitorsLocationComponent,
+    VisitorsLocationContainer,
     Dropdown,
     InputOption
   ],
@@ -44,9 +44,9 @@ import {VisitorsLocationComponent} from "./custom-types/visitors-location/visito
       <div class="cw-condition-component"></div>
     </template>
     <template [ngSwitchWhen]="'VisitorsGeolocationConditionlet'">
-      <cw-visitors-location-component
+      <cw-visitors-location-container
           [componentInstance]="condition"
-          (parameterValueChange)="onParameterValueChange($event)"></cw-visitors-location-component>
+          (parameterValuesChange)="onParameterValuesChange($event)"></cw-visitors-location-container>
     </template>
     <template ngSwitchDefault>
       <cw-serverside-condition class="cw-condition-component"
@@ -111,6 +111,9 @@ export class ConditionComponent {
     this.updateConditionType.emit({type: RULE_CONDITION_UPDATE_TYPE, payload: {condition:this.condition, value: type, index:this.index}})
   }
 
+  onParameterValuesChange(event:{name:string, value:string}[]){
+    event.forEach((change)=> this.onParameterValueChange(change))
+  }
 
   onParameterValueChange(event:{name:string, value:string}) {
     console.log("ConditionComponent", "onParameterValueChange")

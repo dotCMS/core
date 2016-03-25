@@ -13,6 +13,7 @@
   },
   "files":[
     "./src/api/auth/UserModel.ts",
+    "./src/api/maps/GoogleMapService.ts",
     "./src/api/persistence/ApiRoot.spec.ts",
     "./src/api/persistence/ApiRoot.ts",
     "./src/api/rule-engine/Action.it-spec.ts",
@@ -60,6 +61,7 @@
     "./src/view/components/rule-engine/custom-types/visitors-location/boot.ts",
     "./src/view/components/rule-engine/custom-types/visitors-location/demo.ts",
     "./src/view/components/rule-engine/custom-types/visitors-location/visitors-location.component.ts",
+    "./src/view/components/rule-engine/custom-types/visitors-location/visitors-location.container.ts",
     "./src/view/components/rule-engine/index.ts",
     "./src/view/components/rule-engine/rule-action-component.ts",
     "./src/view/components/rule-engine/rule-component.ts",

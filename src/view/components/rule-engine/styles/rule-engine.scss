@@ -231,7 +231,12 @@ input.ng-dirty.ng-valid,
   .cw-type-dropdown {
     max-height: 2em;
   }
-
+  .cw-input-label-right {
+    margin-left: 1em;
+  }
+  .cw-input-label-left {
+    margin-right: 1em;
+  }
   .cw-input,
   &.cw-last {
     margin-right: 1em;

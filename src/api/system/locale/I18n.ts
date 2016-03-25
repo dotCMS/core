@@ -135,8 +135,7 @@ export class I18nService {
       })
       cNode.$markAsLoading(promise)
     } else {
-      console.log("I18n", "Awaiting: ", msgKey)
-
+      // console.log("I18n", "Awaiting: ", msgKey)
     }
     return Observable.defer(()=> {
       return Observable.create((obs:Observer<string>  )=> {
@@ -157,7 +156,7 @@ export class I18nService {
             } else{
               v = cNode._value
             }
-            console.log("I18n", "Providing: ", msgKey, "=", v)
+            // console.log("I18n", "Providing: ", msgKey, "=", v)
             obs.next(v)
             obs.complete()
           })

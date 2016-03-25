@@ -1,5 +1,6 @@
 import {Attribute, Component} from 'angular2/core'
-import {AreaPickerDialogComponent, GCircle} from "./area-picker-dialog.component";
+import {AreaPickerDialogComponent} from "./area-picker-dialog.component";
+import {GCircle} from "../../../../api/maps/GoogleMapService";
 
 @Component({
   selector: 'demo',

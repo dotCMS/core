@@ -25,6 +25,7 @@ import {isBlank} from 'angular2/src/facade/lang';
            type="{{type}}"
            [value]="_modelValue"
            [disabled]="disabled"
+           [readonly]="readonly"
            tabindex="{{tabIndex || ''}}"
            placeholder="{{placeholder}}"
            (blur)="onBlur($event)"
@@ -38,12 +39,15 @@ import {isBlank} from 'angular2/src/facade/lang';
   export class InputText implements ControlValueAccessor {
 
   @Input() placeholder:string = ""
-  @Input() type:string = ""
+  @Input() type:string = "text"
   @Input() icon:string
   @Input() disabled:boolean = false
+  @Input() readonly:boolean = false
   @Input() focused:boolean = false
   @Input() tabIndex:number = null
   @Input() required:boolean = false
+
+
 
   @Output() blur:EventEmitter<any> = new EventEmitter()
 
@@ -69,6 +73,13 @@ import {isBlank} from 'angular2/src/facade/lang';
     }
   }
 
+  @Input()
+  set value(v:string){
+    this.writeValue(v)
+  }
+  get value():string {
+    return this._modelValue
+  }
 
   onBlur(value) {
     this.onTouched()
