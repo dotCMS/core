@@ -19,11 +19,13 @@
   <script src="thirdparty/semantic/dist/semantic.min.js"></script>
   <script src="thirdparty/core-js/client/shim.js"></script>
 
-
   <!-- 2. Configure SystemJS -->
   <script>
     System.config({
       packages: {
+        'angular2-google-maps': {
+          defaultExtension: 'js'
+        },
         app: {
           format: 'register',
           defaultExtension: 'js'

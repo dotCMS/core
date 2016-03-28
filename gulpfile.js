@@ -49,7 +49,7 @@ if(config.args.env){
   }
 }
 
-var typescriptProject = ts.createProject(config.srcDir + '/tsconfig.json');
+var typescriptProject = ts.createProject('./tsconfig.json');
 
 var project = {
   server: null,
@@ -88,6 +88,15 @@ var project = {
       'es6-shim/': [
         { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
       ],
+      // '@ngrx/store/dist/': [
+      //   { dev: 'store.js', prod: 'store.js', out: 'store.js' }
+      // ],
+      // 'immutable/dist/': [
+      //   { dev: 'immutable.js', prod: 'immutable.min.js', out: 'immutable.js' }
+      // ],
+      // 'normalizr/dist/': [
+      //   { dev: 'normalizr.min.js', prod: 'normalizr.min.js', out: 'normalizr.js' }
+      // ],
       'jquery/dist/': [
         { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
         { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
@@ -111,7 +120,8 @@ var project = {
     libKeys.forEach(function(basePath) {
       var lib = libs[basePath]
       lib.forEach(function(libFile){
-        if(libFile[config.buildTarget] != null) {
+        // build target is either dev or prod; we're counting the number of file copy promises we'll need to wait for.
+        if((libFile[config.buildTarget] != null) || (libFile['all'] != null)) {
           count++
         }
       })
@@ -121,11 +131,12 @@ var project = {
     libKeys.forEach(function(basePath) {
       var lib = libs[basePath]
       lib.forEach(function(libFile){
-        var inFile = libFile[config.buildTarget]
+        var inFile = libFile[config.buildTarget] || libFile['all']
         if(inFile) {
-          gulp.src('./node_modules/' + basePath + libFile[config.buildTarget])
+          gulp.src('./node_modules/' + basePath + inFile)
               .pipe(rename(function (path) {
-                path.basename = libFile.out.substring(0, libFile.out.lastIndexOf("."))
+                var outFile = libFile['out'] || libFile['all']
+                path.basename = outFile.substring(0, outFile.lastIndexOf("."))
                 return path
               }))
               .pipe(gulp.dest(baseOutPath + basePath)).on('finish', done);

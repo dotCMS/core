@@ -12,6 +12,17 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
+// generic transform
+@mixin transform($transforms) {
+  -moz-transform: $transforms;
+  -o-transform: $transforms;
+  -ms-transform: $transforms;
+  -webkit-transform: $transforms;
+  transform: $transforms;
+}
+
+
+
 @mixin valid-and-dirty-or-touched {
   border-left: 1px solid rgba(34, 36, 38, 0.15);
   transition-property: border-left, border-left-width;
@@ -220,7 +231,12 @@ input.ng-dirty.ng-valid,
   .cw-type-dropdown {
     max-height: 2em;
   }
-
+  .cw-input-label-right {
+    margin-left: .25em;
+  }
+  .cw-input-label-left {
+    margin-right: .25em;
+  }
   .cw-input,
   &.cw-last {
     margin-right: 1em;
@@ -433,3 +449,37 @@ input.ng-dirty.ng-valid,
   }
 
 }
+
+.ui.modal.cw-modal-dialog2{
+  display: block;
+  margin: -103px 0 0 -200px;
+  height:600px;
+  width:400px;
+}
+
+
+.ui.modal.cw-modal-dialog {
+  display: block;
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  top: 50%;
+  left: 50%;
+  height:60%;
+  width:50%;
+  @include transform(translate(-50%, -50%));
+}
+
+.cw-modal-dialog .cw-dialog-body {
+  height:100%;
+  width:100%;
+}
+
+.cw-visitors-location {
+  .cw-latLong .ui.input input, .cw-radius .ui.input input {
+    text-align: right;
+    color:lightgray;
+  }
+}
+
+

@@ -427,6 +427,7 @@ export class RuleService {
     } else {
       obs = this._doLoadBundleStores().map((bundles:IBundle[])=> {
         this._bundlesAry = bundles
+        console.log("RuleService", "loadBundles", bundles)
         return bundles
       })
     }

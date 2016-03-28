@@ -47,7 +47,6 @@ export class DataTypeModel {
   private _vFns:Function[]
 
   constructor(public id:string, public errorMessageKey:string, private _constraints:any) {
-    console.log("DataTypeModel", "constructor", id, errorMessageKey, _constraints)
   }
 
   validators() {
@@ -61,7 +60,7 @@ export class DataTypeModel {
           this._vFns.push(fn)
         }
       })
-      console.log("DataTypeModel", "validators", Object.keys(this), this)
+      // console.log("DataTypeModel", "validators", Object.keys(this), this)
     }
     return this._vFns
   }

@@ -1,8 +1,8 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
-import {ModalDialogComponent} from "../dialog-component";
-import {IPublishEnvironment, RuleService} from "../../../../api/rule-engine/Rule";
+import {IPublishEnvironment} from "../../../../api/rule-engine/Rule";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
+import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 
 @Component({
   selector: 'cw-push-publish-dialog-component',

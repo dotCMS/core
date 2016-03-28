@@ -1,6 +1,8 @@
 import {CwModel} from "../util/CwModel";
 import {ParameterDefinition} from "../util/CwInputModel";
 import {ParameterModel} from "./Rule";
+import {Control, Validators} from "angular2/common";
+import {CustomValidators} from "../validation/CustomValidators";
 
 export class ServerSideFieldModel extends CwModel {
   private _type:ServerSideTypeModel
@@ -79,7 +81,7 @@ export class ServerSideFieldModel extends CwModel {
         } catch (e) {
           console.error(e)
         }
-        if(paramDef.inputType.name == 'comparison' && paramDef.inputType.options[value].rightHandArgCount == 0){
+        if(paramDef.inputType.name == 'comparison' && paramDef.inputType['options'][value].rightHandArgCount == 0){
           return true;
         }
       })
@@ -87,6 +89,22 @@ export class ServerSideFieldModel extends CwModel {
     valid = valid && this._type && this._type.key && this._type.key != 'NoSelection'
     return valid
   }
+
+  static createNgControl(model:ServerSideFieldModel, paramName:string):Control {
+    let param = model.parameters[paramName]
+    let paramDef = model.parameterDefs[paramName]
+    let vFn:Function[] = paramDef.inputType.dataType.validators()
+    vFn.push(CustomValidators.noQuotes())
+    let control = new Control(
+        model.getParameterValue(param.key),
+        Validators.compose(vFn))
+
+    control.statusChanges.subscribe((value) => {
+
+    })
+    return control
+  }
+  
 }
 
 
@@ -107,7 +125,7 @@ export class ServerSideTypeModel{
   isValid():boolean {
     return !!this.i18nKey && !!this.parameters
   }
-
+  
   static fromJson(json:any):ServerSideTypeModel {
     return new ServerSideTypeModel(json.key, json.i18nKey, json.parameterDefinitions)
   }
