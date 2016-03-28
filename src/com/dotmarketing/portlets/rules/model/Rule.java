@@ -180,8 +180,17 @@ public class Rule implements Permissionable, Serializable {
                 throw new RuleEngineException(e, "Could not read groups for Rule %s ", this.toString());
             }
         }
-        Collections.sort(groups);
-        return groups;
+
+        //Creating copy
+        List<ConditionGroup> copyGroupList = Lists.newArrayList();
+        for(ConditionGroup copyCG: groups){
+            ConditionGroup conditionGroup = new ConditionGroup(copyCG);
+            copyGroupList.add(conditionGroup);
+        }
+
+        //Order copy and return copy
+        Collections.sort(copyGroupList);
+        return copyGroupList;
     }
 
     public void setGroups(List<ConditionGroup> groups) {

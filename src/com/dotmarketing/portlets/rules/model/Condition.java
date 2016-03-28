@@ -34,6 +34,7 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
     }
 
     public Condition(Condition conditionToCopy){
+        instance = conditionToCopy.instance;
         id = conditionToCopy.id;
         conditionletId = conditionToCopy.conditionletId;
         conditionGroup = conditionToCopy.conditionGroup;

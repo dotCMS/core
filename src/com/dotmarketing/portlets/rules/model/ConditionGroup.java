@@ -88,8 +88,17 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
                 throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
-        Collections.sort(conditions);
-        return conditions;
+
+        //Creating copy
+        List<Condition> copyConditionsList = Lists.newArrayList();
+        for(Condition copyCondition: conditions){
+            Condition condition = new Condition(copyCondition);
+            copyConditionsList.add(condition);
+        }
+
+        //Order copy and return copy
+        Collections.sort(copyConditionsList);
+        return copyConditionsList;
     }
 
     public void setConditions(List<Condition> conditions) {
