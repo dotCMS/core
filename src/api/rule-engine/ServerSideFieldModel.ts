@@ -81,7 +81,7 @@ export class ServerSideFieldModel extends CwModel {
         } catch (e) {
           console.error(e)
         }
-        if(paramDef.inputType.name == 'comparison' && paramDef.inputType.options[value].rightHandArgCount == 0){
+        if(paramDef.inputType.name == 'comparison' && paramDef.inputType['options'][value].rightHandArgCount == 0){
           return true;
         }
       })
