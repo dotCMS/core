@@ -6,9 +6,8 @@ import {CORE_DIRECTIVES} from "angular2/common";
   template: `
   <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)" >
     <div class="ui modal cw-modal-dialog" (click)="$event.stopPropagation()">
-      <i class="close icon" (click)="cancel.emit({isCanceled:true})"></i>
       <div class="header">{{headerText}}</div>
-      <div class="content">
+      <div flex layout-fill layout="column" class="content">
         <div *ngIf="errorMessage != null" class="ui negative message">{{errorMessage}}</div>
         <ng-content></ng-content>
       </div>
