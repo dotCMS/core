@@ -92,8 +92,7 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
         //Creating copy
         List<Condition> copyConditionsList = Lists.newArrayList();
         for(Condition copyCondition: conditions){
-            Condition condition = new Condition(copyCondition);
-            copyConditionsList.add(condition);
+            copyConditionsList.add(new Condition(copyCondition));
         }
 
         //Order copy and return copy
