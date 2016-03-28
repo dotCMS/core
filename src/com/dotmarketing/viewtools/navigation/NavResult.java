@@ -39,8 +39,16 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String type;
     private String permissionId;
     private String target;
-    
-    private String hostId;
+    private boolean showOnMenu;
+    public String getHostId() {
+		return hostId;
+	}
+
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
+
+	private String hostId;
     private String folderId;
     private List<String> childrenFolderIds;
     private List<NavResult> children;
@@ -88,7 +96,15 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         return href;
     }
 
-    public void setHref(String href) {
+    public boolean isShowOnMenu() {
+		return showOnMenu;
+	}
+
+	public void setShowOnMenu(boolean showOnMenu) {
+		this.showOnMenu = showOnMenu;
+	}
+
+	public void setHref(String href) {
         this.href = href;
     }
     
@@ -174,6 +190,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     ff.setOrder(nn.getOrder());
                     ff.setType(nn.getType());
                     ff.setPermissionId(nn.getPermissionId());
+                    ff.setShowOnMenu(nn.isShowOnMenu());
                     list.add(ff);
                 }
                 else {
