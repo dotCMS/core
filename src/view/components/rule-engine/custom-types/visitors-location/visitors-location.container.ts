@@ -48,10 +48,10 @@ const I8N_BASE:string = 'api.sites.ruleengine'
   directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, VisitorsLocationComponent],
   template: `<cw-visitors-location-component 
     [circle]="circle$ | async"
+    [preferredUnit]="preferredUnit"
     [comparisonValue]="comparisonValue"
     [comparisonControl]="comparisonControl"
     [comparisonOptions]="comparisonOptions"
-    [comparisonLabel]="comparisonLabel"
     [fromLabel]="fromLabel"
     (comparisonChange)="onComparisonChange($event)"
     (areaChange)="onUpdate($event)"
@@ -68,14 +68,13 @@ export class VisitorsLocationContainer {
   apiKey:string
   preferredUnit:string = 'm'
 
-
   lat:number = 0
   lng:number = 0
   radius:number = 50000
   comparisonValue:string = 'within'
   comparisonControl:Control
-  comparisonOptions: {value: string, label: string, icon:string }[]
-  fromLabel:string = 'from'
+  comparisonOptions: {value: string, label: Observable<string>, icon:string }[]
+  fromLabel:string = 'of'
 
   private _rsrcCache:{[key:string]:Observable<string>}
 
@@ -83,13 +82,10 @@ export class VisitorsLocationContainer {
     resources.get(I8N_BASE).subscribe((rsrc)=> { })
     this._rsrcCache = {}
 
-    this.circle$.subscribe((e)=>{
-      console.log("VisitorsLocationContainer", "circle$", e)
-    }, (e)=>{
-      debugger
-    }, (  ) => {
-      debugger
-    }
+    this.circle$.subscribe((e)=> {
+        }, (e)=> {
+          console.error("VisitorsLocationContainer", "Error updating area", e)
+        }, () => { }
     )
   }
 
@@ -103,7 +99,6 @@ export class VisitorsLocationContainer {
   }
 
   ngOnChanges(change){
-    console.log("VisitorsLocationComponent", "ngOnChanges", change)
     if(change.componentInstance && this.componentInstance != null){
       let temp:any = this.componentInstance.parameters
       let params:VisitorsLocationParams = temp as VisitorsLocationParams
@@ -114,7 +109,7 @@ export class VisitorsLocationContainer {
       let rsrcKey = i18nBaseKey + '.inputs.comparison.'
       let optsAry = Object.keys(opts).map((key)=> {
         let sOpt = opts[key]
-        return {value: sOpt.value, label: rsrcKey + sOpt.i18nKey, icon:sOpt.icon }
+        return {value: sOpt.value, label: this.rsrc(rsrcKey + sOpt.i18nKey), icon:sOpt.icon }
       })
 
       this.comparisonValue = params.comparison.value || comparisonDef.defaultValue
@@ -125,7 +120,8 @@ export class VisitorsLocationContainer {
       this.lat = parseFloat(params.latitude.value) || this.lat
       this.lng = parseFloat(params.longitude.value) || this.lng
       this.radius = parseFloat(params.radius.value) || 50000
-      this.preferredUnit = params.preferredDisplayUnits.value
+      this.preferredUnit = params.preferredDisplayUnits.value || this.componentInstance.parameterDefs['preferredDisplayUnits'].defaultValue
+
       this.circle$.next({ center: {lat: this.lat, lng: this.lng}, radius: this.radius})
     }
   }

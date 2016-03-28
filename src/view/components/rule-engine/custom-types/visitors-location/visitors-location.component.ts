@@ -24,19 +24,19 @@ interface VisitorsLocationParams {
 
 const UNITS = {
   mi: {
-    toMeters: ((len) => len * 1609.34),
-    toMiles: ((len) => len  ),
-    toKm: ((len) => len / 1.60934),
+    m: ((len) => len * 1609.34),
+    mi: ((len) => len  ),
+    km: ((len) => len / 1.60934),
   },
   km: {
-    toMeters: ((len) => len * 1000),
-    toMiles: ((len) => len / 1.60934 ),
-    toKm: ((len) => len),
+    m: ((len) => len * 1000),
+    mi: ((len) => len / 1.60934 ),
+    km: ((len) => len),
   },
   m: {
-    toMeters: ((len) => len ),
-    toKm: ((len) => len / 1000),
-    toMiles: ((len) => len / 1609.34 ),
+    m: ((len) => len ),
+    mi: ((len) => len / 1609.34 ),
+    km: ((len) => len / 1000),
   }
 
 }
@@ -45,7 +45,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
   selector: 'cw-visitors-location-component',
   providers:[DecimalPipe],
   directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, AreaPickerDialogComponent, Dropdown, InputOption, InputText],
-  template: `<div flex layout="row" class="cw-condition-component-body" *ngIf="comparisonDropdown != null">
+  template: `<div flex layout="row" class="cw-visitors-location cw-condition-component-body" *ngIf="comparisonDropdown != null">
 
   <cw-input-dropdown flex
                      class="cw-input"
@@ -56,12 +56,13 @@ const I8N_BASE:string = 'api.sites.ruleengine'
                      placeholder="{{comparisonDropdown.placeholder}}">
     <cw-input-option *ngFor="#opt of comparisonDropdown.options"
                      [value]="opt.value"
-                     [label]="opt.label"
+                     [label]="opt.label | async"
                      icon="{{opt.icon}}"></cw-input-option>
   </cw-input-dropdown>
   <div flex="15" layout-fill layout="row" layout-align="start center" class="cw-input">
     <cw-input-text
         flex
+        class="cw-latLong"
         [type]="text"
         [value]="getRadiusInPreferredUnit() | number:'1.0-0'"
         [readonly]="true">
@@ -72,6 +73,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
     <label class="cw-input-label-left">{{fromLabel}}</label>
     <cw-input-text
         flex
+        class="cw-radius"
         [type]="text"
         [value]="getLatLong()"
         [readonly]="true">
@@ -101,20 +103,16 @@ export class VisitorsLocationComponent {
   @Input() comparisonValue:string
   @Input() comparisonControl:Control
   @Input() comparisonOptions:{}[]
-  @Input() comparisonLabel:string
-  @Input() fromLabel:string = 'from'
+  @Input() fromLabel:string = 'of'
   @Input() changedHook:number = 0
+  @Input() preferredUnit:string = 'm'
+
 
   @Output() areaChange:EventEmitter<GCircle> = new EventEmitter(false)
   @Output() comparisonChange:EventEmitter<string> = new EventEmitter(false)
 
   showingMap:boolean = false
   comparisonDropdown:any
-  apiKey:string
-  preferredUnit:string = 'm'
-  private _rsrcCache:{[key:string]:Observable<string>}
-
-  oldRadius:number = 0
 
   constructor(public decimalPipe:DecimalPipe) {
     console.log("VisitorsLocationComponent", "constructor")
@@ -145,23 +143,16 @@ export class VisitorsLocationComponent {
   getRadiusInPreferredUnit():number{
     let r = this.circle.radius
     console.log("VisitorsLocationComponent", "getRadiusInPreferredUnit", r)
-    return UNITS[this.preferredUnit].toMeters(r)
+    return UNITS.m[this.preferredUnit](r)
   }
 
   toggleMap(){
     this.showingMap = !this.showingMap
-    // this.apiKey = "AIzaSyBqi1S9mgFHW7J-PkAp1hd1VWRKILgkL-8"
-    this.apiKey = ""
   }
 
   onUpdate(circle:GCircle){
     this.showingMap = false
     this.areaChange.emit(circle)
-  }
-
-
-  delayedValue(value:string, delay:number){
-    return Observable.timer(delay).map(x => value)
   }
 
 }

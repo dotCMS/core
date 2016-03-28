@@ -232,10 +232,10 @@ input.ng-dirty.ng-valid,
     max-height: 2em;
   }
   .cw-input-label-right {
-    margin-left: 1em;
+    margin-left: .25em;
   }
   .cw-input-label-left {
-    margin-right: 1em;
+    margin-right: .25em;
   }
   .cw-input,
   &.cw-last {
@@ -474,3 +474,12 @@ input.ng-dirty.ng-valid,
   height:100%;
   width:100%;
 }
+
+.cw-visitors-location {
+  .cw-latLong .ui.input input, .cw-radius .ui.input input {
+    text-align: right;
+    color:lightgray;
+  }
+}
+
+

@@ -30,34 +30,35 @@ export class ModalDialogComponent {
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
   @Output() ok:EventEmitter<boolean> = new EventEmitter(false)
 
+  private _keyListener:any
 
-
-  constructor() {
-
-  }
-
-  keyListener:any
+  constructor() { }
 
   ngOnChanges(change) {
-
     if (change.hidden) {
       if (!this.hidden) {
-        this.keyListener = document.body.addEventListener('keyup', (e)=> {
-          if(e.keyCode == 27 ){ // escape
-            this.cancel.emit(false)
-          }
-        })
-      } else if (this.keyListener != null) {
-        document.body.removeEventListener('keyup', this.keyListener)
+        this.addEscapeListener()
+      } else if (this._keyListener != null) {
+        this.removeEscapeListener()
       }
     }
   }
 
-  onCancel(e){
-    this.cancel.emit(true)
+  private addEscapeListener() {
+    this._keyListener = document.body.addEventListener('keyup', (e)=> {
+      if (e.keyCode == 27) { // escape
+        e.preventDefault()
+        e.stopPropagation()
+        this.cancel.emit(false)
+      }
+    })
   }
 
-  onKeyUp(e){
-    debugger
+  private removeEscapeListener() {
+    document.body.removeEventListener('keyup', this._keyListener)
+  }
+
+  onCancel(e){
+    this.cancel.emit(true)
   }
 }
