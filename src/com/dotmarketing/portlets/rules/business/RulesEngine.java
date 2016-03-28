@@ -116,7 +116,7 @@ public final class RulesEngine {
                 	long before = System.currentTimeMillis();
                     rule.checkValid(); // @todo ggranum: this should actually be done on writing to the DB, or at worst reading from.
                     boolean evaled = rule.evaluate(req, res);
-					System.out.println("### rule = " + rule.getName() + " " + evaled);
+
 					if (evaled) {
 						Rule rCopy = new Rule();
 						rCopy.setId(rule.getId());
@@ -127,7 +127,7 @@ public final class RulesEngine {
 						rCopy.setFolder(rule.getFolder());
 						rCopy.setShortCircuit(rule.isShortCircuit());
 						rCopy.setModDate(rule.getModDate());
-						System.out.println("RulesEngine ###");
+						
 						trackFiredRule(rCopy, req);
 					}
                     long after = System.currentTimeMillis();
