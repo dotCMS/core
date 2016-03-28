@@ -27,12 +27,13 @@ import com.dotcms.repackage.org.apache.felix.framework.util.FelixConstants;
 import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.apache.felix.main.AutoProcessor;
 import com.dotcms.repackage.org.apache.felix.main.Main;
+
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+
 import com.dotcms.repackage.org.osgi.framework.BundleActivator;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import com.dotcms.repackage.org.osgi.framework.launch.Framework;
-
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -75,10 +76,7 @@ public class OSGIUtil {
     }
 
     public Framework initializeFramework ( ServletContextEvent context ) {
-    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
 
-    		return null;
-    	}
         servletContextEvent = context;
 
         String felixDirectory = context.getServletContext().getRealPath( "/WEB-INF/felix" );

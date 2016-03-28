@@ -303,7 +303,8 @@ public class InitServlet extends HttpServlet {
 			//Just get the Engine to make sure it gets inited on time before the first request
 			VelocityUtil.getEngine();
 
-
+			// Tell the world we are started up?
+			System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
 
 

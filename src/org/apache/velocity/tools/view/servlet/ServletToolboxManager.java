@@ -47,6 +47,7 @@ import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.WebKeys;
 
 
 /**
@@ -144,7 +145,7 @@ public class ServletToolboxManager extends XMLToolboxManager
     // -------------------------------------------- Public Methods ------------
 
     public void registerService () {
-    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+    	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 	        // Register main service
 	        BundleContext context = HostActivator.instance().getBundleContext();
 	        Hashtable<String, String> props = new Hashtable<String, String>();

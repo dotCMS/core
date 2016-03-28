@@ -692,6 +692,9 @@ public final class WebKeys {
 	// Personas
     public static final String CMS_PERSONA_PARAMETER= "com.dotmarketing.persona.id";
 	
+	public static final String OSGI_ENABLED="felix.osgi.enabled";
 	
+	
+	public static final String DOTCMS_STARTED_UP="dotcms.started.up";
 	
 }

@@ -29,7 +29,7 @@ import com.dotmarketing.util.Logger;
 
 public class ThreadNameFilter implements Filter {
 	FastDateFormat df = FastDateFormat.getInstance("MM-dd-yyyy hh:mm:ss z");
-	HostWebAPI hapi = WebAPILocator.getHostWebAPI();
+
 	private static final ThreadLocal<Date> startDate = new ThreadLocal<Date>() {
 		@Override
 		protected Date initialValue() {
@@ -42,7 +42,7 @@ public class ThreadNameFilter implements Filter {
 	}
 
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-
+		HostWebAPI hapi = WebAPILocator.getHostWebAPI();
 		String threadName = Thread.currentThread().getName();
 		try{
 			// Log only when the path is a page
