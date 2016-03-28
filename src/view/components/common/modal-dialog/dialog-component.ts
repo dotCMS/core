@@ -5,7 +5,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
   directives: [CORE_DIRECTIVES],
   template: `
   <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)" >
-    <div class="ui modal cw-modal-dialog" (click)="$event.stopPropagation()">
+    <div class="ui modal cw-modal-dialog" style="height:{{height}}%;width:{{width}}%" (click)="$event.stopPropagation()">
       <div class="header">{{headerText}}</div>
       <div flex layout-fill layout="column" class="content">
         <div *ngIf="errorMessage != null" class="ui negative message">{{errorMessage}}</div>
@@ -28,6 +28,9 @@ export class ModalDialogComponent {
   @Input() headerText:string = ""
   @Input() okButtonText:string = "Ok"
   @Input() errorMessage:string = null
+
+  @Input() height:number = 60
+  @Input() width:number = 50
 
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)

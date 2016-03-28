@@ -13,6 +13,7 @@ import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
     [hidden]="hidden"
     [okEnabled]="selectedBundle != null"
     [errorMessage]="errorMessage"
+    [width]="30"
     (ok)="addToBundle.emit(selectedBundle)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
