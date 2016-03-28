@@ -182,10 +182,7 @@ public class Rule implements Permissionable, Serializable {
         }
 
         //Creating copy
-        List<ConditionGroup> copyGroupList = Lists.newArrayList();
-        for(ConditionGroup copyCG: groups){
-            copyGroupList.add(new ConditionGroup(copyCG));
-        }
+        List<ConditionGroup> copyGroupList = Lists.newArrayList(groups);
 
         //Order copy and return copy
         Collections.sort(copyGroupList);
