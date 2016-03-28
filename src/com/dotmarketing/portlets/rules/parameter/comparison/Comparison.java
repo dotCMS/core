@@ -76,7 +76,11 @@ public class Comparison<T> {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with three argument values.");
     }
 
-    public boolean perform(Location argA, Location argB, double argC, UnitOfDistance unitOfDistance) {
+    /**
+     * @todo ggranum: This modification of the simple, single type isn't ideal, but it's understandable. Find a better pattern
+     * for future cases.
+     */
+    public boolean perform(T argA, T argB, double argC) {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed.");
     }
 

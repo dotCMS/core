@@ -45,7 +45,7 @@ public class VisitorsGeolocationConditionletTest {
                     .withRequestIpAddress(MOCK_IP_ADDRESS)
                     .withMockVisitorsLocation(VISITORS_LATITUDE, VISITORS_LONGITUDE)
                     .withDistance(DISTANCE)
-                    .withUnitOfDistance(Location.UnitOfDistance.KILOMETERS)
+                    .withUnitOfDistance(UnitOfDistance.KILOMETERS)
                     .withLatitude(LATITUDE)
                     .withLongitude(LONGITUDE)
                     .shouldBeFalse()
@@ -57,7 +57,7 @@ public class VisitorsGeolocationConditionletTest {
                     .withRequestIpAddress(MOCK_IP_ADDRESS)
                     .withMockVisitorsLocation(VISITORS_LATITUDE, VISITORS_LONGITUDE)
                     .withDistance(DISTANCE)
-                    .withUnitOfDistance(Location.UnitOfDistance.KILOMETERS)
+                    .withUnitOfDistance(UnitOfDistance.KILOMETERS)
                     .withLatitude(LATITUDE)
                     .withLongitude(LONGITUDE)
                     .shouldBeTrue()
@@ -100,7 +100,7 @@ public class VisitorsGeolocationConditionletTest {
         TestCase aCase = new TestCase("Exists: Unsupported comparison should throw.")
                 .withComparison(EXISTS)
                 .withDistance(DISTANCE)
-                .withUnitOfDistance(Location.UnitOfDistance.KILOMETERS)
+                .withUnitOfDistance(UnitOfDistance.KILOMETERS)
                 .withLatitude(LATITUDE)
                 .withLongitude(LONGITUDE)
                 .shouldBeFalse();
@@ -154,12 +154,12 @@ public class VisitorsGeolocationConditionletTest {
         }
 
         TestCase withDistance(double distance) {
-            params.put(DISTANCE_KEY, new ParameterModel(DISTANCE_KEY, Double.toString(distance)));
+            params.put(RADIUS_KEY, new ParameterModel(RADIUS_KEY, Double.toString(distance)));
             return this;
         }
 
-        TestCase withUnitOfDistance(Location.UnitOfDistance unitOfDistance) {
-            params.put(UNIT_OF_DISTANCE_KEY, new ParameterModel(UNIT_OF_DISTANCE_KEY, unitOfDistance.name()));
+        TestCase withUnitOfDistance(UnitOfDistance unitOfDistance) {
+            params.put(RADIUS_UNIT_KEY, new ParameterModel(RADIUS_UNIT_KEY, unitOfDistance.abbreviation));
             return this;
         }
 
