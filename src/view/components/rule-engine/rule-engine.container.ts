@@ -237,7 +237,12 @@ export class RuleEngineContainer {
           rule._conditionGroups.push(group)
         } else {
           rule._conditionGroups.sort(this.prioritySortFn)
-          rule._conditionGroups.forEach((group:ConditionGroupModel) => group._conditions.sort(this.prioritySortFn))
+          rule._conditionGroups.forEach((group:ConditionGroupModel) => {
+            group._conditions.sort(this.prioritySortFn)
+            if (group._conditions.length === 0){
+              group._conditions.push(new ConditionModel({priority: 1, _type: new ServerSideTypeModel(), operator: 'AND'}))
+            }
+          })
         }
       }, (e)=> {
         console.error("RuleEngineContainer", e)
@@ -279,7 +284,7 @@ export class RuleEngineContainer {
           return aryAction.key != ruleAction.key
         })
         if (rule._ruleActions.length === 0) {
-          //this.addAction()
+          rule._ruleActions.push(new ActionModel(null, new ServerSideTypeModel(), 1))
         }
       })
     }
@@ -309,9 +314,11 @@ export class RuleEngineContainer {
   onCreateConditionGroup(event:ConditionGroupActionEvent) {
     console.log("RuleEngineContainer", "onCreateConditionGroup")
     let rule = event.payload.rule
-    let group = new ConditionGroupModel({operator: 'AND', priority:event.payload.priority})
+    let priority = rule._conditionGroups.length ? rule._conditionGroups[rule._conditionGroups.length - 1].priority + 1 : 1
+    let group = new ConditionGroupModel({operator: 'AND', priority:priority})
     group._conditions.push(new ConditionModel({priority: 1, _type: new ServerSideTypeModel(), operator: 'AND'}))
     rule._conditionGroups.push(group)
+    rule._conditionGroups.sort(this.prioritySortFn)
   }
 
   onUpdateConditionGroupOperator(event:ConditionGroupActionEvent) {
@@ -324,7 +331,7 @@ export class RuleEngineContainer {
   onDeleteConditionGroup(event:ConditionGroupActionEvent) {
     let rule = event.payload.rule
     let group = event.payload.conditionGroup
-    this._conditionGroupService.remove(rule.key, group)
+    this._conditionGroupService.remove(rule.key, group).subscribe()
     rule._conditionGroups = rule._conditionGroups.filter((aryGroup)=> aryGroup.key != group.key )
   }
 
@@ -370,6 +377,7 @@ export class RuleEngineContainer {
 
   onDeleteCondition(event:ConditionActionEvent) {
     console.log("RuleEngineContainer", "onDeleteCondition", event)
+    let rule = event.payload.rule
     let group = event.payload.conditionGroup
     let condition = event.payload.condition
     if (condition.isPersisted()) {
@@ -378,7 +386,15 @@ export class RuleEngineContainer {
           return aryCondition.key != condition.key
         })
         if (group._conditions.length === 0) {
-          // removeConditionGroup
+          console.log("RuleEngineContainer", "condition", "Remove Condition and remove Groups is empty")
+          this._conditionGroupService.remove(rule.key, group).subscribe()
+          rule._conditionGroups = rule._conditionGroups.filter((aryGroup)=> aryGroup.key != group.key )
+        }
+        if (rule._conditionGroups.length === 0) {
+          console.log("RuleEngineContainer", "conditionGroups", "Add stub group if Groups are empty")
+          let group = new ConditionGroupModel({operator: 'AND', priority: 1})
+          group._conditions.push(new ConditionModel({priority: 1, _type: new ServerSideTypeModel(), operator: 'AND'}))
+          rule._conditionGroups.push(group)
         }
       })
     }
