@@ -13,6 +13,7 @@ import {ModalDialogComponent} from "../modal-dialog/dialog-component";
     [hidden]="hidden"
     [okEnabled]="selectedEnvironment != null"
     [errorMessage]="errorMessage"
+    [width]="30"
     (ok)="doPushPublish.emit(selectedEnvironmentId)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
