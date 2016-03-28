@@ -64,8 +64,7 @@ public class LoginFactory {
                 if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
                 	userName = user.getUserId();
                 }
-
-                return doLogin(userName, user.getPassword(), true, request, response);
+                return doLogin(userName, null, true, request, response, true);
             } catch (Exception e) { // $codepro.audit.disable logExceptions
         		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
 
@@ -156,8 +155,25 @@ public class LoginFactory {
      * @param request
      * @param response
      * @return
+     * @throws NoSuchUserException
      */
-    public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
+	public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request,
+			HttpServletResponse response) throws NoSuchUserException {
+		return doLogin(userName, password, rememberMe, request, response, false);
+	}
+
+	/**
+	 * 
+	 * @param userName
+	 * @param password
+	 * @param rememberMe
+	 * @param request
+	 * @param response
+	 * @param skipPasswordCheck
+	 * @return
+	 * @throws NoSuchUserException
+	 */
+    public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request, HttpServletResponse response, boolean skipPasswordCheck) throws NoSuchUserException {
         try {
         	User user = null;
         	boolean match = false;
@@ -233,9 +249,11 @@ public class LoginFactory {
 
 	            	return false;
 	            }
-
+	            match = true;
+	            if (!skipPasswordCheck) {
 	            // Validate password and rehash when is needed
 	            match = passwordMatch(password, user);
+	            }
 
 	            if (match) {
 	            	if(useSalesForceLoginFilter){/*Custom Code */
