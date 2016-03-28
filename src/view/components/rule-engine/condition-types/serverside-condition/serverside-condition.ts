@@ -62,7 +62,8 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                                 #rdInput="ngForm"
                                 >
         </cw-input-rest-dropdown>
-        <div flex="50" *ngIf="rdInput.touched && !rdInput.valid" class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
+        <div flex="50" *ngIf="rdInput.touched && !rdInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)" 
+            class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
@@ -75,18 +76,22 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
             (blur)="onBlur(input)"
             #fInput="ngForm"
         ></cw-input-text>
-        <div flex="50" *ngIf="fInput.touched && !fInput.valid"  class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
+        <div flex="50" *ngIf="fInput.touched && !fInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"  
+            class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>
 
       <cw-input-date *ngIf="input.type == 'datetime'"
                      flex
                     layout-fill
                      class="cw-input"
+                     [ngFormControl]="input.control"
                      [class.cw-last]="islast"
                      [placeholder]="input.placeholder | async"
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
-                     (blur)="onBlur(input)"></cw-input-date>
+                     (blur)="onBlur(input)"
+                     #gInput="ngForm"
+      ></cw-input-date>
     </template>
   </div>
 </form>`

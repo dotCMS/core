@@ -8,7 +8,10 @@ import {CORE_DIRECTIVES} from "angular2/common";
     <div class="ui modal cw-modal-dialog" (click)="$event.stopPropagation()">
       <i class="close icon" (click)="cancel.emit({isCanceled:true})"></i>
       <div class="header">{{headerText}}</div>
-      <ng-content></ng-content>
+      <div class="content">
+        <div *ngIf="errorMessage != null" class="ui negative message">{{errorMessage}}</div>
+        <ng-content></ng-content>
+      </div>
       <div class="actions">
         <div class="ui black deny button" (click)="cancel.emit(true)">Cancel</div>
         <div class="ui positive right labeled icon button" (click)="ok.emit()">{{okButtonText}}
@@ -25,6 +28,7 @@ export class ModalDialogComponent {
   @Input() hidden:boolean = false
   @Input() headerText:string = ""
   @Input() okButtonText:string = "Ok"
+  @Input() errorMessage:string = null
 
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)

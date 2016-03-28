@@ -1,23 +1,23 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
-import {IPublishEnvironment, RuleService} from "../../../../api/rule-engine/Rule";
-import {PushPublishDialogComponent} from "./push-publish-dialog-component";
+import {IBundle, RuleService} from "../../../../api/rule-engine/Rule";
+import {AddToBundleDialogComponent} from "./add-to-bundle-dialog-component";
 import {BehaviorSubject} from "rxjs/Rx";
 
 @Component({
-  selector: 'cw-push-publish-dialog-container',
-  directives: [CORE_DIRECTIVES, PushPublishDialogComponent],
+  selector: 'cw-add-to-bundle-dialog-container',
+  directives: [CORE_DIRECTIVES, AddToBundleDialogComponent],
   template: `
-  <cw-push-publish-dialog-component
-  [environmentStores]="ruleService.environments$ | async"
+  <cw-add-to-bundle-dialog-component
+  [bundleStores]="ruleService.bundles$ | async"
   [hidden]="hidden"
   [errorMessage]="errorMessage | async"
   (cancel)="hidden = true; close.emit($event); errorMessage = null;"
-  (doPushPublish)="doPushPublish($event)"
-  ></cw-push-publish-dialog-component>`
+  (addToBundle)="addToBundle($event)"
+  ></cw-add-to-bundle-dialog-component>`
   , changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PushPublishDialogContainer {
+export class AddToBundleDialogContainer {
   @Input() assetId:string
   @Input() hidden:boolean = false
 
@@ -26,20 +26,20 @@ export class PushPublishDialogContainer {
 
   errorMessage:BehaviorSubject<string> = new BehaviorSubject(null)
 
-  environmentStores:IPublishEnvironment[] = []
+  bundleStores:IBundle[] = []
 
   constructor(public ruleService:RuleService) {
-    this.ruleService.loadPublishEnvironments()
+    this.ruleService.loadBundleStores()
   }
 
   ngOnChanges(change){
     if (change.hidden) {
-      console.log("PushPublishDialogContainer", "ngOnChanges", change.hidden.currentValue, change.hidden.previousValue)
+      console.log("AddToBundlehDialogContainer", "ngOnChanges", change.hidden.currentValue, change.hidden.previousValue)
     }
   }
 
-  doPushPublish(environment:IPublishEnvironment) {
-    this.ruleService.pushPublishRule(this.assetId, environment.id).subscribe((result:any)=> {
+  addToBundle(bundle:IBundle) {
+    this.ruleService.addRuleToBundle(this.assetId, bundle).subscribe((result:any)=> {
       if (!result.errors) {
         this.close.emit({isCanceled:false})
         this.errorMessage = null

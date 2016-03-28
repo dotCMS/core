@@ -58,7 +58,7 @@ import {VisitorsLocationContainer} from "./custom-types/visitors-location/visito
 </div>
 <div class="cw-btn-group cw-delete-btn">
   <div class="ui basic icon buttons">
-    <button class="ui button" aria-label="Delete Condition" (click)="onDeleteConditionClicked()">
+    <button class="ui button" aria-label="Delete Condition" (click)="onDeleteConditionClicked()" [disabled]="!condition.isPersisted()">
       <i class="trash icon"></i>
     </button>
   </div>
