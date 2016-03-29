@@ -423,7 +423,6 @@
                     <% }%>
 
                 var type = field["fieldFieldType"];
-
             if(type=='checkbox'){
                    //checkboxes fields
                     var option = field["fieldValues"].split("\r\n");
@@ -604,35 +603,28 @@
                             "</div>"
                         ].join("");
 
-                        document.addEventListener('search_fields_table_update_done', function (e) {
-
-                            document.removeEventListener('search_fields_table_update_done', this);
-                            console.log("fieldId", fieldId);
-                            var tagField = dojo.byId(fieldId);
-                            console.log("tagField", tagField);
-
-                            dojo.connect(tagField, "onkeyup", function(e) {
+                        dojo.addOnLoad(function() {
+                          var tagField = dojo.byId(fieldId);
+                          dojo.connect(tagField, "onkeyup", function(e) {
 
                             <%
                                 //Search for the selected host
                                 String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
                                 if(UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts")) {
                             %>
-                            suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
+                                    suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
                             <%
-                            } else {
+                                } else {
                             %>
-                            suggestTagsForSearch(e, searchFieldId);
+                                    suggestTagsForSearch(e, searchFieldId);
                             <%
                                 }
                             %>
-                            });
-                            dojo.connect(tagField, "onblur", closeSuggetionBox);
-                            if (value.length) {
+                          });
+                          dojo.connect(tagField, "onblur", closeSuggetionBox);
+                          if (value.length) {
                             fillExistingTags(fieldId, value, searchFieldId);
-                            }
-
-
+                          }
                         })
 
                         setDotFieldTypeStr = setDotFieldTypeStr
@@ -1290,8 +1282,6 @@
                         htmlstr += "<div class='clear'></div>";
                 }
                 $('search_fields_table').update(htmlstr);
-                document.dispatchEvent(new Event('search_fields_table_update_done'));
-
                 <%if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)){%>
                   if(hasHostField){
                      dojo.byId("filterSystemHostTable").style.display = "";
@@ -1403,7 +1393,6 @@
 
 	            if(dijit.byId('structure_inode')) {
 	              structureInode  = dijit.byId('structure_inode').getValue();
-                  console.log('structureInode', structureInode);
 	            }
 
                 if(structureInode ==""){
