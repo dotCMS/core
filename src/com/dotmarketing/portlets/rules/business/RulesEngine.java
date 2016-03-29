@@ -9,7 +9,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -159,22 +158,24 @@ public final class RulesEngine {
 	 */
 	@SuppressWarnings("unchecked")
 	private static void trackFiredRule(Rule firedRule, HttpServletRequest req) {
-		Set<Rule> firedRulesRequest = (Set<Rule>) req.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
-		Set<Rule> firedRulesSession = (Set<Rule>) req.getSession(true).getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+		FiredRulesList firedRulesRequest = (FiredRulesList) req.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+		FiredRulesList firedRulesSession = (FiredRulesList) req.getSession(true).getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
 
 
 		if (!UtilMethods.isSet(firedRulesRequest)) {
-			firedRulesRequest = Collections.synchronizedSet(new HashSet<Rule>());
+			firedRulesRequest = new FiredRulesList();
 			req.setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRulesRequest);
 		}
 
 		if (!UtilMethods.isSet(firedRulesSession)) {
-			firedRulesSession =  Collections.synchronizedSet(new HashSet<Rule>());
+			firedRulesSession = new FiredRulesList();
 			req.getSession(true).setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRulesSession);
 		}
 
-		firedRulesRequest.add(firedRule);
-		firedRulesSession.add(firedRule);
+		Date now = new Date();
+		FiredRule ruleFired = new FiredRule(now, firedRule.getId());
+		firedRulesRequest.add( ruleFired );
+		firedRulesSession.add( ruleFired );
 	}
 
 }
