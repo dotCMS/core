@@ -325,11 +325,6 @@ function animateExitingTag(tagSuggested) {
 
 function useThisTagForSearch(e) {
 	var tagLink = e.target;
-
-	if(tagLink.className == 'tagIcon'){
-		tagLink = tagLink.parentNode;
-	}
-
 	var tagSuggested = tagLink.text || tagLink.value.replace(",", "");
 	var tagExists = isTagAdded(tagSuggested);
 	if (tagExists) {
@@ -390,22 +385,17 @@ function addTagValue(tag) {
 	if (contentSearchField) {
 		var contentSearchFieldEl = document.getElementById(contentSearchField)
 
-		if (contentSearchFieldEl) {
-			if (contentSearchFieldEl.value.length) {
-				contentSearchFieldEl.value += ", ";
-			}
-			contentSearchFieldEl.value += tag;
-
-			contentSearchFieldEl.onchange();
+		if (contentSearchFieldEl.value.length) {
+			contentSearchFieldEl.value += ", ";
 		}
+		contentSearchFieldEl.value += tag;
+		contentSearchFieldEl.onchange();
 	}
 
-	if (tagValues && tagValues.value) {
-		if (tagValues.value.length) {
-			tagValues.value += ", ";
-		}
-		tagValues.value += tag;
+	if (tagValues.value.length) {
+		tagValues.value += ", ";
 	}
+	tagValues.value += tag;
 }
 
 function clearTag(e) {
@@ -512,7 +502,7 @@ function removeTagValue(tagToRemove) {
 	tagToRemove = LTrim(tagToRemove);
 
 	var tagValues = document.getElementById(tagVelocityVarName + "Content");
-	if (tagValues && tagValues.value.length) {
+	if (tagValues.value.length) {
 		var tagsExisting = tagValues.value.split(",");
 		var updatedTagValues = [];
 

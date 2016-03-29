@@ -47,6 +47,7 @@
         var headers;
         var userRolesIds = new Array ();
         var selectedStructureVarName = '';
+        var bindTagFieldEvent;
 
         var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
@@ -173,7 +174,6 @@
 
 
         function fillResults(data) {
-        	//console.log("searching:" +  amISearching);
         	if(amISearching <0){
         		amISearching=0;
         	}
@@ -423,7 +423,6 @@
                     <% }%>
 
                 var type = field["fieldFieldType"];
-
             if(type=='checkbox'){
                    //checkboxes fields
                     var option = field["fieldValues"].split("\r\n");
@@ -594,31 +593,42 @@
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
                         dijit.registry.remove(selectedStruct + fieldContentlet + "Field");
 
-                        <%
-                            // Search for the selected host
-                            String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-                            boolean isSelectedHost = UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts");
-                        %>
-
                         var result = [
                             "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
-                            "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" onkeyup=\"tagOnKeyUp('" + searchFieldId + "'<%=isSelectedHost ? ",'" + selectedHost + "'": ""%>)\"/>",
+                            "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
                             "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
                             "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
                             "</div>"
                         ].join("");
 
-                        var self = this;
-                        this[fieldId] = function (){
-                            if (value.length) {
-                                fillExistingTags(fieldId, value, searchFieldId);
-                            }
-                        };
-                        document.addEventListener('search_fields_table_update_done', this[fieldId]);
+                        bindTagFieldEvent = function() {
+                          var tagField = dojo.byId(fieldId);
+                          dojo.connect(tagField, "onkeyup", function(e) {
+
+                            <%
+                                //Search for the selected host
+                                String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                if(UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts")) {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
+                            <%
+                                } else {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId);
+                            <%
+                                }
+                            %>
+                          });
+                          dojo.connect(tagField, "onblur", closeSuggetionBox);
+                          if (value.length) {
+                            fillExistingTags(fieldId, value, searchFieldId);
+                          }
+                        }
 
                         setDotFieldTypeStr = setDotFieldTypeStr
+                                            + "bindTagFieldEvent();\n"
                                             + "dojo.attr("
                                             + "'" + selectedStruct + "." + fieldContentlet + "Field" + "'"
                                             + ",'" + DOT_FIELD_TYPE + "'"
@@ -685,12 +695,6 @@
 
         }
 
-
-        function tagOnKeyUp(searchFieldId, selectedHost){
-            var event = window.event || arguments.callee.caller.arguments[0]
-
-            suggestTagsForSearch(event, searchFieldId, selectedHost);
-        }
 
 		function updateSelectedStructAux(){
 			structureInode = dijit.byId('selectedStructAux').value;
@@ -1279,8 +1283,6 @@
                         htmlstr += "<div class='clear'></div>";
                 }
                 $('search_fields_table').update(htmlstr);
-                document.dispatchEvent(new Event('search_fields_table_update_done'));
-
                 <%if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)){%>
                   if(hasHostField){
                      dojo.byId("filterSystemHostTable").style.display = "";
@@ -1392,7 +1394,6 @@
 
 	            if(dijit.byId('structure_inode')) {
 	              structureInode  = dijit.byId('structure_inode').getValue();
-                  console.log('structureInode', structureInode);
 	            }
 
                 if(structureInode ==""){
@@ -1586,7 +1587,6 @@
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
-				//console.log(fieldsValues);
                 if(isInodeSet(structureInode) || "_all" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
@@ -1790,7 +1790,6 @@
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
-                                //console.log(headers[j]);
                                 cell.setAttribute("align","left");
                                 if (j == 0 ) {
 
