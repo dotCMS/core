@@ -7,7 +7,6 @@ import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.util.LogicalCondition;
 import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -83,28 +82,15 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     public List<Condition> getConditions() {
         if(conditions == null) {
             try {
+                //This will return the Conditions sorted by priority asc directly from DB.
                 conditions = FactoryLocator.getRulesFactory().getConditionsByGroup(this.id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
 
-        //Creating copy
-        List<Condition> copyConditionsList = Lists.newArrayList(conditions);
-
-        //Order copy and return copy
-        Collections.sort(copyConditionsList);
-        return copyConditionsList;
-    }
-
-    public void setConditions(List<Condition> conditions) {
-        this.conditions = conditions;
-    }
-
-    public void addCondition(Condition condition) {
-        if(conditions!=null) {
-            conditions.add(condition);
-        }
+        //Return a shallow copy of the list.
+        return Lists.newArrayList(conditions);
     }
 
     public void checkValid(){

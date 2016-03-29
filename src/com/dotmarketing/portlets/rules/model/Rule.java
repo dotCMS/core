@@ -15,7 +15,6 @@ import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -175,34 +174,19 @@ public class Rule implements Permissionable, Serializable {
     public List<ConditionGroup> getGroups() {
         if(groups == null) {
             try {
+                //This will return the Groups sorted by priority asc directly from DB.
                 groups = FactoryLocator.getRulesFactory().getConditionGroupsByRule(id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not read groups for Rule %s ", this.toString());
             }
         }
 
-        //Creating copy
-        List<ConditionGroup> copyGroupList = Lists.newArrayList(groups);
-
-        //Order copy and return copy
-        Collections.sort(copyGroupList);
-        return copyGroupList;
+        //Return a shallow copy of the list.
+        return Lists.newArrayList(groups);
     }
 
     public void setGroups(List<ConditionGroup> groups) {
         this.groups = groups;
-    }
-
-    public void addGroup(ConditionGroup group) {
-        if(groups != null) {
-            groups.add(group);
-        }
-    }
-
-    public void removeGroup(ConditionGroup group) {
-        if(groups != null) {
-            groups.remove(group);
-        }
     }
 
     public List<RuleAction> getRuleActions() {
