@@ -26,7 +26,7 @@
 
 	
 	<div id="rules-engine-container" class="portlet-wrapper">
-	  <iframe id="rulesIframe" name="rulesIframe" width="100%" height="100%" frameborder="0" style="width:100%;height:100%"></iframe>
+	  <iframe id="rulesIframe" name="rulesIframe" width="100%" height="100%" frameborder="0" style="width:100%;height:100%;min-height:400px;"></iframe>
 	</div>
 
 
@@ -57,7 +57,7 @@
 	    var viewport_height = viewport.h;
 
 	    var e =  dojo.byId("rules-engine-container");
-	    dojo.style(e, "height", viewport_height -150 + "px");
+	    dojo.style(e, "height", (viewport_height - 150) + "px");
 
 	}
 	// need the timeout for back buttons
@@ -66,7 +66,8 @@
 		resizeIframe();
 		setTimeout(resizeIframe, 100);
 		setTimeout(resizeIframe, 500);
-		
+		setTimeout(resizeIframe, 5000);
+
 		// deal with style funk
 		dojo.style("subNavCrumbTrail", "margin", "0px -10px 10px -10px");
 		dojo.style("dotAjaxMainHangerDiv", "margin-top", "-9px");
