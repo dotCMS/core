@@ -47,6 +47,7 @@
         var headers;
         var userRolesIds = new Array ();
         var selectedStructureVarName = '';
+        var bindTagFieldEvent;
 
         var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
@@ -173,7 +174,6 @@
 
 
         function fillResults(data) {
-        	//console.log("searching:" +  amISearching);
         	if(amISearching <0){
         		amISearching=0;
         	}
@@ -603,7 +603,7 @@
                             "</div>"
                         ].join("");
 
-                        dojo.addOnLoad(function() {
+                        bindTagFieldEvent = function() {
                           var tagField = dojo.byId(fieldId);
                           dojo.connect(tagField, "onkeyup", function(e) {
 
@@ -625,9 +625,10 @@
                           if (value.length) {
                             fillExistingTags(fieldId, value, searchFieldId);
                           }
-                        })
+                        }
 
                         setDotFieldTypeStr = setDotFieldTypeStr
+                                            + "bindTagFieldEvent();\n"
                                             + "dojo.attr("
                                             + "'" + selectedStruct + "." + fieldContentlet + "Field" + "'"
                                             + ",'" + DOT_FIELD_TYPE + "'"
@@ -1586,7 +1587,6 @@
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
-				//console.log(fieldsValues);
                 if(isInodeSet(structureInode) || "_all" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
@@ -1790,7 +1790,6 @@
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
-                                //console.log(headers[j]);
                                 cell.setAttribute("align","left");
                                 if (j == 0 ) {
 
