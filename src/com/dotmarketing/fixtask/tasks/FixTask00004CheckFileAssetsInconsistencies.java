@@ -119,7 +119,7 @@ public class FixTask00004CheckFileAssetsInconsistencies  implements FixTask {
 						db.addParam(identifierInode);
 						db.getResult();
 
-						FixAssetsProcessStatus.addAError();
+						FixAssetsProcessStatus.addAErrorFixed();
 						counter++;
 
 					}

@@ -148,60 +148,9 @@ function optimizeCallback() {
 	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"Optimize-Done")%>");
 }
 
-function checkFixAssetCallback (responser) {
-	$("fixAssetsButton").disabled = false;
-
-	var fixAssetInfoDiv = document.getElementById("fixAssetInfo");
-	var fixAssetTimeDiv = document.getElementById("fixAssetTime");
-	var infodiv = "";
-
-	if(responser != undefined){
-
-		for(i=0;i<responser.size();i++){
-			response=responser[i];
-			var total = response['total'];
-			var actual = response['actual'];
-			error = response['error'];
-			var currentIndexPath = response['currentIndexPath'];
-			var initialTime = response['initialTime'];
-			var finalTime = response['finalTime'];
-			var running = response['running'];
-			var percentage = response['percentage'];
-			var elapsed = response['elapsed'];
-			var remaining = response['remaining'];
-		     description = response['description'];
-
-		     infodiv =infodiv +"<%= LanguageUtil.get(pageContext,"The-Task-perform-was") %> " + description + " .<%= LanguageUtil.get(pageContext,"The-total-of-assets-to-change-is") %> " + total + " <%= LanguageUtil.get(pageContext,"--and--") %> " + error + " <%= LanguageUtil.get(pageContext,"assets-were-succesfully-fixed") %>"+"<br />";
-		     infodiv  =infodiv+"<%= LanguageUtil.get(pageContext,"The-start-time-was") %> " + initialTime + " <%= LanguageUtil.get(pageContext,"and-ended-on") %>  "+ finalTime+"<br /><br />";
-
-			}
-
-			fixAssetInfoDiv.innerHTML = infodiv;
-			//fixAssetTimeDiv.innerHTML = timeDiv;
-			document.getElementById("fixAssetsMessage").innerHTML ="";
-			//$("fixAssetsButton").disabled = true;
-			document.getElementById("fixAssetsButtonDiv").style.display = "";
-
-		//	setTimeout("fixAssetsCallback()", 10000000);
-	}
-
-	else{
-		fixAssetInfoDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"No-Tasks-were-executed") %>"
-		fixAssetTimeDiv.innerHTML = "";
-
-		document.getElementById("fixAssetsButtonDiv").style.display = "";
-		document.getElementById("fixAssetsMessage").innerHTML ="";
-		//setTimeout("fixAssetsCallback()", 10000000);
-
-	}
-
-	setTimeout("fixAssetsCallback()", 10000000);
-}
-
-
 function checkFixAsset()
 {
-	CMSMaintenanceAjax.getFixAssetsProgress(checkFixAssetCallback);
+	CMSMaintenanceAjax.getFixAssetsProgress(fixAssetsCallback);
 }
 
 function doCreateZipAjax(dataOnly)
@@ -281,43 +230,35 @@ function fixAssetsCallback(responser)
 	var fixAssetInfoDiv = document.getElementById("fixAssetInfo");
 	var fixAssetTimeDiv = document.getElementById("fixAssetTime");
 	var infodiv = "";
-	if(responser!= null){
 
-		for(i=0;i<responser.size();i++){
-			response=responser[i];
+	if(responser != undefined){
+
+		for(i = 0; i < responser.size(); i++){
+			response = responser[i];
 			var total = response['total'];
-			var actual = response['actual'];
-			error = response['error'];
-			var currentIndexPath = response['currentIndexPath'];
+			var errorsFixed = response['errorsFixed'];
 			var initialTime = response['initialTime'];
 			var finalTime = response['finalTime'];
-			var running = response['running'];
-			var percentage = response['percentage'];
-			var elapsed = response['elapsed'];
-			var remaining = response['remaining'];
-		     description = response['description'];
+			var description = response['description'];
 
-		     infodiv =infodiv +"<%= LanguageUtil.get(pageContext,"The-Task-perform-was") %> " + description + " .<%= LanguageUtil.get(pageContext,"The-total-of-assets-to-change-is") %> " + total + " <%= LanguageUtil.get(pageContext,"--and--") %> " + error + " <%= LanguageUtil.get(pageContext,"assets-were-succesfully-fixed") %>"+"<br />";
-		     infodiv  =infodiv+"<%= LanguageUtil.get(pageContext,"The-start-time-was") %> " + initialTime + " <%= LanguageUtil.get(pageContext,"and-ended-on") %>  "+ finalTime+"<br /><br />";
+			infodiv = infodiv + "<%= LanguageUtil.get(pageContext,"The-Task-perform-was") %> " + description
+                                + " .<%= LanguageUtil.get(pageContext,"The-total-of-assets-to-change-is") %> " + total
+                                + " <%= LanguageUtil.get(pageContext,"--and--") %> " + errorsFixed
+                                + " <%= LanguageUtil.get(pageContext,"assets-were-succesfully-fixed") %>"+"<br />";
 
+            infodiv = infodiv + "<%= LanguageUtil.get(pageContext,"The-start-time-was") %> " + initialTime
+                                + " <%= LanguageUtil.get(pageContext,"and-ended-on") %>  "+ finalTime+"<br /><br />";
 			}
 
 			fixAssetInfoDiv.innerHTML = infodiv;
-			document.getElementById("fixAssetsMessage").innerHTML ="";
-			document.getElementById("fixAssetsButtonDiv").style.display = "";
-
-	}
-
-	else{
+	} else {
 		fixAssetInfoDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"No-Tasks-were-executed") %>"
 		fixAssetTimeDiv.innerHTML = "";
-
-		document.getElementById("fixAssetsButtonDiv").style.display = "";
-		document.getElementById("fixAssetsMessage").innerHTML ="";
 	}
+
+    document.getElementById("fixAssetsMessage").innerHTML ="";
+    document.getElementById("fixAssetsButtonDiv").style.display = "";
 }
-
-
 
 function doDeleteContentlets(){
 	var ids= document.getElementById('contentIdsList').value;
