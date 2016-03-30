@@ -1,8 +1,8 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
-import {IBundle} from "../../../../api/rule-engine/Rule";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
+import {IBundle} from "../../../../api/services/bundle-service";
 
 @Component({
   selector: 'cw-add-to-bundle-dialog-component',

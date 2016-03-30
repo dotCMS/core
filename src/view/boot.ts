@@ -9,6 +9,7 @@ import {ConditionGroupService} from "../api/rule-engine/ConditionGroup"
 import {ConditionService} from "../api/rule-engine/Condition"
 import {I18nService} from "../api/system/locale/I18n"
 import {RuleEngineContainer} from "./components/rule-engine/rule-engine.container";
+import {BundleService} from "../api/services/bundle-service";
 
 bootstrap(RuleEngineContainer, [
   ApiRoot,
@@ -16,6 +17,7 @@ bootstrap(RuleEngineContainer, [
   I18nService,
   UserModel,
   RuleService,
+  BundleService,
   ActionService,
   ConditionGroupService,
   ConditionService,

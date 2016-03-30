@@ -48,7 +48,8 @@
     });
     Promise.all([
       System.import('api/system/locale/I18n.it-spec'),
-      System.import('api/rule-engine/Rule.it-spec')
+      System.import('api/rule-engine/Rule.it-spec'),
+      System.import('api/services/bundle-service.it-spec')
     ]).then(function (p) {
       console.log("Project load complete.")
     });

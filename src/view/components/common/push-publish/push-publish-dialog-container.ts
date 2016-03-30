@@ -1,15 +1,15 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
-import {IPublishEnvironment, RuleService} from "../../../../api/rule-engine/Rule";
 import {PushPublishDialogComponent} from "./push-publish-dialog-component";
 import {BehaviorSubject} from "rxjs/Rx";
+import {BundleService, IPublishEnvironment} from "../../../../api/services/bundle-service";
 
 @Component({
   selector: 'cw-push-publish-dialog-container',
   directives: [CORE_DIRECTIVES, PushPublishDialogComponent],
   template: `
   <cw-push-publish-dialog-component
-  [environmentStores]="ruleService.environments$ | async"
+  [environmentStores]="bundleService.environments$ | async"
   [hidden]="hidden"
   [errorMessage]="errorMessage | async"
   (cancel)="hidden = true; close.emit($event); errorMessage = null;"
@@ -26,20 +26,20 @@ export class PushPublishDialogContainer {
 
   errorMessage:BehaviorSubject<string> = new BehaviorSubject(null)
 
-  environmentStores:IPublishEnvironment[] = []
+  environmentsLoaded:boolean = false
 
-  constructor(public ruleService:RuleService) {
-    this.ruleService.loadPublishEnvironments()
-  }
+  constructor(public bundleService:BundleService) {}
 
   ngOnChanges(change){
-    if (change.hidden) {
+    if (change.hidden && !this.hidden && !this.environmentsLoaded) {
+      this.environmentsLoaded = true
+      this.bundleService.loadPublishEnvironments()
       console.log("PushPublishDialogContainer", "ngOnChanges", change.hidden.currentValue, change.hidden.previousValue)
     }
   }
 
   doPushPublish(environment:IPublishEnvironment) {
-    this.ruleService.pushPublishRule(this.assetId, environment.id).subscribe((result:any)=> {
+    this.bundleService.pushPublishRule(this.assetId, environment.id).subscribe((result:any)=> {
       if (!result.errors) {
         this.close.emit({isCanceled:false})
         this.errorMessage = null
