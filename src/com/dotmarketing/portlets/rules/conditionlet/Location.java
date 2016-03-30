@@ -6,7 +6,7 @@ public class Location implements Comparable {
     private final double latitude;
     private final double longitude;
 
-    private final static double EARTH_DIAMETER = 2.0 * 6378140.0;
+    private final static double EARTH_DIAMETER = 2.0 * 6378.14;
     private final static double RAD_CONVERT = Math.PI / 180.0;
 
     public Location(double latitude, double longitude) {
