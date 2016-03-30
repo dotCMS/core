@@ -1,20 +1,19 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
-import com.dotmarketing.util.NumberOfTimeVisitedCounter;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import com.dotmarketing.util.WebKeys;
-
+import java.security.InvalidParameterException;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EQUAL;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN;
@@ -42,11 +41,16 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 	@Override
 	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 
-		String siteVisits = String.valueOf( NumberOfTimeVisitedCounter.getNumberSiteVisits( request ) );
-		String siteVisitsValue = instance.siteVisits;
+        HttpSession session = request.getSession(true);
 
-		return instance.comparison.perform(siteVisits, siteVisitsValue);
-		
+        Clickstream clickstream = (Clickstream)session.getAttribute("clickstream");
+        if(clickstream == null) {
+            clickstream = new Clickstream();
+            session.setAttribute("clickstream", clickstream);
+        }
+
+        int actualCount = clickstream.getNumberOfRequests();
+        return instance.comparison.perform(actualCount, instance.siteVisits);
 	}
 
     @Override
@@ -55,23 +59,30 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
     }
 
     public static class Instance implements RuleComponentInstance {
-    	
-    	private final String siteVisits;
-    	private final Comparison<String> comparison;
-    	
-    	private Instance(UsersSiteVisitsConditionlet definition, Map<String, ParameterModel> parameters){
-    		this.siteVisits = parameters.get(SITE_VISITS_KEY).getValue();
-    		String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
-    		try {
-				//noinspection unchecked
-				this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
+
+        private final int siteVisits;
+        private final Comparison<Number> comparison;
+
+        private Instance(UsersSiteVisitsConditionlet definition, Map<String, ParameterModel> parameters) {
+            try {
+                this.siteVisits = Integer.parseInt(parameters.get(SITE_VISITS_KEY).getValue());
+            } catch (NumberFormatException e) {
+                throw new InvalidParameterException("Site visit count must be an integer value");
+            }
+
+            String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
+            try {
+                //noinspection unchecked
+                this.comparison = ((ComparisonParameterDefinition)definition
+                    .getParameterDefinitions()
+                    .get(COMPARISON_KEY))
+                    .comparisonFrom(comparisonValue);
             } catch (ComparisonNotPresentException e) {
                 throw new ComparisonNotSupportedException("The comparison '%s' is not supported on Condition type '%s'",
                                                           comparisonValue,
                                                           definition.getId());
             }
-    	}
-    	
+        }
     }
 
 }
