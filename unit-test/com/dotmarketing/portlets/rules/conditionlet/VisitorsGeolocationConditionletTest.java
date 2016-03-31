@@ -32,35 +32,60 @@ public class VisitorsGeolocationConditionletTest {
     private static final double LONGITUDE = -66.8799873;
     private static final double VISITORS_LATITUDE = 8.0;
     private static final double VISITORS_LONGITUDE = -66.0;
-    private static final double DISTANCE = 30;
 
     @DataProvider(name = "cases")
     public Object[][] compareCases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
+            /* Actual distance between the two lat,long is 293 KM */
+
             /* WITHIN DISTANCE */
-            data.add(new TestCase("When Visitors location is ("+VISITORS_LATITUDE+", "+LONGITUDE+") and comparison is WITHIN and distance is 30 KM of location ("+LATITUDE+", "+LONGITUDE+"), should evaluate to false")
+            data.add(new TestCase("When Visitors location is ("+VISITORS_LATITUDE+", "+LONGITUDE+") and comparison is WITHIN and distance is 30 KM of location ("+LATITUDE+", "+LONGITUDE+"), should evaluate to FALSE")
                     .withComparison(WITHIN_DISTANCE)
                     .withRequestIpAddress(MOCK_IP_ADDRESS)
                     .withMockVisitorsLocation(VISITORS_LATITUDE, VISITORS_LONGITUDE)
-                    .withDistance(DISTANCE)
-                    .withUnitOfDistance(UnitOfDistance.KILOMETERS)
+                    .withDistance(30000) // 30 KM
+                    .withUnitOfDistance()
                     .withLatitude(LATITUDE)
                     .withLongitude(LONGITUDE)
                     .shouldBeFalse()
             );
 
-            /* NOT WITHIN DISTANCE */
-            data.add(new TestCase("When Visitors location is ("+VISITORS_LATITUDE+", "+LONGITUDE+") and comparison is NOT WITHIN and distance is 30 KM of location ("+LATITUDE+", "+LONGITUDE+"), should evaluate to true")
-                    .withComparison(NOT_WITHIN_DISTANCE)
+            /* WITHIN DISTANCE */
+            data.add(new TestCase("When Visitors location is ("+VISITORS_LATITUDE+", "+LONGITUDE+") and comparison is WITHIN and distance is 300 KM of location ("+LATITUDE+", "+LONGITUDE+"), should evaluate to TRUE")
+                    .withComparison(WITHIN_DISTANCE)
                     .withRequestIpAddress(MOCK_IP_ADDRESS)
                     .withMockVisitorsLocation(VISITORS_LATITUDE, VISITORS_LONGITUDE)
-                    .withDistance(DISTANCE)
-                    .withUnitOfDistance(UnitOfDistance.KILOMETERS)
+                    .withDistance(300000) // 300 KM
+                    .withUnitOfDistance()
                     .withLatitude(LATITUDE)
                     .withLongitude(LONGITUDE)
                     .shouldBeTrue()
+            );
+
+            /* NOT WITHIN DISTANCE */
+            data.add(new TestCase("When Visitors location is ("+VISITORS_LATITUDE+", "+LONGITUDE+") and comparison is NOT WITHIN and distance is 30 KM of location ("+LATITUDE+", "+LONGITUDE+"), should evaluate to TRUE")
+                    .withComparison(NOT_WITHIN_DISTANCE)
+                    .withRequestIpAddress(MOCK_IP_ADDRESS)
+                    .withMockVisitorsLocation(VISITORS_LATITUDE, VISITORS_LONGITUDE)
+                    .withDistance(30000) // 30 KM
+                    .withUnitOfDistance()
+                    .withLatitude(LATITUDE)
+                    .withLongitude(LONGITUDE)
+                    .shouldBeTrue()
+            );
+
+             /* NOT WITHIN DISTANCE */
+            data.add(new TestCase("When Visitors location is ("+VISITORS_LATITUDE+", "+LONGITUDE+") and comparison is NOT WITHIN and distance is 300 KM of location ("+LATITUDE+", "+LONGITUDE+"), should evaluate to FALSE")
+                    .withComparison(NOT_WITHIN_DISTANCE)
+                    .withRequestIpAddress(MOCK_IP_ADDRESS)
+                    .withMockVisitorsLocation(VISITORS_LATITUDE, VISITORS_LONGITUDE)
+                    .withDistance(300000) // 300 KM
+                    .withUnitOfDistance()
+                    .withLatitude(LATITUDE)
+                    .withLongitude(LONGITUDE)
+                    .shouldBeFalse()
             );
 
             return TestUtil.toCaseArray(data);
@@ -99,8 +124,8 @@ public class VisitorsGeolocationConditionletTest {
     public void testUnsupportedComparisonThrowsException() throws Exception {
         TestCase aCase = new TestCase("Exists: Unsupported comparison should throw.")
                 .withComparison(EXISTS)
-                .withDistance(DISTANCE)
-                .withUnitOfDistance(UnitOfDistance.KILOMETERS)
+                .withDistance(0.0)
+                .withUnitOfDistance()
                 .withLatitude(LATITUDE)
                 .withLongitude(LONGITUDE)
                 .shouldBeFalse();
@@ -158,8 +183,8 @@ public class VisitorsGeolocationConditionletTest {
             return this;
         }
 
-        TestCase withUnitOfDistance(UnitOfDistance unitOfDistance) {
-            params.put(RADIUS_UNIT_KEY, new ParameterModel(RADIUS_UNIT_KEY, unitOfDistance.abbreviation));
+        TestCase withUnitOfDistance() {
+            params.put(RADIUS_UNIT_KEY, new ParameterModel(RADIUS_UNIT_KEY, UnitOfDistance.METERS.abbreviation));
             return this;
         }
 

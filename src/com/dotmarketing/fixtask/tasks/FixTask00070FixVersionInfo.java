@@ -31,7 +31,6 @@ public class FixTask00070FixVersionInfo implements FixTask {
             try {
                 FixAssetsProcessStatus.startProgress();
                 FixAssetsProcessStatus.setDescription("70 Fix versionInfo");
-                int total=0;
                 DotConnect dc=new DotConnect();
                 
                 String[] versionables=new String[] {
@@ -45,6 +44,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
                     		     " where working_inode is null";
                     dc.setSQL(sql);
                     List<Map<String, Object>> results = dc.loadObjectResults();
+                    FixAssetsProcessStatus.addTotal(results.size());
                     for(Map<String, Object> rr : results) {
                         String id=rr.get("id").toString();
                         sql="select inode from "+table+" where identifier=? order by mod_date desc";
@@ -57,7 +57,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
                         Versionable workingVersion=(Versionable) hu.load(inode);
                         APILocator.getVersionableAPI().setWorking(workingVersion);
                         
-                        total++;
+                        FixAssetsProcessStatus.addAErrorFixed();
                     }
                 }
                 
@@ -69,6 +69,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
                 		   " where working_inode is null";
                 dc.setSQL(sql);
                 List<Map<String, Object>> results = dc.loadObjectResults();
+                FixAssetsProcessStatus.addTotal(results.size());
                 for(Map<String, Object> rr : results) {
                     String id=rr.get("id").toString();
                     Integer langId=Integer.parseInt(rr.get("language_id").toString());
@@ -81,10 +82,10 @@ public class FixTask00070FixVersionInfo implements FixTask {
                     APILocator.getVersionableAPI().setWorking(
                        APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false)
                     );
-                    total++;
+
+                    FixAssetsProcessStatus.addAErrorFixed();
                 }
-                
-                FixAssetsProcessStatus.setTotal(total);
+
                 returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
             }
             catch(Exception ex) {
