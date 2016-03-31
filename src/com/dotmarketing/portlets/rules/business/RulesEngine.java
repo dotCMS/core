@@ -173,7 +173,7 @@ public final class RulesEngine {
 		}
 
 		Date now = new Date();
-		FiredRule ruleFired = new FiredRule(now, firedRule.getId());
+		FiredRule ruleFired = new FiredRule(now, firedRule);
 		firedRulesRequest.add( ruleFired );
 		firedRulesSession.add( ruleFired );
 	}

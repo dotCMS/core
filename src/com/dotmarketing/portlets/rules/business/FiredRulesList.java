@@ -24,11 +24,11 @@ public class FiredRulesList {
             map.put(ruleID, list.size() - 1);
         }else{
             FiredRule firedRuleInMap = list.get( index );
-            firedRuleInMap.setFireTime( firedRule.getFireTime() );
+            firedRuleInMap.setFireTime( firedRule.getFireTimeAsLong() );
         }
     }
 
-    public Date getLastFiredTime(String ruleId){
+    public String getLastFiredTime(String ruleId){
         Integer index  = map.get(ruleId);
 
         if (index != null){
@@ -41,4 +41,5 @@ public class FiredRulesList {
     public int size() {
         return list.size();
     }
+
 }
