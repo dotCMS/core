@@ -2,12 +2,11 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
-import static eu.bitwalker.useragentutils.DeviceType.COMPUTER;
-import static eu.bitwalker.useragentutils.DeviceType.MOBILE;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.junit.Assert;
 import org.mockito.Mockito;
 
 import eu.bitwalker.useragentutils.Browser;
@@ -48,45 +46,37 @@ public class UsersBrowserConditionletTest {
     @Test
     public void testIsComparison () {
 
-        Mockito.when(request.getHeader("User-Agent")).thenReturn(Collections.enumeration(browsers).toString());
-        Mockito.when(request.getHeader("User-Agent")).thenReturn(COMPUTER.getName());
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
-        parameters.put(UsersBrowserConditionlet.BROWSER_KEY,
-                new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Chrome"));
-
+        parameters.put(UsersBrowserConditionlet.BROWSER_KEY, new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Chrome"));
         UsersBrowserConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
-        // Correct, the User-Agent Browser is not the selected one
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+
+        Mockito.when(request.getHeader("User-Agent")).thenReturn(Browser.CHROME.getName());
+        assertThat("The user-agent string IS for the 'Chrome' browser.", conditionlet.evaluate(request, response, instance), is(true));
+
+
+        parameters.put(UsersBrowserConditionlet.BROWSER_KEY, new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Edge"));
+        instance = conditionlet.instanceFrom(parameters);
 
         Mockito.when(request.getHeader("User-Agent")).thenReturn(Browser.EDGE.getName());
-
-        Map<String, ParameterModel> parametersE = new HashMap<>();
-        parametersE.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
-        parametersE.put(UsersBrowserConditionlet.BROWSER_KEY,
-                new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Edge"));
-
-        UsersBrowserConditionlet.Instance instanceE = conditionlet.instanceFrom(parameters);
-        // Correct, the User-Agent Browser is not the selected one
-        Assert.assertTrue(conditionlet.evaluate(request, response, instanceE));
+        assertThat("The user-agent string IS for the 'Edge' browser.", conditionlet.evaluate(request, response, instance), is(true));
     }
-    
+
     @Test
     public void testIsNotComparison () {
 
-        Mockito.when(request.getHeader("User-Agent")).thenReturn(Collections.enumeration(browsers).toString());
-        Mockito.when(request.getHeader("User-Agent")).thenReturn(MOBILE.toString());
-
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS_NOT.getId()));
-        parameters.put(UsersBrowserConditionlet.BROWSER_KEY,
-                new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Opera"));
-
+        parameters.put(UsersBrowserConditionlet.BROWSER_KEY, new ParameterModel(UsersBrowserConditionlet.BROWSER_KEY, "Opera"));
         UsersBrowserConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
-        // Correct, the User-Agent Browser is not the selected one
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+
+        Mockito.when(request.getHeader("User-Agent")).thenReturn(Browser.EDGE.toString());
+        assertThat("The user-agent string IS NOT for the 'Opera' browser.", conditionlet.evaluate(request, response, instance), is(true));
+
+        Mockito.when(request.getHeader("User-Agent")).thenReturn(Browser.OPERA.toString());
+        assertThat("Should be false for IS NOT and UA-string matches the condition input value", conditionlet.evaluate(request, response, instance), is(false));
     }
-	
+
 
 }

@@ -47,6 +47,8 @@ import com.liferay.portal.model.User;
  */
 public class ClickstreamFactory {
 
+	public static final String CLICKSTREAM_SESSION_ATTR_KEY = "clickstream";
+
 	/**
 	 * Adds a new request to the stream of clicks. The HttpServletRequest is
 	 * converted to a ClickstreamRequest object and added to the clickstream.
