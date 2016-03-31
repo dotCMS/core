@@ -420,10 +420,12 @@ dojo.require("dojo.cookie");
             else {
                 alert(sameUserIdAlreadyRegisteredErrorMsg);
             }
-        } else if(exception.javaClassName == 'com.dotmarketing.exception.DotSecurityException'){
+        } else {
+            if(exception.javaClassName == 'com.dotmarketing.exception.DotSecurityException'){
                 alert(doNotHavePermissionsMsg);
-            }else {
-            alert("Server error: " + exception);
+            } else {
+                alert("Server error: " + exception.message);
+            }
         }
     }
 
