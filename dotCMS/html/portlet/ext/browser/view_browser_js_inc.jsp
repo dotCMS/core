@@ -948,8 +948,6 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	 function getStatusHTML (asset) {
 		var html = 	'<table class="browserTableStatus"><tr>';
 
-        //if(!v.isLive() && v.isWorking() && (!v.isArchived() && v.isWorking())){
-
         if(!asset.live && asset.working) {
             html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="workingIcon"></span></td>\n';
         } else {
@@ -964,7 +962,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
         }
 
-	 	if (asset.locked)
+	 	if (asset.isLocked)
 			html +=	'		<td><span id="' + asset.inode + '-StatusLockedIMG" class="lockIcon"><span></td>\n';
 		else
 			html +=	'		<td><span id="' + asset.inode + '-StatusLockedIMG" class="shimIcon"></span></td>\n';
