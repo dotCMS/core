@@ -1531,28 +1531,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         deleteBinaryFiles(contentlets,null);
     }
 
+    @Override
     public void archive(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
-
-    	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
-
-        ActivityLogger.logInfo(getClass(), "Archiving Content", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
-
-
+        logContentletActivity(contentlet, "Archiving Content", user);
         try {
 
-        	if(contentlet.getInode().equals(""))
+        	if(contentlet.getInode().equals("")) {
         		throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        	}
         	if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
         		throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") 
         				+ " does not have permission to edit the contentlet");
@@ -1564,15 +1550,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	}catch (DotContentletStateException ce) {
         		Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
         	}
-
-
-
-
         	canLock(contentlet, user);
         	User modUser = null;
-
+        	User systemUser = null;
         	try{
         		modUser = APILocator.getUserAPI().loadUserById(workingContentlet.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+        		systemUser = APILocator.getUserAPI().getSystemUser();
         	}catch(Exception ex){
         		if(ex instanceof NoSuchUserException){
         			modUser = APILocator.getUserAPI().getSystemUser();
@@ -1583,8 +1566,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		workingContentlet.setModUser(modUser.getUserId());
         	}
 
-
-        	if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
+        	// If the user calling this method is System, no other condition is 
+        	// required
+        	if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId()) || user.getUserId().equals(systemUser.getUserId())) {
 
         		if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
         			APILocator.getVersionableAPI().removeLive(liveContentlet);
@@ -1617,15 +1601,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	}
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
-        	ActivityLogger.logInfo(getClass(), "Error Archiving Content", "StartDate: " +contentPushPublishDate+ "; "
-        			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        			+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+        	logContentletActivity(contentlet, "Error Archiving Content", user);
         	throw e;
         }
-
-        ActivityLogger.logInfo(getClass(), "Content Archived", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+        logContentletActivity(contentlet, "Content Archived", user);
     }
 
     public void archive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
