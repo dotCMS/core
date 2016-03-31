@@ -76,6 +76,7 @@ public class Rule implements Permissionable, Serializable {
     }
 
     public Rule(Rule ruleToCopy) {
+
         id = ruleToCopy.id;
         name = ruleToCopy.name;
         fireOn = ruleToCopy.fireOn;
