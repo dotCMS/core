@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -783,10 +784,25 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 //And send it back to the user
                 response.getWriter().println( jsonResponse.toString() );
             }
-        } catch ( Exception e ) {
-            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
-            response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Adding content to Bundle: " + e.getMessage() );
+        } catch(DotPublisherException e){
+            JSONObject jsonResponse = new JSONObject();
+
+            try {
+                jsonResponse.put( "errors", e.getMessage() );
+            } catch (JSONException e1) {
+                sendGeneralError(response, e);
+            }
+
+            //And send it back to the user
+            response.getWriter().println( jsonResponse.toString() );
+        }catch ( Exception e ) {
+            sendGeneralError(response, e);
         }
+    }
+
+    private static void sendGeneralError( HttpServletResponse response, Throwable e) throws IOException {
+        Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
+        response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Adding content to Bundle: " + e.getMessage() );
     }
 
     /**
