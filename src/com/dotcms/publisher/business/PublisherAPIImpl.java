@@ -76,6 +76,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?" ;
 
 	private static final String INSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
+	private static final String SELECT_ASSET ="SELECT asset FROM publishing_queue WHERE bundle_id = ?";
 
 	@Override
     public Map<String, Object> addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
@@ -144,8 +145,16 @@ public class PublisherAPIImpl extends PublisherAPI{
     		  }
 
               try {
-                  for ( String identifier : identifiers ) {
-                	  idToProcess = identifier;
+				  Collection<String> assets = getAssets(bundleId);
+
+				  for ( String identifier : identifiers ) {
+
+					  idToProcess = identifier;
+
+					  if (assets.contains(identifier)){
+						throw new AssetAlreadyLinkWithBundleException( user, identifier );
+					  }
+
                       DotConnect dc = new DotConnect();
                       dc.setSQL( INSERTSQL );
                       PermissionAPI strPerAPI = APILocator.getPermissionAPI();
@@ -264,6 +273,22 @@ public class PublisherAPIImpl extends PublisherAPI{
         resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
         return resultMap;
     }
+
+	private Collection<String> getAssets(String bundleId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL( SELECT_ASSET );
+
+		dc.addParam( bundleId );
+		List<Map<String, Object>> maps = dc.loadObjectResults();
+		List<String> result = new ArrayList<>();
+
+		for (Map<String, Object> map : maps) {
+			Object asset = map.get("asset");
+			result.add( asset.toString() );
+		}
+
+		return result;
+	}
 
 	/**
 	 * Utility enum to identify the type of error that might be generated during
