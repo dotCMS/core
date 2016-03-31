@@ -1,35 +1,46 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotmarketing.portlets.rules.model.Rule;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
  * Created by freddyrodriguez on 28/3/16.
  */
 public class FiredRule implements Comparable<FiredRule>{
-    private Date fireTime;
+
+    private static final DateFormat SIMPLE_DATE_FORMAT = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
+
+    private final String ruleName;
+    private final byte fireOn;
+    private long fireTime;
     private String ruleID;
 
 
-    FiredRule(Date fireTime, String ruleID) {
-        this.fireTime = fireTime;
-        this.ruleID = ruleID;
+    FiredRule(Date fireTime, Rule rule) {
+        this.fireTime = fireTime.getTime();
+        this.ruleID = rule.getId();
+        this.ruleName = rule.getName();
+        this.fireOn = (byte) rule.getFireOn().ordinal();
     }
 
-    public Date getFireTime() {
-        return fireTime;
+    public void setFireTime(long fireTime){
+        this.fireTime = fireTime;
+    }
+
+    public String getFireTime() {
+        return SIMPLE_DATE_FORMAT.format(fireTime);
     }
 
     public String getRuleID() {
         return ruleID;
     }
 
-    public void setFireTime( Date newFireTime ) {
-        this.fireTime = newFireTime;
-    }
-
     @Override
     public int compareTo(FiredRule o) {
-        return o.getFireTime().compareTo( fireTime );
+        return (int) (fireTime - o.fireTime);
     }
 
     @Override
@@ -39,15 +50,24 @@ public class FiredRule implements Comparable<FiredRule>{
 
         FiredRule firedRule = (FiredRule) o;
 
-        if (!fireTime.equals(firedRule.fireTime)) return false;
-        return ruleID.equals(firedRule.ruleID);
+        return ruleID != null ? ruleID.equals(firedRule.ruleID) : firedRule.ruleID == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = fireTime.hashCode();
-        result = 31 * result + ruleID.hashCode();
-        return result;
+        return ruleID != null ? ruleID.hashCode() : 0;
+    }
+
+    public String getRuleName() {
+        return ruleName;
+    }
+
+    public Rule.FireOn getFireOn() {
+        return Rule.FireOn.values()[fireOn];
+    }
+
+    public long getFireTimeAsLong() {
+        return fireTime;
     }
 }
