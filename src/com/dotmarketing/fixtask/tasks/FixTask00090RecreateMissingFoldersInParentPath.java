@@ -96,7 +96,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 			if(isFolderIdentifierMissing(folder)) {
 				createFolder(folder);
 				total++;
-				FixAssetsProcessStatus.addAError();
+				FixAssetsProcessStatus.addAErrorFixed();
 			}
 		}
 	}

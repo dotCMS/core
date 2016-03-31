@@ -123,7 +123,7 @@ public class FixTask00005CheckHTMLPagesInconsistencies  implements FixTask {
 						db.addParam(identifierInode);
 						db.getResult();
 
-						FixAssetsProcessStatus.addAError();
+						FixAssetsProcessStatus.addAErrorFixed();
 						counter++;
 					}
 
