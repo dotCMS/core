@@ -45,7 +45,7 @@ export class AddToBundleDialogContainer {
         this.close.emit({isCanceled:false})
         this.errorMessage = null
       } else {
-        this.errorMessage.next("Sorry there was an error please try again")
+        this.errorMessage.next(result.errors)
       }
     })
   }
