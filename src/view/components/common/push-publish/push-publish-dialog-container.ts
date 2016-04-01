@@ -34,7 +34,6 @@ export class PushPublishDialogContainer {
     if (change.hidden && !this.hidden && !this.environmentsLoaded) {
       this.environmentsLoaded = true
       this.bundleService.loadPublishEnvironments()
-      console.log("PushPublishDialogContainer", "ngOnChanges", change.hidden.currentValue, change.hidden.previousValue)
     }
   }
 
