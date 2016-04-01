@@ -225,7 +225,15 @@ public class SQLResultsViewTool implements ViewTool {
                 Contentlet con = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), true);
                 userId = con.getModUser();
             } else if (fieldResourceName.indexOf(".vtl") > -1) {
-                String[] segments = fieldResourceName.split("/");
+                String separator = "";
+                //We check if the VTL File is loaded from a Unix/Linux instance or Windows.
+                if((fieldResourceName.indexOf("/") > -1)){
+                    separator = "/";
+                }
+                else{
+                    separator = "\\\\";
+                }
+                String[] segments = fieldResourceName.split(separator);
                 inode = segments[segments.length-3];
                 Contentlet con = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), true);
                 userId = con.getModUser();
