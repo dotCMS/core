@@ -36,7 +36,7 @@ import {VisitorsLocationContainer} from "./custom-types/visitors-location/visito
     <cw-input-option
         *ngFor="#opt of typeDropdown.options"
         [value]="opt.value"
-        [label]="opt.label | async"
+        [label]="opt.label"
         icon="{{opt.icon}}"></cw-input-option>
   </cw-input-dropdown>
   <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">

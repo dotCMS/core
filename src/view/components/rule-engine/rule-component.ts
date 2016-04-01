@@ -207,6 +207,7 @@ class RuleComponent {
   showAddToBundleDialog:boolean = false
   showPushPublishDialog:boolean = false
   actionTypePlaceholder:string = ""
+  conditionTypePlaceholder:string = ""
 
 
   constructor(private _user:UserModel,
