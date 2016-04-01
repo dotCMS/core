@@ -3,10 +3,6 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotmarketing.portlets.rules.conditionlet.Location;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet;
-import org.mockito.cglib.core.Local;
-
-import static com.dotmarketing.portlets.rules.conditionlet.Location.*;
 import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
 import java.util.Collection;
@@ -31,7 +27,7 @@ public class Comparison<T> {
     public static final Comparison<Location> NOT_WITHIN_DISTANCE = new NotWithinDistanceComparison();
     public static final Comparison<String> NETMASK = new NetmaskComparison();
 
-    public static final Comparison[] NUMERIC_COMPARATION = {EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL,
+    public static final Comparison[] NUMERIC_COMPARISONS = {EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL,
              GREATER_THAN_OR_EQUAL};
 
     private final String id;
