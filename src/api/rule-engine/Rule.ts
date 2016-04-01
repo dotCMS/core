@@ -352,14 +352,23 @@ export class RuleService extends CoreWebService {
     if (this._ruleActionTypesAry.length) {
       obs = Observable.fromArray(this._ruleActionTypesAry)
     } else {
-      return this._doLoadRuleActionTypes().map((types:ServerSideTypeModel[])=> {
-        types.sort(RuleService.alphaSort('key'))
-        types.forEach(type => {
-          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
-          this._ruleActionTypes[type.key] = type
+      return this._doLoadRuleActionTypes().flatMap((types:ServerSideTypeModel[])=> {
+        return Observable.fromArray(types).flatMap((type)=> {
+          return this._resources.get(type.i18nKey + '.name', type.i18nKey).map(( label:string ) => {
+            type._opt = {value: type.key, label: label}
+            this._ruleActionTypes[type.key] = type
+            return type
+          })
+        }).reduce( (types:any[], type:any)=> {
+          types.push(type)
+          return types
+        }, []).do((types:any[])=>{
+          types.sort(( typeA, typeB ) => {
+            return typeA._opt.label - typeB._opt.label
+          })
+          this._ruleActionTypesAry = types
+          return types
         })
-        this._ruleActionTypesAry = types
-        return types
       })
     }
     return obs
@@ -396,7 +405,7 @@ export class RuleService extends CoreWebService {
       url: this._conditionTypesEndpointUrl,
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
-
+  
   static fromServerRulesTransformFn(ruleMap):RuleModel[] {
     return Object.keys(ruleMap).map((id:string) => {
       let r:IRule = ruleMap[id]

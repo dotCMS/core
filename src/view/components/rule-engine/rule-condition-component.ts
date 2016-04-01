@@ -31,7 +31,7 @@ import {VisitorsLocationContainer} from "./custom-types/visitors-location/visito
       flex="25"
       class="cw-type-dropdown"
       [value]="condition.type?.key"
-      placeholder="{{typeDropdown.placeholder | async}}"
+      placeholder="{{conditionTypePlaceholder}}"
       (change)="onTypeChange($event)">
     <cw-input-option
         *ngFor="#opt of typeDropdown.options"
@@ -70,6 +70,7 @@ export class ConditionComponent {
   @Input() condition:ConditionModel
   @Input() index:number
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
+  @Input() conditionTypePlaceholder:string = ""
 
   @Output() updateConditionType:EventEmitter<{type:string, payload:{condition: ConditionModel, value:string, index:number}}> = new EventEmitter(false)
   @Output() updateConditionParameter:EventEmitter<{type:string, payload:{condition:ConditionModel, name:string, value:string, index:number}}> = new EventEmitter(false)

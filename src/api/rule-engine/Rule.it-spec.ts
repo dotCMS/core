@@ -33,7 +33,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   var conditionService:ConditionService
   var conditionGroupService:ConditionGroupService
 
-  var rulesToRemove:Array<RuleModel>
+  var rulesToRemove:string[]
 
 
   beforeEach(function () {
@@ -44,16 +44,23 @@ describe('Integration.api.rule-engine.RuleService', function () {
     rulesToRemove = []
   });
 
-  afterEach(function () {
-    rulesToRemove.forEach((rule) => {
-      ruleService.deleteRule(rule.key);
+  afterAll(function (done) {
+    Observable.fromArray(rulesToRemove).flatMap((ruleId:string)=>{
+      console.log("Removing rule: ", ruleId)
+      return ruleService.deleteRule(ruleId);
+    }).subscribe(()=>{}, ( e ) => {
+      console.error("Error deleting rules after test", e)
+    }, (  ) => {
+      done()
     })
+
   })
   it("can create a rule when only name is specified.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     ruleService.createRule(new RuleModel(clientRule)).subscribe((serverRule:RuleModel) => {
+          rulesToRemove.push(serverRule.key)
           expect(serverRule.key).toBeDefined("Should have a key")
           expect(serverRule.enabled).toBe(false)
           expect(serverRule.name).toBe(clientRule.name)
@@ -70,10 +77,11 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("can update a rule's name.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var name2 = clientRule.name + '-Updated'
     ruleService.createRule(new RuleModel(clientRule)).flatMap((serverRule1:RuleModel)=> {
+      rulesToRemove.push(serverRule1.key)
       expect(serverRule1.key).toBeDefined()
       expect(serverRule1.name).toBe(clientRule.name)
       serverRule1.name = name2
@@ -90,7 +98,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("can remove a rule.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     ruleService.createRule(new RuleModel(clientRule))
         .flatMap((serverRule1:RuleModel)=> ruleService.deleteRule(serverRule1.key))
@@ -104,15 +112,17 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("can load a rule.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var id
     ruleService.createRule(new RuleModel(clientRule))
         .flatMap((serverRule:RuleModel)=> {
           id = serverRule.key;
+          rulesToRemove.push(serverRule.key)
           return ruleService.loadRule(serverRule.key)
         })
         .subscribe((result:RuleModel) => {
+
               expect(result.key).toBe(id)
               expect(result.name).toBe(clientRule.name)
             },
@@ -124,10 +134,10 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("can load all rules.", function (done) {
     var clientRule1:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var clientRule2:IRule = {
-      name: `TestRule-${new Date().getTime()}-2`
+      name: `Test-Rule-${new Date().getTime()}-2`
     }
     var id
     var ourSavedRules
@@ -135,6 +145,9 @@ describe('Integration.api.rule-engine.RuleService', function () {
         .bufferCount(2, 0)
         .flatMap((ourRules:RuleModel[]) => {
           ourSavedRules = ourRules
+          ourRules.forEach((r)=>{
+            rulesToRemove.push(r.key)
+          })
           return ruleService.loadRules()
         })
         .subscribe((rules:RuleModel[]) => {
@@ -155,14 +168,14 @@ describe('Integration.api.rule-engine.RuleService', function () {
       "EVERY_REQUEST"]
 
     Observable.from(fireOns).subscribe((fireOn:string)=> {
-      let name = "CanCreate-fireOn" + new Date().getTime()
+      let name = "Test-create_fireOn" + new Date().getTime()
       ruleService.createRule(new RuleModel({
         name: name,
         enabled: true,
         fireOn: fireOn,
         priority: Math.floor(Math.random() * 100)
       })).subscribe((serverRule:RuleModel) => {
-        rulesToRemove.push(serverRule)
+        rulesToRemove.push(serverRule.key)
         expect(serverRule.key).toBeDefined()
         expect(serverRule.enabled).toBe(true)
         expect(serverRule.name).toBe(name)
@@ -231,7 +244,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   xit("can create an action.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var clientRuleAction:IRuleAction = {
       type: 'SetResponseHeaderActionlet',
@@ -244,6 +257,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
     var serverRule:RuleModel
     ruleService.createRule(new RuleModel(clientRule)).flatMap((rule:RuleModel)=> {
       serverRule = rule
+      rulesToRemove.push(serverRule.key)
       return ruleActionService.createRuleAction(serverRule.key, new ActionModel(null, null, clientRuleAction.priority))
     }).subscribe((action:ActionModel) => {
           expect(action).toBeDefined()
@@ -261,7 +275,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   xit("can update an action.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var clientRuleAction:IRuleAction = {
       type: 'SetResponseHeaderActionlet',
@@ -274,6 +288,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
     var serverRule:RuleModel
     ruleService.createRule(new RuleModel(clientRule)).flatMap((rule:RuleModel)=> {
       serverRule = rule
+      rulesToRemove.push(serverRule.key)
       return ruleActionService.createRuleAction(serverRule.key, new ActionModel(null, new ServerSideTypeModel(clientRuleAction.type, '', clientRuleAction.parameters), clientRuleAction.priority))
     }).flatMap((action:ActionModel)=> {
       return ruleActionService.updateRuleAction(serverRule.key, action)
@@ -293,7 +308,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("can create a condition group.", function (done) {
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var conditionGroup:IConditionGroup = {
       priority: 10,
@@ -302,6 +317,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
     var serverRule:RuleModel
     ruleService.createRule(new RuleModel(clientRule)).flatMap((rule:RuleModel)=> {
       serverRule = rule
+      rulesToRemove.push(serverRule.key)
       return conditionGroupService.createConditionGroup(serverRule.key, new ConditionGroupModel(conditionGroup))
     }).subscribe((serverGroup:ConditionGroupModel) => {
           expect(serverGroup).toBeDefined("Should create and provide a condition group.")
@@ -318,7 +334,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   it("adds the conditionGroup to the owning rule.", function (done) {
     var aConditionGroup = new ConditionGroupModel({operator: 'OR', priority: 99})
     var clientRule:IRule = {
-      name: `TestRule-${new Date().getTime()}`
+      name: `Test-Rule-${new Date().getTime()}`
     }
     var conditionGroup:IConditionGroup = {
       priority: 10,
@@ -327,6 +343,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
     var serverRule:RuleModel
     ruleService.createRule(new RuleModel(clientRule)).flatMap((rule:RuleModel)=> {
           serverRule = rule
+          rulesToRemove.push(serverRule.key)
           return conditionGroupService.createConditionGroup(serverRule.key, aConditionGroup)
         })
         .subscribe((conditionGroup:ConditionGroupModel) => {
@@ -375,6 +392,4 @@ describe('Integration.api.rule-engine.RuleService', function () {
       done()
     })
   })
-
-
 });

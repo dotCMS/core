@@ -69,6 +69,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
       (deleteRuleAction)="onDeleteRuleAction($event)"
       
       (createConditionGroup)="onCreateConditionGroup($event)"
+      (updateConditionGroupOperator)="onUpdateConditionGroupOperator($event)"
       (createCondition)="onCreateCondition($event)"
       (updateConditionType)="onUpdateConditionType($event)"
       (updateConditionParameter)="onUpdateConditionParameter($event)"
@@ -325,6 +326,7 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onUpdateConditionGroupOperator")
     let group = event.payload.conditionGroup
     group.operator = <string>event.payload.value
+    this.patchConditionGroup(event.payload.rule, group)
     this.patchRule(event.payload.rule)
   }
 
@@ -419,6 +421,16 @@ export class RuleEngineContainer {
       console.error(errors)
       rule._errors = errors
     }
+  }
+  
+  patchConditionGroup(rule:RuleModel, group:ConditionGroupModel, disable:boolean=true){
+    this.ruleUpdating(rule, false)
+    if(disable && rule.enabled){
+      rule.enabled = false
+    }
+    this._conditionGroupService.updateConditionGroup(rule.key, group).subscribe(( result ) => {
+      
+    })
   }
 
   patchRule(rule:RuleModel, disable:boolean=true) {

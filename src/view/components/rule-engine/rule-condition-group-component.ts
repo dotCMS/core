@@ -36,6 +36,7 @@ import {
       <rule-condition flex layout="row"
                       [condition]="condition"
                       [conditionTypes]="conditionTypes"
+                      [conditionTypePlaceholder]="conditionTypePlaceholder"
                       [index]="i"
                       (deleteCondition)="deleteCondition.emit($event)"
                       (updateConditionType)="updateConditionType.emit($event)"
@@ -60,6 +61,7 @@ export class ConditionGroupComponent {
   private static I8N_BASE:string = 'api.sites.ruleengine.rules'
 
   @Input() group:ConditionGroupModel
+  @Input() conditionTypePlaceholder:string
 
   @Input() groupIndex:number = 0
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
