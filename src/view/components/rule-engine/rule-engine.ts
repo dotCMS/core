@@ -12,7 +12,7 @@ import {
     ConditionActionEvent, RuleActionActionEvent, RuleActionEvent,
     ConditionGroupActionEvent
 } from "./rule-engine.container";
-
+import {IPublishEnvironment} from "../../../api/services/bundle-service";
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
@@ -47,12 +47,13 @@ const I8N_BASE:string = 'api.sites.ruleengine'
     </div>
   </div>
   <rule *ngFor="#rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
-         [ruleActions]="rule._ruleActions"
-         [ruleActionTypes]="ruleActionTypes"
-         [conditionTypes]="conditionTypes"
-         [saved]="rule._saved"
-         [saving]="rule._saving"
-         [errors]="rule._errors"
+        [environmentStores]="environmentStores"
+        [ruleActions]="rule._ruleActions"
+        [ruleActionTypes]="ruleActionTypes"
+        [conditionTypes]="conditionTypes"
+        [saved]="rule._saved"
+        [saving]="rule._saving"
+        [errors]="rule._errors"
         (updateName)="updateName.emit($event)"
         (updateFireOn)="updateFireOn.emit($event)"
         (updateEnabledState)="updateEnabledState.emit($event)"
@@ -82,6 +83,7 @@ export class RuleEngineComponent {
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
   @Input() loading:boolean
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
+  @Input() environmentStores:IPublishEnvironment[];
 
   @Output() createRule:EventEmitter<{type:string}> = new EventEmitter(false)
   @Output() deleteRule:EventEmitter<RuleActionEvent> = new EventEmitter(false)
@@ -121,7 +123,6 @@ export class RuleEngineComponent {
     this.rules = []
     this._rsrcCache = {}
     this.status = null
-
   }
 
   rsrc(subkey:string) {

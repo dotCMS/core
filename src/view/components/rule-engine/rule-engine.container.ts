@@ -13,6 +13,7 @@ import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {Observable} from "rxjs/Observable";
 import {CwError} from "../../../api/system/http-response-util";
+import {BundleService, IPublishEnvironment} from "../../../api/services/bundle-service";
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
@@ -52,6 +53,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
   directives: [CORE_DIRECTIVES, RuleEngineComponent],
   template: `
     <cw-rule-engine
+      [environmentStores]="environments"
       [rules]="rules"
       [ruleActionTypes]="_ruleService._ruleActionTypes"
       [conditionTypes]="_ruleService._conditionTypes"
@@ -83,6 +85,8 @@ export class RuleEngineContainer {
 
   state:RuleEngineState = new RuleEngineState()
 
+  environments:IPublishEnvironment[] = []
+
   rules$:EventEmitter<RuleModel[]> = new EventEmitter()
   ruleActions$:EventEmitter<ActionModel[]> = new EventEmitter()
   conditionGroups$:EventEmitter<ConditionGroupModel[]> = new EventEmitter()
@@ -91,13 +95,16 @@ export class RuleEngineContainer {
               private _ruleActionService:ActionService,
               private _conditionGroupService:ConditionGroupService,
               private _conditionService:ConditionService,
-              private _resources:I18nService
+              private _resources:I18nService,
+              public bundleService:BundleService
   ) {
 
     this.rules$.subscribe(( rules ) => {
       console.log("RuleEngineContainer", "rules$.subscribe", rules)
       this.rules = rules
     })
+
+    this.bundleService.loadPublishEnvironments().subscribe((environments) => this.environments = environments);
     this.initRules()
   }
 
