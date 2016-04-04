@@ -114,9 +114,10 @@ export class BundleService extends CoreWebService {
 
 
   private getFormattedDate(date:Date) {
-    let month = (date.getMonth() + 1).toString()
-    month += month.length < 2 ? "0" + month : month
-    return `${month}-${date.getDate()}-${date.getFullYear()}`
+    let yyyy = date.getFullYear().toString();
+    let mm = (date.getMonth()+1).toString();
+    let dd  = date.getDate().toString();
+    return yyyy + '-' + (mm[1]?mm:"0"+mm[0]) + '-' + (dd[1]?dd:"0"+dd[0]);
   }
 
   private getPublishRuleData(ruleId:string, environmentId:string) {
