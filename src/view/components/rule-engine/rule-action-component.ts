@@ -24,12 +24,12 @@ import {RuleActionActionEvent} from "./rule-engine.container";
       flex
       class="cw-type-dropdown"
       [value]="action.type?.key"
-      placeholder="{{typeDropdown.placeholder | async}}"
+      placeholder="{{actionTypePlaceholder}}"
       (change)="onTypeChange($event)">
         <cw-input-option
         *ngFor="#opt of typeDropdown.options"
         [value]="opt.value"
-        [label]="opt.label | async"
+        [label]="opt.label"
         icon="{{opt.icon}}"></cw-input-option>
     </cw-input-dropdown>
   </div>
@@ -51,38 +51,36 @@ export class RuleActionComponent {
 
   @Input() action:ActionModel
   @Input() index:number = 0
+  @Input() actionTypePlaceholder:string
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
 
   @Output() updateRuleActionType:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
   @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
   @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
 
-  typeDropdown:any
+  @Input() typeDropdown:any
 
 
   constructor(private _resources:I18nService) {
+    
   }
 
   ngOnChanges(change){
-    console.log("RuleActionComponent", "ngOnChanges")
-    if (change.action){
-      if (this.typeDropdown && this.action.type) {
-        if(this.action.type.key != 'NoSelection') {
-          this.typeDropdown.value = this.action.type.key
-        }
-      }
-    }
     if(change.ruleActionTypes && !this.typeDropdown){
-      console.log("RuleActionComponent", "ngOnChanges", "actionTypeChanges")
       this.typeDropdown = {
-
-        placeholder: this._resources.get("api.sites.ruleengine.rules.inputs.action.type.placeholder"),
         options: []
       }
       Object.keys(this.ruleActionTypes).forEach(key => {
         let type = this.ruleActionTypes[key]
         this.typeDropdown.options.push(type._opt)
       })
+    }
+    if (change.action){
+      if (this.typeDropdown && this.action.type) {
+        if(this.action.type.key != 'NoSelection') {
+          this.typeDropdown.value = this.action.type.key
+        }
+      }
     }
   }
 

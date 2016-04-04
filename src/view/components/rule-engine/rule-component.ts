@@ -130,9 +130,10 @@ var rsrc = {
                      [group]="group"
                      [conditionTypes]="conditionTypes"
                      [groupIndex]="i"
+                     [conditionTypePlaceholder]="conditionTypePlaceholder"
                      (createCondition)="onCreateCondition($event)"
                      (deleteCondition)="onDeleteCondition($event, group)"
-                     (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
+                     (updateConditionGroupOperator)="onUpdateConditionGroupOperator($event, group)"
                      (updateConditionType)="onUpdateConditionType($event, group)"
                      (updateConditionParameter)="onUpdateConditionParameter($event, group)"
                      (updateConditionOperator)="onUpdateConditionOperator($event, group)"
@@ -144,6 +145,7 @@ var rsrc = {
       <div flex layout="column" class="cw-rule-actions">
         <div layout="row" class="cw-action-row" *ngFor="#ruleAction of ruleActions; #i=index">
           <rule-action flex layout="row" [action]="ruleAction" [index]="i" 
+              [actionTypePlaceholder]="actionTypePlaceholder"
               [ruleActionTypes]="ruleActionTypes"
               (updateRuleActionType)="onUpdateRuleActionType($event)"
                (updateRuleActionParameter)="onUpdateRuleActionParameter($event)"
@@ -187,7 +189,7 @@ class RuleComponent {
   @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
   @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
 
-  @Output() onUpdateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+  @Output() updateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
   @Output() createConditionGroup:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
 
   @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
@@ -207,6 +209,8 @@ class RuleComponent {
   showMoreMenu:boolean = false
   showAddToBundleDialog:boolean = false
   showPushPublishDialog:boolean = false
+  actionTypePlaceholder:string = ""
+  conditionTypePlaceholder:string = ""
 
 
   constructor(private _user:UserModel,
@@ -235,6 +239,14 @@ class RuleComponent {
     }
     this.initFormModel(fb)
 
+    this.resources.get("api.sites.ruleengine.rules.inputs.action.type.placeholder").subscribe((label)=>{
+      this.actionTypePlaceholder = label
+    })
+
+    this.resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder").subscribe((label)=>{
+      this.conditionTypePlaceholder = label
+    })
+
   }
 
   initFormModel(fb:FormBuilder) {
@@ -246,7 +258,7 @@ class RuleComponent {
     })
   }
 
-  rsrc(subkey:string, defVal:string = null) {
+  rsrc(subkey:string, defVal:string = '-missing-') {
     let msgObserver = this._rsrcCache[subkey]
     if (!msgObserver) {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal)
@@ -256,7 +268,6 @@ class RuleComponent {
   }
 
   ngOnChanges(change) {
-    console.log("RuleComponent", "ngOnChanges", change, change.rule)
     if (change.rule) {
       let rule = this.rule
       let ctrl:Control = <Control>this.formModel.controls['name']
@@ -337,7 +348,9 @@ class RuleComponent {
     this.deleteRuleAction.emit( { type:RULE_RULE_ACTION_DELETE, payload:Object.assign({rule:this.rule}, event.payload) } )
   }
 
-
+  onUpdateConditionGroupOperator(event:{type:string, payload:{value:string, index:number}}, conditionGroup:ConditionGroupModel){
+    this.updateConditionGroupOperator.emit( { type:RULE_CONDITION_UPDATE_TYPE, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  }
 
   onUpdateConditionType(event:{type:string, payload:{value:string, index:number}}, conditionGroup:ConditionGroupModel){
     console.log("RuleComponent", "onUpdateConditionType")

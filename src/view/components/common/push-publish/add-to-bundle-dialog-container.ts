@@ -33,7 +33,6 @@ export class AddToBundleDialogContainer {
 
   ngOnChanges(change){
     if (change.hidden && !this.hidden && !this.bundlesLoaded) {
-      console.log("AddToBundlehDialogContainer", "ngOnChanges", change.hidden.currentValue, change.hidden.previousValue)
       this.bundlesLoaded = true
       this.bundleService.loadBundleStores()
     }

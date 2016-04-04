@@ -47,7 +47,6 @@ export class AddToBundleDialogComponent {
   ngOnChanges(change){
     if (change.bundleStores) {
       this.selectedBundle = change.bundleStores.currentValue[0];
-      console.log("AddToBundleDialogComponent", "ngOnChanges", change.bundleStores.currentValue)
     }
   }
 

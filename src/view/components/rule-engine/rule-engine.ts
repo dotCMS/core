@@ -66,7 +66,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
         
         (createCondition)="createCondition.emit($event)"
         (createConditionGroup)="createConditionGroup.emit($event)"
-        (onUpdateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
+        (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
         (updateConditionType)="updateConditionType.emit($event)"
         (updateConditionParameter)="updateConditionParameter.emit($event)"
         (updateConditionOperator)="updateConditionOperator.emit($event)"

@@ -352,15 +352,7 @@ export class RuleService extends CoreWebService {
     if (this._ruleActionTypesAry.length) {
       obs = Observable.fromArray(this._ruleActionTypesAry)
     } else {
-      return this._doLoadRuleActionTypes().map((types:ServerSideTypeModel[])=> {
-        types.sort(RuleService.alphaSort('key'))
-        types.forEach(type => {
-          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
-          this._ruleActionTypes[type.key] = type
-        })
-        this._ruleActionTypesAry = types
-        return types
-      })
+      return this.actionAndConditionTypeLoader(this._doLoadRuleActionTypes(), this._ruleActionTypes)
     }
     return obs
   }
@@ -372,20 +364,36 @@ export class RuleService extends CoreWebService {
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
 
+  private actionAndConditionTypeLoader(
+      requestObserver:Observable<ServerSideTypeModel[]>,
+      typeMap:any):Observable<ServerSideTypeModel[]> {
+      return requestObserver.flatMap((types:ServerSideTypeModel[])=> {
+        return Observable.fromArray(types).flatMap((type)=> {
+          return this._resources.get(type.i18nKey + '.name', type.i18nKey).map(( label:string ) => {
+            type._opt = {value: type.key, label: label}
+            return type
+          })
+        }).reduce( (types:any[], type:any)=> {
+          types.push(type)
+          return types
+        }, []).do((types:any[])=>{
+          types = types.sort(( typeA, typeB ) => {
+            return typeA._opt.label.localeCompare(typeB._opt.label)
+          })
+          types.forEach((type)=>{
+            typeMap[type.key] = type
+          })
+          return types
+        })
+      })
+  }
+
   private loadConditionTypes():Observable<ServerSideTypeModel[]> {
     let obs
     if (this._conditionTypesAry.length) {
       obs = Observable.fromArray(this._conditionTypesAry)
     } else {
-      return this._doLoadConditionTypes().map((types:ServerSideTypeModel[])=> {
-        types.sort(RuleService.alphaSort('key'))
-        types.forEach(type => {
-          type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
-          this._conditionTypes[type.key] = type
-        })
-        this._conditionTypesAry = types
-        return types
-      })
+      return this.actionAndConditionTypeLoader(this._doLoadConditionTypes(), this._conditionTypes)
     }
     return obs
   }
@@ -396,7 +404,7 @@ export class RuleService extends CoreWebService {
       url: this._conditionTypesEndpointUrl,
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
-
+  
   static fromServerRulesTransformFn(ruleMap):RuleModel[] {
     return Object.keys(ruleMap).map((id:string) => {
       let r:IRule = ruleMap[id]
