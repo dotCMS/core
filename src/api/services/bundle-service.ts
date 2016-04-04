@@ -88,7 +88,7 @@ export class BundleService extends CoreWebService {
         return environments
       })
     }
-    obs.subscribe((environments) => this.environments$.next(environments))
+    return obs
   }
 
   _doLoadPublishEnvironments():Observable<IPublishEnvironment[]> {

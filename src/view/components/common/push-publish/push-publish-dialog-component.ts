@@ -43,11 +43,7 @@ export class PushPublishDialogComponent {
 
   constructor() { }
 
-  ngOnChanges(change){
-    if (change.environmentStores) {
-      this.selectedEnvironmentId = change.environmentStores.currentValue[0];
-    }
-  }
+  ngOnChanges(change){}
 
   setSelectedEnvironment(environmentId:string) {
     this.selectedEnvironmentId = environmentId

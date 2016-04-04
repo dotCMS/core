@@ -36,6 +36,7 @@ import {
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {AddToBundleDialogContainer} from "../common/push-publish/add-to-bundle-dialog-container";
 import {PushPublishDialogContainer} from "../common/push-publish/push-publish-dialog-container"
+import {IPublishEnvironment} from "../../../api/services/bundle-service";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -64,6 +65,7 @@ var rsrc = {
       [hidden]="!showAddToBundleDialog"
       (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
   <cw-push-publish-dialog-container
+      [environmentStores]="environmentStores"
       [assetId]="rule.id"
       [hidden]="!showPushPublishDialog"
       (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
@@ -117,7 +119,7 @@ var rsrc = {
       </div>
       <div class="ui vertical menu" *ngIf="showMoreMenu">
         <a class="item" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
-        <a class="item" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
+        <a class="item" *ngIf="environmentStores.length > 0" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -172,6 +174,7 @@ class RuleComponent {
   @Input() ruleActions:ActionModel[]
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
+  @Input() environmentStores:IPublishEnvironment[];
 
   @Input() hidden:boolean = false
 
