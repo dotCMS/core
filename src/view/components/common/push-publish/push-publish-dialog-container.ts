@@ -9,7 +9,7 @@ import {BundleService, IPublishEnvironment} from "../../../../api/services/bundl
   directives: [CORE_DIRECTIVES, PushPublishDialogComponent],
   template: `
   <cw-push-publish-dialog-component
-  [environmentStores]="bundleService.environments$ | async"
+  [environmentStores]="environmentStores"
   [hidden]="hidden"
   [errorMessage]="errorMessage | async"
   (cancel)="hidden = true; close.emit($event); errorMessage = null;"
@@ -20,22 +20,16 @@ import {BundleService, IPublishEnvironment} from "../../../../api/services/bundl
 export class PushPublishDialogContainer {
   @Input() assetId:string
   @Input() hidden:boolean = false
+  @Input() environmentStores:IPublishEnvironment[];
 
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
 
   errorMessage:BehaviorSubject<string> = new BehaviorSubject(null)
 
-  environmentsLoaded:boolean = false
-
   constructor(public bundleService:BundleService) {}
 
   ngOnChanges(change){
-    if (change.hidden && !this.hidden && !this.environmentsLoaded) {
-      this.environmentsLoaded = true
-      this.bundleService.loadPublishEnvironments()
-      console.log("PushPublishDialogContainer", "ngOnChanges", change.hidden.currentValue, change.hidden.previousValue)
-    }
   }
 
   doPushPublish(environment:IPublishEnvironment) {
