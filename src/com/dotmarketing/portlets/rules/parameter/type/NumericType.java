@@ -43,6 +43,17 @@ public class NumericType extends DataType<Number> {
         // blank might mean zero.
     }
 
+    /**
+     * Overridden for mutable return type.
+     */
+    @Override
+    public NumericType defaultValue(Number defaultValue) {
+        return (NumericType)super.defaultValue(defaultValue);
+    }
+
+    /**
+     * Overridden for mutable return type.
+     */
     @Override
     public NumericType restrict(TypeConstraint restriction) {
         return (NumericType)super.restrict(restriction);

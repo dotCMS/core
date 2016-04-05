@@ -8,18 +8,12 @@ import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
  */
 public class TextType extends DataType<String> {
 
-    private String defaultValue = "";
-
     public TextType() {
         this("text");
     }
 
     public TextType(String id) {
         super(id, "api.system.type.text");
-    }
-
-    public String getDefaultValue() {
-        return defaultValue;
     }
 
     public TextType required() {
@@ -34,9 +28,12 @@ public class TextType extends DataType<String> {
         return this.restrict(StandardConstraints.maxLength(maxLength));
     }
 
+    /**
+     * Overridden for mutable return type.
+     */
+    @Override
     public TextType defaultValue(String defaultValue){
-        this.defaultValue = defaultValue;
-        return this;
+        return (TextType)super.defaultValue(defaultValue);
     }
 
     public String convert(String value){

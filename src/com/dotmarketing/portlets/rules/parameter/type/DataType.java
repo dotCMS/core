@@ -15,6 +15,7 @@ public abstract class DataType<T> {
     private final String id;
     private final String errorMessageKey;
 
+    private T defaultValue;
     private Map<String, TypeConstraint> restrictions = Maps.newHashMap();
 
     public DataType(String id, String errorMessageKey) {
@@ -31,6 +32,15 @@ public abstract class DataType<T> {
     }
 
     public abstract T convert(String from);
+
+    public T getDefaultValue() {
+        return defaultValue;
+    }
+
+    public DataType<T> defaultValue(T defaultValue) {
+        this.defaultValue = defaultValue;
+        return this;
+    }
 
     /**
      * Verify that a value can be represented by this DataType. If valid an empty list will
