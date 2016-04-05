@@ -158,7 +158,7 @@ dojo.require("dojo.hash");
                         	return;
                         }
 
-                        console.log("refreshing:" + hashValue);
+                        logger.debug("refreshing:" + hashValue);
                         if(!hashValue || hashValue.length ==0){
                                 return;
                         }
@@ -179,7 +179,7 @@ dojo.require("dojo.hash");
 
                         dojo.style(hanger, "min-height", "400px");
 
-                        console.log("navigating to:" + hashValue)
+                        logger.debug("navigating to:" + hashValue)
                         myCp.attr("href", hashValue);
                         //myCp.refresh(); GIT-7098
 

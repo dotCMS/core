@@ -70,6 +70,8 @@ THIS FILE AND ITS INCLUDES
 		}
    	</script>
 
+	<script type="text/javascript" src="/html/js/log4js/log4javascript.js"></script>
+	<script type="text/javascript" src="/html/js/log4js/dotcms-log4js.js"></script>
 	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
