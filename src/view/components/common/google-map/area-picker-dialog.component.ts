@@ -29,7 +29,7 @@ var mapIdCounter = 1;
 export class AreaPickerDialogComponent {
   @Input() headerText:string = ''
   @Input() hidden:boolean = false
-  @Input() circle:GCircle = {center: {lat:55, lng: 0}, radius: 50000}
+  @Input() circle:GCircle = {center: {lat:38.8977, lng: -77.0365}, radius: 50000}
 
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
