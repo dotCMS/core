@@ -248,15 +248,19 @@ public class TagAPIImpl implements TagAPI {
                 hostId = Host.SYSTEM_HOST;
             }
             tag.setHostId(hostId);
-
-            Tag createdTag = tagFactory.createTag(tag);
+            
+            Tag foundTagInStorage = tagFactory.getTagByNameAndHost(tag.getTagName(),tag.getHostId());
+            
+            if(foundTagInStorage == null){
+            	foundTagInStorage = tagFactory.createTag(tag);
+            }
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
                 HibernateUtil.commitTransaction();
             }
 
-            return createdTag;
+            return foundTagInStorage;
         } catch ( Exception e ) {
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
