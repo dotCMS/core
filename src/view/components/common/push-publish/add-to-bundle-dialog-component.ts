@@ -13,7 +13,8 @@ import {IBundle} from "../../../../api/services/bundle-service";
     [hidden]="hidden"
     [okEnabled]="selectedBundle != null"
     [errorMessage]="errorMessage"
-    [width]="30"
+    width="25em"
+    height="20em"
     (ok)="addToBundle.emit(selectedBundle)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
