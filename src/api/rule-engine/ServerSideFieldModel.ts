@@ -30,8 +30,9 @@ export class ServerSideFieldModel extends CwModel {
       Object.keys(type.parameters).forEach((key)=> {
         let x = type.parameters[key]
         let paramDef = ParameterDefinition.fromJson(x)
+        let defaultValue = paramDef.defaultValue || paramDef.inputType.dataType.defaultValue
         this.parameterDefs[key] = paramDef
-        this.parameters[key] = {key: key, value: paramDef.defaultValue, priority: paramDef.priority}
+        this.parameters[key] = {key: key, value: defaultValue, priority: paramDef.priority}
       })
     }
   }

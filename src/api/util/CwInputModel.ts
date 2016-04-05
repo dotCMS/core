@@ -46,7 +46,7 @@ export class DataTypeModel {
 
   private _vFns:Function[]
 
-  constructor(public id:string, public errorMessageKey:string, private _constraints:any) {
+  constructor(public id:string, public errorMessageKey:string, private _constraints:any, public defaultValue:string = null) {
   }
 
   validators() {
@@ -125,7 +125,7 @@ export class CwInputDefinition {
     }
     let dataType = null
     if(json.dataType){
-      dataType = new DataTypeModel(json.dataType.id, json.dataType.errorMessageKey, json.dataType.constraints )
+      dataType = new DataTypeModel(json.dataType.id, json.dataType.errorMessageKey, json.dataType.constraints, json.dataType.defaultValue )
     }
     return new type(json, typeId, name, json.placeholder, dataType)
   }
