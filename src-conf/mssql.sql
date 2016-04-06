@@ -3491,16 +3491,3 @@ create table rule_condition_value (id varchar(36) primary key,condition_id varch
 create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
-
-CREATE TABLE analytic_summary_user_visits (
-    user_id VARCHAR(255) NOT NULL,
-    host_id VARCHAR(36) NOT NULL,
-    visits NUMERIC(19,0) NOT NULL,
-    last_start_date DATETIME NOT NULL,
-    PRIMARY KEY (user_id, host_id),
-    UNIQUE (user_id, host_id)
-);
-
-CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);
-CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);
-CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);
