@@ -43,7 +43,7 @@
   }
 
   var siteParam="realmId=<%=request.getParameter("id")%>";
-  var hideFireOnParam = "hideFireOn=true";
+  var hideFireOnParam = "hideFireOn=true"; 
   var hideRulePushOptions = "hideRulePushOptions=<%=request.getParameter("hideRulePushOptions")%>";
 
 	

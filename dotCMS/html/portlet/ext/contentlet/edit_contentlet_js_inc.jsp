@@ -649,7 +649,7 @@ dojo.require("dojox.layout.ContentPane");
 		}
 		var hideRulePushOptions = false
 		<%if(contentlet.getStructure().isHTMLPageAsset()){%>
-		hideRulePushOptions=true;
+		hideRulePushOptions=true; 
 		<%}%>
 		myCp = new dojox.layout.ContentPane({
 			id : "contentletRulezDivCp",
