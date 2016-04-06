@@ -11,6 +11,7 @@ export class ApiRoot {
   authUser:UserModel;
   authToken:string
   hideFireOn:boolean = false;
+  hideRulePushOptions:boolean = false; 
 
   constructor(authUser:UserModel) {
     this.authUser = authUser
@@ -27,6 +28,13 @@ export class ApiRoot {
         this.hideFireOn = (hideFireOn === 'true' || hideFireOn === '1')
         console.log('hideFireOn set to ', this.hideFireOn)
       }
+      
+      let hideRulePushOptions = ApiRoot.parseQueryParam(query, "hideRulePushOptions");
+      if (hideRulePushOptions) {
+        this.hideRulePushOptions = (hideRulePushOptions === 'true' || hideRulePushOptions === '1')
+        console.log('hideRulePushOptions set to ', this.hideRulePushOptions)
+      }
+      
       let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
       //console.log('Proxy server Base URL set to ', baseUrl)
       this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
