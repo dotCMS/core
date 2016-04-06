@@ -118,8 +118,8 @@ var rsrc = {
         </div>
       </div>
       <div class="ui vertical menu" *ngIf="showMoreMenu">
-        <a class="item" *ngIf="rule.id || rule.key" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
-        <a class="item" *ngIf="environmentStores.length > 0 && (rule.id || rule.key)" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
+        <a class="item" *ngIf="(rule.id || rule.key) && !apiRoot.hideRulePushOptions" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
+        <a class="item" *ngIf="environmentStores.length > 0 && (rule.id || rule.key) && !apiRoot.hideRulePushOptions" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -221,7 +221,7 @@ class RuleComponent {
               fb:FormBuilder) {
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
-
+    
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
     this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
       this.updateEnabledState.emit(event)
