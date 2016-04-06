@@ -44,10 +44,11 @@
 
   var siteParam="realmId=<%=request.getParameter("id")%>";
   var hideFireOnParam = "hideFireOn=true";
+  var hideRulePushOptions = "hideRulePushOptions=<%=request.getParameter("hideRulePushOptions")%>";
 
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/html/js/_rulesengine?" + localeParam + "&" + siteParam + "&" + hideFireOnParam;
+  document.getElementById("rulesIframe").src = "/html/js/_rulesengine?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
   
 
 
