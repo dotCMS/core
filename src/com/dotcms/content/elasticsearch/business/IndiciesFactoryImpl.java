@@ -8,6 +8,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 
@@ -107,7 +108,7 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
         
         cache.clearCache();
         
-        HibernateUtil.addCommitListener(new Runnable() {
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             public void run() {
                 cache.clearCache();
             }
