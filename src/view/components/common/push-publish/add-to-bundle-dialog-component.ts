@@ -14,7 +14,7 @@ import {IBundle} from "../../../../api/services/bundle-service";
     [okEnabled]="selectedBundle != null"
     [errorMessage]="errorMessage"
     width="25em"
-    height="20em"
+    height="auto"
     (ok)="addToBundle.emit(selectedBundle)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
@@ -41,7 +41,7 @@ export class AddToBundleDialogComponent {
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
   @Output() addToBundle:EventEmitter<IBundle> = new EventEmitter(false)
 
-  public selectedBundle:IBundle;
+  public selectedBundle:IBundle = null;
 
   constructor() { }
 

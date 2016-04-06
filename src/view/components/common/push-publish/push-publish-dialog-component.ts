@@ -11,10 +11,10 @@ import {IPublishEnvironment} from "../../../../api/services/bundle-service";
     [headerText]="'Push Publish'"
     [okText]="'Push'"
     [hidden]="hidden"
-    [okEnabled]="selectedEnvironment != null"
+    [okEnabled]="selectedEnvironmentId != null"
     [errorMessage]="errorMessage"
     width="25em"
-    height="20em"
+    height="auto"
     (ok)="doPushPublish.emit(selectedEnvironmentId)"
     (cancel)="cancel.emit()">
   <cw-input-dropdown
