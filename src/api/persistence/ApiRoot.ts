@@ -11,7 +11,7 @@ export class ApiRoot {
   authUser:UserModel;
   authToken:string
   hideFireOn:boolean = false;
-  hideRulePushOptions:boolean = false;
+  hideRulePushOptions:boolean = false; 
 
   constructor(authUser:UserModel) {
     this.authUser = authUser
