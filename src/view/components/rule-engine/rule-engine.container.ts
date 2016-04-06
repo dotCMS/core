@@ -101,7 +101,7 @@ export class RuleEngineContainer {
   ) {
 
     this.rules$.subscribe(( rules ) => {
-      console.log("RuleEngineContainer", "rules$.subscribe", rules)
+      //console.log("RuleEngineContainer", "rules$.subscribe", rules)
       this.rules = rules
     })
 
@@ -167,7 +167,7 @@ export class RuleEngineContainer {
   }
   
   onDeleteRule(event:RuleActionEvent) {
-    console.log("RuleEngineContainer", "onDeleteRule")
+    //console.log("RuleEngineContainer", "onDeleteRule")
     let rule = event.payload.rule
     rule._deleting = true
     this.state.deleting = true
@@ -181,13 +181,13 @@ export class RuleEngineContainer {
   }
 
   onUpdateEnabledState(event:RuleActionEvent) {
-    console.log("RuleEngineContainer", "onUpdateEnabledState", event)
+    //console.log("RuleEngineContainer", "onUpdateEnabledState", event)
     event.payload.rule.enabled = <boolean>event.payload.value
     this.patchRule(event.payload.rule, false)
   }
 
   onUpdateRuleName(event:RuleActionEvent){
-    console.log("RuleEngineContainer", "onUpdateRuleName", event)
+    //console.log("RuleEngineContainer", "onUpdateRuleName", event)
     event.payload.rule.name = <string>event.payload.value
     this.patchRule(event.payload.rule, false)
   }

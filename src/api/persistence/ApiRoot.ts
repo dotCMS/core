@@ -20,7 +20,7 @@ export class ApiRoot {
       let siteId = ApiRoot.parseQueryParam(query, "realmId");
       if (siteId) {
         this.siteId = siteId
-        console.log('Site Id set to ', this.siteId)
+        //console.log('Site Id set to ', this.siteId)
       }
       let hideFireOn = ApiRoot.parseQueryParam(query, "hideFireOn");
       if (hideFireOn) {
@@ -28,7 +28,7 @@ export class ApiRoot {
         console.log('hideFireOn set to ', this.hideFireOn)
       }
       let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
-      console.log('Proxy server Base URL set to ', baseUrl)
+      //console.log('Proxy server Base URL set to ', baseUrl)
       this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
       this.configureUser(query, authUser)
     } catch (e) {
