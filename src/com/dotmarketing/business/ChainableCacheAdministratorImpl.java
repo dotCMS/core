@@ -14,6 +14,8 @@ import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DotRunnable;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -339,7 +341,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			return;
 		}
 
-		Runnable cacheRemoveRunnable=new Runnable() {
+		FlushCacheRunnable cacheRemoveRunnable=new FlushCacheRunnable() {
 	         public void run() {
 
 				String k = key.toLowerCase();

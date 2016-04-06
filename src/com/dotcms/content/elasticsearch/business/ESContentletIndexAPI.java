@@ -12,10 +12,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.repackage.com.google.gson.Gson;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
@@ -25,12 +21,18 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.index.query.QueryBuilders;
+
+import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.com.google.gson.Gson;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.ReindexRunnable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -281,28 +283,24 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
 
-	    Runnable indexAction=new Runnable() {
-            public void run() {
-                try {
-                    Client client=new ESClient().getClient();
-                    BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
+	    
+	    
+	    
+        // http://jira.dotmarketing.net/browse/DOTCMS-6886
+        // check for related content to reindex
+        List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
+        contentToIndex.add(content);
+        if(deps){
+			try {
+				contentToIndex.addAll(loadDeps(content));
+			} catch (DotDataException | DotSecurityException e1) {
+				throw new DotHibernateException(e1.getMessage(), e1);
+			}
+        }
+	    
+	    
+	    ReindexRunnable indexAction=new ReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING) {
 
-                    // http://jira.dotmarketing.net/browse/DOTCMS-6886
-                    // check for related content to reindex
-                    List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
-                    contentToIndex.add(content);
-                    if(deps)
-                        contentToIndex.addAll(loadDeps(content));
-                    
-                    indexContentletList(req, contentToIndex,reindexOnly);
-                                        
-                    if(bulk==null && req.numberOfActions()>0)
-                        req.execute().actionGet();
-
-                } catch (Exception e) {
-					throw new RuntimeException(e);
-                }
-            }
         };
 
 	    if(bulk!=null || indexBeforeCommit) {
@@ -311,12 +309,43 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else {
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
-            HibernateUtil.addCommitListener(content.getInode()+HibernateUtil.addToIndex,indexAction);
+            HibernateUtil.addCommitListener(content.getInode()+ ReindexRunnable.Action.ADDING,indexAction);
 	    }	    
 	}
 
+	@Override
+	public void indexContentList(List<Contentlet> contentToIndex) throws  DotDataException{
+    	if(contentToIndex==null || contentToIndex.size()==0){
+    		return;
+    	}
+        Client client=new ESClient().getClient();
+        BulkRequestBuilder req = client.prepareBulk() ;
+        try {
+			indexContentletList(req, contentToIndex, false);
+			if(req.numberOfActions()>0){
+				req.execute().actionGet();
+			}
+		} catch (DotStateException | DotSecurityException | DotMappingException e) {
+			throw new DotDataException (e.getMessage(), e);
+		}
+		
+		
+		
+		
+	}
+	
+	
+	
+	
+	
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
 
+
+
+		Logger.info(this.getClass(), "Indexing " + contentToIndex.size()  + " contents, starting with: " + contentToIndex.get(0).getTitle());
+
+		
+		
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -391,7 +420,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	private void removeContentFromIndex(final Contentlet content, final boolean onlyLive, final List<Relationship> relationships) throws DotHibernateException {
-		 Runnable indexRunner = new Runnable() {
+		ReindexRunnable indexRunner = new ReindexRunnable(content, ReindexRunnable.Action.REMOVING) {
 	            public void run() {
 	        	    try {
 	            	    String id=content.getIdentifier()+"_"+content.getLanguageId();
@@ -435,7 +464,12 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	        	    }
 	            }
 	        };
-	        HibernateUtil.addCommitListener(content.getInode()+HibernateUtil.removeFromIndex,indexRunner);
+	        
+	        
+	        
+	        
+	        
+	        HibernateUtil.addCommitListener(content.getInode()+ReindexRunnable.Action.REMOVING,indexRunner);
 	}
 	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {

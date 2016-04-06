@@ -1,0 +1,54 @@
+package com.dotmarketing.db;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+
+public abstract class ReindexRunnable extends DotRunnable {
+
+	public enum Action{ADDING, REMOVING};
+
+	
+	private final Action action;
+	private final List<Contentlet> contentToIndex;
+
+	public List<Contentlet> getReindexIds() {
+		return contentToIndex;
+	}
+
+	public ReindexRunnable(List<Contentlet> reindexIds, Action action) {
+		super();
+		this.contentToIndex = reindexIds;
+		this.action = action;
+	}
+
+	public ReindexRunnable(Contentlet reindexId, Action action) {
+		super();
+
+		contentToIndex = new ArrayList<Contentlet>();
+		contentToIndex.add(reindexId);
+		this.action = action;
+	}
+
+	public Action getAction() {
+		return action;
+	}
+
+    public void run() {
+
+        try {
+        	if(action.equals(Action.ADDING)){
+        		APILocator.getContentletIndexAPI().indexContentList(contentToIndex);
+        	}
+        	else{
+        		throw new DotStateException("REMOVE ACTION NEEDS TO OVERRIDE THE run() method");
+        	}
+        } catch (Exception e) {
+			throw new RuntimeException(e);
+        }
+    }
+    
+}
