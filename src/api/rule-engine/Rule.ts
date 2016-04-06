@@ -465,7 +465,7 @@ export class RuleService extends CoreWebService {
       json.key = key
       return ServerSideTypeModel.fromJson(json)
     })
-    console.log("RuleService", "fromServerServersideTypesTransformFn - loaded", types)
+    //console.log("RuleService", "fromServerServersideTypesTransformFn - loaded", types)
     return types.filter((type)=> type.key != 'CountRulesActionlet')
   }
 }

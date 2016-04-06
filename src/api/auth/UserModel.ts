@@ -32,7 +32,7 @@ export class UserModel {
         end = end != -1 ? end : q.indexOf('#', idx)
         end = end != -1 ? end : q.length
         locale = q.substring(idx + token.length, end)
-        console.log('Locale set to to ', locale)
+        //console.log('Locale set to to ', locale)
       }
     }
     return locale

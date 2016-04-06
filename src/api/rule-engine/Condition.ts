@@ -67,7 +67,7 @@ export class ConditionService {
   }
 
   add(groupId:string, model:ConditionModel):Observable<any> {
-    console.log("api.rule-engine.ConditionService", "add", model)
+    //console.log("api.rule-engine.ConditionService", "add", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }

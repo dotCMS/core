@@ -117,7 +117,7 @@ export class I18nService {
     let cNode = this.root.$descendant(path)
     if (!cNode.$isLoaded() && !cNode.$isLoading()) {
       let promise = new Promise((resolve, reject)=> {
-        console.log("I18n", "Requesting: ", msgKey)
+        //console.log("I18n", "Requesting: ", msgKey)
         this.makeRequest(path.join('/')).catch((err:any, source:Observable<any>)=>{
           if(err && err.status === 404){
             console.log("Missing Resource: '" , msgKey, "'")
@@ -149,7 +149,7 @@ export class I18nService {
             if(!cNode.$isLeaf() ){
                 if(forceText){
                   v = defaultValue
-                  console.log("Misconfigured resource:", msgKey )
+                  //console.log("Misconfigured resource:", msgKey )
                 } else {
                   v = cNode
                 }
