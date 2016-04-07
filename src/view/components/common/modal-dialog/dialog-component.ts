@@ -4,7 +4,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
   selector: 'cw-modal-dialog',
   directives: [CORE_DIRECTIVES],
   template: `
-  <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)" >
+  <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)" (keyup.enter)="ok.emit()" tabindex="0">
     <div class="ui modal cw-modal-dialog" style="height:{{height}};width:{{width}};max-height:{{maxHeight}};max-width:{{maxWidth}}" (click)="$event.stopPropagation()">
       <div class="header">{{headerText}}</div>
       <div flex layout-fill layout="column" class="content">
@@ -13,7 +13,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
       </div>
       <div class="actions">
         <div class="ui black deny button" (click)="cancel.emit(true)">Cancel</div>
-        <div class="ui positive right labeled icon button" (click)="ok.emit()">{{okButtonText}}
+        <div class="ui positive right labeled icon button" (click)="ok.emit()" (keyup.enter)="ok.emit()">{{okButtonText}}
           <i class="checkmark icon"></i>
         </div>
       </div>

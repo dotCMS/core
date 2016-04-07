@@ -58,6 +58,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
 
   @Output() change:EventEmitter<any> = new EventEmitter()
   @Output() touch:EventEmitter<any> = new EventEmitter()
+  @Output() enter:EventEmitter<boolean> = new EventEmitter(false)
 
   onChange:Function = (  ) => { }
   onTouched:Function = (  ) => { }
@@ -240,8 +241,13 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
    */
   private _applyArrowNavFix($dropdown) {
     let $searchField = $dropdown.children('input.search')
+    let enterEvent = this.enter;
     $searchField.on('keyup', (event:any)=> {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
+        if (event.keyCode == 13 && enterEvent){
+          enterEvent.emit();
+        }
+
         event.stopPropagation()
       }
     })
