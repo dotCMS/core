@@ -4,7 +4,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
   selector: 'cw-modal-dialog',
   directives: [CORE_DIRECTIVES],
   template: `
-  <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)" >
+  <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)">
     <div class="ui modal cw-modal-dialog" style="height:{{height}};width:{{width}};max-height:{{maxHeight}};max-width:{{maxWidth}}" (click)="$event.stopPropagation()">
       <div class="header">{{headerText}}</div>
       <div flex layout-fill layout="column" class="content">
@@ -58,6 +58,10 @@ export class ModalDialogComponent {
         e.preventDefault()
         e.stopPropagation()
         this.cancel.emit(false)
+      }else if(e.keyCode == 13){ //enter
+        e.stopPropagation();
+        e.preventDefault();
+        this.ok.emit();
       }
     })
   }

@@ -22,7 +22,8 @@ import {IBundle} from "../../../../api/services/bundle-service";
       [value]="bundleStores[0]?.id"
       allowAdditions="true"
       (click)="$event.stopPropagation()"
-      (change)="setSelectedBundle($event)">
+      (change)="setSelectedBundle($event)"
+      (enter)="addToBundle.emit(selectedBundle)">
     <cw-input-option
         *ngFor="#opt of bundleStores"
         [value]="opt.id"
