@@ -24,9 +24,9 @@ import com.dotmarketing.util.UtilMethods;
 public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask {
 	private static TagAPI tagAPI = APILocator.getTagAPI();
 
-	private static String GET_STRUCTURES_WITH_TAGS_FIELDS="SELECT STRUCTURE_INODE, VELOCITY_VAR_NAME, FIELD_CONTENTLET FROM FIELD WHERE FIELD_TYPE=?";
-	private static String GET_CONTENT_HOST_ID="SELECT HOST_INODE FROM IDENTIFIER WHERE ID=?";
-	private static String DELETE_OLD_CONTENT_TAG_INODES="DELETE FROM TAG_INODE WHERE inode=?";
+	private static String GET_STRUCTURES_WITH_TAGS_FIELDS="SELECT structure_inode, velocity_var_name, field_contentlet FROM field WHERE field_type=?";
+	private static String GET_CONTENT_HOST_ID="SELECT host_inode FROM identifier WHERE id=?";
+	private static String DELETE_OLD_CONTENT_TAG_INODES="DELETE FROM tag_inode WHERE inode=?";
 
 	/**
 	 * Update/fix the contentlets tags references in the tag_inode table 
@@ -43,7 +43,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 			String field_contentlet = (String)result.get("field_contentlet");
 
 			//get contents with that field set
-			dc.setSQL("SELECT INODE, IDENTIFIER, "+field_contentlet+" FROM CONTENTLET WHERE STRUCTURE_INODE=? AND "+field_contentlet+" IS NOT NULL");
+			dc.setSQL("SELECT inode, identifier, "+field_contentlet+" FROM contentlet WHERE structure_inode=? AND "+field_contentlet+" IS NOT NULL");
 			dc.addParam(structureInode);
 			List<Map<String, Object>> contentResults = (List<Map<String, Object>>) dc.loadResults();
 			for(Map<String, Object> content : contentResults){
@@ -74,7 +74,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 						}
 
 						//clean contentlet tag field
-						dc.setSQL("UPDATE CONTENTLET SET "+field_contentlet+"='' WHERE INODE=?");
+						dc.setSQL("UPDATE contentlet SET "+field_contentlet+"='' WHERE inode=?");
 						dc.addParam(content_inode);
 						dc.loadResult();
 						HibernateUtil.commitTransaction();
