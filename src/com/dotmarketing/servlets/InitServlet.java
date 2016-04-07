@@ -489,7 +489,9 @@ public class InitServlet extends HttpServlet {
 					HibernateUtil.closeSession();
 				} catch (DotHibernateException e) {
 					Logger.error(InitServlet.class, e.getMessage(), e);
-				}
+				} finally {
+	                DbConnectionFactory.closeConnection();
+	            }
             }
 
         }
