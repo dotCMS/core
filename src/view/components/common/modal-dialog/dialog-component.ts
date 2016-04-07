@@ -12,10 +12,10 @@ import {CORE_DIRECTIVES} from "angular2/common";
         <ng-content></ng-content>
       </div>
       <div class="actions">
-        <div class="ui black deny button" (click)="cancel.emit(true)">Cancel</div>
-        <div class="ui positive right labeled icon button" (click)="ok.emit()">{{okButtonText}}
+        <div class="ui positive right labeled icon button" [class.disabled]="!okEnabled" (click)="ok.emit()">{{okButtonText}}
           <i class="checkmark icon"></i>
         </div>
+        <div class="ui black deny button" (click)="cancel.emit(true)">Cancel</div>
       </div>
     </div>
   </div>

@@ -61,12 +61,12 @@ var rsrc = {
     PushPublishDialogContainer],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
   <cw-add-to-bundle-dialog-container
-      [assetId]="rule.id"
+      [assetId]="rule.id || rule.key"
       [hidden]="!showAddToBundleDialog"
       (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
   <cw-push-publish-dialog-container
       [environmentStores]="environmentStores"
-      [assetId]="rule.id"
+      [assetId]="rule.id || rule.key"
       [hidden]="!showPushPublishDialog"
       (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
@@ -118,8 +118,8 @@ var rsrc = {
         </div>
       </div>
       <div class="ui vertical menu" *ngIf="showMoreMenu">
-        <a class="item" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
-        <a class="item" *ngIf="environmentStores.length > 0" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
+        <a class="item" *ngIf="(rule.id || rule.key) &&  !apiRoot.hideRulePushOptions" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
+        <a class="item" *ngIf="environmentStores.length > 0 && (rule.id || rule.key) &&  !apiRoot.hideRulePushOptions" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -221,7 +221,7 @@ class RuleComponent {
               fb:FormBuilder) {
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
-
+    
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
     this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
       this.updateEnabledState.emit(event)
