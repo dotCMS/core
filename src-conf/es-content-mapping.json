@@ -20,12 +20,6 @@
                         "type": "string",
                         "index": "not_analyzed",
                         "ignore_above": 8191
-                    },
-                    "match": "tags",
-                    "mapping": {
-                        "type": "string",
-                        "analyzer": "comma_analyzer"	
-
                     }
                 }
             },
@@ -44,9 +38,16 @@
                         "type": "geo_point"
                     }
                 }
+            },
+            {
+            	"tags" : {
+		            "match": "tags",
+		            "mapping": {
+		                "type": "string",
+		                "analyzer": "dot_comma_analyzer"	
+					}
+	            }
             }
-
-            
         ]
     }
 }
