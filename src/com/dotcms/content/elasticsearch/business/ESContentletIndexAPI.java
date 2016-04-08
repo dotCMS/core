@@ -98,8 +98,14 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		ClassLoader classLoader = null;
 		URL url = null;
 		classLoader = Thread.currentThread().getContextClassLoader();
-		url = classLoader.getResource("es-content-settings.json");
-		String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+		String settings = null;
+		try{
+			url 	= classLoader.getResource("es-content-settings.json");
+			settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "cannot load es-content-settings.json file, skipping", e);
+		}
 		
 		url = classLoader.getResource("es-content-mapping.json");
 		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
