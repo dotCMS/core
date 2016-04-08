@@ -16,6 +16,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.com.google.gson.Gson;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
@@ -25,6 +26,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.index.query.QueryBuilders;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -93,15 +95,30 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 	@Override
 	public synchronized boolean createContentIndex(String indexName, int shards) throws ElasticsearchException, IOException {
-
-		CreateIndexResponse cir = iapi.createIndex(indexName, null, shards);
+		ClassLoader classLoader = null;
+		URL url = null;
+		classLoader = Thread.currentThread().getContextClassLoader();
+		String settings = null;
+		try{
+			url 	= classLoader.getResource("es-content-settings.json");
+			settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "cannot load es-content-settings.json file, skipping", e);
+		}
+		
+		url = classLoader.getResource("es-content-mapping.json");
+		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+		
+		CreateIndexResponse cir = iapi.createIndex(indexName, settings, shards);
+		
+		
 		int i = 0;
 		while(!cir.isAcknowledged()){
 
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -111,13 +128,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		}
 
 
-		ClassLoader classLoader = null;
-		URL url = null;
-		classLoader = Thread.currentThread().getContextClassLoader();
-		url = classLoader.getResource("es-content-mapping.json");
-        // create actual index
-		String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
 
+		
 		mappingAPI.putMapping(indexName, "content", mapping);
 
 
@@ -316,6 +328,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
+
+		Logger.debug(this.getClass(), "Indexing " + contentToIndex.size()  + " contents, starting with: " + contentToIndex.get(0).getTitle());
 
 		for(Contentlet con : contentToIndex) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
