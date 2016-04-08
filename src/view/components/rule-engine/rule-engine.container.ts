@@ -131,7 +131,7 @@ export class RuleEngineContainer {
       this.state.loading = false
       if (err.response.status === 403) {
         this.state.showRules = false;
-        this.state.globalError = JSON.parse(err.response._body).error.replace('dotcms.api.error.forbidden: ', '')
+        this._handle403Error(err)
       }
     })
   }
@@ -460,16 +460,16 @@ export class RuleEngineContainer {
         this._ruleService.updateRule(rule.key, rule).subscribe(() => {
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-          this.ruleUpdated(rule, {serverError: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       }
       else {
         this._ruleService.createRule(rule).subscribe(() => {
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-          this.ruleUpdated(rule, {serverError: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       }
     } else{
@@ -487,15 +487,15 @@ export class RuleEngineContainer {
         this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe((result)=>{
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-          this.ruleUpdated(rule, {invalid: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       } else {
         this._ruleActionService.updateRuleAction(rule.key, ruleAction).subscribe((result)=>{
           this.ruleUpdated(rule)
         }, (e:any)=>{
-          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-          this.ruleUpdated(rule, {invalid: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       }
     }else{
@@ -513,8 +513,8 @@ export class RuleEngineContainer {
           this._conditionService.save(group.key, condition).subscribe((result)=>{
             this.ruleUpdated(rule)
           }, (e:any)=>{
-            this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-            this.ruleUpdated(rule, {invalid: e.message})
+            let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+            this.ruleUpdated(rule, ruleError)
           })
         } else {
           if (!group.isPersisted()) {
@@ -523,8 +523,8 @@ export class RuleEngineContainer {
                 group.conditions[condition.key] = true
                 this.ruleUpdated(rule)
               }, (e:CwError)=>{
-                this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-                this.ruleUpdated(rule, {invalid: e.message})
+                let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+                this.ruleUpdated(rule, ruleError)
               })
             })
           } else {
@@ -532,8 +532,8 @@ export class RuleEngineContainer {
               group.conditions[condition.key] = true
               this.ruleUpdated(rule)
             }, (e:CwError)=>{
-              this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
-              this.ruleUpdated(rule, {invalid: e.message})
+              let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+              this.ruleUpdated(rule, ruleError)
             })
           }
         }
@@ -551,6 +551,22 @@ export class RuleEngineContainer {
 
   prioritySortFn(a:any, b:any) {
     return a.priority - b.priority;
+  }
+
+  private _handle403Error(e:CwError) {
+    let handled = false;
+    try{
+      if (e && e.response.status == 403) {
+        let errorJson = e.response.json()
+        if (errorJson && errorJson.error) {
+          this.state.globalError = errorJson.error.replace('dotcms.api.error.forbidden: ', '')
+          handled = true
+        }
+      }
+    } catch (e) {
+      console.error("Error while processing invalid response: ", e)
+    }
+    return handled
   }
 
 }
