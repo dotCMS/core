@@ -516,28 +516,27 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
                     if(tagList ==null || tagList.size()==0) continue;
                     
+                    final String tagDelimit = Config.getStringProperty("ES_TAG_DELIMITER_PATTERN", ",,");
+                    
+                    
                     for ( Tag t : tagList ) {
                     	if(t.getTagName() ==null) continue;
-                    	String myTag = t.getTagName().replace(',', ' ').trim();
-                    	
-                    	
-                    	
-                        tagg.append(myTag).append(",");
-
+                    	String myTag = t.getTagName().trim();
+                        tagg.append(myTag).append(tagDelimit);
                         if ( t.isPersona() ) {
-                            personaTags.append(myTag).append(",");
+                            personaTags.append(myTag).append(tagDelimit);
                         }
                     }
-                    if(tagg.length() >0){
-                    	String taggStr = tagg.substring(0, tagg.length()-1);
+                    if(tagg.length() >tagDelimit.length()){
+                    	String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr);
                         m.put("tags", taggStr);
                     }
 
 
                     if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
-                        if ( personaTags.length() > 0 ) {
-                        	String personaStr = personaTags.substring(0, personaTags.length()-1);
+                        if ( personaTags.length() > tagDelimit.length() ) {
+                        	String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
                             m.put(st.getVelocityVarName() + ".personas", personaStr);
                             m.put("personas", personaStr);
                         }
