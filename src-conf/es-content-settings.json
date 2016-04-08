@@ -3,7 +3,7 @@
 	    "analyzer": {
 	      "comma_analyzer": {
 	         "type": "pattern",
-	         "pattern":","
+	         "pattern":",,"
 	      }
 	    }
     }
