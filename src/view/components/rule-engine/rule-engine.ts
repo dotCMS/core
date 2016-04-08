@@ -24,8 +24,11 @@ const I8N_BASE:string = 'api.sites.ruleengine'
   directives: [CORE_DIRECTIVES, RuleComponent],
   template: `
   <div class="cw-modal-glasspane"  [class.cw-loading]="loading" *ngIf="loading"></div>
-
-<div class="cw-rule-engine" *ngIf="!loading">
+  <div *ngIf="!loading && globalError" class="ui negative message cw-message">
+    <div class="header">{{globalError}}</div>
+    <p>Please contact an administrator</p>
+  </div>
+<div class="cw-rule-engine" *ngIf="!loading && showRules">
   <div class="cw-header">
     <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
@@ -82,6 +85,8 @@ export class RuleEngineComponent {
   @Input() rules:RuleModel[]
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
   @Input() loading:boolean
+  @Input() globalError:string
+  @Input() showRules:boolean
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
   @Input() environmentStores:IPublishEnvironment[];
 

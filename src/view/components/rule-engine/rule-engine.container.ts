@@ -58,6 +58,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
       [ruleActionTypes]="_ruleService._ruleActionTypes"
       [conditionTypes]="_ruleService._conditionTypes"
       [loading]="state.loading"
+      [showRules]="state.showRules"
+      [globalError]="state.globalError"
       (createRule)="onCreateRule($event)"
       (deleteRule)="onDeleteRule($event)"
       (updateName)="onUpdateRuleName($event)"
@@ -91,6 +93,8 @@ export class RuleEngineContainer {
   rules$:EventEmitter<RuleModel[]> = new EventEmitter()
   ruleActions$:EventEmitter<ActionModel[]> = new EventEmitter()
   conditionGroups$:EventEmitter<ConditionGroupModel[]> = new EventEmitter()
+  globalError:string;
+  showRules:boolean
 
   constructor(private _ruleService:RuleService,
               private _ruleActionService:ActionService,
@@ -123,6 +127,12 @@ export class RuleEngineContainer {
       });
       this.rules$.emit(rules)
       this.state.loading = false
+    }, (err:any) => {
+      this.state.loading = false
+      if (err.response.status === 403) {
+        this.state.showRules = false;
+        this.state.globalError = JSON.parse(err.response._body).error.replace('dotcms.api.error.forbidden: ', '')
+      }
     })
   }
 
@@ -450,13 +460,15 @@ export class RuleEngineContainer {
         this._ruleService.updateRule(rule.key, rule).subscribe(() => {
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-            this.ruleUpdated(rule, {serverError: e.message})
+          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
+          this.ruleUpdated(rule, {serverError: e.message})
         })
       }
       else {
         this._ruleService.createRule(rule).subscribe(() => {
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
+          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
           this.ruleUpdated(rule, {serverError: e.message})
         })
       }
@@ -475,12 +487,14 @@ export class RuleEngineContainer {
         this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe((result)=>{
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
+          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
           this.ruleUpdated(rule, {invalid: e.message})
         })
       } else {
         this._ruleActionService.updateRuleAction(rule.key, ruleAction).subscribe((result)=>{
           this.ruleUpdated(rule)
         }, (e:any)=>{
+          this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
           this.ruleUpdated(rule, {invalid: e.message})
         })
       }
@@ -499,6 +513,7 @@ export class RuleEngineContainer {
           this._conditionService.save(group.key, condition).subscribe((result)=>{
             this.ruleUpdated(rule)
           }, (e:any)=>{
+            this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
             this.ruleUpdated(rule, {invalid: e.message})
           })
         } else {
@@ -508,6 +523,7 @@ export class RuleEngineContainer {
                 group.conditions[condition.key] = true
                 this.ruleUpdated(rule)
               }, (e:CwError)=>{
+                this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
                 this.ruleUpdated(rule, {invalid: e.message})
               })
             })
@@ -516,6 +532,7 @@ export class RuleEngineContainer {
               group.conditions[condition.key] = true
               this.ruleUpdated(rule)
             }, (e:CwError)=>{
+              this.state.globalError = JSON.parse(e.response._body).error.replace('dotcms.api.error.forbidden: ', '')
               this.ruleUpdated(rule, {invalid: e.message})
             })
           }

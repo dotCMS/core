@@ -71,6 +71,10 @@ export class CoreWebService {
                 throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source)
               }
             }
+            else if (response.status === 403) {
+              console.error("Could not execute request: 403 user not authorized", options.url)
+              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source)
+            }
             else if (response.status === 404) {
               console.error("Could not execute request: 404 path not valid.", options.url)
               throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source)
