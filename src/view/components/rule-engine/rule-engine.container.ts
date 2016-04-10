@@ -333,8 +333,10 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onUpdateConditionGroupOperator")
     let group = event.payload.conditionGroup
     group.operator = <string>event.payload.value
-    this.patchConditionGroup(event.payload.rule, group)
-    this.patchRule(event.payload.rule)
+    if(group.key != null) {
+      this.patchConditionGroup(event.payload.rule, group)
+      this.patchRule(event.payload.rule)
+    }
   }
 
   onDeleteConditionGroup(event:ConditionGroupActionEvent) {
@@ -362,7 +364,7 @@ export class RuleEngineContainer {
       let idx = event.payload.index
       let type:ServerSideTypeModel = this._ruleService._conditionTypes[<string>event.payload.value]
       // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
-      condition = new ConditionModel({id: condition.key, _type: type, priority:condition.priority})
+      condition = new ConditionModel({id: condition.key, _type: type, priority:condition.priority, operator:condition.operator})
       group._conditions[idx] = condition
       this.patchCondition(rule, group, condition)
     } catch (e) {
