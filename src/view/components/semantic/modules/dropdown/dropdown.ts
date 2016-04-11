@@ -245,7 +245,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     $searchField.on('keyup', (event:any)=> {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
         if (event.keyCode == 13 && enterEvent){
-          enterEvent.emit();
+          enterEvent.emit(true);
         }
 
         event.stopPropagation()

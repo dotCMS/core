@@ -61,7 +61,7 @@ export class ModalDialogComponent {
       }else if(e.keyCode == 13){ //enter
         e.stopPropagation();
         e.preventDefault();
-        this.ok.emit();
+        this.ok.emit(true);
       }
     })
   }
