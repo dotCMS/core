@@ -51,6 +51,14 @@ $primary-one: #209021;
 
 $finder-s-input: '.ui.input input';
 
+.cw-message {
+  &.ui.message {
+    &:first-child {
+      margin: 2em 2em 1em;
+    }
+  }
+}
+
 .cw-loading {
   background-color: rgba(10, 10, 10, 0.35);
   width:100%;
