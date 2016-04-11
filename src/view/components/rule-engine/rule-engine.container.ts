@@ -94,7 +94,6 @@ export class RuleEngineContainer {
   ruleActions$:EventEmitter<ActionModel[]> = new EventEmitter()
   conditionGroups$:EventEmitter<ConditionGroupModel[]> = new EventEmitter()
   globalError:string;
-  showRules:boolean
 
   constructor(private _ruleService:RuleService,
               private _ruleActionService:ActionService,
