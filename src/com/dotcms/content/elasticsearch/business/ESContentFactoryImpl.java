@@ -1730,12 +1730,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 Logger.debug(ESContentFactoryImpl.class, "Structure Variable Name not found");
                 //return query;
             }
-
-            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
-
-            if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
-                Logger.debug(ESContentFactoryImpl.class, "Structure not found");
-                //return query;
+            if(structureVarName!=null){
+	            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
+	            if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
+	                Logger.debug(ESContentFactoryImpl.class, "Structure not found");
+	                //return query;
+	            }
             }
 
             //delete additional blank spaces on date range

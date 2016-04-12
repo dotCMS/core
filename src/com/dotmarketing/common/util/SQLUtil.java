@@ -213,6 +213,7 @@ public class SQLUtil {
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
 		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return "";
 	}
@@ -229,6 +230,7 @@ public class SQLUtil {
 			if(parameter.toLowerCase().contains(str)){//check if the order by requested have any other command
 				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
 				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+				SecurityLogger.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 				return "";
 			}
 		}
