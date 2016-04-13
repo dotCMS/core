@@ -415,6 +415,10 @@ public class ContentletServices {
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "=$contents.getEmptyList())");
 	                sb.append("#set( $" ).append( field.getVelocityVarName() ).append( "CategoriesKeys=$contents.getEmptyList())");
 				}
+			} else if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+				content.setTags();
+				String value = content.getStringProperty(field.getVelocityVarName());
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "=\"" ).append( UtilMethods.espaceForVelocity(value).trim() ).append( "\")");
 			}
 		}
 

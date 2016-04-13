@@ -1077,49 +1077,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		//Return the tags related to this Contentlet in order to show them in the edit window
-		HashMap<String, StringBuilder> contentletTags = new HashMap<>();
-		List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(contentlet.getInode());
-		if ( foundTagInodes != null && !foundTagInodes.isEmpty() ) {
-
-			for ( TagInode foundTagInode : foundTagInodes ) {
-
-				StringBuilder contentletTagsBuilder = new StringBuilder();
-				String fieldVarName = foundTagInode.getFieldVarName();
-
-				if ( UtilMethods.isSet(fieldVarName) ) {
-					//Getting the related tag object
-					Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
-
-					if ( contentletTags.containsKey(fieldVarName) ) {
-						contentletTagsBuilder = contentletTags.get(fieldVarName);
-					}
-					if ( contentletTagsBuilder.length() > 0 ) {
-						contentletTagsBuilder.append(",");
-					}
-					if ( relatedTag.isPersona() ) {
-						contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
-					} else {
-						contentletTagsBuilder.append(relatedTag.getTagName());
-					}
-
-					contentletTags.put(fieldVarName, contentletTagsBuilder);
-				} else {
-					Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
-							"[" + foundTagInode.getInode() + "] without an associated Field var name.");
-				}
-			}
-
-			/*
-			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
-			this is done only for display purposes.
-			 */
-			if ( !contentletTags.isEmpty() ) {
-				for ( Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
-					//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-					contentlet.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
-				}
-			}
-		}
+		contentlet.setTags();
 
 		GregorianCalendar cal = new GregorianCalendar();
 		if (contentlet.getModDate() == null) {
