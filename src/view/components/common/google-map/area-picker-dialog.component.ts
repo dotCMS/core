@@ -12,9 +12,9 @@ var mapIdCounter = 1;
   template: `<cw-modal-dialog 
                  [headerText]="headerText"
                  [hidden]="hidden"
-                 [okEnabled]="selectedBundle != null"
-                 (ok)="circleUpdate.emit(circle)"
-                 (cancel)="cancel.emit()">
+                 [okEnabled]="true"
+                 (ok)="onOkAction($event)"
+                 (cancel)="onCancelAction($event)">
   <div *ngIf="!hidden" class="cw-dialog-body">
     <div id="{{mapId}}" class="g-map" *ngIf="!hidden" > </div>
   </div>
@@ -39,17 +39,15 @@ export class AreaPickerDialogComponent {
 
   mapId = 'map_' + mapIdCounter++;
 
+  private _prevCircle:GCircle
+
   constructor(public mapsService:GoogleMapService) {
     console.log("AreaPickerDialogComponent", "constructor", this.mapId)
   }
 
   ngOnChanges(change) {
-    console.log("AreaPickerDialogComponent", "ngOnChange", change, this.mapId)
     if(!this.hidden && this.map == null){
-      this.mapsService.mapsApi$.subscribe((x)=>{
-        console.log("AreaPickerDialogComponent", "subscribed", this.mapId, x.ready)
-      }, ()=>{}, (  ) => {
-        console.log("AreaPickerDialogComponent", "done", this.mapId)
+      this.mapsService.mapsApi$.subscribe((x)=>{}, ()=>{}, (  ) => {
         if(this.mapsService.apiReady){
           this.readyMap()
         }
@@ -78,12 +76,11 @@ export class AreaPickerDialogComponent {
 
   waitCount:number  = 0
   readyMap() {
-    console.log("AreaPickerDialogComponent", "readyMap", this.mapId, this.circle.radius)
     let el = document.getElementById(this.mapId)
     if (!el) {
-      console.log("AreaPickerDialogComponent", "readyMap", "waiting....", this.waitCount++)
       window.setTimeout(()=> this.readyMap(), 10)
     } else {
+      this._prevCircle = this.circle
       this.map = new google.maps.Map(el, {
         zoom: 7,
         center: new google.maps.LatLng(this.circle.center.lat, this.circle.center.lng),
@@ -118,6 +115,16 @@ export class AreaPickerDialogComponent {
         console.log('radius changed to', circle.getRadius(), this.circle.radius)
       })
     }
+  }
+
+  onOkAction(event){
+    this._prevCircle = this.circle
+    this.circleUpdate.emit(this.circle)
+  }
+
+  onCancelAction(event){
+    this.circle = this._prevCircle
+    this.cancel.emit(false)
   }
 
 }
