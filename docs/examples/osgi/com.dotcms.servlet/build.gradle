@@ -3,7 +3,7 @@ apply plugin: 'osgi'
 apply plugin: 'war'
 apply plugin: 'eclipse'
 
-sourceCompatibility = '1.7'
+sourceCompatibility = '1.8'
 version = '0.1'
 
 
@@ -13,9 +13,9 @@ repositories {
     }
 }
 dependencies {
-	compile fileTree(dir: '../../../../dotCMS/WEB-INF/felix/load', include: '*.jar')//As this example depends on the com.dotcms.service example
+	compile fileTree(dir: '../com.dotcms.service/build/libs/', include: '*.jar')//As this example depends on the com.dotcms.service example
 	compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
-	compile (group: 'com.dotcms', name: 'dotcms', version: '3.2.4'){
+	compile (group: 'com.dotcms', name: 'dotcms', version: '3.5'){
 		transitive = true
 	}
 	providedCompile "javax.servlet:servlet-api:2.5"
@@ -34,6 +34,6 @@ jar {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
+    gradleVersion = '2.9'
 }
 
