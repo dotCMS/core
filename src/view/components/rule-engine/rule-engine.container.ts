@@ -356,12 +356,20 @@ export class RuleEngineContainer {
   }
 
   onCreateCondition(event:ConditionActionEvent){
+
     let rule = event.payload.rule
-    let group = event.payload.conditionGroup
-    let priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1
-    let entity = new ConditionModel({ priority:priority, _type:new ServerSideTypeModel(), operator: 'AND'})
-    group._conditions.push(entity)
-    rule._saved = false
+    this.ruleUpdating(rule, true)
+    try {
+      let group = event.payload.conditionGroup
+      let priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1
+      let entity = new ConditionModel({priority: priority, _type: new ServerSideTypeModel(), operator: 'AND'})
+      group._conditions.push(entity)
+      this.ruleUpdated(rule)
+    } catch(e){
+      console.error("RuleEngineContainer", "onCreateCondition", e)
+      this.ruleUpdated(rule, [{unhandledError: e}])
+    }
+
   }
 
   onUpdateConditionType(event:ConditionActionEvent) {
