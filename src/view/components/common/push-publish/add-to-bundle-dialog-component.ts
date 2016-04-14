@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter, ElementRef} from "angular2/core";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
@@ -50,11 +50,6 @@ export class AddToBundleDialogComponent {
   dropdown: Dropdown
 
   public selectedBundle:IBundle = null;
-  private elementRef:ElementRef
-
-  constructor(elementRef:ElementRef) {
-    this.elementRef = elementRef
-  }
 
   ngOnChanges(change){
     if (change.bundleStores) {
