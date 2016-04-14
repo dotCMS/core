@@ -47,12 +47,11 @@ export class ModalDialogComponent {
     if (change.hidden) {
       if (!this.hidden) {
         this.addEscapeListener()
+
+        //wait until the dialog is really show up
+        setTimeout( () => this.open.emit(false), 2);
       } else {
         this.removeEscapeListener()
-      }
-
-      if (!change.hidden.currentValue){
-        setTimeout( () => this.open.emit(false), 2);
       }
     }
   }
