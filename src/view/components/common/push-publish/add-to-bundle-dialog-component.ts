@@ -5,8 +5,6 @@ import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 import {IBundle} from "../../../../api/services/bundle-service";
 import {ViewChild} from "angular2/core";
 
-var $ = window['$']
-
 @Component({
   selector: 'cw-add-to-bundle-dialog-component',
   directives: [CORE_DIRECTIVES, ModalDialogComponent, Dropdown, InputOption],
