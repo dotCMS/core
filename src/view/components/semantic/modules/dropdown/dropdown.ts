@@ -87,6 +87,10 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     this._modelValue = value;
   }
 
+  focus(){
+    this._$dropdown.children('input.search')[0].focus();
+  }
+
   writeValue(value:any) {
     this._modelValue = isBlank(value) ? '' : value
     this.applyValue(this._modelValue)
@@ -241,13 +245,10 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
    */
   private _applyArrowNavFix($dropdown) {
     let $searchField = $dropdown.children('input.search')
-    let enterEvent = this.enter;
+
     $searchField.on('keyup', (event:any)=> {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
-        if (event.keyCode == 13 && enterEvent){
-          enterEvent.emit();
-        }
-
+        this.enter.emit();
         event.stopPropagation()
       }
     })

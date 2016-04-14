@@ -37,6 +37,7 @@ export class ModalDialogComponent {
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
   @Output() ok:EventEmitter<boolean> = new EventEmitter(false)
+  @Output() open:EventEmitter<boolean> = new EventEmitter(false)
 
   private _keyListener:any
 
@@ -48,6 +49,10 @@ export class ModalDialogComponent {
         this.addEscapeListener()
       } else if (this._keyListener != null) {
         this.removeEscapeListener()
+      }
+
+      if (!change.hidden.currentValue){
+        setTimeout( () => this.open.emit(false), 2);
       }
     }
   }
@@ -61,7 +66,7 @@ export class ModalDialogComponent {
       }else if(e.keyCode == 13){ //enter
         e.stopPropagation();
         e.preventDefault();
-        this.ok.emit();
+        this.ok.emit(false);
       }
     })
   }

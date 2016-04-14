@@ -1,8 +1,11 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter, ElementRef} from "angular2/core";
 import {CORE_DIRECTIVES} from "angular2/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 import {IBundle} from "../../../../api/services/bundle-service";
+import {ViewChild} from "angular2/core";
+
+var $ = window['$']
 
 @Component({
   selector: 'cw-add-to-bundle-dialog-component',
@@ -16,7 +19,8 @@ import {IBundle} from "../../../../api/services/bundle-service";
     width="25em"
     height="auto"
     (ok)="addToBundle.emit(selectedBundle)"
-    (cancel)="cancel.emit()">
+    (cancel)="cancel.emit()"
+    (open)="focusDropDown()">
   <cw-input-dropdown
       flex
       [value]="bundleStores[0]?.id"
@@ -42,9 +46,15 @@ export class AddToBundleDialogComponent {
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
   @Output() addToBundle:EventEmitter<IBundle> = new EventEmitter(false)
 
-  public selectedBundle:IBundle = null;
+  @ViewChild(Dropdown)
+  dropdown: Dropdown
 
-  constructor() { }
+  public selectedBundle:IBundle = null;
+  private elementRef:ElementRef
+
+  constructor(elementRef:ElementRef) {
+    this.elementRef = elementRef
+  }
 
   ngOnChanges(change){
     if (change.bundleStores) {
@@ -62,6 +72,10 @@ export class AddToBundleDialogComponent {
         this.selectedBundle = bundle
       }
     })
+  }
+
+  focusDropDown(){
+    this.dropdown.focus();
   }
 }
 
