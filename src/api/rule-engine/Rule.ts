@@ -42,6 +42,8 @@ export function getNextId():string {
 }
 
 export class RuleEngineState {
+  showRules:boolean = true;
+  globalError:string = null
   loading:boolean = true
   saving:boolean = false
   hasError:boolean = false

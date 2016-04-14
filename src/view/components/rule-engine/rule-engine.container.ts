@@ -58,6 +58,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
       [ruleActionTypes]="_ruleService._ruleActionTypes"
       [conditionTypes]="_ruleService._conditionTypes"
       [loading]="state.loading"
+      [showRules]="state.showRules"
+      [globalError]="state.globalError"
       (createRule)="onCreateRule($event)"
       (deleteRule)="onDeleteRule($event)"
       (updateName)="onUpdateRuleName($event)"
@@ -91,6 +93,7 @@ export class RuleEngineContainer {
   rules$:EventEmitter<RuleModel[]> = new EventEmitter()
   ruleActions$:EventEmitter<ActionModel[]> = new EventEmitter()
   conditionGroups$:EventEmitter<ConditionGroupModel[]> = new EventEmitter()
+  globalError:string;
 
   constructor(private _ruleService:RuleService,
               private _ruleActionService:ActionService,
@@ -123,6 +126,12 @@ export class RuleEngineContainer {
       });
       this.rules$.emit(rules)
       this.state.loading = false
+    }, (err:any) => {
+      this.state.loading = false
+      if (err.response.status === 403) {
+        this.state.showRules = false;
+        this._handle403Error(err)
+      }
     })
   }
 
@@ -333,8 +342,10 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onUpdateConditionGroupOperator")
     let group = event.payload.conditionGroup
     group.operator = <string>event.payload.value
-    this.patchConditionGroup(event.payload.rule, group)
-    this.patchRule(event.payload.rule)
+    if(group.key != null) {
+      this.patchConditionGroup(event.payload.rule, group)
+      this.patchRule(event.payload.rule)
+    }
   }
 
   onDeleteConditionGroup(event:ConditionGroupActionEvent) {
@@ -345,12 +356,20 @@ export class RuleEngineContainer {
   }
 
   onCreateCondition(event:ConditionActionEvent){
+
     let rule = event.payload.rule
-    let group = event.payload.conditionGroup
-    let priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1
-    let entity = new ConditionModel({ priority:priority, _type:new ServerSideTypeModel(), operator: 'AND'})
-    group._conditions.push(entity)
-    rule._saved = false
+    this.ruleUpdating(rule, true)
+    try {
+      let group = event.payload.conditionGroup
+      let priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1
+      let entity = new ConditionModel({priority: priority, _type: new ServerSideTypeModel(), operator: 'AND'})
+      group._conditions.push(entity)
+      this.ruleUpdated(rule)
+    } catch(e){
+      console.error("RuleEngineContainer", "onCreateCondition", e)
+      this.ruleUpdated(rule, [{unhandledError: e}])
+    }
+
   }
 
   onUpdateConditionType(event:ConditionActionEvent) {
@@ -362,7 +381,7 @@ export class RuleEngineContainer {
       let idx = event.payload.index
       let type:ServerSideTypeModel = this._ruleService._conditionTypes[<string>event.payload.value]
       // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
-      condition = new ConditionModel({id: condition.key, _type: type, priority:condition.priority})
+      condition = new ConditionModel({id: condition.key, _type: type, priority:condition.priority, operator:condition.operator})
       group._conditions[idx] = condition
       this.patchCondition(rule, group, condition)
     } catch (e) {
@@ -450,14 +469,16 @@ export class RuleEngineContainer {
         this._ruleService.updateRule(rule.key, rule).subscribe(() => {
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-            this.ruleUpdated(rule, {serverError: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       }
       else {
         this._ruleService.createRule(rule).subscribe(() => {
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-          this.ruleUpdated(rule, {serverError: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       }
     } else{
@@ -475,13 +496,15 @@ export class RuleEngineContainer {
         this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe((result)=>{
           this.ruleUpdated(rule)
         }, (e:CwError)=>{
-          this.ruleUpdated(rule, {invalid: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       } else {
         this._ruleActionService.updateRuleAction(rule.key, ruleAction).subscribe((result)=>{
           this.ruleUpdated(rule)
         }, (e:any)=>{
-          this.ruleUpdated(rule, {invalid: e.message})
+          let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+          this.ruleUpdated(rule, ruleError)
         })
       }
     }else{
@@ -499,7 +522,8 @@ export class RuleEngineContainer {
           this._conditionService.save(group.key, condition).subscribe((result)=>{
             this.ruleUpdated(rule)
           }, (e:any)=>{
-            this.ruleUpdated(rule, {invalid: e.message})
+            let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+            this.ruleUpdated(rule, ruleError)
           })
         } else {
           if (!group.isPersisted()) {
@@ -508,7 +532,8 @@ export class RuleEngineContainer {
                 group.conditions[condition.key] = true
                 this.ruleUpdated(rule)
               }, (e:CwError)=>{
-                this.ruleUpdated(rule, {invalid: e.message})
+                let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+                this.ruleUpdated(rule, ruleError)
               })
             })
           } else {
@@ -516,7 +541,8 @@ export class RuleEngineContainer {
               group.conditions[condition.key] = true
               this.ruleUpdated(rule)
             }, (e:CwError)=>{
-              this.ruleUpdated(rule, {invalid: e.message})
+              let ruleError = this._handle403Error(e) ? null : {invalid: e.message}
+              this.ruleUpdated(rule, ruleError)
             })
           }
         }
@@ -534,6 +560,22 @@ export class RuleEngineContainer {
 
   prioritySortFn(a:any, b:any) {
     return a.priority - b.priority;
+  }
+
+  private _handle403Error(e:CwError) {
+    let handled = false;
+    try{
+      if (e && e.response.status == 403) {
+        let errorJson = e.response.json()
+        if (errorJson && errorJson.error) {
+          this.state.globalError = errorJson.error.replace('dotcms.api.error.forbidden: ', '')
+          handled = true
+        }
+      }
+    } catch (e) {
+      console.error("Error while processing invalid response: ", e)
+    }
+    return handled
   }
 
 }

@@ -24,7 +24,7 @@ import {CORE_DIRECTIVES} from "angular2/common";
 export class ModalDialogComponent {
 
   @Input() okEnabled:boolean = true
-  @Input() hidden:boolean = false
+  @Input() hidden:boolean = true
   @Input() headerText:string = ""
   @Input() okButtonText:string = "Ok"
   @Input() errorMessage:string = null
@@ -47,7 +47,7 @@ export class ModalDialogComponent {
     if (change.hidden) {
       if (!this.hidden) {
         this.addEscapeListener()
-      } else if (this._keyListener != null) {
+      } else {
         this.removeEscapeListener()
       }
 
@@ -58,21 +58,27 @@ export class ModalDialogComponent {
   }
 
   private addEscapeListener() {
-    this._keyListener = document.body.addEventListener('keyup', (e)=> {
-      if (e.keyCode == 27) { // escape
-        e.preventDefault()
-        e.stopPropagation()
-        this.cancel.emit(false)
-      }else if(e.keyCode == 13){ //enter
-        e.stopPropagation();
-        e.preventDefault();
-        this.ok.emit(false);
+    if (!this._keyListener) {
+      this._keyListener = (e)=> {
+        if (e.keyCode == 27) { // escape
+          e.preventDefault()
+          e.stopPropagation()
+          this.cancel.emit(false)
+        } else if (e.keyCode == 13) { //enter
+          e.stopPropagation();
+          e.preventDefault();
+          this.ok.emit(true);
+        }
       }
-    })
+      document.body.addEventListener('keyup', this._keyListener)
+    }
   }
 
   private removeEscapeListener() {
-    document.body.removeEventListener('keyup', this._keyListener)
+    if(this._keyListener){
+      document.body.removeEventListener('keyup', this._keyListener)
+      this._keyListener = null
+    }
   }
 
   onCancel(e){
