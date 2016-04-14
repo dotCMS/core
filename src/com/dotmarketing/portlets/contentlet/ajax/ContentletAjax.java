@@ -449,22 +449,8 @@ public class ContentletAjax {
 	 * if the widget doesn't exist then is created and also checks the user
 	 * permissions to see the content
 	 *
-	 * @param structureInode
+	 * @param formStructureInode
 	 *            Inode of the structure content to be listed
-	 * @param fields
-	 *            Fields to filters, where the position i (where i is odd)
-	 *            represent the field name and the position i + 1 represent the
-	 *            field value to filter
-	 * @param categories
-	 *            The categories inodes to filter
-	 * @param showDeleted
-	 *            If true show the deleted elements only
-	 * @param page
-	 *            The page number to show (starting with 1)
-	 *            If page is 0, this will return all possible contentlets
-	 * @param perPage
-	 * @param orderBy
-	 *            The field name to be used to sort the content
 	 * @return The list of contents that match the parameters at the position 0
 	 *         the result included a hashmap with some useful information like
 	 *         the total number of results, ...
@@ -984,8 +970,10 @@ public class ContentletAjax {
 			searchResult.put("working", working.toString());
 			Boolean live=con.isLive();
 			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+			searchResult.put("hasLiveVersion", "false");
 			if(!con.isLive() && con.isWorking() && !con.isArchived()){
 				if(APILocator.getVersionableAPI().hasLiveVersion(con)){
+					searchResult.put("hasLiveVersion", "true");
 					searchResult.put("allowUnpublishOfLiveVersion", "true");
 					searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
 				}
