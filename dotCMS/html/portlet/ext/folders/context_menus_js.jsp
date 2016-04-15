@@ -93,7 +93,7 @@ function getFilePopUp(i,ctxPath, objId, parentId, openNodes, referer,fileExt,liv
 
 		}
 
-		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider" onClick="hideMenuPopUp(\'popupTr\' + i);">';
+		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider">';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</div>';
 
@@ -104,7 +104,7 @@ function getFilePopUp(i,ctxPath, objId, parentId, openNodes, referer,fileExt,liv
 
 
 // Container Flyout
-function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,hasLiveVersion) {
 
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
@@ -138,7 +138,7 @@ function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wo
 			strHTML += '</div>';
 		}
 
-		if ((live!="1") && (working=="1") && (publish=="1")) {
+		if ((live!="1") && (hasLiveVersion!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
 				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="javascript: deleteContainer(\'' + objId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
                 strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
@@ -150,7 +150,7 @@ function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wo
 				strHTML += '</div>';
 			}
 		}
-		if ((live=="1") && (publish=="1")) {
+		if ((live=="1" || hasLiveVersion=="1") && (publish=="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\'">';
 	        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish"))%> ';
 			strHTML += '</div>';
@@ -181,7 +181,7 @@ function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wo
 	        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
 			strHTML += '</div>';
 		}
-		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider" onClick="hideMenuPopUp(\'popupTr\' + i);">';
+		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider">';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</div>';
 
@@ -192,7 +192,7 @@ function getContainerPopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wo
 
 
 // Link Flyout
-function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,hasLiveVersion) {
 		var strHTML = '';
 		strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -228,7 +228,7 @@ function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,li
 		     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle"))%>';
 		     strHTML += '</div>';
 		}
-		if ((live!="1") && (working=="1") && (publish=="1")) {
+		if ((live!="1") && (hasLiveVersion!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
 				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteLink(\'' + objId + '\',\'' + parentId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
                 strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>';
@@ -240,7 +240,7 @@ function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,li
 				strHTML += '</div>';
 			}
 		}
-		if ((live=="1") && (publish=="1")) {
+		if ((live=="1" || hasLiveVersion=="1") && (publish=="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&r=<%=r%>&parent=' + parentId + '&inode=' + objId + '&referer=' + referer + openNodes + '\'">';
 	    	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish"))%>';
 			strHTML += '</div>';
@@ -268,7 +268,7 @@ function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,li
 			strHTML += '</div>';
 		}
 
-		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider" onClick="hideMenuPopUp(\'popupTr\' + i);">';
+		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider">';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</div>';
 
@@ -277,7 +277,7 @@ function getLinkPopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,li
 }
 
 // Template Flyout
-function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,hasLiveVersion) {
 
 	var strHTML = '';
 	strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
@@ -304,7 +304,7 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 			strHTML += '</div>';
 		}
 
-		if ((live!="1") && (working=="1") && (publish=="1")) {
+		if ((live!="1") && (hasLiveVersion!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
 				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteTemplate(\'' + objId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
                 strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>';
@@ -316,7 +316,7 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 				strHTML += '</div>';
 			}
 		}
-		if ((live=="1") && (publish=="1")) {
+		if ((live=="1" || hasLiveVersion=="1") && (publish=="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&inode=' + objId + '&r=<%=r%>&referer=' + referer + openNodes + '\';">';
 	  		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish"))%>';
 			strHTML += '</div>';
@@ -348,7 +348,7 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 			strHTML += '</div>';
 		}
 
-		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider" onClick="hideMenuPopUp(\'popupTr\' + i);">';
+		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider">';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</div>';
 
@@ -476,7 +476,7 @@ function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, refere
 			strHTML += '</div>';
 		}
 
-		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider" onClick="hideMenuPopUp(\'popupTr\' + i);">';
+		strHTML += '<div dojoType="dijit.MenuItem" iconClass="closeIcon" class="pop_divider">';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</div>';
 

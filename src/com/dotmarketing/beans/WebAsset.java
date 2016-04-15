@@ -112,6 +112,10 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
         return APILocator.getVersionableAPI().isWorking(this);
 	}
 
+	public boolean hasLiveVersion() throws DotStateException, DotDataException {
+		return APILocator.getVersionableAPI().hasLiveVersion(this);
+	}
+
 	/**
 	 * Sets the modDate.
 	 * @param modDate The modDate to set
@@ -228,6 +232,7 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 		map.put("live", isLive());
 		map.put("working", isWorking());
 		map.put("deleted", isDeleted());
+		map.put("hasLiveVersion", hasLiveVersion());
 		map.put("locked", isLocked());
 		map.put("modDate", this.modDate);
 		map.put("modUser", this.modUser);

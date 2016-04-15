@@ -1846,6 +1846,7 @@
                         workflowMandatory = cellData["workflowMandatory"];
                         contentStructureType = cellData["contentStructureType"];
                         structure_id = cellData["structureInode"];
+                        hasLiveVersion = cellData["hasLiveVersion"];
 
                         contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 
@@ -1942,7 +1943,7 @@
 						// END NEW CONTEXT MENU
 
 
-                        if ((!live) && working && (publish=="1") && workflowMandatory=="false") {
+                        if ((!live) && working && (publish=="1") && workflowMandatory=="false" && hasLiveVersion!="true") {
                            if(selectedStructureVarName == 'calendarEvent'){
                              if (!deleted){
                                         popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"deleteContentlet('" + cellData.inode + "','','" + escape('<%= referer %>') + "'" + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
