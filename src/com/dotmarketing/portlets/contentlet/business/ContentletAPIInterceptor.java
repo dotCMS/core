@@ -494,7 +494,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 		if (!delete){
 			//Exception is throwed after the post.delete(...) call for not change the original code's flow
-			throw new ImpossibleDeleteArchivedContentletException( contentlet.getIdentifier() );
+			throw new UnableToDeleteArchivedContentletException( contentlet.getIdentifier() );
 		}
 	}
 

@@ -22,7 +22,7 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotmarketing.portlets.contentlet.business.ImpossibleDeleteArchivedContentletException;
+import com.dotmarketing.portlets.contentlet.business.UnableToDeleteArchivedContentletException;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import org.quartz.JobExecutionContext;
 
@@ -225,7 +225,7 @@ public class CMSMaintenanceAjax {
 				try {
 					conAPI.delete(contentlet, APILocator.getUserAPI().getSystemUser(), true, true);
 					contdeleted++;
-				} catch (ImpossibleDeleteArchivedContentletException e) {
+				} catch (UnableToDeleteArchivedContentletException e) {
 					conditionletWithErrors.add(contentlet.getIdentifier());
 				}
 			}

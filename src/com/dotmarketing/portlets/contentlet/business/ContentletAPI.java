@@ -497,7 +497,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws ImpossibleDeleteArchivedContentletException, DotDataException,DotSecurityException, DotContentletStateException;
+	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws UnableToDeleteArchivedContentletException, DotDataException,DotSecurityException, DotContentletStateException;
 	/**
 	 * Publishes a piece of content. 
 	 * @param contentlet

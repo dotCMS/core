@@ -5,9 +5,9 @@ import com.dotmarketing.util.web.WebDotcmsException;
 /**
  * Created by freddyrodriguez on 18/4/16.
  */
-public class ImpossibleDeleteArchivedContentletException extends WebDotcmsException {
+public class UnableToDeleteArchivedContentletException extends WebDotcmsException {
 
-    ImpossibleDeleteArchivedContentletException(String conditionletIdentifier){
+    UnableToDeleteArchivedContentletException(String conditionletIdentifier){
         super("message.contentlet.delete.error.archived", conditionletIdentifier);
     }
 }
