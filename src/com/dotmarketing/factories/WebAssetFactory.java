@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -911,7 +912,7 @@ public class WebAssetFactory {
 			  .append(" and vi.identifier=").append(tableName).append(".identifier ")
 			  .append(" and vi.working_inode=").append(tableName).append(".inode ");
 
-			if (parent != null) {
+			if (!Strings.isNullOrEmpty(parent)) {
 				sb.append(" and identifier.host_inode = '" + parent + "'");
 			}
 			if(orderby != null)
