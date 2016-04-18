@@ -275,47 +275,10 @@ function doDeleteContentlets(){
 		}
 }
 
-function doDeleteContentletsCallback(contentlets){
-
-    var message="";
-
- 	if (contentlets[0]!="")
- 	{
- 		var contaddedsize=contentlets[0];
- 	 	/*if(contentlets[0].indexOf(",")){
- 	 	 	var contadded=contentlets[0].split(',')
- 	 	 	contaddedsize=contadded.length;
- 	 	 	}*/
- 	 	message+= contaddedsize+ ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlets-were-succesfully-deleted")) %></br>';
- 	}
-	if (contentlets[1]!="")
- 	{
- 	 	if(contentlets[1].indexOf(",")){
- 	 	 	var contnotfound=contentlets[1].split(',')
- 	 	 	message+=  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + contnotfound.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlets-were-not-found")) %>: '+ contentlets[1] +'</br>';
- 	 	 	}
- 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-was-not-found")) %>: '+ contentlets[1] +'</br>';
- 	}
-
-	if (contentlets[2]!="")
- 	{
- 	 	if(contentlets[2].indexOf(",")){
- 	 	 	var conthasreqrel=contentlets[2].split(',')
- 	 	 	message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + conthasreqrel.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content")) %>: '+ contentlets[2] +'</br>';
- 	 	 	}
- 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-contentlet-is-required-by-another-piece-of-content")) %>: '+ contentlets[2] +'</br>';
- 	}
-	if (contentlets[3]!="")
- 	{
- 	 	if(contentlets[3].indexOf(",")){
- 	 	 	var contnotfound=contentlets[3].split(',')
- 	 	 	message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + contnotfound.length + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions")) %>:'+ contentlets[3] +'</br>';
- 	 	 	}
- 	 	else message+= '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"The-following")) %> ' + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "contentlet-s-could-not-be-deleted-because-the-user-does-not-have-the-necessary-permissions")) %>:'+ contentlets[1] +'</br>';
- 	}
-
+function doDeleteContentletsCallback(message){
 	document.getElementById("deleteContentletMessage").innerHTML=message;
 	document.getElementById("deleteContentletButton").disabled = false;
+	document.getElementById('contentIdsList').value = "";
 }
 
 function doDeletePushedAssets(){

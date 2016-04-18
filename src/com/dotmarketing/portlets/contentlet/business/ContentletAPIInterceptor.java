@@ -485,9 +485,16 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		conAPI.delete(contentlet, user, respectFrontendRoles);
+
+		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles);
+
 		for(ContentletAPIPostHook post : postHooks){
 			post.delete(contentlet, user, respectFrontendRoles);
+		}
+
+		if (!delete){
+			//Exception is throwed after the post.delete(...) call for not change the original code's flow
+			throw new ImpossibleDeleteArchivedContentletException( contentlet.getIdentifier() );
 		}
 	}
 
