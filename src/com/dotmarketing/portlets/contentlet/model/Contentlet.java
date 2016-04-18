@@ -5,10 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,6 +37,8 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -705,6 +704,52 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
         return isSystemHost == null ? false : isSystemHost;
     }
+
+	public void setTags() throws DotDataException {
+		HashMap<String, StringBuilder> contentletTags = new HashMap<>();
+		List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+		if ( foundTagInodes != null && !foundTagInodes.isEmpty() ) {
+
+			for ( TagInode foundTagInode : foundTagInodes ) {
+
+				StringBuilder contentletTagsBuilder = new StringBuilder();
+				String fieldVarName = foundTagInode.getFieldVarName();
+
+				if ( UtilMethods.isSet(fieldVarName) ) {
+					//Getting the related tag object
+					Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+
+					if ( contentletTags.containsKey(fieldVarName) ) {
+						contentletTagsBuilder = contentletTags.get(fieldVarName);
+					}
+					if ( contentletTagsBuilder.length() > 0 ) {
+						contentletTagsBuilder.append(",");
+					}
+					if ( relatedTag.isPersona() ) {
+						contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+					} else {
+						contentletTagsBuilder.append(relatedTag.getTagName());
+					}
+
+					contentletTags.put(fieldVarName, contentletTagsBuilder);
+				} else {
+					Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
+							"[" + foundTagInode.getInode() + "] without an associated Field var name.");
+				}
+			}
+		}
+
+		/*
+			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
+			this is done only for display purposes.
+			 */
+		if ( !contentletTags.isEmpty() ) {
+			for ( Map.Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
+				//We should not store the tags inside the field, the relation must only exist on the tag_inode table
+				this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+			}
+		}
+	}
 
 	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**

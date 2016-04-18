@@ -3,7 +3,7 @@ apply plugin: 'osgi'
 apply plugin: 'war'
 apply plugin: 'eclipse'
 
-sourceCompatibility = '1.7'
+sourceCompatibility = '1.8'
 version = '0.1'
 
 configurations {
@@ -27,7 +27,7 @@ dependencies {
 
 	//Compile against dotCMS 3.1
     compile fileTree(dir: configurations.resourcesLibsFolder, include: '*.jar')
-    compile(group: 'com.dotcms', name: 'dotcms', version: '3.2.4') {
+    compile(group: 'com.dotcms', name: 'dotcms', version: '3.5') {
         transitive = true
     }
     providedCompile "javax.servlet:servlet-api:2.5"
@@ -108,7 +108,7 @@ jar {
 tasks.copyToLib.execute()
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
+    gradleVersion = '2.9'
 }
 
 defaultTasks 'help', 'tasks'

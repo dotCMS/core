@@ -109,6 +109,7 @@ public final class SubmitWebFormAction extends DispatchAction {
 				if(!UtilMethods.isSet(invalidCaptchaURL)) {
 					invalidCaptchaURL = errorURL;
 				}
+				invalidCaptchaURL = invalidCaptchaURL.replaceAll("\\s", " ");
 				ActionForward af = new ActionForward();
 					af.setRedirect(true);
 					if (UtilMethods.isSet(queryString)) {

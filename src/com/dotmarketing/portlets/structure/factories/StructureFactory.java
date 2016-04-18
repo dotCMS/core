@@ -25,6 +25,7 @@ import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -93,6 +94,7 @@ public class StructureFactory {
 	 */
 	public static Structure getStructureByType(String type)
 	{
+		type = SQLUtil.sanitizeParameter(type);
 		Structure structure = null;
 		String condition = " name = '" + type + "'";
 		List list = InodeFactory.getInodesOfClassByCondition(Structure.class,condition);
@@ -114,7 +116,9 @@ public class StructureFactory {
 	@SuppressWarnings("unchecked")
 	public static Structure getStructureByVelocityVarName(String varName)
 	{
-		if(varName ==null) return new Structure();
+		varName = SQLUtil.sanitizeParameter(varName);
+		if(!UtilMethods.isSet(varName)) return new Structure();
+
 		Structure structure = null;
 		String condition = " lower(velocity_var_name) = '" + varName.toLowerCase() + "'";
 		List<Structure> list = InodeFactory.getInodesOfClassByCondition(Structure.class,condition);

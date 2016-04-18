@@ -17,8 +17,8 @@ import com.dotmarketing.util.Logger;
  */
 public class Task03535RemoveTagsWithoutATagname extends AbstractJDBCStartupTask {
 
-	private static String removeInvalidIagInodes="DELETE FROM TAG_INODE WHERE TAG_ID IN (SELECT TAG_ID FROM TAG WHERE TAGNAME IS NULL OR TAGNAME='');";
-	private static String removeInvalidIags="DELETE FROM TAG WHERE TAGNAME IS NULL OR TAGNAME='';";
+	private static String removeInvalidIagInodes="DELETE FROM tag_inode WHERE tag_id IN (SELECT tag_id FROM tag WHERE tagname IS NULL OR tagname='');";
+	private static String removeInvalidIags="DELETE FROM tag WHERE tagname IS NULL OR tagname='';";
 
 	private static String addTagnameConstraintPOSTGRES="ALTER TABLE tag ALTER COLUMN tagname SET NOT NULL;";
 	private static String addTagnameConstraintMYSQL="ALTER TABLE tag MODIFY tagname VARCHAR(255) NOT NULL;";

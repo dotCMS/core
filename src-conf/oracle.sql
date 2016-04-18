@@ -3450,15 +3450,3 @@ create table rule_condition_value (id varchar2(36) primary key,condition_id varc
 create table rule_action (id varchar2(36) primary key,rule_id varchar2(36) references dot_rule(id),priority number(10,0) default 0,actionlet nclob not null,mod_date timestamp);
 create table rule_action_pars(id varchar2(36) primary key,rule_action_id varchar2(36) references rule_action(id), paramkey varchar2(255) not null,value nclob);
 create index idx_rules_fire_on on dot_rule (fire_on);
-
-CREATE TABLE analytic_summary_user_visits (
-    user_id VARCHAR2(255) NOT NULL,
-    host_id VARCHAR2(36) NOT NULL,
-    visits NUMBER(19,0) NOT NULL,
-    last_start_date TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id, host_id)
-);
-
-CREATE INDEX idx_analytic_user_visits_1 ON analytic_summary_user_visits (user_id);
-CREATE INDEX idx_analytic_user_visits_2 ON analytic_summary_user_visits (host_id);
-CREATE INDEX idx_analytic_user_visits_3 ON analytic_summary_user_visits (last_start_date);

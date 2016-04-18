@@ -322,7 +322,8 @@ function processDelete(inode, referer) {
 					   ,'<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>'
 					   ,'<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>'
 					   ,'<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>'
-					   ,'<%=user.getUserId()%>'));
+					   ,'<%=user.getUserId()%>'
+					   ,'<%=container.hasLiveVersion() ? "1" : "0"%>'));
 				</script>
 			</td>
 		</tr>

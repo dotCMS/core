@@ -3,7 +3,7 @@ apply plugin: 'eclipse'
 apply plugin: 'java'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.6'
+    gradleVersion = '2.9'
 }
 
 version = '0.2'

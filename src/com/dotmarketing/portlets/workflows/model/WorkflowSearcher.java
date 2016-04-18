@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -100,6 +101,9 @@ public class WorkflowSearcher {
 		stepId = getStringValue("stepId", map);
 		keywords = getStringValue("keywords", map);
 		orderBy = getStringValue("orderBy", map);
+		
+		
+		orderBy= SQLUtil.sanitizeSortBy(orderBy);
 		show4all = getBooleanValue("show4all", map);
 		open = getBooleanValue("open", map);
 		closed = getBooleanValue("closed", map);
@@ -135,7 +139,7 @@ public class WorkflowSearcher {
 	}
 
 	public String getOrderBy() {
-		return orderBy;
+		return SQLUtil.sanitizeSortBy(orderBy);
 	}
 
 	public List<WorkflowTask> findTasks() throws DotDataException {
@@ -154,6 +158,7 @@ public class WorkflowSearcher {
 	}
 
 	public void setOrderBy(String orderBy) {
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		this.orderBy = orderBy;
 	}
 

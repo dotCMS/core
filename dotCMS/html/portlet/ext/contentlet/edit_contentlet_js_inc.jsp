@@ -647,10 +647,14 @@ dojo.require("dojox.layout.ContentPane");
 		if (myDiv) {
 			dojo.empty(myDiv);
 		}
+		var hideRulePushOptions = false
+		<%if(contentlet.getStructure().isHTMLPageAsset()){%>
+		hideRulePushOptions=true; 
+		<%}%>
 		myCp = new dojox.layout.ContentPane({
 			id : "contentletRulezDivCp",
 			style: "height:100%",
-			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y
+			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
 		}).placeAt("contentletRulezDiv");
 		
 

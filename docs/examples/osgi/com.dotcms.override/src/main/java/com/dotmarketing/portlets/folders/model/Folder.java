@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -26,7 +27,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
-public class Folder extends Inode implements Serializable, Permissionable, Treeable {
+public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable {
 
     private static final long serialVersionUID = 1L;
 
@@ -300,7 +301,8 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
                 return false;
             if(!this.title.equals(((Folder) o).title))
                 return false;
-            if(!this.filesMasks.equals(((Folder) o).filesMasks))
+            if((this.filesMasks == null && ((Folder) o).filesMasks != null && ((Folder)o).filesMasks != "")
+                    || (this.filesMasks != null && !this.filesMasks.equals(((Folder) o).filesMasks)))
                 return false;
         }else if(o instanceof FolderForm){
             if(!this.name.equals(((FolderForm) o).getName()))
@@ -313,7 +315,8 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
                 return false;
             if(!this.title.equals(((FolderForm) o).getTitle()))
                 return false;
-            if(!this.filesMasks.equals(((FolderForm) o).getFilesMasks()))
+            if((this.filesMasks == null && ((FolderForm) o).getFilesMasks() != null && ((FolderForm)o).getFilesMasks() != "")
+                    || (this.filesMasks != null && !this.filesMasks.equals(((FolderForm) o).getFilesMasks())))
                 return false;
             if(!this.showOnMenu == ((FolderForm) o).isShowOnMenu())
                 return false;
