@@ -37,6 +37,7 @@ export class ModalDialogComponent {
   @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
   @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
   @Output() ok:EventEmitter<boolean> = new EventEmitter(false)
+  @Output() open:EventEmitter<boolean> = new EventEmitter(false)
 
   private _keyListener:any
 
@@ -46,6 +47,9 @@ export class ModalDialogComponent {
     if (change.hidden) {
       if (!this.hidden) {
         this.addEscapeListener()
+
+        //wait until the dialog is really show up
+        setTimeout( () => this.open.emit(false), 2);
       } else {
         this.removeEscapeListener()
       }

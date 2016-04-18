@@ -87,6 +87,16 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     this._modelValue = value;
   }
 
+  focus(){
+    try{
+      this._$dropdown.children('input.search')[0].focus();
+    }
+    catch(e){
+       console.log("Dropdown", "could not focus search element")
+    }
+
+  }
+
   writeValue(value:any) {
     this._modelValue = isBlank(value) ? '' : value
     this.applyValue(this._modelValue)
