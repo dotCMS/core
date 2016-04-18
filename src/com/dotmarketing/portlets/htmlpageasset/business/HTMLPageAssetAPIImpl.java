@@ -390,6 +390,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         newpage.setShowOnMenu(legacyPage.isShowOnMenu());
         newpage.setModUser(legacyPage.getModUser());
         newpage.setModDate(legacyPage.getModDate());
+        newpage.setRedirect(legacyPage.getRedirect());
         return newpage;
     }
     

@@ -3,21 +3,21 @@
 
    <Properties>
     <Property name="DOTCMS_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms.log</Property>
-    <Property name="DOTCMS_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="DOTCMS_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-%i.log.gz</Property>
     <Property name="SECURITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-security.log</Property>
-    <Property name="SECURITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-security-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="SECURITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-security-%i.log.gz</Property>
     <Property name="SITESEARCH_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-sitesearch.log</Property>
-    <Property name="SITESEARCH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-sitesearch-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="SITESEARCH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-sitesearch-%i.log.gz</Property>
     <Property name="AUDIT_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-adminaudit.log</Property>
-    <Property name="AUDIT_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-adminaudit-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="AUDIT_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-adminaudit-%i.log.gz</Property>
     <Property name="USERACTIVITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-userActivity.log</Property>
-    <Property name="USERACTIVITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-userActivity-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="USERACTIVITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-userActivity-%i.log.gz</Property>
     <Property name="TEST_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-test.log</Property>
-    <Property name="TEST_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-test-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="TEST_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-test-%i.log.gz</Property>
     <Property name="PUSHPUBLISH_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-pushpublish.log</Property>
-    <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-pushpublish-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-pushpublish-%i{BundleId}.log.gz</Property>
     <Property name="VELOCITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-velocity.log</Property>
-    <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-velocity-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-velocity-%i.log.gz</Property>
     <Property name="PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
     <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
     <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
