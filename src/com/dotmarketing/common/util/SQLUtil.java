@@ -3,6 +3,9 @@ package com.dotmarketing.common.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -20,6 +23,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 
 public class SQLUtil {
+
+	private static final String[] EVIL_SQL_WORDS = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
+			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
+			"unlock","write", "engine", "null","not ","mode", "set ",";"};
 
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -146,5 +153,24 @@ public class SQLUtil {
 	        }
 		}
   	  return queryString.toString();
+	}
+
+	public static String sanitizeParameter(String parameter){
+
+
+		if(!UtilMethods.isSet(parameter)){//check if is not null
+			return "";
+		}
+
+		for(String str : EVIL_SQL_WORDS){
+			if(parameter.toLowerCase().contains(str)){//check if the order by requested have any other command
+				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+				SecurityLogger.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
+				return "";
+			}
+		}
+
+		return parameter;
 	}
 }
