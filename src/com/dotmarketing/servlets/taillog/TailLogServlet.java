@@ -14,11 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.org.apache.commons.io.input.TailerListenerAdapter;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
 public class TailLogServlet extends HttpServlet {
@@ -55,37 +51,25 @@ public class TailLogServlet extends HttpServlet {
 		    return;
 		}
 
-		File file = null;
         String tailLogLofFolder = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
-		try {
-            if (!tailLogLofFolder.endsWith(java.io.File.separator)) {
-                tailLogLofFolder = tailLogLofFolder + java.io.File.separator;
-            }
-			file = new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(tailLogLofFolder + fileName));
+		if (!tailLogLofFolder.endsWith(java.io.File.separator)) {
+			tailLogLofFolder = tailLogLofFolder + java.io.File.separator;
+			}
+		File logFolder 	= new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(tailLogLofFolder));
+		File logFile 	= new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(tailLogLofFolder + fileName));
 
-		} catch (Exception e) {
-			Logger.error(this.getClass(), "unable to open log file '" + tailLogLofFolder + fileName
-					+ "' please set the config variable TAIL_LOG_LOG_FOLDER correctly");
-		}
-		if (file == null || !file.exists()) {
+		// if the logFile is outside of of the logFolder, die
+		if ( !logFolder.exists()
+				||   !logFile.getCanonicalPath().startsWith(logFolder.getCanonicalPath())) {
 
 			response.sendError(403);
-			AdminLogger.log(TailLogServlet.class, "service", "Someone tried to use the TailLogServlet to display a file not in the logs directory");
+			SecurityLogger.logInfo(TailLogServlet.class,  "Invalid File request:" + logFile.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
 			return;
 		}
 
-		// clean and check passed in filename against allowed files
+		Logger.info(this.getClass(), "Requested logFile:" + logFile.getCanonicalPath());
 
-
-
-
-		String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX");
-		if(!UtilMethods.isSet(regex)){
-			regex="!.*";
-		}
-
-		//regex=".*\\.log$|.*\\.out$";
-		//regex="!.*";
+		String regex = Config.getStringProperty("TAIL_LOG_FILE_REGEX", ".*\\.log$|.*\\.out$");
 
 		if(!Pattern.compile(regex).matcher(fileName).matches()){
 			//response.sendError(403);
@@ -109,12 +93,12 @@ public class TailLogServlet extends HttpServlet {
 		out.flush();
 
 		Tailer tailer = null;
-		long startPosition = ((file.length() - 5000) < 0) ? 0 : file.length() - 5000;
+		long startPosition = ((logFile.length() - 5000) < 0) ? 0 : logFile.length() - 5000;
 
 		MyTailerListener listener = new MyTailerListener();
 		listener.handle("Tailing " + fileName);
 		listener.handle("----------------------------- ");
-		tailer = new Tailer(file, listener, 1000);
+		tailer = new Tailer(logFile, listener, 1000);
 		tailer.setStartPosition(startPosition);
 		MyTailerThread thread = new MyTailerThread(tailer);
 
