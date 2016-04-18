@@ -85,6 +85,9 @@ apply plugin: 'application'
 
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
+//Required for gradle 2.3 and above
+mainClassName = ' '
+
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }

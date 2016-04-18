@@ -370,7 +370,7 @@ public class UserAjax {
 
 	public Map<String, Boolean> getUserRolesValues (String userId, String hostIdentifier) throws Exception {
 		//auth
-		User modUser = getAdminUser();
+		User modUser = getLoggedInUser();
 
 		Map<String, Boolean> userPerms = new HashMap<String,Boolean>();
 		if(UtilMethods.isSet(userId)){

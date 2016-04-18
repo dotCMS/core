@@ -40,14 +40,13 @@ public class WidgetAPIImpl implements WidgetAPI {
 	}
 
 	public List<Structure> findAll(User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		List<Structure> sts = StructureFactory.getStructures();
+		List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_WIDGET);
 		List<Structure> wids = new ArrayList<Structure>();
 		for (Structure structure : sts) {
-			if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET){
+            if (!structure.isSystem() && perAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 				wids.add(structure);
 			}
 		}
-		wids = perAPI.filterCollection(wids, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 		return wids;
 	}
 }

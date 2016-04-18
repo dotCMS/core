@@ -102,6 +102,17 @@ public class Log4jUtil {
         LoggerContext context = (LoggerContext) LogManager.getContext();
 
         //Shutting down log4j in order to avoid memory leaks
+        shutdown(context);
+    }
+
+    /**
+     * Normally there is no need to do this manually.
+     * Each LoggerContext registers a shutdown hook that takes care of releasing resources when the JVM exits (unless system property log4j.shutdownHookEnabled is set to false).
+     * Web applications should include the log4j-web module in their classpath which disables the shutdown
+     * hook but instead cleans up log4j resources when the web application is stopped.
+     */
+    public static void shutdown(LoggerContext context) {
+        //Shutting down log4j in order to avoid memory leaks
         Configurator.shutdown(context);
     }
 
@@ -134,6 +145,15 @@ public class Log4jUtil {
             }
 
         }
+    }
+
+    /**
+     * Returns the current dotCMS logger context
+     *
+     * @return current logger context
+     */
+    public static LoggerContext getLoggerContext () {
+        return (LoggerContext) LogManager.getContext(false);
     }
 
 }

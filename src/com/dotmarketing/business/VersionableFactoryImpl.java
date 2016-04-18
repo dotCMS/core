@@ -224,6 +224,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         	contv.setLang(lang);
         	contv.setWorkingInode(fourOhFour);
         	icache.addContentletVersionInfoToCache(contv);
+			return null;
         }
         
         return contv;

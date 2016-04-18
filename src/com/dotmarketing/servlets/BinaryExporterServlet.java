@@ -1,34 +1,5 @@
 package com.dotmarketing.servlets;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
 import com.dotcms.util.DownloadUtil;
@@ -53,15 +24,27 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  *
@@ -191,6 +174,13 @@ public class BinaryExporterServlet extends HttpServlet {
         }
 
         boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
+
+		ServletOutputStream out = null;
+		FileChannel from = null;
+		WritableByteChannel to = null;
+		RandomAccessFile input = null;
+		FileInputStream is = null;
+
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
@@ -432,7 +422,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 			resp.setContentType(mimeType);
-			resp.setHeader("Content-Disposition", "inline; filename=" + downloadName);
+			resp.setHeader("Content-Disposition", "inline; filename=" + UtilMethods.encodeURL(downloadName));
 
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
@@ -442,7 +432,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				if(!x.equals(y)){
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
-				resp.setHeader("Content-Disposition", "attachment; filename=" + downloadName);
+				resp.setHeader("Content-Disposition", "attachment; filename=" + UtilMethods.encodeURL(downloadName));
 				resp.setHeader("Content-Type", "application/force-download");
 			} else {
 
@@ -520,10 +510,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			String rangeHeader = req.getHeader("range");
 			if(UtilMethods.isSet(rangeHeader)){
-				ServletOutputStream out = null;
-				FileChannel from = null;
-				WritableByteChannel to = null;
-				RandomAccessFile input = null;
+
 				try {
 					out = resp.getOutputStream();
 					from = new FileInputStream(data.getDataFile()).getChannel();
@@ -602,25 +589,17 @@ public class BinaryExporterServlet extends HttpServlet {
 					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
 					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
 
-				} finally {
-					if(to != null)
-						to.close();
-					if(from != null)
-						from.close();
-					if(out != null)
-						out.close();
-					if(input !=null)
-						input.close();
 				}
 			}else{
-				FileInputStream is = new FileInputStream(data.getDataFile());
+				is = new FileInputStream(data.getDataFile());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
-	            OutputStream servletOutput = resp.getOutputStream();
+	            out = resp.getOutputStream();
+
 	            while((count = is.read(buffer)) > 0) {
-	            	servletOutput.write(buffer, 0, count);
+	            	out.write(buffer, 0, count);
 	            }
-	            servletOutput.close();
+
 			}
             
 		} catch (DotContentletStateException e) {
@@ -657,7 +636,61 @@ public class BinaryExporterServlet extends HttpServlet {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+		}catch (Exception e) {
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		}
+		// close our resources no matter what
+		finally{
+			if(from!=null){
+				try{
+					from.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+
+			if(to!=null){
+				try{
+					to.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+
+			if(input!=null){
+				try{
+					input.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+
+			if(is!=null){
+				try{
+					is.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+
+			if(out!=null){
+				try{
+					out.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+
+
+		}
+
 	}
 
 	@SuppressWarnings("unchecked")
