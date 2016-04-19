@@ -399,9 +399,14 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
    			name = asset.fileName;
    			assetIcon = '/icon?i=' + asset.extension;
 
-   			if(asset.mimeType != null){
-	   			if(asset.mimeType.indexOf('image') >= 0)
-	   				assetThumbnail = '/thumbnail?w=100&h=100&id=' + asset.identifier;
+   			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
+
+				if(asset.mimeType.indexOf('image/svg') <0 && asset.mimeType.indexOf('image/x-icon')<0){
+					assetThumbnail = '/contentAsset/image/' + asset.identifier + '/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/r/'+asset.inode;
+				}
+				else{
+					assetThumbnail= '/contentAsset/image/' + asset.identifier + '/fileAsset/'+asset.inode;
+				}
    			}
    		}
    		if (asset.type == 'htmlpage') {
