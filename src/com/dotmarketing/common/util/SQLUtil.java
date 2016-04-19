@@ -2,7 +2,13 @@ package com.dotmarketing.common.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -20,6 +26,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 
 public class SQLUtil {
+
+	private static final Set<String> EVIL_SQL_WORDS = ImmutableSet.of( "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
+			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
+			"unlock","write", "engine", "null","not ","mode", "set ",";");
+
+	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
+			"title","filename", "moddate", "tagname","pageUrl",
+			"category_name","category_velocity_var_name",
+			"mod_date","structuretype,upper(name)","upper(name)",
+			"category_key", "page_url","name","velocity_var_name",
+			"description","category_","sort_order","hostName", "keywords");
 
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -146,5 +163,48 @@ public class SQLUtil {
 	        }
 		}
   	  return queryString.toString();
+	}
+
+	/**
+	 * Method to sanitize order by SQL injection
+	 * @param parameter
+	 * @return
+	 */
+	public static String sanitizeSortBy(String parameter){
+
+		if(!UtilMethods.isSet(parameter)){//check if is not null
+			return "";
+		}
+
+		String testParam=parameter.replaceAll(" asc", "").replaceAll(" desc", "").replaceAll("-", "").toLowerCase();
+		if(ORDERBY_WHITELIST.contains(testParam)){
+			return parameter;
+		}
+
+		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
+		return "";
+	}
+
+	public static String sanitizeParameter(String parameter){
+
+
+		if(!UtilMethods.isSet(parameter)){//check if is not null
+			return "";
+		}
+
+		parameter = StringEscapeUtils.escapeSql(parameter);
+
+		for(String str : EVIL_SQL_WORDS){
+			if(parameter.toLowerCase().contains(str)){//check if the order by requested have any other command
+				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+				SecurityLogger.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
+				return "";
+			}
+		}
+
+		return parameter;
 	}
 }
