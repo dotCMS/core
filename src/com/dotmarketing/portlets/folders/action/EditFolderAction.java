@@ -21,7 +21,6 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
@@ -53,15 +52,26 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
- * @author Maria
+ * This Action class provides utility methods to interact with {@link Folder}
+ * objects from the back-end of dotCMS. Folder-related operations originated 
+ * from the Site Browser portlet will make their way to this class.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
  */
-
 public class EditFolderAction extends DotPortletAction {
 
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private FolderFactory ffac = FactoryLocator.getFolderFactory();
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	
+	private static final int MAX_FOLDER_PATH_LENGTH = 255;
+	private static final int MAX_FOLDER_NAME_LENGTH = 255;
+
+	/**
+	 * 
+	 */
 	public void processAction(ActionMapping mapping, ActionForm form,
 			PortletConfig config, ActionRequest req, ActionResponse res)
 			throws Exception {
@@ -185,6 +195,14 @@ public class EditFolderAction extends DotPortletAction {
 
 	// /// ************** ALL METHODS HERE *************************** ////////
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @throws Exception
+	 */
 	public void _editFolder(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form) throws Exception {
 		User user=_getUser(req);
@@ -238,16 +256,36 @@ public class EditFolderAction extends DotPortletAction {
 
 	}
 
+	/**
+	 * Updates or adds the information and configuration parameters of a
+	 * {@link Folder} object. There's a limitation of 255 characters for the
+	 * folder name, and 255 characters for the parent path of a folder or asset.
+	 * User and developers need to take this into consideration when adding or
+	 * changing folder names in dotCMS.
+	 * 
+	 * @param req
+	 *            - The Struts wrapper of the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper of the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters of the Liferay portlet.
+	 * @param form
+	 *            - The Folder data that was added or updated by the user.
+	 * @return If <code>true</code>, the Folder was successfully added or
+	 *         updated. If an error occurred during the process, returns
+	 *         <code>false</code>.
+	 * @throws Exception
+	 *             An error occurred when updating or adding the Folder
+	 *             information.
+	 */
 	public boolean _updateFolder(ActionRequest req, ActionResponse res,PortletConfig config, ActionForm form) throws Exception 
 	{
-		Folder old = (Folder) req.getAttribute(WebKeys.FOLDER_EDIT);
 		Folder f = (Folder) req.getAttribute(WebKeys.FOLDER_EDIT);
 		Folder parentFolder = (Folder) req.getAttribute(WebKeys.FOLDER_PARENT);
 		Host parentHost = (Host) req.getAttribute(WebKeys.HOST_PARENT);
 		User user = _getUser(req);
 
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
-
 		if(!InodeUtils.isSet(f.getInode()) && parentFolder != null && !permAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
 			if(!InodeUtils.isSet(f.getInode()) && parentHost != null && !permAPI.doesUserHavePermission(parentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
 				throw new DotSecurityException("You don't have permissions to add this folder");
@@ -257,19 +295,24 @@ public class EditFolderAction extends DotPortletAction {
 		}
 
 		FolderForm folderForm = (FolderForm) form;
-		
 		// the folders is new or there are changes
 		if(UtilMethods.isSet(f.getIdentifier()) && f.equals(folderForm)){
 			// no changes to save, the message is shown and nothing saved.
 			SessionMessages.add(req, "message", "message.folder.nochanges");
 			return true;
 		}
-		
-		HibernateUtil.startTransaction();
-		
-		
+		String parentPath = parentFolder != null ? parentFolder.getPath() : "/";
 		try {
-		
+			if (folderForm.getName().length() >= MAX_FOLDER_NAME_LENGTH) {
+				SessionMessages.add(req, "message", "message.folder.namelength");
+				return false;
+			}
+			String newPath = parentPath + folderForm.getName();
+			if (newPath.length() >= MAX_FOLDER_PATH_LENGTH) {
+				SessionMessages.add(req, "message", "message.folder.pathlength");
+				return false;
+			}
+			HibernateUtil.startTransaction();
 			if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equalsIgnoreCase(f.getName())) {
 				if (!folderAPI.renameFolder(f,folderForm.getName(),user,false)) {
 					// For messages to be displayed on messages page
@@ -355,7 +398,6 @@ public class EditFolderAction extends DotPortletAction {
 				}
 				
 				folderAPI.save(f,user,false);
-				
 				if (!(!previousShowMenu && !f.isShowOnMenu())) 
 				{
 					//if the not, doesn't show before and doesn't show now, delete the menus
@@ -373,7 +415,8 @@ public class EditFolderAction extends DotPortletAction {
 		}
 		catch(Exception ex) {
 			HibernateUtil.rollbackTransaction();
-			throw ex;
+			SessionMessages.add(req, "message", "message.folder.save.error");
+			Logger.error(this, "ERROR: Cannot save folder '" + parentPath + folderForm.getName() + "'", ex);
 		}
 		finally {
 			HibernateUtil.closeSession();
@@ -381,6 +424,14 @@ public class EditFolderAction extends DotPortletAction {
 		return false;
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @throws Exception
+	 */
 	public void _deleteFolder(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form) throws Exception {
 
@@ -412,6 +463,14 @@ public class EditFolderAction extends DotPortletAction {
 
 	}
 
+	/**
+	 * 
+	 * @param folder
+	 * @param objectsList
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
 	public static void _deleteChildrenAssetsFromFolder(Folder folder,	Set<Inode> objectsList) throws DotDataException, DotStateException, DotSecurityException {
 
 		PermissionAPI perAPI =  APILocator.getPermissionAPI();
@@ -497,44 +556,19 @@ public class EditFolderAction extends DotPortletAction {
 		
 		
 		/************ end *****************/
-		
-		/*
-		List<Tree> childrenTrees = TreeFactory.getTreesByParent(folder);
-		for (Tree childTree : childrenTrees) {
-			
-			Inode inode = InodeFactory.getInode(childTree.getChild(), Inode.class);
-			
-			if (!(inode instanceof Folder)) {
-				InodeFactory.deleteInode(inode);
-			}
-		}
-		*/
 	}
 
-/*	private void _listChildrenAssetsFromFolder(Folder folder,
-			Set<Inode> objectsList) {
-		List<Tree> childrenTrees = TreeFactory.getTreesByParent(folder);
-		for (Tree childTree : childrenTrees) {
-			Inode inode = InodeFactory.getInode(childTree.getChild(),
-					Inode.class);
-			if (inode instanceof WebAsset) {
-				WebAsset asset = (WebAsset) inode;
-				Identifier id = APILocator.getIdentifierAPI().find(asset);
-				List versions = IdentifierFactory
-						.getVersionsandLiveChildrenOfClass(asset, asset
-								.getClass());
-				Iterator childrenversions = versions.iterator();
-				while (childrenversions.hasNext()) {
-					WebAsset version = (WebAsset) childrenversions.next();
-					objectsList.add(version);
-				}
-				objectsList.add(asset);
-				objectsList.add(id);
-			}
-		}
-	}*/
-
 	// Copy action
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean _copyFolder(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 		String parentInode = req.getParameter("parent");
@@ -552,6 +586,16 @@ public class EditFolderAction extends DotPortletAction {
 	}
 
 	// Move action
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean _moveFolder(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 		String parentInode = req.getParameter("parent");

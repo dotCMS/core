@@ -3093,9 +3093,8 @@ BEGIN
 END;
 /
 CREATE OR REPLACE PROCEDURE renameFolderChildren(oldPath IN varchar2,newPath IN varchar2,hostInode IN varchar2) IS
-  newFolderPath varchar2(100);
-  oldFolderPath varchar2(100);
-  assetName varchar2(100);
+  newFolderPath varchar2(255);
+  oldFolderPath varchar2(255);
 BEGIN
  UPDATE identifier SET  parent_path  = newPath where parent_path = oldPath and host_inode = hostInode;
  FOR i in (select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode)
@@ -3110,8 +3109,8 @@ CREATE OR REPLACE TRIGGER rename_folder_assets_trigger
 AFTER UPDATE ON Folder
 FOR EACH ROW
 DECLARE
- oldPath varchar2(100);
- newPath varchar2(100);
+ oldPath varchar2(255);
+ newPath varchar2(255);
  hostInode varchar2(100);
 BEGIN
 	IF :NEW.name <> :OLD.name THEN
