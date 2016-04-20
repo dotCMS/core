@@ -16,6 +16,7 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -25,7 +26,6 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -44,6 +44,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.*;
@@ -58,26 +59,45 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
- * @author Maria
+ * Provides utility methods to interact with {@link WebAsset} objects in dotCMS.
+ * Several operations can be performed on WebAsset objects, such as:
+ * <ul>
+ * <li>Get information of an asset.</li>
+ * <li>Delete an asset.</li>
+ * <li>Delete a specific version of the asset.</li>
+ * <li>Publish or Un-publish an asset.</li>
+ * <li>Unlock an asset.</li>
+ * <li>etc.</li>
+ * </ul>
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
  *
  */
 public class DotPortletAction extends PortletAction {
 
 	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private HostAPI hostAPI = APILocator.getHostAPI();
-	private final static int MAX_LIMIT_COUNT = 101;
-	
 	
 	/**
-	 * Generic method to delete a WebAsset version
+	 * Generic method to delete a WebAsset version.
 	 *
 	 * @param req
+	 *            - Struts wrapper for the HTTP Request object.
 	 * @param res
+	 *            - Struts wrapper for the HTTP Response object.
 	 * @param config
+	 *            - The configuration parameters for the Liferay portlet.
 	 * @param form
+	 *            - The HTML form containing the asset information.
 	 * @param user
+	 *            - The {@link User} performing this action.
 	 * @param webKeyEdit
+	 *            - The key representing the type of asset whose version will be
+	 *            deleted.
 	 * @throws Exception
+	 *             An error occurred when deleting the asset version.
 	 */
 	public void _deleteVersionWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String webKeyEdit)
 	throws Exception {
@@ -115,10 +135,16 @@ public class DotPortletAction extends PortletAction {
 
 		// calls the Contentlet API delete the container version
 		try{
+			if (WebKeys.CONTAINER_EDIT.equalsIgnoreCase(webKeyEdit)) {
+				// Delete any content type relationships before deleting version
+				APILocator.getContainerAPI().deleteContainerContentTypesByContainerInode((Container) webAsset);
+			}
 			WebAssetFactory.deleteAssetVersion(webAsset);
 			SessionMessages.add(httpReq, "message", "message.contentlet.delete");
 		}catch(Exception e){
 			SessionMessages.add(httpReq, "message", "message.contentlet.delete.live_or_working");
+			Logger.error(this, "An error occurred when deleting the version [" + webAsset.getInode() + "] of asset ["
+					+ webAsset.getIdentifier() + "]", e);
 		}
 	}
 
@@ -689,11 +715,6 @@ public class DotPortletAction extends PortletAction {
 		} catch (DotHibernateException e1) {
 			Logger.error(this, e.getMessage(), e);
 		}
-        /*if(UtilMethods.getStackTrace(e) != null
-                && UtilMethods.getStackTrace(e).toLowerCase().contains("constraint")
-                && UtilMethods.getStackTrace(e).toLowerCase().contains("violation")){
-            SessionMessages.add(req, "message", "message.language.content");
-        }*/
 		req.setAttribute(PageContext.EXCEPTION, e);
 		
 		//This is a fix for the <%@ page isErrorPage="true" %> directive in Glassfish
@@ -821,6 +842,12 @@ public class DotPortletAction extends PortletAction {
 		return getForward(req, null);
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param defaultValue
+	 * @return
+	 */
 	public String getForward(ActionRequest req, String defaultValue) {
 		String forward = (String) req.getAttribute(com.liferay.portal.util.WebKeys.PORTLET_STRUTS_FORWARD);
 
@@ -831,6 +858,14 @@ public class DotPortletAction extends PortletAction {
 		}
 	}
 
+	/**
+	 * 
+	 * @param webAsset
+	 * @param user
+	 * @param permission
+	 * @throws ActionException
+	 * @throws DotDataException
+	 */
 	protected static void _checkUserPermissions(Inode webAsset, User user, int permission) throws ActionException, DotDataException {
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		// Checking permissions
@@ -874,6 +909,14 @@ public class DotPortletAction extends PortletAction {
 		}
 	}
 
+	/**
+	 * 
+	 * @param webAsset
+	 * @param parentFolder
+	 * @param user
+	 * @param httpReq
+	 * @throws Exception
+	 */
 	public static void _checkPermissions(Inode webAsset, Folder parentFolder, User user, HttpServletRequest httpReq) throws Exception {
 		String subcmd = httpReq.getParameter("subcmd");
 		boolean publish = (subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH);
@@ -898,6 +941,13 @@ public class DotPortletAction extends PortletAction {
 
 	}
 
+	/**
+	 * 
+	 * @param webAsset
+	 * @param user
+	 * @param httpReq
+	 * @throws Exception
+	 */
 	protected void _checkPermissions(Inode webAsset, User user, HttpServletRequest httpReq) throws Exception {
 		String subcmd = httpReq.getParameter("subcmd");
 		boolean publish = (subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH);
@@ -920,6 +970,13 @@ public class DotPortletAction extends PortletAction {
 
 	}
 
+	/**
+	 * 
+	 * @param inode
+	 * @param user
+	 * @param httpReq
+	 * @throws Exception
+	 */
 	protected void _checkWritePermissions(Inode inode, User user, HttpServletRequest httpReq) throws Exception {
 		try {
 			_checkUserPermissions(inode, user, PERMISSION_WRITE);
@@ -932,6 +989,14 @@ public class DotPortletAction extends PortletAction {
 
 	}
 
+	/**
+	 * 
+	 * @param inode
+	 * @param user
+	 * @param httpReq
+	 * @param adminRoles
+	 * @throws Exception
+	 */
 	protected void _checkWritePermissions(Inode inode, User user, HttpServletRequest httpReq, ArrayList<String>adminRoles) throws Exception {
 		List<Role> userRoles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 		for (Role role : userRoles) {
@@ -942,6 +1007,13 @@ public class DotPortletAction extends PortletAction {
 		_checkWritePermissions(inode, user, httpReq);
 	}
 
+	/**
+	 * 
+	 * @param inode
+	 * @param user
+	 * @param httpReq
+	 * @throws Exception
+	 */
 	protected void _checkReadPermissions(Inode inode, User user, HttpServletRequest httpReq) throws Exception {
 		try {
 			_checkUserPermissions(inode, user, PERMISSION_READ);
@@ -953,6 +1025,14 @@ public class DotPortletAction extends PortletAction {
 		}
 	}
 
+	/**
+	 * 
+	 * @param inode
+	 * @param user
+	 * @param httpReq
+	 * @param adminRoles
+	 * @throws Exception
+	 */
 	protected void _checkReadPermissions(Inode inode, User user, HttpServletRequest httpReq, ArrayList<String>adminRoles) throws Exception {
 		List<Role> userRoles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 		for (Role role : userRoles) {
@@ -963,6 +1043,13 @@ public class DotPortletAction extends PortletAction {
 		_checkReadPermissions(inode, user, httpReq);
 	}
 
+	/**
+	 * 
+	 * @param inode
+	 * @param user
+	 * @param httpReq
+	 * @throws Exception
+	 */
 	protected void _checkDeletePermissions(Inode inode, User user, HttpServletRequest httpReq) throws Exception {
 		try {
 			_checkUserPermissions(inode, user, PERMISSION_WRITE);
@@ -975,6 +1062,14 @@ public class DotPortletAction extends PortletAction {
 
 	}
 
+	/**
+	 * 
+	 * @param inode
+	 * @param user
+	 * @param httpReq
+	 * @param adminRoles
+	 * @throws Exception
+	 */
 	protected void _checkDeletePermissions(Inode inode, User user, HttpServletRequest httpReq, ArrayList<String>adminRoles) throws Exception {
 		List<Role> userRoles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 		for (Role role : userRoles) {
@@ -985,6 +1080,15 @@ public class DotPortletAction extends PortletAction {
 		_checkDeletePermissions(inode, user, httpReq);
 	}
 
+	/**
+	 * 
+	 * @param webAsset
+	 * @param parentFolder
+	 * @param user
+	 * @param httpReq
+	 * @param action
+	 * @throws Exception
+	 */
 	protected void _checkCopyAndMovePermissions(Inode webAsset, Folder parentFolder, User user, HttpServletRequest httpReq, String action)
 	throws Exception {
 
@@ -999,6 +1103,14 @@ public class DotPortletAction extends PortletAction {
 		}
 	}
 
+	/**
+	 * 
+	 * @param webAsset
+	 * @param user
+	 * @param httpReq
+	 * @param action
+	 * @throws Exception
+	 */
 	protected void _checkCopyAndMovePermissions(Inode webAsset, User user, HttpServletRequest httpReq, String action) throws Exception {
 
 		try {
@@ -1011,17 +1123,30 @@ public class DotPortletAction extends PortletAction {
 		}
 	}
 
+	/**
+	 * 
+	 * @param from
+	 * @param to
+	 * @throws ActionException
+	 * @throws DotDataException
+	 */
 	protected void _copyPermissions(Inode from, Inode to) throws ActionException, DotDataException {
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		perAPI.copyPermissions(from, to);
 	}
 
-
-
+	/**
+	 * 
+	 * @return
+	 */
 	public CategoryAPI getCategoryAPI() {
 		return categoryAPI;
 	}
 
+	/**
+	 * 
+	 * @param categoryAPI
+	 */
 	public void setCategoryAPI(CategoryAPI categoryAPI) {
 		this.categoryAPI = categoryAPI;
 	}
