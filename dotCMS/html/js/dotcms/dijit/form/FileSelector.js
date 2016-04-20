@@ -176,11 +176,10 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 				this.thumbnailSize = thumbSize;
 			}
 
-
 			if(fileInfo.mimeType.indexOf('image/svg') <0 && fileInfo.mimeType.indexOf('image/x-icon')<0) {
 				this.thumbnailImage.src = "/contentAsset/image/" + fileInfo.identifier + "/fileAsset/filter/Thumbnail/thumbnail_w/" + this.thumbnailSize + "/rand/" + Math.random();
 			}else{
-				this.thumbnailImage.src = fileInfo.thumbnail;
+				this.thumbnailImage.src = '/contentAsset/image/' + fileInfo.identifier + '/fileAsset/'+fileInfo.inode;
 			}
 
 			this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
