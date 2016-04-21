@@ -62,16 +62,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -474,7 +467,7 @@ public class ContentResource {
 			if("xml".equals(type)) {
 				result = getXML(cons, request, response, render);
 			} else {
-				result = getJSON(cons, request, response, render);
+				result = getJSON(cons, request, response, render, user);
 			}
 		} catch (Exception e) {
 			Logger.warn(this, "Error converting result to XML/JSON");
@@ -547,13 +540,13 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws IOException{
+	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws IOException{
 		JSONObject json = new JSONObject();
 		JSONArray jsonCons = new JSONArray();
 
 		for(Contentlet c : cons){
 			try {
-				jsonCons.put(contentletToJSON(c, request, response, render));
+				jsonCons.put(contentletToJSON(c, request, response, render, user));
 			} catch (Exception e) {
 				Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 				Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -578,7 +571,7 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render) throws JSONException, IOException{
+	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
 		Map<String,Object> map = con.getMap();
@@ -599,6 +592,37 @@ public class ContentResource {
 			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
 				jo.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  con.getIdentifier() + "/" + f.getVelocityVarName()	);
 				jo.put(f.getVelocityVarName() + "ContentAsset", con.getIdentifier() + "/" +f.getVelocityVarName()	);
+			}
+//			else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
+//				List<Tag> tagList =null;
+//				try {
+//					tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
+//				} catch (DotDataException e) {
+//					Logger.error(this, e.getMessage(), e);
+//				}
+//				if(tagList ==null || tagList.size()==0) continue;
+//				StringBuilder tagg = new StringBuilder();
+//				for ( Tag t : tagList ) {
+//					if(t.getTagName() ==null) continue;
+//					String myTag = t.getTagName().trim();
+//					tagg.append(myTag).append(',');
+//				}
+//				if(tagg.length()>0){
+//					jo.put(f.getVelocityVarName(), tagg.toString().subSequence(0, tagg.length()-1));
+//				}
+//			}
+			else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
+				List<Category> cats = null;
+				try {
+					cats = APILocator.getCategoryAPI().getParents(con, user, false);
+				} catch (Exception e) {
+					Logger.error(this, String.format("Unable to get the Categories for given contentlet with inode= %s", con.getInode()));
+				}
+
+				if(cats!=null && !cats.isEmpty()) {
+					String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
+					jo.put(f.getVelocityVarName(), catsStr);
+				}
 			}
 		}
 
