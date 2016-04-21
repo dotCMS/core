@@ -302,6 +302,7 @@ public class EditFolderAction extends DotPortletAction {
 			return true;
 		}
 		String parentPath = parentFolder != null ? parentFolder.getPath() : "/";
+		HibernateUtil.startTransaction();
 		try {
 			if (folderForm.getName().length() >= MAX_FOLDER_NAME_LENGTH) {
 				SessionMessages.add(req, "message", "message.folder.namelength");
@@ -312,7 +313,6 @@ public class EditFolderAction extends DotPortletAction {
 				SessionMessages.add(req, "message", "message.folder.pathlength");
 				return false;
 			}
-			HibernateUtil.startTransaction();
 			if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equalsIgnoreCase(f.getName())) {
 				if (!folderAPI.renameFolder(f,folderForm.getName(),user,false)) {
 					// For messages to be displayed on messages page
