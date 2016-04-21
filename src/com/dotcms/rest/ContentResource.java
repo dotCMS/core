@@ -62,16 +62,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -472,9 +465,9 @@ public class ContentResource {
 
 		try {
 			if("xml".equals(type)) {
-				result = getXML(cons, request, response, render);
+				result = getXML(cons, request, response, render, user);
 			} else {
-				result = getJSON(cons, request, response, render);
+				result = getJSON(cons, request, response, render, user);
 			}
 		} catch (Exception e) {
 			Logger.warn(this, "Error converting result to XML/JSON");
@@ -484,7 +477,7 @@ public class ContentResource {
 	}
 
 
-	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws DotDataException, IOException {
+	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
 		xstream.registerConverter(new MapEntryConverter());
@@ -493,16 +486,11 @@ public class ContentResource {
 		sb.append("<contentlets>");
 
 		for(Contentlet c : cons){
-			Map<String, Object> m = new HashMap<String, Object>();
+			Map<String, Object> m = new HashMap<>();
 			m.putAll(c.getMap());
 			Structure s = c.getStructure();
 
-			for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-				if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-					m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
-					m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
-				}
-			}
+			m.putAll(getSpecialFieldValues(user, c, s));
 
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
@@ -518,6 +506,31 @@ public class ContentResource {
 
 		sb.append("</contentlets>");
 		return sb.toString();
+	}
+
+	private Map getSpecialFieldValues(User user, Contentlet c, Structure s) {
+		Map<String, Object> m = new HashMap<>();
+
+		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
+            if(f.getFieldType().equals(FieldType.BINARY.toString())){
+                m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
+                m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
+            } else if(f.getFieldType().equals(FieldType.CATEGORY.toString())) {
+                List<Category> cats = null;
+                try {
+                    cats = APILocator.getCategoryAPI().getParents(c, user, false);
+                } catch (Exception e) {
+                    Logger.error(this, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+                }
+
+                if(cats!=null && !cats.isEmpty()) {
+                    String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
+                    m.put(f.getVelocityVarName(), catsStr);
+                }
+            }
+        }
+
+		return m;
 	}
 
 	private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
@@ -547,13 +560,13 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws IOException{
+	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws IOException{
 		JSONObject json = new JSONObject();
 		JSONArray jsonCons = new JSONArray();
 
 		for(Contentlet c : cons){
 			try {
-				jsonCons.put(contentletToJSON(c, request, response, render));
+				jsonCons.put(contentletToJSON(c, request, response, render, user));
 			} catch (Exception e) {
 				Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 				Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -578,7 +591,7 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render) throws JSONException, IOException{
+	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
 		Map<String,Object> map = con.getMap();
@@ -595,11 +608,10 @@ public class ContentResource {
 					jo.put(key, map.get(key));
 		}
 
-		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-				jo.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  con.getIdentifier() + "/" + f.getVelocityVarName()	);
-				jo.put(f.getVelocityVarName() + "ContentAsset", con.getIdentifier() + "/" +f.getVelocityVarName()	);
-			}
+		Map<String, Object> specialFieldValues = getSpecialFieldValues(user, con, s);
+
+		for (String key : specialFieldValues.keySet()) {
+			jo.put(key, specialFieldValues.get(key));
 		}
 
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
