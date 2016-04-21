@@ -1228,21 +1228,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Find all multi-language working contentlets
             List<Contentlet> otherLanguageCons = conFac.getContentletsByIdentifier(con.getIdentifier());
 
-            if (isDeletingAHost) {
-                // When we are deleting a host, we need to delete
-                // live, working or archived contentlets
-                for (Contentlet contentlet : otherLanguageCons) {
-                    if (contentlet.getInode() != con.getInode()
-                            && contentlet.getLanguageId() != con.getLanguageId()) {
-                        if (perCons.contains(contentlet)) {
-                            indexAPI.removeContentFromIndex(contentlet);
-                        } else {
-                            cannotDelete = true;
-                            break;
-                        }
-                    }
-                }
-            } else {
+            if(!isDeletingAHost) {
                 // When we are NOT deleting a host and at least one multi-language
                 // contentlet is NOT archived we cannot delete.
                 for (Contentlet contentlet : otherLanguageCons) {
@@ -1281,7 +1267,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user, respectFrontendRoles));
-            APILocator.getVersionableAPI().deleteContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
 
             List<MultiTree> mts = MultiTreeFactory.getMultiTreeByChild(con.getIdentifier());
             for (MultiTree mt : mts) {
