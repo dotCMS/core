@@ -178,11 +178,12 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 
 			if(fileInfo.mimeType.indexOf('image/svg') <0 && fileInfo.mimeType.indexOf('image/x-icon')<0) {
 				this.thumbnailImage.src = "/contentAsset/image/" + fileInfo.identifier + "/fileAsset/filter/Thumbnail/thumbnail_w/" + this.thumbnailSize + "/rand/" + Math.random();
+				this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
 			}else{
 				this.thumbnailImage.src = '/contentAsset/image/' + fileInfo.identifier + '/fileAsset/'+fileInfo.inode;
 			}
 
-			this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
+
 	        dojo.style(this.thumbnailWrapper, { display : "" });		
 		} else {
 	        dojo.style(this.thumbnailWrapper, { display : "none" });		
@@ -219,7 +220,11 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	
 	_changeThumbnailSize: function (newValue) {
 		this.thumbnailSize = newValue;
-	    this.thumbnailImage.src = "/contentAsset/image/" + this.value + "/fileAsset/filter/Thumbnail/thumbnail_w/" + newValue + "/rand/" + Math.random();
+
+		if (this.thumbnailImage.src.indexOf("Thumbnail")>0) {
+			this.thumbnailImage.src = "/contentAsset/image/" + this.value + "/fileAsset/filter/Thumbnail/thumbnail_w/" + newValue + "/rand/" + Math.random();
+		}
+
 		dojo.cookie(this.id + '-thumbsize', new String(newValue));
 	},
 	

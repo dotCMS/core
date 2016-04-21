@@ -720,7 +720,7 @@ dojo.require("dojox.layout.ContentPane");
 				if(fieldRelatedData.fileName.indexOf('svg') <0) {
 					thumbnailImage = "/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300";
 				}else{
-					thumbnailImage = "/contentAsset/image/" + data['contentletInode'] + "/fileAsset/"+fieldRelatedData.fieldInode;
+					thumbnailImage = "/contentAsset/image/" + data['contentletInode'] + "/fileAsset/?byInode=1";
 				}
 				console.log("thumbnailImage", thumbnailImage);
 				thumbNailImg.setAttribute("src", thumbnailImage);
