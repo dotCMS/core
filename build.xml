@@ -41,8 +41,8 @@
     <property name="distribution.plugins.output" value="${distribution.output}/plugins" />
     <property name="distribution.docs.output" value="${distribution.output}/docs" />
 
-    <property name="license.project.home" value="../license"/>
-    <property name="enterprise.project.home" value="../enterprise-2.x"/>
+    <property name="license.project.home" value="../../../license"/>
+    <property name="enterprise.project.home" value="../../../enterprise-2.x"/>
 
     <property name="tomcat.branch" value="${tomcat.install.branch}"/>
     <property name="tomcat.home" value="${tomcat.install.location}"/>
@@ -206,7 +206,7 @@
     </target>
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="768m">
             <classpath refid="files-classpath" />
         </javac>
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />

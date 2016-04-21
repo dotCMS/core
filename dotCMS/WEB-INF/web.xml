@@ -10,12 +10,10 @@
 		<param-name>company_id</param-name>
 		<param-value>dotcms.org</param-value>
 	</context-param>
-
 	<context-param>
 		<param-name>isLog4jAutoInitializationDisabled</param-name>
 		<param-value>true</param-value>
 	</context-param>
-
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN CONTEXT-PARAMS -->
     <!-- END CONTEXT-PARAMS -->
@@ -649,7 +647,7 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
  <!-- END SERVLETS -->
-    <!-- TEST FRAMEWORK SERVLETS -->                                            
+    <!-- TEST FRAMEWORK SERVLETS -->                                                  
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
