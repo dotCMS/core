@@ -15,7 +15,7 @@ public class PublisherConfig implements Map<String, Object> {
 	private enum Config {
 		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
-		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, DESTINATION_BUNDLE,
+		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
 	}
 
@@ -416,5 +416,17 @@ public class PublisherConfig implements Map<String, Object> {
 	
 	public void setAssets(List<PublishQueueElement> pageIds) {
 		params.put(Config.ASSETS.name(), pageIds);
+	}
+
+	public boolean isSameIndexNotIncremental() {
+		return (params.get(Config.NOT_NEW_NOT_INCREMENTAL.name()) !=null);
+	}
+
+	public void setSameIndexNotIncremental(boolean sameIndexNoIncremental) {
+		if (sameIndexNoIncremental) {
+			params.put(Config.NOT_NEW_NOT_INCREMENTAL.name(), true);
+		} else {
+			params.remove(Config.NOT_NEW_NOT_INCREMENTAL.name());
+		}
 	}
 }

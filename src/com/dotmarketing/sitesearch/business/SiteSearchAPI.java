@@ -30,16 +30,15 @@ public interface SiteSearchAPI {
 
 	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
 
-	
 	List<ScheduledTask> getTasks() throws SchedulerException;
 
 	void deleteTask(String taskName) throws SchedulerException;
 
 	void scheduleTask(SiteSearchConfig config) throws SchedulerException, ParseException, ClassNotFoundException;
 
-	void putToIndex(String idx, SiteSearchResult res);
+	void putToIndex(String idx, SiteSearchResult res, String resultType);
 
-	void putToIndex(String idx, List<SiteSearchResult> res);
+	void putToIndex(String idx, List<SiteSearchResult> res, String resultType);
 
 	void deleteFromIndex(String idx, String docId);
 
