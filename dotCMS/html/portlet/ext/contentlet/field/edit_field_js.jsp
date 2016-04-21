@@ -14,36 +14,36 @@
 <script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <style type="text/css">
-    #aceTextArea { 
-        position: relative;	  	
+    #aceTextArea {
+        position: relative;
     }
     .aceClass{
     	width: 100%;
         height: 400px;
         border:1px solid #C0C0C0;
         text-overflow: clip;
-    	white-space: nowrap;   
+    	white-space: nowrap;
     }
     .aceText{
     	width:450px;
     	min-height:105px;
-    	max-height: 600px;    	
+    	max-height: 600px;
         border:1px solid #C0C0C0;
         text-overflow: clip;
-    	white-space: nowrap;   
+    	white-space: nowrap;
     }
     .widgetAceText{
-    	width:682px;min-height:362px;max-height: 400px;   	
+    	width:682px;min-height:362px;max-height: 400px;
         border:1px solid #C0C0C0;
         text-overflow: clip;
-    	white-space: nowrap;   
+    	white-space: nowrap;
     }
 </style>
 
 <!-- AChecker support -->
 <script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
 
-<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
+<script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tiny_mce_gzip.js"></script>
 <%}else { %>
@@ -88,7 +88,7 @@
     		file_picker_callback: function(callback, value, meta) {
     			cmsFileBrowser(callback, value, meta);
     		}
-    		
+
 		});
 	}
 </script>
@@ -112,7 +112,7 @@ var cmsfile=null;
 		var dateValue ="";
 		var datePart=dijit.byId(varName + "Date");
 		var timePart=dijit.byId(varName + 'Time');
-		
+
 		if(datePart != null) {
 			var x = datePart.getValue();
 			if(x) {
@@ -124,7 +124,7 @@ var cmsfile=null;
 				dateValue= year + "-" + month + "-" + day + " ";
 			}
 		}
-		
+
 		if(datePart==null || dateValue!="") {
 			// if it is just time or date_time but the value exists
 			if (timePart != null) {
@@ -155,16 +155,16 @@ var cmsfile=null;
 	    	if(pDiv != null && pDiv != undefined){
 	    		dojo.destroy(pDiv);
 	    	}
-	    	
+
 	    	var swDiv = dojo.byId(x+'ThumbnailSliderWrapper');
 	       	if(swDiv != null && swDiv != undefined){
 	       	    dojo.destroy(swDiv);
 	       	}
-	    	
+
 	    	dojo.query(".thumbnailDiv" + x).forEach(function(node, index, arr){
 	    		dojo.destroy(node);
 	    	});
-	    	
+
 	    	var dt = dojo.byId(x+'dt');
 	    	if(dt != null && dt != undefined){
 	    		dt.innerHTML = '';
@@ -252,16 +252,16 @@ var cmsfile=null;
 			updateDisabledWysiwyg(id,"PLAIN");
 			}
 	}
-	
+
 	function updateDisabledWysiwyg(id,mode){
-		
+
 		//Updating the list of disabled wysiwyg list
 		var elementWysiwyg = document.getElementById("disabledWysiwyg");
 		var wysiwygValue = elementWysiwyg.value;
 		var result = "";
 		var existingInDisabledWysiwyg = false;
 		if(mode == "WYSIWYG"){
-			
+
 			if(wysiwygValue != ""){
 				var wysiwygValueArray = wysiwygValue.split(",");
 
@@ -275,7 +275,7 @@ var cmsfile=null;
 				}
 			}
 		}else if(mode == "CODE"){
-			
+
 			if(wysiwygValue != ""){
 				var wysiwygValueArray = wysiwygValue.split(",");
 
@@ -294,7 +294,7 @@ var cmsfile=null;
 				result += id;
 			}
 		}else{// to PLAIN
-			
+
 			if(wysiwygValue != ""){
 				var wysiwygValueArray = wysiwygValue.split(",");
 
@@ -309,7 +309,7 @@ var cmsfile=null;
 				if(!existingInDisabledWysiwyg)
 					result += id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>";
 			}else{
-				result += id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>"; 
+				result += id+"<%=com.dotmarketing.util.Constants.WYSIWYG_PLAIN_SEPARATOR%>";
 			}
 		}
 		elementWysiwyg.value = result;
@@ -415,8 +415,8 @@ var cmsfile=null;
 			cmsFileBrowserFile.show();
 		}
 		dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
-		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })		
-		
+		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })
+
 	}
 
 	//Glossary terms search
@@ -549,7 +549,7 @@ var cmsfile=null;
 		aceEditors[textarea].className = aceClass.replace('classAce', 'aceClass');
 		aceEditors[textarea] = ace.edit(textarea+'aceEditor');
 	    aceEditors[textarea].setTheme("ace/theme/textmate");
-	    aceEditors[textarea].getSession().setMode("ace/mode/html");
+	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
 	    aceEditors[textarea].getSession().setUseWrapMode(true);
 	    aceEditors[textarea].setValue(id);
     	aceEditors[textarea].clearSelection();
@@ -569,7 +569,7 @@ var cmsfile=null;
 		enabledCodeAreas[textarea]=false;
 		aceEditors[textarea] = null;
 	}
-	
+
 	function addFileImageCallback(file) {
 		var assetURI = [file.path, file.name].join("");
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
@@ -599,7 +599,7 @@ var cmsfile=null;
 			 alert('<%= LanguageUtil.get(pageContext, "empty-key") %>');
 		}else{
 		key = key.trim();
-		//escape double quotes	
+		//escape double quotes
 		key = replaceAll('"', '&#x22;', key);
 		var value = dijit.byId(fieldValueId+'_value').value;
 		//escape double quotes
@@ -613,7 +613,7 @@ var cmsfile=null;
 				duplicateKey = true;
 				break;
 			}
-		}		
+		}
 		if(duplicateKey){
 			 alert('<%= LanguageUtil.get(pageContext, "key-already-exists") %>');
 		}else{
@@ -677,9 +677,9 @@ var cmsfile=null;
 					 var rowCount = table.rows.length;
 					 for(var i=0; i<rowCount; i++) {
 						if(row.id==table.rows[i].id) {
-							
+
 							table.deleteRow(i);
-						
+
 							rowCount--;
 							i--;
 						}
@@ -707,8 +707,8 @@ var cmsfile=null;
 			 }
 		}
 	}
-	
-	function setKVValue(fieldId, fieldValueId){   
+
+	function setKVValue(fieldId, fieldValueId){
 		var rowCount;
 		var jsonStr="";
 		var table = document.getElementById(fieldId+'_kvtable');
@@ -724,7 +724,7 @@ var cmsfile=null;
 					jsonStr+= '"' + key + '"' + ":" + '"' + value + '"' + (i!=rowCount-1?",":"");
 				}
 			 jsonStr+="}";
-		 } 
+		 }
 		 var keyfieldId = document.getElementsByClassName(fieldValueId);
 		 for (var i = 0; i < keyfieldId.length; ++i) {
 		     keyfieldId[i].value= jsonStr;
@@ -735,7 +735,7 @@ var cmsfile=null;
 	function editText(inode) {
 		editTextManager.editText(inode);
 	}
-	
+
 	var textEditor = new Array();
 	var aceTextId = new Array();
 	function aceText(textarea,keyValue,isWidget) {
@@ -771,10 +771,10 @@ var cmsfile=null;
 					if((wysiwygFieldVar == textarea) || (wysiwygFieldVar == toggleEditor))
 						continue;
 					else
-						result += wysiwygFieldVar + ",";		
+						result += wysiwygFieldVar + ",";
 				}
 			}
-			result += toggleEditor + ",";	
+			result += toggleEditor + ",";
 		} else {
 			var editorText = textEditor[textarea].getValue();
 			if(isWidget == 'true')
@@ -787,12 +787,12 @@ var cmsfile=null;
 			textEditor[textarea].setValue("");
 			enabledCodeAreas[textarea]=false;
 			if(wysiwygValue != ""){
-				for(i = 0;i < wysiwygValueArray.length;i++){	
+				for(i = 0;i < wysiwygValueArray.length;i++){
 					var wysiwygFieldVar = trimString(wysiwygValueArray[i]);
 					if((wysiwygFieldVar == textarea) || (wysiwygFieldVar == toggleEditor))
 						continue;
 					else
-						result += wysiwygFieldVar + ",";		
+						result += wysiwygFieldVar + ",";
 				}
 			}
 		}
@@ -800,4 +800,3 @@ var cmsfile=null;
 		elementWysiwyg.value = result;
 	}
 </script>
-
