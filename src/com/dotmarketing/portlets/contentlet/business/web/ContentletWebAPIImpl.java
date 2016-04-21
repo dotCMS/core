@@ -912,13 +912,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString())) && APILocator.getFieldAPI().valueSettable(field) && !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
 					try{
 						conAPI.setContentletProperty(contentlet, field, value);
-					}catch (Exception e) {
-						Logger.info(this, "Unable to set field " + field.getFieldName() + " to value " + value);
-						Logger.debug(this, "Unable to set field " + field.getFieldName() + " to value " + value, e);
+					}catch (DotContentletStateException e) {
+						Logger.error(this, "Unable to set field " + field.getFieldName() + " to value " + value);
+						throw e;
 					}
 			}
 
 			return true;
+		} catch (DotContentletStateException ex) {
+			throw ex;
 		} catch (Exception ex) {
 			return false;
 		}
