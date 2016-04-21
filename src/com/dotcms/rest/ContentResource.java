@@ -465,7 +465,7 @@ public class ContentResource {
 
 		try {
 			if("xml".equals(type)) {
-				result = getXML(cons, request, response, render);
+				result = getXML(cons, request, response, render, user);
 			} else {
 				result = getJSON(cons, request, response, render, user);
 			}
@@ -477,7 +477,7 @@ public class ContentResource {
 	}
 
 
-	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws DotDataException, IOException {
+	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
 		xstream.registerConverter(new MapEntryConverter());
@@ -486,16 +486,11 @@ public class ContentResource {
 		sb.append("<contentlets>");
 
 		for(Contentlet c : cons){
-			Map<String, Object> m = new HashMap<String, Object>();
+			Map<String, Object> m = new HashMap<>();
 			m.putAll(c.getMap());
 			Structure s = c.getStructure();
 
-			for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-				if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-					m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
-					m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
-				}
-			}
+			m.putAll(getSpecialFieldValues(user, c, s));
 
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
@@ -511,6 +506,31 @@ public class ContentResource {
 
 		sb.append("</contentlets>");
 		return sb.toString();
+	}
+
+	private Map getSpecialFieldValues(User user, Contentlet c, Structure s) {
+		Map<String, Object> m = new HashMap<>();
+
+		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
+            if(f.getFieldType().equals(FieldType.BINARY.toString())){
+                m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
+                m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
+            } else if(f.getFieldType().equals(FieldType.CATEGORY.toString())) {
+                List<Category> cats = null;
+                try {
+                    cats = APILocator.getCategoryAPI().getParents(c, user, false);
+                } catch (Exception e) {
+                    Logger.error(this, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+                }
+
+                if(cats!=null && !cats.isEmpty()) {
+                    String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
+                    m.put(f.getVelocityVarName(), catsStr);
+                }
+            }
+        }
+
+		return m;
 	}
 
 	private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
@@ -588,42 +608,10 @@ public class ContentResource {
 					jo.put(key, map.get(key));
 		}
 
-		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-				jo.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  con.getIdentifier() + "/" + f.getVelocityVarName()	);
-				jo.put(f.getVelocityVarName() + "ContentAsset", con.getIdentifier() + "/" +f.getVelocityVarName()	);
-			}
-//			else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
-//				List<Tag> tagList =null;
-//				try {
-//					tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
-//				} catch (DotDataException e) {
-//					Logger.error(this, e.getMessage(), e);
-//				}
-//				if(tagList ==null || tagList.size()==0) continue;
-//				StringBuilder tagg = new StringBuilder();
-//				for ( Tag t : tagList ) {
-//					if(t.getTagName() ==null) continue;
-//					String myTag = t.getTagName().trim();
-//					tagg.append(myTag).append(',');
-//				}
-//				if(tagg.length()>0){
-//					jo.put(f.getVelocityVarName(), tagg.toString().subSequence(0, tagg.length()-1));
-//				}
-//			}
-			else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-				List<Category> cats = null;
-				try {
-					cats = APILocator.getCategoryAPI().getParents(con, user, false);
-				} catch (Exception e) {
-					Logger.error(this, String.format("Unable to get the Categories for given contentlet with inode= %s", con.getInode()));
-				}
+		Map<String, Object> specialFieldValues = getSpecialFieldValues(user, con, s);
 
-				if(cats!=null && !cats.isEmpty()) {
-					String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
-					jo.put(f.getVelocityVarName(), catsStr);
-				}
-			}
+		for (String key : specialFieldValues.keySet()) {
+			jo.put(key, specialFieldValues.get(key));
 		}
 
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
