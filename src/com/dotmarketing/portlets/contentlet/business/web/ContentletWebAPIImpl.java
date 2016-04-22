@@ -804,8 +804,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	}
 
-	private boolean _populateContent(Map<String, Object> contentletFormData,
-			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception, DotContentletValidationException {
+	private void _populateContent(Map<String, Object> contentletFormData,
+			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
 		handleEventRecurrence(contentletFormData, contentlet);
 
@@ -909,18 +909,18 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						}
 					}
 				}
-				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString())) && APILocator.getFieldAPI().valueSettable(field) && !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
-					try{
-						conAPI.setContentletProperty(contentlet, field, value);
-					}catch (Exception e) {
-						Logger.info(this, "Unable to set field " + field.getFieldName() + " to value " + value);
-						Logger.debug(this, "Unable to set field " + field.getFieldName() + " to value " + value, e);
-					}
+				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString()))
+						&& APILocator.getFieldAPI().valueSettable(field)
+						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+					conAPI.setContentletProperty(contentlet, field, value);
+				}
 			}
 
-			return true;
-		} catch (Exception ex) {
-			return false;
+		} catch (DotContentletStateException e) {
+			throw e;
+		} catch (Exception e) {
+			Logger.error(this, "Unable to populate content. ", e);
+			throw e;
 		}
 	}
 
