@@ -15,6 +15,18 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
+/**
+ * Provides access to the information of {@link Container} objects in dotCMS.
+ * <p>
+ * Containers allow users to specify the different places of a template where
+ * content authors can add information inside an HTML page. Containers define
+ * the list of Content Types that they are able to display.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public interface ContainerAPI {
 
 	/**
@@ -123,6 +135,22 @@ public interface ContainerAPI {
 	public void deleteContainerStructuresByContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
+	 *
+	 * Deletes the Container-Content Type relationships for the given container
+	 * Inode.
+	 *
+	 * @param container
+	 *            - The {@link Container} whose Content Type relationships will
+	 *            be deleted.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the data.
+	 * @throws DotStateException
+	 *             A system error occurred.
+	 */
+	public void deleteContainerContentTypesByContainerInode(final Container container) throws DotStateException,
+			DotDataException;
+
+	/**
 	 * Retrieves all the containers attached to the given host
 	 * @param parentPermissionable
 	 * @author David H Torres
@@ -154,7 +182,6 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
 
 	/**
 	 * Delete the specified container
@@ -202,7 +229,13 @@ public interface ContainerAPI {
     List<Container> findContainersForStructure(String structureInode)
             throws DotDataException;
 
+    /**
+     * 
+     * @param assetsOlderThan
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     */
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
-
 
 }

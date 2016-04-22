@@ -74,7 +74,7 @@ if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCM
 			}
 			else{
 				userForPull = APILocator.getUserAPI().loadUserById(userToPullID,APILocator.getUserAPI().getSystemUser(),true);
-				
+
 			}
 		}
 		catch(Exception e){
@@ -102,7 +102,7 @@ if(query == null){
 
 
 				cons = es.esSearch(query, live,userForPull,true);
-			
+
 
 		}
 
@@ -120,115 +120,144 @@ if(query == null){
 
 %>
 
-
+<script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <script>
-function refreshPane(){
-	
 
-	
-    	var data = {
-    			"query":dijit.byId("query").getValue(),
-    			"userid":dijit.byId("userid").getValue(),
-    			"live": dijit.byId("live").getValue()
-    			};
+    var editor;
+    function aceArea(){
+        editor = ace.edit('esEditor');
+        editor.setTheme("ace/theme/textmate");
+        editor.getSession().setMode("ace/mode/json");
+        editor.getSession().setUseWrapMode(true);
+        editor.setValue(document.getElementById('query').value);
+    }
 
-   	    dojo.xhrPost({
-   	        url: "/api/portlet/ES_SEARCH_PORTLET/render",
-   	        handleAs: "text",
-   	        postData: data,
-   	        load: function(code) {
-   	        	dotAjaxNav.refreshHTML(code);
+    function refreshPane(){
+        var data = {
+            "query": editor.getValue(),
+            "userid": dijit.byId("userid").getValue(),
+            "live": dijit.byId("live").getValue()
+        };
 
-   	        }
-   	    });
-}
+        dojo.xhrPost({
+            url: "/api/portlet/ES_SEARCH_PORTLET/render",
+            handleAs: "text",
+            postData: data,
+            load: function(code) {
+                dotAjaxNav.refreshHTML(code);
+            }
+        });
+    }
 
-function showEsHelpDialog(){
-	var esSearch = dijit.byId("esSearchHelpDia");
-	esSearch.show();
-	
-}
+    function showEsHelpDialog() {
+        var esSearch = dijit.byId("esSearchHelpDia");
+        esSearch.show();
+    }
 
+    function handleWrapMode(e) {
+        editor.getSession().setUseWrapMode(e);
+    }
 
-
+    dojo.addOnLoad(aceArea);
 </script>
-<div class="portlet-wrapper">
-	<div style='text-align:center;padding:20px;'>
+<style type="text/css" media="screen">
+    #esEditor {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+    .esEditorWrapper {
+        position: relative;
+        height: 400px;
+        border: solid 1px #C0C0C0
+    }
 
-	</div>
-	<table class="listingTable" style="width:70%">	
+    .dmundra .helpButton {
+        margin: 5px 0 0 0;
+    }
+    .wrap-editor {
+        margin-top: 5px;
+    }
+</style>
+<div class="portlet-wrapper">
+
+	<table class="listingTable" style="width:70%">
+        <tr>
+            <th width="110" valign="top">
+                <strong><%= LanguageUtil.get(pageContext, "ES Query") %>:</strong>
+                <button type="button" class="helpButton" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
+            </th>
+            <td>
+                <div class="esEditorWrapper">
+                    <div id="esEditor"><%=UtilMethods.htmlifyString(query)%></div>
+                </div>
+                <div class="wrap-editor">
+                    <input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" /> <label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+                </div>
+            </td>
+        </tr>
 		<tr>
-			<th valign="top"><strong><%= LanguageUtil.get(pageContext, "ES Query") %> :</strong></th>
-			<td valign="top" style="vertical-align: top;">
-			
-				<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;font-family:monospace;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea>
-			
-				<button type="button" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
-				
-			</td>
-		</tr>
-		<tr>
-			<th><strong><%= LanguageUtil.get(pageContext, "Live") %> :</strong></th>
+			<th><strong><%= LanguageUtil.get(pageContext, "Live") %>:</strong></th>
 			<td nowrap="nowrap">
-			
 				<input dojoType="dijit.form.CheckBox" name="live"  id="live" type="checkbox" value="true" <%=live ? "checked=true" : ""%>
-		
 			</td>
 		</tr>
-	
+
 		<tr>
-			<th><strong><%= LanguageUtil.get(pageContext, "User ID or Email") %> :</strong></th>
+			<th><strong><%= LanguageUtil.get(pageContext, "User ID or Email") %>:</strong></th>
 			<td nowrap="nowrap">
-			
+
 				<input name="userid" id="userid"  type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40"   dojoType="dijit.form.TextBox"  />
-	
-	
+
+
 			</td>
 		</tr>
 	</table>
 
-	
+
 	<div style='text-align:center;padding:20px;'>
 		<button type="button" id="submitButton"  iconClass="queryIcon" onClick="refreshPane()" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Query") %></button>
 	</div>
 
 	<%if(UtilMethods.isSet(cons)){ %>
-		<table class="listingTable" style="width:70%;padding-bottom:20px">	
+		<table class="listingTable" style="width:70%;padding-bottom:20px">
 			<tr>
 				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Took") %> :</strong></th>
 				<td style="width:100%">
 					<%=cons.getQueryTook()%> ms <%= LanguageUtil.get(pageContext, "query") %><br>
 					<%=cons.getPopulationTook()%> ms <%= LanguageUtil.get(pageContext, "population") %><br>
-					
+
 				</td>
 			</tr>
-	
+
 			<tr>
 				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Query-is") %> :</strong></th>
 				<td>
 					<%=cons.getQuery()%>
-	
-	
+
+
 				</td>
 			</tr>
 			<tr>
 				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Showing Hits") %> :</strong></th>
 				<td>
 				<%=cons.getCount() %> of <%=cons.getTotalResults()%>
-	
-	
+
+
 				</td>
 			</tr>
 		</table>
 		<div style='text-align:center;padding:20px;'>
-	
+
 		</div>
 	<%} %>
-	
+
 	<%if(cons!= null && cons.getFacets() !=null){ %>
-		<table class="listingTable" style="width:70%;"">	
+		<table class="listingTable" style="width:70%;"">
 			<tr><th colspan="3">
-				
+
 
 					<h2>Facets</h2>
 				</th></tr>
@@ -241,18 +270,18 @@ function showEsHelpDialog(){
 
 							<%=ii++%>. <%=entry.getTerm()%> =
 							<%= entry.getCount()%><br>
-					
+
 						<% } %>
 					<%} %>
 				</td>
 			</tr>
 		</table>
 		<div style='text-align:center;padding:20px;'>
-	
+
 		</div>
 	<%} %>
 	<%if(cons != null && cons.getSuggestions() !=null){ %>
-		<table class="listingTable" style="width:70%;"">	
+		<table class="listingTable" style="width:70%;"">
 			<tr>
 				<th colspan="3">
 					<h3>Suggestions</h3>
@@ -261,9 +290,9 @@ function showEsHelpDialog(){
 			<tr>
 				<td><%int ii=1; %>
 					<%for(Suggestion s : cons.getSuggestions() ){ %>
-			
+
 						<%for (Object entry : s.getEntries()) {%>
-							<%=ii++%>. <%=((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> | 
+							<%=ii++%>. <%=((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> |
 							<%for(TermSuggestion.Entry.Option opt : ((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
 								<%=opt.getText()%>
 							<%} %>
@@ -271,7 +300,7 @@ function showEsHelpDialog(){
 						<%} %>
 					<%} %>
 
-	
+
 				</td>
 			</tr>
 		</table>
@@ -280,27 +309,27 @@ function showEsHelpDialog(){
 		</div>
 	<%} %>
 	<%if(cons!=null && cons.size() >0){ %>
-	
-			<table class="listingTable" style="width:70%;"">	
+
+			<table class="listingTable" style="width:70%;"">
 				<tr><th colspan="3">
-				
-	
+
+
 					<h2>Results</h2>
 				</th></tr>
-	
+
 				<% for (Object x : cons){%>
 					<%Contentlet c =(Contentlet) x;%>
-			
+
 						<tr>
 							<td><strong><%= counter %>.</td>
 							<td width="100"><strong><%= LanguageUtil.get(pageContext, "Title") %>:</strong></td>
-							
-			
-							
-							
+
+
+
+
 							<td>
 									<%=c.getTitle() %>
-			
+
 							</td>
 						</tr>
 						<tr>
@@ -323,15 +352,15 @@ function showEsHelpDialog(){
 					<%}%>
 			</table>
 		<div style='text-align:center;padding:20px;'>
-	
+
 		</div>
-		
+
 	<%} %>
 
 
 
 		<%if(cons != null){ %>
-			<table 	class="listingTable" style="width:70%;">	
+			<table 	class="listingTable" style="width:70%;">
 				<tr>
 					<th colspan="3">
 						<h3>Raw</h3>
@@ -345,21 +374,21 @@ function showEsHelpDialog(){
 				</tr>
 			</table>
 			<div style='text-align:center;padding:20px;'>
-	
+
 			</div>
 		<%} %>
 	<%if(UtilMethods.isSet(nastyError)){%>
-	
+
 		<div style='color:red;width:70%;margin:auto;padding:20px;'>
 			<%=nastyError %>
 		</div>
 
 	<%}%>
-	
+
 
 </div>
 
-		
+
 <div id="esSearchHelpDia" title="ElasticSearch Help" dojoType="dijit.Dialog">
 	<jsp:include page="/WEB-INF/jsp/es_search_portlet/es-search-help.jsp"></jsp:include>
 </div>

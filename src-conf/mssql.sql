@@ -3124,18 +3124,29 @@ DECLARE cur_Deleted cursor LOCAL FAST_FORWARD for
 fetch next from cur_Deleted into @identifier,@assetType,@assetName,@parentPath,@hostInode
 END;
 
-CREATE PROCEDURE renameFolderChildren @oldPath varchar(100),@newPath varchar(100),@hostInode varchar(100) AS
-DECLARE @newFolderPath varchar(100)
-DECLARE @oldFolderPath varchar(100)
-DECLARE @assetName varchar(100)
-   UPDATE identifier SET  parent_path  = @newPath where parent_path = @oldPath and host_inode = @hostInode
+CREATE PROCEDURE renameFolderChildren @oldPath varchar(255),@newPath varchar(255),@hostInode varchar(100) AS
+DECLARE @newFolderPath varchar(255)
+DECLARE @oldFolderPath varchar(255)
+DECLARE @assetName varchar(255)
+DECLARE @folderPathLength INT
+DECLARE @errorMsg VARCHAR(1000)
+UPDATE identifier SET  parent_path  = @newPath where parent_path = @oldPath and host_inode = @hostInode
 DECLARE folder_data_cursor CURSOR LOCAL FAST_FORWARD for
 select asset_name from identifier where asset_type='folder' and parent_path = @newPath and host_inode = @hostInode
 OPEN folder_data_cursor
 FETCH NEXT FROM folder_data_cursor INTO @assetName
 while @@FETCH_STATUS <> -1
 BEGIN
+	 SET @folderPathLength = 0
      SET @newFolderPath = @newPath + @assetName + '/'
+     SET @folderPathLength = LEN(@newPath) + LEN(@assetName) + 1
+     IF (@folderPathLength > 255)
+        BEGIN
+	        SET @errorMsg = 'Folder path ' + @newPath + @assetName + '/' + ' is longer than 255 characters'
+	        RAISERROR (@errorMsg, 16, 1)
+	        ROLLBACK WORK
+	        RETURN
+        END 
      SET @oldFolderPath = @oldPath + @assetName + '/'
      EXEC renameFolderChildren @oldFolderPath,@newFolderPath,@hostInode
 fetch next from folder_data_cursor into @assetName
@@ -3144,11 +3155,13 @@ END;
 CREATE Trigger rename_folder_assets_trigger
 on Folder
 FOR UPDATE AS
-DECLARE @oldPath varchar(100)
-DECLARE @newPath varchar(100)
-DECLARE @newName varchar(100)
+DECLARE @oldPath varchar(255)
+DECLARE @newPath varchar(255)
+DECLARE @newName varchar(255)
 DECLARE @hostInode varchar(100)
 DECLARE @ident varchar(100)
+DECLARE @folderPathLength INT
+DECLARE @errorMsg VARCHAR(1000)
 DECLARE folder_cur_Updated cursor LOCAL FAST_FORWARD for
  Select inserted.identifier,inserted.name
  from inserted join deleted on (inserted.inode=deleted.inode)
@@ -3158,7 +3171,16 @@ open folder_cur_Updated
 fetch next from folder_cur_Updated into @ident,@newName
 while @@FETCH_STATUS <> -1
 BEGIN
+  SET @folderPathLength = 0
   SELECT @oldPath = parent_path+asset_name+'/',@newPath = parent_path +@newName+'/',@hostInode = host_inode from identifier where id = @ident
+  SET @folderPathLength = LEN(@newPath)
+  IF (@folderPathLength > 255)
+    BEGIN
+	    SET @errorMsg = 'Folder path ' + @newPath + ' is longer than 255 characters'
+	    RAISERROR (@errorMsg, 16, 1)
+	    ROLLBACK WORK
+	    RETURN
+    END 
   UPDATE identifier SET asset_name = @newName where id = @ident
   EXEC renameFolderChildren @oldPath,@newPath,@hostInode
 fetch next from folder_cur_Updated into @ident,@newName

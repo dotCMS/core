@@ -2944,12 +2944,12 @@ create index idx_template_id on template_containers(template_id);
 alter table template_containers add constraint FK_template_id foreign key (template_id) references identifier(id);
 alter table template_containers add constraint FK_container_id foreign key (container_id) references identifier(id);
 
-CREATE OR REPLACE FUNCTION renameFolderChildren(old_path varchar(100),new_path varchar(100),hostInode varchar(100))
+CREATE OR REPLACE FUNCTION renameFolderChildren(old_path varchar(255),new_path varchar(255),hostInode varchar(255))
 RETURNS void AS '
 DECLARE
    fi identifier;
-   new_folder_path varchar(100);
-   old_folder_path varchar(100);
+   new_folder_path varchar(255);
+   old_folder_path varchar(255);
 BEGIN
     UPDATE identifier SET  parent_path  = new_path where parent_path = old_path and host_inode = hostInode;
     FOR fi IN select * from identifier where asset_type=''folder'' and parent_path = new_path and host_inode = hostInode LOOP
@@ -2962,10 +2962,10 @@ END
 CREATE OR REPLACE FUNCTION rename_folder_and_assets()
 RETURNS trigger AS '
 DECLARE
-   old_parent_path varchar(100);
-   old_path varchar(100);
-   new_path varchar(100);
-   old_name varchar(100);
+   old_parent_path varchar(255);
+   old_path varchar(255);
+   new_path varchar(255);
+   old_name varchar(255);
    hostInode varchar(100);
 BEGIN
    IF (tg_op = ''UPDATE'' AND NEW.name<>OLD.name) THEN
