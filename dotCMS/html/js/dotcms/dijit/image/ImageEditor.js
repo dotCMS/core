@@ -136,7 +136,13 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             if(thumbUrl.indexOf("?") <0){
                 //thumbUrl+="?";
             }
-            thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
+
+            if(this.saveAsFileName.indexOf('svg') <0) {
+                thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
+            }else{
+                console.log("RETURN");
+                return thumbUrl;
+            }
         }
 
 
