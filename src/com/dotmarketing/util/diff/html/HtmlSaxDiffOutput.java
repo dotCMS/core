@@ -15,6 +15,8 @@
  */
 package com.dotmarketing.util.diff.html;
 
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.diff.html.dom.ImageNode;
 import com.dotmarketing.util.diff.html.dom.Node;
 import com.dotmarketing.util.diff.html.dom.TagNode;
@@ -117,7 +119,15 @@ public class HtmlSaxDiffOutput implements DiffOutput{
                                 .getType()
                                 + "-" + prefix + "-" + mod.getID());
                     }
-
+                    // showing change inside html
+                    if (UtilMethods.isSet(mod.getChanges())) {
+                        attrs.addAttribute("", "title", "title", "", mod
+                                .getChanges()
+                                .replaceAll("<b>" , "\"").replaceAll("</b>" , "\"").replaceAll("<br/>", "")
+                                .replaceAll("<li>" , "").replaceAll("</li>" , " ")
+                                .replaceAll("<ul class='changelist'>" , "").replaceAll("</ul>" , "")
+                                );
+                    }
                     addAttributes(mod, attrs);
                     handler.startElement("", "span", "span", attrs);
 
