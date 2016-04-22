@@ -805,7 +805,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private boolean _populateContent(Map<String, Object> contentletFormData,
-			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception, DotContentletValidationException {
+			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
 		handleEventRecurrence(contentletFormData, contentlet);
 
