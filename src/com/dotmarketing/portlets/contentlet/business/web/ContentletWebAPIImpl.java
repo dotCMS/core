@@ -920,7 +920,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			throw e;
 		} catch (Exception e) {
 			Logger.error(this, "Unable to populate content. ", e);
-			throw e;
+			throw new Exception("Unable to populate content");
 		}
 	}
 
