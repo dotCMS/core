@@ -770,4 +770,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			 return super.put(key, value);
 		 }
 	}
+
+	public boolean hasLiveVersion() throws DotStateException, DotDataException {
+		return APILocator.getVersionableAPI().hasLiveVersion(this);
+	}
 }
