@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -46,6 +47,8 @@ public class SpeedyAssetServlet extends HttpServlet {
 	private static String assetPath = "/assets";
 
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+	
+    private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
     public void init(ServletConfig config) throws ServletException {
         // Set the asset paths
@@ -175,13 +178,18 @@ public class SpeedyAssetServlet extends HttpServlet {
 					}
 				}
 				
-                //If language is in session, let's load it. Otherwise, set langId with default Language Id
-                long langId = 0;
-                
-                if(UtilMethods.isSet(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))){
-                    langId = Long.parseLong((String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
-                } else {
-                    langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                //If language is in session/request, let's load it. Otherwise, set langId with default Language Id
+                long langId = defaultLang;
+                try {
+                    String x = null;
+                    if (session != null) {
+                        x = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+                    } else {
+                        x = (String) request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+                    }
+                    langId = Long.parseLong(x);
+                } catch(Exception e){
+                    // Number parsing exception
                 }
 				
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
@@ -192,6 +200,17 @@ public class SpeedyAssetServlet extends HttpServlet {
 							f = new File(FileUtil.getRealPath(assetPath + uri));
 						}else{
 							f = new File(realPath + uri);
+						}
+						if(uri == null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+						    //If URI cannot be found with selected language and property above is true, 
+						    //let's pull the file with default Language Instead
+						    uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId(), defaultLang);
+
+						    if(!UtilMethods.isSet(realPath)){
+						        f = new File(FileUtil.getRealPath(assetPath + uri));
+						    }else{
+						        f = new File(realPath + uri);
+						    }
 						}
 						if(uri == null || !f.exists() || !f.canRead()) {
 							if(uri == null){
@@ -225,6 +244,27 @@ public class SpeedyAssetServlet extends HttpServlet {
 							f = new File(FileUtil.getRealPath(assetPath + uri));
 						}else{
 							f = new File(realPath + uri);
+						}
+						if(StringUtils.isBlank(uri) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+						    //If URI cannot be found with selected language and property above is true, 
+						    //let's pull the file with default Language Instead
+						    try{
+						        uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId(), defaultLang);
+						    }catch (Exception e) {
+						        if(isLoggedToBackend){
+						            response.setHeader( "Pragma", "no-cache" );
+						            response.setHeader( "Cache-Control", "no-cache" );
+						            response.setDateHeader( "Expires", 0 );
+						            response.sendError(404);
+						            return;
+						        }
+						    }
+
+						    if(!UtilMethods.isSet(realPath)){
+						        f = new File(FileUtil.getRealPath(assetPath + uri));
+						    }else{
+						        f = new File(realPath + uri);
+						    }
 						}
 
 						if(StringUtils.isBlank(uri)) {

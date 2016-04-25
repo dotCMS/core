@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -121,16 +122,28 @@ public class CmsUrlUtil {
 		if ("file_asset".equals(id.getAssetType())) {
 			return true;
 		}
-		if ("contentlet".equals(id.getAssetType())) {
-			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
-				Contentlet c = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
-				return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET);
-			} catch (Exception e) {
-				Logger.error(this.getClass(), "Unable to find" + uri);
-				return false;
-			}
-		}
+        if ("contentlet".equals(id.getAssetType())) {
+            try {
+                ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
+
+                if ( (cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" )) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+                    //Get the Default Language
+                    Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+                    //If the fallback to Default Language is set to true, let's see if the requested file is stored with Default Language 
+                    cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), defaultLang.getId() );
+                }
+
+                if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+                    return false;//At this point we know is not a File Asset
+                } else {
+                    Contentlet c = APILocator.getContentletAPI().find( cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false );
+                    return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET);
+                }
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Unable to find" + uri);
+                return false;
+            }
+        }
 		return false;
 	}
 
