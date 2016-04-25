@@ -171,6 +171,10 @@ public class PersonaAPIImpl implements PersonaAPI {
 			}
 		}
 
+		if(c.getLanguageId()!=APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+			throw new DotContentletValidationException("Can't create Persona in a Language different than default language");
+		}
+
 		String keyTag = persona.getKeyTag();
 
 		// we need to make sure no other persona has the same keyfield
