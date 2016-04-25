@@ -2263,7 +2263,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						}
 
 						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user))
-							if (!contentlet.isLive())
+							if (!contentlet.hasLiveVersion())
 								contentlets.add(contentlet);
 							else {
 							    someContentIsLive=true;

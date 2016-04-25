@@ -444,7 +444,7 @@ public class ESContentletIndexAPITest extends TestBase {
     }
 
     /**
-     * Testing the {@link SiteSearchAPI#putToIndex(String, com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult)},
+     * Testing the {@link SiteSearchAPI#putToIndex(String, com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult, String)},
      * {@link SiteSearchAPI#search(String, String, int, int)} and {@link SiteSearchAPI#deleteFromIndex(String, String)} methods
      *
      * @throws Exception
@@ -494,7 +494,7 @@ public class ESContentletIndexAPITest extends TestBase {
         res.setId( docId );
 
         //Adding it to the index
-        siteSearchAPI.putToIndex( indexName, res );
+        siteSearchAPI.putToIndex( indexName, res, "HTMLPage");
         isDocIndexed( docId );
 
         try {
