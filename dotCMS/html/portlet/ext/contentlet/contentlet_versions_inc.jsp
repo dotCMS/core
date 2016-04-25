@@ -115,8 +115,12 @@
 			 	<% if (!working && canEdit && !live) { %>
 			 		<a  href="javascript: selectVersion('<%= vinode %>');">
 			 	<%} %>
-			 	<img src="/contentAsset/image/<%=vinode %>/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_h=125&thumbnail_w=125" style="width:150px;height:150px;border:1px solid silver;padding:3px;"></a>
 
+				<%if(ident.getAssetName().toLowerCase().equals("svg")){%>
+			 		<img src="/contentAsset/image/<%=vinode %>/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_h=125&thumbnail_w=125" style="width:150px;height:150px;border:1px solid silver;padding:3px;"></a>
+				<%}else{%>
+				 <img src="/contentAsset/image/<%=vinode %>/fileAsset/?byInode=1" style="width:150px;height:150px;border:1px solid silver;padding:3px;"></a>
+				<%}%>
 			 </td>
 		 <%} %>
 		<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
