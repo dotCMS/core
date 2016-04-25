@@ -175,12 +175,19 @@ public class SpeedyAssetServlet extends HttpServlet {
 					}
 				}
 				
-				
+                //If language is in session, let's load it. Otherwise, set langId with default Language Id
+                long langId = 0;
+                
+                if(UtilMethods.isSet(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))){
+                    langId = Long.parseLong((String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+                } else {
+                    langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                }
 				
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
 
 					if(serveWorkingVersion){
-						uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId());
+						uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId(), langId);
 						if(!UtilMethods.isSet(realPath)){
 							f = new File(FileUtil.getRealPath(assetPath + uri));
 						}else{
@@ -204,7 +211,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 					}else {
 						try{
-							uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId());
+							uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId(), langId);
 						}catch (Exception e) {
 							if(isLoggedToBackend){
 								response.setHeader( "Pragma", "no-cache" );

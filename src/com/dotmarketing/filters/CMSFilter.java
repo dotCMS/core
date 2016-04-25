@@ -19,7 +19,9 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.util.*;
+
 import org.apache.commons.logging.LogFactory;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -196,14 +198,26 @@ public class CMSFilter implements Filter {
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
+	             //Serving the file through the /dotAsset servlet
+                StringWriter forward = new StringWriter();
+                forward.append("/dotAsset/");
+                
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
 				request.setAttribute(CMS_FILTER_IDENTITY, ident);
+				
 				RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 				if(response.isCommitted()) {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
 					return;
 				}
-				request.getRequestDispatcher("/dotAsset/").forward(request, response);
+				
+                //If language is in session, set as query string
+                if(UtilMethods.isSet(languageId)){
+                    forward.append('?');
+                    forward.append(WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId);
+                }
+                
+                request.getRequestDispatcher(forward.toString()).forward(request, response);
 			} catch (DotDataException e) {
 				Logger.error(CMSFilter.class, e.getMessage(), e);
 				throw new IOException(e.getMessage());

@@ -123,7 +123,7 @@ public class CmsUrlUtil {
 		}
 		if ("contentlet".equals(id.getAssetType())) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
 				return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET);
 			} catch (Exception e) {
