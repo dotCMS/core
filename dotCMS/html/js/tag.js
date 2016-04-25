@@ -189,7 +189,7 @@ function closeSuggetionBox(e) {
 			e.target.value = "";
 			e.target.blur();
 		}
-	}, 100)
+	}, 500)
 }
 
 function removeAllTags() {
