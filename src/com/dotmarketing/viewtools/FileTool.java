@@ -47,7 +47,7 @@ public class FileTool implements ViewTool {
         IFileAsset file = null;
 		try {
 			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					file = APILocator.getFileAssetAPI().fromContentlet(cont);
 				}
