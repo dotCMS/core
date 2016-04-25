@@ -1,10 +1,8 @@
 package com;
 
-
-//import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
 import com.dotmarketing.portlets.rules.RulesUnderPageAssetsFTest;
+import com.dotmarketing.portlets.rules.actionlet.VisitorsTagsActionletFTest;
 import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
-//import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
 import com.dotmarketing.portlets.rules.conditionlet.*;
@@ -27,7 +25,6 @@ import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
-//import com.dotcms.rest.api.v1.sites.rules.ConditionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
@@ -112,13 +109,10 @@ import com.dotmarketing.webdav.WebDavTest;
     RulesAPIFTest.class,
     RuleResourceFTest.class,
     ConditionGroupResourceFTest.class,
-//    ConditionResourceFTest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
-//    ConditionletTest.class,
     ActionletResourceFTest.class,
     SetSessionAttributeActionletFTest.class,
     SetResponseHeaderActionletFTest.class,
-//    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,
     RulesCacheFTest.class,
     PersonaActionletFTest.class, //Needs Enterprise License
@@ -129,7 +123,18 @@ import com.dotmarketing.webdav.WebDavTest;
 	CurrentSessionLanguageConditionletFTest.class,
 	CurrentSessionLanguageConditionletTest.class,
 	TagAPITest.class,
-	RulesUnderPageAssetsFTest.class
+	RulesUnderPageAssetsFTest.class,
+	VisitorsTagsActionletFTest.class,
+    ConditionletFTest.class,
+    ConditionletOSGIFTest.class,
+    NumberOfTimesPreviouslyVisitedConditionletFTest.class,
+    NumberOfTimesPreviouslyVisitedConditionletTest.class,
+    PagesViewedConditionletFTest.class,
+    UsersSiteVisitsConditionletFTest.class,
+    UsersSiteVisitsConditionletTest.class,
+    VisitorOperatingSystemConditionletFTest.class,
+    VisitorOperatingSystemConditionletTest.class,
+    VisitorsCurrentUrlConditionletFTest.class
 })
 public class AllTestsSuite {
 
