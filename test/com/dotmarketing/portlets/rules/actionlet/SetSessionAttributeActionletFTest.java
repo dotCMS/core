@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -46,6 +48,11 @@ public class SetSessionAttributeActionletFTest extends TestBase {
         robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
         indexUrl = String.format("http://%s:%s/", serverName, serverPort);
         ruleId = "";
+    }
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
     }
 
     @Test
