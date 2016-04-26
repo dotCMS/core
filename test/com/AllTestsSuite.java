@@ -111,34 +111,34 @@ import org.junit.runners.Suite;
         TagAPITest.class,
 
         //Rules.
-        RulesAPIFTest.class,
-        RulesCacheFTest.class,
-        RulesUnderPageAssetsFTest.class,
+        RulesAPIFTest.class, //Needs Enterprise License.
+        RulesCacheFTest.class, //Needs Enterprise License.
+        RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
 
         //Rules:Actionlets.
-        ActionletResourceFTest.class,
-        PersonaActionletFTest.class, //Needs Enterprise License
-        SetResponseHeaderActionletFTest.class,
-        SetSessionAttributeActionletFTest.class,
-        VisitorsTagsActionletFTest.class,
+        ActionletResourceFTest.class, //Needs Enterprise License.
+        PersonaActionletFTest.class, //Needs Enterprise License.
+        SetResponseHeaderActionletFTest.class, //Needs Enterprise License.
+        SetSessionAttributeActionletFTest.class, //Needs Enterprise License.
+        VisitorsTagsActionletFTest.class, //Needs Enterprise License.
 
         //Rules:Conditionlets.
-        ConditionletFTest.class,
-        ConditionletOSGIFTest.class,
-        CurrentSessionLanguageConditionletFTest.class,
-        CurrentSessionLanguageConditionletTest.class,
-        NumberOfTimesPreviouslyVisitedConditionletFTest.class,
-        NumberOfTimesPreviouslyVisitedConditionletTest.class,
-        PagesViewedConditionletFTest.class,
-        UsersBrowserLanguageConditionletFTest.class,
-        UsersBrowserLanguageConditionletTest.class,
-        UsersSiteVisitsConditionletFTest.class,
-        UsersSiteVisitsConditionletTest.class,
-        VisitedUrlConditionletTest.class,
-        VisitedUrlConditionletFTest.class,
-        VisitorOperatingSystemConditionletFTest.class,
-        VisitorOperatingSystemConditionletTest.class,
-        VisitorsCurrentUrlConditionletFTest.class
+        ConditionletFTest.class, //Needs Enterprise License.
+        ConditionletOSGIFTest.class, //Needs Enterprise License.
+        CurrentSessionLanguageConditionletFTest.class, //Needs Enterprise License.
+        CurrentSessionLanguageConditionletTest.class, //Needs Enterprise License.
+        NumberOfTimesPreviouslyVisitedConditionletFTest.class, //Needs Enterprise License.
+        NumberOfTimesPreviouslyVisitedConditionletTest.class, //Needs Enterprise License.
+        PagesViewedConditionletFTest.class, //Needs Enterprise License.
+        UsersBrowserLanguageConditionletFTest.class, //Needs Enterprise License.
+        UsersBrowserLanguageConditionletTest.class, //Needs Enterprise License.
+        UsersSiteVisitsConditionletFTest.class, //Needs Enterprise License.
+        UsersSiteVisitsConditionletTest.class, //Needs Enterprise License.
+        VisitedUrlConditionletTest.class, //Needs Enterprise License.
+        VisitedUrlConditionletFTest.class, //Needs Enterprise License.
+        VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
+        VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
+        VisitorsCurrentUrlConditionletFTest.class //Needs Enterprise License.
 })
 
 public class AllTestsSuite {}

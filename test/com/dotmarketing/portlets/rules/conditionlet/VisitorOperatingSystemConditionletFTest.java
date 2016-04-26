@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import eu.bitwalker.useragentutils.OperatingSystem;
 
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -31,6 +33,11 @@ public class VisitorOperatingSystemConditionletFTest extends ConditionletFTest{
     private URLConnection makeRequest(String url, String userAgentHeaderValue) throws IOException {
         ApiRequest apiRequest = new ApiRequest(request, "User-Agent");
         return apiRequest.makeRequest(url, userAgentHeaderValue);
+    }
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
     }
 
     @Test

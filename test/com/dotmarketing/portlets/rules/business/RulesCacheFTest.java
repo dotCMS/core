@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotcms.LicenseTestUtil;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -28,6 +30,11 @@ public class RulesCacheFTest {
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
     private ParameterDataGen parameterDataGen = new ParameterDataGen();
     private List<Rule> rulesToRemove = new ArrayList<>();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Test
     public void testgetRulesByParentFireOnReturnsNullWhenCachedRuleOnSameHostIsUpdated() throws Exception {

@@ -41,7 +41,6 @@ public class RulesUnderPageAssetsFTest extends TestBase {
     private Host host;
     private User sysUser;
     private HttpServletRequest request;
-    private final String robotsTxtUrl;
     private final String indexUrl;
 
     @BeforeClass
@@ -56,7 +55,6 @@ public class RulesUnderPageAssetsFTest extends TestBase {
         request = ServletTestRunner.localRequest.get();
         String serverName = request.getServerName();
         int serverPort = request.getServerPort();
-        robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
         indexUrl = String.format("http://%s:%s", serverName, serverPort);
 
         //Clean the Attribute.

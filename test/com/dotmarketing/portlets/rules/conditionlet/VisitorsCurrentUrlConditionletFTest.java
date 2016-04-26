@@ -19,9 +19,11 @@ import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -42,6 +44,11 @@ public class VisitorsCurrentUrlConditionletFTest {
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
 
     private List<Rule> rulesToRemove = Lists.newArrayList();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init() {
