@@ -27,9 +27,10 @@ import com.liferay.util.StringUtil;
 
 public class SQLUtil {
 
-	private static final Set<String> EVIL_SQL_WORDS = ImmutableSet.of( "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
-			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
-			"unlock","write", "engine", "null","not ","mode", "set ",";");
+	private static final Set<String> EVIL_SQL_WORDS = ImmutableSet.of( "select ", "insert ", "delete ", "update ",
+            "replace ", "create ", " distinct ", " like ", " and ", " or ", " limit ", " group ", " order ", " as ",
+            " count ", "drop ", "alter ", "truncate ", "declare ", " where ", "exec ", "--", " procedure ", "pg_",
+            "lock ", "unlock ", "write ", " engine ", "null", "not ", " mode ", "set ", ";" );
 
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
 			"title","filename", "moddate", "tagname","pageUrl",
