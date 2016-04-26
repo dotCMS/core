@@ -2,19 +2,26 @@ package com.dotcms.content.elasticsearch.business;
 
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.services.ContentletMapServices;
+import com.dotmarketing.services.ContentletServices;
+import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.*;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
 
+import org.quartz.*;
 import org.springframework.util.NumberUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -72,13 +79,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class ESContentFactoryImpl extends ContentletFactory {
@@ -2097,4 +2097,108 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			return result;
 		}
+
+    protected void clearField(String structureInode, Field field) throws DotDataException {
+        Queries queries = getQueries(field);
+
+        try(Connection conn = DbConnectionFactory.getConnection();
+            PreparedStatement ps = conn.prepareStatement(queries.getSelect()))
+        {
+            ps.setObject(1, structureInode);
+            final int BATCH_SIZE = 200;
+
+            try(ResultSet rs = ps.executeQuery();
+                PreparedStatement ps2 = conn.prepareCall(queries.getUpdate()))
+            {
+                for (int i = 1; rs.next(); i++) {
+                    String contentInode = rs.getString("inode");
+                    ps2.setObject(1, contentInode);
+                    ps2.addBatch();
+
+                    if (i % BATCH_SIZE == 0) {
+                        ps2.executeBatch();
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DotDataException(String.format("Error Clearing Field '%s' for Structure with id: %s",
+                    field.getVelocityVarName(), structureInode), e);
+
+        }
+    }
+
+    private Queries getQueries(Field field) {
+
+        StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
+        StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
+        StringBuilder whereField = new StringBuilder();
+
+        if (field.getFieldContentlet().contains("float")) {
+            if (DbConnectionFactory.isMySql()) {
+                select.append(field.getFieldContentlet()).append(" = ");
+                whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
+                        .append(" != ");
+            } else {
+                select.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
+                whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
+                        .append(field.getFieldContentlet()).append("\" != ");
+            }
+        } else {
+            update.append(field.getFieldContentlet()).append(" = ");
+            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
+                    .append(" != ");
+        }
+
+        if (field.getFieldContentlet().contains("bool")) {
+            update.append(DbConnectionFactory.getDBFalse());
+            whereField.append(DbConnectionFactory.getDBFalse());
+        } else if (field.getFieldContentlet().contains("date")) {
+            update.append(DbConnectionFactory.getDBDateTimeFunction());
+            whereField.append(DbConnectionFactory.getDBDateTimeFunction());
+        } else if (field.getFieldContentlet().contains("float")) {
+            update.append(0.0);
+            whereField.append(0.0);
+        } else if (field.getFieldContentlet().contains("integer")) {
+            update.append(0);
+            whereField.append(0);
+        } else {
+            update.append("''");
+            whereField.append("''");
+        }
+
+        select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
+        update.append(" WHERE inode = ?");
+
+        return new Queries().setSelect(select.toString()).setUpdate(update.toString());
+
+    }
+
+    private final class Queries {
+        private String select;
+        private String update;
+
+        private Queries setSelect(String select) {
+            this.select = select;
+            return this;
+        }
+
+        private Queries setUpdate(String update) {
+            this.update = update;
+            return this;
+        }
+
+        public String getSelect() {
+            return select;
+        }
+
+        public String getUpdate() {
+            return update;
+        }
+    }
+
+
+
+
+
 }

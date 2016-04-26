@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
+import com.dotmarketing.quartz.job.DeleteFieldJob;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
@@ -517,9 +518,10 @@ public class EditFieldAction extends DotPortletAction {
 	private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) {
 		Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
 		Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
+		User user = _getUser(req);
 
 		try {
-            _checkUserPermissions(structure, _getUser(req), PERMISSION_PUBLISH);
+            _checkUserPermissions(structure, user, PERMISSION_PUBLISH);
         } catch (Exception ae) {
             if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
             	String message = "message.insufficient.permissions.to.delete";
@@ -527,47 +529,10 @@ public class EditFieldAction extends DotPortletAction {
             	return;
             }
         }
-		// clean contentlet field in db
-		try {
-			String type = field.getFieldType();
-			if (!fAPI.isElementConstant(field) && !Field.FieldType.LINE_DIVIDER.toString().equals(type)
-					&& !Field.FieldType.TAB_DIVIDER.toString().equals(type)
-					&& !Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type)
-					&& !Field.FieldType.CATEGORIES_TAB.toString().equals(type)
-					&& !Field.FieldType.PERMISSIONS_TAB.toString().equals(type)
-					&& !Field.FieldType.HOST_OR_FOLDER.toString().equals(type)) {
-				conAPI.cleanField(structure, field, APILocator.getUserAPI().getSystemUser(), false);
-			}
-			FieldFactory.deleteField(field);
-			// Call the commit method to avoid a deadlock
-			HibernateUtil.commitTransaction();
-			FieldsCache.removeFields(structure);
 
-			ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
-				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+		DeleteFieldJob.triggerDeleteFieldJob(structure, field, user);
 
-			CacheLocator.getContentTypeCache().remove(structure);
-			StructureServices.removeStructureFile(structure);
-
-			//Refreshing permissions
-			PermissionAPI perAPI = APILocator.getPermissionAPI();
-			if(field.getFieldType().equals("host or folder")) {
-				conAPI.cleanHostField(structure, APILocator.getUserAPI().getSystemUser(), false);
-				perAPI.resetChildrenPermissionReferences(structure);
-			}
-			StructureFactory.saveStructure(structure);
-			// rebuild contentlets indexes
-			conAPI.reindex(structure);
-			// remove the file from the cache
-			ContentletServices.removeContentletFile(structure);
-			ContentletMapServices.removeContentletMapFile(structure);
-			String message = "message.structure.deletefield";
-			SessionMessages.add(req, "message", message);
-		} catch (Exception e) {
-			Logger.error(EditFieldAction.class, "Falied trying to delete field.", e);
-			String message = "message.structure.deletefield.error";
-			SessionMessages.add(req, "error", message);
-		}
+		SessionMessages.add(req, "message", "message.structure.deletefield.async");
 
 	}
 
