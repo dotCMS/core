@@ -16,6 +16,7 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.hibernate.validator.internal.util.logging.Log;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -530,7 +531,12 @@ public class EditFieldAction extends DotPortletAction {
             }
         }
 
-		DeleteFieldJob.triggerDeleteFieldJob(structure, field, user);
+		try {
+			DeleteFieldJob.triggerDeleteFieldJob(structure, field, user);
+		} catch(Exception e) {
+			Logger.error(this, "Unable to trigger DeleteFieldJob", e);
+			SessionMessages.add(req, "error", "message.structure.deletefield.error");
+		}
 
 		SessionMessages.add(req, "message", "message.structure.deletefield.async");
 

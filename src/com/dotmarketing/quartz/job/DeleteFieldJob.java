@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.APILocator;
@@ -7,8 +8,10 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -28,9 +31,20 @@ import java.util.UUID;
 
 public class DeleteFieldJob implements Job {
 
+    private final PermissionAPI permAPI;
+    private final ContentletAPI conAPI;
+    private final NotificationAPI notfAPI;
+
+    public DeleteFieldJob() {
+        permAPI = APILocator.getPermissionAPI();
+        conAPI = APILocator.getContentletAPI();
+        notfAPI = APILocator.getNotificationAPI();
+    }
+
     public static void triggerDeleteFieldJob(Structure structure, Field field, User user) {
         Preconditions.checkNotNull(structure, "Structure can't be null");
-        Preconditions.checkArgument(Strings.isNullOrEmpty(structure.getInode()), "Structure Id can't be null or empty");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(structure.getInode()),
+                "Structure Id can't be null or empty");
         Preconditions.checkNotNull(field, "Field can't be null");
         Preconditions.checkNotNull(user, "User can't be null");
 
@@ -71,18 +85,22 @@ public class DeleteFieldJob implements Job {
         User user = (User) map.get("user");
 
         Preconditions.checkNotNull(structure, "Structure can't be null");
-        Preconditions.checkArgument(com.dotcms.repackage.com.google.common.base.Strings.isNullOrEmpty(structure.getInode()), "Structure Id can't be null or empty");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(structure.getInode()),
+                "Structure Id can't be null or empty");
         Preconditions.checkNotNull(field, "Field can't be null");
         Preconditions.checkNotNull(user, "User can't be null");
 
         try {
-            if (!APILocator.getPermissionAPI().doesUserHavePermission(structure,
+            if (!permAPI.doesUserHavePermission(structure,
                     PermissionAPI.PERMISSION_PUBLISH, user, false)) {
                 throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
                         + (user != null ? user.getUserId() : "Unknown"));
             }
 
             String type = field.getFieldType();
+
+            notfAPI.info(String.format("Deletion of Field '%s' has been started. Field Inode: %s, Structure Inode: %s",
+                    field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
 
             HibernateUtil.startTransaction();
 
@@ -94,16 +112,14 @@ public class DeleteFieldJob implements Job {
                     && !Field.FieldType.PERMISSIONS_TAB.toString().equals(type)
                     && !Field.FieldType.HOST_OR_FOLDER.toString().equals(type)) {
 
-                APILocator.getContentletAPI()
-                        .cleanField(structure, field, APILocator.getUserAPI().getSystemUser(), false);
+                conAPI.cleanField(structure, field, APILocator.getUserAPI().getSystemUser(), false);
             }
             FieldFactory.deleteField(field);
             // Call the commit method to avoid a deadlock
             HibernateUtil.commitTransaction();
 
-            APILocator.getNotificationAPI().info(
-                    String.format("Field '%s' was deleted succesfully. Field Inode: %s, Structure Inode: %s",
-                            field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
+            notfAPI.info(String.format("Field '%s' was deleted succesfully. Field Inode: %s, Structure Inode: %s",
+                    field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
 
             ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + user.getUserId() + "/"
                     + user.getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
@@ -115,23 +131,26 @@ public class DeleteFieldJob implements Job {
             StructureServices.removeStructureFile(structure);
 
             //Refreshing permissions
-            PermissionAPI perAPI = APILocator.getPermissionAPI();
             if (field.getFieldType().equals("host or folder")) {
-                APILocator.getContentletAPI().cleanHostField(structure, APILocator.getUserAPI().getSystemUser(), false);
-                perAPI.resetChildrenPermissionReferences(structure);
+                conAPI.cleanHostField(structure, APILocator.getUserAPI().getSystemUser(), false);
+                permAPI.resetChildrenPermissionReferences(structure);
             }
             StructureFactory.saveStructure(structure);
             // rebuild contentlets indexes
-            APILocator.getContentletAPI().reindex(structure);
+            conAPI.reindex(structure);
             // remove the file from the cache
             ContentletServices.removeContentletFile(structure);
             ContentletMapServices.removeContentletMapFile(structure);
         } catch (Exception e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.error(this, "Error in rollback transaction", e);
+            }
             Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
                     field.getVelocityVarName(), field.getInode(), structure.getInode()), e);
-            APILocator.getNotificationAPI().error(
-                    String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
-                            field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
+            notfAPI.error(String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
+                    field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
         }
 
     }

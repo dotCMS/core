@@ -2119,6 +2119,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         ps2.executeBatch();
                     }
                 }
+
+                ps2.executeBatch(); // insert remaining records
             }
 
         } catch (SQLException e) {
