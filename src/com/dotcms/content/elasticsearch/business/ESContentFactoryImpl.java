@@ -1,49 +1,14 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Calendar;
-
-import com.dotmarketing.util.*;
-import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
-
-import org.springframework.util.NumberUtils;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -70,14 +35,43 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.count.CountRequestBuilder;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.internal.InternalSearchHits;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.util.NumberUtils;
+
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Calendar;
 
 /**
- * Implementation class for the {@link ContentletFactory} interface.
- * 
+ * Implementation class for the {@link ContentletFactory} interface. This class
+ * represents the data layer used to query contentlet data from the database.
+ *
  * @author root
  * @version 1.0
- * @since May 22, 2012
+ * @since Mar 22, 2012
  *
  */
 public class ESContentFactoryImpl extends ContentletFactory {
@@ -90,7 +84,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
 
 	/**
-	 * Default factory constructor that initializes the connection with the 
+	 * Default factory constructor that initializes the connection with the
 	 * Elastic index.
 	 */
 	public ESContentFactoryImpl() {
@@ -221,7 +215,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         fatty.setReviewInterval(cont.getReviewInterval());
         fatty.setTitle(name);
         fatty.setFriendlyName(name);
-        //fatty.setFolder(cont.getFolder());
         List<String> wysiwygFields = cont.getDisabledWysiwyg();
         if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
             StringBuilder wysiwyg = new StringBuilder();
@@ -462,7 +455,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param structureInode
 	 * @param velVarfieldsMap
 	 * @param criteriaToBuildOut
@@ -885,7 +878,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param hostId
 	 * @param limit
 	 * @param offset
@@ -1100,7 +1093,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException {
 	    String tableName;
         try {
-            //tableName = ((Inode) Identifier.class.newInstance()).getType();
             tableName = "identifier";
         } catch (Exception e) {
             throw new DotDataException("Unable to instantiate identifier",e);
@@ -1372,7 +1364,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param contentlets
 	 * @throws DotDataException
 	 * @throws DotStateException
@@ -1466,12 +1458,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
-	   /**
-	    * 
-	    * @param query
-	    * @param sortBy
-	    * @return
-	    */
+	/**
+	 * Takes a dotCMS-generated query and translates it into valid terms and
+	 * keywords for accessing the Elastic index.
+	 *
+	 * @param query
+	 *            - The Lucene query.
+	 * @param sortBy
+	 *            - The parameter used to order the results.
+	 * @return The translated query used to search content in our Elastic index.
+	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
 	        TranslatedQuery result = CacheLocator.getContentletCache().getTranslatedQuery(query + " --- " + sortBy);
@@ -1618,11 +1614,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	                }
 	            }
 	        }
-
-	        //GIT-6085
-	        if(!query.contains("\\~"))
-	        	query = query.replace("~", "\\~");
-	        
 	        result.setQuery(query.trim());
 
 	        CacheLocator.getContentletCache().addTranslatedQuery(originalQuery + " --- " + sortBy, result);
@@ -1631,7 +1622,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    }
 
 	    /**
-	     * 
+	     *
 	     * @param sortBy
 	     * @param originalQuery
 	     * @return
@@ -1689,7 +1680,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    }
 
 	    /**
-	     * 
+	     *
 	     * @param query
 	     * @return
 	     */
@@ -1880,7 +1871,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param query
          * @param regExp
          * @param dateFormat
@@ -1916,7 +1907,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         private final static String ERROR_DATE = "error date";
 
         /**
-         * 
+         *
          * @param dateString
          * @param format
          * @return
@@ -1938,7 +1929,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param date
          * @return
          */
@@ -1954,7 +1945,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param dateString
          * @return
          */
@@ -1969,7 +1960,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param query
          * @param regExp
          * @return
@@ -2000,7 +1991,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param query
          * @param regExp
          * @param timeFormat
@@ -2031,7 +2022,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param dateString
          * @param format
          * @return
@@ -2051,7 +2042,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param dateString
          * @return
          */
@@ -2061,7 +2052,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          * @param time
          * @return
          */
@@ -2077,7 +2068,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         /**
-         * 
+         *
          */
 		public List<Map<String, String>> getMostViewedContent(String structureInode, Date startDate, Date endDate, User user) throws DotDataException {
 
@@ -2134,7 +2125,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		}
 
 	/**
-	 * 
+	 *
 	 * @param structureInode
 	 * @param field
 	 * @throws DotDataException
@@ -2178,7 +2169,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     /**
-     * 
+     *
      * @param field
      * @return
      */
