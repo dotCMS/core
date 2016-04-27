@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
 
 import org.springframework.util.NumberUtils;
@@ -81,6 +80,15 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * Implementation class for the {@link ContentletFactory} interface. This class
+ * represents the data layer used to query contentlet data from the database.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class ESContentFactoryImpl extends ContentletFactory {
 	private ContentletCache cc = CacheLocator.getContentletCache();
 	private ESClient client = null;
@@ -107,30 +115,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
-		/*Client client = new ESClient().getClient();
-
-		QueryBuilder query = QueryBuilders.termQuery("stInode", structureInode);
-		SearchResponse searchResponse = client.prepareSearch().setSearchType(SearchType.SCAN).setQuery(query).setSize(10)
-				.setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
-		while (true) {
-			searchResponse = client.prepareSearchScroll(searchResponse.scrollId()).setScroll(TimeValue.timeValueMinutes(30)).execute()
-					.actionGet();
-			for (SearchHit hit : searchResponse.hits()) {
-				try {
-					Contentlet con = loadInode(hit);
-
-					con.getMap().remove(field.getVelocityVarName());
-
-					save(con);
-				} catch (DotMappingException e) {
-					throw new DotDataException(e.getMessage());
-				}
-
-			}
-			if (searchResponse.hits().totalHits() == 0) {
-				break;
-			}
-		}*/
 	    StringBuffer sql = new StringBuffer("update contentlet set " );
         if(field.getFieldContentlet().indexOf("float") != -1){
         	if(DbConnectionFactory.isMySql())
@@ -160,33 +144,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         //we could do a select here to figure out exactly which guys to evict
         cc.clearCache();
 	}
-
-	/*@Override
-	protected void cleanHostField(String structureInode) throws DotDataException {
-		Client client = new ESClient().getClient();
-
-		QueryBuilder query = QueryBuilders.termQuery("stInode", structureInode);
-		SearchResponse searchResponse = client.prepareSearch().setSearchType(SearchType.SCAN).setQuery(query).setSize(10)
-				.setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
-		while (true) {
-			searchResponse = client.prepareSearchScroll(searchResponse.scrollId()).setScroll(TimeValue.timeValueMinutes(30)).execute()
-					.actionGet();
-			for (SearchHit hit : searchResponse.hits()) {
-				try {
-					Contentlet con = new ESMappingAPIImpl().toContentlet(hit.getSource());
-					con.setFolder(FolderAPI.SYSTEM_FOLDER);
-					save(con);
-				} catch (DotMappingException e) {
-					throw new DotDataException(e.getMessage());
-				}
-
-			}
-			if (searchResponse.hits().totalHits() == 0) {
-				break;
-			}
-		}
-
-	}*/
 
 	@Override
 	protected void cleanIdentifierHostField(String structureInode) throws DotDataException, DotMappingException, DotStateException, DotSecurityException {
@@ -267,7 +224,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         fatty.setReviewInterval(cont.getReviewInterval());
         fatty.setTitle(name);
         fatty.setFriendlyName(name);
-        //fatty.setFolder(cont.getFolder());
         List<String> wysiwygFields = cont.getDisabledWysiwyg();
         if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
             StringBuilder wysiwyg = new StringBuilder();
@@ -739,20 +695,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			}
 			return con;
 		}
-
-		/*try {
-
-			Client client = new ESClient().getClient();
-			QueryBuilder builder = QueryBuilders.boolQuery().must(QueryBuilders.fieldQuery("inode", inode));
-
-			SearchResponse response = client.prepareSearch().setQuery(builder).execute().actionGet();
-			SearchHits hits = response.hits();
-			Contentlet contentlet = loadInode(hits.getAt(0));
-
-			return contentlet;
-		} catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage());
-		}*/
 		com.dotmarketing.portlets.contentlet.business.Contentlet fatty = null;
         try{
             fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
@@ -852,7 +794,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
             cc.add(String.valueOf(content.getInode()), content);
-//          result.add(content);
             result.add(convertFatContentletToContentlet(fatty));
         }
         return result;
@@ -1138,7 +1079,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException {
 	    String tableName;
         try {
-            //tableName = ((Inode) Identifier.class.newInstance()).getType();
             tableName = "identifier";
         } catch (Exception e) {
             throw new DotDataException("Unable to instantiate identifier",e);
@@ -1437,15 +1377,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void removeFolderReferences(Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
-	    //Folder parentFolder = null;
 	    Identifier folderId = null;
         try{
-            //parentFolder = APILocator.getFolderAPI().findParentFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
             folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
         }catch(Exception e){
             Logger.debug(this, "Unable to get parent folder for folder = " + folder.getInode(), e);
         }
-        //String parentFolderId = parentFolder!=null?parentFolder.getInode():FolderAPI.SYSTEM_FOLDER;
         DotConnect dc = new DotConnect();
         dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? and host_inode=?");
         dc.addParam(folderId.getPath());
@@ -1500,7 +1437,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
-//	    protected static LRUMap translatedQueryCache = new LRUMap(5000);
+	/**
+	 * Takes a dotCMS-generated query and translates it into valid terms and
+	 * keywords for accessing the Elastic index.
+	 * 
+	 * @param query
+	 *            - The Lucene query.
+	 * @param sortBy
+	 *            - The parameter used to order the results.
+	 * @return The translated query used to search content in our Elastic index.
+	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
 	        TranslatedQuery result = CacheLocator.getContentletCache().getTranslatedQuery(query + " --- " + sortBy);
@@ -1647,11 +1593,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	                }
 	            }
 	        }
-
-	        //GIT-6085
-	        if(!query.contains("\\~"))
-	        	query = query.replace("~", "\\~");
-	        
 	        result.setQuery(query.trim());
 
 	        CacheLocator.getContentletCache().addTranslatedQuery(originalQuery + " --- " + sortBy, result);
@@ -1728,13 +1669,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if (!UtilMethods.isSet(structureVarName)) {
                 Logger.debug(ESContentFactoryImpl.class, "Structure Variable Name not found");
-                //return query;
             }
             if(structureVarName!=null){
 	            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
 	            if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
 	                Logger.debug(ESContentFactoryImpl.class, "Structure not found");
-	                //return query;
 	            }
             }
 
@@ -2097,4 +2036,5 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			return result;
 		}
+
 }
