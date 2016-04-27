@@ -765,7 +765,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return; // Binary fields have nothing to do with database.
         }
 
-//        conFac.cleanField(structure.getInode(), field);
         conFac.clearField(structure.getInode(), field);
 
     }
