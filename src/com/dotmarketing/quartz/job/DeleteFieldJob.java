@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -151,6 +152,14 @@ public class DeleteFieldJob implements Job {
                     field.getVelocityVarName(), field.getInode(), structure.getInode()), e);
             notfAPI.error(String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
                     field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
+        } finally {
+            try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
+            } finally {
+                DbConnectionFactory.closeConnection();
+            }
         }
 
     }
