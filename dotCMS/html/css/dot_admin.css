@@ -653,9 +653,6 @@ table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-wid
 #portal_login_as_password {width: 150px;}
 #portal_loginas_errors {text-align: center;color: red;padding-bottom: 5px;}
 
-/* for the dotCMS ligthbox overlay utils */
-#dotCMS_lightbox_overlay {z-index: 1000;position: absolute;visibility: hidden;background: url(/html/js/dotcms-utils/overlay.png);}
-
 /* permission hacks */
 .dmundra .dijitAccordionTitle {line-height:0;font-size:0px;}
 .permissionTableTitle td{text-align: center;width: 12%;font-size:11px;line-height:22px;}
