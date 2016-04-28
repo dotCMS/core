@@ -83,7 +83,6 @@ THIS FILE AND ITS INCLUDES
 	<script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/scriptaculous/prototype.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/menu.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/rollovers.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/init.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/util.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/validation.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
