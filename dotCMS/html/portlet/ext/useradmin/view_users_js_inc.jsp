@@ -289,7 +289,7 @@
 		dojo.byId('loadingUserProfile').style.display = 'none';
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
-			deleteButton.show();
+			deleteButton.parentNode.show();
 		}
 		
 		initStructures();
@@ -372,7 +372,9 @@
 		dijit.byId('userTabsContainer').selectChild(dijit.byId('userDetailsTab'));
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
-			deleteButton.hide();
+			//to avoid the display of a square when the delete button is hide
+			deleteButton.parentNode.hide();
+			
 		}
 		resizeRoleBrowser();
 	}
