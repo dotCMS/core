@@ -48,8 +48,6 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -948,7 +946,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
                CacheLocator.getFileCache().remove(file);
            }
         } catch (DotDataException e) {
-            Logger.error(LinkFactory.class,e.getMessage(),e);
+            Logger.error(FileFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
 	}

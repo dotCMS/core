@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -1653,7 +1652,7 @@ public class InodeFactory {
            dc.loadResult();
 
         } catch (DotDataException e) {
-            Logger.error(LinkFactory.class,e.getMessage(),e);
+            Logger.error(InodeFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
 	}
