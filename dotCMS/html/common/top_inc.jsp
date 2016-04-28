@@ -1,8 +1,8 @@
 <%--
 
-THE INTENT OF THIS FILE IS A COMMON HEADER THAT SHOULD 
+THE INTENT OF THIS FILE IS A COMMON HEADER THAT SHOULD
 BE ABLE TO BE INCLUDED IN ALL JSP PAGES, EVEN "BLANK ONES"
-PLEASE KEEP ALL PORTAL SPECIFIC CODE, JS AND MARKUP OUT OF 
+PLEASE KEEP ALL PORTAL SPECIFIC CODE, JS AND MARKUP OUT OF
 THIS FILE AND ITS INCLUDES
 
 --%>
@@ -27,34 +27,34 @@ THIS FILE AND ITS INCLUDES
 <head>
 	<meta http-equiv="x-ua-compatible" content="IE=edge" >
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	
+
 	<meta content="no-cache" http-equiv="Cache-Control" />
 	<meta content="no-cache" http-equiv="Pragma" />
 	<meta content="0" http-equiv="Expires" />
 	<meta name="Expire" content="Now" />
-	
+
 	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
-	 
+
 	<style type="text/css">
-		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>"; 
+		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
         @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
         @import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
         @import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
         @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
     </style>
-	
+
 	<!--[if IE]>
 		<link rel="stylesheet" type="text/css" href="/html/css/iehacks.css" />
-	<![endif]--> 
-    
+	<![endif]-->
+
     <%
-    String dojoLocaleConfig = "locale:'en-us'";    
+    String dojoLocaleConfig = "locale:'en-us'";
     if(locale != null){
-    	dojoLocaleConfig = "locale:'"+locale.getLanguage() + "-" + locale.getCountry().toLowerCase() + "',";    	
-    }    
+    	dojoLocaleConfig = "locale:'"+locale.getLanguage() + "-" + locale.getCountry().toLowerCase() + "',";
+    }
     %>
-   	    
+
    	<script type="text/javascript">
        	djConfig={
                parseOnLoad: true,
@@ -63,7 +63,7 @@ THIS FILE AND ITS INCLUDES
                <%=dojoLocaleConfig%>
                modulePaths: { dotcms: "/html/js/dotcms" }
        };
-	   
+
 	   	function isInodeSet(x){
 			return (x && x != undefined && x!="" && x.length>15);
 		}
@@ -82,7 +82,6 @@ THIS FILE AND ITS INCLUDES
 	<script type="text/javascript" src="/dwr/interface/UserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/scriptaculous/prototype.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/sniffer.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/menu.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/rollovers.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/init.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
@@ -138,7 +137,7 @@ THIS FILE AND ITS INCLUDES
 		dojo.require("dojo.data.ItemFileReadStore");
 		dojo.require("dijit.form.Form");
 		dojo.require("dojo.io.script");
-		
+
 		dojo.addOnLoad(function () {
 			dojo.global.DWRUtil = dwr.util;
 			dojo.global.DWREngine = dwr.engine;
@@ -161,14 +160,14 @@ THIS FILE AND ITS INCLUDES
             mb.h=abs.h;
             return mb;
         };
-		
+
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>
 		.imageBG{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;background-size:100% auto;height:75px;position:absolute;top:0;left:0;width:100%;z-index:-2;}
 	</style>
 
-	
+
 </head>
 
 <%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || UtilMethods.isSet(request.getParameter("in_frame"))){ %>
@@ -178,4 +177,3 @@ THIS FILE AND ITS INCLUDES
 		<div class="imageBG"></div>
 		<div class="bannerBG"></div>
 <%} %>
-
