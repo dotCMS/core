@@ -3478,6 +3478,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!InodeUtils.isSet(stInode)){
             throw new DotContentletValidationException("The contentlet's structureInode must be set");
         }
+
+        if(!UtilMethods.isSet(value.toString())) {
+            contentlet.setProperty(field.getVelocityVarName(), null);
+            return;
+        }
+
         if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())){
 
         }else if(fAPI.isElementConstant(field)){
