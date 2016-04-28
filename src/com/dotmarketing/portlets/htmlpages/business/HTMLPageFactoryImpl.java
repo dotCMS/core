@@ -33,7 +33,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
@@ -648,7 +647,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
                CacheLocator.getHTMLPageCache().remove(page);
            }
         } catch (DotDataException e) {
-            Logger.error(LinkFactory.class,e.getMessage(),e);
+            Logger.error(HTMLPageFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
 	}

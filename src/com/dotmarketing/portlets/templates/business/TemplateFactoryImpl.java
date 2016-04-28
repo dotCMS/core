@@ -33,7 +33,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -503,7 +502,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
               TemplateServices.invalidate(template, true);
           }
        } catch (DotDataException e) {
-           Logger.error(LinkFactory.class,e.getMessage(),e);
+           Logger.error(TemplateFactory.class,e.getMessage(),e);
            throw new DotDataException(e.getMessage(), e);
        }
 	}

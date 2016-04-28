@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.ElasticsearchException;
-
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

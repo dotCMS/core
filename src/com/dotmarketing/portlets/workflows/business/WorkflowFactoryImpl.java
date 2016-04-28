@@ -4,7 +4,6 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,11 +11,9 @@ import java.util.Map;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -28,7 +25,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -1299,7 +1295,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
            dc.loadResult();
            
         } catch (DotDataException e) {
-            Logger.error(LinkFactory.class,e.getMessage(),e);
+            Logger.error(WorkFlowFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
 	}

@@ -22,11 +22,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.portlets.links.factories.LinkFactory;
-import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -255,7 +252,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
                CacheLocator.getContainerCache().remove(identifier);
            }
         } catch (DotDataException e) {
-            Logger.error(LinkFactory.class,e.getMessage(),e);
+            Logger.error(ContainerFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
 	}
