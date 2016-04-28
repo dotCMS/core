@@ -3310,9 +3310,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      */
 	private void cascadePermissionUnder(Permissionable permissionable, Role role, Permissionable permissionsPermissionable, List<Permission> allPermissions) throws DotDataException {
 
-		boolean isHost = permissionable instanceof Host ||
-				(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
-		boolean isFolder = permissionable instanceof Folder;
+		boolean isHost = isHost(permissionable);
+		boolean isFolder = isFolder(permissionable);
 
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -3328,15 +3327,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		List<Permission> permissionablePermissions = loadPermissions(permissionable);
 
 		PermissionType[] values = PermissionType.values();
-		int i = 0;
 
-		if (isHost) {
-			i = 2;
-		}
 
-		for (; i < values.length; i++) {
-			PermissionType permissionType = values[i];
+		for (PermissionType permissionType : values) {
 
+			if(isFolder && permissionType.getApplyTo() == PermissionType.ApplyTo.ONLY_HOST){
+				continue;
+			}
+			
 			Permission inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable
 					.getPermissionId(), permissionType.getKey(), role.getId());
 
