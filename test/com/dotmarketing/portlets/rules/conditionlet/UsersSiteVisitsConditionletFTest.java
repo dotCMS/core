@@ -153,10 +153,10 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
         conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        assertEquals(value, conn.getHeaderField(randomKey));
 
         conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        assertEquals(value, conn.getHeaderField(randomKey));
     }
 
     @Test
