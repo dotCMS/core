@@ -38,31 +38,31 @@ THIS FILE AND ITS INCLUDES
 
 	<style type="text/css">
 		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
-        @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
-        @import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
-        @import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
-        @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
-    </style>
+		@import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
+		@import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
+		@import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
+		@import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
+	</style>
 
 	<!--[if IE]>
 		<link rel="stylesheet" type="text/css" href="/html/css/iehacks.css" />
 	<![endif]-->
 
-    <%
-    String dojoLocaleConfig = "locale:'en-us'";
-    if(locale != null){
-    	dojoLocaleConfig = "locale:'"+locale.getLanguage() + "-" + locale.getCountry().toLowerCase() + "',";
-    }
-    %>
+	<%
+	String dojoLocaleConfig = "locale:'en-us'";
+	if(locale != null){
+		dojoLocaleConfig = "locale:'"+locale.getLanguage() + "-" + locale.getCountry().toLowerCase() + "',";
+	}
+	%>
 
    	<script type="text/javascript">
-       	djConfig={
-               parseOnLoad: true,
-               useXDomain: false,
-               isDebug: false,
-               <%=dojoLocaleConfig%>
-               modulePaths: { dotcms: "/html/js/dotcms" }
-       };
+	   	djConfig={
+			   parseOnLoad: true,
+			   useXDomain: false,
+			   isDebug: false,
+			   <%=dojoLocaleConfig%>
+			   modulePaths: { dotcms: "/html/js/dotcms" }
+	   };
 
 	   	function isInodeSet(x){
 			return (x && x != undefined && x!="" && x.length>15);
@@ -87,13 +87,11 @@ THIS FILE AND ITS INCLUDES
 	<script type="text/javascript" src="/html/js/validation.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/tag.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/uuidUtils.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/html/js/cms_ui_utils.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
 
 
 
-
-
-
-    <script type="text/javascript">
+	<script type="text/javascript">
 		dojo.require("dijit.Dialog");
 		dojo.require("dijit.form.Button");
 		dojo.require("dijit.form.CheckBox");
@@ -124,9 +122,9 @@ THIS FILE AND ITS INCLUDES
 		dojo.require("dojox.widget.Calendar");
 		dojo.require("dojo.date.locale");
 		dojo.require("dojox.form.Uploader");
-        dojo.require("dojox.form.uploader.FileList");
-        dojo.require("dojox.form.uploader.plugins.HTML5");
-        dojo.require("dijit.form.ComboBox");
+		dojo.require("dojox.form.uploader.FileList");
+		dojo.require("dojox.form.uploader.plugins.HTML5");
+		dojo.require("dijit.form.ComboBox");
    		dojo.require("dijit.TooltipDialog");
 		dojo.require("dojox.grid.EnhancedGrid");
 		dojo.require("dojox.grid.enhanced.plugins.Menu");
@@ -148,14 +146,14 @@ THIS FILE AND ITS INCLUDES
 		var dojoDomGeometry=dojo.require("dojo.dom-geometry");
 		var dojoStyle=dojo.require("dojo.dom-style");
 		dojo.coords = function(elem,xx) {
-            var mb=dojoDomGeometry.getMarginBox(elem,dojoStyle.getComputedStyle(elem));
-            var abs=dojoDomGeometry.position(elem,xx);
-            mb.x=abs.x;
-            mb.y=abs.y;
-            mb.w=abs.w;
-            mb.h=abs.h;
-            return mb;
-        };
+			var mb=dojoDomGeometry.getMarginBox(elem,dojoStyle.getComputedStyle(elem));
+			var abs=dojoDomGeometry.position(elem,xx);
+			mb.x=abs.x;
+			mb.y=abs.y;
+			mb.w=abs.w;
+			mb.h=abs.h;
+			return mb;
+		};
 
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
