@@ -3334,7 +3334,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			if(isFolder && permissionType.getApplyTo() == PermissionType.ApplyTo.ONLY_HOST){
 				continue;
 			}
-			
+
 			Permission inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable
 					.getPermissionId(), permissionType.getKey(), role.getId());
 
@@ -3348,7 +3348,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			savePermission(permissionToUpdate, permissionable);
 
 			//Looking for children  overriding inheritance to also apply the cascade changes
-			List<String> idsToUpdate = getChildrenOverringInheritancePermission(host, permissionType);
+			List<String> idsToUpdate = getChildrenOverridingInheritancePermission(host, permissionType);
 
 			int permission = 0;
 			if (inheritablePermission != null) {
@@ -3408,7 +3408,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					} else if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_CONTENTLET ) ) {
 						HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
 						//Get the contentlet and the HTMLPage asset object related to the given permissionable id
-						Contentlet pageWorkingVersion = APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false );
+						Contentlet pageWorkingVersion = APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );
 						result.add(htmlPageAssetAPI.fromContentlet( pageWorkingVersion ));
 					}
 				}
@@ -3439,7 +3439,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Returns the permissionable's children that have individual permission.
 	 * @return a list of {@link Permissionable} 's id
 	 */
-	public List<String> getChildrenOverringInheritancePermission(Permissionable permissionable, PermissionType permissionType) throws DotDataException {
+	public List<String> getChildrenOverridingInheritancePermission(Permissionable permissionable, PermissionType permissionType) throws DotDataException {
 		String query = null;
 		String fieldNameFromQueryToreturn = "id";
 		DotConnect dc = new DotConnect();
@@ -3459,11 +3459,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(permissionable.getPermissionId());
 				break;
 			case FOLDER:
-				query = selectChildrenFolderWithDirectPermissionsSQL;
+				/*query = selectChildrenFolderWithDirectPermissionsSQL;
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(isHost ? "%" : folderPath + "%"); dc.addParam(isHost ? " " : folderPath + "");
 				dc.addParam(permissionable.getPermissionId());
 				fieldNameFromQueryToreturn = "inode";
+				*/
 				break;
 			case IHTMLPAGE:
 				query = selectChildrenHTMLPageWithIndividualPermissionsSQL;
@@ -3502,6 +3503,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		for (Map<String, String> permissionableInfo : idsToUpdate) {
 			result.add( permissionableInfo.get(fieldNameFromQueryToreturn) );
 		}
+
+		return result;
 	}
 
 	private boolean isFolder(Permissionable permissionable) {
