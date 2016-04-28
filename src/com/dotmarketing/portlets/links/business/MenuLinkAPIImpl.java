@@ -182,4 +182,18 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
         return LinkFactory.moveLink(link, folder);
     }
 
+    /**
+	 * Method will replace user references of the given userId in MenuLinks 
+	 * with the replacement user id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		LinkFactory.updateUserReferences(userId, replacementUserId);
+	}
+
+    
 }

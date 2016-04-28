@@ -4868,6 +4868,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void removeUserReferences(String userId)throws DotDataException, DotSecurityException {
         conFac.removeUserReferences(userId);
     }
+    
+    /**
+	 * Method will replace user references of the given userId in Contentlets
+	 * with the replacement user id  
+	 * @param userId User Id to replace
+	 * @param replacementUserId Replacement User Id
+	 * @exception DotDataException There is a data error
+	 * @throws DotSecurityException 
+	 */	
+	public void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotSecurityException{
+		conFac.updateUserReferences(userId, replacementUserId);
+	}
+
 
     public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,16 +12,21 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -216,5 +222,42 @@ public class ContainerFactoryImpl implements ContainerFactory {
         dh.setParam(structureInode);
         return dh.list();
     }
+    
+    /**
+	 * Method will replace user references of the given userId in containers 
+	 * with the replacement user id 
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+        
+        try {
+           dc.setSQL("select distinct(identifier) from containers where mod_user = ?");
+           dc.addParam(userId);
+           List<HashMap<String, String>> containers = dc.loadResults();
+           
+           dc.setSQL("UPDATE containers set mod_user = ? where mod_user = ? ");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+           
+           dc.setSQL("update container_version_info set locked_by=? where locked_by  = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+         
+           for(HashMap<String, String> ident:containers){
+               String identifier = ident.get("identifier");
+               CacheLocator.getContainerCache().remove(identifier);
+           }
+        } catch (DotDataException e) {
+            Logger.error(LinkFactory.class,e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+	}
 
 }

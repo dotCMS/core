@@ -1,18 +1,23 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 @Deprecated
@@ -88,4 +93,14 @@ public interface HTMLPageFactory {
 	
     public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate);
 	
+    /**
+	 * Method will replace user references of the given userId in htmlpages 
+	 * with the replacement user id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 }

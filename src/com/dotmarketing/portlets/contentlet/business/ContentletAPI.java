@@ -1331,6 +1331,16 @@ public interface ContentletAPI {
 	public void removeUserReferences(String userId)throws DotDataException, DotSecurityException;
 
 	/**
+	 * Method will remove User References of the given userId in Contentlets
+	 * with the specified user id  
+	 * @param userId User Id to replace
+	 * @param replacementUserId Replacement User Id
+	 * @exception DotDataException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */	
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+
+	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.
 	 * 
 	 * @param contentlet

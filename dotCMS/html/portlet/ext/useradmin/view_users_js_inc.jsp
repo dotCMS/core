@@ -31,6 +31,8 @@
 	var abondonUserChangesConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "abondon-user-changes-confirm")) %>';
 	var passwordsDontMatchError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "passwords-dont-match-error")) %>';
 	var deleteYourOwnUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-your-own-user-error")) %>';
+	var replacementUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "replacement-user-required-error")) %>';
+	var deleteAndReplaceUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-and-replace-same-user-error")) %>';
 	var deactivateYourOwnUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "deactivate-your-own-user-error")) %>';
 	var deleteUserConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-user-confirm")) %>';
 	var userDeleted = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "user-deleted")) %>';
@@ -279,14 +281,17 @@
 		dijit.byId('emailAddress').attr('value', user.emailaddress);
 		dijit.byId('password').attr('value', '********');
 		dijit.byId('passwordCheck').attr('value', '********');
-
 		dojo.query(".fullUserName").forEach(function (elem) { elem.innerHTML = user.name; });
 
 		userChanged = false;
 		newUser = false;
 		dojo.byId('userProfileTabs').style.display = '';
 		dojo.byId('loadingUserProfile').style.display = 'none';
-
+		var deletebutton = dijit.byId('deleteButton');
+		if(deleteButton != null){
+			deleteButton.show();
+		}
+		
 		initStructures();
 		loadUserRolesTree(currentUser.id);
 		buildRolesTree();
@@ -365,6 +370,10 @@
 		  dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 		}
 		dijit.byId('userTabsContainer').selectChild(dijit.byId('userDetailsTab'));
+		var deletebutton = dijit.byId('deleteButton');
+		if(deleteButton != null){
+			deleteButton.hide();
+		}
 		resizeRoleBrowser();
 	}
 
@@ -478,18 +487,36 @@
 	}
 
 	//Event handler then deleting a user
+	function showDeleteUserBox(){
+		dijit.byId('deleteUserDialog').show();
+	}
+	
+	function cancelDeleteUser(){
+		dijit.byId('deleteUserDialog').hide();
+	}
 	function deleteUser() {
+		var replacementUserId = dijit.byId('deleteUsersFilter').attr('value'); 
 		if(currentUserId  == currentUser.id) {
 			alert(deleteYourOwnUserError);
 			return;
 		}
+		if(replacementUserId ==''||replacementUserId==null){
+			alert(replacementUserError);
+			return;
+		}
+		if(currentUser.id  == replacementUserId) {
+			alert(deleteAndReplaceUserError);
+			return;
+		}
+		replacementUserId = replacementUserId.replace('user-','');
 		if(confirm(deleteUserConfirm)) {
-			UserAjax.deleteUser(currentUser.id, deleteUserCallback);
+			UserAjax.deleteUser(currentUser.id, replacementUserId, deleteUserCallback);
 		}
 	}
 
 	//Callaback from the server to confirm a user deletion
 	function deleteUserCallback (isDeleted) {
+		dijit.byId('deleteUserDialog').hide();
 		if(isDeleted) {
 			userChanged = false;
 			passwordChanged = false;

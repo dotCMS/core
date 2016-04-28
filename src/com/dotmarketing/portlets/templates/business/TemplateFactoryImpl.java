@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.templates.business;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,6 +23,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PermissionedWebAssetUtil;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -31,6 +33,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -466,4 +469,42 @@ public class TemplateFactoryImpl implements TemplateFactory {
        TemplateServices.invalidate(templateToUpdate, true);
    };
 
+   /**
+	 * Method will replace user references of the given userId in templates
+	 * with the replacement user Id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+       
+       try {
+          dc.setSQL("select inode from template where mod_user = ?");
+          dc.addParam(userId);
+          List<HashMap<String, String>> templates = dc.loadResults();
+          
+          dc.setSQL("UPDATE template set mod_user = ? where mod_user = ? ");
+          dc.addParam(replacementUserId);
+          dc.addParam(userId);
+          dc.loadResult();
+          
+          dc.setSQL("update template_version_info set locked_by=? where locked_by  = ?");
+          dc.addParam(replacementUserId);
+          dc.addParam(userId);
+          dc.loadResult();
+        
+          for(HashMap<String, String> ident:templates){
+              String inode = ident.get("inode");
+              Template template = find(inode);
+              deleteFromCache(template);
+              TemplateServices.invalidate(template, true);
+          }
+       } catch (DotDataException e) {
+           Logger.error(LinkFactory.class,e.getMessage(),e);
+           throw new DotDataException(e.getMessage(), e);
+       }
+	}
 }

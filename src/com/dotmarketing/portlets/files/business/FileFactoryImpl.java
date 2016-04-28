@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,8 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -911,4 +914,42 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
         }
 
     }
+    
+    /**
+	 * Method will replace user references of the given userId in legacy file assets  
+	 * with the replacement user id
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+        DotConnect dc = new DotConnect();
+        
+        try {
+           dc.setSQL("select distinct(identifier) from file_asset where mod_user = ?");
+           dc.addParam(userId);
+           List<HashMap<String, String>> files = dc.loadResults();
+           
+           dc.setSQL("UPDATE file_asset set mod_user = ? where mod_user = ? ");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+           
+           dc.setSQL("update fileasset_version_info set locked_by=? where locked_by  = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+         
+           for(HashMap<String, String> ident:files){
+               String identifier = ident.get("identifier");
+               File file = getWorkingFileById(identifier);
+               CacheLocator.getFileCache().remove(file);
+           }
+        } catch (DotDataException e) {
+            Logger.error(LinkFactory.class,e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+	}
 }

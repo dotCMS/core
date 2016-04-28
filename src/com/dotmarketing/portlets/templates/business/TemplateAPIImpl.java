@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.templates.business;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,11 +18,13 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -35,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
@@ -537,4 +541,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
   			PageServices.invalidateLive(page);
   		}
     }
+    
+    /**
+	 * Method will replace user references of the given userId in templates
+	 * with the replacement user Id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		templateFactory.updateUserReferences(userId, replacementUserId);
+	}
 }

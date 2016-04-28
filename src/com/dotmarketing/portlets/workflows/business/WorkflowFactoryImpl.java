@@ -4,6 +4,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -26,6 +28,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -1259,4 +1262,45 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         WorkflowScheme scheme = findScheme(step.getSchemeId());
         saveScheme(scheme);
     }
+    
+    /**
+	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
+	 * with the replacement user id 
+	 * @param userId User Identifier
+	 * @param userRoleId The role id of the user
+	 * @param replacementUserId The user id of the replacement user
+	 * @param replacementUserRoleId The role Id of the replacemente user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+        
+        try {
+           dc.setSQL("update workflow_comment set posted_by=? where posted_by  = ?");
+           dc.addParam(userId);
+           dc.addParam(replacementUserId);
+           dc.loadResults();
+           
+           dc.setSQL("update workflow_task set assigned_to=? where assigned_to  = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+           
+           dc.setSQL("update workflow_task set created_by=? where created_by  = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+           
+           dc.setSQL("update workflow_action set next_assign=? where next_assign  = ?");
+           dc.addParam(replacementUserRoleId);
+           dc.addParam(userRoleId);
+           dc.loadResult();
+           
+        } catch (DotDataException e) {
+            Logger.error(LinkFactory.class,e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+	}
 }

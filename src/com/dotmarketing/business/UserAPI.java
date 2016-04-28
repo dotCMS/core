@@ -243,6 +243,19 @@ public interface UserAPI {
     public void delete(User userToDelete, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
     /**
+     * Delete the specified user on the permission, users_cms_roles, cms_role, user_ tables and change the user references in the db with another replacement user
+     * on the contentlet, file_asset, containers, template, links, htmlpage, workflow_task, workflow_comment 
+     * inode and version info tables. 
+     * @param userToDelete User to delete 
+     * @param replacementUser User to replace the db reference of the user to delete
+     * @param user User requesting the delete user
+     * @param respectFrontEndRoles
+     * @throws DotDataException If the user to delete or the replacement user are not set
+     * @throws DotSecurityException If the user requesting the delete doesn't have permission
+     */
+    public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,DotSecurityException;
+    	
+    /**
      * Method that saves a new address and tie it to the user
      * @param user
      * @param ad
