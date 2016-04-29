@@ -6,7 +6,9 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 
 /**
@@ -21,7 +23,9 @@ public enum PermissionType {
     IHTMLPAGE(IHTMLPage.class.getCanonicalName()),
     LINK(Link.class.getCanonicalName()),
     CONTENTLET(Contentlet.class.getCanonicalName()),
-    STRUCTURE(Structure.class.getCanonicalName());
+    STRUCTURE(Structure.class.getCanonicalName()),
+    RULE(Rule.class.getCanonicalName()),
+    TEMPLATE_LAYOUT(TemplateLayout.class.getCanonicalName());
 
     private final ApplyTo applyTo;
     private String key;
