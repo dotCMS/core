@@ -3460,51 +3460,56 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		Folder folder = isFolder ? (Folder) permissionable : null;
 		String folderPath = folder!=null?APILocator.getIdentifierAPI().find(folder).getPath():"";
 		String query = selectChildrenWithIndividualPermissionsSQLs.get(permissionType);
-		dc.setSQL(query);
-
-		switch (permissionType){
-			case TEMPLATE:
-			case CONTAINER:
-				dc.addParam(permissionable.getPermissionId());
-				break;
-			case FOLDER:
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				dc.addParam(isHost ? " " : folderPath + "");
-				fieldNameFromQueryToreturn = "inode";
-				break;
-			case IHTMLPAGE:
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				break;
-			case FILE:
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				break;
-			case LINK:
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				break;
-			case CONTENTLET:
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				break;
-			case STRUCTURE:
-				dc.addParam(isHost ? "%" : folderPath + "%");
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(permissionable.getPermissionId());
-				break;
-		}
-
-
-		List<Map<String, String>> idsToUpdate = dc.loadResults();
 
 		List<String> result = new ArrayList<String>();
 
-		for (Map<String, String> permissionableInfo : idsToUpdate) {
-			result.add( permissionableInfo.get(fieldNameFromQueryToreturn) );
+		if (query != null) {
+			dc.setSQL(query);
+
+			switch (permissionType) {
+				case TEMPLATE:
+				case CONTAINER:
+					dc.addParam(permissionable.getPermissionId());
+					break;
+				case FOLDER:
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					dc.addParam(isHost ? " " : folderPath + "");
+					fieldNameFromQueryToreturn = "inode";
+					break;
+				case IHTMLPAGE:
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					break;
+				case FILE:
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					break;
+				case LINK:
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					break;
+				case CONTENTLET:
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					break;
+				case STRUCTURE:
+					dc.addParam(isHost ? "%" : folderPath + "%");
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(permissionable.getPermissionId());
+					fieldNameFromQueryToreturn = "inode";
+					break;
+				default:
+					//rules and template layput dont have individual permission
+			}
+
+
+			List<Map<String, String>> idsToUpdate = dc.loadResults();
+			for (Map<String, String> permissionableInfo : idsToUpdate) {
+				result.add( permissionableInfo.get(fieldNameFromQueryToreturn) );
+			}
 		}
 
 		return result;
