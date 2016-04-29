@@ -179,7 +179,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The id of the host
 	 */
-	private final String selectChildrenTemplateWithIndividualPermissionsSQL =
+	private static final String selectChildrenTemplateWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='template' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         "and host_inode = ? ";
@@ -264,7 +264,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The host id
 	 */
-	private final String selectChildrenContainerWithIndividualPermissionsSQL =
+	private final static String selectChildrenContainerWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='containers' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         "and host_inode = ? ";
@@ -337,7 +337,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
 	 */
-	private final String dotFolderPath=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
+	private static final String dotFolderPath=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
 
 	/*
 	 * To load folder inodes that are in the same tree/hierarchy of a parent host/folder
@@ -357,7 +357,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
-	private final String selectChildrenFolderWithDirectPermissionsSQL =
+	private static final String selectChildrenFolderWithDirectPermissionsSQL =
 	     "select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) join permission on (inode_id=folder.inode) where " +
 	     "identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
 
@@ -470,7 +470,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
+    private static final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
             "select distinct li.id from identifier li join permission on (inode_id = li.id) where " +
                     " li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ? " +
                     " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -621,10 +621,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenFileWithIndividualPermissionsSQL =
-        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
-        "asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ? " +
-        "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
+	private static final String selectChildrenFileWithIndividualPermissionsSQL =
+			"select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+			"asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ? " +
+			"and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of files of a given parent folder
@@ -765,7 +765,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenLinkWithIndividualPermissionsSQL =
+	private static final String selectChildrenLinkWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
         "asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ? " +
         "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
@@ -908,7 +908,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
+    private static final String selectChildrenContentWithIndividualPermissionsByPathSQL =
             "select distinct li.id from identifier li" +
                 " join permission lp on (lp.inode_id = li.id) " +
                 " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
@@ -1109,7 +1109,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private final String selectChildrenStructureByPathSQL =
+	private static final String selectChildrenStructureByPathSQL =
 		"select distinct structure.inode from structure where ( " +
 		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
 		"         select folder.inode from folder join identifier on (identifier.id=folder.identifier) " +
@@ -1312,7 +1312,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
+	private static final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
 		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = structure.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
 
@@ -1327,6 +1327,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String selectChildrenStructureWithIndividualPermissionsByPathSQLFolder =
 		selectChildrenStructureByPathSQLFolder + " and exists (select * from permission where inode_id = inode.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
+
+	private static final Map<PermissionType, String> selectChildrenWithIndividualPermissionsSQLs = new HashMap<>();
 
 	static {
 		String[] listOfMasks = PermissionAPI.PERMISSION_TYPES;
@@ -1343,6 +1345,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	        }
 
 		}
+
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.TEMPLATE, selectChildrenTemplateWithIndividualPermissionsSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.CONTAINER, selectChildrenContainerWithIndividualPermissionsSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.FOLDER, selectChildrenFolderWithDirectPermissionsSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.IHTMLPAGE, selectChildrenHTMLPageWithIndividualPermissionsSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.FILE, selectChildrenFileWithIndividualPermissionsSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.LINK, selectChildrenLinkWithIndividualPermissionsSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.CONTENTLET, selectChildrenContentWithIndividualPermissionsByPathSQL);
+		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.STRUCTURE, selectChildrenStructureWithIndividualPermissionsByPathSQL);
 	}
 
 	/**
@@ -3435,12 +3446,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		return result;
 	}
 
+
 	/**
 	 * Returns the permissionable's children that have individual permission.
 	 * @return a list of {@link Permissionable} 's id
 	 */
 	public List<String> getChildrenOverridingInheritancePermission(Permissionable permissionable, PermissionType permissionType) throws DotDataException {
-		String query = null;
 		String fieldNameFromQueryToreturn = "id";
 		DotConnect dc = new DotConnect();
 
@@ -3448,54 +3459,46 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		boolean isFolder = isFolder(permissionable);
 		Folder folder = isFolder ? (Folder) permissionable : null;
 		String folderPath = folder!=null?APILocator.getIdentifierAPI().find(folder).getPath():"";
+		String query = selectChildrenWithIndividualPermissionsSQLs.get(permissionType);
+		dc.setSQL(query);
 
 		switch (permissionType){
 			case TEMPLATE:
-				query = selectChildrenTemplateWithIndividualPermissionsSQL;
-				dc.addParam(permissionable.getPermissionId());
-				break;
 			case CONTAINER:
-				query = selectChildrenContainerWithIndividualPermissionsSQL;
 				dc.addParam(permissionable.getPermissionId());
 				break;
 			case FOLDER:
-				/*query = selectChildrenFolderWithDirectPermissionsSQL;
 				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost ? "%" : folderPath + "%"); dc.addParam(isHost ? " " : folderPath + "");
-				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(isHost ? "%" : folderPath + "%");
+				dc.addParam(isHost ? " " : folderPath + "");
 				fieldNameFromQueryToreturn = "inode";
-				*/
 				break;
 			case IHTMLPAGE:
-				query = selectChildrenHTMLPageWithIndividualPermissionsSQL;
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(isHost ? "%" : folderPath + "%");
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(isHost ? "%" : folderPath + "%");
 				break;
 			case FILE:
-				query = selectChildrenFileWithIndividualPermissionsSQL;
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(isHost ? "%" : folderPath + "%");
+				break;
 			case LINK:
-				query = selectChildrenLinkWithIndividualPermissionsSQL;
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(isHost ? "%" : folderPath + "%");
 				break;
 			case CONTENTLET:
-				query = selectChildrenContentWithIndividualPermissionsByPathSQL;
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(isHost ? "%" : folderPath + "%");
 				break;
 			case STRUCTURE:
-				query =  selectChildrenStructureWithIndividualPermissionsByPathSQL;
 				dc.addParam(isHost ? "%" : folderPath + "%");
 				dc.addParam(permissionable.getPermissionId());
 				dc.addParam(permissionable.getPermissionId());
 				break;
 		}
 
-		dc.setSQL(query);
+
 		List<Map<String, String>> idsToUpdate = dc.loadResults();
 
 		List<String> result = new ArrayList<String>();
