@@ -2100,6 +2100,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     protected void clearField(String structureInode, Field field) throws DotDataException {
         Queries queries = getQueries(field);
+        List<String> inodesToFlush = new ArrayList<>();
 
         try(Connection conn = DbConnectionFactory.getConnection();
             PreparedStatement ps = conn.prepareStatement(queries.getSelect()))
@@ -2112,6 +2113,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             {
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
+                    inodesToFlush.add(contentInode);
                     ps2.setObject(1, contentInode);
                     ps2.addBatch();
 
@@ -2127,6 +2129,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throw new DotDataException(String.format("Error Clearing Field '%s' for Structure with id: %s",
                     field.getVelocityVarName(), structureInode), e);
 
+        }
+
+        for (String inodeToFlush : inodesToFlush) {
+            cc.remove(inodeToFlush);
         }
     }
 
