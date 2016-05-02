@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import junit.framework.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +17,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class ConditionletOSGIFTest {
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Test
     public void registerRuleConditionlet_validConditionlet_success() throws Exception{

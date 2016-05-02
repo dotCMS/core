@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.CookieUtil;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -25,6 +27,11 @@ public class NumberOfTimesPreviouslyVisitedConditionletTest {
     private HttpServletResponse response;
     private HttpSession httpSessionMock;
     private NumberOfTimesPreviouslyVisitedConditionlet conditionlet = new NumberOfTimesPreviouslyVisitedConditionlet();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void before () {

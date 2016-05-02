@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -30,6 +32,11 @@ public class PagesViewedConditionletFTest {
 
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
     private ConditionletTestUtil conditionletTestUtil = new ConditionletTestUtil();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init () {

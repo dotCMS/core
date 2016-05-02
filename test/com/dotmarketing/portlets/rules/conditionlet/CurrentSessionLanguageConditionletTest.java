@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -30,6 +32,11 @@ public class CurrentSessionLanguageConditionletTest {
     private HttpSession session;
     private LanguageWebAPI languageAPI;
     private CurrentSessionLanguageConditionlet conditionlet;
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void before () {
