@@ -185,6 +185,23 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract void delete(List<Contentlet> contentlets)throws DotDataException;
+	
+	/**
+	 * Deletes all the specified in contentlets. This method allows users to
+	 * delete only a version of a contentlet, i.e., the Identifier remains.
+	 * 
+	 * @param contentlets
+	 *            - The contentlet that will be deleted.
+	 * @param deleteIdentifier
+	 *            - If the contentlet identifier must be deleted, set to
+	 *            {@code true}. Otherwise, set to {@code false}. -
+	 * @return If the contentlet was successfully destroyed, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the information from the
+	 *             database.
+	 */
+	protected abstract void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException;
 
 	/**
 	 * Retrieves all contentlets from the database based on its identifier (including multilingual versions)
