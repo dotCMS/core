@@ -8,6 +8,10 @@ import com.dotmarketing.exception.DotDataException;
 
 public interface NotificationAPI {
 
+	void info(String message, String userId);
+
+	void error(String message, String userId);
+
 	void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException;
 
 	Notification findNotification(String notificationId) throws DotDataException;
