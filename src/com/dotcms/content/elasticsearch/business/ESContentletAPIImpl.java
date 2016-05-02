@@ -3479,7 +3479,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet's structureInode must be set");
         }
 
-        if(!UtilMethods.isSet(value.toString())) {
+        if(value==null || !UtilMethods.isSet(value.toString())) {
             contentlet.setProperty(field.getVelocityVarName(), null);
             return;
         }
