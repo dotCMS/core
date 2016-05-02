@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.WebKeys;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -27,6 +29,11 @@ public class UsersSiteVisitsConditionletTest {
     private HttpServletResponse response;
     private HttpSession httpSessionMock;
     private UsersSiteVisitsConditionlet conditionlet = new UsersSiteVisitsConditionlet();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void before () {

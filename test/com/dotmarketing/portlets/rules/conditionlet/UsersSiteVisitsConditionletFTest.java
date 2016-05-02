@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -9,6 +10,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.util.Http;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +33,11 @@ import static org.junit.Assert.assertNull;
 public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
 
     private UsersSiteVisitsUtilTest usersSiteVisitsUtilTest;
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void innerInit () {
@@ -146,10 +153,10 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
         conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        assertEquals(value, conn.getHeaderField(randomKey));
 
         conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        assertEquals(value, conn.getHeaderField(randomKey));
     }
 
     @Test
