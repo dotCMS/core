@@ -9,9 +9,7 @@ import java.util.*;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-
 import org.elasticsearch.action.search.SearchResponse;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -493,44 +491,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#destroy(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
-	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.destroy(contentlet, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		boolean noErrors = conAPI.destroy(contentlet, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.destroy(contentlet, user, respectFrontendRoles);
-		}
-
-		return noErrors;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#destroy(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
-	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.destroy(contentlets, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		boolean noErrors = conAPI.destroy(contentlets, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.destroy(contentlets, user, respectFrontendRoles);
-		}
-
-		return noErrors;
-	}
-	
     /*
      * (non-Javadoc)
      * 

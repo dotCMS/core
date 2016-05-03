@@ -34,16 +34,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
 /**
- * Provides access to a wide range of routines aimed to interact with
- * information related to contents ({@link Contentlet} objects) in dotCMS. You
- * can perform CRUD operations, re-index operations, locking and unlocking,
- * among others.
- * 
  * @author Jason Tesser
- * @version 1.0
- * @since Mar 22, 2012
  *
  */
+
 public interface ContentletAPI {
 
 	/**
@@ -64,6 +58,16 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+	/**
+	 * Finds a Contentlet Object given the inode
+	 * @param inode
+	 * @return
+	 * @throws DotDataException
+	 */
+	//http://jira.dotmarketing.net/browse/DOTCMS-2143
+	//public Contentlet find(long inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
 	
 	/**
 	 * Returns a live Contentlet Object for a given language 
@@ -319,6 +323,7 @@ public interface ContentletAPI {
 	 */
 	public void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 
+	
 	/**
 	 * Will get all the contentlets for a structure and set the system host and system folder for the host values
 	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all COntentlets will be cleaned make 
@@ -333,7 +338,8 @@ public interface ContentletAPI {
 	 * @throws DotMappingException 
 	 */
 	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotMappingException;
-
+	
+	
 	/**
 	 * Finds the next date that a contentlet must be reviewed
 	 * @param content 
@@ -436,6 +442,7 @@ public interface ContentletAPI {
 	 */
 	public ContentletRelationships getAllRelationships(Contentlet contentlet) throws DotDataException;
 
+
 	/**
 	 * Returns a contentlet's siblings for a given contentlet object.
 	 * @param contentlet
@@ -443,6 +450,8 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public List<Contentlet> getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+
 
 	/**
 	 * 
@@ -476,7 +485,8 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
-
+	
+	
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
 	 * http://jira.dotmarketing.net/browse/DOTCMS-2059
@@ -488,53 +498,6 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
-
-	/**
-	 * Destroys the specified {@link Contentlet}. This method will automatically
-	 * un-publish, archive, and delete ALL the information related to this
-	 * contentlet in all of its languages.
-	 * 
-	 * @param contentlet
-	 *            - The contentlet that will be completely destroyed.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param respectFrontendRoles
-	 *            -
-	 * @return If the contentlet was successfully destroyed, returns
-	 *         {@code true}. Otherwise, returns {@code false}.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the information from the
-	 *             database.
-	 * @throws DotSecurityException
-	 *             The specified user does not have the required permissions to
-	 *             perform this action.
-	 */
-	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException;
-
-	/**
-	 * Destroys the specified list of {@link Contentlet} objects . This method
-	 * will automatically un-publish, archive, and delete ALL the information
-	 * related to these contentlets in all of their languages.
-	 * 
-	 * @param contentlets
-	 *            - The list of contentlets that will be completely destroyed.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param respectFrontendRoles
-	 *            -
-	 * @return If the contentlets were successfully destroyed, returns
-	 *         {@code true}. Otherwise, returns {@code false}.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the information from the
-	 *             database.
-	 * @throws DotSecurityException
-	 *             The specified user does not have the required permissions to
-	 *             perform this action.
-	 */
-	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException;
-	
 	/**
 	 * Publishes a piece of content. 
 	 * @param contentlet
@@ -592,7 +555,6 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public void archive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
-
 	/**
 	 * This method unarchives the given contentlets
 	 * @param contentlets
@@ -624,6 +586,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
+	
 	
 	/**
 	 * This method completely deletes the given contentlet from the system
@@ -797,6 +760,7 @@ public interface ContentletAPI {
 	 * @deprecated @see refresh
 	 */
 	public void reindex(Contentlet contentlet)throws DotReindexStateException, DotDataException;
+	
 	
 	/**
 	 * Reindexes all content + clear the content caches
@@ -1278,6 +1242,7 @@ public interface ContentletAPI {
 	public int deleteOldContent(Date deleteFrom) throws DotDataException;
 	
 	/**
+
 	 * 
 	 * @param deleteFrom
 	 * @param offset
@@ -1285,7 +1250,9 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public List<String> findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles) throws DotDataException;
-
+	
+	
+	//http://jira.dotmarketing.net/browse/DOTCMS-2178
 	/**
 	 * Fetches the File Name stored under the contentlet and field
 	 * @param contentletInode
@@ -1309,14 +1276,8 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public long contentletIdentifierCount() throws DotDataException;
+	
 
-	/**
-	 * 
-	 * @param identifier
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
 	public List<Contentlet> getSiblings(String identifier)throws DotDataException, DotSecurityException ;
 	
 	/**
@@ -1387,6 +1348,7 @@ public interface ContentletAPI {
 	 * @param respectFrontendRoles
 	 */
 	public void deleteVersion(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
+
 
 	/**
 	 * Checks if the version you are saving is live=false.  If it is, this method will save 
