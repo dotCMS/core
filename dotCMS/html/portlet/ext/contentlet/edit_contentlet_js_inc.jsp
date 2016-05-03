@@ -65,7 +65,7 @@ dojo.require("dojox.layout.ContentPane");
 	function cancelEdit() {
 
 		window.onbeforeunload=true;
-		
+
 		doesUserCancelledEdit = true;
 
 		if(isContentAutoSaving){ //To avoid storage of contentlet while user cancels.
@@ -278,7 +278,7 @@ dojo.require("dojox.layout.ContentPane");
 		var k = 0;
 		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
 				function (textareaObj) {
-					var aceEditor;					
+					var aceEditor;
 					if(textareaObj.id == aceTextId[textareaObj.id]) {
 						aceEditor = textEditor[aceTextId[textareaObj.id]];
 					} else{
@@ -637,33 +637,33 @@ dojo.require("dojox.layout.ContentPane");
     	var y =Math.floor(Math.random()*1123213213);
 
     	var myCp = dijit.byId("contentletRulezDivCp");
-    	
+
 		if (myCp) {
 			return;
 
 		}
     	var myDiv = dijit.byId("contentletRulezDiv");
-    	
+
 		if (myDiv) {
 			dojo.empty(myDiv);
 		}
 		var hideRulePushOptions = false
 		<%if(contentlet.getStructure().isHTMLPageAsset()){%>
-		hideRulePushOptions=true; 
+		hideRulePushOptions=true;
 		<%}%>
 		myCp = new dojox.layout.ContentPane({
 			id : "contentletRulezDivCp",
 			style: "height:100%",
 			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
 		}).placeAt("contentletRulezDiv");
-		
+
 
     }
 
 
-    
-    
-    
+
+
+
 	function saveBinaryFileOnContent(fieldInode, fieldVarName, fieldContentlet, fileName){
 		var fieldRelatedData = {"fieldContentlet" : fieldContentlet,
 								"fieldVarName" : fieldVarName,
@@ -944,7 +944,7 @@ dojo.require("dojox.layout.ContentPane");
     function unlockContent(contentletInode){
 
 		window.onbeforeunload=true;
-		
+
     	if(_hasUserChanged){
     		if(!confirm("<%=LanguageUtil.get(pageContext, "checkin-without-saving-changes")%>")){
     			return;
@@ -988,7 +988,6 @@ dojo.require("dojox.layout.ContentPane");
 		myCp.refresh();
 
   }
-
 	function toggleLockedMessage(locked, who, when){
 		  if(dojo.byId("contentLockedInfo")){
 			  if (locked) {
