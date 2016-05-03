@@ -97,7 +97,7 @@ import com.liferay.util.servlet.SessionMessages;
  * For example, the <b>Content Search</b> portlet uses this class to display the
  * Contentlet data to the users, which can be filtered by certain criteria
  * depending on the selected Content Type.
- *
+ * 
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
@@ -895,7 +895,7 @@ public class ContentletAjax {
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
 			searchResult.put("__title__", conAPI.getName(con, currentUser, false));
-
+			
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
 			                :  (s.getStructureType() ==2)
@@ -907,7 +907,7 @@ public class ContentletAjax {
 			                        		:  (s.getStructureType() ==5)
 			                        		? "pageIcon"
 			                        				: "personaIcon";
-
+					                        
 			String typeStringToShow = s.getName() ;
 			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
@@ -1016,7 +1016,7 @@ public class ContentletAjax {
 
 	                List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action);
 	                for(WorkflowActionClass actionlet : actionlets){
-	                	if(actionlet.getActionlet() != null
+	                	if(actionlet.getActionlet() != null 
 	                			&& actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){
 	                		hasPushPublishActionlet = true;
 	                	}
@@ -1061,7 +1061,7 @@ public class ContentletAjax {
 			counters.put("hasNext", perPage < hits.size());
 
 		// Data to show in the bottom content listing page
-		String luceneQueryToShow2= luceneQuery.toString();
+		String luceneQueryToShow2= luceneQuery.toString();		
 		luceneQueryToShow2=luceneQueryToShow2.replaceAll("\\+languageId:[0-9]*\\*?","").replaceAll("\\+deleted:[a-zA-Z]*","")
 			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
 		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
@@ -1274,12 +1274,12 @@ public class ContentletAjax {
 			if(elementName.equalsIgnoreCase("hostId")){
 				callbackData.put("hostOrFolder",true);
 			}
-
+			
 			if(elementName.startsWith("text")){
 				elementValue = elementValue.toString().trim();
 			}
-
-			//http://jira.dotmarketing.net/browse/DOTCMS-3463
+			
+			//http://jira.dotmarketing.net/browse/DOTCMS-3463			
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
@@ -1566,7 +1566,7 @@ public class ContentletAjax {
 					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
 					saveContentErrors.add(errorString);
 				}
-
+				
 				if(ve.getMessage().contains("message.contentlet.expired")){
 					String errorString = LanguageUtil.get(user,"message.contentlet.expired");
 					saveContentErrors.add(errorString);
@@ -1612,7 +1612,7 @@ public class ContentletAjax {
 		}
 
 		finally{
-
+			
 		    if(saveContentErrors.size()>0) {
                 try {
                     HibernateUtil.rollbackTransaction();
@@ -1636,7 +1636,7 @@ public class ContentletAjax {
 				SessionMessages.clear(req.getSession());
 
 			}
-			// If an error occurred, manually delete all other uploaded binary
+			// If an error occurred, manually delete all other uploaded binary 
 		    // files since they were not included in the Hibernate transaction
 			try {
 				HttpSession ses = req.getSession();
@@ -1806,7 +1806,7 @@ public class ContentletAjax {
 				Contentlet draftContentlet = conAPI.saveDraft(cont, contentRelationships,
 					APILocator.getCategoryAPI().getParents(cont, user, false),
 					APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
-
+				
                 callbackData.put("isNewContentletInodeHtmlPage", draftContentlet.isHTMLPage());
 				callbackData.put("newContentletInode", draftContentlet.getInode());
 			}
@@ -2047,7 +2047,7 @@ public class ContentletAjax {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 		User sysUser = APILocator.getUserAPI().getSystemUser();
-
+		
 
 		HttpSession ses = req.getSession();
 		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
