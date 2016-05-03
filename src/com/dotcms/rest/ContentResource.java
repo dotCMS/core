@@ -493,7 +493,7 @@ public class ContentResource {
 			m.putAll(c.getMap());
 			Structure s = c.getStructure();
 
-			m.putAll(ContentletUtil.getSpecialFieldValues(user, c));
+			c = ContentletUtil.setSpecialFieldValues(user, c);
 
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
@@ -571,9 +571,13 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException{
+	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user)
+			throws DotDataException, JSONException, IOException{
+
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
+		con = ContentletUtil.setSpecialFieldValues(user, con);
+
 		Map<String,Object> map = con.getMap();
 
 		Set<String> jsonFields=getJSONFields(s);
@@ -587,12 +591,6 @@ public class ContentResource {
 				else {
 					jo.put(key, map.get(key));
 				}
-		}
-
-		Map<String, Object> specialFieldValues = ContentletUtil.getSpecialFieldValues(user, con);
-
-		for (String key : specialFieldValues.keySet()) {
-			jo.put(key, specialFieldValues.get(key));
 		}
 
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {

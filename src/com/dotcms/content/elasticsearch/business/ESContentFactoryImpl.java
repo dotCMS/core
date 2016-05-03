@@ -921,8 +921,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
             for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
                 Contentlet con = convertFatContentletToContentlet(fatty);
-                //Return the tags related to this Contentlet.
-                con.setTags();
                 result.add(con);
                 cc.add(con.getInode(), con);
             }

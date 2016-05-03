@@ -321,7 +321,7 @@ if(query == null){
 				<% for (Object x : cons){%>
 					<%
 						Contentlet c =(Contentlet) x;
-						c.getMap().putAll(ContentletUtil.getSpecialFieldValues(user, c));
+						c = ContentletUtil.setSpecialFieldValues(user, c);
 					%>
 
 						<tr>
