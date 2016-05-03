@@ -73,6 +73,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 
 /**
+ * Implementation class for the {@link ContentletFactory} interface.
  * 
  * @author root
  * @version 1.0
@@ -89,7 +90,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
 
 	/**
-	 * 
+	 * Default factory constructor that initializes the connection with the 
+	 * Elastic index.
 	 */
 	public ESContentFactoryImpl() {
 		client = new ESClient();

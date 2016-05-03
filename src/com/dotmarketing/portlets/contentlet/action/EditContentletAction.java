@@ -35,7 +35,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -116,7 +115,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private String currentHost;
 
 	/**
-	 * 
+	 * Default constructor that initializes all the required dotCMS APIs.
 	 */
 	public EditContentletAction() {
 		catAPI = APILocator.getCategoryAPI();
@@ -2421,7 +2420,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/**
-	 * Deletes a given list of contentlets.
+	 * Deletes a given list of contentlets. An error will be thrown if the user
+	 * performing this action does not have the required permissions or if the
+	 * contentlets are not archived.
 	 * 
 	 * @param req
 	 *            - The Struts wrapper for the HTTP Request object.
@@ -2485,11 +2486,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							Logger.error(this, "Unable to find contentlet with inode " + inode);
 						}
 
-						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user) && !contentlet.isLive()) {
-
+						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user) && contentlet.isArchived()) {
 							contentlets.add(contentlet);
-						} else
+						} else {
 							hasNoPermissionOnAllContent = true;
+						}
 					}
 					List<Contentlet> cons = new ArrayList<Contentlet>();
 					for (Contentlet content : contentlets) {
@@ -2498,10 +2499,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						try{
 							conAPI.delete(cons, user, false);
 						}catch (DotSecurityException e) {
-							Logger.warn(this, "Unable to delete content because of a lack of permissions" + e.getMessage(), e);
+							Logger.error(this, "Unable to delete content with identifier " + content.getIdentifier()
+									+ " because of a lack of permissions. " + e.getMessage(), e);
 							hasNoPermissionOnAllContent = true;
 						}catch (Exception e) {
-							Logger.warn(this, "Unable to delete content " + e.getMessage(), e);
+							Logger.error(this, "Unable to delete content with identifier " + content.getIdentifier() + ". "
+									+ e.getMessage(), e);
 						}
 					}
 

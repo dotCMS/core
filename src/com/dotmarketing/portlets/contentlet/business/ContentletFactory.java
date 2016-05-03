@@ -20,6 +20,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Provides utility methods to interact with {@link Contentlet} objects in
+ * dotCMS. This class works closely with the Elastic index in order to minimize 
+ * databse calls and maximize the use of the index to search for data.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public abstract class ContentletFactory {
 
 	/**
