@@ -20,6 +20,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Provides utility methods to interact with {@link Contentlet} objects in
+ * dotCMS. This class works closely with the Elastic index in order to minimize 
+ * databse calls and maximize the use of the index to search for data.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public abstract class ContentletFactory {
 
 	/**
@@ -185,6 +195,23 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract void delete(List<Contentlet> contentlets)throws DotDataException;
+	
+	/**
+	 * Deletes all the specified in contentlets. This method allows users to
+	 * delete only a version of a contentlet, i.e., the Identifier remains.
+	 * 
+	 * @param contentlets
+	 *            - The contentlet that will be deleted.
+	 * @param deleteIdentifier
+	 *            - If the contentlet identifier must be deleted, set to
+	 *            {@code true}. Otherwise, set to {@code false}. -
+	 * @return If the contentlet was successfully destroyed, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the information from the
+	 *             database.
+	 */
+	protected abstract void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException;
 
 	/**
 	 * Retrieves all contentlets from the database based on its identifier (including multilingual versions)

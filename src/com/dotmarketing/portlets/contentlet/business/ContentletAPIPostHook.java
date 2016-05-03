@@ -1,6 +1,3 @@
-/**
- * 
- @param returnValue - value returned by primary API Method */
 package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.Serializable;
@@ -51,14 +48,7 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method
 	 */
 	public void find(String inode, User user, boolean respectFrontendRoles,Contentlet returnValue);
-	
-	/**
-	 * Finds a Contentlet Object given the inode
-	 * @param inode
-	 * @param returnValue - value returned by primary API Method
-	 */
-	//public void find(long inode, User user, boolean respectFrontendRoles,Contentlet returnValue);
-	
+
 	/**
 	 * Returns a live Contentlet Object for a given language 
 	 * @param languageId
@@ -343,7 +333,6 @@ public interface ContentletAPIPostHook {
 	 */
 	public void getAllRelationships(Contentlet contentlet,ContentletRelationships returnValue);
 
-
 	/**
 	 * Returns a contentlet's siblings for a given contentlet object.
 	 * @param contentlet
@@ -370,8 +359,6 @@ public interface ContentletAPIPostHook {
 	 */ 
 	public void archive(Contentlet contentlet, User user, boolean respectFrontendRoles);
 
-	
-
 	/**
 	 * This method completely deletes the given contentlet from the system
 	 * @param contentlet
@@ -379,7 +366,6 @@ public interface ContentletAPIPostHook {
 	 * @param respectFrontendRoles
 	 */
 	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles);
-	
 	
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
@@ -390,6 +376,51 @@ public interface ContentletAPIPostHook {
 	 * @param allVersions
 	 */
 	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions);
+
+	/**
+	 * Destroys the specified {@link Contentlet}. This method will automatically
+	 * un-publish, archive, and delete ALL the information related to this
+	 * contentlet in all of its languages.
+	 * 
+	 * @param contentlet
+	 *            - The contentlet that will be completely destroyed.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param respectFrontendRoles
+	 *            -
+	 * @return If the contentlet was successfully destroyed, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the information from the
+	 *             database.
+	 * @throws DotSecurityException
+	 *             The specified user does not have the required permissions to
+	 *             perform this action.
+	 */
+	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles);
+
+	/**
+	 * Destroys the specified list of {@link Contentlet} objects . This method
+	 * will automatically un-publish, archive, and delete ALL the information
+	 * related to these contentlets in all of their languages.
+	 * 
+	 * @param contentlets
+	 *            - The list of contentlets that will be completely destroyed.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param respectFrontendRoles
+	 *            -
+	 * @return If the contentlets were successfully destroyed, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the information from the
+	 *             database.
+	 * @throws DotSecurityException
+	 *             The specified user does not have the required permissions to
+	 *             perform this action.
+	 */
+	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	
 	/**
 	 * Publishes a piece of content. 
 	 * @param contentlet
@@ -932,14 +963,12 @@ public interface ContentletAPIPostHook {
 	public void deleteOldContent(Date deleteFrom,int returnValue);
 	
 	/**
-
 	 * 
 	 * @param deleteFrom
 	 * @param offset
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public void findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles,List<String> returnValue);
-	
 	
 	/**
 	 * Fetches the File Name stored under the contentlet and field
@@ -964,17 +993,50 @@ public interface ContentletAPIPostHook {
 	 * @throws DotDataException
 	 */
 	public long contentletIdentifierCount(long returnValue) throws DotDataException;
-	
+
+	/**
+	 * 
+	 * @param contentletInodeOrIdentifier
+	 * @return
+	 * @throws DotDataException
+	 */
 	public boolean removeContentletFromIndex(String contentletInodeOrIdentifier) throws DotDataException;
 
+	/**
+	 * 
+	 * @param structure
+	 */
 	public void refresh(Structure structure);
 
+	/**
+	 * 
+	 * @param contentlet
+	 */
 	public void refresh(Contentlet contentlet);
 
+	/**
+	 * 
+	 */
 	public void refreshAllContent();
 
+	/**
+	 * 
+	 * @param identifier
+	 * @return
+	 * @throws DotDataException
+	 */
 	public List<Contentlet> getSiblings(String identifier)throws DotDataException ;
-	
+
+	/**
+	 * 
+	 * @param contentlet
+	 * @param contentRelationships
+	 * @param cats
+	 * @param permissions
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param returnValue
+	 */
 	public void checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles,Contentlet returnValue);
 	
 	/**
@@ -1066,14 +1128,19 @@ public interface ContentletAPIPostHook {
 	 */
 	public void DBSearch(Query query, User user,boolean respectFrontendRoles, List<Map<String, Serializable>> returnValue) throws ValidationException,DotDataException;
 	
-	
 	/**
 	 * Method will time out after 30 seconds returning false
 	 * @param inode
 	 * @return
 	 */
 	public void isInodeIndexed(String inode, boolean returnValue);
-	
+
+	/**
+	 * 
+	 * @param inode
+	 * @param live
+	 * @param returnValue
+	 */
 	public void isInodeIndexed(String inode, boolean live, boolean returnValue);
 
 	/**
@@ -1131,7 +1198,6 @@ public interface ContentletAPIPostHook {
 	 * @throws DotContentletValidationException If content is not valid
 	 */
 	public void  saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
-	
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1230,6 +1296,13 @@ public interface ContentletAPIPostHook {
 	 */
 	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException;
 
+	/**
+	 * 
+	 * @param luceneQuery
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param c
+	 */
     public void searchIndexCount(String luceneQuery, User user, boolean respectFrontendRoles, long c);
     
 	/**
@@ -1239,14 +1312,25 @@ public interface ContentletAPIPostHook {
 	 * @param user
 	 * @return Map with the ContentRelationships. Empty Map if the content doesn't have associated relationships.
 	 */
-	
 	public void findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * 
+	 * @param inode
+	 * @param field
+	 * @param value
+	 */
     public void loadField(String inode, Field field, Object value);
 
+    /**
+     * 
+     * @param luceneQuery
+     * @param user
+     * @param respectFrontendRoles
+     * @param value
+     */
     public void indexCount(String luceneQuery, User user,
             boolean respectFrontendRoles, long value);
-
 
     /**
      * Gets the top viewed content for a particular structure for a specified date interval
@@ -1259,13 +1343,60 @@ public interface ContentletAPIPostHook {
      */
 	public boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user);
 
+	/**
+	 * 
+	 * @param contentlet
+	 * @param isNew
+	 * @param isNewVersion
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotContentletStateException
+	 * @throws DotStateException
+	 */
     public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
+    /**
+     * 
+     * @param contentlet
+     * @param isNew
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotContentletStateException
+     * @throws DotStateException
+     */
     public void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
+    /**
+     * 
+     * @param esQuery
+     * @param live
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     public void esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
-	
+
+    /**
+     * 
+     * @param esQuery
+     * @param live
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
 	public void esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 
+	/**
+	 * 
+	 * @param buffy
+	 * @param user
+	 * @param roles
+	 * @param respectFrontendRoles
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
 }
