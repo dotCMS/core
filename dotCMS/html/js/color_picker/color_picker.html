@@ -1,0 +1,317 @@
+<html>
+<head>
+	<title>Color Picker</title>
+	<style type="text/css">
+		.grad-container {
+			border: 1px inset window;
+			font-size: 1;
+			height: 6;
+			margin-left: 5px;
+			overflow: hidden;
+			position: absolute;
+			width: 140;
+			z-index: 4;
+		}
+
+		.outer-slide-container  {
+			border: 0px;
+			height: 6;
+			margin-left: 0;
+			width: 150;
+		}
+
+		.slider-handle {
+			border: 0 outset white;
+			cursor: hand;
+			height: 14;
+			overflow: hidden;
+			width: 11;
+			z-index: 5;
+		}
+
+		.line {
+			height: 6;
+			filter: alpha(style=1);
+			overflow: hidden;
+			width: 139;
+			z-index: 0;
+		}
+
+		.line-container {
+			height: 6;
+			margin-left: 5px;
+			position: absolute;
+			width: 139;
+			z-index: 0;
+		}
+	</style>
+	<script language="JavaScript" src="slidebar.js"></script>
+	<script language="JavaScript">
+
+		// Public description
+
+		var public_description = new ColorPicker();
+
+		function ColorPicker() {
+			this.init = init;
+			this.getColor = getColor;
+			this.setColor = setColor;
+			this.getHexCode = getHexCode;
+		}
+
+		function init() {
+			setColor(0.5, 0.5, 0.5);
+		}
+
+		function getColor() {
+			var obj = new Object();
+			obj.r = redSlider.value;
+			obj.g = greenSlider.value;
+			obj.b = blueSlider.value;
+
+			return obj;
+		}
+
+		function setColor(r, g, b) {
+			setValue(redSlider, Math.min(1.0, r));
+			setValue(greenSlider, Math.min(1.0, g));
+			setValue(blueSlider, Math.min(1.0, b));
+
+			raiseIt();
+		}
+
+		function getHexCode() {
+			var hexCode = "#";
+
+			var _KEY = "0123456789ABCDEF";
+
+			hexCode +=
+				_KEY.substring(
+					Math.floor(redInput.value / 16),
+					Math.floor(redInput.value / 16) + 1);
+
+			hexCode += _KEY.substring(redInput.value % 16, (redInput.value % 16) + 1);
+
+			hexCode +=
+				_KEY.substring(
+					Math.floor(greenInput.value / 16),
+					Math.floor(greenInput.value / 16) + 1);
+
+			hexCode += _KEY.substring(greenInput.value % 16, (greenInput.value % 16) + 1);
+
+			hexCode +=
+				_KEY.substring(
+					Math.floor(blueInput.value / 16),
+					Math.floor(blueInput.value / 16) + 1);
+
+			hexCode +=
+				_KEY.substring(blueInput.value % 16, (blueInput.value % 16) + 1);
+
+			return hexCode;
+		}
+
+		// Private methods
+
+		function calculateRGB() {
+			if (window.event.button == 1 && slidebarDragObj == null) {
+				var hsv = new Object();
+				var h = window.event.srcElement.offsetHeight;
+				var y = window.event.offsetY;
+
+				hsv.h = 360 * window.event.offsetX / window.event.srcElement.offsetWidth;
+
+				if (y > h / 2) {
+					hsv.s = 1.0;
+					hsv.v = 2 * (h - y) / h;
+				}
+				else {
+					hsv.v = 1.0;
+					hsv.s = y / (h / 2);
+				}
+
+				var rgb = hsvToRgb(hsv);
+
+				setColor(rgb.r, rgb.g, rgb.b);
+			}
+		}
+
+		function clickOnGrad(sliderEl) {
+			setValue(sliderEl, Math.min(Math.abs((event.offsetX + 1) / event.srcElement.offsetWidth), 1.0));
+		}
+
+		function hsvToRgb(hsv) {
+			var rgb = new Object();
+			var i, f, p, q, t;
+
+			if (hsv.s == 0) {
+				rgb.r = rgb.g = rgb.b = hsv.v;
+
+				return rgb;
+			}
+
+			hsv.h /= 60;
+			i = Math.floor( hsv.h );
+			f = hsv.h - i;
+			p = hsv.v * (1 - hsv.s);
+			q = hsv.v * (1 - hsv.s * f);
+			t = hsv.v * (1 - hsv.s * (1 - f));
+
+			if (i == 0) {
+				rgb.r = hsv.v;
+				rgb.g = t;
+				rgb.b = p;
+			}
+			else if (i == 1) {
+				rgb.r = q;
+				rgb.g = hsv.v;
+				rgb.b = p;
+			}
+			else if (i == 2) {
+				rgb.r = p;
+				rgb.g = hsv.v;
+				rgb.b = t;
+			}
+			else if (i == 3) {
+				rgb.r = p;
+				rgb.g = q;
+				rgb.b = hsv.v;
+			}
+			else if (i == 4) {
+				rgb.r = t;
+				rgb.g = p;
+				rgb.b = hsv.v;
+			}
+			else {
+				rgb.r = hsv.v;
+				rgb.g = p;
+				rgb.b = q;
+			}
+
+			return rgb;
+		}
+
+		function raiseIt() {
+			var obj = new Object();
+			obj.r = redSlider.value;
+			obj.g = greenSlider.value;
+			obj.b = blueSlider.value;
+		}
+
+		function update(el) {
+			var red   = Math.round(255 * redSlider.value);
+			var green = Math.round(255 * greenSlider.value);
+			var blue  = Math.round(255 * blueSlider.value);
+
+			var color = "RGB(" + red + "," + green + "," + blue + ")";
+
+			redLeft.style.background = "RGB(" + 0 + "," + green + "," + blue + ")";
+			redRight.style.background = "RGB(" + 255 + "," + green + "," + blue + ")";
+			greenLeft.style.background = "RGB(" + red + "," + 0 + "," + blue + ")";
+			greenRight.style.background = "RGB(" + red + "," + 255 + "," + blue + ")";
+			blueLeft.style.background = "RGB(" + red + "," + green + "," + 0 + ")";
+			blueRight.style.background = "RGB(" + red + "," + green + "," + 255 + ")";
+
+			redInput.value = Math.round(red);
+			greenInput.value = Math.round(green);
+			blueInput.value = Math.round(blue);
+
+			colorBox.style.backgroundColor = getHexCode();
+
+			raiseIt();
+		}
+
+		function updateInput(slider) {
+			var value = parseInt(window.event.srcElement.value);
+
+			if (!isNaN(value)) {
+				setValue(slider, Math.min(256, value) / 256);
+
+				raiseIt();
+			}
+		}
+	</script>
+</head>
+
+<body background="#EBEAC6" leftmargin="0" marginheight="0" marginwidth="0" rightmargin="0" topmargin="0" onDragStart="return false;" onLoad="init();">
+
+<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%">
+<tr>
+	<td align="center" valign="middle">
+		<table border="0">
+		<tr>
+			<td>
+				<img src="images/color.jpg" id="colorImage" style="border: 1px inset window; cursor: hand; height: 128; width: 128;" onMouseDown="calculateRGB();" onMouseMove="calculateRGB();">
+			</td>
+			<td>
+				<table>
+				<tr>
+					<td>
+						<font face="MS Sans Serif" size="1">
+						R
+						</font>
+					</td>
+					<td>
+						<span class="outer-slide-container">
+							<div class="grad-container" onClick="clickOnGrad(redSlider);"></div>
+							<div class="line-container" id="redRight" style="background: RGB(255, 0, 0);">
+								<div class="line" id="redLeft" style="background: RGB(0, 0, 0);"></div>
+							</div>
+							<div id="redSlider" class="slider-handle" type="x" value="0" title="" onChange="update(this);"><img src="images/arrow.gif"></div>
+						</span>
+					</td>
+					<td>
+						<input id="redInput" maxlength="3" size="3" type="text" onChange="updateInput(redSlider);">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<font face="MS Sans Serif" size="1">
+						G
+						</font>
+					</td>
+					<td>
+						<span class="outer-slide-container">
+							<div class="grad-container" onClick="clickOnGrad(greenSlider);"></div>
+							<div class="line-container" id="greenRight" style="background: RGB(0, 255, 0);">
+								<div class="line" id="greenLeft" style="background: RGB(0, 0, 0);"></div>
+							</div>
+							<div id="greenSlider" class="slider-handle" type="x" value="0" title="" onChange="update(this);"><img src="images/arrow.gif"></div>
+						</span>
+					</td>
+					<td>
+						<input id="greenInput" maxlength="3" size="3" type="text" onChange="updateInput(greenSlider);">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<font face="MS Sans Serif" size="1">
+						B
+						</font>
+					</td>
+					<td>
+						<span class="outer-slide-container">
+							<div class="grad-container" onClick="clickOnGrad(blueSlider);"></div>
+							<div class="line-container" id="blueRight" style="background: RGB(0, 0, 255);">
+								<div class="line" id="blueLeft" style="background: RGB(0, 0, 0);"></div>
+							</div>
+							<div id="blueSlider" class="slider-handle" type="x" value="0" title="" onChange="update(this);"><img src="images/arrow.gif"></div>
+						</span>
+					</td>
+					<td>
+						<input id="blueInput" maxlength="3" size="3" type="text" onChange="updateInput(blueSlider);">
+					</td>
+				</tr>
+				</table>
+			</td>
+			<td>
+				<span id="colorBox" style="border: 1 inset window; height: 128; margin-left: 2px; width: 32;"></span>
+			</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+</table>
+
+</body>
+
+</html>

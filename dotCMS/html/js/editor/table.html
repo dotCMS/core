@@ -1,0 +1,299 @@
+<html>
+<head>
+	<title>Table</title>
+	<script language="JavaScript">
+		function insert() {
+			var html = "";
+			html +=
+				"<table " +
+					((document.fm.bgcolor.value) ? "bgcolor=\"" + document.fm.bgcolor.value + "\" " : "") +
+					((document.fm.border.value) ? "border=\"" + document.fm.border.value + "\" " : "") +
+					((document.fm.bordercolor.value) ? "bordercolor=\"" + document.fm.bordercolor.value + "\" " : "") +
+					((document.fm.cellpadding.value) ? "cellpadding=\"" + document.fm.cellpadding.value + "\" " : "") +
+					((document.fm.cellspacing.value) ? "cellspacing=\"" + document.fm.cellspacing.value + "\" " : "") +
+					((document.fm.height.value) ? "height=\"" + document.fm.height.value + "\" " : "") +
+					((document.fm.width.value) ? "width=\"" + document.fm.width.value + "\" " : "") +
+				">";
+
+			for (var i = 0; i < document.fm.rows.value; i++) {
+				html += "<tr>";
+
+				for (var j = 0; j < document.fm.cols.value; j++) {
+					html +=
+						"<td " +
+							"align=\"" + document.fm.align[document.fm.align.selectedIndex].value + "\" " +
+							((document.fm.col_height.value) ? "height=\"" + document.fm.col_height.value + "\" " : "") +
+							((document.fm.col_width.value) ? "width=\"" + document.fm.col_width.value + "\" " : "") +
+							"valign=\"" + document.fm.valign[document.fm.valign.selectedIndex].value + "\" " +
+						">&nbsp;</td>";
+				}
+
+				html += "</tr>";
+			}
+
+			html += "</table>";
+
+			opener.insertHTML(html);
+
+			window.close();
+		}
+	</script>
+</head>
+
+<body bgcolor="Silver" leftmargin="0" marginheight="0" marginwidth="0" rightmargin="0" topmargin="0">
+
+<table border="0" cellpadding="10" cellspacing="0" width="100%">
+
+<form name="fm">
+
+<tr>
+	<td>
+		<table border="0" cellpadding="0" cellspacing="0" width="100%">
+		<tr>
+			<td colspan="3">
+				<fieldset>
+					<legend><font face="MS Sans Serif" size="1">Layout</font></legend>
+
+					<table border="0" cellpadding="4" cellspacing="0">
+					<tr>
+						<td>
+							<table border="0" cellpadding="0" cellspacing="0">
+							<tr>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Rows:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="rows" size="2" type="text" value="2">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Cols:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="cols" size="2" type="text" value="2">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Cell Padding:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="cellpadding" size="2" type="text" value="0">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Cell Spacing:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="cellspacing" size="2" type="text" value="0">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table border="0" cellpadding="0" cellspacing="0">
+							<tr>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Height:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="height" size="3" type="text" value="">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Width:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="width" size="3" type="text" value="">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Col Height:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="col_height" size="3" type="text" value="100">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Col Width:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="col_width" size="3" type="text" value="100">
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table border="0" cellpadding="0" cellspacing="0">
+							<tr>
+								<td>
+									<font face="MS Sans Serif" size="1">Col Horizontal Align:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<select name="align">
+										<option value="left">Left</option>
+										<option value="center">Center</option>
+										<option value="right">Right</option>
+									</select>
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td>
+									<font face="MS Sans Serif" size="1">Col Vertical Align:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<select name="valign">
+										<option value="top">Top</option>
+										<option value="middle">Middle</option>
+										<option value="bottom">Bottom</option>
+										<option value="baseline">Baseline</option>
+									</select>
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</fieldset>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3"><img border="0" height="5" src="images/spacer.gif" width="1"></td>
+		</tr>
+		<tr>
+			<td>
+				<fieldset>
+					<legend><font face="MS Sans Serif" size="1">Border</font></legend>
+
+					<table border="0" cellpadding="4" cellspacing="0">
+					<tr>
+						<td>
+							<table border="0" cellpadding="0" cellspacing="0">
+							<tr>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Width:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="border" size="2" type="text" value="1">
+								</td>
+								<td width="10">
+									&nbsp;
+								</td>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Color:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="bordercolor" size="7" type="text" value="Black">
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</fieldset>
+			</td>
+			<td><img border="0" height="1" src="images/spacer.gif" width="5"></td>
+			<td>
+				<fieldset>
+					<legend><font face="MS Sans Serif" size="1">Background</font></legend>
+
+					<table border="0" cellpadding="4" cellspacing="0">
+					<tr>
+						<td>
+							<table border="0" cellpadding="0" cellspacing="0">
+							<tr>
+								<td valign="top">
+									<font face="MS Sans Serif" size="1">Color:</font>
+								</td>
+								<td>
+									&nbsp;
+								</td>
+								<td>
+									<input name="bgcolor" size="7" type="text" value="White">
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</fieldset>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3">
+				<table border="0" cellpadding="8" cellspacing="0" width="100%">
+				<tr>
+					<td align="right" nowrap>
+						<input type="button" value="Insert" onClick="insert();">
+						<input type="button" value="Cancel" onClick="self.close();">
+					</td>
+				</tr>
+				</table>
+			</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+
+</form>
+
+</table>
+
+</body>
+
+</html>

@@ -21,7 +21,10 @@
 
 
 <%
-
+	User userToCheck = com.liferay.portal.util.PortalUtil.getUser(request);
+	if(userToCheck == null ){
+		return;
+	}
 	String dojoPath = Config.getStringProperty("path.to.dojo");
 	if(!UtilMethods.isSet(dojoPath)){
 		// Change dojopath in dotmarketing-config.properties!
@@ -51,7 +54,9 @@
 	
 	/** static js **/
 	files.add(dojoPath + "/dojo/dot-dojo.js");
-
+	files.add("/html/js/dotcms/dojo/data/UsersReadStore.js");
+	files.add("/html/js/calendar/calendar_stripped.js");
+	files.add("/html/js/calendar/calendar-setup_stripped.js");
 	files.add("/html/js/scriptaculous/prototype.js");
 	files.add("/html/js/sniffer.js");
 	files.add("/html/js/menu.js");
@@ -65,7 +70,7 @@
 	files.add("/html/js/form_validation.js");
 	files.add("/html/js/tag.js");
 	files.add("/html/js/uuidUtils.js");
-
+	files.add("/html/js/states_and_countries.js");
 	
 	
 	StringBuilder buff = new StringBuilder();
