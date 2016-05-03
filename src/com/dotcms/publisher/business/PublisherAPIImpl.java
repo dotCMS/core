@@ -650,16 +650,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Delete element from publishing_queue table by id
 	 */
 	private static final String DELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?";
-	
-	private static final String DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND language_id = ?";
 
 	@Override
 	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
-		deleteElementFromPublishQueueTable(identifier, 0);
-	}
-
-	@Override
-	public void deleteElementFromPublishQueueTable(String identifier, long languageId) throws DotPublisherException{
 		boolean localTransaction = false;
 
 		try {
@@ -670,14 +663,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 		try{
 			DotConnect dc = new DotConnect();
-			if (languageId > 0) {
-				dc.setSQL(DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE);
-				dc.addParam(identifier);
-				dc.addParam(languageId);
-			} else {
-				dc.setSQL(DELETEELEMENTFROMQUEUESQL);
-				dc.addParam(identifier);
-			}
+			dc.setSQL(DELETEELEMENTFROMQUEUESQL);
+			dc.addParam(identifier);
 			dc.loadResult();
 
 			if(localTransaction) {

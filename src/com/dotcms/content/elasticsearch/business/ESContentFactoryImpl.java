@@ -10,9 +10,18 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Calendar;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.services.ContentletMapServices;
+import com.dotmarketing.services.ContentletServices;
+import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.*;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
 
+import org.quartz.*;
 import org.springframework.util.NumberUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -72,27 +81,13 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 
-/**
- * Implementation class for the {@link ContentletFactory} interface.
- * 
- * @author root
- * @version 1.0
- * @since May 22, 2012
- *
- */
 public class ESContentFactoryImpl extends ContentletFactory {
-
 	private ContentletCache cc = CacheLocator.getContentletCache();
 	private ESClient client = null;
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static final Contentlet cache404Content= new Contentlet();
 	private static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
-
-	/**
-	 * Default factory constructor that initializes the connection with the 
-	 * Elastic index.
-	 */
 	public ESContentFactoryImpl() {
 		client = new ESClient();
 		cache404Content.setInode(CACHE_404_CONTENTLET);
@@ -112,6 +107,30 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
+		/*Client client = new ESClient().getClient();
+
+		QueryBuilder query = QueryBuilders.termQuery("stInode", structureInode);
+		SearchResponse searchResponse = client.prepareSearch().setSearchType(SearchType.SCAN).setQuery(query).setSize(10)
+				.setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+		while (true) {
+			searchResponse = client.prepareSearchScroll(searchResponse.scrollId()).setScroll(TimeValue.timeValueMinutes(30)).execute()
+					.actionGet();
+			for (SearchHit hit : searchResponse.hits()) {
+				try {
+					Contentlet con = loadInode(hit);
+
+					con.getMap().remove(field.getVelocityVarName());
+
+					save(con);
+				} catch (DotMappingException e) {
+					throw new DotDataException(e.getMessage());
+				}
+
+			}
+			if (searchResponse.hits().totalHits() == 0) {
+				break;
+			}
+		}*/
 	    StringBuffer sql = new StringBuffer("update contentlet set " );
         if(field.getFieldContentlet().indexOf("float") != -1){
         	if(DbConnectionFactory.isMySql())
@@ -141,6 +160,33 @@ public class ESContentFactoryImpl extends ContentletFactory {
         //we could do a select here to figure out exactly which guys to evict
         cc.clearCache();
 	}
+
+	/*@Override
+	protected void cleanHostField(String structureInode) throws DotDataException {
+		Client client = new ESClient().getClient();
+
+		QueryBuilder query = QueryBuilders.termQuery("stInode", structureInode);
+		SearchResponse searchResponse = client.prepareSearch().setSearchType(SearchType.SCAN).setQuery(query).setSize(10)
+				.setScroll(TimeValue.timeValueMinutes(30)).execute().actionGet();
+		while (true) {
+			searchResponse = client.prepareSearchScroll(searchResponse.scrollId()).setScroll(TimeValue.timeValueMinutes(30)).execute()
+					.actionGet();
+			for (SearchHit hit : searchResponse.hits()) {
+				try {
+					Contentlet con = new ESMappingAPIImpl().toContentlet(hit.getSource());
+					con.setFolder(FolderAPI.SYSTEM_FOLDER);
+					save(con);
+				} catch (DotMappingException e) {
+					throw new DotDataException(e.getMessage());
+				}
+
+			}
+			if (searchResponse.hits().totalHits() == 0) {
+				break;
+			}
+		}
+
+	}*/
 
 	@Override
 	protected void cleanIdentifierHostField(String structureInode) throws DotDataException, DotMappingException, DotStateException, DotSecurityException {
@@ -461,14 +507,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return res;
 	}
 
-	/**
-	 * 
-	 * @param structureInode
-	 * @param velVarfieldsMap
-	 * @param criteriaToBuildOut
-	 * @param bob
-	 * @param params
-	 */
 	private void buildComplexCriteria(String structureInode, Map<String, Field> velVarfieldsMap, ComplexCriteria criteriaToBuildOut, StringBuilder bob, List<Object> params){
         List<Criteria> cs = criteriaToBuildOut.getCriteria();
         boolean first = true;
@@ -503,11 +541,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void delete(List<Contentlet> contentlets) throws DotDataException {
-		delete(contentlets, true);
-	}
-
-	@Override
-	protected void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException {
         /*
          First thing to do is to clean up the trees for the given Contentles
          */
@@ -572,17 +605,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             }
         }
-        if (deleteIdentifier) {
-	        for (Contentlet c : contentlets) {
-	            if(InodeUtils.isSet(c.getInode())){
-	                Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
-	                String si = ident.getInode();
-	                if(!identsDeleted.contains(si) && si!=null && si!="" ){
-	                    APILocator.getIdentifierAPI().delete(ident);
-	                    identsDeleted.add(si);
-	                }
-	            }
-	        }
+        for (Contentlet c : contentlets) {
+            if(InodeUtils.isSet(c.getInode())){
+                Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
+                String si = ident.getInode();
+                if(!identsDeleted.contains(si) && si!=null && si!="" ){
+                    APILocator.getIdentifierAPI().delete(ident);
+                    identsDeleted.add(si);
+                }
+            }
         }
 	}
 
@@ -708,6 +739,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			}
 			return con;
 		}
+
+		/*try {
+
+			Client client = new ESClient().getClient();
+			QueryBuilder builder = QueryBuilders.boolQuery().must(QueryBuilders.fieldQuery("inode", inode));
+
+			SearchResponse response = client.prepareSearch().setQuery(builder).execute().actionGet();
+			SearchHits hits = response.hits();
+			Contentlet contentlet = loadInode(hits.getAt(0));
+
+			return contentlet;
+		} catch (Exception e) {
+			throw new ElasticsearchException(e.getMessage());
+		}*/
 		com.dotmarketing.portlets.contentlet.business.Contentlet fatty = null;
         try{
             fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
@@ -807,6 +852,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
             cc.add(String.valueOf(content.getInode()), content);
+//          result.add(content);
             result.add(convertFatContentletToContentlet(fatty));
         }
         return result;
@@ -884,14 +930,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return result;
 	}
 
-	/**
-	 * 
-	 * @param hostId
-	 * @param limit
-	 * @param offset
-	 * @return
-	 * @throws DotDataException
-	 */
 	protected List<Contentlet> findContentletsByHost(String hostId, int limit, int offset) throws DotDataException {
 		try {
 
@@ -1145,7 +1183,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return dh.list();
 	}
 
-	@Override
 	protected long indexCount(String query) {
 	    String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
@@ -1311,6 +1348,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    return resp.getHits();
 	}
 
+
 	@Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	    DotConnect dc = new DotConnect();
@@ -1371,13 +1409,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return content;
 	}
 
-	/**
-	 * 
-	 * @param contentlets
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 * @throws DotSecurityException
-	 */
 	protected void save(List<Contentlet> contentlets) throws DotDataException, DotStateException, DotSecurityException {
 		for(Contentlet con : contentlets)
 		    save(con);
@@ -1406,12 +1437,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void removeFolderReferences(Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	    //Folder parentFolder = null;
 	    Identifier folderId = null;
         try{
+            //parentFolder = APILocator.getFolderAPI().findParentFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
             folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
         }catch(Exception e){
             Logger.debug(this, "Unable to get parent folder for folder = " + folder.getInode(), e);
         }
+        //String parentFolderId = parentFolder!=null?parentFolder.getInode():FolderAPI.SYSTEM_FOLDER;
         DotConnect dc = new DotConnect();
         dc.setSQL("select identifier,inode from identifier,contentlet where identifier.id = contentlet.identifier and parent_path = ? and host_inode=?");
         dc.addParam(folderId.getPath());
@@ -1466,12 +1500,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	    }
 
-	   /**
-	    * 
-	    * @param query
-	    * @param sortBy
-	    * @return
-	    */
+//	    protected static LRUMap translatedQueryCache = new LRUMap(5000);
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
 	        TranslatedQuery result = CacheLocator.getContentletCache().getTranslatedQuery(query + " --- " + sortBy);
@@ -1630,12 +1659,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        return result;
 	    }
 
-	    /**
-	     * 
-	     * @param sortBy
-	     * @param originalQuery
-	     * @return
-	     */
 	    private static String translateQuerySortBy(String sortBy, String originalQuery) {
 
 	        if(sortBy == null)
@@ -1688,11 +1711,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        return sortBy;
 	    }
 
-	    /**
-	     * 
-	     * @param query
-	     * @return
-	     */
+
         private static String findAndReplaceQueryDates(String query) {
             query = RegEX.replaceAll(query, " ", "\\s{2,}");
 
@@ -1709,11 +1728,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if (!UtilMethods.isSet(structureVarName)) {
                 Logger.debug(ESContentFactoryImpl.class, "Structure Variable Name not found");
+                //return query;
             }
             if(structureVarName!=null){
 	            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
 	            if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
 	                Logger.debug(ESContentFactoryImpl.class, "Structure not found");
+	                //return query;
 	            }
             }
 
@@ -1879,13 +1900,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return query;
         }
 
-        /**
-         * 
-         * @param query
-         * @param regExp
-         * @param dateFormat
-         * @return
-         */
         private static String replaceDateTimeWithFormat(String query, String regExp, String dateFormat) {
             List<RegExMatch> matches = RegEX.find(query, regExp);
             String originalDate;
@@ -1914,13 +1928,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         private final static String ERROR_DATE = "error date";
-
-        /**
-         * 
-         * @param dateString
-         * @param format
-         * @return
-         */
         private static String toLuceneDateWithFormat(String dateString, String format) {
             try {
                 if (!UtilMethods.isSet(dateString))
@@ -1937,11 +1944,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        /**
-         * 
-         * @param date
-         * @return
-         */
         private static String toLuceneDate(Date date) {
             try {
                 SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -1953,11 +1955,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        /**
-         * 
-         * @param dateString
-         * @return
-         */
         private static String toLuceneDateTime(String dateString) {
             String format = "MM/dd/yyyy HH:mm:ss";
             String result = toLuceneDateWithFormat(dateString, format);
@@ -1968,12 +1965,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return result;
         }
 
-        /**
-         * 
-         * @param query
-         * @param regExp
-         * @return
-         */
         private static String replaceDateWithFormat(String query, String regExp) {
             List<RegExMatch> matches = RegEX.find(query, regExp);
             String originalDate;
@@ -1999,13 +1990,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return query;
         }
 
-        /**
-         * 
-         * @param query
-         * @param regExp
-         * @param timeFormat
-         * @return
-         */
         private static String replaceTimeWithFormat(String query, String regExp, String timeFormat) {
             List<RegExMatch> matches = RegEX.find(query, regExp);
             String originalDate;
@@ -2030,12 +2014,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return query;
         }
 
-        /**
-         * 
-         * @param dateString
-         * @param format
-         * @return
-         */
         private static String toLuceneTimeWithFormat(String dateString, String format) {
             try {
                 if (!UtilMethods.isSet(dateString))
@@ -2050,21 +2028,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        /**
-         * 
-         * @param dateString
-         * @return
-         */
         private static String toLuceneDate(String dateString) {
             String format = "MM/dd/yyyy";
             return toLuceneDateWithFormat(dateString, format);
         }
 
-        /**
-         * 
-         * @param time
-         * @return
-         */
         private static String toLuceneTime(Date time) {
             try {
                 SimpleDateFormat df = new SimpleDateFormat("HHmmss");
@@ -2076,9 +2044,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         }
 
-        /**
-         * 
-         */
 		public List<Map<String, String>> getMostViewedContent(String structureInode, Date startDate, Date endDate, User user) throws DotDataException {
 
 			List<Map<String, String>> result = new ArrayList<Map<String, String>>();
@@ -2133,12 +2098,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			return result;
 		}
 
-	/**
-	 * 
-	 * @param structureInode
-	 * @param field
-	 * @throws DotDataException
-	 */
     protected void clearField(String structureInode, Field field) throws DotDataException {
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
@@ -2177,11 +2136,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    /**
-     * 
-     * @param field
-     * @return
-     */
     private Queries getQueries(Field field) {
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
@@ -2250,5 +2204,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return update;
         }
     }
+
+
+
+
 
 }

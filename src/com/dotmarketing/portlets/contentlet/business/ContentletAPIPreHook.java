@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 package com.dotmarketing.portlets.contentlet.business;
 
 import java.util.Date;
@@ -46,6 +49,13 @@ public interface ContentletAPIPreHook {
 	 * @return false if the hook should stop the transaction
 	 */
 	public boolean find(String inode, User user, boolean respectFrontendRoles);
+	
+	/**
+	 * Finds a Contentlet Object given the inode
+	 * @param inode
+	 * @return
+	 */
+	//public boolean find(long inode, User user, boolean respectFrontendRoles);
 	
 	/**
 	 * Returns a live Contentlet Object for a given language 
@@ -206,6 +216,7 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
+
 	public boolean searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles);
 	
 	/**
@@ -326,12 +337,15 @@ public interface ContentletAPIPreHook {
 	 */
 	public boolean getAllRelationships(Contentlet contentlet);
 
+
 	/**
 	 * Returns a contentlet's siblings for a given contentlet object.
 	 * @param contentlet
 	 * @return a ContentletRelationships object containing all relationships for the contentlet
 	 */
 	public boolean getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles);
+	
+
 
 	/**
 	 * 
@@ -351,6 +365,8 @@ public interface ContentletAPIPreHook {
 	 */
 	public boolean archive(Contentlet contentlet, User user, boolean respectFrontendRoles);
 
+	
+
 	/**
 	 * This method completely deletes the given contentlet from the system
 	 * @param contentlet
@@ -358,6 +374,7 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 */
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	
 	
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
@@ -368,51 +385,6 @@ public interface ContentletAPIPreHook {
 	 * @param allVersions
 	 */
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions);
-
-	/**
-	 * Destroys the specified {@link Contentlet}. This method will automatically
-	 * un-publish, archive, and delete ALL the information related to this
-	 * contentlet in all of its languages.
-	 * 
-	 * @param contentlet
-	 *            - The contentlet that will be completely destroyed.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param respectFrontendRoles
-	 *            -
-	 * @return If the contentlet was successfully destroyed, returns
-	 *         {@code true}. Otherwise, returns {@code false}.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the information from the
-	 *             database.
-	 * @throws DotSecurityException
-	 *             The specified user does not have the required permissions to
-	 *             perform this action.
-	 */
-	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles);
-
-	/**
-	 * Destroys the specified list of {@link Contentlet} objects . This method
-	 * will automatically un-publish, archive, and delete ALL the information
-	 * related to these contentlets in all of their languages.
-	 * 
-	 * @param contentlets
-	 *            - The list of contentlets that will be completely destroyed.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param respectFrontendRoles
-	 *            -
-	 * @return If the contentlets were successfully destroyed, returns
-	 *         {@code true}. Otherwise, returns {@code false}.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the information from the
-	 *             database.
-	 * @throws DotSecurityException
-	 *             The specified user does not have the required permissions to
-	 *             perform this action.
-	 */
-	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
-	
 	/**
 	 * Publishes a piece of content. 
 	 * @param contentlet
@@ -949,6 +921,7 @@ public interface ContentletAPIPreHook {
 	 */
 	public boolean applyStructurePermissionsToChildren(Structure structure, User user, List<Permission> permissions, boolean respectFrontendRoles);
 	
+	
    /**
     * 
     * @param deleteFrom
@@ -957,12 +930,14 @@ public interface ContentletAPIPreHook {
 	public boolean deleteOldContent(Date deleteFrom);
 	
 	/**
+
 	 * 
 	 * @param deleteFrom
 	 * @param offset
 	 * @return
 	 */
 	public boolean findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles);
+	
 	
 	/**
 	 * Fetches the File Name stored under the contentlet and field
@@ -985,53 +960,17 @@ public interface ContentletAPIPreHook {
 	 * @throws DotDataException
 	 */
 	public boolean contentletIdentifierCount() throws DotDataException;
-
-	/**
-	 * 
-	 * @param contentletInodeOrIdentifier
-	 * @return
-	 * @throws DotDataException
-	 */
+	
 	public boolean removeContentletFromIndex(String contentletInodeOrIdentifier) throws DotDataException;
 
-	/**
-	 * 
-	 * @param structure
-	 * @return
-	 */
 	public boolean refresh(Structure structure);
 
-	/**
-	 * 
-	 * @param content
-	 * @return
-	 */
 	public boolean refresh(Contentlet content);
-
-	/**
-	 * 
-	 * @return
-	 */
+	
 	public boolean refreshAllContent();
-
-	/**
-	 * 
-	 * @param identifier
-	 * @return
-	 * @throws DotDataException
-	 */
+	
 	public boolean getSiblings(String identifier)throws DotDataException ;
-
-	/**
-	 * 
-	 * @param contentlet
-	 * @param contentRelationships
-	 * @param cats
-	 * @param permissions
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
+	
     public boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles);
 	
 	/**
@@ -1116,6 +1055,7 @@ public interface ContentletAPIPreHook {
 	 * @throws DotDataException
 	 */
 	public boolean DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException;
+
 	
 	/**
 	 * Method will time out after 30 seconds returning false
@@ -1123,13 +1063,7 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode);
-
-	/**
-	 * 
-	 * @param inode
-	 * @param live
-	 * @return
-	 */
+	
 	public boolean isInodeIndexed(String inode,boolean live);
 
 	/**
@@ -1139,13 +1073,11 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 */
 	public boolean isInodeIndexed(String inode, int secondsToWait);
-
 	/**
 	 * Method will update hostInode of content to systemhost
 	 * @param identifier
 	 */	
 	public boolean UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException;
-
 	/**
 	 * Method will remove User References of the given userId in Contentlet  
 	 * @param userId
@@ -1170,6 +1102,7 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 */
 	public boolean deleteVersion(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
+
 
 	/**
 	 * Checks if the version you are saving is live=false.  If it is, this method will save 
@@ -1275,22 +1208,9 @@ public interface ContentletAPIPreHook {
 	 */
 	public boolean removeFolderReferences(Folder folder) throws DotDataException;
 
-	/**
-	 * 
-	 * @param contentlet
-	 * @param user
-	 * @return
-	 * @throws DotLockException
-	 */
+
 	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException;
 
-	/**
-	 * 
-	 * @param luceneQuery
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
     public boolean searchIndexCount(String luceneQuery, User user, boolean respectFrontendRoles);
     
 	/**
@@ -1300,26 +1220,14 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @return Map with the ContentRelationships. Empty Map if the content doesn't have associated relationships.
 	 */
+	
 	public boolean findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
-
-	/**
-	 * 
-	 * @param inode
-	 * @param field
-	 * @return
-	 * @throws DotDataException
-	 */
+	
 	public boolean loadField(String inode, Field field) throws DotDataException;
 
-	/**
-	 * 
-	 * @param luceneQuery
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
     public boolean indexCount(String luceneQuery, User user,
             boolean respectFrontendRoles);
+
 
     /**
      * Gets the top viewed content for a particular structure for a specified date interval
@@ -1332,65 +1240,13 @@ public interface ContentletAPIPreHook {
      */
 	public boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user);
 
-	/**
-	 * 
-	 * @param contentlet
-	 * @param isNew
-	 * @param isNewVersion
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotContentletStateException
-	 * @throws DotStateException
-	 */
     public boolean publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
-    /**
-     * 
-     * @param contentlet
-     * @param isNew
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     * @throws DotContentletStateException
-     * @throws DotStateException
-     */
     public boolean publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
 
-    /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
     public boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
-
-    /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+	
 	public boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 
-	/**
-	 * 
-	 * @param buffy
-	 * @param user
-	 * @param roles
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
 	public boolean addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
-
 }
