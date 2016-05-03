@@ -3697,10 +3697,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // setBinary
             }else if(field.getFieldContentlet().startsWith("binary")){
                 try{
-                	System.out.println(value.getClass());
-                    contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
+                	// only if the value is a file
+                	if(value.getClass()==java.io.File.class){
+                		contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
+                	}
                 }catch (Exception e) {
-                    throw new DotContentletStateException("Unable to set binary file Object");
+                    throw new DotContentletStateException("Unable to set binary file Object",e);
                 }
         }else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
