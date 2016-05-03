@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Ext Carousel Example</title>		
+        
+    	<link href="../examples.css" rel="stylesheet" />
+    	<link href="carousel.css" rel="stylesheet" />
+        
+    	<script src="../../ext-core-debug.js"></script>
+        <script src="carousel.js"></script>
+        
+        <script>
+            Ext.onReady(function() {
+                new Ext.ux.Carousel('simple-example');
+                
+                new Ext.ux.Carousel('full-example', {
+                    itemSelector: 'img',
+                    interval: 3,
+                    autoPlay: true,
+                    showPlayButton: true,
+                    pauseOnNavigate: true,
+                    freezeOnHover: true,
+                    transitionType: 'fade',
+                    navigationOnHover: true       
+                });
+                
+                new Ext.ux.Carousel('html-example', {
+                    itemSelector: 'div.item',
+                    interval: 5,
+                    autoPlay: true,
+                    transitionEasing: 'easeIn'                 
+                });
+            })
+        </script>
+        
+        <style>
+            div.item {
+                padding: 20px;
+            }            
+        </style>
+    </head>
+
+    <body>
+    	<h2>Example</h2>
+    
+    	<h3>Simple configuration</h3>
+        <div id="simple-example" style="padding: 5px; height: 280px; width: 420px; background-color: #E6E6E0">
+    		<img src="slides/1.jpg" title="Masterpiece">
+            <img src="slides/2.jpg" title="Teeth">
+            <img src="slides/3.jpg" title="Roar">
+            <img src="slides/4.jpg" title="Feed me">
+            <img src="slides/5.jpg" title="Debugging">
+            <img src="slides/6.jpg" title="Baby">
+        </div>
+        
+        <h3>Full configuration. autoPlay, fade, freezeOnHover, navigationOnHover and more</h3>
+        <div id="full-example" style="padding: 5px; height: 280px; width: 420px; background-color: #E6E6E0">
+            <img src="slides/2.jpg" title="Teeth">
+            <img src="slides/3.jpg" title="Roar">
+            <img src="slides/4.jpg" title="Feed me">
+            <img src="slides/5.jpg" title="Debugging">
+            <img src="slides/6.jpg" title="Baby">
+    		<img src="slides/1.jpg" title="Masterpiece">
+        </div>
+        
+        <h3>Configuration with HTML and transitionEasing: 'easeIn'</h3>
+        <div id="html-example" style="padding: 5px; height: 250px; width: 600px; background-color: #F6F6F0; color: black">
+    		<div class="item" title="Some markup and list">
+    		    <h3>List</h3>
+    		    <ul>
+    		        <li>List item 1</li>
+                    <li>List item 2</li>
+                    <li>List item 3</li>
+    		    </ul>
+                <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Proin odio sapien, sagittis id, sollicitudin eget, scelerisque et, nibh. Vestibulum faucibus, erat at varius dapibus, magna ante consectetur turpis, faucibus dapibus nunc justo laoreet nulla. Praesent lorem purus, consequat at, posuere id, convallis non, nibh. Maecenas vehicula lectus at turpis ultrices placerat.</p>
+    		</div>
+            <div class="item" title="Lorem Ipsum text">
+                <h3>Text</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris justo. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Proin odio sapien, sagittis id, sollicitudin eget, scelerisque et, nibh. Vestibulum faucibus, erat at varius dapibus, magna ante consectetur turpis, faucibus dapibus nunc justo laoreet nulla. Praesent lorem purus, consequat at, posuere id, convallis non, nibh. Maecenas vehicula lectus at turpis ultrices placerat.</p>
+            </div>
+            <div class="item" title="More of that text">
+                <h3>More Text</h3>
+                <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Proin odio sapien, sagittis id, sollicitudin eget, scelerisque et, nibh. Vestibulum faucibus, erat at varius dapibus, magna ante consectetur turpis, faucibus dapibus nunc justo laoreet nulla. Praesent lorem purus, consequat at, posuere id, convallis non, nibh. Maecenas vehicula lectus at turpis ultrices placerat.</p>
+            </div>
+        </div>
+    </body>
+</html>

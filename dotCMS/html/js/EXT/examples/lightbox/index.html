@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Ext Lightbox Example</title>
+
+    	<link href="../examples.css" rel="stylesheet" />
+    	<link href="lightbox.css" rel="stylesheet" />
+
+    	<script src="../../ext-core-debug.js"></script>
+        <script src="lightbox.js"></script>
+
+        <script>
+            Ext.ux.Lightbox.register('a[rel^=lightbox]');
+            Ext.ux.Lightbox.register('a.lb-flower', true); // true to show them as a set
+        </script>
+
+        <style>
+            .thumbnail {
+            	padding: 4px;
+            	background-color: #e6e6e0;
+            	border: 1px solid #d6d6d0;
+            	float: left;
+            	margin-right: 10px;
+            	margin-bottom: 10px;
+        	}
+        </style>
+    </head>
+
+    <body>
+        <div id="content">
+        	<h2>Example</h2>
+
+        	<h3>Single Images</h3>
+        	<div class="thumbnail">
+        		<a href="images/image1.jpg" rel="lightbox"><img src="images/thumb1.jpg" alt="Columbine" width="120" height="72"></a>
+        	</div>
+        	<div class="thumbnail">
+        		<a href="images/image2.jpg" rel="lightbox" title="This caption is optional."><img src="images/thumb2.jpg" alt="Pink Whirls" width="120" height="72"></a>
+        	</div>
+
+        	<h3 style="clear: both;">Gallery</h3>
+
+        	<div class="thumbnail">
+        		<a href="images/image3.jpg" class="lb-flower" title="Click on the right side of an image to move forward."><img src="images/thumb3.jpg" alt="Lily of the Valley" width="120" height="72"></a>
+        	</div>
+        	<div class="thumbnail">
+        		<a href="images/image4.jpg" class="lb-flower" title="You can also use the arrow keys to navigate the gallery."><img src="images/thumb4.jpg" alt="Pansy" width="120" height="72"></a>
+        	</div>
+        	<div class="thumbnail">
+        		<a href="images/image5.jpg" class="lb-flower" title="While you are viewing an image, the lightbox preloads the next image in the gallery."><img src="images/thumb5.jpg" alt="Primrose" width="120" height="72"></a>
+        	</div>
+        	<div class="thumbnail">
+        		<a href="images/image6.jpg" class="lb-flower" title="This is a narrow image with a long description. Notice how the bottom of the lightbox automatically expands to accommodate the longer caption."><img src="images/thumb6.jpg" alt="Periwinkle" width="120" height="72"></a>
+        	</div>
+        	<div class="thumbnail">
+        		<a href="images/image7.jpg" class="lb-flower" title="Press 'Esc' to close the gallery."><img src="images/thumb7.jpg" alt="Daffodil" width="120" height="72"></a>
+        	</div>
+        </div>
+    </body>
+</html>

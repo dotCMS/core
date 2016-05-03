@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Ext Combo Example</title>		
+        
+    	<link href="../examples.css" rel="stylesheet" />
+    	<link href="../carousel/carousel.css" rel="stylesheet" />
+        <link href="../menu/menu.css" rel="stylesheet" />
+        <link href="../lightbox/lightbox.css" rel="stylesheet" />
+        
+    	<script src="../../ext-core-debug.js"></script>
+        <script src="../carousel/carousel.js"></script>
+        <script src="../lightbox/lightbox.js"></script>
+        <script src="../menu/menu.js"></script>
+        <script src="../jsonp/jsonp.js"></script>
+        
+        <script>
+            Ext.ux.ComboExample = {
+                init: function() {
+                    this.photoTemplate = new Ext.Template([
+                        '<a href="{href}" class="lightbox" title="{title}">',
+                            '<img src="{src}" height="240">',
+                        '</a>'
+                    ]);
+
+                    this.menu = new Ext.ux.Menu('combo-menu');
+                    this.menu.on('click', this.loadPhotos, this);
+                    
+                    this.carousel = new Ext.ux.Carousel('combo-carousel', {
+                        interval: 5,
+                        itemSelector: 'a.lightbox',
+                        showPlayButton: true,
+                        pauseOnNavigate: true    
+                    });
+                    
+                    Ext.ux.Lightbox.register('a.lightbox', true);
+                    
+                    Ext.ux.Lightbox.on('open', function() {
+                        this.carousel.pause();
+                    }, this);
+                    
+                    Ext.ux.Lightbox.on('close', function(image) {
+                        this.carousel.setSlide(image);
+                        this.carousel.play();
+                    }, this);                        
+                },
+                
+                loadPhotos: function(ev, t) {
+                    ev.preventDefault();
+                    
+                    // in this case we only want to navigate if you click on a subitem
+                    if(Ext.fly(t).parent('li').hasClass('ux-menu-item-main')) {
+                        return;
+                    }
+                    
+                    var tag = t.innerText || t.textContent;
+                    
+                    this.menu.hideAll();
+                    this.menu.el.select('.current').removeClass('current');
+                    Ext.fly(t).addClass('current');
+                    this.menu.setCurrent();
+                    
+                    Ext.ux.JSONP.request('http://api.flickr.com/services/feeds/photos_public.gne', {
+                        callbackKey: 'jsoncallback',
+                        params: {
+                            format: 'json',
+                            tags: tag,
+                            lang: 'en-us'                            
+                        },
+                        callback: this.updatePhotos,
+                        scope: this
+                    });
+                },
+                
+                updatePhotos: function(data) {
+                    Ext.select('#combo-carousel > p').remove();
+                    
+                    this.carousel.clear();
+                    Ext.each(data.items, function(item) {
+                        item.src = item.media.m;
+                        item.href = item.media.m.replace('_m.jpg', '.jpg');
+                        this.carousel.add(this.photoTemplate.append('combo-carousel', item));
+                    }, this);
+                    
+                    this.carousel.refresh().play();
+                }
+            };
+            
+            Ext.onReady(Ext.ux.ComboExample.init, Ext.ux.ComboExample);
+        </script>
+        
+        <style>
+            #combo-carousel {
+                padding: 5px; 
+                height: 240px; 
+                width: 358px; 
+                background-color: #E6E6E0;
+                margin-top: 20px;
+                overflow: hidden;      
+            }
+            
+            #combo-carousel p {
+                padding: 20px;
+            }
+            
+            .ux-menu a.current {
+                background-image: url('../menu/images/menu-item-bg-current.png');
+                border-color: #cbc0b7;
+            }            
+        </style>
+    </head>
+
+    <body>
+    	<h2>Combo Example</h2>
+    
+    	<h3>Menu + Flickr JSONP + Carousel + Lightbox</h3>
+        <ul id="combo-menu">
+    		<li>
+    		    <a href="#">Nature</a>
+                <ul>
+                    <li><a href="#">Plants</a></li>
+                    <li><a href="#">Ocean</a></li>
+                    <li><a href="#">Trees</a></li>
+                    <li><a href="#">Skies</a></li>
+                    <li><a href="#">Mountains</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#">Vehicles</a>
+                <ul>
+                    <li><a href="#">Cars</a></li>
+                    <li><a href="#">Boats</a></li>
+                    <li><a href="#">Trucks</a></li>
+                    <li><a href="#">Bikes</a></li>
+                </ul>                
+            </li>
+            <li>
+                <a href="#">Animals</a>
+                <ul>
+                    <li><a href="#">Tigers</a></li>
+                    <li><a href="#">Elephants</a></li>
+                    <li><a href="#">Fish</a></li>
+                    <li><a href="#">Birds</a></li>
+                </ul>                
+            </li>
+        </ul>
+        
+        <div id="combo-carousel"><p>Click on one of the items in the menu to load photos</p></div>
+    </body>
+</html>

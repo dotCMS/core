@@ -1,0 +1,106 @@
+/*
+ * Ext Core Library Examples 3.0
+ * http://extjs.com/
+ * Copyright(c) 2006-2009, Ext JS, LLC.
+ * 
+ * The MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * 
+ */
+
+.tab_container {
+    float: left;
+    width: 400px;
+}
+
+.tab-buttons-panel {
+    width: 100%;
+    float: left;
+    background: url(images/wt-norm.png) repeat-x bottom;
+}
+
+.tab-buttons-panel ul {
+    margin: 0;
+    padding: 0px;
+    list-style: none;    
+}
+
+.tab-buttons-panel li {
+    float:left;    
+    margin:0;
+    padding:0;
+    cursor: pointer;
+    border-color: #b8cbde;
+    border-style: solid;
+    border-width: 0px 0px 1px 0px;
+    background: url(images/wt-right.png) no-repeat right top;
+}
+
+.tab-buttons-panel span {
+    color: #222;
+    display: block;
+    background: url(images/wt-left.png) no-repeat left top;
+    padding: 5px 15px 4px;
+}
+
+.tab-buttons-panel li.tab-show {
+     background: url(images/wt-right-on.png) no-repeat right top;
+    border-width: 0px 0px 0px 0px;
+}
+
+.tab-buttons-panel li.tab-show span {
+      background:url(images/wt-left-on.png) no-repeat left top;
+      padding:5px 15px 5px;
+}
+
+.tab-content {
+    top: 27px;
+    position: relative;
+    border-width: 0px 1px 1px 1px;
+    border-color: #b8cbde;
+    border-style: none solid solid solid;
+    background-color: #e1e6ee;
+    display: none;
+    padding: 15px;
+    padding-bottom: 0px;
+}
+
+.ext-border-box .tab-content {
+    top: 0px;    
+}
+
+.tab-content-show {
+    display: block;
+}
+
+.tab-content-panel-border {
+    margin-bottom: 20px;
+}
+
+.tab-content-panel {
+    padding: 5px;
+    border: 1px dotted #abb3b0;
+    background-color: #f8fafd;
+}
+
+.tab-content-panel li {
+    list-style-type: circle;
+    list-style-position: inside;
+}
