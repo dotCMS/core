@@ -35,6 +35,7 @@ import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
+import com.dotmarketing.business.UserAPITest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -129,7 +130,8 @@ import com.dotmarketing.webdav.WebDavTest;
 	CurrentSessionLanguageConditionletFTest.class,
 	CurrentSessionLanguageConditionletTest.class,
 	TagAPITest.class,
-	RulesUnderPageAssetsFTest.class
+	RulesUnderPageAssetsFTest.class,
+	UserAPITest.class
 })
 public class AllTestsSuite {
 
