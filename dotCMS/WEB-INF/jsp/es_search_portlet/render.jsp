@@ -26,6 +26,7 @@
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
 
 <%if( LicenseUtil.getLevel() < 200){ %>
 	<div class="portlet-wrapper">
@@ -318,7 +319,10 @@ if(query == null){
 				</th></tr>
 
 				<% for (Object x : cons){%>
-					<%Contentlet c =(Contentlet) x;%>
+					<%
+						Contentlet c =(Contentlet) x;
+						c.getMap().putAll(ContentletUtil.getSpecialFieldValues(user, c));
+					%>
 
 						<tr>
 							<td><strong><%= counter %>.</td>
