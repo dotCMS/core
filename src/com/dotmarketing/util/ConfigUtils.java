@@ -28,7 +28,7 @@ public class ConfigUtils {
 				realPath = realPath + java.io.File.separator;
 			}
 		} else {
-			realPath = com.liferay.util.FileUtil.getRealPath("dotsecure");
+			realPath = com.liferay.util.FileUtil.getRealPath("/dotsecure");
 		}
 		return realPath;
 

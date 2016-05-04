@@ -332,7 +332,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
                 moveResources( context, jspPath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getBundleFolder( context ) + jspPath );
+                portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getBundleFolder( context, File.separator ) + jspPath );
             } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
@@ -344,7 +344,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 //Copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
                 moveVelocityResources( context, templatePath );
-                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getBundleFolder( context ) + templatePath );
+                portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getBundleFolder( context, File.separator ) + templatePath );
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
@@ -370,7 +370,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
             path = PATH_SEPARATOR + path;
         }
 
-        String forwardMapping = getBundleFolder( context ) + path;
+        String forwardMapping = getBundleFolder( context, File.separator ) + path;
 
         // Creating an ForwardConfig Instance
         ForwardConfig forwardConfig = new ActionForward( name, forwardMapping, redirect );

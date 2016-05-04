@@ -107,7 +107,7 @@ public class ServletTestRunner extends HttpServlet {
         JUnitCore jUnitCore = new JUnitCore();
 
         //Preparing the reports folder
-        String logsDirectory = Config.CONTEXT.getRealPath( "dotsecure" ) + File.separator + "logs" + File.separator + "test" + File.separator;
+        String logsDirectory = Config.CONTEXT.getRealPath( "/dotsecure/logs/test/" );
         File reportDirectory = new File( logsDirectory );
         FileUtils.deleteDirectory( reportDirectory );
         reportDirectory.mkdirs();

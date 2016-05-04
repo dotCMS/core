@@ -284,6 +284,12 @@ public class FileUtil {
 			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
 			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
 		}
+
+		//Fallback for wrong use of the File.separator using the context.getRealPath
+		if (relativePath.contains("\\")) {
+			relativePath = replaceSeparator(relativePath);
+		}
+
 		String ret = Config.CONTEXT.getRealPath(relativePath);	
 		if(ret !=null) return ret;
 		String base = Config.CONTEXT.getRealPath("/");

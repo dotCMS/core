@@ -50,7 +50,7 @@ class ActivatorUtil {
         }
     }
 
-    static String getBundleFolder ( BundleContext context ) {
+    static String getBundleFolder ( BundleContext context, String separator ) {
 
         //We will use the bundle jar name as the folder name for the osgi resources we move inside dotCMS
         String bundleLocation = context.getBundle().getLocation();
@@ -58,7 +58,7 @@ class ActivatorUtil {
         jarFileName = jarFileName.replace( ".jar", "" );
 
         //return OSGI_FOLDER + File.separator + context.getBundle().getBundleId();
-        return OSGI_FOLDER + File.separator + jarFileName;
+        return OSGI_FOLDER + separator + jarFileName;
     }
 
     static ModuleConfig getModuleConfig () {
@@ -91,14 +91,14 @@ class ActivatorUtil {
         ServletContext servletContext = Config.CONTEXT;
 
         //Cleaning the resources under the html folder
-        String resourcesPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
+        String resourcesPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context, "/" ) );
         File resources = new File( resourcesPath );
         if ( resources.exists() ) {
             FileUtil.deltree( resources );
         }
 
         //Now cleaning the resources under the velocity folder
-        resourcesPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context ) );
+        resourcesPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context, "/" ) );
         resources = new File( resourcesPath );
         if ( resources.exists() ) {
             FileUtil.deltree( resources );
@@ -115,7 +115,7 @@ class ActivatorUtil {
     static void moveVelocityResources ( BundleContext context, String referenceResourcePath ) throws Exception {
 
         ServletContext servletContext = Config.CONTEXT;
-        String destinationPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context ) );
+        String destinationPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context, "/" ) );
 
         moveResources( context, referenceResourcePath, destinationPath );
     }
@@ -130,7 +130,7 @@ class ActivatorUtil {
     static void moveResources ( BundleContext context, String referenceResourcePath ) throws Exception {
 
         ServletContext servletContext = Config.CONTEXT;
-        String destinationPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context ) );
+        String destinationPath = servletContext.getRealPath( Constants.TEXT_HTML_DIR + getBundleFolder( context, "/" ) );
 
         moveResources( context, referenceResourcePath, destinationPath );
     }

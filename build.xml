@@ -47,8 +47,8 @@
     <property name="license.project.home" value="../license"/>
     <property name="enterprise.project.home" value="../enterprise-2.x"/>
 
-    <property name="tomcat7.home" value="${tomcat7.install.location}"/>
-    <property name="tomcat7.version" value="${tomcat7.install.version}"/>
+    <property name="tomcat.home" value="${tomcat.install.location}"/>
+    <property name="tomcat.version" value="${tomcat.install.version}"/>
     <property name="jboss7.home" value="${jboss7.install.location}"/>
     <property name="jboss7.version" value="${jboss7.install.version}"/>
 
@@ -169,7 +169,7 @@
 
 
     <target name="clean-jsp" description="Removes all compiled jsp files from the tomcat instance.">
-        <delete dir="${tomcat7.home}/work/Catalina" />
+        <delete dir="${tomcat.home}/work/Catalina" />
     </target>
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
@@ -339,18 +339,18 @@
 
     <target name="create-dist" description="Creates the final distribution files for dotCMS.">
 
-        <var name="tomcat7.home" value="${distribution.dotserver.output}/tomcat-${tomcat7.version}"/>
+        <var name="tomcat.home" value="${distribution.dotserver.output}/tomcat-${tomcat.version}"/>
 
         <antcall target="clean" />
 
         <!--Clone tomcat-->
-        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="${tomcat7.version}" dest="${tomcat7.home}"/>
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat.git" version="${tomcat.version}" dest="${tomcat.home}"/>
 
         <!--Generate the war-->
         <antcall target="war" />
 
         <!--Move the war to the ./dotserver/tomcat-7.x.x/webapps folder-->
-        <antcall target="move-war-tomcat7" />
+        <antcall target="move-war-tomcat" />
 
         <!--bin folder (./bin)-->
         <copy todir="${distribution.bin.output}">
@@ -390,9 +390,9 @@
             </fileset>
         </copy>
 
-    	 <!--docs folder (./docs) -->
+        <!--docs folder (./docs) -->
         <copy todir="${distribution.docs.output}">
-        	<fileset dir="docs">
+            <fileset dir="docs">
                 <include name="**/*"/>
             </fileset>
         </copy>
@@ -400,20 +400,20 @@
         <!--Set some startup variables-->
         <replace file="${distribution.bin.output}/build.conf"><!--Unix-->
             <replacefilter token="#SERVER_FOLDER" value="SERVER_FOLDER"/>
-            <replacefilter token="{server.folder}" value="dotserver/tomcat-${tomcat7.version}"/>
+            <replacefilter token="{server.folder}" value="dotserver/tomcat-${tomcat.version}"/>
 
             <replacefilter token="#HOME_FOLDER" value="HOME_FOLDER"/>
             <replacefilter token="{home.folder}" value="$SERVER_FOLDER/webapps/ROOT"/>
 
             <replacefilter token="#target.root" value="target.root"/>
-            <replacefilter token="{dotcms.home}" value="dotserver/tomcat-${tomcat7.version}/webapps/ROOT"/>
+            <replacefilter token="{dotcms.home}" value="dotserver/tomcat-${tomcat.version}/webapps/ROOT"/>
         </replace>
         <replace file="${distribution.bin.output}/build.conf.bat"><!--For windows-->
             <replacefilter token="rem set" value="set"/>
 
-            <replacefilter token="{server.folder}" value="dotserver\tomcat-${tomcat7.version}"/>
-            <replacefilter token="{home.folder}" value="dotserver\tomcat-${tomcat7.version}\webapps\ROOT"/>
-            <replacefilter token="{dotcms.home}" value="dotserver\tomcat-${tomcat7.version}\webapps\ROOT"/>
+            <replacefilter token="{server.folder}" value="dotserver\tomcat-${tomcat.version}"/>
+            <replacefilter token="{home.folder}" value="dotserver\tomcat-${tomcat.version}\webapps\ROOT"/>
+            <replacefilter token="{dotcms.home}" value="dotserver\tomcat-${tomcat.version}\webapps\ROOT"/>
         </replace>
 
         <copy file="build.xml" todir="${distribution.bin.output}/ant"/>
@@ -423,7 +423,7 @@
         <if>
             <equals arg1="${dist.update}" arg2="true"/>
             <then>
-                <delete file="${distribution.dotserver.output}/tomcat-${tomcat7.version}/webapps/ROOT/starter.zip"/>
+                <delete file="${distribution.dotserver.output}/tomcat-${tomcat.version}/webapps/ROOT/starter.zip"/>
             </then>
         </if>
 
@@ -439,11 +439,11 @@
                     <tarfileset dir="${distribution.output}/bin" prefix="/bin" filemode="755">
                         <include name="**/*.sh"/>
                     </tarfileset>
-                    <tarfileset dir="${distribution.output}/dotserver/tomcat-${tomcat7.version}/bin" prefix="/dotserver/tomcat-${tomcat7.version}/bin" filemode="755">
+                    <tarfileset dir="${distribution.output}/dotserver/tomcat-${tomcat.version}/bin" prefix="/dotserver/tomcat-${tomcat.version}/bin" filemode="755">
                         <include name="**/*.sh"/>
                     </tarfileset>
 
-                    <tarfileset dir="${distribution.output}/dotserver/tomcat-${tomcat7.version}/webapps/ROOT" prefix="/dotserver/tomcat-${tomcat7.version}/webapps/ROOT" filemode="755">
+                    <tarfileset dir="${distribution.output}/dotserver/tomcat-${tomcat.version}/webapps/ROOT" prefix="/dotserver/tomcat-${tomcat.version}/webapps/ROOT" filemode="755">
                         <include name="**/*.sh"/>
                     </tarfileset>
 
@@ -490,8 +490,8 @@
 
     </target>
 
-	<target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
-		<mkdir dir="${build.dir}/testbuild" />
+    <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
+        <mkdir dir="${build.dir}/testbuild" />
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
@@ -500,7 +500,7 @@
                 <exclude name="**/*.java"/>
             </fileset>
         </copy>
-		<jar jarfile="${distribution.file.output}/dotcms_tests_${dotcms.release.version}.jar" basedir="${build.dir}/testbuild" />
+        <jar jarfile="${distribution.file.output}/dotcms_tests_${dotcms.release.version}.jar" basedir="${build.dir}/testbuild" />
 
     </target>
 
@@ -872,41 +872,41 @@
         </war>
     </target>
 
-    <target name="undeploy-war-tomcat7">
-        <delete dir="${tomcat7.home}/webapps/ROOT"/>
+    <target name="undeploy-war-tomcat">
+        <delete dir="${tomcat.home}/webapps/ROOT"/>
     </target>
     <target name="undeploy-war-jboss7">
         <delete file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
         <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
     </target>
 
-    <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war" description="Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.">
-        <antcall target="move-war-tomcat7"/>
+    <target name="deploy-war-tomcat" depends="clone-pull-tomcat, war" description="Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.">
+        <antcall target="move-war-tomcat"/>
     </target>
 
-    <target name="deploy-war-tomcat7-dev"  description="Same as deploy-war-tomcat7 but will use the no obfuscated version of the license and enterprise jars. (Useful for development)">
-        <antcall target="generate-move-clean-projects-tomcat7"/>
-        <antcall target="deploy-war-tomcat7"/>
+    <target name="deploy-war-tomcat-dev"  description="Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)">
+        <antcall target="generate-move-clean-projects-tomcat"/>
+        <antcall target="deploy-war-tomcat"/>
     </target>
 
-    <target name="generate-move-clean-projects-tomcat7">
-        <antcall target="generate-move-clean-license-tomcat7"/>
-        <antcall target="generate-move-clean-enterprise-tomcat7"/>
+    <target name="generate-move-clean-projects-tomcat">
+        <antcall target="generate-move-clean-license-tomcat"/>
+        <antcall target="generate-move-clean-enterprise-tomcat"/>
     </target>
 
-    <target name="generate-move-clean-license-tomcat7">
+    <target name="generate-move-clean-license-tomcat">
 
         <!--Generate the projects jars-->
         <ant antfile="${license.project.home}/build.xml" target="jar" inheritAll="false"/>
 
         <!--Delete the old jars-->
         <delete>
-            <fileset dir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib" includes="eelic-*"/>
+            <fileset dir="${tomcat.home}/webapps/ROOT/WEB-INF/lib" includes="eelic-*"/>
             <fileset dir="dotCMS/WEB-INF/lib" includes="eelic-*" />
         </delete>
 
         <!--Copy the jar-->
-        <copy todir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib">
+        <copy todir="${tomcat.home}/webapps/ROOT/WEB-INF/lib">
             <fileset dir="${license.project.home}/build">
                 <include name="eelic_clean.jar"/>
             </fileset>
@@ -918,19 +918,19 @@
         </copy>
     </target>
 
-    <target name="generate-move-clean-enterprise-tomcat7">
+    <target name="generate-move-clean-enterprise-tomcat">
 
         <!--Generate the projects jars-->
         <ant antfile="${enterprise.project.home}/build.xml" target="jar" inheritAll="false"/>
 
         <!--Delete the old jars-->
         <delete>
-            <fileset dir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib" includes="ee-*" />
+            <fileset dir="${tomcat.home}/webapps/ROOT/WEB-INF/lib" includes="ee-*" />
             <fileset dir="dotCMS/WEB-INF/lib" includes="ee-*" />
         </delete>
 
         <!--Copy the jar-->
-        <copy todir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib">
+        <copy todir="${tomcat.home}/webapps/ROOT/WEB-INF/lib">
             <fileset dir="${enterprise.project.home}/build">
                 <include name="ee_clean.jar"/>
             </fileset>
@@ -943,29 +943,29 @@
     </target>
 
     <!--
-        Same as the deploy-war-tomcat7 except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
-        This is useful in cases when you need to make a deploy-war-tomcat7 but keeping your current data.
+        Same as the deploy-war-tomcat except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
+        This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
     -->
-    <target name="deploy-war-tomcat7-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war" description="Same as 'deploy-war-tomcat7' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)">
-        <antcall target="move-war-tomcat7"/>
-        <antcall target="restore-backup-war-tomcat7-data"/>
+    <target name="deploy-war-tomcat-backup" depends="clone-pull-tomcat, backup-war-tomcat-data, war" description="Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)">
+        <antcall target="move-war-tomcat"/>
+        <antcall target="restore-backup-war-tomcat-data"/>
     </target>
     <!--
-        Same as the deploy-war-tomcat7-tests except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
-        This is useful in cases when you need to make a deploy-war-tomcat7-tests but keeping your current data.
+        Same as the deploy-war-tomcat-tests except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
+        This is useful in cases when you need to make a deploy-war-tomcat-tests but keeping your current data.
     -->
-    <target name="deploy-war-tomcat7-tests-backup" depends="clone-pull-tomcat7, backup-war-tomcat7-data, war-tests" description="Same as 'deploy-war-tomcat7-backup' but also includes the junit tests.">
-        <antcall target="move-war-tomcat7"/>
-        <antcall target="restore-backup-war-tomcat7-data"/>
+    <target name="deploy-war-tomcat-tests-backup" depends="clone-pull-tomcat, backup-war-tomcat-data, war-tests" description="Same as 'deploy-war-tomcat-backup' but also includes the junit tests.">
+        <antcall target="move-war-tomcat"/>
+        <antcall target="restore-backup-war-tomcat-data"/>
     </target>
-    <target name="deploy-war-tomcat7-tests" depends="clone-pull-tomcat7, war-tests" description="Same as 'deploy-war-tomcat7' but also includes the junit tests.">
-        <antcall target="move-war-tomcat7"/>
+    <target name="deploy-war-tomcat-tests" depends="clone-pull-tomcat, war-tests" description="Same as 'deploy-war-tomcat' but also includes the junit tests.">
+        <antcall target="move-war-tomcat"/>
     </target>
     <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war" description="Will checkout the jboss app server, generate a war structure and copy it to the just checked out jboss. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-jboss7"/>
     </target>
-    <target name="deploy-jsp-tomcat7" description="Moves the jsp files from a git checkout to the tomcat (Useful for development).">
-        <var name="exploded.war.location" value="${tomcat7.home}/webapps/ROOT"/>
+    <target name="deploy-jsp-tomcat" description="Moves the jsp files from a git checkout to the tomcat (Useful for development).">
+        <var name="exploded.war.location" value="${tomcat.home}/webapps/ROOT"/>
         <antcall target="deploy-jsp-app-server"/>
     </target>
     <target name="deploy-jsp-jboss7" description="Moves the jsp files from a git checkout to the jboss (Useful for development).">
@@ -992,8 +992,8 @@
         </copy>
     </target>
 
-    <target name="move-war-tomcat7" depends="undeploy-war-tomcat7" description="Moves the generated war under the build folder to the tomcat webapps folder.">
-        <copy todir="${tomcat7.home}/lib/">
+    <target name="move-war-tomcat" depends="undeploy-war-tomcat" description="Moves the generated war under the build folder to the tomcat webapps folder.">
+        <copy todir="${tomcat.home}/lib/">
             <fileset dir="libs/buildlibs/">
                 <include name="mail.jar"/>
                 <include name="sqljdbc41.jar"/>
@@ -1004,15 +1004,15 @@
             </fileset>
         </copy>
 
-        <copy todir="${tomcat7.home}/webapps/ROOT">
+        <copy todir="${tomcat.home}/webapps/ROOT">
             <fileset dir="${build.war}/${war.name}.war">
                 <exclude name="**/.git" />
             </fileset>
         </copy>
 
-        <mkdir dir="${tomcat7.home}/webapps/ROOT/META-INF"/>
-        <copy file="extra/tomcat-7/context.xml" tofile="${tomcat7.home}/webapps/ROOT/META-INF/context.xml"/>
-    	<delete dir="${tomcat7.home}/webapps/ROOT/WEB-INF/classes/com"/>
+        <mkdir dir="${tomcat.home}/webapps/ROOT/META-INF"/>
+        <copy file="extra/tomcat/context.xml" tofile="${tomcat.home}/webapps/ROOT/META-INF/context.xml"/>
+        <delete dir="${tomcat.home}/webapps/ROOT/WEB-INF/classes/com"/>
     </target>
 
     <target name="move-war-jboss7" depends="undeploy-war-jboss7" description="Moves the generated war under the build folder to the jboss deployments folder.">
@@ -1024,76 +1024,76 @@
         </copy>
     </target>
 
-    <target name="backup-war-tomcat7-data">
+    <target name="backup-war-tomcat-data">
 
-        <mkdir dir="${tomcat7.home}/temp"/>
+        <mkdir dir="${tomcat.home}/temp"/>
 
-        <delete dir="${tomcat7.home}/temp/assets"/>
-        <move todir="${tomcat7.home}/temp/assets" failonerror="false">
-            <fileset dir="${tomcat7.home}/webapps/ROOT/assets">
+        <delete dir="${tomcat.home}/temp/assets"/>
+        <move todir="${tomcat.home}/temp/assets" failonerror="false">
+            <fileset dir="${tomcat.home}/webapps/ROOT/assets">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <delete dir="${tomcat7.home}/temp/dotsecure"/>
-        <move todir="${tomcat7.home}/temp/dotsecure" failonerror="false">
-            <fileset dir="${tomcat7.home}/webapps/ROOT/dotsecure">
+        <delete dir="${tomcat.home}/temp/dotsecure"/>
+        <move todir="${tomcat.home}/temp/dotsecure" failonerror="false">
+            <fileset dir="${tomcat.home}/webapps/ROOT/dotsecure">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <delete dir="${tomcat7.home}/temp/META-INF"/>
-        <move todir="${tomcat7.home}/temp/META-INF" failonerror="false">
-            <fileset dir="${tomcat7.home}/webapps/ROOT/META-INF">
+        <delete dir="${tomcat.home}/temp/META-INF"/>
+        <move todir="${tomcat.home}/temp/META-INF" failonerror="false">
+            <fileset dir="${tomcat.home}/webapps/ROOT/META-INF">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <delete dir="${tomcat7.home}/temp/h2"/>
-        <move todir="${tomcat7.home}/temp/h2" failonerror="false">
-            <fileset dir="${tomcat7.home}/webapps/ROOT/WEB-INF/H2_DATABASE">
+        <delete dir="${tomcat.home}/temp/h2"/>
+        <move todir="${tomcat.home}/temp/h2" failonerror="false">
+            <fileset dir="${tomcat.home}/webapps/ROOT/WEB-INF/H2_DATABASE">
                 <include name="*.db" />
             </fileset>
         </move>
 
     </target>
 
-    <target name="restore-backup-war-tomcat7-data" description="Restores the backup generated by the 'backup-war-tomcat7-data' task.">
+    <target name="restore-backup-war-tomcat-data" description="Restores the backup generated by the 'backup-war-tomcat-data' task.">
 
-        <delete dir="${tomcat7.home}/webapps/ROOT/assets"/>
-        <move todir="${tomcat7.home}/webapps/ROOT/assets" failonerror="false">
-            <fileset dir="${tomcat7.home}/temp/assets">
+        <delete dir="${tomcat.home}/webapps/ROOT/assets"/>
+        <move todir="${tomcat.home}/webapps/ROOT/assets" failonerror="false">
+            <fileset dir="${tomcat.home}/temp/assets">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <delete dir="${tomcat7.home}/webapps/ROOT/dotsecure"/>
-        <move todir="${tomcat7.home}/webapps/ROOT/dotsecure" failonerror="false">
-            <fileset dir="${tomcat7.home}/temp/dotsecure">
+        <delete dir="${tomcat.home}/webapps/ROOT/dotsecure"/>
+        <move todir="${tomcat.home}/webapps/ROOT/dotsecure" failonerror="false">
+            <fileset dir="${tomcat.home}/temp/dotsecure">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <delete dir="${tomcat7.home}/webapps/ROOT/META-INF"/>
-        <move todir="${tomcat7.home}/webapps/ROOT/META-INF" failonerror="false">
-            <fileset dir="${tomcat7.home}/temp/META-INF">
+        <delete dir="${tomcat.home}/webapps/ROOT/META-INF"/>
+        <move todir="${tomcat.home}/webapps/ROOT/META-INF" failonerror="false">
+            <fileset dir="${tomcat.home}/temp/META-INF">
                 <include name="**/*"/>
             </fileset>
         </move>
 
-        <move todir="${tomcat7.home}/webapps/ROOT/WEB-INF/H2_DATABASE" overwrite="true" failonerror="false">
-            <fileset dir="${tomcat7.home}/temp/h2">
+        <move todir="${tomcat.home}/webapps/ROOT/WEB-INF/H2_DATABASE" overwrite="true" failonerror="false">
+            <fileset dir="${tomcat.home}/temp/h2">
                 <include name="*.db" />
             </fileset>
         </move>
 
-        <delete dir="${tomcat7.home}/temp"/>
-        <delete dir="${tomcat7.home}/webapps/ROOT/WEB-INF/classes/com"/>
-    	
+        <delete dir="${tomcat.home}/temp"/>
+        <delete dir="${tomcat.home}/webapps/ROOT/WEB-INF/classes/com"/>
+
     </target>
 
-    <target name="clone-pull-tomcat7">
-        <git-clone-pull repository="https://github.com/dotCMS/tomcat7.git" version="${tomcat7.version}" dest="${tomcat7.home}"/>
+    <target name="clone-pull-tomcat">
+        <git-clone-pull repository="https://github.com/dotCMS/tomcat.git" version="${tomcat.version}" dest="${tomcat.home}"/>
     </target>
     <target name="clone-pull-jboss7">
         <git-clone-pull repository="https://github.com/dotCMS/jboss7.git" version="${jboss7.version}" dest="${jboss7.home}"/>
@@ -1134,7 +1134,7 @@
     <!--<target name="clone-tomcat">
         <git command="clone">
             <args>
-                <arg value="https://github.com/dotCMS/tomcat7.git"/>
+                <arg value="https://github.com/dotCMS/tomcat.git"/>
                 <arg value="../app-servers/tomcat"/>
             </args>
         </git>

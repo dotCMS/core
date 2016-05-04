@@ -22,9 +22,8 @@
 
 package com.liferay.util.servlet;
 
-import java.io.IOException;
-
 import javax.servlet.ServletOutputStream;
+import java.io.IOException;
 
 /**
  * <a href="NullServletOutputStream.java.html"><b><i>View Source</i></b></a>
