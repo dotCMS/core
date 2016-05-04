@@ -12,7 +12,6 @@ dojo.ready(function(){
 			if(url && url.get('value').trim()==='') {
 				url.set('value', 
 					this.get('value').toLowerCase().trim()
-				                     .replace(/[^a-zA-Z0-9]+/g,'-')
 				                     .replace(/-+$|^-+/g,''));
 			}
 
