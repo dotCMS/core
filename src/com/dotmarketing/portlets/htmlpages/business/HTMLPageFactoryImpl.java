@@ -488,7 +488,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 
 		// republishes the page to reset the VTL_SERVLETURI variable
 		if (page.isLive()) {
-			PageServices.invalidate(page);
+			PageServices.invalidateAll(page);
 		}
 
 		return true;

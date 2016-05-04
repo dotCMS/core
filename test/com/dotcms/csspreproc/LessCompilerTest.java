@@ -12,7 +12,7 @@ import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -59,7 +59,7 @@ public class LessCompilerTest {
             asset.setHost(demo.getIdentifier());
             asset.setFolder(folder.getInode());
             asset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-            asset.setStructureInode(StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+            asset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
             asset.setBinary(FileAssetAPI.BINARY_FIELD, f);
             asset.setStringProperty(FileAssetAPI.TITLE_FIELD, f.getName());
             asset = APILocator.getContentletAPI().checkin(asset,sysuser,false);
@@ -166,7 +166,7 @@ public class LessCompilerTest {
     
     protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
         Contentlet fileAsset=new Contentlet();
-        fileAsset.setStructureInode(StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+        fileAsset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
         fileAsset.setHost(host.getIdentifier());
         fileAsset.setFolder(f.getInode());
         fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);

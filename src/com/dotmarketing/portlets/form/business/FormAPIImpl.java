@@ -5,11 +5,11 @@ import java.util.List;
 
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DataAccessException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -138,8 +138,8 @@ public class FormAPIImpl implements FormAPI {
 		}
 		
 		/*Saving the structure in cache*/
-		StructureCache.removeStructure(structure);
-		StructureCache.addStructure(structure);
+		CacheLocator.getContentTypeCache().remove(structure);
+		CacheLocator.getContentTypeCache().add(structure);
 		StructureServices.removeStructureFile(structure);
 
 		/*Adding Widget Fields*/

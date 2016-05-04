@@ -1,15 +1,14 @@
 package com.dotmarketing.portlets.structure.business;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -17,7 +16,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -82,7 +80,7 @@ public class StructureAPIImpl implements StructureAPI {
         
         // delete Forms entry if it is a form structure
         if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-            Structure sf = StructureCache.getStructureByVelocityVarName(
+            Structure sf = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(
                     FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
             if (UtilMethods.isSet(sf) && UtilMethods.isSet(sf.getInode())) {
                 Field field = st.getFieldVar(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME);
@@ -115,7 +113,7 @@ public class StructureAPIImpl implements StructureAPI {
 
         // flushing cache
         FieldsCache.removeFields(st);
-        StructureCache.removeStructure(st);
+        CacheLocator.getContentTypeCache().remove(st);
         StructureServices.removeStructureFile(st);
     }
 

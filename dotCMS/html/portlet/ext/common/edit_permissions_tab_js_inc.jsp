@@ -14,7 +14,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.business.Versionable"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
@@ -40,7 +40,7 @@
 	<%
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
 		Permissionable asset = ((Permissionable)request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT));
-		Structure hostStrucuture = StructureCache.getStructureByVelocityVarName("Host");
+		Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		Contentlet contentletAux = ((Contentlet)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT));
 	%>
 	var languageId = '<%= ((UtilMethods.isSet(contentletAux) && UtilMethods.isSet(contentletAux.getLanguageId())) ? contentletAux.getLanguageId() : "") %>';

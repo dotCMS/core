@@ -14,8 +14,7 @@ import com.dotcms.repackage.org.antlr.runtime.tree.CommonTree;
 import com.dotcms.repackage.org.antlr.runtime.tree.CommonTreeNodeStream;
 import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlLexer;
 import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlParser;
-
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
@@ -81,7 +80,7 @@ public class SQLQueryFactory extends GenericQueryFactory {
         else if(tableName.equalsIgnoreCase(BuilderType.FOLDER.toString())){
         	query.setBuilderType(BuilderType.FOLDER);
         }else {
-        	Structure s = StructureCache.getStructureByVelocityVarName(tableName);
+        	Structure s = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tableName);
         	if(!UtilMethods.isSet(s)){
         		Logger.error(this, "table name doesn't exist");
         		throw new ValidationException("table name doesn't exist");

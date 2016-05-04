@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.workflows.business;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -15,11 +14,11 @@ import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -117,7 +116,7 @@ public class WorkflowAPITest extends TestBase{
 		/*
 		 * Create structure and add workflow scheme
 		 */
-		Structure st = StructureCache.getStructureByVelocityVarName("Issue5197Structure");
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Issue5197Structure");
 		if(!UtilMethods.isSet(st) || !UtilMethods.isSet(st.getInode())){
 			st = new Structure();
 			st.setHost(host.getIdentifier());

@@ -1,5 +1,16 @@
 package com.dotmarketing.portlets.structure.action;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+
+import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -10,10 +21,10 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,24 +45,22 @@ import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.services.StructureServices;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.Validator;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
-
-import javax.servlet.http.HttpServletRequest;
-
-import java.net.URLDecoder;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 public class EditStructureAction extends DotPortletAction {
 
@@ -250,7 +259,7 @@ public class EditStructureAction extends DotPortletAction {
 			auxStructureName = auxStructureName.replace("'", "''");
 
 			@SuppressWarnings("deprecation")
-			Structure auxStructure = StructureCache.getStructureByType(auxStructureName);
+			Structure auxStructure = CacheLocator.getContentTypeCache().getStructureByType(auxStructureName);
 
 			if (InodeUtils.isSet(auxStructure.getInode()) && !auxStructure.getInode().equalsIgnoreCase(structure.getInode())) {
 				throw new DotDataException(LanguageUtil.format(user.getLocale(), "structure-name-already-exist",new String[]{auxStructureName},false));
@@ -269,7 +278,7 @@ public class EditStructureAction extends DotPortletAction {
 				String structureFormName = structureForm.getName();
 				if (UtilMethods.isSet(structureName) && UtilMethods.isSet(structureFormName) && !structureName.equals(structureFormName) && !structure.isFixed()) {
 
-					StructureCache.removeStructure(structure);
+				    CacheLocator.getContentTypeCache().remove(structure);
 
 				}
 			}
@@ -478,8 +487,8 @@ public class EditStructureAction extends DotPortletAction {
 					+ structure.getName() + ".", HostUtil.hostNameUtil(req, _getUser(req)));
 
 			// Saving the structure in cache
-			StructureCache.removeStructure(structure);
-			StructureCache.addStructure(structure);
+			CacheLocator.getContentTypeCache().remove(structure);
+			CacheLocator.getContentTypeCache().add(structure);
 			StructureServices.removeStructureFile(structure);
 
 			String message = "message.structure.savestructure";

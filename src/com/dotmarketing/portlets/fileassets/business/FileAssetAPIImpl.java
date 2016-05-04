@@ -27,7 +27,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -431,10 +430,31 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     	
     }
 	
-	
-	
-	
-	
+	/**
+	 * This method returns the relative path for assets
+     * 
+     * @return the relative folder of where assets are stored
+	 */
+	public String getRelativeAssetsRootPath() {
+        String path = "";
+        path = Config.getStringProperty("ASSET_PATH");
+        return path;
+    }
+
+    /**
+     * This method returns the root path for assets
+     * 
+     * @return the root folder of where assets are stored
+     */
+    public String getRealAssetsRootPath() {
+        String realPath = Config.getStringProperty("ASSET_REAL_PATH");
+        if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
+            realPath = realPath + java.io.File.separator;
+        if (!UtilMethods.isSet(realPath))
+            return FileUtil.getRealPath(getRelativeAssetsRootPath());
+        else
+            return realPath;
+    }
 
 	public String getRealAssetPath(String inode) {
         String _inode = inode;

@@ -2,7 +2,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
 <%@page import="com.dotmarketing.portlets.structure.model.Field" %>
 <%@page import="com.dotmarketing.util.InodeUtils" %>
@@ -47,7 +47,7 @@ String defaultStructureInode = structure.getInode();
 String structureSelected = null;
 if(InodeUtils.isSet(request.getParameter("structInode"))){
     structureSelected=request.getParameter("structInode");
-    structure = StructureCache.getStructureByInode(structureSelected);
+    structure = CacheLocator.getContentTypeCache().getStructureByInode(structureSelected);
 }
 
 if(structureSelected == null){

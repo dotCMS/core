@@ -2,9 +2,9 @@ package com.dotcms.publisher.integrity;
 
 import javax.servlet.ServletContext;
 
+import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource.ProcessStatus;
-import com.dotcms.rest.IntegrityUtil;
 import com.dotmarketing.util.Logger;
 
 public class IntegrityDataGeneratorThread extends Thread {
