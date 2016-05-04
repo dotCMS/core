@@ -19,10 +19,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.cache.LiveCache;
+import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.comparators.ContentComparator;
 import com.dotmarketing.comparators.WebAssetSortOrderComparator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -59,23 +60,113 @@ public class ContentletServices {
 		ContentletServices.categoryAPI= categoryAPI;
 	}
 
+    /**
+     * Invalidate contentlet that is live and working
+     *
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	public static void invalidateAll(Contentlet contentlet) throws DotDataException, DotSecurityException {
+		Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-	public static void invalidate(Contentlet contentlet) throws DotDataException, DotSecurityException {
-
-		Identifier identifier= APILocator.getIdentifierAPI().find(contentlet);
+		// Live
+		LiveCache.removeAssetFromCache(contentlet);
 		invalidate(contentlet, identifier, false);
+
+		// Working
+		WorkingCache.removeAssetFromCache(contentlet);
 		invalidate(contentlet, identifier, true);
+
+		// Writes the contentlet object to a file
+		ContentletMapServices.invalidateAll(contentlet);
 	}
 
-	public static void invalidate(Contentlet contentlet, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
+    /**
+     * Will remove all contentlet files for both live and working
+     *
+     * @param contentlets
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws DotStateException
+     */
+    public static void invalidateAll(List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
+        for (Contentlet contentlet : contentlets) {
+            invalidateAll(contentlet);
+        }
+    }
 
-		Identifier identifier= APILocator.getIdentifierAPI().find(contentlet);
-		invalidate(contentlet, identifier, EDIT_MODE);
-	}
+    /**
+     * Invalidate contentlet that is live.
+     *
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static void invalidateLive(Contentlet contentlet) throws DotDataException, DotSecurityException {
+        invalidateLive(contentlet, null);
+    }
 
-	public static void invalidate(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
+    /**
+     * Invalidate contentlet that is live. <p>NOTE: This method is helpful when
+     * you would like to save calls finding the identifier, otherwise you should
+     * use the other method {@link #invalidateLive(Contentlet) invalidateLive} where
+     * you only pass the contentlet</p>
+     *
+     * @param contentlet
+     * @param identifier
+     *            of the contentlet, if its null then it will do a search using
+     *            contentlet parameter
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	public static void invalidateLive(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
+	    Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI().find(contentlet) : identifier;
+
+        LiveCache.removeAssetFromCache(contentlet);
+        invalidate(contentlet, localIdentifier, false);
+
+        // Writes the contentlet object to a file
+        ContentletMapServices.invalidateLive(contentlet);
+    }
+
+	/**
+     * Invalidate contentlet that is working
+     *
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static void invalidateWorking(Contentlet contentlet) throws DotDataException, DotSecurityException {
+        invalidateWorking(contentlet, null);
+    }
+
+    /**
+     * Invalidate contentlet that is working. <p>NOTE: This method is helpful when
+     * you would like to save calls finding the identifier, otherwise you should
+     * use the other method {@link #invalidateWorking(Contentlet) invalidateWorking} where
+     * you only pass the contentlet</p>
+     *
+     * @param contentlet
+     * @param identifier
+     *            of the contentlet, if its null then it will do a search using
+     *            contentlet parameter
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	public static void invalidateWorking(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
+        Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI().find(contentlet) : identifier;
+
+        WorkingCache.removeAssetFromCache(contentlet);
+        invalidate(contentlet, localIdentifier, true);
+
+        // Writes the contentlet object to a file
+        ContentletMapServices.invalidateWorking(contentlet);
+    }
+
+	private static void invalidate(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 		removeContentletFile(content, identifier, EDIT_MODE);
-		
+
 		if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
 		    PageServices.removePageFile(APILocator.getHTMLPageAssetAPI().fromContentlet(content), identifier, EDIT_MODE);
 		}
@@ -441,27 +532,6 @@ public class ContentletServices {
 
 	}
 
-	public static void unpublishContentletFile(Contentlet asset) throws DotStateException, DotDataException {
-
-		Identifier identifier;
-		try {
-			identifier= APILocator.getIdentifierAPI().find(asset);
-			removeContentletFile(asset, identifier, false);
-		} catch (DotHibernateException e) {
-			Logger.error(ContainerServices.class, "Unable to retrieve Identifier", e);
-		}
-
-	}
-
-	public static void removeContentletFile(Contentlet asset, boolean EDIT_MODE) throws DotStateException, DotDataException {
-		try {
-			Identifier identifier= APILocator.getIdentifierAPI().find(asset);
-			removeContentletFile(asset, identifier, EDIT_MODE);
-		} catch (DotHibernateException e) {
-			Logger.error(ContainerServices.class,"Unable to retrieve Identifier", e);
-		}
-	}
-
 	/**
 	 * Will remove all contentlet files within a structure for both live and working. Uses the system user.
 	 * @param contentlets
@@ -476,7 +546,7 @@ public class ContentletServices {
 		int size= contentlets.size();
 		while(size > 0){
 			for (Contentlet contentlet : contentlets) {
-				removeContentletFile(contentlet);
+				invalidateAll(contentlet);
 			}
 			offset += limit;
 			contentlets= conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
@@ -484,30 +554,9 @@ public class ContentletServices {
 		}
 	}
 
-	/**
-	 * Will remove all contentlet files for both live and working
-	 * @param contentlets
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public static void removeContentletFile(Contentlet contentlet) throws DotStateException, DotDataException{
-		removeContentletFile(contentlet, true);
-		removeContentletFile(contentlet, false);
-	}
+	private static void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
+	    CacheLocator.getContentletCache().remove(asset.getInode());
 
-	/**
-	 * Will remove all contentlet files for both live and working
-	 * @param contentlets
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public static void removeContentletFile(List<Contentlet> contentlets) throws DotStateException, DotDataException{
-		for (Contentlet contentlet : contentlets) {
-			removeContentletFile(contentlet);
-		}
-	}
-
-	public static void removeContentletFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath= (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
 		String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
 		if (velocityRootPath.startsWith("/WEB-INF")) {

@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -30,7 +30,7 @@ public class Host extends Contentlet implements Permissionable {
 
 	public Host() {
 		map.put(SYSTEM_HOST_KEY, false);
-		Structure st = StructureCache.getStructureByVelocityVarName("Host");
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		this.map.put(STRUCTURE_INODE_KEY, st.getInode());
 		setDefault(false);
 		setSystemHost(false);
@@ -97,7 +97,7 @@ public class Host extends Contentlet implements Permissionable {
 	}
 
 	public String getStructureInode() {
-		Structure st = StructureCache.getStructureByVelocityVarName("Host");
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		return (String) st.getInode();
 	}
 

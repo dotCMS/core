@@ -2,13 +2,13 @@ package com.dotmarketing.scripting.util;
 
 /*
  * Copyright 2004,2004 The Apache Software Foundation.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,7 +41,7 @@ import com.liferay.util.FileUtil;
 /**
  * This class provides methods that make it easier to
  * use the BSF Within dotCMS Scripting Plugin.
- * 
+ *
  * @author Jason Tesser
  */
 public class BSFUtil {
@@ -50,7 +50,6 @@ public class BSFUtil {
 	public static final String LANGUAGE_PYTHON = "jython";
 	public static final String LANGUAGE_GROOVY = "groovy";
 	public static final String LANGUAGE_JAVASCRIPT = "javascript";
-	public static final String LANGUAGE_PHP = "php";
 	private static final int COLUMN_NO = -1;
 	private static final int LINE_NO = -1;
 
@@ -72,14 +71,13 @@ public class BSFUtil {
 			assetPath = Config.getStringProperty("ASSET_PATH");
 		} catch (Exception e) { }
 	}
-	
+
 	private BSFManager initManager(){
 		// Register the JRuby engine with BSF.
 		BSFManager.registerScriptingEngine(LANGUAGE_RUBY, "com.dotcms.repackage.jruby.org.jruby.javasupport.bsf.JRubyEngine", new String[] {"rb"});
 		BSFManager.registerScriptingEngine(LANGUAGE_PYTHON,"com.dotcms.repackage.bsf.org.apache.bsf.engines.jython.JythonEngine", new String[] {"py"});
 		BSFManager.registerScriptingEngine(LANGUAGE_JAVASCRIPT,"com.dotmarketing.scripting.engine.JSRhinoEngine", new String[] {"js"});
 		BSFManager.registerScriptingEngine(LANGUAGE_GROOVY,"com.dotmarketing.scripting.engine.GroovyEngine", new String[] {"groovy,gy"});
-		BSFManager.registerScriptingEngine(LANGUAGE_PHP,"com.dotmarketing.scripting.engine.PHPEngine", new String[] {"php"});
 		return new BSFManager();
 	}
 
@@ -97,17 +95,17 @@ public class BSFUtil {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param language
 	 * @param objectToCallethodOn - can be null
 	 * @param methodName
 	 * @param args
 	 * @return
-	 * @throws BSFException 
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
-	 * @throws IOException 
-	 * @throws NoSuchUserException 
+	 * @throws BSFException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 * @throws NoSuchUserException
 	 */
 	public Object callMethod(String language, String filePath, Host host, String methodName, Object[] args) throws BSFException, NoSuchUserException, IOException, DotSecurityException, DotDataException{
 		BSFEngine engine = manager.get().loadScriptingEngine(language);
@@ -122,19 +120,19 @@ public class BSFUtil {
 	 * @param methodName
 	 * @param args
 	 * @return
-	 * @throws BSFException 
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
-	 * @throws IOException 
-	 * @throws NoSuchUserException 
+	 * @throws BSFException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 * @throws NoSuchUserException
 	 */
 	public Object callMethod(String language, Object o, Host host, String methodName, Object[] args) throws BSFException, NoSuchUserException, IOException, DotSecurityException, DotDataException{
 		BSFEngine engine = manager.get().loadScriptingEngine(language);
 		return engine.call(o, methodName, args);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param language
 	 * @param source
 	 * @param codeBody
@@ -142,10 +140,10 @@ public class BSFUtil {
 	 * @param arguments
 	 * @return
 	 * @throws BSFException
-	 * @throws DotSecurityException 
-	 * @throws IOException 
-	 * @throws DotDataException 
-	 * @throws NoSuchUserException 
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 * @throws DotDataException
+	 * @throws NoSuchUserException
 	 */
 	public Object applyAndExecuteCode(String filePath, Host host, String codeBody, Vector paramNames, Vector arguments) throws BSFException, IOException, DotSecurityException, DotDataException{
 		String source = readFile(filePath, host);
@@ -178,10 +176,10 @@ public class BSFUtil {
 	 * @param expression
 	 * @return
 	 * @throws BSFException
-	 * @throws DotSecurityException 
-	 * @throws IOException 
-	 * @throws DotDataException 
-	 * @throws NoSuchUserException 
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 * @throws DotDataException
+	 * @throws NoSuchUserException
 	 */
 	public Object evalExpressionOnFile(String filePath, Host host, String expression) throws BSFException, IOException, DotSecurityException, DotDataException {
 		//		String source = readFile(filePath, host);
@@ -191,7 +189,7 @@ public class BSFUtil {
 
 	/**
 	 * Evaluates an expression on a file and returns its value.
-	 * @param fileKey - This can be a 
+	 * @param fileKey - This can be a
 	 * @param expression
 	 * @return
 	 * @throws BSFException
@@ -212,16 +210,16 @@ public class BSFUtil {
 	public Object evalExpressionOnScriptlet(String language, String scriplet, String expression) throws BSFException {
 		return manager.get().eval(language, scriplet, LINE_NO, COLUMN_NO, expression);
 	}
-	
+
 	/**
 	 * Evaluates a file of code and returns the value of the last expression.
 	 * @param filePath
 	 * @return
 	 * @throws BSFException
 	 * @throws IOException
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws NoSuchUserException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws NoSuchUserException
 	 */
 	public Object evalFile(String filePath, Host host) throws BSFException, IOException, DotSecurityException, DotDataException {
 		String language = whichLanguage(filePath);
@@ -244,9 +242,9 @@ public class BSFUtil {
 	 * @param filePath
 	 * @throws BSFException
 	 * @throws IOException
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws NoSuchUserException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws NoSuchUserException
 	 */
 	public void execFile(String filePath, Host host) throws BSFException, IOException, DotSecurityException, DotDataException {
 		String language = whichLanguage(filePath);
@@ -258,7 +256,7 @@ public class BSFUtil {
 	 * Find the language being used based on the file extension
 	 * @param filePath
 	 * @return
-	 * @throws BSFException 
+	 * @throws BSFException
 	 */
 	public String whichLanguage(String filePath) throws BSFException{
 		return BSFManager.getLangFromFilename(filePath);
@@ -273,8 +271,8 @@ public class BSFUtil {
 	 * @param filePath - dotCMS file path
 	 * @return
 	 * @throws IOException
-	 * @throws DotDataException 
-	 * @throws NoSuchUserException 
+	 * @throws DotDataException
+	 * @throws NoSuchUserException
 	 */
 	public static String readFile(String filePath, Host host) throws IOException,DotSecurityException, NoSuchUserException, DotDataException {
 		Identifier ident = APILocator.getIdentifierAPI().find(host, filePath);
@@ -308,7 +306,7 @@ public class BSFUtil {
 
 		return content;
 	}
-	
+
 	public void terminateThreadLocalManager(){
 		BSFManager man = manager.get();
 		if(man != null){

@@ -37,6 +37,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
@@ -46,7 +47,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -1610,7 +1610,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				httpReq.getSession().setAttribute(WebKeys.Structure.STRUCTURE_TYPE, new Integer("1"));
 				String selectedStructure = req.getParameter("selectedStructure");
 				if (InodeUtils.isSet(selectedStructure)) {
-					structure = StructureCache.getStructureByInode(selectedStructure);
+					structure = CacheLocator.getContentTypeCache().getStructureByInode(selectedStructure);
 				}
 			}
 
@@ -1702,7 +1702,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 			/*Structure, if contentletList.size() then contentletsList2 are not empty
 			 * http://jira.dotmarketing.net/browse/DOTCMS-72*/
-			st=StructureCache.getStructureByInode(structureInode);
+			st=CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 
 			try {
 				response.setContentType("application/octet-stream; charset=UTF-8");

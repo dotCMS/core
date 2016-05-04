@@ -4,6 +4,7 @@
 <%@ page import="java.util.HashMap"%>
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 
@@ -16,7 +17,7 @@
 	String thispage = java.net.URLEncoder.encode(CTX_PATH + "/ext/folders/edit_folder?inode=" + folder.getInode() +
 			(parentFolder == null?"&phostId=" + parentHost.getIdentifier():"&pfolderId=" + parentFolder.getInode()) + "&openNodes=" + request.getParameter("openNodes") + "&view=" + request.getParameter("view") + "&content=" + request.getParameter("content"),"UTF-8");
 	String referer = request.getParameter("referer");
-	Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+	Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 %>
 
 

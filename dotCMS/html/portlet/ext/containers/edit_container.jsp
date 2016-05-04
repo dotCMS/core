@@ -11,6 +11,7 @@
 <%@ page import="com.dotmarketing.util.InodeUtils" %>
 <%@ page import="com.dotmarketing.business.PermissionAPI"%>
 <%@ page import="com.dotmarketing.business.Role"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 
 <%@ include file="/html/portlet/ext/containers/init.jsp" %>
 
@@ -261,7 +262,7 @@
 							</style>
 							<%
 							for(ContainerStructure cs: containerStructures) {
-								Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+								Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 								String code = UtilMethods.escapeHTMLSpecialChars(cs.getCode());
 							%>
 								<div dojoType="dijit.layout.ContentPane" title="<%=st.getName()%>" selected="true" style="padding:0" id="tab_<%=st.getInode()%>" data-dojo-props="closable:true">

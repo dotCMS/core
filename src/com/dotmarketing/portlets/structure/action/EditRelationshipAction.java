@@ -8,13 +8,11 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -158,8 +156,8 @@ public class EditRelationshipAction extends DotPortletAction {
 			Structure childStructure  = null;
 			if(InodeUtils.isSet(relationshipForm.getParentStructureInode()) || 
 					InodeUtils.isSet(relationshipForm.getChildStructureInode())){
-				parentStructure = StructureCache.getStructureByInode(relationshipForm.getParentStructureInode());
-				childStructure  = StructureCache.getStructureByInode(relationshipForm.getChildStructureInode());
+				parentStructure = CacheLocator.getContentTypeCache().getStructureByInode(relationshipForm.getParentStructureInode());
+				childStructure  = CacheLocator.getContentTypeCache().getStructureByInode(relationshipForm.getChildStructureInode());
 			}
 			if(parentStructure!=null && childStructure!=null){
 

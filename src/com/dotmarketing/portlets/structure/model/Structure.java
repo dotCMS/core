@@ -29,6 +29,7 @@ import com.dotmarketing.util.UtilMethods;
 
 public class Structure extends Inode implements Permissionable, Exportable, Importable,Treeable  {
 
+    public static final String STRUCTURE_TYPE_ALL       = "_all";
 	public static final int STRUCTURE_TYPE_CONTENT 		= 1;
 	public static final int STRUCTURE_TYPE_WIDGET 		= 2;
 	public static final int STRUCTURE_TYPE_FORM 		= 3;

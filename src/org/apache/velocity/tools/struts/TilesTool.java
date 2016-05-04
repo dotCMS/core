@@ -35,6 +35,7 @@ import com.dotcms.repackage.org.apache.struts.tiles.PathAttribute;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesUtil;
 import com.dotcms.repackage.org.apache.struts.tiles.DefinitionsFactoryException;
 import com.dotcms.repackage.org.apache.struts.tiles.Controller;
+import com.dotmarketing.util.Config;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.ImportSupport;
@@ -474,7 +475,7 @@ public class TilesTool extends ImportSupport implements ViewTool
                                    this.application);
             }
             /* pass things off to ImportSupport */
-            return this.acquireString(page);
+            return this.acquireString(page, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000));
         }
         finally
         {

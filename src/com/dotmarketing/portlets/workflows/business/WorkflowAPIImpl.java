@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -10,16 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -30,7 +29,25 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -48,8 +65,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -652,7 +667,34 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
-		wfac.deleteActionClass(actionClass);
+		try {
+			// Delete action class
+			final int orderOfActionClassToDelete = actionClass.getOrder();
+			wfac.deleteActionClass(actionClass);
+			
+			// We don't need to get "complete" base action object from the database 
+			// to retrieve all action classes from him. So, we can create the base action object
+			// with the "action id" contain in actionClass parameter.
+			WorkflowAction baseAction = new WorkflowAction();
+			baseAction.setId(actionClass.getActionId());
+			
+			// Reorder the action classes in the database
+			List<WorkflowActionClass> actionClasses = findActionClasses(baseAction);
+			if((actionClasses.size() > 1) && (actionClasses.size() != orderOfActionClassToDelete)) {
+				// Only update when there are action classes in the database and when the user is NOT deleting
+				// the last action class
+				for(WorkflowActionClass action : actionClasses) {
+					if(action.getOrder() > orderOfActionClassToDelete) {
+						// Subtract by 1 for those that are higher than the
+						// action class deleted
+						action.setOrder(action.getOrder()-1);
+						saveActionClass(action);
+					}
+				}
+			}
+		} catch (Exception e) {
+			throw new DotWorkflowException(e.getMessage());
+		}
 	}
 
 	public void saveActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
@@ -660,33 +702,56 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	public void reorderActionClass(WorkflowActionClass actionClass, int order) throws DotDataException {
-
 		try {
-			WorkflowAction baseAction = findAction(actionClass.getActionId(), APILocator.getUserAPI().getSystemUser());
 			List<WorkflowActionClass> actionClasses = null;
 			try {
+				// We don't need to get "complete" base action object from the database 
+				// to retrieve all action classes from him. So, we can create the base action object
+				// with the "action id" contain in actionClass parameter.
+				WorkflowAction baseAction = new WorkflowAction();
+				baseAction.setId(actionClass.getActionId());
+				
 				actionClasses = findActionClasses(baseAction);
 			} catch (Exception e) {
 				throw new DotDataException(e.getLocalizedMessage());
 			}
-			List<WorkflowActionClass> newActionClasses = new ArrayList<WorkflowActionClass>();
-			for (int i = 0; i < actionClasses.size(); i++) {
-				WorkflowActionClass a = actionClasses.get(i);
-				if (actionClass.equals(a)) {
-					continue;
+			
+			final int currentOrder = actionClass.getOrder();
+			for(WorkflowActionClass action : actionClasses) {
+				if(currentOrder == action.getOrder()) {
+					// Assign the new order to the action class
+					action.setOrder(order);
+				} else {
+					if(currentOrder > order) {
+						// When we want to move it to a lower level
+						if(action.getOrder() < order) {
+							continue;
+						} else {
+							if(action.getOrder() > currentOrder) {
+								// If current item order is higher than the last order position,
+								// we don't need to fix the order.
+								return;
+							}
+							
+							action.setOrder(action.getOrder() + 1);
+						}
+					} else {
+						// When we want to move it to a higher level
+						if(action.getOrder() < currentOrder) {
+							continue;
+						} else {
+							if(action.getOrder() > order) {
+								// If current item is higher than the new order position,
+								// we don't need to fix the order.
+								return;
+							}
+							
+							action.setOrder(action.getOrder() - 1);
+						}
+					}
 				}
-				newActionClasses.add(a);
-
-			}
-			order = (order<0) ? 0: (order >= actionClasses.size() ? actionClasses.size()-1 : order);
-			newActionClasses.add(order, actionClass);
-
-			int i =0;
-			for(WorkflowActionClass action : newActionClasses){
-				action.setOrder(i++);
 				saveActionClass(action);
 			}
-
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage());
 		}

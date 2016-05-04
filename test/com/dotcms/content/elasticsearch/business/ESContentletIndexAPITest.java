@@ -1,17 +1,37 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertFalse;
+import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import com.dotcms.TestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchRequestBuilder;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.repackage.org.elasticsearch.client.Client;
+import com.dotcms.repackage.org.elasticsearch.index.query.QueryBuilders;
+import com.dotcms.repackage.org.elasticsearch.index.query.QueryStringQueryBuilder;
+import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.org.elasticsearch.search.internal.InternalSearchHits;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Ignore;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -29,29 +49,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchRequestBuilder;
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
-import com.dotcms.repackage.org.elasticsearch.client.Client;
-import com.dotcms.repackage.org.elasticsearch.index.query.QueryBuilders;
-import com.dotcms.repackage.org.elasticsearch.index.query.QueryStringQueryBuilder;
-import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
-import com.dotcms.repackage.org.elasticsearch.search.internal.InternalSearchHits;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Ignore;
-import com.dotcms.repackage.org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import static com.dotcms.repackage.org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba
@@ -624,7 +625,7 @@ public class ESContentletIndexAPITest extends TestBase {
 	    	testStructure.setOwner( user.getUserId() );
 	    	testStructure.setVelocityVarName( structureName );
 	    	StructureFactory.saveStructure( testStructure );
-	    	StructureCache.addStructure( testStructure );
+	    	CacheLocator.getContentTypeCache().add( testStructure );
 	    	//Adding test field
 
 	    	Field field = new Field( "testSearchIndexByDateField", Field.FieldType.DATE_TIME,  Field.DataType.DATE, testStructure, true, true, true, 1, false, false, true );
@@ -754,7 +755,7 @@ public class ESContentletIndexAPITest extends TestBase {
         testStructure.setOwner( user.getUserId() );
         testStructure.setVelocityVarName( structureName );
         StructureFactory.saveStructure( testStructure );
-        StructureCache.addStructure( testStructure );
+        CacheLocator.getContentTypeCache().add( testStructure );
         //Adding test field
         Field field = new Field( "Wysiwyg", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, testStructure, true, true, true, 1, false, false, false );
         field.setVelocityVarName( "wysiwyg" );

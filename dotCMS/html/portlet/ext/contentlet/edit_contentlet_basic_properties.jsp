@@ -30,7 +30,6 @@
 <%@page import="com.dotmarketing.util.XMLUtils"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
 
 
 <%
@@ -205,7 +204,7 @@
 						<%}else if(structure.getStructureType() ==5){ %>
 							<span class="pageIcon"></span>
 					    <%} %>
-						<%=StructureCache.getStructureByInode(structure.getInode() ).getName()%>
+						<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>
 					</h3>
 					<input type="hidden" name="selectedStructure" id="selectedStructure" value="<%= structure.getInode() %>">
 				<%} %>

@@ -294,7 +294,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			}
 			else if(currWebAsset instanceof HTMLPage)
 			{
-				PageServices.unpublishPageFile((HTMLPage)currWebAsset);
+				PageServices.invalidateLive((HTMLPage)currWebAsset);
 				if(RefreshMenus.shouldRefreshMenus((HTMLPage)currWebAsset)){
 					RefreshMenus.deleteMenu(currWebAsset);
 					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);

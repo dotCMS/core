@@ -42,8 +42,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -1050,11 +1050,11 @@ public class ContentResource extends WebResource {
 		if(!UtilMethods.isSet(stInode)) {
 			String stName=(String)map.get("stName");
 			if(UtilMethods.isSet(stName)) {
-				stInode = StructureCache.getStructureByVelocityVarName(stName).getInode();
+				stInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(stName).getInode();
 			}
 		}
 		if(UtilMethods.isSet(stInode)) {
-			Structure st=StructureCache.getStructureByInode(stInode);
+			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(stInode);
 			if(st!=null && InodeUtils.isSet(st.getInode())) {
 				// basic data
 				contentlet.setStructureInode(st.getInode());

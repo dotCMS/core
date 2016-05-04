@@ -4062,14 +4062,6 @@ env-entry, and ejb-ref elements should follow this fragment.
 		<servlet-class>com.dotmarketing.servlets.taillog.TailLogServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>PHPServlet</servlet-name>
-		<servlet-class>com.dotmarketing.scripting.servlet.PHPServlet</servlet-class>
-		<init-param>
-				<param-name>compile</param-name>
-				<param-value>true</param-value>
-		</init-param>
-	</servlet>
-	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
 	  <servlet-class>org.directwebremoting.servlet.DwrServlet</servlet-class>
       <init-param>
@@ -4347,10 +4339,6 @@ env-entry, and ejb-ref elements should follow this fragment.
 	<servlet-mapping>
 		<servlet-name>TailLogServlet</servlet-name>
 		<url-pattern>/dotTailLogServlet/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>PHPServlet</servlet-name>
-		<url-pattern>*.php</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>CMIS</servlet-name>
