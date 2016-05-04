@@ -42,6 +42,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.CmsUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.StructureUtil;
@@ -64,7 +65,10 @@ public class URLMapFilter implements Filter {
 	private UserWebAPI wuserAPI;
 	private HostWebAPI whostAPI;
 	private boolean urlFallthrough;
-
+	CmsUrlUtil cmsUrlUtil = CmsUrlUtil.getInstance();
+	
+	
+	
 	public void destroy() {
 
 	}
@@ -111,7 +115,7 @@ public class URLMapFilter implements Filter {
 			uri = pointer;
 		}
 
-		
+		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 		
 		String mastRegEx = null;
 		StringBuilder query = null;
@@ -131,7 +135,9 @@ public class URLMapFilter implements Filter {
 			}
 		}
 		boolean trailSlash = uri.endsWith("/");
-		boolean isDotPage = uri.substring(uri.lastIndexOf(".")+1).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+		boolean isDotPage = cmsUrlUtil.isPageAsset(uri, host, languageId);
+				
+				
 		String url = (!trailSlash && !isDotPage)?uri+'/':uri;
 		if (!UtilMethods.isSet(mastRegEx) || uri.startsWith("/webdav")) {
 			chain.doFilter(req, res);
@@ -289,39 +295,10 @@ public class URLMapFilter implements Filter {
 					
 					if((cons != null && cons.size() > 0) || !urlFallthrough){
 						
-						if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-							EDIT_MODE = false;
-							session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-							request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-							session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-							request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-							LogFactory.getLog(this.getClass()).debug("URLMAP FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
+						request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, ident.getURI());
 
-						}
-
-						if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-							EDIT_MODE = true;
-							session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-							request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-							session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-							request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-							LogFactory.getLog(this.getClass()).debug("URLMAP FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
-						}
-
-						if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-							EDIT_MODE = false;
-							session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-							request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-							session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-							request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-							LogFactory.getLog(this.getClass()).debug("URLMAP FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
-						}
-						
-						request.getRequestDispatcher(ident.getURI()).forward(req, res);
-					}else{
-						chain.doFilter(req, res);
 					}
-					return;
+
 				} catch (Exception e) {
 					Logger.error(URLMapFilter.class, e.getMessage(), e);
 				}

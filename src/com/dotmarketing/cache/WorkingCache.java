@@ -19,6 +19,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CmsUrlUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Config;
@@ -31,6 +32,9 @@ import com.dotmarketing.util.UtilMethods;
  * @author Jason Tesser
  *
  */
+
+
+@Deprecated
 public class WorkingCache {
     
     public static String addToWorkingAssetToCache(Versionable asset) throws DotIdentifierStateException, DotDataException{
@@ -38,7 +42,7 @@ public class WorkingCache {
 		// we use the identifier uri for our mappings.
 		Identifier id = APILocator.getIdentifierAPI().find(asset);
 		//Velocity Page Extension
-		String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+
 		//Obtain the URI
 		String uri = id.getURI(); 		
 		//Obtain the INODE
@@ -47,19 +51,19 @@ public class WorkingCache {
 		if (UtilMethods.isSet(uri)) 
 		{		    
 			Logger.debug(WorkingCache.class, "Mapping Working: " + uri + " to " + uri);
-			if(uri.endsWith("." + ext))
+			if(CmsUrlUtil.getInstance().isPageAsset(asset))
 			{
 			    //add it to the cache
 				//for now we are adding the page URI
 				cache.put(getPrimaryGroup() + hostId + "-" + uri,uri, getPrimaryGroup() + "_" + hostId);
 
 				//if this is an index page, map its directories to it
-				if(id.getURI().endsWith("/index." + ext))
+				if(id.getURI().endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")))
 				{
-					Logger.debug(WorkingCache.class, "Mapping Working: " + uri.substring(0,uri.lastIndexOf("/index." + ext)) + " to " + uri);
-					cache.put(getPrimaryGroup() + hostId + "-" + uri.substring(0,uri.lastIndexOf("/index." + ext)),uri, getPrimaryGroup() + "_" + hostId);
-					Logger.debug(WorkingCache.class, "Mapping Working: " + id.getURI().substring(0,id.getURI().lastIndexOf("index." + ext)) + " to " + uri);
-					cache.put(getPrimaryGroup() + hostId + "-" + uri.substring(0,uri.lastIndexOf("index." + ext)), uri, getPrimaryGroup() + "_" + hostId);
+					Logger.debug(WorkingCache.class, "Mapping Working: " + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) + " to " + uri);
+					cache.put(getPrimaryGroup() + hostId + "-" + uri.substring(0,uri.lastIndexOf("/" +Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))),uri, getPrimaryGroup() + "_" + hostId);
+					Logger.debug(WorkingCache.class, "Mapping Working: " + id.getURI().substring(0,id.getURI().lastIndexOf(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) + " to " + uri);
+					cache.put(getPrimaryGroup() + hostId + "-" + uri.substring(0,uri.lastIndexOf(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))), uri, getPrimaryGroup() + "_" + hostId);
 				}
 				ret = uri;
 			}
@@ -111,11 +115,11 @@ public class WorkingCache {
 
 		if(_uri != null) return _uri;
 		
-		String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+
 
 		if (URI.endsWith("/")) {
 			//it's a folder path, so I add index.html at the end
-			URI += "index." + ext;
+			URI += Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 		}
 
 		// lets try to lazy get it.
@@ -126,7 +130,7 @@ public class WorkingCache {
 		if(!InodeUtils.isSet(id.getInode())) 
 		{
 			//it's a folder path, so I add index.html at the end
-			URI += "/index." + ext;
+			URI += "/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 			id = APILocator.getIdentifierAPI().find( fake,URI);
 			if(!InodeUtils.isSet(id.getInode()))
 			{

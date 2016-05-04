@@ -62,6 +62,8 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.form.business.FormAPIImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -323,9 +325,15 @@ public class APILocator extends Locator<APIIndex>{
 	    return (NotificationAPI)getInstance(APIIndex.NOTIFICATION_API);
 	}
 	
+
+	public static HTMLPageAssetAPI getHTMLPageAssetAPI() {
+        return (HTMLPageAssetAPI)getInstance(APIIndex.HTMLPAGE_ASSET_API);
+    }
+
 	public static ServerActionAPI getServerActionAPI() {
 	    return (ServerActionAPI)getInstance(APIIndex.SERVER_ACTION_API);
 	}
+
 
 	private static Object getInstance(APIIndex index) {
 
@@ -412,7 +420,11 @@ enum APIIndex
 	SERVER_API,
 	PUSHED_ASSETS_API,
 	NOTIFICATION_API,
+
+	HTMLPAGE_ASSET_API,
+
 	SERVER_ACTION_API;
+
 
 	Object create() {
 		switch(this) {
@@ -466,7 +478,13 @@ enum APIIndex
 		case PUSHED_ASSETS_API: return new PushedAssetsAPIImpl();
 		case SERVER_API: return new ServerAPIImpl();
 		case NOTIFICATION_API: return new NotificationAPIImpl();
+
+		case HTMLPAGE_ASSET_API: return new HTMLPageAssetAPIImpl();
+
+		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
+
+		
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

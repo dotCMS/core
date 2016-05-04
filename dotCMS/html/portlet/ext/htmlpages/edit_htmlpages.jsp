@@ -323,7 +323,7 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 			</dd>
 
 			<dt>
-				<%= LanguageUtil.get(pageContext, "Page Metadata") %>:
+				<%= LanguageUtil.get(pageContext, "Page-Metadata") %>:
 			</dt>
 			<dd>
 				<textarea dojoType="dijit.form.Textarea" style="width:400px; min-height:75px;max-height:300px;" name="metadata" ><%= UtilMethods.xmlEscape(htmlpage.getMetadata())%></textarea>

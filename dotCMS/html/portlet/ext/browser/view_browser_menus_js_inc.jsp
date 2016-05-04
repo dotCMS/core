@@ -120,8 +120,21 @@
 	    				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
 					strHTML += '</a>'
 				}
+				
 
+				
 				if(isAdminUser || userRoles.fileModifiable) {
+					
+					
+					strHTML += '<a class="contextPopupMenu" href="javascript: addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
+					strHTML += '<span class="newPageIcon"></span>&nbsp;';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
+					strHTML += '</a>';
+					
+					
+					
+					
+					
 					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');">';
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
@@ -247,7 +260,6 @@
 			strHTML += '</a>';
 
 			strHTML += '<div class="pop_divider" ></div>';
-
 		}
 
 		if(addChildren) {
@@ -327,6 +339,36 @@
 
 		showPopUp('context_menu_popup_'+objId, e);
 	}
+	
+	function wfActionsMenu(objId, content) {
+		contentAdmin = new dotcms.dijit.contentlet.ContentAdmin('','',1);
+		var strHTML = "";
+		for (var i = 0; i < content.wfActionMapList.length; i++) {
+            var name = content.wfActionMapList[i].name;
+            var id = content.wfActionMapList[i].id;
+            var assignable = content.wfActionMapList[i].assignable;
+            var hasPushPublishActionlet = content.wfActionMapList[i].hasPushPublishActionlet;
+            var commentable = content.wfActionMapList[i].commentable;
+            console.log(name + ":"+ assignable + ":" + commentable);
+            var icon = content.wfActionMapList[i].icon;
+            var requiresCheckout = content.wfActionMapList[i].requiresCheckout;
+            var wfActionNameStr = content.wfActionMapList[i].wfActionNameStr;
+            var isLocked = content.isLocked;
+            var contentEditable = content.contentEditable;
+            if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
+                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                strHTML += '<span class=\''+icon+'\'></span>';
+                strHTML += wfActionNameStr;
+                strHTML += '</a>';
+            }else if(!requiresCheckout)  {
+                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                strHTML += '<span class=\''+icon+'\'></span>';
+                strHTML += wfActionNameStr;
+                strHTML += '</a>';
+            }
+        }
+		return strHTML;
+	}
 
 	// File Popup
 	function showFilePopUp(file, cmsAdminUser, origReferer, e) {
@@ -388,30 +430,8 @@
 		console.log(file);
 		//console.log(file.wfActionMapList);
 
-		for (var i = 0; i < file.wfActionMapList.length; i++) {
-			var name = file.wfActionMapList[i].name;
-			var id = file.wfActionMapList[i].id;
-			var assignable = file.wfActionMapList[i].assignable;
-			var hasPushPublishActionlet = file.wfActionMapList[i].hasPushPublishActionlet;
-			var commentable = file.wfActionMapList[i].commentable;
-			console.log(name + ":"+ assignable + ":" + commentable);
-			var icon = file.wfActionMapList[i].icon;
-			var requiresCheckout = file.wfActionMapList[i].requiresCheckout;
-			var wfActionNameStr = file.wfActionMapList[i].wfActionNameStr;
-			var isLocked = file.isLocked;
-			var contentEditable = file.contentEditable;
-			if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
-				strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-    			strHTML += '<span class=\''+icon+'\'></span>';
-        		strHTML += wfActionNameStr;
-				strHTML += '</a>';
-			}else if(!requiresCheckout)  {
-				strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-				strHTML += '<span class=\''+icon+'\'></span>';
-    			strHTML += wfActionNameStr;
-				strHTML += '</a>';
-			}
-		}
+		strHTML += wfActionsMenu(objId, file);
+		
 		
 		if(!file.wfMandatoryWorkflow) {
 			if (working && publish && !archived ) {
@@ -659,7 +679,11 @@
 			if ((live || working) && read)  {
 				var actionLabel = write ? '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Edit")) %>' : '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>';
 
-				strHTML += '<a href="javascript: editHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
+				var editFunction = page.isContentlet ?
+						                  "editHTMLPageAsset('" + objId + "','" + page.stInode + "')"
+						                : "editHTMLPage('" + objId + "', '" + referer + "')";  
+				
+				strHTML += "<a href=\"javascript: "+editFunction+";\" class=\"contextPopupMenu\">";
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
 				strHTML += '</a>';
@@ -672,64 +696,77 @@
 		      strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Statistics")) %>';
 	      strHTML += '</a>';
 	    }
-
-		if (working && !archived && publish) {
-			strHTML += '<a href="javascript: publishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-	    	if(live) {
-				strHTML += '<span class="republishIcon"></span>';
-				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
-	   	    }
-			else {
-				strHTML += '<span class="publishIcon"></span>';
-				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
+        
+        if(page.isContentlet) {
+            strHTML += wfActionsMenu(objId, page);
+        }
+        
+        if(!page.isContentlet || !page.wfMandatoryWorkflow) {
+			if (working && !archived && publish) {
+				strHTML += '<a href="javascript: publishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+		    	if(live) {
+					strHTML += '<span class="republishIcon"></span>';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
+		   	    }
+				else {
+					strHTML += '<span class="publishIcon"></span>';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
+				}
+				strHTML += '</a>';
+	
+	            if (enterprise) {
+	                if (sendingEndpoints) {
+	                    strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                    strHTML += '<span class="sServerIcon"></span>';
+	                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+	                    strHTML += '</a>';
+	                }
+	
+					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objIden + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<span class="bundleIcon"></span>';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
+					strHTML += '</a>';
+				}
+	
 			}
-			strHTML += '</a>';
-
-            if (enterprise) {
-                if (sendingEndpoints) {
-                    strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-                    strHTML += '<span class="sServerIcon"></span>';
-                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
-                    strHTML += '</a>';
-                }
-
-				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objIden + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-				strHTML += '<span class="bundleIcon"></span>';
-				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
+	
+			if (live && publish) {
+				strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			    	strHTML += '<span class="unpublishIcon"></span>';
+			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 				strHTML += '</a>';
 			}
-
-		}
-
-		if (live && publish) {
-			strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="unpublishIcon"></span>';
-		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
-			strHTML += '</a>';
-		}
-
-		if (!live && working && publish) {
-			if (!archived) {
-				strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		   			strHTML += '<span class="archiveIcon"></span>';
-    	          	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
+	
+			if (!live && working && publish) {
+				if (!archived) {
+					strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			   			strHTML += '<span class="archiveIcon"></span>';
+	    	          	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
+					strHTML += '</a>';
+				}
+				else {
+					strHTML += '<a href="javascript: unarchiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			   			strHTML += '<span class="unarchiveIcon"></span>';
+	    		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
+					strHTML += '</a>';
+				}
+			}
+	
+			if (locked && write) {
+				strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			    	strHTML += '<span class="keyIcon"></span>';
+			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 				strHTML += '</a>';
 			}
-			else {
-				strHTML += '<a href="javascript: unarchiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		   			strHTML += '<span class="unarchiveIcon"></span>';
-    		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
-				strHTML += '</a>';
-			}
-		}
-
-		if (locked && write) {
-			strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="keyIcon"></span>';
-		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
-			strHTML += '</a>';
-		}
-
+			
+			if (write && archived)
+	        {
+	            strHTML += '<a href="javascript: deleteHTMLPage(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                strHTML += '<span class="stopIcon"></span>';
+	                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
+	            strHTML += '</a>';
+	        }
+        }
 
 		if (write && !archived)  {
 			strHTML += '<div class="pop_divider" ></div>';
@@ -745,12 +782,12 @@
 			strHTML += '</a>';
 
 		}
-
-		if (write && archived)
-		{
-			strHTML += '<a href="javascript: deleteHTMLPage(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="stopIcon"></span>';
-	    	   	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
+		
+		if(!page.isContentlet) {
+			strHTML += '<div class="pop_divider" ></div>';
+			strHTML += '<a href="javascript: migratePage(\''+objId+'\',\''+referer+'\');" class="contextPopupMenu">';
+			strHTML += '<span class="repeatIcon"></span>';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Migrate-To-Content")) %>';
 			strHTML += '</a>';
 		}
 
@@ -899,9 +936,9 @@
 				var containerperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
 				var templateperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_13", user)%>;
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addTopFolder(\'' + objId + '\', \'' + referer + '\')">';
-				htmlCode += '<span class="folderAddIcon"></span>&nbsp;';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Folder")) %>';
+				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
+				htmlCode += '<span class="newPageIcon"></span>&nbsp;';
+				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 				htmlCode += '</div>';
 
 				if(containerperm){

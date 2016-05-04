@@ -11,6 +11,8 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.UserFirstNameException;
+import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
@@ -246,10 +248,16 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			User u =  UserLocalManagerUtil.updateUser(user);
 //			uc.add(u.getUserId(), u);
 			return u;
+		} catch (com.liferay.portal.UserFirstNameException e) {
+			Logger.error(this, e.getMessage(), e);
+			throw new UserFirstNameException(e);
+		} catch (com.liferay.portal.UserLastNameException e) {
+			Logger.error(this, e.getMessage(), e);
+			throw new UserLastNameException(e);
 		} catch (PortalException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
+		}catch (SystemException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException("saving a user failed", e);
 		}

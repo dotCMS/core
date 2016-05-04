@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -74,6 +75,10 @@ public class ContentletServices {
 
 	public static void invalidate(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 		removeContentletFile(content, identifier, EDIT_MODE);
+		
+		if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+		    PageServices.removePageFile(APILocator.getHTMLPageAssetAPI().fromContentlet(content), identifier, EDIT_MODE);
+		}
 	}
 
 	public static InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {

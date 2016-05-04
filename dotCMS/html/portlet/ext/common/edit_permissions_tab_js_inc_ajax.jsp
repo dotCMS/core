@@ -844,19 +844,26 @@
 		} else if(assetType == 'com.dotmarketing.beans.Host') {
 			role["publish-permission-style"] = 'display:none';
 		} else if(assetType == 'com.dotmarketing.portlets.structure.model.Structure') {
-			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
+			role["add-children-permission-style"] = 'display: none';
+			role["virtual-links-permission-style"] = 'display: none';
 		} else if(assetType == 'com.dotmarketing.portlets.categories.model.Category') {
 			role["publish-permission-style"] = 'display:none';
-			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
+			role["add-children-permission-style"] = 'display: none';
+			role["virtual-links-permission-style"] = 'display: none';
 		} else if(assetType == 'com.dotmarketing.portlets.report.model.Report') {
 			role["publish-permission-style"] = 'display:none';
-			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
+			role["add-children-permission-style"] = 'display: none';
+			role["virtual-links-permission-style"] = 'display: none';
 		} else if(assetType == 'com.dotmarketing.portlets.htmlpages.model.HTMLPage') {
-			role["virtual-links-permission-style"] = 'display: none'
-		} else {
+			role["virtual-links-permission-style"] = 'display: none';
+		} 
+     <% if(UtilMethods.isSet(contentletAux) && contentletAux.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {%>
+        else if(assetType == contentClassName) {
+        	role["virtual-links-permission-style"] = 'display: none';
+        	// hola mundo
+        }
+     <% } %>
+		else {
 			role["add-children-permission-style"] = 'display: none'
 			role["virtual-links-permission-style"] = 'display: none'
 		}

@@ -100,7 +100,7 @@ public class TimeMachineFilter implements Filter {
 //		    if(uri.equals("/"))
 //		        uri="/home/index."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 		    
-		    final String pageEXT=Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"); 
+
 		    
 
 		    java.io.File file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
@@ -116,7 +116,7 @@ public class TimeMachineFilter implements Filter {
 		    	}
 		    	
 		    	
-		        uri+="index."+pageEXT;
+		        uri+=Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 		        file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 			            "tm_"+date.getTime()+java.io.File.separator+
 			            "live"+java.io.File.separator+
@@ -125,7 +125,7 @@ public class TimeMachineFilter implements Filter {
 		    }
 		    
 		    final String defid=Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		    if(!file.exists() && !uri.endsWith(pageEXT) && !langid.equals(defid)) {
+		    if(!file.exists() && !uri.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")) && !langid.equals(defid)) {
 		        // if the file doesn't exists then lets see if there exists a version for the default language
 		        // https://github.com/dotCMS/dotCMS/issues/2710
 		        file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+

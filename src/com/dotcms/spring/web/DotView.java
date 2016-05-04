@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.VelocityContext;
 import org.springframework.web.servlet.View;
 
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.VelocityServlet;
 
@@ -41,8 +42,12 @@ public class DotView implements View {
             // add the context to the request.attr
             // where it will be picked up and used by the VelocityServlet
             request.setAttribute(VelocityServlet.VELOCITY_CONTEXT, ctx);
+            
+            // override the page path
+            request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, pagePath);
 
-            request.getRequestDispatcher(pagePath).forward(request, response);
+            request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
+
         } else {
             pagePath = pagePath.replaceFirst("redirect:", "");
             response.sendRedirect(pagePath);

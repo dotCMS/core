@@ -13,7 +13,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
-public interface IFileAsset {
+public interface IFileAsset extends Permissionable {
 
 	public String getVersionId();
 

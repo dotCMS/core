@@ -12,8 +12,8 @@ import java.util.Map;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -28,7 +28,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -64,6 +64,99 @@ public class BrowserAPI {
 
     	return getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, showWorking, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, false);
 
+    }
+    
+    protected static class WfData {
+        
+        List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
+        WorkflowStep wfStep; WorkflowScheme wfScheme;
+        boolean contentEditable = false;
+        List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>>();
+        
+        boolean skip=false;
+        
+        public WfData(Contentlet contentlet, List<Integer> permissions, User user, boolean showArchived) throws DotStateException, DotDataException, DotSecurityException {
+            
+            try {
+                if (contentlet != null) {
+                    wfStep = APILocator.getWorkflowAPI().findStepByContentlet(
+                            contentlet);
+                    wfScheme = APILocator.getWorkflowAPI().findScheme(
+                            wfStep.getSchemeId());
+                    wfActions = APILocator.getWorkflowAPI()
+                            .findAvailableActions(contentlet, user);
+                }
+            } catch (Exception e) {
+                Logger.error(this, "Could not load workflow actions : ", e);
+                // wfActions = new ArrayList();
+            }
+            
+            if (contentlet != null) {
+                if (permissionAPI.doesUserHavePermission(contentlet,
+                        PermissionAPI.PERMISSION_WRITE, user)
+                        && contentlet.isLocked()) {
+                    String lockedUserId = APILocator.getVersionableAPI()
+                            .getLockedBy(contentlet);
+                    if (user.getUserId().equals(lockedUserId)) {
+                        contentEditable = true;
+                    } else {
+                        contentEditable = false;
+                    }
+                } else {
+                    contentEditable = false;
+                }
+            }
+
+            try {
+                if (permissions.contains(PERMISSION_READ)) {
+                    boolean hasPushPublishActionlet = false;
+                    if (!showArchived && contentlet.isArchived()) {
+                        skip=true;
+                        return;
+                    }
+                    
+                    for (WorkflowAction action : wfActions) {
+                        List<WorkflowActionClass> actionlets = APILocator
+                                .getWorkflowAPI().findActionClasses(action);
+                        if (action.requiresCheckout()) {
+                            continue;
+                        }
+                        Map<String, Object> wfActionMap = new HashMap<String, Object>();
+                        wfActionMap.put("name", action.getName());
+                        wfActionMap.put("id", action.getId());
+                        wfActionMap.put("icon", action.getIcon());
+                        wfActionMap.put("assignable", action.isAssignable());
+                        wfActionMap.put("commentable", action.isCommentable()
+                                || UtilMethods.isSet(action.getCondition()));
+                        wfActionMap.put("requiresCheckout",
+                                action.requiresCheckout());
+                        wfActionMap.put("wfActionNameStr",
+                                LanguageUtil.get(user, action.getName()));
+                        for (WorkflowActionClass actionlet : actionlets) {
+                            if (actionlet
+                                    .getActionlet()
+                                    .getClass()
+                                    .getCanonicalName()
+                                    .equals(PushPublishActionlet.class
+                                            .getCanonicalName())) {
+                                hasPushPublishActionlet = true;
+                            }
+                        }
+                        wfActionMap.put("hasPushPublishActionlet",
+                                hasPushPublishActionlet);
+                        wfActionMapList.add(wfActionMap);
+                    }
+                    if (wfScheme != null && wfScheme.isMandatory()) {
+                        permissions.remove(new Integer(
+                                PermissionAPI.PERMISSION_PUBLISH));
+                    }
+                }
+            }
+            catch(Exception ex) {
+                Logger.error(BrowserAPI.class,"can't process workflow data", ex);
+            }
+
+        }
     }
 
 	/**
@@ -161,33 +254,46 @@ public class BrowserAPI {
 		if (!onlyFiles) {
 
 			// Getting the html pages directly under the parent folder or host
-			List<HTMLPage> pages = new ArrayList<HTMLPage>();
+			List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
 			try {
 				if (parent != null) {
-					if(!showWorking)
+					if(!showWorking) {
 						pages.addAll(folderAPI.getLiveHTMLPages(parent, user, false));
-					else
+						pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
+					}
+					else {
 						pages.addAll(folderAPI.getHTMLPages(parent, true, false, user, false));
+						pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
+						//pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
+					}
 
-					if(showArchived)
+					if(showArchived) {
 						pages.addAll(folderAPI.getHTMLPages(parent, true, showArchived, user, false));
+						pages.addAll(APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages(parent, user, false));
+					}
 				} else {
 					pages.addAll(folderAPI.getHTMLPages(host, true,
 							showArchived, user, false));
+					pages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(host,true,showArchived, user, false));
+
 				}
 			} catch (Exception e1) {
 				Logger.error(this, "Could not load HTMLPages : ", e1);
 			}
 
-			for (HTMLPage page : pages) {
+			for (IHTMLPage page : pages) {
 				List<Integer> permissions = new ArrayList<Integer>();
 				try {
-					permissions = permissionAPI.getPermissionIdsFromRoles(page,
-							roles, user);
+					permissions = permissionAPI.getPermissionIdsFromRoles(page, roles, user);
 				} catch (DotDataException e) {
 					Logger.error(this, "Could not load permissions : ", e);
 				}
 				if (permissions.contains(PERMISSION_READ)) {
+				    WfData wfdata = page instanceof Contentlet ? new WfData((Contentlet)page, permissions, user, showArchived) : null;
+				    
+				    if(wfdata!=null && wfdata.skip)
+				        continue;
+				    
 					Map<String, Object> pageMap = page.getMap();
 					pageMap.put("mimeType", "application/dotpage");
 					pageMap.put("permissions", permissions);
@@ -199,6 +305,21 @@ public class BrowserAPI {
 					} catch (Exception e) {
 						Logger.error(this, "Could not get URI : ", e);
 					}
+					pageMap.put("isContentlet", page instanceof Contentlet);
+					
+					if(wfdata!=null) {
+    		            pageMap.put("wfMandatoryWorkflow", wfdata.wfScheme.isMandatory());
+    		            pageMap.put("wfActionMapList", wfdata.wfActionMapList);
+    	                pageMap.put("contentEditable", wfdata.contentEditable);
+					}
+					
+					if(page instanceof Contentlet) {
+					    pageMap.put("identifier", page.getIdentifier());
+		                pageMap.put("inode", page.getInode());
+		                pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+		                pageMap.put("isLocked", page.isLocked());
+					}
+					
 					returnList.add(pageMap);
 				}
 			}
@@ -231,17 +352,13 @@ public class BrowserAPI {
 			}
 
 			//remove duplicated legacy files from list. See issue 5943
-		HashSet<Versionable> tempFilesListToSet = new HashSet<Versionable>(files);
-		files.clear();
-		files.addAll(tempFilesListToSet);
+    		HashSet<Versionable> tempFilesListToSet = new HashSet<Versionable>(files);
+    		files.clear();
+    		files.addAll(tempFilesListToSet);
 
 		} catch (Exception e2) {
 			Logger.error(this, "Could not load files : ", e2);
 		}
-
-		Contentlet contentlet;
-		WorkflowStep wfStep;
-		WorkflowScheme wfScheme = null;
 
 		for (Versionable file : files) {
 
@@ -249,163 +366,91 @@ public class BrowserAPI {
 				continue;
 
 			List<Integer> permissions = new ArrayList<Integer>();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(
-						(Permissionable) file, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(this, "Could not load permissions : ", e);
+
+            try {
+                permissions = permissionAPI.getPermissionIdsFromRoles((IFileAsset)file, roles, user);
+            } catch (DotDataException e) {
+                Logger.error(this, "Could not load permissions : ", e);
+            }
+			
+			WfData wfdata=null;
+			Contentlet contentlet=null;
+			if(file instanceof Contentlet) {
+			    contentlet=(Contentlet)file;
+			    wfdata=new WfData(contentlet, permissions, user, showArchived);
 			}
 
-			List<WorkflowAction> wfActions = new ArrayList<WorkflowAction>();
-
-			contentlet = null;
-			if (file instanceof com.dotmarketing.portlets.fileassets.business.FileAsset)
-				contentlet = (Contentlet) file;
-			try {
-				if (contentlet != null) {
-					wfStep = APILocator.getWorkflowAPI().findStepByContentlet(
-							contentlet);
-					wfScheme = APILocator.getWorkflowAPI().findScheme(
-							wfStep.getSchemeId());
-					wfActions = APILocator.getWorkflowAPI()
-							.findAvailableActions(contentlet, user);
-				}
-			} catch (Exception e) {
-				Logger.error(this, "Could not load workflow actions : ", e);
-				// wfActions = new ArrayList();
-			}
-			boolean contentEditable = false;
+			// check for multilingual. we don't need to see the item
+			// more than once for every language
+			boolean skip = false;
 			if (contentlet != null) {
-				if (perAPI.doesUserHavePermission(contentlet,
-						PermissionAPI.PERMISSION_WRITE, user)
-						&& contentlet.isLocked()) {
-					String lockedUserId = APILocator.getVersionableAPI()
-							.getLockedBy(contentlet);
-					if (user.getUserId().equals(lockedUserId)) {
-						contentEditable = true;
-					} else {
-						contentEditable = false;
+				List<Map<String, Object>> toDelete = new ArrayList<Map<String, Object>>();
+				for (Map<String, Object> map : returnList) {
+					if (map.get("identifier").equals(
+							contentlet.getIdentifier())) {
+						if (contentlet.getLanguageId() != APILocator
+								.getLanguageAPI().getDefaultLanguage()
+								.getId()) {
+							// if this is no for the default lang and
+							// there is another one in the list skip.
+							skip = true;
+						} else {
+							// if this is for def lang then delete any
+							// other we find
+							toDelete.add(map);
+						}
 					}
-				} else {
-					contentEditable = false;
 				}
+				returnList.removeAll(toDelete);
 			}
 
-			try {
-				if (permissions.contains(PERMISSION_READ)) {
-					boolean hasPushPublishActionlet = false;
-					if (!showArchived && file.isArchived()) {
-						continue;
-					}
-					IFileAsset fileAsset = (IFileAsset) file;
-					List<Map<String, Object>> wfActionMapList = new ArrayList<Map<String, Object>>();
-					for (WorkflowAction action : wfActions) {
-						List<WorkflowActionClass> actionlets = APILocator
-								.getWorkflowAPI().findActionClasses(action);
-						if (action.requiresCheckout()) {
-							continue;
-						}
-						Map<String, Object> wfActionMap = new HashMap<String, Object>();
-						wfActionMap.put("name", action.getName());
-						wfActionMap.put("id", action.getId());
-						wfActionMap.put("icon", action.getIcon());
-						wfActionMap.put("assignable", action.isAssignable());
-						wfActionMap.put("commentable", action.isCommentable()
-								|| UtilMethods.isSet(action.getCondition()));
-						wfActionMap.put("requiresCheckout",
-								action.requiresCheckout());
-						wfActionMap.put("wfActionNameStr",
-								LanguageUtil.get(user, action.getName()));
-						for (WorkflowActionClass actionlet : actionlets) {
-							if (actionlet
-									.getActionlet()
-									.getClass()
-									.getCanonicalName()
-									.equals(PushPublishActionlet.class
-											.getCanonicalName())) {
-								hasPushPublishActionlet = true;
-							}
-						}
-						wfActionMap.put("hasPushPublishActionlet",
-								hasPushPublishActionlet);
-						wfActionMapList.add(wfActionMap);
-					}
-					if (wfScheme != null && wfScheme.isMandatory()) {
-						permissions.remove(new Integer(
-								PermissionAPI.PERMISSION_PUBLISH));
-					}
+			if (skip || wfdata.skip) {
+			    continue;
+			}
+			
+			IFileAsset fileAsset=(IFileAsset)file;
+			Map<String, Object> fileMap = fileAsset.getMap();
 
-					// check for multilingual. we don't need to see the item
-					// more than once for every language
-					boolean skip = false;
-					if (contentlet != null) {
-						List<Map<String, Object>> toDelete = new ArrayList<Map<String, Object>>();
-						for (Map<String, Object> map : returnList) {
-							if (map.get("identifier").equals(
-									contentlet.getIdentifier())) {
-								if (contentlet.getLanguageId() != APILocator
-										.getLanguageAPI().getDefaultLanguage()
-										.getId()) {
-									// if this is no for the default lang and
-									// there is another one in the list skip.
-									skip = true;
-								} else {
-									// if this is for def lang then delete any
-									// other we find
-									toDelete.add(map);
-								}
-							}
-						}
-						returnList.removeAll(toDelete);
-					}
+			Identifier ident = APILocator.getIdentifierAPI().find(
+					fileAsset.getVersionId());
 
-					if (skip)
-						continue;
-
-					Map<String, Object> fileMap = fileAsset.getMap();
-
-					Identifier ident = APILocator.getIdentifierAPI().find(
-							fileAsset.getVersionId());
-
-					fileMap.put("wfMandatoryWorkflow", wfScheme!=null && wfScheme.isMandatory());
-					fileMap.put("permissions", permissions);
-					fileMap.put("mimeType", APILocator.getFileAPI()
-							.getMimeType(fileAsset.getFileName()));
-					fileMap.put("name", ident.getAssetName());
-					fileMap.put("fileName", ident.getAssetName());
-					fileMap.put("title", fileAsset.getFriendlyName());
-					fileMap.put("description", fileAsset instanceof Contentlet ?
-					                           ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
-					                           : "");
-					fileMap.put("extension", UtilMethods
-							.getFileExtension(fileAsset.getFileName()));
-					fileMap.put("path", fileAsset.getPath());
-					fileMap.put("type", fileAsset.getType());
-					fileMap.put("wfActionMapList", wfActionMapList);
-					fileMap.put("contentEditable", contentEditable);
-					fileMap.put("size", fileAsset.getFileSize());
-					fileMap.put("publishDate", fileAsset.getIDate());
-					// BEGIN GRAZIANO issue-12-dnd-template
-					fileMap.put(
-							"parent",
-							fileAsset.getParent() != null ? fileAsset
-									.getParent() : "");
-					fileMap.put("isContentlet", false);
-					// END GRAZIANO issue-12-dnd-template
-					if (contentlet != null) {
-						fileMap.put("identifier", contentlet.getIdentifier());
-						fileMap.put("inode", contentlet.getInode());
-						fileMap.put("languageId", contentlet.getLanguageId());
-						fileMap.put("isLocked", contentlet.isLocked());
-						fileMap.put("isContentlet", true);
-					}
-
-					returnList.add(fileMap);
-				}
-			} catch (Exception e) {
-				Logger.error(this, "Could not load fileAsset : ", e);
+			WorkflowScheme wfScheme = wfdata!=null ? wfdata.wfScheme : null;
+			fileMap.put("wfMandatoryWorkflow", wfScheme!=null && wfScheme.isMandatory());
+			fileMap.put("permissions", permissions);
+			fileMap.put("mimeType", APILocator.getFileAPI()
+					.getMimeType(fileAsset.getFileName()));
+			fileMap.put("name", ident.getAssetName());
+			fileMap.put("fileName", ident.getAssetName());
+			fileMap.put("title", fileAsset.getFriendlyName());
+			fileMap.put("description", fileAsset instanceof Contentlet ?
+			                           ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
+			                           : "");
+			fileMap.put("extension", UtilMethods
+					.getFileExtension(fileAsset.getFileName()));
+			fileMap.put("path", fileAsset.getPath());
+			fileMap.put("type", fileAsset.getType());
+			if(wfdata!=null) {
+    			fileMap.put("wfActionMapList", wfdata.wfActionMapList);
+    			fileMap.put("contentEditable", wfdata.contentEditable);
+			}
+			fileMap.put("size", fileAsset.getFileSize());
+			fileMap.put("publishDate", fileAsset.getIDate());
+			// BEGIN GRAZIANO issue-12-dnd-template
+			fileMap.put(
+					"parent",
+					fileAsset.getParent() != null ? fileAsset
+							.getParent() : "");
+			fileMap.put("isContentlet", false);
+			// END GRAZIANO issue-12-dnd-template
+			if (contentlet != null) {
+				fileMap.put("identifier", contentlet.getIdentifier());
+				fileMap.put("inode", contentlet.getInode());
+				fileMap.put("languageId", contentlet.getLanguageId());
+				fileMap.put("isLocked", contentlet.isLocked());
+				fileMap.put("isContentlet", true);
 			}
 
+			returnList.add(fileMap);
 		}
 
 		if (!onlyFiles && !excludeLinks) {

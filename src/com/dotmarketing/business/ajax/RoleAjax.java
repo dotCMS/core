@@ -36,6 +36,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -231,6 +232,10 @@ public class RoleAjax {
 
 	public Map<String, Object> addNewRole (String roleName, String roleKey, String parentRoleId, boolean canEditUsers, boolean canEditPermissions,
 			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException  {
+		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
+		
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		Role role = new Role();
@@ -254,7 +259,12 @@ public class RoleAjax {
 
 		try {
 			role = roleAPI.save(role);
-		} catch(DotDataException | DotStateException e) {
+		} catch(RoleNameException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"Role-Save-Name-Failed"));
+			throw e;
+		}catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			throw e;
@@ -269,6 +279,9 @@ public class RoleAjax {
 
 	public Map<String, Object> updateRole (String roleId, String roleName, String roleKey, String parentRoleId, boolean canEditUsers, boolean canEditPermissions,
 			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException {
+		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		Role role = roleAPI.loadRoleById(roleId);
@@ -294,6 +307,11 @@ public class RoleAjax {
 
 		try {
 			role = roleAPI.save(role);
+		} catch(RoleNameException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"Role-Save-Name-Failed"));
+			throw e;
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Modifying Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 			AdminLogger.log(getClass(), "Error Modifying Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );

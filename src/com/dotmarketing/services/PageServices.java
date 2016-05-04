@@ -1,7 +1,21 @@
 package com.dotmarketing.services;
 
-import com.dotcms.repackage.bsh.This;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.velocity.runtime.resource.ResourceManager;
+
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.bsh.This;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -13,21 +27,17 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.sql.Timestamp;
-import java.util.*;
 
 /**
  * @author will
@@ -39,7 +49,7 @@ import java.util.*;
  */
 public class PageServices {
 
-	public static void invalidate(HTMLPage htmlPage) throws DotStateException, DotDataException {
+	public static void invalidate(IHTMLPage htmlPage) throws DotStateException, DotDataException {
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 		invalidate(htmlPage, identifier, false);
@@ -47,17 +57,21 @@ public class PageServices {
 
 	}
 
-	public static void invalidate(HTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
+	public static void invalidate(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 		invalidate(htmlPage, identifier, EDIT_MODE);
 	}
 
-	public static void invalidate(HTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
+	public static void invalidate(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
 		removePageFile(htmlPage, identifier, EDIT_MODE);
+		
+		if(htmlPage instanceof Contentlet) {
+		    ContentletServices.removeContentletFile((Contentlet)htmlPage, identifier, EDIT_MODE);
+		}
 	}
 
-	public static InputStream buildStream(HTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
+	public static InputStream buildStream(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
 		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 		try{
 			return buildStream(htmlPage, identifier, EDIT_MODE);
@@ -69,13 +83,13 @@ public class PageServices {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static InputStream buildStream(HTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
+	public static InputStream buildStream(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 		String folderPath = (!EDIT_MODE) ? "live/" : "working/";
 		InputStream result;
 		StringBuilder sb = new StringBuilder();
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate(htmlPage, EDIT_MODE);
+		Template cmsTemplate = APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, EDIT_MODE);
 		if(cmsTemplate == null || ! InodeUtils.isSet(cmsTemplate.getInode())){
 			Logger.error(This.class, "PAGE DOES NOT HAVE A VALID TEMPLATE (template unpublished?) : page id " + htmlPage.getIdentifier() + ":" + identifier.getURI()   );
 		}
@@ -97,13 +111,20 @@ public class PageServices {
 		}
 		
 		
+		if("contentlet".equals(identifier.getAssetType())){
+			sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
+			
+			
+		}
+		
+		
+		
 		
 		// set the host variables
-		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 
-		Host host = htmlPageAPI.getParentHost(htmlPage);
+		Host host = APILocator.getHTMLPageAssetAPI().getParentHost(htmlPage);
 		sb.append("#if(!$doNotParseTemplate)");
-			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION") ).append( "')");
+			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION", "html") ).append( "')");
 		sb.append(" #end ");
 		
 		
@@ -135,12 +156,7 @@ public class PageServices {
 		sb.append("#set ($pageChannel = \"" ).append( pageChannel ).append( "\" )");
 		sb.append("#set ($friendlyName = \"" ).append( UtilMethods.espaceForVelocity(htmlPage.getFriendlyName()) ).append( "\" )");
 
-		Date moddate = null;
-		if(UtilMethods.isSet(htmlPage.getModDate())){
-			moddate = htmlPage.getModDate();
-		} else {
-			moddate = htmlPage.getStartDate();
-		}
+		Date moddate = htmlPage.getModDate();
 
 		moddate = new Timestamp(moddate.getTime());
 
@@ -148,9 +164,6 @@ public class PageServices {
 		sb.append("#set ($HTMLPAGE_MOD_DATE= $date.toDate(\"yyyy-MM-dd HH:mm:ss.SSS\", \"" ).append( moddate ).append( "\"))");
 		sb.append(" #end ");
 						
-		//get the containers for the page and stick them in context
-		//List identifiers = InodeFactory.getChildrenClass(cmsTemplate, Identifier.class);
-
         List<Container> containerList = APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate, APILocator.getUserAPI().getSystemUser(), false);
 
 		Iterator i = containerList.iterator();
@@ -287,7 +300,7 @@ public class PageServices {
                 //Merging our template
                 sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\")" );
             } else {
-                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION" ) ).append( "')" );
+                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION","html" ) ).append( "')" );
             }
 		sb.append("#end");
 		
@@ -297,7 +310,7 @@ public class PageServices {
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-	            String filePath = realFolderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
+	            String filePath = realFolderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
 	            if (velocityRootPath.startsWith("/WEB-INF")) {
 	                velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 	            }
@@ -325,31 +338,33 @@ public class PageServices {
 		return result;
 	}
 
-	public static void unpublishPageFile(HTMLPage htmlPage) throws DotStateException, DotDataException {
+	public static void unpublishPageFile(IHTMLPage htmlPage) throws DotStateException, DotDataException {
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 		removePageFile(htmlPage, identifier, false);
 	}
 
-	public static void removePageFile(HTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
+	public static void removePageFile(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 		removePageFile(htmlPage, identifier, EDIT_MODE);
 	}
 
-	public static void removePageFile (HTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
+	public static void removePageFile (IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
 		if (velocityRootPath.startsWith("/WEB-INF")) {
 			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 		}
-		String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
+		String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
 		velocityRootPath += java.io.File.separator;
 		java.io.File f  = new java.io.File(velocityRootPath + filePath);
 		f.delete();
 		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
 		vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-		CacheLocator.getHTMLPageCache().remove((HTMLPage) htmlPage);
+		if(htmlPage instanceof HTMLPage) {
+		    CacheLocator.getHTMLPageCache().remove((HTMLPage) htmlPage);
+		}
 	}
 
 }

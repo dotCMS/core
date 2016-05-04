@@ -106,7 +106,7 @@ public class TopLinksMenuBuilder implements ViewTool {
                 stringbuf.append("#else\n");
 				stringbuf.append("<a ");
                 stringbuf.append("#end \n");
-				stringbuf.append("href=\"" + UtilMethods.encodeURIComponent(itemChildPath) + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "\">"); 
+				stringbuf.append("href=\"" + UtilMethods.encodeURIComponent(itemChildPath) + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">"); 
 				stringbuf.append(((Folder)itemChild).getTitle());
 				stringbuf.append("</a>");
 			}

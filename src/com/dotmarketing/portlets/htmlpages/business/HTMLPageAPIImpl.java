@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -68,7 +69,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
-
+@Deprecated
 public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -651,7 +652,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		Context context = null;
 		
 
-		uri = UtilMethods.cleanURI(uri);
+
 
 		// Map with all identifier inodes for a given uri.
 		String idInode = APILocator.getIdentifierAPI().find(host, uri)

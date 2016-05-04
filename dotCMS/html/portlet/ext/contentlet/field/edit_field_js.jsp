@@ -575,23 +575,25 @@ var cmsfile=null;
 	function addFileImageCallback(file) {
 		var ident
 		var ext=file.extension;
-		var ident =file.identifier+'.'+ext;
-		document.getElementById(wysiwyg_field_name).value = "/dotAsset/" + ident;
-		//wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/dotAsset/" + ident;
+
+		var ident =file.identifier;
+		wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
+
 		if(wysiwyg_field_name == 'src'){
-			wysiwyg_win.ImageDialog.showPreviewImage("/dotAsset/" + ident);
+			wysiwyg_win.ImageDialog.showPreviewImage("/contentAsset/raw-data/" + ident + "/fileAsset");
 		}
 	}
 	function addFileCallback(file) {
 		var ident
 		var ext=file.extension;
-		var ident =file.identifier+'.'+ext;
+		var ident =file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
 		if(fileExt == '<%= extension %>'){
 			document.getElementById(wysiwyg_field_name).value = file.pageURI;
-		}else{
-			document.getElementById(wysiwyg_field_name).value = "/dotAsset/" + ident;
+		}else {
+
+			wysiwyg_win.document.forms[0].elements["href"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
 		}
 	}
 

@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.liferay.portal.model.User;
 
+@Deprecated
 public interface HTMLPageFactory {
 	
 	public void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException;

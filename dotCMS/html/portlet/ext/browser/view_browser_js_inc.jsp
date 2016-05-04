@@ -1,3 +1,6 @@
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
+<%@page import="com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI"%>
 <%@page import="java.util.TimeZone"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -1477,7 +1480,11 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	//HTML Page actions
 	function addHTMLPage(parentId, referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=edit&parent=' + parentId + '&inode=&referer=' + referer;
+		//top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=edit&parent=' + parentId + '&inode=&referer=' + referer;
+		refererVar=referer;
+		BrowserAjax.getFolderMap(parentId,function(map) {
+			showPageAssetPopUp(map);
+		});
 	}
 
 	function previewHTMLPage (objId, referer) {
@@ -1601,6 +1608,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
 			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Page-unlocked")) %>');
 		}
 	}
+	
+	function migratePage(objId, referer) {
+		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/director/direct" /><portlet:param name="cmd" value="migrate" /></portlet:actionURL>&htmlPage=' + objId + '&referer=' + referer;
+	}
 
 	function copyHTMLPage (objId, parentId, referer) {
 		BrowserAjax.copyHTMLPage(objId, parentId, copyHTMLPageCallback);
@@ -1686,6 +1697,42 @@ dojo.require("dotcms.dojo.push.PushHandler");
 		  		"<select id='defaultFileType' name='defaultFileType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='fileAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
 				"<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedFileAssetButton' onclick='getSelectedfileAsset(\"${folderInode}\",${isMultiple});'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
 				"</div>";
+	}
+	
+	function showPageAssetPopUp(folderMap){
+        hidePopUp('context_menu_popup_'+folderMap.inode);
+        var faDialog = dijit.byId("addPageAssetDialog");
+        if (faDialog) {
+            faDialog.destroyRecursive(true);
+        }
+        var pageAssetDialog = new dijit.Dialog({
+            id   : "addPageAssetDialog",
+            title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpage.dialog")) %>",
+            style: "width: 420px; height:130px; overflow: auto"
+        });
+        var dialogHtml = getHTMLPageAssetDialogHtml();
+        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:'<%=APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost)%>', folderInode:folderMap.inode });
+        pageAssetDialog.attr("content", dialogHtml);
+        pageAssetDialog.show();
+    }
+	
+	function getHTMLPageAssetDialogHtml(){
+
+        return "<div>"+
+                "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.htmlpage.you.wish.to.upload")) %>:</div>" +
+                "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='pageAssetStructureStore' dojoId='pageAssetStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_HTMLPAGE %>'></span>"+
+                "<select id='defaultPageType' name='defaultPageType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='pageAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
+                "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedPageAssetButton' onclick='getSelectedpageAsset(\"${folderInode}\");'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
+                "</div>";
+    }
+	
+	function getSelectedpageAsset(folderInode) {
+		var selected = dijit.byId('defaultPageType');
+		if(!selected){
+            showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
+        }
+		
+		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
 	}
 
 
@@ -1787,6 +1834,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	function editFileAsset (contInode,structureInode){
 		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
    	}
+	
+	function editHTMLPageAsset (contInode,structureInode){
+        top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
+    }
+	function previewHTMLPageAsset(id,referer) {
+		
+	}
 
 	function publishFile (objId, referer) {
 		BrowserAjax.publishAsset(objId, publishFileCallback);

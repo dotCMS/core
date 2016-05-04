@@ -52,6 +52,7 @@ hr {color: #fff; background-color: #fff; border: 1px solid #ddd; border-style: n
 .redlineIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -60px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .cancelIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -120px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .newPageIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -400px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.repeatIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -140px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .newTaskIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .statisticsIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -720px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .pagePropIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -900px;width:18px;height:18px;display:inline-block;vertical-align:top;}

@@ -1,0 +1,30 @@
+<script type="application/javascript">
+	dojo.require('dotcms.dijit.FileBrowserDialog');
+	function browseRedirectPage() {
+		pageSelector.show();
+	}
+	function redirectPageSelected(page) {
+		dijit.byId('redirectBox').set('value', page.pageURI);
+	}
+
+	function updateRedirectValue() {
+		dojo.byId('redirecturl').value=dijit.byId('redirectBox').get('value');
+	}
+
+	dojo.ready(function() {
+		dijit.byId('redirectBox').set('value', dojo.byId('redirecturl').value);
+		dojo.connect(dijit.byId('redirectBox'),"onchange",updateRedirectValue);
+	});
+
+</script>
+
+
+<input type="text" dojoType="dijit.form.TextBox" style="width:275px;" 
+       id="redirectBox" name="redirectBox" />
+
+<button dojoType="dijit.form.Button" onClick="browseRedirectPage();return false;" iconClass="linkIcon" type="button">
+	$text.get("select-link")
+</button>
+
+<div dojoAttachPoint="fileBrowser" jsId="pageSelector" onFileSelected="redirectPageSelected" 
+     mimeTypes="application/dotpage" dojoType="dotcms.dijit.FileBrowserDialog"></div>

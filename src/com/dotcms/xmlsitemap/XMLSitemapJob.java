@@ -433,7 +433,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							HTMLPage page = (HTMLPage) itemChild;
 							Logger.debug(this, "Folder Page Configuration " + page.getURI());
 							if (page.isLive() && !page.isDeleted()) {
-								String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+								String indexPageConfiguration = "/"+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 								String pathToPageUrl = XMLUtils.xmlEscape("http://"+ host.getHostname() + page.getURI());
 
 								if (pathToPageUrl.endsWith(indexPageConfiguration)) {
@@ -530,10 +530,10 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		Host host = hostAPI.findParentHost(thisFolder, systemUser, false);
 
 		Identifier id = identAPI.loadFromCache(host, folderIdent.getURI()
-				+ "/index."
-				+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+				+ "/"
+				+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"));
 
-		Logger.debug(this, "Performing check for folders [" + (folderIdent.getURI() + "/index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION")) + "], Identifier Check ["
+		Logger.debug(this, "Performing check for folders [" + (folderIdent.getURI() + "/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")) + "], Identifier Check ["
 		 + (id != null) + "], Children Count [" + itemsChildrenList2.size() + "], Host Identifier [" + host.getIdentifier() + "], Identifier " +
 		 ((id != null) ? id.getInode() : "") + "]");
 
@@ -609,7 +609,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					Identifier childChild2Ident = identAPI.find(page2
 							.getIdentifier());
 					if (page2.isLive() && !page2.isDeleted()) {
-						String indexPageConfiguration = "/index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+						String indexPageConfiguration = "/"+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 
 						String pathToPageUrl = XMLUtils.xmlEscape("http://" + host.getHostname() + childChild2Ident.getURI());
 
@@ -622,7 +622,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 						stringbuf = "<url><loc>" + pathToPageUrl + "</loc><lastmod>" + modifiedDateStringValue + "</lastmod><changefreq>daily</changefreq></url>\n";
 
-						Logger.debug(this, "Writing the XMLConfiguration for an HTML Page with out index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html") + " extension [" + pathToPageUrl + "]");
+						Logger.debug(this, "Writing the XMLConfiguration for an HTML Page with out " + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + " extension [" + pathToPageUrl + "]");
 
 						writeFile(stringbuf);
 

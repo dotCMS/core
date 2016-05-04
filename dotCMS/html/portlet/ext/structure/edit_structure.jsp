@@ -542,7 +542,9 @@ function disableFormFields(){
 								<%= LanguageUtil.get(pageContext, "Form") %>
 							<%}else if(form.getStructureType() ==4){%>
 								<%= LanguageUtil.get(pageContext, "File") %>
-							<%} %> &gt;
+							<%}else if(form.getStructureType() ==5){%>
+                                <%= LanguageUtil.get(pageContext, "HTMLPage") %>
+                            <%} %> &gt;
 						</span>
 						<%=structure.getName() %>
 					</h2>
@@ -680,12 +682,15 @@ function disableFormFields(){
 									<%= LanguageUtil.get(pageContext, "Form") %>
 								<%}else if(form.getStructureType() ==4){%>
 									<%= LanguageUtil.get(pageContext, "File") %>
-								<%} %>
+								<%}else if(form.getStructureType() ==5){%>
+                                    <%= LanguageUtil.get(pageContext, "HTMLPage") %>
+                                <%} %>
 							<%}else{ %>
 								<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_WIDGET) %>"><%= LanguageUtil.get(pageContext, "Widget") %></option>
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_FILEASSET) %>"><%= LanguageUtil.get(pageContext, "File") %></option>
+									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_HTMLPAGE) %>"><%= LanguageUtil.get(pageContext, "HTMLPage") %></option>
 								</select>
 							<%} %>
 						<html:hidden property="system" styleId="system" />

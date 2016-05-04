@@ -11,10 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.javax.portlet.WindowState;
-
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -48,7 +47,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -207,8 +206,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 
 			Identifier htmlParentId = identifierAPI.findFromInode(htmlpage_inode);
-			HTMLPage htmlParent = (HTMLPage) versionableAPI.findWorkingVersion(htmlParentId, user, false);
-			Logger.debug(this, "Added Contentlet to parent=" + htmlParent.getInode());
+			Logger.debug(this, "Added Contentlet to parent=" + htmlpage_inode);
 
 			Identifier containerParentId = null;
 			Container containerParent = null;
@@ -229,13 +227,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				Logger.debug(this, "Added Contentlet to parent=" + containerParent.getInode());
 
 
-				if (InodeUtils.isSet(htmlParent.getInode()) && InodeUtils.isSet(containerParent.getInode()) && InodeUtils.isSet(contentlet.getInode())) {
-					Identifier htmlPageIdentifier = identifierAPI.find(htmlParent);
+				if (InodeUtils.isSet(htmlParentId.getId()) && InodeUtils.isSet(containerParent.getInode()) && InodeUtils.isSet(contentlet.getInode())) {
 					Identifier containerIdentifier = identifierAPI.find(containerParent);
 					Identifier contenletIdentifier = identifierAPI.find(contentlet);
-					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,
+					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlParentId, containerIdentifier,
 							contenletIdentifier);
-					Logger.debug(this, "Getting multitree for=" + htmlParent.getInode() + " ," + containerParent.getInode()
+					Logger.debug(this, "Getting multitree for=" + htmlpage_inode + " ," + containerParent.getInode()
 							+ " ," + contentlet.getIdentifier());
 					Logger.debug(this, "Coming from multitree parent1=" + multiTree.getParent1() + " parent2="
 							+ multiTree.getParent2());
@@ -244,15 +241,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 					if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 						Logger.debug(this, "MTree is null!!! Creating new one!");
-						MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
+						MultiTree mTree = new MultiTree(htmlParentId.getInode(), containerIdentifier.getInode(),
 														contenletIdentifier.getInode(),null,contentletCount);
 						MultiTreeFactory.saveMultiTree(mTree);
 					}
-
-					//Updating the last mod user and last mod date of the page
-					htmlParent.setModDate(new Date());
-					htmlParent.setModUser(user.getUserId());
-					HibernateUtil.saveOrUpdate(htmlParent);
 
 				}
 			}
@@ -881,7 +873,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			//Avoinding to send the email to the same users
 			for (Map<String, Object> reference : references){
 				try{
-					HTMLPage page = (HTMLPage)reference.get("page");
+					IHTMLPage page = (IHTMLPage)reference.get("page");
 					User pageUser = APILocator.getUserAPI().loadUserById(page.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
 					if (!pageUser.getUserId().equals(currentUser.getUserId())){
 						reference.put("owner", pageUser);
@@ -926,8 +918,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				String editorName = UtilMethods.getUserFullName(contentlet.getModUser());
 
 				for (Map<String, Object> reference : references) {
-					HTMLPage page = (HTMLPage)reference.get("page");
-					Host host = hostAPI.findParentHost(page, systemUser, false);
+					IHTMLPage page = (IHTMLPage)reference.get("page");
+					Host host = APILocator.getHTMLPageAssetAPI().getParentHost(page);
 					Company company = PublicCompanyFactory.getDefaultCompany();
 					User pageUser = (User)reference.get("owner");
 

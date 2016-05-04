@@ -127,7 +127,7 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 				Folder folder = APILocator.getFolderAPI().createFolders(folderPath, host, user, false);
 
 				String page = url.substring(url.lastIndexOf("/") + 1, url.length());
-				String pageName = page.replaceAll("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"), "");
+				String pageName = page;
 
 				String friendlyName = (UtilMethods.isSet(req.getParameter("friendlyName"))) ? req.getParameter("friendlyName") : pageName;
 
@@ -492,9 +492,7 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 
 		// removes the extension .jsp from page url
 		String pageName = htmlpage.getPageUrl();
-		if (pageName != null) {
-			pageName = pageName.replaceAll("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"), "");
-		}
+
 		// to remove the page extension on the bean
 		hf.setPageUrl(pageName);
 
@@ -560,10 +558,7 @@ public class EditHTMLPageAction extends DotPortletAction implements DotPortletAc
 		} else {
 			newHtmlPage.setFriendlyName(newHtmlPage.getTitle());
 		}
-		// add VELOCITY_PAGE_EXTENSION to the pagename
-		if (!newHtmlPage.getPageUrl().endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
-			newHtmlPage.setPageUrl(newHtmlPage.getPageUrl() + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
-		}
+
 
 		// Some checks
 

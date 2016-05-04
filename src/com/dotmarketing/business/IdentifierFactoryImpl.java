@@ -23,10 +23,12 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -292,6 +294,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 						Logger.debug(this, e.getMessage() + " Issue happened while assigning Binary Field");
 					}
 				}
+				else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
+				}
 				identifier.setAssetType("contentlet");
 				identifier.setParentPath(parentId.getPath());
 				identifier.setAssetName(uri);
@@ -363,14 +368,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
             identifier.setId( uuid );
 
-            if ( versionable instanceof Contentlet && ((Contentlet) versionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
-
-                // special case when it is a file asset as contentlet
+            if ( versionable instanceof Contentlet) {
                 Contentlet cont = (Contentlet) versionable;
-                try {
-                    uri = cont.getBinary( FileAssetAPI.BINARY_FIELD ) != null ? cont.getBinary( FileAssetAPI.BINARY_FIELD ).getName() : "";
-                } catch ( IOException e ) {
-                    throw new DotDataException( e.getMessage(), e );
+                if(cont.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
+                    // special case when it is a file asset as contentlet
+                    try {
+                        uri = cont.getBinary( FileAssetAPI.BINARY_FIELD ) != null ? cont.getBinary( FileAssetAPI.BINARY_FIELD ).getName() : "";
+                    } catch ( IOException e ) {
+                        throw new DotDataException( e.getMessage(), e );
+                    }
+                }
+                else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
                 }
                 identifier.setAssetType( "contentlet" );
                 identifier.setParentPath( "/" );

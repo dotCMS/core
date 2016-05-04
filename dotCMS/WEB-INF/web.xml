@@ -772,10 +772,18 @@
 		<servlet-name>SlideShowServlet</servlet-name>
 		<url-pattern>/dot_slideshow</url-pattern>
 	</servlet-mapping>
-<servlet-mapping>
+	<!--  
+	<servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
 		<url-pattern>*.html</url-pattern>
 	</servlet-mapping>
+	-->
+	<servlet-mapping>
+		<servlet-name>VelocityServlet</servlet-name>
+		<url-pattern>/servlets/VelocityServlet</url-pattern>
+	</servlet-mapping>
+	
+	
 	<servlet-mapping>
 		<servlet-name>FileServlet</servlet-name>
 		<url-pattern>/dot/*</url-pattern>

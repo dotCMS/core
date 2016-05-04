@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
+
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
@@ -23,7 +24,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -46,11 +47,16 @@ import com.liferay.util.FileUtil;
 
 public class DotResourceLoader extends ResourceLoader {
 
-    final String[] velocityCMSExtenstions = { Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION"),
-            Config.getStringProperty("VELOCITY_CONTENT_EXTENSION"), Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION"),
-            Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"), Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION"),
-            Config.getStringProperty("VELOCITY_BANNER_EXTENSION"),Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION"),
-            Config.getStringProperty("VELOCITY_FIELD_EXTENSION"),Config.getStringProperty("VELOCITY_HOST_EXTENSION")};
+    final String[] velocityCMSExtenstions = { 
+    		Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION"),
+            Config.getStringProperty("VELOCITY_CONTENT_EXTENSION"), 
+            Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION"),
+            Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"), 
+            Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION"),
+            Config.getStringProperty("VELOCITY_BANNER_EXTENSION"),
+            Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION"),
+            Config.getStringProperty("VELOCITY_FIELD_EXTENSION"),
+            Config.getStringProperty("VELOCITY_HOST_EXTENSION")};
 
     private String VELOCITY_ROOT = null;
     private String VELOCITY_CONTAINER_EXTENSION = null;
@@ -221,6 +227,7 @@ public class DotResourceLoader extends ResourceLoader {
         return result;
     }
 
+    @SuppressWarnings("resource")
     private InputStream generateStream(String arg0) throws Exception {
     	User user=APILocator.getUserAPI().getSystemUser();
 
@@ -385,15 +392,19 @@ public class DotResourceLoader extends ResourceLoader {
             }
         }else if (arg0.endsWith(VELOCITY_HTMLPAGE_EXTENSION)) {
             try {
-                //Integer.parseInt(x);
-                //Identifier identifier = (Identifier) InodeFactory.getInode(x, Identifier.class);
             	Identifier identifier = APILocator.getIdentifierAPI().find(x);
             	VersionableAPI versionableAPI=APILocator.getVersionableAPI();
-                HTMLPage page = null;
-                if (preview) {
-                	page=(HTMLPage) versionableAPI.findWorkingVersion(identifier, user, true);
-                } else {
-                	page=(HTMLPage) versionableAPI.findLiveVersion(identifier, user, true);
+                IHTMLPage page = null;
+                if(identifier.getAssetType().equals("contentlet")) {
+                    page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                            APILocator.getContentletAPI().findContentletByIdentifier(x, !preview, 0, user, true));
+                }
+                else {
+                    if (preview) {
+                        page = (IHTMLPage) versionableAPI.findWorkingVersion(identifier, user, true);
+                    } else {
+                        page = (IHTMLPage) versionableAPI.findLiveVersion(identifier, user, true);
+                    }
                 }
 
                 Logger.debug(this,"DotResourceLoader:\tWriting out HTMLpage inode = " + page.getInode());

@@ -460,14 +460,20 @@ public class EditStructureAction extends DotPortletAction {
 				fAPI.createBaseFormFields(structure);
 			}
 
-			// if the structure is a form we need to add the base fields.
+			// if the structure is a file we need to add the base fields.
 			if (newStructure && structureForm.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
 				APILocator.getFileAssetAPI().createBaseFileAssetFields(structure);
 			}
+			
+			// if the structure is a page we need to add the base fields.
+			if(newStructure && structureForm.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+			    APILocator.getHTMLPageAssetAPI().createHTMLPageAssetBaseFields(structure);
+			}
+			
 			if (!newStructure) {
 				perAPI.resetPermissionReferences(structure);
 			}
-			System.out.println("L'host settato all'interno dellastructure è: " + structure.getHost());
+			
 			ActivityLogger.logInfo(ActivityLogger.class, "Save Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added structure "
 					+ structure.getName() + ".", HostUtil.hostNameUtil(req, _getUser(req)));
 

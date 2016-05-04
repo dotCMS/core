@@ -33,6 +33,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	public static final int STRUCTURE_TYPE_WIDGET 		= 2;
 	public static final int STRUCTURE_TYPE_FORM 		= 3;
 	public static final int STRUCTURE_TYPE_FILEASSET 	= 4;
+	public static final int STRUCTURE_TYPE_HTMLPAGE     = 5;
 
 	private static final long serialVersionUID = 1L;
 	private String name;
@@ -209,25 +210,22 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	}
 
 	public boolean isContent() {
-		if(structureType == STRUCTURE_TYPE_CONTENT)
-			return true;
-		return false;
+		return structureType == STRUCTURE_TYPE_CONTENT;
 	}
 
 	public boolean isWidget() {
-		if(structureType == STRUCTURE_TYPE_WIDGET)
-			return true;
-		return false;
+		return structureType == STRUCTURE_TYPE_WIDGET;
 	}
 
 	public boolean isForm() {
-		if(structureType == STRUCTURE_TYPE_FORM)
-			return true;
-		return false;
+		return structureType == STRUCTURE_TYPE_FORM;
 	}
 	public boolean isFileAsset() {
-		return(structureType == STRUCTURE_TYPE_FILEASSET);
+		return structureType == STRUCTURE_TYPE_FILEASSET;
 
+	}
+	public boolean isHTMLPageAsset() {
+	    return structureType==STRUCTURE_TYPE_HTMLPAGE;
 	}
 	public boolean isSystem() {
 		return system;

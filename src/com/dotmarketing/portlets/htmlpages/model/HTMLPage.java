@@ -17,13 +17,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
-public class HTMLPage extends WebAsset implements Serializable, Comparable {
+@Deprecated
+public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTMLPage {
 
     private static final long serialVersionUID = 1L;
 
@@ -108,14 +110,14 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable {
         return id.getURI();
     }
     
-	public void copy(HTMLPage currentHTMLPage) {
-		this.metadata = currentHTMLPage.getMetadata();
-		this.startDate = currentHTMLPage.getStartDate();
-		this.endDate = currentHTMLPage.getEndDate();
-		this.pageUrl = currentHTMLPage.getPageUrl();
-		this.httpsRequired = currentHTMLPage.isHttpsRequired();
-		this.redirect = currentHTMLPage.getRedirect();
-		super.copy(currentHTMLPage);
+	public void copy(HTMLPage current) {
+		this.metadata = current.getMetadata();
+		this.startDate = current.getStartDate();
+		this.endDate = current.getEndDate();
+		this.pageUrl = current.getPageUrl();
+		this.httpsRequired = current.isHttpsRequired();
+		this.redirect = current.getRedirect();
+		super.copy(current);
 	}
 
 	/**
@@ -356,5 +358,15 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable {
 		}
 
 	}
+
+    @Override
+    public boolean isContent() {
+        return false;
+    }
+
+    @Override
+    public int getMenuOrder() {
+        return getSortOrder();
+    }
 	
 }

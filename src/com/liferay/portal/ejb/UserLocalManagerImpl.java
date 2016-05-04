@@ -31,6 +31,7 @@ import javax.mail.internet.InternetAddress;
 
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
+import com.dotcms.repackage.org.owasp.esapi.ESAPI;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.NoSuchUserException;
@@ -612,11 +613,13 @@ public class UserLocalManagerImpl implements UserLocalManager {
 			String userId, String firstName, String lastName,
 			String emailAddress, String smsId)
 		throws PortalException, SystemException {
-
-		if (Validator.isNull(firstName)) {
+		
+		// isValidInput(java.lang.String context, java.lang.String input, java.lang.String type, int maxLength, boolean allowNull) 
+		
+		if (Validator.isNull(firstName) || !ESAPI.validator().isValidInput("firstName", firstName, "UserName", 50, false)) {
 			throw new UserFirstNameException();
 		}
-		else if (Validator.isNull(lastName)) {
+		else if (Validator.isNull(lastName) || !ESAPI.validator().isValidInput("lastName", lastName, "UserName", 50, false)) {
 			throw new UserLastNameException();
 		}
 

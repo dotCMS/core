@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.browser.ajax;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +50,8 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
@@ -81,7 +83,6 @@ public class BrowserAjax {
 	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private FileAPI fileAPI = APILocator.getFileAPI();
-	private HTMLPageAPI pageAPI = APILocator.getHTMLPageAPI();
 	private ContentletAPI contAPI = APILocator.getContentletAPI();
 	private WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
@@ -327,10 +328,9 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("htmlpage")) {
-			HTMLPage page = pageAPI.loadWorkingPageById(fileId, user, respectFrontendRoles);
-			Map<String, Object> pageMap = page.getMap();
+			Map<String, Object> pageMap = APILocator.getHTMLPageAPI().loadWorkingPageById(fileId, user, respectFrontendRoles).getMap();
 			pageMap.put("mimeType", "application/dotpage");
-			pageMap.put("pageURI", page.getURI());
+			pageMap.put("pageURI", ident.getURI());
 			return pageMap;
 		}
 
@@ -338,14 +338,23 @@ public class BrowserAjax {
 		    ContentletVersionInfo vinfo=APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
 			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, APILocator.getLanguageAPI().getDefaultLanguage().getId() , user, respectFrontendRoles);
-			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
-			java.io.File file = fileAsset.getFileAsset();
-			String mimeType = servletContext.getMimeType(file.getName().toLowerCase());
-			Map<String, Object> fileMap = fileAsset.getMap();
-			fileMap.put("mimeType", mimeType);
-			fileMap.put("path", fileAsset.getPath());
-			fileMap.put("type", "contentlet");
-			return fileMap;
+			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+    			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
+    			java.io.File file = fileAsset.getFileAsset();
+    			String mimeType = servletContext.getMimeType(file.getName().toLowerCase());
+    			Map<String, Object> fileMap = fileAsset.getMap();
+    			fileMap.put("mimeType", mimeType);
+    			fileMap.put("path", fileAsset.getPath());
+    			fileMap.put("type", "contentlet");
+    			return fileMap;
+			}
+			else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+			    HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
+			    Map<String, Object> pageMap = page.getMap();
+			    pageMap.put("mimeType", "application/dotpage");
+	            pageMap.put("pageURI", ident.getURI());
+	            return pageMap;
+			}
 		}
 
 		return null;
@@ -799,14 +808,22 @@ public class BrowserAjax {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
+        Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
+                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
+                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
+                                 APILocator.getContentletAPI().find(inode, user, false));
+        
     	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	HTMLPage page = (HTMLPage) InodeFactory.getInode(inode, HTMLPage.class);
+    	
     	String pageURL = page.getPageUrl();
     	result.put("lastName", pageURL.substring(0, pageURL.lastIndexOf(".")));
-    	result.put("extension", Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+
     	result.put("newName", newName);
     	result.put("inode", inode);
-    	if (HTMLPageFactory.renameHTMLPage(page, newName, user)) {
+    	if (ident.getAssetType().equals("htmlpage") ? 
+    	        HTMLPageFactory.renameHTMLPage((HTMLPage)page, newName, user)
+    	      : APILocator.getHTMLPageAssetAPI().rename((HTMLPageAsset) page, newName, user)) {
         	result.put("result", 0);
     	} else {
         	result.put("result", 1);
@@ -831,7 +848,11 @@ public class BrowserAjax {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser( req );
 
-        HTMLPage page = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
+        Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
+                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
+                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
+                                 APILocator.getContentletAPI().find(inode, user, false));
 
         // gets folder parent
         Folder parent = null;
@@ -850,16 +871,28 @@ public class BrowserAjax {
         String permissionsError = "The user doesn't have the required permissions.";
         if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
             throw new DotRuntimeException( permissionsError );
-        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_CAN_ADD_CHILDREN, user ) ) {
             throw new DotRuntimeException( permissionsError );
-        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_CAN_ADD_CHILDREN, user ) ) {
             throw new DotRuntimeException( permissionsError );
         }
 
-        if ( parent != null ) {
-            HTMLPageFactory.copyHTMLPage( page, parent );
-        } else {
-            HTMLPageFactory.copyHTMLPage( page, host );
+        if(ident.getAssetType().equals("htmlpage")) {
+            if ( parent != null ) {
+                HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
+            } else {
+                HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
+            }
+        }
+        else {
+            Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
+            if(parent!=null) {
+                cont=APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
+            }
+            else {
+                cont=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
+            }
+            
         }
 
         return true;
@@ -878,7 +911,11 @@ public class BrowserAjax {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser( req );
 
-        HTMLPage page = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
+        Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
+                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
+                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
+                                 APILocator.getContentletAPI().find(inode, user, false));
 
         // gets folder parent
         Folder parent = null;
@@ -897,16 +934,26 @@ public class BrowserAjax {
         String permissionsError = "The user doesn't have the required permissions.";
         if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
             throw new DotRuntimeException( permissionsError );
-        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_CAN_ADD_CHILDREN, user ) ) {
             throw new DotRuntimeException( permissionsError );
-        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_CAN_ADD_CHILDREN, user ) ) {
             throw new DotRuntimeException( permissionsError );
         }
 
-        if ( parent != null ) {
-            return HTMLPageFactory.moveHTMLPage( page, parent, user );
-        } else {
-            return HTMLPageFactory.moveHTMLPage( page, host, user );
+        if(ident.getAssetType().equals("htmlpage")) {
+            if ( parent != null ) {
+                return HTMLPageFactory.moveHTMLPage( (HTMLPage) page, parent, user );
+            } else {
+                return HTMLPageFactory.moveHTMLPage( (HTMLPage) page, host, user );
+            }
+        }
+        else {
+            if ( parent != null ) {
+                return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
+            }
+            else {
+                return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
+            }
         }
     }
 
