@@ -13,8 +13,12 @@ import java.util.Set;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotmarketing.beans.*;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -50,8 +54,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
-
-import static com.dotmarketing.beans.PermissionType.TEMPLATE;
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -179,7 +181,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The id of the host
 	 */
-	private static final String selectChildrenTemplateWithIndividualPermissionsSQL =
+	private final String selectChildrenTemplateWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='template' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         "and host_inode = ? ";
@@ -264,7 +266,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * Parameters
 	 * 1. The host id
 	 */
-	private final static String selectChildrenContainerWithIndividualPermissionsSQL =
+	private final String selectChildrenContainerWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
         "where asset_type='containers' and permission_type='" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
         "and host_inode = ? ";
@@ -337,7 +339,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
 	 */
-	private static final String dotFolderPath=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
+	private final String dotFolderPath=(DbConnectionFactory.isMsSql() ? "dbo.":"")+"dotFolderPath";
 
 	/*
 	 * To load folder inodes that are in the same tree/hierarchy of a parent host/folder
@@ -357,7 +359,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 * 3. Parent folder exact path E.G. '/about/' pass '' if you want all from the host
 	 */
-	private static final String selectChildrenFolderWithDirectPermissionsSQL =
+	private final String selectChildrenFolderWithDirectPermissionsSQL =
 	     "select distinct folder.inode from folder join identifier on (folder.identifier = identifier.id) join permission on (inode_id=folder.inode) where " +
 	     "identifier.host_inode = ? and "+dotFolderPath+"(parent_path,asset_name) like ? and "+dotFolderPath+"(parent_path,asset_name) <> ?";
 
@@ -470,7 +472,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private static final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
+    private final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
             "select distinct li.id from identifier li join permission on (inode_id = li.id) where " +
                     " li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ? " +
                     " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -621,10 +623,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private static final String selectChildrenFileWithIndividualPermissionsSQL =
-			"select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
-			"asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ? " +
-			"and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
+	private final String selectChildrenFileWithIndividualPermissionsSQL =
+        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
+        "asset_type='file_asset' and identifier.host_inode = ? and identifier.parent_path like ? " +
+        "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of files of a given parent folder
@@ -765,7 +767,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private static final String selectChildrenLinkWithIndividualPermissionsSQL =
+	private final String selectChildrenLinkWithIndividualPermissionsSQL =
         "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
         "asset_type='links' and identifier.host_inode = ? and identifier.parent_path like ? " +
         "and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
@@ -908,7 +910,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-    private static final String selectChildrenContentWithIndividualPermissionsByPathSQL =
+    private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
             "select distinct li.id from identifier li" +
                 " join permission lp on (lp.inode_id = li.id) " +
                 " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
@@ -1109,7 +1111,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private static final String selectChildrenStructureByPathSQL =
+	private final String selectChildrenStructureByPathSQL =
 		"select distinct structure.inode from structure where ( " +
 		"(structure.folder <> 'SYSTEM_FOLDER' AND exists(" +
 		"         select folder.inode from folder join identifier on (identifier.id=folder.identifier) " +
@@ -1312,7 +1314,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id
 	 * 3. The host id
 	 */
-	private static final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
+	private final String selectChildrenStructureWithIndividualPermissionsByPathSQL =
 		selectChildrenStructureByPathSQL + " and exists (select * from permission where inode_id = structure.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
 
@@ -1327,8 +1329,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String selectChildrenStructureWithIndividualPermissionsByPathSQLFolder =
 		selectChildrenStructureByPathSQLFolder + " and exists (select * from permission where inode_id = inode.inode and " +
 		"permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "')";
-
-	private static final Map<PermissionType, String> selectChildrenWithIndividualPermissionsSQLs = new HashMap<>();
 
 	static {
 		String[] listOfMasks = PermissionAPI.PERMISSION_TYPES;
@@ -1345,15 +1345,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	        }
 
 		}
-
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.TEMPLATE, selectChildrenTemplateWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.CONTAINER, selectChildrenContainerWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.FOLDER, selectChildrenFolderWithDirectPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.IHTMLPAGE, selectChildrenHTMLPageWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.FILE, selectChildrenFileWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.LINK, selectChildrenLinkWithIndividualPermissionsSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.CONTENTLET, selectChildrenContentWithIndividualPermissionsByPathSQL);
-		selectChildrenWithIndividualPermissionsSQLs.put(PermissionType.STRUCTURE, selectChildrenStructureWithIndividualPermissionsByPathSQL);
 	}
 
 	/**
@@ -3256,7 +3247,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	 void cascadePermissionUnder(Permissionable permissionable, Role role) throws DotDataException {
+	@Override
+	void cascadePermissionUnder(Permissionable permissionable, Role role) throws DotDataException {
 
 		Logger.info(this, "Starting cascade role permissions for permissionable " + permissionable.getPermissionId() + " for role " + role.getId());
 		if(!permissionable.isParentPermissionable()) {
@@ -3310,20 +3302,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/**
-	 * Assign to  a Permissionable the same permission that it's parent
-	 *
-	 * @param permissionable permissionable link with the permission to update or save
-	 * @param role role link with the permission to update or save
-	 * @param permissionsPermissionable permissionable's parent
-	 * @param allPermissions parent permission
-	 * @throws DotDataException
-     */
+	@SuppressWarnings("unchecked")
 	private void cascadePermissionUnder(Permissionable permissionable, Role role, Permissionable permissionsPermissionable, List<Permission> allPermissions) throws DotDataException {
 
-		boolean isHost = isHost(permissionable);
-		boolean isFolder = isFolder(permissionable);
+		boolean isHost = permissionable instanceof Host ||
+			(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
+		boolean isFolder = permissionable instanceof Folder;
 
+		DotConnect dc = new DotConnect();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 
@@ -3334,194 +3320,362 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
+		Folder folder = isFolder ? (Folder) permissionable : null;
+		String folderPath = folder!=null?APILocator.getIdentifierAPI().find(folder).getPath():"";
 
 		List<Permission> permissionablePermissions = loadPermissions(permissionable);
 
-		PermissionType[] values = PermissionType.values();
+		if (isHost) {
 
-
-		for (PermissionType permissionType : values) {
-
-			if(isFolder && permissionType.getApplyTo() == PermissionType.ApplyTo.ONLY_HOST){
-				continue;
-			}
-
+			//Templates
 			Permission inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable
-					.getPermissionId(), permissionType.getKey(), role.getId());
+					.getPermissionId(), Template.class.getCanonicalName(), role.getId());
 
-			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
-					Template.class.getCanonicalName(), role.getId());
-			if(permissionToUpdate == null) {
-				permissionToUpdate = new Permission(permissionType.getKey(), permissionable.getPermissionId(), role.getId(), 0, true);
+			//Assigning inheritable permissions to the permissionable if needed
+			List<Permission> permissionableTemplatePermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+					Template.class.getCanonicalName());
+			if(permissionableTemplatePermissions.size() > 0) {
+				Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+						Template.class.getCanonicalName(), role.getId());
+				if(permissionToUpdate == null) {
+					permissionToUpdate = new Permission(Template.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+				}
+				if(inheritablePermission != null)
+					permissionToUpdate.setPermission(inheritablePermission.getPermission());
+				savePermission(permissionToUpdate, permissionable);
 			}
-			if(inheritablePermission != null)
-				permissionToUpdate.setPermission(inheritablePermission.getPermission());
-			savePermission(permissionToUpdate, permissionable);
 
-			//Looking for children  overriding inheritance to also apply the cascade changes
-			List<String> idsToUpdate = getChildrenOverridingInheritancePermission(host, permissionType);
-
+			//Looking for children templates overriding inheritance to also apply the cascade changes
+			dc.setSQL(selectChildrenTemplateWithIndividualPermissionsSQL);
+			dc.addParam(host.getPermissionId());
+			List<Map<String, String>> idsToUpdate = dc.loadResults();
+			TemplateAPI templateAPI = APILocator.getTemplateAPI();
 			int permission = 0;
 			if (inheritablePermission != null) {
 				permission = inheritablePermission.getPermission();
 			}
-			for (String id : idsToUpdate) {
-				List<Permissionable> childPermissionables;
+			for (Map<String, String> idMap : idsToUpdate) {
+				String id = idMap.get("id");
+				Permissionable childPermissionable;
 				try {
-					childPermissionables = getPermissionable(id, systemUser, permissionType);
+					childPermissionable = templateAPI.findWorkingTemplate(id, systemUser, false);
 				} catch (DotSecurityException e) {
 					Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(), e);
 				}
+				savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+			}
 
-				for (Permissionable childPermissionable : childPermissionables) {
+			//Containers
+			inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
+					Container.class.getCanonicalName(), role.getId());
+
+			//Assigning inheritable permissions to the permissionable if needed
+			List<Permission> permissionableContainerPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+					Container.class.getCanonicalName());
+			if(permissionableContainerPermissions.size() > 0) {
+				Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+						Container.class.getCanonicalName(), role.getId());
+				if(permissionToUpdate == null) {
+					permissionToUpdate = new Permission(Container.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+				}
+				if(inheritablePermission != null)
+					permissionToUpdate.setPermission(inheritablePermission.getPermission());
+				savePermission(permissionToUpdate, permissionable);
+			}
+
+			//Looking for children containers overriding inheritance to also apply the cascade changes
+			dc.setSQL(selectChildrenContainerWithIndividualPermissionsSQL);
+			dc.addParam(host.getPermissionId());
+			idsToUpdate = dc.loadResults();
+			ContainerAPI containerAPI = APILocator.getContainerAPI();
+			permission = 0;
+			if (inheritablePermission != null) {
+				permission = inheritablePermission.getPermission();
+			}
+			for (Map<String, String> idMap : idsToUpdate) {
+				String id = idMap.get("id");
+				Permissionable childPermissionable;
+				try {
+					childPermissionable = containerAPI.getWorkingContainerById(id, systemUser, false);
+				} catch (DotSecurityException e) {
+					Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+					throw new DotRuntimeException(e.getMessage(), e);
+				}
+				savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+			}
+
+		}
+
+		//Folders
+		Permission inheritablePermission = filterInheritablePermission(allPermissions,
+				permissionsPermissionable.getPermissionId(), Folder.class.getCanonicalName(), role.getId());
+
+		//Assigning inheritable permissions to the permissionable if needed
+		List<Permission> permissionableFolderPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+				Folder.class.getCanonicalName());
+		if(permissionableFolderPermissions.size() > 0) {
+			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+					Folder.class.getCanonicalName(), role.getId());
+			if(permissionToUpdate == null) {
+				permissionToUpdate = new Permission(Folder.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+			}
+			if(inheritablePermission != null)
+				permissionToUpdate.setPermission(inheritablePermission.getPermission());
+			savePermission(permissionToUpdate, permissionable);
+		}
+
+		// Selecting folders which are children and need individual permission
+		// changes
+		dc.setSQL(selectChildrenFolderWithDirectPermissionsSQL);
+		dc.addParam(host.getPermissionId());
+		dc.addParam(isHost ? "%" : folderPath + "%");
+		dc.addParam(isHost ? " " : folderPath + "");
+		List<Map<String, String>> idsToUpdate = dc.loadResults();
+		FolderAPI folderAPI = APILocator.getFolderAPI();
+		int permission = 0;
+		if (inheritablePermission != null) {
+			permission = inheritablePermission.getPermission();
+		}
+		for (Map<String, String> idMap : idsToUpdate) {
+			String id = idMap.get("inode");
+			Permissionable childPermissionable;
+			try {
+				childPermissionable = folderAPI.find(id, systemUser, false);
+				savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+			} catch (DotSecurityException e) {
+				Logger.error(this.getClass(), "Should not be getting a Permission Error with system user", e);
+			}
+
+		}
+
+		//HTML pages
+        inheritablePermission = filterInheritablePermission( allPermissions, permissionsPermissionable.getPermissionId(),
+                IHTMLPage.class.getCanonicalName(), role.getId() );
+
+		//Assigning inheritable permissions to the permissionable if needed
+		List<Permission> permissionablePagesPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+				IHTMLPage.class.getCanonicalName());
+		if(permissionablePagesPermissions.size() > 0) {
+			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+					IHTMLPage.class.getCanonicalName(), role.getId());
+			if(permissionToUpdate == null) {
+				permissionToUpdate = new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+			}
+			if(inheritablePermission != null)
+				permissionToUpdate.setPermission(inheritablePermission.getPermission());
+			savePermission(permissionToUpdate, permissionable);
+		}
+
+		// Selecting html pages which are children and need individual
+		// permission changes
+		dc.setSQL(selectChildrenHTMLPageWithIndividualPermissionsSQL);
+		dc.addParam(host.getPermissionId());
+		dc.addParam(isHost ? "%" : folderPath + "%");
+        dc.addParam(host.getPermissionId());
+        dc.addParam(isHost ? "%" : folderPath + "%");
+		idsToUpdate = dc.loadResults();
+		permission = 0;
+		if (inheritablePermission != null) {
+			permission = inheritablePermission.getPermission();
+		}
+		for (Map<String, String> idMap : idsToUpdate) {
+			String id = idMap.get("id");
+			Permissionable childPermissionable = null;
+			try {
+
+                //Find the identifier related to this Permissionable
+                Identifier identifier = APILocator.getIdentifierAPI().find( id );
+                if ( identifier != null ) {
+                    if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_HTML_PAGE ) ) {
+                        HTMLPageAPI pageAPI = APILocator.getHTMLPageAPI();
+                        childPermissionable = pageAPI.loadWorkingPageById( id, systemUser, false );
+                    } else if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_CONTENTLET ) ) {
+                        HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+                        //Get the contentlet and the HTMLPage asset object related to the given permissionable id
+                        Contentlet pageWorkingVersion = APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false );
+                        childPermissionable = htmlPageAssetAPI.fromContentlet( pageWorkingVersion );
+                    }
+                }
+
+			} catch (DotSecurityException e) {
+				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+				throw new DotRuntimeException(e.getMessage(), e);
+			}
+			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+		}
+
+		// File
+
+		inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
+				File.class.getCanonicalName(), role.getId());
+
+		//Assigning inheritable permissions to the permissionable if needed
+		List<Permission> permissionableFilesPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+				File.class.getCanonicalName());
+		if(permissionableFilesPermissions.size() > 0) {
+			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+					File.class.getCanonicalName(), role.getId());
+			if(permissionToUpdate == null) {
+				permissionToUpdate = new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+			}
+			if(inheritablePermission != null)
+				permissionToUpdate.setPermission(inheritablePermission.getPermission());
+			savePermission(permissionToUpdate, permissionable);
+		}
+
+		// Selecting files which are children and need individual permission
+		// changes
+		dc.setSQL(selectChildrenFileWithIndividualPermissionsSQL);
+		dc.addParam(host.getPermissionId());
+		dc.addParam(isHost ? "%" : folderPath + "%");
+		idsToUpdate = dc.loadResults();
+		FileAPI fileAPI = APILocator.getFileAPI();
+		permission = 0;
+		if (inheritablePermission != null) {
+			permission = inheritablePermission.getPermission();
+		}
+		for (Map<String, String> idMap : idsToUpdate) {
+			String id = idMap.get("id");
+			Permissionable childPermissionable;
+			try {
+				childPermissionable = fileAPI.getWorkingFileById(id, systemUser, false);
+			} catch (DotSecurityException e) {
+				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+				throw new DotRuntimeException(e.getMessage(), e);
+			}
+			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+		}
+
+		// Links
+
+		inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
+				Link.class.getCanonicalName(), role.getId());
+
+		//Assigning inheritable permissions to the permissionable if needed
+		List<Permission> permissionableLinksPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+				Link.class.getCanonicalName());
+		if(permissionableLinksPermissions.size() > 0) {
+			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+					Link.class.getCanonicalName(), role.getId());
+			if(permissionToUpdate == null) {
+				permissionToUpdate = new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+			}
+			if(inheritablePermission != null)
+				permissionToUpdate.setPermission(inheritablePermission.getPermission());
+			savePermission(permissionToUpdate, permissionable);
+		}
+
+		// Selecting links which are children and need individual permission
+		// changes
+		dc.setSQL(selectChildrenLinkWithIndividualPermissionsSQL);
+		dc.addParam(host.getPermissionId());
+		dc.addParam(isHost ? "%" : folderPath + "%");
+		idsToUpdate = dc.loadResults();
+		MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
+		permission = 0;
+		if (inheritablePermission != null) {
+			permission = inheritablePermission.getPermission();
+		}
+		for (Map<String, String> idMap : idsToUpdate) {
+			String id = idMap.get("id");
+			Permissionable childPermissionable;
+			try {
+				childPermissionable = linkAPI.findWorkingLinkById(id, systemUser, false);
+			} catch (DotSecurityException e) {
+				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+				throw new DotRuntimeException(e.getMessage(), e);
+			}
+			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+		}
+
+		// Contentlets
+
+		inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
+				Contentlet.class.getCanonicalName(), role.getId());
+
+		//Assigning inheritable permissions to the permissionable if needed
+		List<Permission> permissionableContentPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+				Contentlet.class.getCanonicalName());
+		if(permissionableContentPermissions.size() > 0) {
+			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+					Contentlet.class.getCanonicalName(), role.getId());
+			if(permissionToUpdate == null) {
+				permissionToUpdate = new Permission(Contentlet.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+			}
+			if(inheritablePermission != null)
+				permissionToUpdate.setPermission(inheritablePermission.getPermission());
+			savePermission(permissionToUpdate, permissionable);
+		}
+
+		// Selecting content which are children and need individual permission
+		// changes
+		dc.setSQL(selectChildrenContentWithIndividualPermissionsByPathSQL);
+		dc.addParam(host.getPermissionId());
+		dc.addParam(isHost ? "%" : folderPath + "%");
+		idsToUpdate = dc.loadResults();
+		ContentletAPI contentAPI = APILocator.getContentletAPI();
+		permission = 0;
+		if (inheritablePermission != null) {
+			permission = inheritablePermission.getPermission();
+		}
+		for (Map<String, String> idMap : idsToUpdate) {
+			String id = idMap.get("id");
+
+			//Search contentlets by identifier (all languages) and set permissions
+			String luceneQuery = "+identifier:"+id+" +working:true";
+			try {
+				for(Permissionable childPermissionable: contentAPI.search(luceneQuery,1,0,null,systemUser, false)) {
 					savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+					break;
 				}
-
+			} catch (DotSecurityException e) {
+				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+				throw new DotRuntimeException(e.getMessage(), e);
 			}
 		}
 
-	}
+		// Structures
 
-	/**
-	 * Return {@link Permissionable}
-	 *
-	 * @param id {@link Permissionable}'s id
-	 * @param user
-	 * @param permissionType
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-     */
-	private List<Permissionable> getPermissionable(String id, User user, PermissionType permissionType) throws DotSecurityException, DotDataException {
+		inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
+				Structure.class.getCanonicalName(), role.getId());
 
-		List<Permissionable> result = new ArrayList<>();
-
-		switch (permissionType){
-			case TEMPLATE:
-				TemplateAPI templateAPI = APILocator.getTemplateAPI();
-				result.add(templateAPI.findWorkingTemplate(id, user, false));
-				break;
-			case CONTAINER:
-				ContainerAPI containerAPI = APILocator.getContainerAPI();
-				result.add(containerAPI.getWorkingContainerById(id, user, false));
-				break;
-			case FOLDER:
-				FolderAPI folderAPI = APILocator.getFolderAPI();
-				result.add(folderAPI.find(id, user, false));
-				break;
-			case IHTMLPAGE:
-				Identifier identifier = APILocator.getIdentifierAPI().find( id );
-				if ( identifier != null ) {
-					if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_HTML_PAGE ) ) {
-						HTMLPageAPI pageAPI = APILocator.getHTMLPageAPI();
-						result.add(pageAPI.loadWorkingPageById( id, user, false ));
-					} else if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_CONTENTLET ) ) {
-						HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-						//Get the contentlet and the HTMLPage asset object related to the given permissionable id
-						Contentlet pageWorkingVersion = APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );
-						result.add(htmlPageAssetAPI.fromContentlet( pageWorkingVersion ));
-					}
-				}
-				break;
-			case FILE:
-				FileAPI fileAPI = APILocator.getFileAPI();
-				result.add(fileAPI.getWorkingFileById(id, user, false));
-				break;
-			case LINK:
-				MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
-				result.add(linkAPI.findWorkingLinkById(id, user, false));
-				break;
-			case CONTENTLET:
-				ContentletAPI contentAPI = APILocator.getContentletAPI();
-				String luceneQuery = "+identifier:"+id+" +working:true";
-				result.addAll(contentAPI.search(luceneQuery, 1, 0, null, user, false));
-				break;
-			case STRUCTURE:
-				result.add(CacheLocator.getContentTypeCache().getStructureByInode(id));
-				break;
+		//Assigning inheritable permissions to the permissionable if needed
+		List<Permission> permissionableStructurePermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
+				Structure.class.getCanonicalName());
+		if(permissionableStructurePermissions.size() > 0) {
+			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
+					Structure.class.getCanonicalName(), role.getId());
+			if(permissionToUpdate == null) {
+				permissionToUpdate = new Permission(Structure.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+			}
+			if(inheritablePermission != null)
+				permissionToUpdate.setPermission(inheritablePermission.getPermission());
+			savePermission(permissionToUpdate, permissionable);
 		}
 
 
-		return result;
-	}
-
-
-	/**
-	 * Returns the permissionable's children that have individual permission.
-	 * @return a list of {@link Permissionable} 's id
-	 */
-	public List<String> getChildrenOverridingInheritancePermission(Permissionable permissionable, PermissionType permissionType) throws DotDataException {
-		String fieldNameFromQueryToreturn = "id";
-		DotConnect dc = new DotConnect();
-
-		boolean isHost = isHost(permissionable);
-		boolean isFolder = isFolder(permissionable);
-		Folder folder = isFolder ? (Folder) permissionable : null;
-		String folderPath = folder!=null?APILocator.getIdentifierAPI().find(folder).getPath():"";
-		String query = selectChildrenWithIndividualPermissionsSQLs.get(permissionType);
-
-		List<String> result = new ArrayList<String>();
-
-		if (query != null) {
-			dc.setSQL(query);
-
-			switch (permissionType) {
-				case TEMPLATE:
-				case CONTAINER:
-					dc.addParam(permissionable.getPermissionId());
-					break;
-				case FOLDER:
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					dc.addParam(isHost ? " " : folderPath + "");
-					fieldNameFromQueryToreturn = "inode";
-					break;
-				case IHTMLPAGE:
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					break;
-				case FILE:
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					break;
-				case LINK:
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					break;
-				case CONTENTLET:
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					break;
-				case STRUCTURE:
-					dc.addParam(isHost ? "%" : folderPath + "%");
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(permissionable.getPermissionId());
-					fieldNameFromQueryToreturn = "inode";
-					break;
-				default:
-					//rules and template layput dont have individual permission
-			}
-
-
-			List<Map<String, String>> idsToUpdate = dc.loadResults();
-			for (Map<String, String> permissionableInfo : idsToUpdate) {
-				result.add( permissionableInfo.get(fieldNameFromQueryToreturn) );
-			}
+		// Selecting structures which are children and need individual permission
+		// changes
+		dc.setSQL(selectChildrenStructureWithIndividualPermissionsByPathSQL);
+		dc.addParam(isHost ? "%" : folderPath + "%");
+		dc.addParam(host.getPermissionId());
+		dc.addParam(host.getPermissionId());
+		idsToUpdate = dc.loadResults();
+		permission = 0;
+		if (inheritablePermission != null) {
+			permission = inheritablePermission.getPermission();
 		}
 
-		return result;
-	}
+		for (Map<String, String> idMap : idsToUpdate) {
+			String id = idMap.get("inode");
+			Permissionable childPermissionable = CacheLocator.getContentTypeCache().getStructureByInode(id);
+			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
+			//http://jira.dotmarketing.net/browse/DOTCMS-6090
+			//If a structure we need to save permissions inheritable by children content
+			savePermission(new Permission(Contentlet.class.getCanonicalName(), id, role.getId(), permission, true),childPermissionable);
+		}
 
-	private boolean isFolder(Permissionable permissionable) {
-		return permissionable instanceof Folder;
-	}
-
-	private boolean isHost(Permissionable permissionable) {
-		return permissionable instanceof Host ||
-			(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
 	}
 
 	@SuppressWarnings("unchecked")
