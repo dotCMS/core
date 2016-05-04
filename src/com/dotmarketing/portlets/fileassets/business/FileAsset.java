@@ -8,7 +8,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

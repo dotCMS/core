@@ -135,7 +135,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 	</div>
 
-     <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin:6px 0px 43px 6px" region="center" class="rightContentPane" id="rightContentPane">
+     <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin:4px 0px 43px 6px" region="center" class="rightContentPane" id="rightContentPane">
      	<div id="combo_zone2" >
 			<input id="language_id" />
 		</div>

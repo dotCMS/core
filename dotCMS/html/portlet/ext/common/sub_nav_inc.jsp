@@ -184,8 +184,8 @@
 <%
 	if (showHostSelector) {
 %>
-<div class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
-	<span id="changeHostId"><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
+<div id="changeHostId" class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
+	<span><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
 	<span class="chevronExpandIcon"></span>
 </div>
 <%

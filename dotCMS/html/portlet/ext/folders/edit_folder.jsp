@@ -196,7 +196,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			<dd>
 				<input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="filesMasks"  value="<%= UtilMethods.isSet(folder.getFilesMasks()) ? UtilMethods.escapeDoubleQuotes(folder.getFilesMasks()) : "" %>" />
 				<div class="inputCaption" style="padding-left:5px;">(<%= LanguageUtil.get(pageContext, "a-comma-separated-list") %>)</div>
-			<dd>
+			</dd>
 
 			<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
 			<dd>
