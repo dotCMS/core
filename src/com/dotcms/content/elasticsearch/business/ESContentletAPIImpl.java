@@ -446,8 +446,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!isNew) {
             // writes the contentlet to a live directory under velocity folder
-            ContentletServices.invalidate(contentlet);
-            ContentletMapServices.invalidate(contentlet);
+            ContentletServices.invalidateAll(contentlet);
 
             CacheLocator.getContentletCache().remove(contentlet.getInode());
 
@@ -640,7 +639,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(page != null && page.isLive()){
                     //Rebuild the pages' files
-                    PageServices.invalidate(page);
+                    PageServices.invalidateAll(page);
                 }
             }
             catch(Exception e){
@@ -829,9 +828,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Link link = (Link) InodeFactory.getInode(linkInode, Link.class);
             Identifier identifier = APILocator.getIdentifierAPI().find(link);
             relAPI.addRelationship(contentlet.getInode(),identifier.getInode(), relationName);
-            ContentletServices.invalidate(contentlet, true);
-            // writes the contentlet object to a file
-            ContentletMapServices.invalidate(contentlet, true);
+            ContentletServices.invalidateWorking(contentlet);
         }
     }
 
@@ -842,9 +839,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             File file = (File) InodeFactory.getInode(fileInode, File.class);
             Identifier identifier = APILocator.getIdentifierAPI().find(file);
             relAPI.addRelationship(contentlet.getInode(),identifier.getInode(), relationName);
-            ContentletServices.invalidate(contentlet, true);
-            // writes the contentlet object to a file
-            ContentletMapServices.invalidate(contentlet, true);
+            ContentletServices.invalidateWorking(contentlet);
         }
     }
 
@@ -855,9 +850,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             File image = (File) InodeFactory.getInode(imageInode, File.class);
             Identifier identifier = APILocator.getIdentifierAPI().find(image);
             relAPI.addRelationship(contentlet.getInode(),identifier.getInode(), relationName);
-            ContentletServices.invalidate(contentlet, true);
-            // writes the contentlet object to a file
-            ContentletMapServices.invalidate(contentlet, true);
+            ContentletServices.invalidateWorking(contentlet);
         }
     }
 
@@ -1183,7 +1176,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(pageIdent != null && UtilMethods.isSet(pageIdent.getInode())){
                     IHTMLPage page=loadPageByIdentifier(pageIdent.getId(), false, user, false);
                     if(page!=null && UtilMethods.isSet(page.getIdentifier()))
-                        PageServices.invalidate(page);
+                        PageServices.invalidateAll(page);
                 }
                 MultiTreeFactory.deleteMultiTree(mt);
             }
@@ -1506,8 +1499,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                }
         		}
 
-        		ContentletServices.invalidate(contentlet);
-        		ContentletMapServices.invalidate(contentlet);
+        		ContentletServices.invalidateAll(contentlet);
         		publishRelatedHtmlPages(contentlet);
         	}else{
         		throw new DotContentletStateException("Contentlet is locked: Unable to archive");
@@ -1746,9 +1738,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
                 }
         	}
-        	CacheLocator.getContentletCache().remove(contentlet.getInode());
-        	ContentletServices.unpublishContentletFile(contentlet);
-        	ContentletMapServices.unpublishContentletMapFile(contentlet);
+        	ContentletServices.invalidateLive(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
 
@@ -1824,8 +1814,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         			&& !liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()))
         		indexAPI.addContentToIndex(liveContentlet);
 
-        	ContentletServices.invalidate(contentlet);
-        	ContentletMapServices.invalidate(contentlet);
+        	ContentletServices.invalidateAll(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
@@ -2893,9 +2882,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    publishAssociated(contentlet, isNewContent, createNewVersion);
 				} else {
 				    if (!isNewContent) {
-				        ContentletServices.invalidate(contentlet, true);
-				        // writes the contentlet object to a file
-				        ContentletMapServices.invalidate(contentlet, true);
+				        ContentletServices.invalidateWorking(contentlet);
 				    }
 
 				    indexAPI.addContentToIndex(contentlet);
@@ -3136,9 +3123,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Contentlet currentWorkingCon = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
         APILocator.getVersionableAPI().setWorking(contentlet);
         // Upodating lucene index
-        ContentletServices.invalidate(contentlet, true);
-        //writes the contentlet object to a file
-        ContentletMapServices.invalidate(contentlet, true);
+        ContentletServices.invalidateWorking(contentlet);
         // Updating lucene index
         indexAPI.addContentToIndex(currentWorkingCon);
         indexAPI.addContentToIndex(contentlet);

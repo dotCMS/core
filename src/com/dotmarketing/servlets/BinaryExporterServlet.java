@@ -51,7 +51,6 @@ import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterExcept
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
@@ -265,6 +264,14 @@ public class BinaryExporterServlet extends HttpServlet {
 					content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
 					assetInode = content.getInode();
 				}
+
+				// Check if content is live or not. If content is NOT live then throw an error 404
+				if(respectFrontendRoles && content.isLive() == false) {
+				    Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: " + content.getInode());
+                    resp.sendError(404);
+                    return;
+				}
+
 				Field field = content.getStructure().getFieldVar(fieldVarName);
 				if(field == null){
 					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
