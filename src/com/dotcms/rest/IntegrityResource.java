@@ -19,6 +19,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.com.sun.jersey.api.client.ClientHandlerException;
 import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
 import com.dotcms.repackage.com.sun.jersey.api.client.config.ClientConfig;
 import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig;
@@ -1018,6 +1019,11 @@ public class IntegrityResource extends WebResource {
             } else {
                 return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' has an invalid value.").build();
             }
+
+        }  catch(ClientHandlerException e) {
+        	Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
+        	return response( "Error fixing conflicts for endpoint: " + endpointId + ". Connection Refused. "
+        			+ "Remote Server seems to be down, or not acepting requests.", true );
 
         } catch ( Exception e ) {
         	try {
