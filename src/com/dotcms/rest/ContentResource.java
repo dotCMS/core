@@ -80,6 +80,14 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 public class ContentResource extends WebResource {
 	private static final String RELATIONSHIP_KEY = "__##relationships##__";
 
+	private static final String IP_ADDRESS = "ipAddress";
+	private static final String HOST_HEADER = "hostHeader";
+	private static final String COOKIES = "cookies";
+	private static final String USER_AGENT = "userAgent";
+	private static final String REFERER = "referer";
+	private static final String REQUEST_METHOD = "requestMethod";
+	private static final String ACCEPT_LANGUAGE = "acceptLanguage";
+	
 	/**
 	 * performs a call to APILocator.getContentletAPI().searchIndex() with the
 	 * specified parameters.
@@ -431,6 +439,7 @@ public class ContentResource extends WebResource {
 		InitDataObject init=init(params,true,request,false);
 		User user=init.getUser();
 		Contentlet contentlet=new Contentlet();
+		setRequestMetadata(contentlet, request);
 		
 		Map<String, Object> map = new HashMap<String, Object>();
 		
@@ -544,6 +553,8 @@ public class ContentResource extends WebResource {
 		InitDataObject init=init(params,true,request,false);
 
 		Contentlet contentlet=new Contentlet();
+		setRequestMetadata(contentlet, request);
+		
 		try {
 			if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
 				processJSON(contentlet, request.getInputStream());
@@ -963,5 +974,59 @@ public class ContentResource extends WebResource {
 			map.put(key, value.toString());
 		}
 		processMap(contentlet,map);
+	}
+	
+	private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {
+		try{
+			contentlet.setStringProperty(HOST_HEADER, request.getHeader("Host"));
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set HOST_HEADER" + HOST_HEADER + e);
+			
+		}
+		
+		try{
+			contentlet.setStringProperty(COOKIES, request.getCookies().toString());
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set COOKIES " + e);
+			
+		}
+		try{
+			contentlet.setStringProperty(REQUEST_METHOD, request.getMethod());
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set REQUEST_METHOD" + e);
+			
+		}
+		try{
+			contentlet.setStringProperty(REFERER, request.getHeader("Referer"));
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set REFERER" + e);
+			
+		}
+		try{
+			contentlet.setStringProperty(USER_AGENT, request.getHeader("User-Agent"));
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set USER_AGENT" + e);
+			
+		}
+		try{
+			contentlet.setStringProperty(IP_ADDRESS, request.getRemoteHost());
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set IP_ADDRESS" + e);
+			
+		}
+		
+		try{
+			contentlet.setStringProperty(ACCEPT_LANGUAGE, request.getHeader("Accept-Language"));
+		}
+		catch(Exception e){
+			Logger.error(this.getClass(), "Cannot set ACCEPT_LANGUAGE" + e);
+			
+		}
 	}
 }
