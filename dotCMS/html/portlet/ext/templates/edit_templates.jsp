@@ -101,6 +101,7 @@
 	var referer = '<%=referer%>';
 
 	function submitfm(form,subcmd) {
+		window.onbeforeunload=true;
 		if(dijit.byId("toggleEditor").checked){
 		document.getElementById("bodyField").value=editor.getValue();
 		}
@@ -118,6 +119,7 @@
 	var copyAsset = false;
 
 	function cancelEdit() {
+		window.onbeforeunload=true;
 		self.location = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="unlock" /><portlet:param name="inode" value="<%=template.getInode()%>" /></portlet:actionURL>&referer=' + referer;
 	}
 
@@ -362,6 +364,11 @@
     		dijit.byId("toggleEditor").disabled=false;
     	}
 
+    	var onBeforeUnloadHandle = dojo.connect(dijit.byId('templatePropertiesTab'), "onkeypress", activateOnBeforeUnload);
+    	function activateOnBeforeUnload(){
+    		window.onbeforeunload=function(){return "";};
+    		dojo.disconnect(onBeforeUnloadHandle);
+    	}
     </script>
 <!-- /Properties -->
 

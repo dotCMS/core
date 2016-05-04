@@ -515,6 +515,12 @@ var editButtonRow="editContentletButtonRow";
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
 	});
+
+	var onBeforeUnloadHandle = dojo.connect(dijit.byId('mainTabContainer'), "onkeypress", activateOnBeforeUnload);
+	function activateOnBeforeUnload(){
+		window.onbeforeunload=function(){return "";};
+		dojo.disconnect(onBeforeUnloadHandle);
+	}
 </script>
 
 <div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog">
