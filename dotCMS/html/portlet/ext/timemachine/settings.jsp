@@ -130,6 +130,7 @@ function saveAndRun(dorun) {
 	var allhosts=dijit.byId("allhosts").checked;
 	if(dojo.query("[name='snaphost']").length==0 && !allhosts) {
 		dijit.byId('hostSelector').focus();
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-hosts-selected")) %>");
 		return;
 	}
 

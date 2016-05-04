@@ -12,7 +12,7 @@ import java.util.Map;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
@@ -20,7 +20,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -207,7 +206,7 @@ public class SubmitContentUtil {
 			cont.setFolder(folder.getInode());
 			cont.setHost(host.getIdentifier());
 			cont.setBinary(FileAssetAPI.BINARY_FIELD, uploadedFile);
-			if(StructureCache.getStructureByInode(cont.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
+			if(CacheLocator.getContentTypeCache().getStructureByInode(cont.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
 				cont.setStringProperty("fileName", title);
 			cont = APILocator.getContentletAPI().checkin(cont, user, true);
 			if(APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user))
@@ -331,7 +330,7 @@ public class SubmitContentUtil {
 	 */
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
-		Structure st = StructureCache.getStructureByName(structureName);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByName(structureName);
 		String contentletInode = null;
 		long contentLanguageId = 1;
 		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();

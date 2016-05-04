@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -61,7 +61,7 @@ public class PermissionedWebAssetUtil {
 		offset = offset<0?0:offset;
 		String hostQuery = null;
 		if(searchHost){
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			Field hostNameField = st.getFieldVar("hostName");
 			List<Contentlet> list = null;
 			try {
@@ -171,7 +171,123 @@ public class PermissionedWebAssetUtil {
 		}
 		//	}
 	}
-
+	
+	/**
+	 * Returns the list of {@link Container} objects that the current user has
+	 * access to. This will retrieve a final list of results with a single
+	 * query, instead of programmatically traversing the total list of
+	 * containers and then filtering it to get the permissioned objects from it.
+	 * 
+	 * @param searchString
+	 *            - Can be null or empty. It is used as a filter to search for
+	 *            container's "title".
+	 * @param hostName
+	 *            - Can be null or empty. It is used as a filter to search for
+	 *            containers in a specific site. The "searchHost" must be set to
+	 *            {@code true}.
+	 * @param searchHost
+	 *            - If {@code true}, and if "hostName" is not empty, the method
+	 *            will only get the containers from the specified site.
+	 * @param dbColSort
+	 *            - The column name of the DB table used to order the results.
+	 * @param offset
+	 *            - The offset of records to include in the result (used for
+	 *            pagination purposes).
+	 * @param limit
+	 *            - The limit of records to retrieve (used for pagination
+	 *            purposes).
+	 * @param permission
+	 *            - The required Permission needed to pull the containers
+	 *            information.
+	 * @param user
+	 *            - The {@link User} that performs the operation.
+	 * @param respectFrontEndPermissions
+	 * @return The {@code List} of {@link Container} objects that the specified
+	 *         user has access to.
+	 * @throws DotDataException
+	 *             - If an error occurred when retrieving information from the
+	 *             database.
+	 * @throws DotSecurityException
+	 *             - If the current user does not have permission to perform the
+	 *             required operation.
+	 */
+	public static List<Container> findContainersForLimitedUser(
+			String searchString, String hostName, boolean searchHost,
+			String dbColSort, int offset, int limit, int permission, User user,
+			boolean respectFrontEndPermissions) throws DotDataException,
+			DotSecurityException {
+		offset = offset < 0 ? 0 : offset;
+		String hostQuery = null;
+		if (searchHost) {
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+			Field hostNameField = st.getFieldVar("hostName");
+			List<Contentlet> hostList = null;
+			try {
+				String query = "+structureInode:" + st.getInode()
+						+ " +working:true";
+				if (UtilMethods.isSet(hostName)) {
+					query += " +" + hostNameField.getFieldContentlet() + ":"
+							+ hostName;
+				}
+				hostList = APILocator.getContentletAPI().search(query, 0, 0,
+						null, user, respectFrontEndPermissions);
+			} catch (Exception e) {
+				Logger.error(PermissionedWebAssetUtil.class, e.getMessage(), e);
+			}
+			if (hostList != null) {
+				if (hostList.size() > 0) {
+					hostQuery = "identifier.host_inode IN (";
+				}
+				boolean first = true;
+				for (Contentlet contentlet : hostList) {
+					if (!first) {
+						hostQuery += ",";
+					}
+					hostQuery += "'" + contentlet.getIdentifier() + "'";
+					first = false;
+				}
+				if (hostQuery != null) {
+					hostQuery += ")";
+				}
+			}
+		}
+		ArrayList<ColumnItem> columnsToOrderBy = new ArrayList<ColumnItem>();
+		ColumnItem templateTitle = new ColumnItem("title", "containers", null,
+				true, OrderDir.ASC);
+		columnsToOrderBy.add(templateTitle);
+		List<String> containerIds = queryForAssetIds(
+				"containers, identifier, inode, container_version_info ",
+				new String[] { Container.class.getCanonicalName() },
+				"containers.inode",
+				"identifier.id",
+				"containers.identifier = identifier.id and inode.inode = containers.inode and "
+						+ "identifier.id=container_version_info.identifier and container_version_info.working_inode=containers.inode and "
+						+ "container_version_info.deleted="
+						+ DbConnectionFactory.getDBFalse()
+						+ (UtilMethods.isSet(searchString) ? " and (lower(containers.title) LIKE '%"
+								+ searchString.toLowerCase()
+								+ "%'"
+								+ (UtilMethods.isSet(hostQuery) ? " AND ("
+										+ hostQuery + ")" : "") + ")"
+								: (UtilMethods.isSet(hostQuery) ? " AND ("
+										+ hostQuery + ")" : "")),
+				columnsToOrderBy, offset, limit, permission,
+				respectFrontEndPermissions, user);
+		if (containerIds != null && containerIds.size() > 0) {
+			StringBuilder identifiers = new StringBuilder();
+			for (String id : containerIds) {
+				identifiers.append("'").append(id).append("',");
+			}
+			return InodeFactory.getInodesOfClassByConditionAndOrderBy(
+					Container.class,
+					"inode in ("
+							+ identifiers.toString().subSequence(0,
+									identifiers.toString().length() - 1) + ")",
+					dbColSort);
+		} else {
+			return new ArrayList<Container>();
+		}
+	}
 
 	/**
 	 * Will execute the query to get assetIds with required permission
@@ -275,7 +391,7 @@ public class PermissionedWebAssetUtil {
 		permissionRefSQL.append(assetWhereClause).append(" ");
 		if(!userIsAdmin){
 		    if(permissionType.length==1) {
-		        permissionRefSQL.append("AND permission.permission_type = '").append(permissionType).append("' ");
+		        permissionRefSQL.append("AND permission.permission_type = '").append(permissionType[0]).append("' ");
 		    }
 		    else {
 		        permissionRefSQL.append(" AND (");
@@ -344,14 +460,15 @@ public class PermissionedWebAssetUtil {
 		String sql = "";
 		DotConnect dc = new DotConnect();
 		String limitOffsetSQL = null;
+		boolean limitResults = limit > 0;
 		if(DbConnectionFactory.isOracle()){
-			limitOffsetSQL = "WHERE LINENUM BETWEEN " + (offset<=0?offset:offset+1) + " AND " + (offset + limit);
+			limitOffsetSQL = limitResults ? "WHERE LINENUM BETWEEN " + (offset<=0?offset:offset+1) + " AND " + (offset + limit) : "";
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " + limitOffsetSQL + " ORDER BY " + orderByClauseWithAlias ;
 		}else if(DbConnectionFactory.isMsSql()){
-			limitOffsetSQL = "AS MyDerivedTable WHERE MyDerivedTable.LINENUM BETWEEN " + (offset<=0?offset:offset+1)  + " AND " + (offset + limit);
+			limitOffsetSQL = limitResults ? "AS MyDerivedTable WHERE MyDerivedTable.LINENUM BETWEEN " + (offset<=0?offset:offset+1)  + " AND " + (offset + limit) : "";
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " + limitOffsetSQL + " ORDER BY " + orderByClauseWithAlias;
 		}else{
-			limitOffsetSQL = " LIMIT " +  limit + " OFFSET " + offset;
+			limitOffsetSQL = limitResults ? " LIMIT " +  limit + " OFFSET " + offset : "";
 			sql = permissionRefSQL.toString() + (UtilMethods.isSet(individualPermissionSQL.toString())?" UNION " +individualPermissionSQL.toString():"") +" ) " +  " as t1 ORDER BY "+ orderByClauseWithAlias + " " + limitOffsetSQL;
 		}
 

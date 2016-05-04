@@ -5,27 +5,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 
 @Path("/structure")
 public class StructureResource extends WebResource {
@@ -82,7 +82,7 @@ public class StructureResource extends WebResource {
 			}
 		}
 		else {
-			Structure specificStructure = StructureCache.getStructureByInode(inodeFilter);
+			Structure specificStructure = CacheLocator.getContentTypeCache().getStructureByInode(inodeFilter);
 			if(specificStructure != null)
 				structures.add(specificStructure);
 		}

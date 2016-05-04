@@ -5,20 +5,15 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -59,7 +54,7 @@ public class ContainerServices {
         sb.append("#set ($CONTAINER_INODE = '" ).append(container.getInode() ).append( "')");
         sb.append("#set ($CONTAINER_MAX_CONTENTLETS = " ).append( container.getMaxContentlets()).append( ")");
         // commented by issue-2093
-//        Structure st = StructureCache.getStructureByInode(container.getStructureInode());
+//        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(container.getStructureInode());
 //        sb.append("#set ($CONTAINER_STRUCTURE_NAME = \"" ).append( (UtilMethods.isSet(st.getName())?st.getName():"") ).append( "\")");
         sb.append("#set ($STATIC_CONTAINER = " ).append( !UtilMethods.isSet(container.getLuceneQuery()) ).append(")");
         sb.append("#set ($SORT_PAGE = \"" ).append( container.getSortContentletsBy() ).append( "\")");
@@ -119,7 +114,7 @@ public class ContainerServices {
             //let's do the search of contentlets using lucene query
             if (isDynamic) {
             	// commented by issue-2093
-//                Structure containerStructure = StructureCache.getStructureByInode(container.getStructureInode());
+//                Structure containerStructure = CacheLocator.getContentTypeCache().getStructureByInode(container.getStructureInode());
 //                   sb.append("#set ($contentletResultsMap" ).append( identifier.getInode() ).append(
 //                        " = $contents.searchWithLuceneQuery(\"").append( containerStructure.getInode() ).append("\", " ).append(
 //                                "\"$LUCENE_QUERY\", " ).append(

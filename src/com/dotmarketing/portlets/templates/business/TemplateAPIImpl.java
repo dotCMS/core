@@ -514,26 +514,27 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"template");
     }
-    
+
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
-    }    
-    
+    }
+
     /**
-	 * Invalidate pages cache related to the specified template 
-	 * @param templateInode
-	 * @param user
-	 * @param live
-	 * @param respectFrontEndRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-    public void invalidateTemplatePages(String templateInode, User user, boolean live, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
+     * Invalidate pages cache related to the specified template and also
+     * invalidates live html pages
+     *
+     * @param templateInode
+     * @param user
+     * @param respectFrontEndRoles
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public void invalidateTemplatePages(String templateInode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
     	Template template = find(templateInode, user, respectFrontEndRoles);
   		List<HTMLPage> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
   		for (HTMLPage page : pagesForThisTemplate) {
   			//writes the page to a file
-  			PageServices.invalidate(page,live);
+  			PageServices.invalidateLive(page);
   		}
     }
 }

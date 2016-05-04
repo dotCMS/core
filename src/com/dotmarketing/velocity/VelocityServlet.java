@@ -6,7 +6,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,18 +23,12 @@ import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotmarketing.business.*;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-
-import com.liferay.portal.language.LanguageException;
-import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -47,19 +40,20 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -67,38 +61,31 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
-import com.dotmarketing.filters.TimeMachineFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityProfiler;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
-import com.dotmarketing.viewtools.HTMLPageWebAPI;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.dotmarketing.viewtools.content.ContentMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 public abstract class VelocityServlet extends HttpServlet {
@@ -667,7 +654,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			boolean hasWritePermOverTheStructure = false;
 
 			for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
-				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 
 				hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user, true);
 			}
@@ -922,7 +909,7 @@ public abstract class VelocityServlet extends HttpServlet {
             boolean hasWritePermOverTheStructure = false;
 
 			for (ContainerStructure cs : APILocator.getContainerAPI().getContainerStructures(c)) {
-				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 
 				hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, backendUser);
 			}

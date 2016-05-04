@@ -27,25 +27,75 @@ import com.liferay.portal.model.User;
 public abstract class DashboardFactory {
 
     protected String getSummaryPagesQuery(){
-
-    	return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2())?
-			" select count(*) as hits, htmlpage.inode as inode, identifier.parent_path || identifier.asset_name as uri " +
-			" from clickstream_request join identifier on identifier.id = associated_identifier "+
-			" join htmlpage on htmlpage.identifier = identifier.id  where extract(day from timestampper) = ? "+
-			" and extract(month from timestampper) = ? and extract(year from timestampper) = ? "+
-			" and host_id = ? group by associated_identifier, identifier.parent_path || identifier.asset_name ,htmlpage.inode "
-			:DbConnectionFactory.isMySql()?
-					" select count(*) as hits, htmlpage.inode as inode, CONCAT(identifier.parent_path,identifier.asset_name) as uri " +
-					" from clickstream_request join identifier on identifier.id = associated_identifier "+
-					" join htmlpage on htmlpage.identifier = identifier.id where DAY(timestampper) = ? "+
-					" and MONTH(timestampper) = ? and YEAR(timestampper) = ? and host_id = ?"+
-					" group by associated_identifier, CONCAT(identifier.parent_path,identifier.asset_name) ,htmlpage.inode "
-					:DbConnectionFactory.isMsSql()?
-							" select count(*) as hits, htmlpage.inode as inode,(identifier.parent_path + identifier.asset_name) as uri " +
-							" from clickstream_request join identifier on identifier.id = associated_identifier "+
-							" join htmlpage on htmlpage.identifier = identifier.id where DATEPART(day, timestampper) = ? "+
-							" and DATEPART(month, timestampper) = ? and DATEPART(year, timestampper) = ? and host_id = ?"+
-							" group by associated_identifier, (identifier.parent_path + identifier.asset_name) ,htmlpage.inode ":"";
+    	StringBuilder queryBuilder = new StringBuilder("");
+    	
+    	if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
+			//Find legacy html pages
+			queryBuilder.append("SELECT COUNT(*) AS hits, htmlpage_version_info.live_inode AS inode, ")
+			.append("(identifier.parent_path || identifier.asset_name) AS uri ")
+			.append("FROM clickstream_request cr ")
+			.append("JOIN identifier ON (identifier.id = cr.associated_identifier) ")
+			.append("JOIN htmlpage_version_info ON (htmlpage_version_info.identifier = identifier.id) ")
+			.append("WHERE EXTRACT(DAY FROM cr.timestampper) = ? AND EXTRACT(MONTH FROM cr.timestampper) = ? AND EXTRACT(YEAR FROM cr.timestampper) = ? AND cr.host_id = ? ")
+			.append("GROUP BY associated_identifier, (identifier.parent_path || identifier.asset_name), htmlpage_version_info.live_inode")
+			.append(" UNION ALL ")
+			// Find contentlets type 'html page'
+			.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
+			.append("(identifier.parent_path || identifier.asset_name) AS uri ")
+			.append("FROM clickstream_request cr ")
+			.append("JOIN contentlet ON (contentlet.identifier = cr.associated_identifier) ")
+			.append("JOIN structure ON (structure.inode = contentlet.structure_inode) ")
+			.append("JOIN identifier ON (identifier.id = contentlet.identifier) ")
+			.append("JOIN contentlet_version_info ON (contentlet_version_info.identifier = identifier.id) ")
+			.append("WHERE EXTRACT(DAY FROM cr.timestampper) = ? AND EXTRACT(MONTH FROM cr.timestampper) = ? AND EXTRACT(YEAR FROM cr.timestampper) = ? ")
+			.append("AND cr.host_id = ? AND structure.structuretype = ").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+			.append("GROUP BY associated_identifier, (identifier.parent_path || identifier.asset_name), contentlet_version_info.live_inode");
+    	}
+    	else if(DbConnectionFactory.isMySql()) { // MySQL Query Builder
+    		// Find legacy html pages
+    		queryBuilder.append("SELECT COUNT(*) AS hits, htmlpage_version_info.live_inode AS inode, ")
+    		.append("CONCAT(identifier.parent_path, identifier.asset_name) AS uri ")
+    		.append("FROM clickstream_request cr ")
+    		.append("JOIN identifier ON (identifier.id = cr.associated_identifier) ")
+    		.append("JOIN htmlpage_version_info ON (htmlpage_version_info.identifier = identifier.id) ")
+    		.append("WHERE DAY(cr.timestampper) = ? AND MONTH(cr.timestampper) = ? AND YEAR(cr.timestampper) = ? AND cr.host_id = ? ")
+    		.append("GROUP BY associated_identifier, CONCAT(identifier.parent_path, identifier.asset_name), htmlpage_version_info.live_inode")
+    		.append(" UNION ALL ")
+    		// Find contentlets type 'html page'
+    		.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
+    		.append("CONCAT(identifier.parent_path, identifier.asset_name) AS uri ")
+    		.append("FROM clickstream_request cr ")
+    		.append("JOIN contentlet ON (contentlet.identifier = cr.associated_identifier) ")
+    		.append("JOIN structure ON (structure.inode = contentlet.structure_inode) ")
+    		.append("JOIN identifier ON (identifier.id = contentlet.identifier) ")
+    		.append("JOIN contentlet_version_info ON (contentlet_version_info.identifier = identifier.id) ")
+    		.append("WHERE DAY(cr.timestampper) = ? AND MONTH(cr.timestampper) = ? AND YEAR(cr.timestampper) = ? ")
+    		.append("AND cr.host_id = ? AND structure.structuretype = ").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+    		.append("GROUP BY associated_identifier, CONCAT(identifier.parent_path, identifier.asset_name), contentlet_version_info.live_inode");
+    	} else if(DbConnectionFactory.isMsSql()) { // MsSQL Query Builder
+    		//Find legacy html pages
+			queryBuilder.append("SELECT COUNT(*) AS hits, htmlpage_version_info.live_inode AS inode, ")
+			.append("(identifier.parent_path + identifier.asset_name) AS uri ")
+			.append("FROM clickstream_request cr ")
+			.append("JOIN identifier ON (identifier.id = cr.associated_identifier) ")
+			.append("JOIN htmlpage_version_info ON (htmlpage_version_info.identifier = identifier.id) ")
+			.append("WHERE DATEPART(DAY, cr.timestampper) = ? AND DATEPART(MONTH, cr.timestampper) = ? AND DATEPART(YEAR, cr.timestampper) = ? AND cr.host_id = ? ")
+			.append("GROUP BY associated_identifier, (identifier.parent_path + identifier.asset_name), htmlpage_version_info.live_inode")
+			.append(" UNION ALL ")
+			// Find contentlets type 'html page'
+			.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
+			.append("(identifier.parent_path + identifier.asset_name) AS uri ")
+			.append("FROM clickstream_request cr ")
+			.append("JOIN contentlet ON (contentlet.identifier = cr.associated_identifier) ")
+			.append("JOIN structure ON (structure.inode = contentlet.structure_inode) ")
+			.append("JOIN identifier ON (identifier.id = contentlet.identifier) ")
+			.append("JOIN contentlet_version_info ON (contentlet_version_info.identifier = identifier.id) ")
+			.append("WHERE DATEPART(DAY, cr.timestampper) = ? AND DATEPART(MONTH, cr.timestampper) = ? AND DATEPART(YEAR, cr.timestampper) = ? ")
+			.append("AND cr.host_id = ? AND structure.structuretype = ").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+			.append("GROUP BY associated_identifier, (identifier.parent_path + identifier.asset_name), contentlet_version_info.live_inode");
+    	}
+    	
+    	return queryBuilder.toString();
     };
 
 	protected String getSummaryContentQuery(){
@@ -102,28 +152,47 @@ public abstract class DashboardFactory {
 
 
 	protected String getTopAssetsQuery() {
-		return "select identifier.host_inode as host_inode,count(*) as count, 'htmlpage' as asset_type "
-		    + "from htmlpage_version_info pageinfo join identifier on (identifier.id = pageinfo.identifier) "
-			+ "where identifier.host_inode = ? "
-			+ "and pageinfo.live_inode is not null "
-			+ "group by identifier.host_inode "
-			+ "UNION ALL "
-			+ "select identifier.host_inode as host_inode,count(*) as count, 'file_asset' as asset_type "
-			+ "from ((select identifier,live_inode from fileasset_version_info) union all " +
-			"        (select identifier,live_inode from contentlet_version_info where EXISTS " +
-			"         (select * from contentlet cc join structure st on (cc.structure_inode=st.inode) " +
-			"           where contentlet_version_info.identifier=cc.identifier and st.structuretype="+Structure.STRUCTURE_TYPE_FILEASSET+" ))) ainfo " +
-			"   join identifier on(identifier.id = ainfo.identifier) "
-			+ "where identifier.host_inode = ? "
-			+ "and ainfo.live_inode is not null "
-			+ "group by identifier.host_inode "
-			+ "UNION ALL  "
-			+ "select identifier.host_inode as host_inode,count(contentlet.inode) as count, 'contentlet' as asset_type "
-			+ "from contentlet_version_info contentinfo join identifier on(identifier.id = contentinfo.identifier ) "
-			+ "join contentlet on (contentlet.identifier = identifier.id) join structure on (contentlet.structure_inode=structure.inode) "
-			+ "where identifier.host_inode = ? and structure.structuretype<>"+Structure.STRUCTURE_TYPE_FILEASSET+" "
-			+ "and contentinfo.live_inode is not null "
-			+ "group by identifier.host_inode";
+		// This query counts legacy html pages
+		StringBuilder sbCountLegacyHtmlPages = new StringBuilder("(SELECT COUNT(*) ")
+		.append("FROM htmlpage_version_info pageinfo JOIN identifier ON (identifier.id = pageinfo.identifier) ") 
+		.append("WHERE identifier.host_inode = ? AND pageinfo.live_inode IS NOT NULL GROUP BY identifier.host_inode)");
+		
+		// This query counts html pages by combine 'html page contentlets' and 'legacy html pages'
+		StringBuilder sbCountAllHtmlPages = new StringBuilder("SELECT identifier.host_inode AS host_inode, ")
+		.append("(COUNT(contentlet.inode) + ").append(sbCountLegacyHtmlPages.toString()).append(") AS count, 'htmlpage' as asset_type ")
+		.append("FROM contentlet_version_info contentinfo ")
+		.append("JOIN identifier ON (identifier.id = contentinfo.identifier) ") 
+		.append("JOIN contentlet ON (contentlet.identifier = identifier.id) ")
+		.append("JOIN structure ON (contentlet.structure_inode=structure.inode) ") 
+		.append("WHERE identifier.host_inode = ? AND structure.structuretype = ")
+		.append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+		.append("AND contentinfo.live_inode IS NOT NULL ")
+		.append("GROUP BY identifier.host_inode");
+		
+		// This query counts files assets
+		StringBuilder sbCountFileAssets = new StringBuilder("SELECT identifier.host_inode AS host_inode, ")
+		.append("count(*) AS count, 'file_asset' AS asset_type ")
+		.append("FROM ((SELECT identifier, live_inode FROM fileasset_version_info) UNION ALL ")
+		.append("      (SELECT identifier, live_inode FROM contentlet_version_info WHERE EXISTS ")
+		.append("      (SELECT * FROM contentlet cc JOIN structure st ON (cc.structure_inode = st.inode) ")
+		.append("         WHERE contentlet_version_info.identifier=cc.identifier AND ")
+		.append("               st.structuretype=").append(Structure.STRUCTURE_TYPE_FILEASSET).append(" ))) ainfo ")
+		.append("JOIN identifier ON (identifier.id = ainfo.identifier) ")
+		.append("WHERE identifier.host_inode = ? AND ainfo.live_inode IS NOT NULL ")
+		.append("GROUP BY identifier.host_inode");
+		
+		// This query counts contentlets excluding Structure.STRUCTURE_TYPE_FILEASSET and Structure.STRUCTURE_TYPE_HTMLPAGE
+		StringBuilder sbCountContentlets  = new StringBuilder("SELECT identifier.host_inode as host_inode, ")
+		.append("COUNT(contentlet.inode) AS count, 'contentlet' AS asset_type ")
+		.append("FROM contentlet_version_info contentinfo JOIN identifier ON (identifier.id = contentinfo.identifier) ")
+		.append("JOIN contentlet ON (contentlet.identifier = identifier.id) JOIN structure ON (contentlet.structure_inode = structure.inode) ")
+		.append("WHERE identifier.host_inode = ? AND structure.structuretype<>").append(Structure.STRUCTURE_TYPE_FILEASSET).append(" AND ")
+		.append("structure.structuretype<>").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" AND contentinfo.live_inode IS NOT NULL ")
+		.append("GROUP BY identifier.host_inode");
+		
+		return sbCountAllHtmlPages.append(" UNION ALL ")
+				.append(sbCountFileAssets).append(" UNION ALL ")
+				.append(sbCountContentlets).toString();
 	}
 
 	protected String  getIdentifierColumn(){

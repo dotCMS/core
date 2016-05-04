@@ -14,11 +14,10 @@ import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -26,8 +25,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 
 /** @author Hibernate CodeGenerator */
 public class Contentlet extends WebAsset implements Serializable {
@@ -280,7 +277,7 @@ public class Contentlet extends WebAsset implements Serializable {
     /**
      */
     public Structure getStructure() {
-        Structure structure = StructureCache.getStructureByInode(structureInode);
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
         return structure;
     }
 
@@ -1634,7 +1631,7 @@ public class Contentlet extends WebAsset implements Serializable {
 	 * @throws DotRuntimeException if the field doesn't exist or it's not accesible
 	 */
 	public void setField(String fieldVarName, Object value) throws DotRuntimeException {
-		Structure st = StructureCache.getStructureByInode(this.structureInode);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(this.structureInode);
 		Field f = st.getFieldVar(fieldVarName);
 		if(f == null)
 			throw new DotRuntimeException("Field: " + fieldVarName + " doesn't exist.");

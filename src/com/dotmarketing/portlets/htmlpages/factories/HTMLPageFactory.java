@@ -319,7 +319,7 @@ public class HTMLPageFactory {
 
         //republishes the page to reset the VTL_SERVLETURI variable
         if ( (liveWebAsset != null) && (InodeUtils.isSet( liveWebAsset.getInode() )) ) {
-            PageServices.invalidate( liveWebAsset );
+            PageServices.invalidateAll(liveWebAsset);
         }
 
         //Wipe out menues

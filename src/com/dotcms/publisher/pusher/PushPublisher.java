@@ -110,7 +110,15 @@ public class PushPublisher extends Publisher {
 	        int errorCounter = 0;
 
 			for (Environment environment : environments) {
-				List<PublishingEndPoint> endpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
+				List<PublishingEndPoint> allEndpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
+				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
+				
+				//Filter Endpoints list and push only to those that are enabled
+				for(PublishingEndPoint ep : allEndpoints) {
+					if(ep.isEnabled()) {
+						endpoints.add(ep);
+					}
+				}
 
 				boolean failedEnvironment = false;
 

@@ -50,7 +50,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -860,7 +859,7 @@ public class DotWebdavHelper {
 
 			if(destinationFile==null){
 				Contentlet fileAsset = new Contentlet();
-				Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+				Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 				Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 				fileAsset.setStructureInode(folder.getDefaultFileType());
 				fileAsset.setFolder(folder.getInode());
@@ -901,7 +900,7 @@ public class DotWebdavHelper {
 				if(destinationFile instanceof File){
 					fileData=workingFile;
 				} else {
-					Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+					Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 
 					// Create user temp folder and create file inside of it

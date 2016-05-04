@@ -18,14 +18,13 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.content.submit.util.CaptchaUtil;
 import com.dotmarketing.cms.content.submit.util.SubmitContentUtil;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -50,8 +49,8 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.servlet.UploadServletRequest;
 import com.liferay.util.FileUtil;
+import com.liferay.util.servlet.UploadServletRequest;
 
 /**
  * This Action manage the submit content save procedure
@@ -126,7 +125,7 @@ public class SubmitContentAction extends DispatchAction{
 			 * Getting content structure
 			 */
 			String structureInode = request.getParameter("structure");
-			Structure st = StructureCache.getStructureByInode(structureInode);
+			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 
 
 			/**

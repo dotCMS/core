@@ -286,10 +286,9 @@ public class PublishFactory {
 				com.dotmarketing.portlets.contentlet.business.Contentlet cont = (com.dotmarketing.portlets.contentlet.business.Contentlet) it.next();
 			    if (cont.isLive()) {
 			    	try {
-			    		com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet = 
+			    		com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet =
 							conAPI.convertFatContentletToContentlet(cont);
-						ContentletServices.invalidate(newFormatContentlet,  false);
-				    	ContentletMapServices.invalidate(newFormatContentlet, false);
+						ContentletServices.invalidateLive(newFormatContentlet);
 					} catch (DotDataException e) {
 						throw new WebAssetException(e.getMessage(), e);
 					}
@@ -346,7 +345,7 @@ public class PublishFactory {
         }
 
         //writes the htmlpage to a live directory under velocity folder
-        PageServices.invalidate(htmlPage);
+        PageServices.invalidateAll(htmlPage);
 
         //Cleaning the cache
         if (htmlPage instanceof HTMLPage) {
