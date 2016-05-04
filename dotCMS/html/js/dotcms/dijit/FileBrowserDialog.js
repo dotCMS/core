@@ -81,6 +81,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	allowFileUpload: true,
 	sortBy: "title",
 	sortByDesc: false,
+	_browserFolderTree: null,
 
 	postCreate: function () {
 
@@ -127,8 +128,29 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 
 		this._initialized = true;
-
-
+		this._browserFolderTree = this.tree;
+		BrowserAjax.getSelectedBrowserPath(dojo.hitch(this, this._getSelectedBrowserPathCallback));
+		
+	},
+	
+	_getSelectedBrowserPathCallback: function (data) {
+		if(data["path"].length > 1){
+			this._browserFolderTree.set("path",data["path"]);
+			if(data["currentFolder"] != null)
+				this._selectFolder(data["currentFolder"]);
+			
+			setTimeout(this._highlightNode, 2000, this._browserFolderTree, data["path"][(data["path"].length-1)]);
+		}
+	},
+	
+	_highlightNode: function (browserTree,folderNodeId){
+		browserTree.set("selectedItem",folderNodeId);
+		var nodes = browserTree.getNodesByItem(folderNodeId);
+		if(!nodes[0].isExpanded){
+			browserTree._expandNode(nodes[0]);
+			var tempId = browserTree.id + '-treeNode-' + folderNodeId;
+			document.getElementById(tempId).style.backgroundColor="#E5EDF0";
+		}
 	},
 
 	show: function () {

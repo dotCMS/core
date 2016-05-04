@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -89,6 +90,7 @@ public class BrowserAjax {
 
 	String activeHostId = "";
     String activeFolderInode = "";
+    private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
     List<String> openFolders = new ArrayList<String> ();
 
     String lastSortBy = "name";
@@ -262,8 +264,46 @@ public class BrowserAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
+		HttpSession session = ctx.getSession();
+		Map<String, Object> selectedBrowserPathObject = new HashMap<String, Object>();
+		if(UtilMethods.isSet(folderId)){
+			selectedBrowserPathObject.put("path", getSelectedBrowserPathArray(folderId));
+			try {
+				selectedBrowserPathObject.put("currentFolder", getFolderMap(folderId));
+			} catch (Exception e) {}
+			session.setAttribute(SELECTED_BROWSER_PATH_OBJECT, selectedBrowserPathObject);
+		}
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks);
+	}
+
+	private String[] getSelectedBrowserPathArray(String folderId) {
+		List<String> selectedPath = new ArrayList<String>();
+		Folder parentFolder = new Folder();
+		String[] pathArray = new String[]{"root"};
+		try{
+			User systemUser = APILocator.getUserAPI().getSystemUser();
+			selectedPath.add(folderId);
+			String hostId = folderAPI.find(folderId, systemUser, false).getHostId();
+			while(parentFolder != null){
+				parentFolder = folderAPI.findParentFolder(folderAPI.find(folderId, systemUser, false), systemUser, false);
+				if(parentFolder != null){
+					selectedPath.add(parentFolder.getInode());
+					folderId = parentFolder.getInode();
+				}else{
+					break;
+				}
+			}
+			pathArray = new String[selectedPath.size()+2];
+			int index = 0;
+			for(int i = selectedPath.size()+1; i > 1 ; i--){
+				pathArray[i] = selectedPath.get(index);
+				index++;
+			}
+			pathArray[0] = "root";
+			pathArray[1] = hostId;
+		}catch(Exception e){}
+		return pathArray;
 	}
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
@@ -1741,6 +1781,17 @@ public class BrowserAjax {
         } else {
         	APILocator.getContentletAPI().refreshContentUnderHost(host);
         }
+	}
+	
+	public Map<String, Object> getSelectedBrowserPath(){
+		Map<String, Object> result = new HashMap<String, Object>();
+		HttpSession session = WebContextFactory.get().getSession();
+		if(UtilMethods.isSet(session.getAttribute(SELECTED_BROWSER_PATH_OBJECT)))
+			return (Map<String, Object>) session.getAttribute(SELECTED_BROWSER_PATH_OBJECT);
+		
+		result.put("path", new String[]{"root"});
+		result.put("currentFolder", null);
+		return result;
 	}
 
 }
