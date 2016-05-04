@@ -271,10 +271,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 
 			m.put("title", con.getTitle());
-			m.put("structureName", st.getVelocityVarName());
-            m.put("structureType", st.getStructureType() + "");
+			m.put("structureName", st.getVelocityVarName()); // marked for DEPRECATION
+			m.put("contentType", st.getVelocityVarName());
+            m.put("structureType", st.getStructureType() + ""); // marked for DEPRECATION
+            m.put("type", st.getStructureType() + "");
             m.put("inode", con.getInode());
-            m.put("type", "content");
             m.put("modDate", datetimeFormat.format(con.getModDate()));
             m.put("owner", con.getOwner()==null ? "0" : con.getOwner());
             m.put("modUser", con.getModUser());

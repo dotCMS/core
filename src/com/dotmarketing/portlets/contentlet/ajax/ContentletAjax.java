@@ -535,7 +535,7 @@ public class ContentletAjax {
 		    st = StructureCache.getStructureByInode(structureInode);
 		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 		    lastSearchMap.put("structure", st);
-		    luceneQuery.append("+structureName:" + st.getVelocityVarName() + " ");
+		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
 		}
 		else {
 		    for(int i=0;i<fields.size();i++){
@@ -554,8 +554,8 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
-		    luceneQuery.append("-structureName:Host ");
-		    luceneQuery.append("-structureType:3 ");
+		    luceneQuery.append("-contentType:Host ");
+		    luceneQuery.append("-type:3 ");
 		}
 
 		WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
