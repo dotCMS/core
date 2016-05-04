@@ -91,7 +91,7 @@ public class RoleResource extends WebResource {
 				JSONObject jsonRoleChildObject = new JSONObject();
 				jsonRoleChildObject.put("id", r.getId());
 				jsonRoleChildObject.put("$ref", r.getId());
-				jsonRoleChildObject.put("name", UtilMethods.javaScriptify(r.getName()));
+				jsonRoleChildObject.put("name", r.getName());
 				jsonRoleChildObject.put("locked", r.isLocked());
 				jsonRoleChildObject.put("children", true);
 				
@@ -109,7 +109,7 @@ public class RoleResource extends WebResource {
 			
 			JSONObject jsonRoleObject = new JSONObject();
 			jsonRoleObject.put("id", role.getId());
-			jsonRoleObject.put("name", UtilMethods.javaScriptify(role.getName()));
+			jsonRoleObject.put("name", role.getName());
 			jsonRoleObject.put("locked", role.isLocked());
 
 			JSONArray jsonChildren = new JSONArray();
@@ -122,7 +122,7 @@ public class RoleResource extends WebResource {
 					JSONObject jsonRoleChildObject = new JSONObject();
 					jsonRoleChildObject.put("id", r.getId());
 					jsonRoleChildObject.put("$ref", r.getId());
-					jsonRoleChildObject.put("name", UtilMethods.javaScriptify(r.getName()));
+					jsonRoleChildObject.put("name", r.getName());
 					jsonRoleChildObject.put("locked", r.isLocked());
 					jsonRoleChildObject.put("children", true);
 					
@@ -183,15 +183,15 @@ public class RoleResource extends WebResource {
 		jsonRoleObject.put("DBFQN", UtilMethods.javaScriptify(role.getDBFQN()));
 		jsonRoleObject.put("FQN", UtilMethods.javaScriptify(role.getFQN()));
 		jsonRoleObject.put("children", (Object)new JSONArray());
-		jsonRoleObject.put("description", UtilMethods.javaScriptify(role.getDescription()));
+		jsonRoleObject.put("description", role.getDescription());
 		jsonRoleObject.put("editLayouts", role.isEditLayouts());
 		jsonRoleObject.put("editPermissions", role.isEditPermissions());
 		jsonRoleObject.put("editUsers", role.isEditUsers());
 		jsonRoleObject.put("id", role.getId());
 		jsonRoleObject.put("locked", role.isLocked());
-		jsonRoleObject.put("name", UtilMethods.javaScriptify(role.getName()));
+		jsonRoleObject.put("name", role.getName());
 		jsonRoleObject.put("parent", role.getParent());
-		jsonRoleObject.put("roleKey", role.getRoleKey()!=null?UtilMethods.javaScriptify(role.getRoleKey()):"");
+		jsonRoleObject.put("roleKey", role.getRoleKey()!=null?role.getRoleKey():"");
 		jsonRoleObject.put("system", role.isSystem());
 
         return responseResource.response(jsonRoleObject.toString());
@@ -325,7 +325,7 @@ public class RoleResource extends WebResource {
 				
 				JSONObject jsonObject = new JSONObject();
 				jsonObject.put("id", r.getId().replace('-', '_'));
-				jsonObject.put("name", UtilMethods.javaScriptify(r.getName()));
+				jsonObject.put("name", r.getName());
 				jsonObject.put("locked", r.isLocked());
 				
 				LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
