@@ -29,6 +29,7 @@
  %>
 
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
+<script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -230,7 +231,7 @@ var editButtonRow="editEventButtonRow";
 	    				for(String catId : formCategories){
 	    					formCategoryList.add(catAPI.find(catId,user,false));
 	    				}
-	    			}    				
+	    			}
     				formValue =  (List<Category>) formCategoryList;
 
     				try {
@@ -466,4 +467,3 @@ var editButtonRow="editEventButtonRow";
 
 
 %>
-

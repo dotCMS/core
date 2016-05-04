@@ -130,7 +130,6 @@ if(query == null){
         editor.setTheme("ace/theme/textmate");
         editor.getSession().setMode("ace/mode/json");
         editor.getSession().setUseWrapMode(true);
-        editor.setValue(document.getElementById('query').value);
     }
 
     function refreshPane(){

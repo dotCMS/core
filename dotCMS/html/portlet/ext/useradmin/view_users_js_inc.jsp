@@ -19,7 +19,7 @@
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
 	dojo.require("dojox.data.JsonRestStore");
-	
+
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 	dojo.require("dotcms.dojo.data.UsersReadStore");
 	dojo.require('dijit.layout.AccordionContainer');
@@ -179,7 +179,7 @@
 				label: 'id',
 				items: [  ]
 			};
-		list.data.each(function (record, idx) {
+		list.data.forEach(function (record, idx) {
 			usersData.items.push({ name: record.name, id: record.id, email: record.emailaddress });
 		});
  		var usersStore = new dojo.data.ItemFileReadStore({data: usersData });
@@ -380,7 +380,7 @@
 		userChanged = true;
 		passwordChanged = true;
 	}
-	
+
 	//Handler from when the user info has changed
 	var emailChanged = false;
 	function userEmailChanged() {
@@ -726,7 +726,7 @@
 
 		//Unregistering any old loaded tree and nodes before try to render a new tree
 		if (dijit.byId('userRolesTree')) {
-			flatTree.each(function (role) {
+			flatTree.forEach(function (role) {
 				if(dijit.byId("role_node_" + role.id + "_chk")) {
 					dijit.registry.remove("role_node_" + role.id + "_chk");
 				}
@@ -818,7 +818,7 @@
 
 		if (checked) {
 			expandWholeTree(tree);
-			flatTree.each(function (role) {
+			flatTree.forEach(function (role) {
 				var treeNode = dijit.byId('treeNode-' + role.id);
 				if(treeNode)
 					dojo.style(treeNode.domNode, { display: 'none' });
@@ -830,7 +830,7 @@
 				var tree = dijit.byId('userRolesTree');
 
 				var branchesUp = getRoleFlatUpBranch(userRole.id);
-				branchesUp.each(function(upRole){
+				branchesUp.forEach(function(upRole){
 					var tree = dijit.byId('userRolesTree');
 					var treeNode = dijit.byId('treeNode-' + upRole.id);
 					if (!treeNode) return;
@@ -938,7 +938,7 @@
 			rolesChecked.push(checkbox);
 			//If role is check everything underneath should be checked
 			var branchDown = getRoleFlatDownBranch(id);
-			branchDown.each(function (role) {
+			branchDown.forEach(function (role) {
 				var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 				if(checkbox != undefined && !checkbox.attr('disabled'))
 					checkbox.attr('value', 'on');
@@ -950,7 +950,7 @@
 
 			//If role is un-checked everything above should be unchecked
 			var branchesUp = getRoleFlatUpBranch(id);
-			branchesUp.each(function (role) {
+			branchesUp.forEach(function (role) {
 				var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 				if(checkbox != undefined &&  !checkbox.attr('disabled'))
 					checkbox.attr('value', false);
@@ -963,7 +963,7 @@
 
 	//Resets the roles selection to how it was when loaded
 	function resetRoles () {
-		flatTree.each(function (role) {
+		flatTree.forEach(function (role) {
 			var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 			if(!findRole(role.id, userRoles))
 				if(!checkbox.attr('disabled'))
@@ -972,7 +972,7 @@
 				if(!checkbox.attr('disabled'))
 					checkbox.attr('value', 'on');
 				var branchDown = getRoleFlatDownBranch(role.id);
-				branchDown.each(function (role) {
+				branchDown.forEach(function (role) {
 					var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 					if(!checkbox.attr('disabled'))
 						checkbox.attr('value', 'on');
@@ -997,7 +997,7 @@
 
 	//Utility functions
 	function flattenTree (tree) {
-		tree.each(function (node) {
+		tree.forEach(function (node) {
 			flatTree.push(node);
 			if (node.children)
 				flattenTree(node.children);
@@ -1127,7 +1127,7 @@
 	function loadUserAddressesCallback(addresses){
 		var addressesGrid = dijit.byId('userAddressesGrid');
 		addressesData.items = [];
-		addresses.each(function (newAddress) {
+		addresses.forEach(function (newAddress) {
 			newAddress.address = newAddress.street1 + "<br/>" + newAddress.street2 + "<br/>" + newAddress.city + ", " +
 				newAddress.state + " " + newAddress.zip + "<br/>" + newAddress.country;
 			addressesData.items.push(newAddress);
@@ -1225,7 +1225,7 @@
 		if(currentUser == null)
 			return;
 		if(!dijit.byId('addressForm').validate())
-			return;		
+			return;
 		var id = dojo.byId('addressId').value;
 		var desc = dijit.byId('addressDescription').attr('value');
 		var street1 = dijit.byId('addressStreet1').attr('value');
@@ -1310,7 +1310,7 @@
 		if(currentUser == null)
 			return;
 		if (!dijit.byId('userAdditionalInfoForm').validate())
-			return;		
+			return;
 		var active = dijit.byId('userActive').attr('value') != false;
 		var prefix = dijit.byId('prefix').attr('value');
 		var suffix = dijit.byId('suffix').attr('value');
@@ -1591,6 +1591,3 @@
 
 
 </script>
-
-
-

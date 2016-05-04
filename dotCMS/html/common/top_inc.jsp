@@ -72,6 +72,7 @@ THIS FILE AND ITS INCLUDES
 	<script type="text/javascript" src="/html/js/log4js/log4javascript.js"></script>
 	<script type="text/javascript" src="/html/js/log4js/dotcms-log4js.js"></script>
 	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+  <script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/TemplateAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
@@ -81,14 +82,6 @@ THIS FILE AND ITS INCLUDES
 	<script type="text/javascript" src="/dwr/interface/BrowserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/UserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/scriptaculous/prototype.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/menu.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/util.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/validation.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/tag.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/uuidUtils.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-	<script type="text/javascript" src="/html/js/cms_ui_utils.js"?b=<%= ReleaseInfo.getVersion() %>"></script>
-
 
 
 	<script type="text/javascript">
