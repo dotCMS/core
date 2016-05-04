@@ -2532,7 +2532,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    ident.setHostId(contentlet.getHost());
 				    if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
 				        try {
-				            ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+                            if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
+                                String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : "";
+                                String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : "";;
+                                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                        + " identifier: " + binaryIdentifier
+                                        + " inode: " + binarynode);
+                            } else {
+                                ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+                            }
 				        } catch (IOException e) {
 				            // TODO
 				        }
