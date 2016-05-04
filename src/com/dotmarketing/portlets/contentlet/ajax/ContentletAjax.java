@@ -886,6 +886,7 @@ public class ContentletAjax {
 			}
 
 			Map<String, String> searchResult = new HashMap<String, String>();
+			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
 
 			for (String fieldContentlet : fieldsMapping.keySet()) {
 				String fieldValue = null;
@@ -912,8 +913,13 @@ public class ContentletAjax {
 					if (UtilMethods.isSet(fieldValue))
 						fieldValue = fieldValue.replaceAll("# #",",").replaceAll("#","");
 				}
-                //We need to replace the URL value from the contentlet with the one in the Identifier.
-                if(("url").equals(fieldContentlet) && UtilMethods.isSet(ident) && UtilMethods.isSet(ident.getAssetName())){
+
+                //We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
+                if(("url").equals(fieldContentlet) &&
+                		s != null &&
+                		s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE &&
+                		UtilMethods.isSet(ident) &&
+                		UtilMethods.isSet(ident.getAssetName())){
                     fieldValue = ident.getAssetName();
                 }
 
@@ -923,7 +929,7 @@ public class ContentletAjax {
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
 			searchResult.put("__title__", conAPI.getName(con, currentUser, false));
-			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
+
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
 			                :  (s.getStructureType() ==2)
