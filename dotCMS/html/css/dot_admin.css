@@ -66,6 +66,24 @@
 	color:#fff;
 }
 
+/*NAV STYLES*/
+.navbar ul{list-style:none;margin:0;padding:0}
+.navbar li{list-style:none;position:relative}
+.navbar li a{display:block;text-decoration:none;float:none}
+.navbar .dropdown{background:#fff;border:1px solid #d1d1d1;border-top:0;left:-1px;min-width:200px;position:absolute;opacity:0;transition:opacity .2s;top:44px;visibility:hidden;z-index:999}
+.navbar .dropdown li.level2{padding:0}
+.navbar .dropdown li.level2 a{background:#fff;color:#5f5f5f;display:block;font-size:85%;height:18px;line-height:18px;margin:0;padding:3px 10px;vertical-align:middle}
+.navbar .horizontal li.level1.active .navMenu-title,.navbar .horizontal li.level1:hover .navMenu-title{color:#c00}
+.navbar .dropdown li.level2 a:hover{background:#F2F2F2}
+.navbar .dropdown li.level2 a span{display:inline-block;float:left;height:18px;margin:0 5px 2px;width:18px}
+.navbar .horizontal li.level1{background-color:#F2F2F2;border-top-left-radius:3px;border-top-right-radius:3px;border:1px solid #DADADA;border-right:0;box-shadow:inset 0 1px 1px 0 #FFF;float:left;padding:0;width:auto}
+.navbar .horizontal li.level1.active,.navbar .horizontal li.level1:hover{background-color:#fff}
+.navbar .horizontal li.level1:hover>.dropdown{visibility:visible;opacity:1}
+.navbar .horizontal li.level1:last-child{border-right:solid 1px #DADADA}
+.navbar .horizontal li.level1 .tabLeft{padding:8px 10px 5px}
+.navbar .navMenu-title{color:#404040;font-size:93%;font-weight:700;line-height:14px;margin:0;overflow:hidden;padding:0}
+.navbar .navMenu-subtitle{color:#5f5f5f;font-size:77%;margin:0;overflow:hidden;padding:0}
+
 /* NAV MENU STYLES 2.0 */
 .navbar ul{list-style:none;margin:0;padding:0}
 .navbar li{list-style:none;position:relative}
