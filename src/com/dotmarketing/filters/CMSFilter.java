@@ -70,6 +70,7 @@ public class CMSFilter implements Filter {
 	
 	
 	public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
+	public static final String VELOCITY_PAGE_EXTENSION = Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
 	public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
 
@@ -209,6 +210,16 @@ public class CMSFilter implements Filter {
 				}
 				if(urlUtil.isPageAsset(rewrite, host, languageId)){
 					iAm = IAm.PAGE;
+				}else{
+					// support for legacy index pages that required extension
+					rewrite = rewrite + "." + VELOCITY_PAGE_EXTENSION;
+					if(urlUtil.isPageAsset(rewrite, host, languageId)){
+						iAm = IAm.PAGE;
+					}else{
+						// no page found, leave it as it is, still a FOLDER
+						rewrite = null;
+						Logger.warn(CMSFilter.class, "Index page not found: " + uri);
+					}
 				}
 			}
 		}
