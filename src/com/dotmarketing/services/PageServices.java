@@ -288,7 +288,8 @@ public class PageServices {
 		}
 		
 		sb.append("#if($HTMLPAGE_REDIRECT != \"\")");
-		sb.append("    $response.sendRedirect(\"$HTMLPAGE_REDIRECT\")");
+		sb.append(" $response.setStatus(301)");
+		sb.append(" $response.setHeader(\"Location\", \"$HTMLPAGE_REDIRECT\")");
 		sb.append("#end");
 		
 		Identifier iden = APILocator.getIdentifierAPI().find(cmsTemplate);
