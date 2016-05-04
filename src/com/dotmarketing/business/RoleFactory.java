@@ -44,6 +44,8 @@ public abstract class RoleFactory {
 	
 	protected abstract Role save(Role role) throws DotDataException;
 	
+	protected abstract Role save(Role role, String existingId) throws DotDataException;
+	
 	protected abstract List<Role> getRolesByNameFiltered(String filter, int start, int limit) throws DotDataException;
 
 	/**
