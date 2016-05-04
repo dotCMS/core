@@ -1076,6 +1076,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
     		}
 		}
 
+		//Return the tags related to this Contentlet in order to show them in the edit window
+		contentlet.setTags();
+
 		GregorianCalendar cal = new GregorianCalendar();
 		if (contentlet.getModDate() == null) {
 			contentlet.setModDate(cal.getTime());
