@@ -157,10 +157,10 @@
 
                         htmlContent += "<td>";
                         if (bundleData.state != <%=Bundle.ACTIVE%>) {
-                            htmlContent += "<a href=\"javascript:bundles.start('" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a>";
+                            htmlContent += "<a href=\"javascript:bundles.start('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Start")%></a>";
                         }
                         if (bundleData.state == <%=Bundle.ACTIVE%>) {
-                            htmlContent += "<a href=\"javascript:bundles.stop('" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a>";
+                            htmlContent += "<a href=\"javascript:bundles.stop('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a>";
                         }
                         if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(bundleData.separator + "load" + bundleData.separator) != -1) {
                             htmlContent += "&nbsp;|&nbsp;<a href=\"javascript:bundles.undeploy('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a>";
