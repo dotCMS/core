@@ -183,6 +183,37 @@ public class NavTool implements ViewTool {
         }
     }
     
+    /**
+     * Pass the level of the nav you wish to
+     * retrieve, based on the current path, 
+     * level 0 being the root
+     * @param level
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public NavResult getNav(int level) throws DotDataException, DotSecurityException {
+        if(level<1) return getNav("/");
+        
+
+        String reqPath = getNav().getHref();
+
+    	String[] levels = reqPath.split("/");
+    	
+    	
+    	if(level+1>levels.length)return null;
+
+    	StringBuffer sw = new StringBuffer();
+    	
+    	for(int i=1;i<=level;i++){
+    		sw.append("/");
+    		sw.append(levels[i]);
+    	}
+    	String path=sw.toString();
+
+        return getNav(path);
+    }
+    
     public NavResult getNav() throws DotDataException, DotSecurityException {
     	return getNav((String) request.getAttribute("javax.servlet.forward.request_uri"));
     }
