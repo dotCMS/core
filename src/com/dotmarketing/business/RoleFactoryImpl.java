@@ -343,6 +343,18 @@ public class RoleFactoryImpl extends RoleFactory {
 
 		return r;
 	}
+	
+	@Override
+	protected Role save(Role role, String existingId) throws DotDataException {
+        if(!UtilMethods.isSet(role.getId())){
+            throw new DotStateException("Cannot save a Role without an Id");
+        }
+        HibernateUtil.saveWithPrimaryKey(role, existingId);
+        rc.add(role);
+		HibernateUtil.evict(role);
+		
+		return role;
+    }
 
 	@Override
 	protected void delete(Role role) throws DotDataException {
