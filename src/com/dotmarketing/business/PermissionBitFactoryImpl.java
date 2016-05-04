@@ -1214,11 +1214,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if(bitPermissionsList == null) {
+		if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
 			synchronized(permissionable.getPermissionId().intern()){
 				//Checking individual permissions
 				bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
-				if(bitPermissionsList == null) {
+				if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
 					bitPermissionsList = loadPermissions(permissionable);
 					permissionCache.addToPermissionCache(permissionable.getPermissionId(), bitPermissionsList);
 				}
@@ -1249,13 +1249,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if(bitPermissionsList == null) {
+		if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
 			synchronized(permissionable.getPermissionId().intern()){
 
 				if(!forceLoadFromDB)
 					bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 				//Checking individual permissions
-				if(bitPermissionsList == null) {
+				if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
 					bitPermissionsList = loadPermissions(permissionable);
 					permissionCache.addToPermissionCache(permissionable.getPermissionId(), bitPermissionsList);
 				}
