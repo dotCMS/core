@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -71,8 +72,10 @@ import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {
-	private static final String RELATIONSHIP_KEY = "__##relationships##__";
 
+	public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
+
+	private static final String RELATIONSHIP_KEY = "__##relationships##__";
 	private static final String IP_ADDRESS = "ipAddress";
 	private static final String HOST_HEADER = "hostHeader";
 	private static final String COOKIES = "cookies";
@@ -490,7 +493,7 @@ public class ContentResource {
 			m.putAll(c.getMap());
 			Structure s = c.getStructure();
 
-			m.putAll(getSpecialFieldValues(user, c, s));
+			c = ContentletUtil.setSpecialFieldValues(user, c);
 
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
@@ -508,30 +511,7 @@ public class ContentResource {
 		return sb.toString();
 	}
 
-	private Map getSpecialFieldValues(User user, Contentlet c, Structure s) {
-		Map<String, Object> m = new HashMap<>();
 
-		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-            if(f.getFieldType().equals(FieldType.BINARY.toString())){
-                m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
-                m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
-            } else if(f.getFieldType().equals(FieldType.CATEGORY.toString())) {
-                List<Category> cats = null;
-                try {
-                    cats = APILocator.getCategoryAPI().getParents(c, user, false);
-                } catch (Exception e) {
-                    Logger.error(this, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
-                }
-
-                if(cats!=null && !cats.isEmpty()) {
-                    String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
-                    m.put(f.getVelocityVarName(), catsStr);
-                }
-            }
-        }
-
-		return m;
-	}
 
 	private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
@@ -583,7 +563,7 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	private Set<String> getJSONFields(Structure s) {
+	public static Set<String> getJSONFields(Structure s) {
 		Set<String> jsonFields=new HashSet<String>();
 		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode()))
 			if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
@@ -591,9 +571,13 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException{
+	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user)
+			throws DotDataException, JSONException, IOException{
+
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
+		con = ContentletUtil.setSpecialFieldValues(user, con);
+
 		Map<String,Object> map = con.getMap();
 
 		Set<String> jsonFields=getJSONFields(s);
@@ -601,17 +585,12 @@ public class ContentResource {
 		for(String key : map.keySet()) {
 			if(Arrays.binarySearch(ignoreFields, key) < 0)
 				if(jsonFields.contains(key)) {
-					Logger.info(this, key+" is a json field: "+map.get(key).toString());
+					Logger.info(ContentResource.class, key+" is a json field: "+map.get(key).toString());
 					jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
 				}
-				else
+				else {
 					jo.put(key, map.get(key));
-		}
-
-		Map<String, Object> specialFieldValues = getSpecialFieldValues(user, con, s);
-
-		for (String key : specialFieldValues.keySet()) {
-			jo.put(key, specialFieldValues.get(key));
+				}
 		}
 
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
@@ -620,8 +599,6 @@ public class ContentResource {
 
 		return jo;
 	}
-
-	final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
 
 	public class MapEntryConverter implements Converter{
 		public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {

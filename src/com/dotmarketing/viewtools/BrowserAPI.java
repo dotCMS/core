@@ -372,15 +372,15 @@ public class BrowserAPI {
 
 			} else {
 		        ChildrenCondition cond = new ChildrenCondition();
+		        
 		        if(showWorking)
 		        	cond.working = true;
 		        else
 		        	cond.live = true;
-				files.addAll(folderAPI.getFiles(parent,	userAPI.getSystemUser(), false, cond));
-				if (showArchived) {
-					cond.deleted = showArchived;
-					files.addAll(folderAPI.getFiles(parent, userAPI.getSystemUser(), false, cond));
-				}
+				
+		        cond.deleted = showArchived;
+					
+				files.addAll(folderAPI.getFiles(parent, userAPI.getSystemUser(), false, cond));
 				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, "", !showWorking, showWorking, user, false));
 			}
 

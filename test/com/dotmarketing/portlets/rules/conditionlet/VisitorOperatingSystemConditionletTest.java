@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import eu.bitwalker.useragentutils.OperatingSystem;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -21,6 +23,10 @@ public class VisitorOperatingSystemConditionletTest {
     private HttpServletResponse response;
     private VisitorOperatingSystemConditionlet conditionlet = new VisitorOperatingSystemConditionlet();
 
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void before () {

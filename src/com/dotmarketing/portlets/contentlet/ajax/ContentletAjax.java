@@ -1287,7 +1287,9 @@ public class ContentletAjax {
 					Contentlet binaryContentlet =  new Contentlet();
 					try{
 						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-					}catch(Exception e){}
+					}catch(Exception e){
+						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
+					}
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
 							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);

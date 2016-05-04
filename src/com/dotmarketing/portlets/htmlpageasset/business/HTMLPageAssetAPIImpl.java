@@ -853,6 +853,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 		requestProxy.put("user", user);
 		if (!liveMode) {
 			requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
+			requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
 		}
 		boolean signedIn = false;
 

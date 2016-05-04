@@ -25,7 +25,6 @@ import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import org.quartz.JobExecutionContext;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -86,6 +85,15 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+/**
+ * This class provides access to maintenance routines that dotCMS users can run
+ * in order to keep their environments as optimized and clean as possible.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class CMSMaintenanceAjax {
 
     public Map getReindexationProgress() throws DotDataException {
@@ -97,8 +105,6 @@ public class CMSMaintenanceAjax {
 
     public boolean deleteIndex(String indexName){
     	validateUser();
-    	ESIndexAPI esapi= new ESIndexAPI();
-
     	return  APILocator.getContentletIndexAPI().delete(indexName);
     }
 
@@ -197,10 +203,26 @@ public class CMSMaintenanceAjax {
         return result;
     }
 
-
-
+	/**
+	 * Takes a list of comma-separated Identifiers and deletes them.
+	 * 
+	 * @param List
+	 *            - The list of Identifiers as Strings.
+	 * @param userId
+	 *            - The ID of the user performing this action.
+	 * @return A String array of information that provides the user with the
+	 *         results of performing this action.
+	 * @throws PortalException
+	 *             An error occurred when retrieving the user information.
+	 * @throws SystemException
+	 *             A system error occurred. Please check the system logs.
+	 * @throws DotDataException
+	 *             An error occurred when accessing the contentlets to delete.
+	 * @throws DotSecurityException
+	 *             The user does not have permissions to perform this action.
+	 */
 	public String[] deleteContentletsFromIdList(String List, String userId) throws PortalException, SystemException, DotDataException,DotSecurityException {
-
+		validateUser();
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		String[] inodes = List.split(",");
 		Integer contdeleted = 0;
@@ -222,7 +244,7 @@ public class CMSMaintenanceAjax {
 		}
 
 		for (Contentlet contentlet : contentlets) {
-			conAPI.delete(contentlet, APILocator.getUserAPI().getSystemUser(), true, true);
+			conAPI.delete(contentlet, user, true, true);
 			contdeleted++;
 		}
 
@@ -333,27 +355,6 @@ public class CMSMaintenanceAjax {
 
 
 			}
-			/*else if(action.equals("downloadZip")) {
-
-				message ="File Downloaded";
-				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-				File zipFile = new File(backupFilePath + "/backup_" + x + "_.zip");
-
-				ActionResponseImpl responseImpl = (ActionResponseImpl) response;
-				HttpServletResponse httpResponse = responseImpl.getHttpServletResponse();
-				httpResponse.setHeader("Content-type", "");
-				httpResponse.setHeader("Content-Disposition", "attachment; filename=" + zipFile.getName());
-
-				if(!dataOnly){
-					moveAssetsToBackupDir();
-				}
-
-				createXMLFiles();
-
-				zipTempDirectoryToStream(httpResponse.getOutputStream());
-
-			}*/
-
 			return message;
 
 		}
@@ -412,8 +413,6 @@ public class CMSMaintenanceAjax {
 		@SuppressWarnings("unchecked")
 		public void createXMLFiles() throws ServletException, IOException, DotDataException {
 			validateUser();
-	//		deleteTempFiles();
-
 			Logger.info(this, "Starting createXMLFiles()");
 
 			Set<Class> _tablesToDump = new HashSet<Class>();
@@ -458,11 +457,6 @@ public class CMSMaintenanceAjax {
 						_xstream.registerConverter(new HibernateMapConverter(mapper));
 					}
 
-					/*
-					 * String _shortClassName =
-					 * clazz.getName().substring(clazz.getName().lastIndexOf("."),clazz.getName().length());
-					 * xstream.alias(_shortClassName, clazz);
-					 */
 					int i= 0;
 					int step = 1000;
 					int total =0;
@@ -575,73 +569,7 @@ public class CMSMaintenanceAjax {
 				_list = null;
 				_bout = null;
 
-				/* Roles */
-	//			_list = RoleManagerUtil.findAll();
-	//			_xstream = new XStream(new DomDriver());
-	//			_writing = new File(backupTempFilePath + "/" + Role.class.getName() + ".xml");
-	//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-	//			_xstream.toXML(_list, _bout);
-	//			_bout.close();
-	//			_list = null;
-	//			_bout = null;
-
-				/* Groups */
-	//			_list = new ArrayList<Group>();
-	//			for (Company company : companies) {
-	//				_list.addAll(CompanyLocalManagerUtil.getGroups(CompanyUtils.getDefaultCompany().getCompanyId()));
-	//			}
-	//			List<Group> groups = new ArrayList<Group>(_list);
-	//			_xstream = new XStream(new DomDriver());
-	//			_writing = new File(backupTempFilePath + "/" + Group.class.getName() + ".xml");
-	//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-	//			_xstream.toXML(_list, _bout);
-	//			_bout.close();
-	//			_list = null;
-	//			_bout = null;
-
-				/* Layouts */
-	//			_list = LayoutManagerUtil.findAll();
-	//			_xstream = new XStream(new DomDriver());
-	//			_writing = new File(backupTempFilePath + "/" + Layout.class.getName() + ".xml");
-	//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-	//			_xstream.toXML(_list, _bout);
-	//			_bout.close();
-	//			_list = null;
-	//			_bout = null;
-
-				/* users_roles */
 				DotConnect dc = new DotConnect();
-	//			dc.setSQL("select * from users_roles");
-	//			_list = dc.getResults();
-	//			_xstream = new XStream(new DomDriver());
-	//			_writing = new File(backupTempFilePath + "/Users_Roles.xml");
-	//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-	//			_xstream.toXML(_list, _bout);
-	//			_bout.close();
-	//			_list = null;
-	//			_bout = null;
-	//
-	//			/* users_groups */
-	//			dc.setSQL("select * from users_groups");
-	//			_list = dc.getResults();
-	//			_xstream = new XStream(new DomDriver());
-	//			_writing = new File(backupTempFilePath + "/Users_Groups.xml");
-	//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-	//			_xstream.toXML(_list, _bout);
-	//			_bout.close();
-	//			_list = null;
-	//			_bout = null;
-	//
-	//			/* users_groups */
-	//			dc.setSQL("select * from groups_roles");
-	//			_list = dc.getResults();
-	//			_xstream = new XStream(new DomDriver());
-	//			_writing = new File(backupTempFilePath + "/Groups_Roles.xml");
-	//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-	//			_xstream.toXML(_list, _bout);
-	//			_bout.close();
-	//			_list = null;
-	//			_bout = null;
 
 				/* counter */
 				dc.setSQL("select * from counter");
@@ -791,43 +719,8 @@ public class CMSMaintenanceAjax {
 			byte b[] = new byte[512];
 			ZipOutputStream zout = new ZipOutputStream(out);
 			ZipUtil.zipDirectory(backupTempFilePath, zout);
-	//		File f = new File(backupTempFilePath);
-	//		String[] s = f.list();
-	//		for (int i = 0; i < s.length; i++) {
-	//			if(s[i].equals(".svn")){
-	//				continue;
-	//			}
-	//			f = new File(backupTempFilePath + "/" + s[i]);
-	//			InputStream in;
-	//			if(f.isDirectory()){
-	//				in = new BufferedInputStream(new ByteArrayInputStream(f.));
-	//			}else{
-	//				in = new BufferedInputStream(new FileInputStream(f));
-	//			}
-	//			ZipEntry e = new ZipEntry(s[i].replace(File.separatorChar, '/'));
-	//			zout.putNextEntry(e);
-	//			int len = 0;
-	//			while ((len = in.read(b)) != -1) {
-	//				zout.write(b, 0, len);
-	//			}
-	//			zout.closeEntry();
-	//			in.close();
-	//		}
 			zout.close();
 			out.close();
 	}
 
-	    private User getUser(HttpServletRequest req) {
-
-	        // get the user
-	        User user = null;
-	        try {
-	            user = com.liferay.portal.util.PortalUtil.getUser(req);
-	        } catch (Exception e) {
-	            Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-	            throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
-	        }
-	        return user;
-
-	    }
 }

@@ -680,7 +680,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private void registerBundleResourceMessages(BundleContext context) {
         //Register Language under /resources/messages folder.
         Enumeration<String> langFiles = context.getBundle().getEntryPaths("messages");
-        while( langFiles.hasMoreElements() ){
+        while(langFiles != null && langFiles.hasMoreElements() ){
 
             String langFile = langFiles.nextElement();
 

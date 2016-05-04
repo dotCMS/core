@@ -9,24 +9,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.exception.*;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.services.ContentletMapServices;
+import com.dotmarketing.services.StructureServices;
+import org.quartz.*;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -768,7 +765,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return; // Binary fields have nothing to do with database.
         }
 
-        conFac.cleanField(structure.getInode(), field);
+        conFac.clearField(structure.getInode(), field);
 
     }
 
@@ -3478,6 +3475,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!InodeUtils.isSet(stInode)){
             throw new DotContentletValidationException("The contentlet's structureInode must be set");
         }
+
+        if(value==null || !UtilMethods.isSet(value.toString())) {
+            contentlet.setProperty(field.getVelocityVarName(), null);
+            return;
+        }
+
         if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())){
 
         }else if(fAPI.isElementConstant(field)){
@@ -3553,10 +3556,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // setBinary
             }else if(field.getFieldContentlet().startsWith("binary")){
                 try{
-                	System.out.println(value.getClass());
-                    contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
+                	// only if the value is a file
+                	if(value.getClass()==java.io.File.class){
+                		contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
+                	}
                 }catch (Exception e) {
-                    throw new DotContentletStateException("Unable to set binary file Object");
+                    throw new DotContentletStateException("Unable to set binary file Object",e);
                 }
         }else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
