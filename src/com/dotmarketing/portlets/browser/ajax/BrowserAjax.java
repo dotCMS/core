@@ -1,9 +1,9 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +38,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -63,7 +62,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -890,11 +888,13 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    public String copyFile ( String inode, String newFolder ) throws Exception {
-		try{
-			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-			User user = getUser( req );
+    public Map<String, Object> copyFile ( String inode, String newFolder ) throws Exception {
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( req );
 
+        Map<String, Object> result = new HashMap<String, Object>();
+
+        try{
 			//Contentlet file identifier
 			Identifier id = APILocator.getIdentifierAPI().findFromInode( inode );
 
@@ -912,13 +912,10 @@ public class BrowserAjax {
 			}
 
 			// Checking permissions
-			String permissionsError = "File-failed-to-copy-check-you-have-the-required-permissions";
-			if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
-				return permissionsError;
-			} else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
-				return permissionsError;
-			} else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
-				return permissionsError;
+			if(!hasFileWritePermissions(host, parent, id, user)) {
+			    result.put("status", "error");
+			    result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-failed-to-copy-check-you-have-the-required-permissions")));
+			    return result;
 			}
 
 			if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
@@ -927,10 +924,11 @@ public class BrowserAjax {
 				Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
 
 				if ( parent != null ) {
-
 					FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet( cont );
 					if ( UtilMethods.isSet( fileAsset.getFileName() ) && !folderAPI.matchFilter( parent, fileAsset.getFileName() ) ) {
-						return "message.file_asset.error.filename.filters";
+						result.put("status", "error");
+						result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.file_asset.error.filename.filters")));
+						return result;
 					}
 				}
 
@@ -946,19 +944,24 @@ public class BrowserAjax {
 				Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
 				refreshIndex(null, parent, user, host, srcFolder );
 
-
-				return "File-copied";
+				result.put("status", "success");
+				result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
+				return result;
 			}
 
             File file = (File) InodeFactory.getInode( inode, File.class );
             // CHECK THE FOLDER PATTERN		//DOTCMS-6017
             if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
-                return "message.file_asset.error.filename.filters";
+                result.put("status", "error");
+                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.file_asset.error.filename.filters")));
+                return result;
             }
 
             // Checking permissions
             if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
-                return "File-failed-to-copy-check-you-have-the-required-permissions";
+                result.put("status", "error");
+                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-failed-to-copy-check-you-have-the-required-permissions")));
+                return result;
             }
 
             if ( parent != null ) {
@@ -966,12 +969,55 @@ public class BrowserAjax {
             } else {
                 APILocator.getFileAPI().copyFile( file, host, user, false );
             }
-            return "File-copied";
+            
+            result.put("status", "success");
+            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
+            return result;
 		}
-		catch(Exception ex) {
-		    Logger.error(this, "Error trying to copy the file to folder.", ex);
-		}
-        return "";
+        catch(Exception ex) {
+            Logger.error(this, "Error trying to copy the file to folder.", ex);
+
+            // File asset URL already exist
+            if(ex instanceof DotDataException && ((DotDataException) ex).getMessage().equalsIgnoreCase("error.copy.url.conflict")) {
+                result.put("status", "error");
+                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.htmlpage.error.htmlpage.exists.file")));
+                return result;
+            }
+
+            result.put("status", "error");
+            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.file.error.generic.copy")));
+            return result;
+        }
+    }
+    
+    /**
+     * This method verify if the user has write permissions of the file asset
+     * @param host
+     * @param parent
+     * @param page
+     * @param user
+     * @return true if has permissions otherwise false
+     */
+    private boolean hasFileWritePermissions(Host host, Folder parent, Identifier id, User user) {
+        boolean allowed = false;
+
+        final String permissionsError = "The user doesn't have the required permissions.";
+        try {
+            // Checking permissions
+            if ( !permissionAPI.doesUserHavePermission( id, PERMISSION_WRITE, user ) ) {
+                Logger.error(this, permissionsError);
+            } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_WRITE, user ) ) {
+                Logger.error(this, permissionsError);
+            } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_WRITE, user ) ) {
+                Logger.error(this, permissionsError);
+            } else {
+                allowed = true;
+            }
+        } catch(DotDataException e) {
+            Logger.error(this, permissionsError, e);
+        }
+
+        return allowed;
     }
 
     /**
@@ -1087,59 +1133,105 @@ public class BrowserAjax {
      * @return true if success, false otherwise
      * @throws Exception
      */
-    public boolean copyHTMLPage ( String inode, String newFolder ) throws Exception {
-
+    public Map<String, Object> copyHTMLPage ( String inode, String newFolder ) throws Exception {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser( req );
 
-        Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
-                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
-                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
-                                 APILocator.getContentletAPI().find(inode, user, false));
+        Map<String, Object> result = new HashMap<String, Object>();
 
-        // gets folder parent
-        Folder parent = null;
         try {
-            parent = APILocator.getFolderAPI().find( newFolder, user, false );
-        } catch ( Exception ignored ) {
-            //Probably what we have here is a host
-        }
-
-        Host host = null;
-        if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
-            host = APILocator.getHostAPI().find( newFolder, user, false );
-        }
-
-        // Checking permissions
-        String permissionsError = "The user doesn't have the required permissions.";
-        if ( !permissionAPI.doesUserHavePermission( page, PERMISSION_WRITE, user ) ) {
-            throw new DotRuntimeException( permissionsError );
-        } else if ( parent != null && !permissionAPI.doesUserHavePermission( parent, PERMISSION_CAN_ADD_CHILDREN, user ) ) {
-            throw new DotRuntimeException( permissionsError );
-        } else if ( host != null && !permissionAPI.doesUserHavePermission( host, PERMISSION_CAN_ADD_CHILDREN, user ) ) {
-            throw new DotRuntimeException( permissionsError );
-        }
-
-        if(ident.getAssetType().equals("htmlpage")) {
-            if ( parent != null ) {
-                HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
-            } else {
-                HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
+            Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+            IHTMLPage page = ident.getAssetType().equals("htmlpage") 
+                               ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
+                               : APILocator.getHTMLPageAssetAPI().fromContentlet(
+                                     APILocator.getContentletAPI().find(inode, user, false));
+    
+            // gets folder parent
+            Folder parent = null;
+            try {
+                parent = APILocator.getFolderAPI().find( newFolder, user, false );
+            } catch ( Exception ignored ) {
+                //Probably what we have here is a host
             }
-        }
-        else {
-            Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
-            if(parent!=null) {
-                cont=APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
+    
+            Host host = null;
+            if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
+                host = APILocator.getHostAPI().find( newFolder, user, false );
+            }
+    
+            // Checking permissions
+            if(!hasHTMLPageWritePermissions(host, parent, page, user)) {
+                Logger.error(this, "The user doesn't have the required permissions.");
+                result.put("status", "error");
+                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Failed-to-copy-check-you-have-the-required-permissions")));
+                return result;
+            }
+
+            if(ident.getAssetType().equals("htmlpage")) {
+                if ( parent != null ) {
+                    HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
+                } else {
+                    HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
+                }
             }
             else {
-                cont=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
+                Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
+
+                if(parent!=null) {
+                    APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
+                }
+                else {
+                    APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
+                }
             }
-            
+
+            result.put("status", "success");
+            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Page-copied")));
+            return result;
+        } catch(Exception e) {
+            Logger.error(this, "Error copying the html page.", e);
+
+            // Page URL already exist
+            if(e instanceof DotDataException && ((DotDataException) e).getMessage().equalsIgnoreCase("error.copy.url.conflict")) {
+                result.put("status", "error");
+                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.htmlpage.error.htmlpage.exists")));
+                return result;
+            }
+
+            result.put("status", "error");
+            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.htmlpage.error.generic.copy")));
+            return result;
+        }
+    }
+    
+    /**
+     * This method verify if the user has write permissions of the page
+     * @param host
+     * @param parent
+     * @param page
+     * @param user
+     * @return true if has permissions otherwise false
+     */
+    private boolean hasHTMLPageWritePermissions(Host host, Folder parent, IHTMLPage page, User user) {
+        boolean allowed = false;
+
+        final String permissionsError = "The user doesn't have the required permissions.";
+        try {
+            // Checking permissions
+            if (!permissionAPI.doesUserHavePermission(page, PERMISSION_WRITE, user)) {
+                Logger.error(this, permissionsError);
+            } else if (parent != null && !permissionAPI.doesUserHavePermission(parent, PERMISSION_CAN_ADD_CHILDREN, user)) {
+                Logger.error(this, permissionsError);
+            } else if (host != null && !permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user)) {
+                Logger.error(this, permissionsError);
+            } else {
+                allowed = true;
+            }
+        } catch(DotDataException e) {
+            Logger.error(this, permissionsError, e);
         }
 
-        return true;
+        return allowed;
     }
 
     /**

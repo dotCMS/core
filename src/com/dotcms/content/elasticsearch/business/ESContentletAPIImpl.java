@@ -18,6 +18,7 @@ import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecution
 import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHit;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
+import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -79,8 +80,10 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
 import org.springframework.beans.BeanUtils;
 
 import java.io.*;
@@ -4278,10 +4281,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return QueryUtil.DBSearch(query, dbColToObjectAttribute, "structure_inode = '" + fields.get(0).getStructureInode() + "'", user, true,respectFrontendRoles);
     }
 
-    private Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user,boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-
+    private Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
     	Contentlet resultContentlet = new Contentlet();
-    	String newIdentifier = "";
+    	String newIdentifier = Strings.EMPTY;
     	ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
 
@@ -4312,29 +4314,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Contentlet newContentlet = new Contentlet();
             newContentlet.setStructureInode(contentlet.getStructureInode());
             copyProperties(newContentlet, contentlet.getMap(),true);
-            //newContentlet.setLocked(false);
-            //newContentlet.setLive(contentlet.isLive());
 
             if(contentlet.isLive())
             	isContentletLive = true;
             if(contentlet.isWorking())
             	isContentletWorking = true;
 
-            newContentlet.setInode("");
-            newContentlet.setIdentifier("");
-            if(UtilMethods.isSet(newIdentifier))
-            	newContentlet.setIdentifier(newIdentifier);
+            newContentlet.setInode(Strings.EMPTY);
+            newContentlet.setIdentifier(Strings.EMPTY);
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-            	if(appendCopyToFileName){
-            		String fldNameNoExt=UtilMethods.getFileName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                    String fldfileExt=UtilMethods.getFileExtension(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-            		newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fldNameNoExt + "_(COPY)." + fldfileExt);
-            	}
-            	else
-            		newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+                if(StringUtils.isBlank(copySuffix.trim())) {
+                    // We don't need to append a suffix to the file name
+                    newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+                } else {
+                    // Append COPY suffix to the file name
+                    final String fldNameNoExt = UtilMethods.getFileName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+                    final String fldfileExt = UtilMethods.getFileExtension(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+                    newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fldNameNoExt + copySuffix + "." + fldfileExt);
+                }
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -4353,10 +4353,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                                 final String nameNoExt=UtilMethods.getFileName(srcFile.getName());
                                 final String fileExt=UtilMethods.getFileExtension(srcFile.getName());
-                            	if(appendCopyToFileName)
-                            		fieldValue = nameNoExt + "_copy." + fileExt;
-                            	else
-                            		fieldValue = nameNoExt + "." + fileExt;
+                                fieldValue = nameNoExt + copySuffix.trim() + "." + fileExt;
                             }else{
                                 fieldValue=srcFile.getName();
                             }
@@ -4407,7 +4404,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE){
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
-                    newContentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, identifier.getAssetName());
+                    final String newAssetName = identifier.getAssetName() + copySuffix.trim();
+                    newContentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, newAssetName);
                 } else {
                     Logger.warn(this, "Unable to get URL from Contentlet " + contentlet);
                 }
@@ -4476,7 +4474,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         HostAPI hostAPI = APILocator.getHostAPI();
         FolderAPI folderAPI = APILocator.getFolderAPI();
 
-        String hostIdentfier = contentlet.getHost();
+        final String hostIdentfier = contentlet.getHost();
         Identifier contIdentifier = APILocator.getIdentifierAPI().find(contentlet);
 
         Host host = hostAPI.find(hostIdentfier, user, respectFrontendRoles);
@@ -4484,39 +4482,120 @@ public class ESContentletAPIImpl implements ContentletAPI {
             host = new Host();
         Folder folder = folderAPI.findFolderByPath(contIdentifier.getParentPath(), host, user, false);
 
-        return copyContentlet(contentlet, host, folder, user, needAppendCopy(contentlet,host,folder), respectFrontendRoles);
+        return copyContentlet(contentlet, host, folder, user, generateCopySuffix(contentlet, host, folder), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, host, null, user, needAppendCopy(contentlet,host,null), respectFrontendRoles);
+        return copyContentlet(contentlet, host, null, user, generateCopySuffix(contentlet, host, null), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, null, folder, user, needAppendCopy(contentlet,null,folder), respectFrontendRoles);
+        return copyContentlet(contentlet, null, folder, user, generateCopySuffix(contentlet, null, folder), respectFrontendRoles);
     }
 
     public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        return copyContentlet(contentlet, null, folder, user, appendCopyToFileName, respectFrontendRoles);
+        // Suffix that we need to apply to append in content name
+        final String copySuffix = appendCopyToFileName ? "_copy" : Strings.EMPTY;
+
+        return copyContentlet(contentlet, null, folder, user, copySuffix, respectFrontendRoles);
     }
 
-    private boolean needAppendCopy(Contentlet contentlet, Host host, Folder folder) throws DotDataException {
-        if(host!=null && contentlet.getHost()!=null && !contentlet.getHost().equals(host.getIdentifier()))
+    /**
+     * This method generates the copy suffix when there is a contentlet that
+     * already has the same URL.
+     * <ul>
+     * <li>if the new contentlet URL is NOT used then returns an empty suffix.</li>
+     * <li>if the new contentlet URL without "_copy" is used then returns a
+     * "_copy" suffix.</li>
+     * <li>if the new contentlet URL with or without "_copy" is used then
+     * returns a "_copy" plus timestamp in millis (example: "_copy_2122313123")
+     * suffix.</li>
+     * </ul>
+     * 
+     * @param contentlet
+     *            the contentlet that we are going to copy or move
+     * @param host
+     * @param folder
+     *            the destination folder
+     * @return the generated contentlet asset name suffix
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
+     */
+    private String generateCopySuffix(Contentlet contentlet, Host host, Folder folder) throws DotDataException, DotStateException, DotSecurityException {
+        String assetNameSuffix = Strings.EMPTY;
+
+        if(host!=null && contentlet.getHost()!=null && !contentlet.getHost().equals(host.getIdentifier())) {
             // if different host we really don't need to
-            return false;
+            return assetNameSuffix;
+        }
 
-        String sourcef=null;
-        if(UtilMethods.isSet(contentlet.getFolder()))
-            sourcef=contentlet.getFolder();
-        else
-            sourcef=APILocator.getFolderAPI().findSystemFolder().getInode();
+        final String sourcef = (UtilMethods.isSet(contentlet.getFolder())) ? contentlet.getFolder() : APILocator.getFolderAPI().findSystemFolder().getInode();
+        final String destf = (UtilMethods.isSet(folder)) ? folder.getInode() : APILocator.getFolderAPI().findSystemFolder().getInode();
 
-        String destf=null;
-        if(UtilMethods.isSet(folder))
-            destf=folder.getInode();
-        else
-            destf=APILocator.getFolderAPI().findSystemFolder().getInode();
+        if(sourcef.equals(destf)) { // is copying in the same folder?
+            assetNameSuffix = "_copy";
 
-        return sourcef.equals(destf);
+            // We need to verify if already exist a content with suffix "_copy",
+            // if already exists we need to append a timestamp
+            if(isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
+                assetNameSuffix += "_" + System.currentTimeMillis();
+            }
+        } else {
+            if(isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
+                throw new DotDataException("error.copy.url.conflict");
+            }
+        }
+
+        return assetNameSuffix;
+    }
+    
+    /**
+     * This method verifies if the contentlet that we are going to copy or cut
+     * into a folder doesn't have conflict with other contentlet that has the
+     * same URL.
+     * 
+     * @param contentlet
+     *            the contentlet that we are going to copy or move
+     * @param destinationHost
+     *            the destination host
+     * @param destinationFolder
+     *            the destination folder
+     * @param assetNameSuffix
+     *            the suffix string that we will append in the asset name.
+     *            Sometimes you need to know if a asset name with a suffix is
+     *            used or not
+     * @return true if the contentlet URL is already used otherwise returns
+     *         false
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private boolean isContentletUrlAlreadyUsed(Contentlet contentlet, Host destinationHost, Folder destinationFolder, final String assetNameSuffix) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier contentletId = APILocator.getIdentifierAPI().find(contentlet);
+
+        // Create new asset name
+        final String contentletIdAssetName = contentletId.getAssetName();
+        final String fileExtension = contentlet.hasAssetNameExtension() ? "." + UtilMethods.getFileExtension(contentletIdAssetName).trim() : Strings.EMPTY;
+        final String futureAssetNameWithSuffix = UtilMethods.getFileName(contentletIdAssetName) + assetNameSuffix + fileExtension;
+
+        // Check if page url already exist
+        Identifier identifierWithSameUrl = null;
+        if(UtilMethods.isSet(destinationHost) && InodeUtils.isSet(destinationHost.getInode())) { // Hosts
+            identifierWithSameUrl = APILocator.getIdentifierAPI().find(destinationHost, "/" + futureAssetNameWithSuffix);
+        } else if(UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(destinationFolder.getInode())) { // Folders
+            // Create new path
+            Identifier folderId = APILocator.getIdentifierAPI().find(destinationFolder);
+            final String path = (destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/" : folderId.getPath()) + futureAssetNameWithSuffix;
+
+            identifierWithSameUrl = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(destinationFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false), path);
+        } else {
+            // Host or folder object MUST be define
+            Logger.error(this, "Host or folder destination are invalid, please check that one of those values are set propertly.");
+            throw new DotDataException("Host or folder destination are invalid, please check that one of those values are set propertly.");
+        }
+
+        return InodeUtils.isSet(identifierWithSameUrl.getId());
     }
 
     private boolean hasAHostField(String structureInode) {
