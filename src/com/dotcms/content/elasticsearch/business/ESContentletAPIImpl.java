@@ -3384,6 +3384,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     contentlet.setFloatProperty(field.getVelocityVarName(),new Float((String)value));
                 }catch (Exception e) {
+                	 if(value != null && value.toString().length() != 0){
+                  		contentlet.getMap().put(field.getVelocityVarName(),(String)value);
+                  	}
                     throw new DotContentletStateException("Unable to set string value as a Float");
                 }
             }
@@ -3500,6 +3503,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!(o instanceof Float)){
                         cve.addBadTypeField(field);
                         Logger.error(this,"A float contentlet must be of type Float");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeLong(field)){
                     if(!(o instanceof Long || o instanceof Integer)){
