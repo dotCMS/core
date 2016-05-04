@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -13,14 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
-import com.liferay.util.Validator;
 
 public class WfActionClassAjax extends WfBaseAction {
 	 public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
@@ -32,7 +28,9 @@ public class WfActionClassAjax extends WfBaseAction {
 		try {
 			int order = Integer.parseInt(o);
 			WorkflowActionClass actionClass = wapi.findActionClass(actionClassId);
-			wapi.reorderActionClass(actionClass, order);
+			if(actionClass.getOrder() != order) { // Reorder ONLY when position changed
+				wapi.reorderActionClass(actionClass, order);
+			}
 		} catch (Exception e) {
 			
 			// dojo sends this Ajax method "reorder Actions" calls, which fail.  Not sure why 
@@ -67,7 +65,12 @@ public class WfActionClassAjax extends WfBaseAction {
 		WorkflowActionClass wac = new WorkflowActionClass();
 
 		try {
-			WorkflowAction action = wapi.findAction(actionId, APILocator.getUserAPI().getSystemUser());
+			// We don't need to get "complete" action object from the database 
+			// to retrieve all action classes from him. So, we can create simple action object
+			// with the "action id" contain in actionClass parameter.
+			WorkflowAction action = new WorkflowAction();
+			action.setId(actionId);
+			
 			List<WorkflowActionClass> classes = wapi.findActionClasses(action);
 			if (classes != null) {
 				wac.setOrder(classes.size());
