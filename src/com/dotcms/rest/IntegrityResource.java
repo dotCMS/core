@@ -979,7 +979,21 @@ public class IntegrityResource extends WebResource {
                 jsonResponse.put( "success", true );
                 jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
 
-                clearStatus( request, endpointId );
+                // check if we still have other conflicts 
+        		
+                IntegrityType[] types = IntegrityType.values();
+                boolean isThereAnyConflict = false;
+
+                for (IntegrityType integrityType : types) {
+                	List<Map<String, Object>> results = integrityUtil.getIntegrityConflicts(endpointId, integrityType);
+                	if(!results.isEmpty()) {
+                		isThereAnyConflict = true;
+                		break;
+                	}
+                }
+
+                if(!isThereAnyConflict)
+                	clearStatus( request, endpointId );
 
             } else  if(whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
