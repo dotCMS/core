@@ -7,7 +7,6 @@ import java.util.Set;
 
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -789,6 +788,4 @@ public interface PermissionAPI {
      * @throws DotDataException
      */
     boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
-
-
 }
