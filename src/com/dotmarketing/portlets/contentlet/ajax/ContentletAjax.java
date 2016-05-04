@@ -531,7 +531,7 @@ public class ContentletAjax {
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
-		if(!"_all".equals(structureInode)){
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)){
 		    st = StructureCache.getStructureByInode(structureInode);
 		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 		    lastSearchMap.put("structure", st);
@@ -540,7 +540,7 @@ public class ContentletAjax {
 		else {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
-		        if("_all".equals(x)){
+		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
 		            String next =  fields.get(i+1);
 		            next = next.replaceAll("\\*", "");
 		            while(next.contains("  ")){

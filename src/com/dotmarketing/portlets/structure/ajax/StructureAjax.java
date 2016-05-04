@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.ajax;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -36,6 +37,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.*;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
@@ -469,9 +471,19 @@ public class StructureAjax {
 	}
 
 	public Map<String, Object> getStructureDetails(String StructureInode) throws PortalException, SystemException, DotDataException {
-        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+	    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = userWebAPI.getLoggedInUser(req);
+        
+        // StructureInode is a special inode to get ALL content types (used in combo boxes)
+        if(StructureInode.equals(Structure.STRUCTURE_TYPE_ALL)) {
+            Map<String, Object> structureDetails = new HashMap<String, Object>();
+            structureDetails.put("inode", Structure.STRUCTURE_TYPE_ALL);
+            structureDetails.put("name", LanguageUtil.get(user, "all"));
+            structureDetails.put("velocityVarName", Strings.EMPTY);
+            return structureDetails;
+        }
 
+        // StructureInode is a valid inode different than ALL
 		Structure str = StructureCache.getStructureByInode(StructureInode);
 
         if(!APILocator.getPermissionAPI().doesUserHavePermission(str, PERMISSION_READ, user, false))

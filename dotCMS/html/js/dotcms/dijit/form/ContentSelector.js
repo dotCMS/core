@@ -93,7 +93,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this._fillStructures();
 		else
 			this._structureChanged();
-		LanguageAjax.getLanguages(dojo.hitch(this, this._fillLanguages));
+		LanguageAjax.getLanguagesWithAllOption(dojo.hitch(this, this._fillLanguages));
 
 		if(this.title != '')
 			this.dialog.set('title',this.title);
@@ -121,14 +121,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureDetailsCallback: function (structure) {
-		this.structureName.innerHTML = structure['name'];
-		this.structureVelVar = structure['velocityVarName'];
+		this.structureName.innerHTML = structure["name"] ? structure["name"] : "";
+		this.structureVelVar = structure["velocityVarName"] ? structure["velocityVarName"] : "";
 		this._structureChanged();
 	},
 
 	_structureChanged: function () {
         this.setDotFieldTypeStr = "";
-		LanguageAjax.getLanguages(dojo.hitch(this, this._fillLanguages));
+		LanguageAjax.getLanguagesWithAllOption(dojo.hitch(this, this._fillLanguages));
 		StructureAjax.getSearchableStructureFields (this.structureInode,dojo.hitch(this, this._fillFields));
 		StructureAjax.getStructureCategories (this.structureInode,dojo.hitch(this, this._fillCategories));
 		this._hideMatchingResults ();
@@ -147,32 +147,26 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dd>";
 		if(this.containerStructures.length > 1){
 			dojo.require("dijit.form.FilteringSelect");
-			htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)'  id='structuresSelect+"+this.dialogCounter+"' required='false' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.structureInode+"'>";
-
-			var defaultValue = "";
+			htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)' id='structuresSelect+"+this.dialogCounter+"' required='true' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\">";
 
 			for (var i = 0; i < this.containerStructures.length; i++) {
-
-				if(i==0) {
-					defaultValue = this.containerStructures[i].inode;
+				htmlstr += "<option value='"+this.containerStructures[i].inode+"'";
+				if((this.structureInode == '' && i == 0) || this.containerStructures[i].inode == this.structureInode) {
+					htmlstr += " selected='selected'";
 				}
-				htmlstr += "<option  value='"+this.containerStructures[i].inode+"'";
-				htmlstr += ">"+this.containerStructures[i].name+"</option>"
+				htmlstr += ">"+this.containerStructures[i].name+"</option>";
 			}
 
 			htmlstr += "</select>";
 		}else{
 			htmlstr += this.containerStructures[0].name;
-			this.displayStructureFields(this.containerStructures[0].inode);
 		}
+		
+		this.displayStructureFields(this.containerStructures[0].inode);
 		htmlstr += "</dd>";
 		htmlstr += "</dl>";
 		dojo.place(htmlstr,this.structures_select);
 		dojo.parser.parse(this.structures_select);
-
-
-
-
 	},
 
 	_fillLanguages: function(data) {
@@ -186,15 +180,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dt><b>"+data[0].title+"</b></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown'  id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"' style=\"width:160px;\" name='lang' value='"+this.contentletLanguageId+"'>";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='true' name='langcombo+"+this.dialogCounter+"' style='width:160px;'>";
 
 		for (var i = 0; i < data.length; i++) {
-
 			htmlstr += "<option  value='"+data[i].id+"'";
 			if(this.contentletLanguageId == data[i].id) {
-				htmlstr += " selected=\"selected\" "
+				htmlstr += " selected='selected' ";
 			}
-			htmlstr += ">"+data[i].language + " - " + data[i].country +"</option>"
+			htmlstr += ">"+data[i].language + (data[i].country == "" ? "" : " - " + data[i].country) + "</option>";
 		}
 
 		htmlstr += "</select>";
