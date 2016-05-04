@@ -75,17 +75,18 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	function beLazy(){
 		var titleField = document.getElementById("friendlyNameField");
 		var ele = document.getElementById("titleField");
-		if(ele.value.length ==0 )
-		{
-			title = titleField.value.toLowerCase();
-			title = title.replace(/^\s+/g, "");
-			title = title.replace(/\s/g, "-");
-			var arg=/[\+\%\&\!\"\'\#\$\/\\\=\?\�\�}\:\;\*\<\>\`\�\|]/g ;
-			title = title.replace(arg,"");
-			title = title.replace(/-{2,}/g, "-");
-			ele.value = title;
-		}
-
+		title = titleField.value.toLowerCase();
+		title = title.replace(/^\s+/g, "");
+		title = title.replace(/\s/g, "-");
+		var arg=/[\+\%\&\!\"\'\#\$\/\\\=\?\�\�}\:\;\*\<\>\`\�\|]/g ;
+		title = title.replace(arg,"");
+		title = title.replace(/-{2,}/g, "-");
+		ele.value = title;
+		<% if (parentFolder != null) { %>
+		 	dojo.byId("pathToFolder").value = <%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>+title;
+		<% } else { %>
+		 	dojo.byId("pathToFolder").value = "/"+title;
+		<% } %>
 	}
 
 	function displayProperties(id) {
@@ -160,9 +161,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 				<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 				<dd>
 					<% if (parentFolder != null) { %>
-						<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %>
+						<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %>" />
 					<% } else { %>
-						/<%= folder.getName() %>
+						<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="/<%= folder.getName() %>" />
 					<% } %>
 					<!--<html:hidden property="name" />-->
 				</dd>
