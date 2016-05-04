@@ -80,7 +80,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				MultipleApproverActionlet.class,
 				TwitterActionlet.class,
 				PushPublishActionlet.class,
-				CheckURLAccessibilityActionlet.class
+				CheckURLAccessibilityActionlet.class,
+                EmailActionlet.class,
+                SetValueActionlet.class,
+                PushNowActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
