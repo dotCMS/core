@@ -51,7 +51,6 @@ import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterExcept
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
@@ -94,6 +93,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 	private static String assetPath = "/assets";
 	private static String realPath = null;
+	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -201,7 +201,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 
 			String downloadName = "file_asset";
-			long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+			long lang = defaultLang;
 			try {
 				String x = null;
 				if (session != null) {
@@ -262,9 +262,57 @@ public class BinaryExporterServlet extends HttpServlet {
 				                return; // expired!
 				        }
 				    }
-					content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
+
+					//If the DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in session...
+					if ( Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)
+							&& defaultLang != lang ) {
+
+						ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+						//Build the lucene query with the identifier and both languages, the default and one in session to see what we can find
+						StringBuilder query = new StringBuilder();
+						query.append("+(languageId:").append(defaultLang).append(" languageId:").append(lang).append(") ");
+						query.append("+identifier:").append(assetIdentifier).append(" +deleted:false ");
+						if ( live ) {
+							query.append("+live:true ");
+						} else {
+							query.append("+working:true ");
+						}
+
+						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, respectFrontendRoles);
+						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
+							//Prefer the contentlet with the session language
+							content = foundContentlets.get(0);
+							if ( content.getLanguageId() != lang && foundContentlets.size() == 2 ) {
+								content = foundContentlets.get(1);
+							}
+						} else {
+							Logger.error(this, "Content with Identifier [" + assetIdentifier + "] not found.");
+							resp.sendError(404);
+							return;
+						}
+
+					} else {
+						/*
+						If the property DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is false OR the language in session
+						is equals to the default language, continue with the default behavior.
+						 */
+						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
+					}
 					assetInode = content.getInode();
 				}
+
+                // If the user is NOT logged in the backend then we cannot show content that is NOT live.
+                // Temporal files should be allowed any time
+                if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                    if (!content.isLive() && respectFrontendRoles) {
+                        Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
+                                + content.getInode());
+                        resp.sendError(404);
+                        return;
+                    }
+                }
+
 				Field field = content.getStructure().getFieldVar(fieldVarName);
 				if(field == null){
 					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
@@ -661,15 +709,16 @@ private boolean isContent(String id, boolean byInode, long langId, boolean respe
 		else{
 			try {
 
+				//Lest try first to find the identifier in cache
 				Identifier identifier = APILocator.getIdentifierAPI().loadFromCache(id);
-				if(identifier != null){
+				if ( identifier != null ) {
 					return "contentlet".equals(identifier.getAssetType());
 				}
 
-				//second check content check from lucene
+				//If not found in cache trying in the index
 				String luceneQuery = "+identifier:" + id;
-				Contentlet c = APILocator.getContentletAPI().findContentletByIdentifier(id, false,langId, userAPI.getSystemUser(), false);
-				if(c != null && UtilMethods.isSet(c.getInode())){
+				List<Contentlet> foundContentlets = APILocator.getContentletAPI().search(luceneQuery, 0, -1, null, userAPI.getSystemUser(), false);
+				if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
 					return true;
 				}
 

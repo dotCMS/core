@@ -11,7 +11,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
@@ -43,7 +43,7 @@
 	var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 	<%
-	Structure fileStructure = StructureCache.getStructureByVelocityVarName("FileAsset");
+	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
 	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
 	%>
 

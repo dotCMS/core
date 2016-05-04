@@ -1,8 +1,30 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
+import java.io.StringWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.Cookie;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.UserProxy;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -10,7 +32,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
 import com.dotmarketing.cmis.proxy.DotRequestProxy;
@@ -37,21 +58,19 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.CookieUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
 
-import javax.servlet.http.Cookie;
-
-import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.util.*;
 
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
@@ -466,7 +485,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
         
         APILocator.getHTMLPageAPI().delete(working, user, respectFrontEndPermissions);
-        PageServices.invalidate(working);
+        PageServices.invalidateAll(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
         
@@ -506,7 +525,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             String stInode= ff.getFieldType().equals(Field.FieldType.CONSTANT.toString()) ? ff.getValues()
                     : host.getStringProperty(ff.getVelocityVarName());
             if(stInode!=null && UtilMethods.isSet(stInode)) {
-                Structure type=StructureCache.getStructureByInode(stInode);
+                Structure type=CacheLocator.getContentTypeCache().getStructureByInode(stInode);
                 if(type!=null && InodeUtils.isSet(type.getInode())) {
                     return stInode;
                 }
@@ -586,7 +605,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             concat=" (ii.parent_path || ii.asset_name) ";
         }
         
-        Structure st=StructureCache.getStructureByInode(DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        Structure st=CacheLocator.getContentTypeCache().getStructureByInode(DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         Field tf=st.getFieldVar(TEMPLATE_FIELD);
         
         // htmlpage with modified template

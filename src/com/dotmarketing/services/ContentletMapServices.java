@@ -54,14 +54,47 @@ public class ContentletMapServices {
 		ContentletMapServices.categoryAPI=categoryAPI;
 	}
 
-	public static void invalidate(Contentlet contentlet) throws DotDataException, DotSecurityException {
-		invalidate(contentlet, true);
-		invalidate(contentlet, false);
+	/**
+	 * Will remove all contentlet map files for both live and working
+	 * @param contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public static void invalidateAll(Contentlet contentlet) throws DotDataException {
+	    removeContentletMapFile(contentlet, true);
+	    removeContentletMapFile(contentlet, false);
 	}
 
-	public static void invalidate(Contentlet content, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
-		removeContentletMapFile(content, EDIT_MODE);
-	}
+	/**
+     * Will remove all contentlet map files for both live and working
+     * @param contentlets
+	 * @throws DotSecurityException
+     */
+    public static void invalidateAll(List<Contentlet> contentlets) throws DotDataException {
+        for (Contentlet contentlet : contentlets) {
+            invalidateAll(contentlet);
+        }
+    }
+
+	/**
+     * Will remove all contentlet map files for live
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	public static void invalidateLive(Contentlet content) throws DotDataException, DotSecurityException {
+        removeContentletMapFile(content, false);
+    }
+
+	/**
+     * Will remove all contentlet map files for working
+     * @param contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	public static void invalidateWorking(Contentlet content) throws DotDataException, DotSecurityException {
+        removeContentletMapFile(content, true);
+    }
 
 	public static InputStream buildVelocity(Contentlet content, boolean EDIT_MODE) throws DotDataException, DotSecurityException, DotContentletStateException {
 		InputStream result;
@@ -405,12 +438,6 @@ public class ContentletMapServices {
 
 	}
 
-	public static void unpublishContentletMapFile(Contentlet asset) throws DotDataException {
-
-		Identifier identifier=APILocator.getIdentifierAPI().find(asset);
-		removeContentletMapFile(asset, identifier, false);
-	}
-
 	/**
 	 * Will remove all contentlet map files within a structure for both live and working. Uses the system user.
 	 * @param contentlets
@@ -425,7 +452,7 @@ public class ContentletMapServices {
 		int size=contentlets.size();
 		while(size > 0){
 			for (Contentlet contentlet : contentlets) {
-				removeContentletMapFile(contentlet);
+				invalidateAll(contentlet);
 			}
 			offset += limit;
 			contentlets=conAPI.findByStructure(structure, APILocator.getUserAPI().getSystemUser(), false, limit, offset);
@@ -433,33 +460,12 @@ public class ContentletMapServices {
 		}
 	}
 
-	/**
-	 * Will remove all contentlet map files for both live and working
-	 * @param contentlets
-	 * @throws DotDataException
-	 */
-	public static void removeContentletMapFile(Contentlet contentlet) throws DotDataException{
-		removeContentletMapFile(contentlet, true);
-		removeContentletMapFile(contentlet, false);
-	}
-
-	/**
-	 * Will remove all contentlet map files for both live and working
-	 * @param contentlets
-	 */
-	public static void removeContentletMapFile(List<Contentlet> contentlets) throws DotDataException{
-		for (Contentlet contentlet : contentlets) {
-			removeContentletMapFile(contentlet);
-		}
-	}
-
-	public static void removeContentletMapFile(Contentlet asset, boolean EDIT_MODE) throws DotDataException {
-
+	private static void removeContentletMapFile(Contentlet asset, boolean EDIT_MODE) throws DotDataException {
 		Identifier identifier=APILocator.getIdentifierAPI().find(asset);
 		removeContentletMapFile(asset, identifier, EDIT_MODE);
 	}
 
-	public static void removeContentletMapFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
+	private static void removeContentletMapFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath=(!EDIT_MODE) ? "live/" : "working/";
 		String velocityRoot=FileUtil.getRealPath("/WEB-INF/velocity/") + folderPath;
 	

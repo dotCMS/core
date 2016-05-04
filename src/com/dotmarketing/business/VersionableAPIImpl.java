@@ -1,9 +1,12 @@
 
 package com.dotmarketing.business;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -12,10 +15,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 public class VersionableAPIImpl implements VersionableAPI {
 
@@ -266,7 +265,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
 
         //Get the structure for this contentlet
-        Structure structure = StructureCache.getStructureByInode( liveContentlet.getStructureInode() );
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( liveContentlet.getStructureInode() );
 
         if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
         	if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
@@ -317,7 +316,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
 
             //Get the structure for this contentlet
-            Structure structure = StructureCache.getStructureByInode( cont.getStructureInode() );
+            Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( cont.getStructureInode() );
 
             if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
                 if ( UtilMethods.isSet( ident.getSysPublishDate() ) && ident.getSysPublishDate().after( new Date() ) ) {

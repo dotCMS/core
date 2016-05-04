@@ -50,7 +50,6 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SimpleCriteria;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -988,7 +987,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    List<Contentlet> result = new ArrayList<Contentlet>();
 
         try {
-            Structure structure = StructureCache.getStructureByInode(structureInode);
+            Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
             if ((structure == null) || (!InodeUtils.isSet(structure.getInode())))
                 return result;
 
@@ -1506,7 +1505,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	                Logger.debug(ESContentFactoryImpl.class, e.toString());
 	                inode = query.substring(index);
 	            }
-	            st = StructureCache.getStructureByInode(inode);
+	            st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
 	            if (!InodeUtils.isSet(st.getInode()) || !UtilMethods.isSet(st.getVelocityVarName())) {
 	                Logger.error(ESContentFactoryImpl.class,
 	                        "Unable to find Structure or Structure Velocity Variable Name from passed in structureInode Query : "
@@ -1641,13 +1640,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        if(matches.size() > 0) {
 	            String structureName = matches.get(0).getGroups().get(0).getMatch();
 	            fields = FieldsCache.getFieldsByStructureVariableName(structureName);
-	            structure = StructureCache.getStructureByVelocityVarName(structureName);
+	            structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureName);
 	        } else {
 	            matches = RegEX.find(originalQuery, "structureInode:([^\\s)]+)");
 	            if(matches.size() > 0) {
 	                String structureInode = matches.get(0).getGroups().get(0).getMatch();
 	                fields = FieldsCache.getFieldsByStructureInode(structureInode);
-	                structure = StructureCache.getStructureByInode(structureInode);
+	                structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 	            }
 	        }
 
@@ -1702,7 +1701,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 //return query;
             }
 
-            Structure selectedStructure = StructureCache.getStructureByVelocityVarName(structureVarName);
+            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
 
             if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
                 Logger.debug(ESContentFactoryImpl.class, "Structure not found");
@@ -1752,7 +1751,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if(clause.indexOf('.') >= 0 && (clause.indexOf('.') < clause.indexOf(':'))){
 
                     tempStructureVarName = clause.substring(0, clause.indexOf('.'));
-                    tempStructure = StructureCache.getStructureByVelocityVarName(tempStructureVarName);
+                    tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
 
                     List<com.dotmarketing.portlets.structure.model.Field> tempStructureFields = FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName());
 
@@ -1776,7 +1775,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             for (String clause: clauses) {
                 for (com.dotmarketing.portlets.structure.model.Field field: dateFields) {
 
-                    structureVarName = StructureCache.getStructureByInode(field.getStructureInode()).getVelocityVarName().toLowerCase();
+                    structureVarName = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode()).getVelocityVarName().toLowerCase();
 
                     if (clause.startsWith(structureVarName + "." + field.getVelocityVarName().toLowerCase() + ":") || clause.startsWith("moddate:")) {
                         replace = new String(clause);

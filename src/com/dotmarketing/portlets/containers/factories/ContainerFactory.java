@@ -8,18 +8,14 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.util.Logger;
 /**
@@ -106,7 +102,7 @@ public class ContainerFactory {
        	newContainer.setTitle(currentContainer.getTitle() + " (COPY) ");
 
         //Copy the structure
-//        Structure st = StructureCache.getStructureByInode(currentContainer.getStructureInode());
+//        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(currentContainer.getStructureInode());
 //        newContainer.setStructureInode(st.getInode());
 
 

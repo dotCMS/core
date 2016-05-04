@@ -12,8 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.InodeFactory;
@@ -24,12 +24,11 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.StructureServices;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -62,7 +61,7 @@ public class SlideShowServlet extends HttpServlet {
 				return;
 			}
 			
-			Structure slideShowSt = StructureCache.getStructureByVelocityVarName("slideShow");
+			Structure slideShowSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("slideShow");
 			List<Field> fields = FieldsCache.getFieldsByStructureVariableName("slideShow");
 			Field slideShowTitleF = null;
 			Field slideShowCreditsF = null;
@@ -120,13 +119,13 @@ public class SlideShowServlet extends HttpServlet {
 			}
 			if (fieldAdded) {
 				FieldsCache.removeFields(slideShowSt);
-				StructureCache.removeStructure(slideShowSt);
+				CacheLocator.getContentTypeCache().remove(slideShowSt);
 				StructureServices.removeStructureFile(slideShowSt);
 				StructureFactory.saveStructure(slideShowSt);
 			}
 			
 			
-			Structure slideSt = StructureCache.getStructureByVelocityVarName("slideImage");
+			Structure slideSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("slideImage");
 			fields = FieldsCache.getFieldsByStructureVariableName("slideImage");
 			Field slideTitleF = null;
 			Field slideImageF = null;
@@ -186,7 +185,7 @@ public class SlideShowServlet extends HttpServlet {
 			}
 			if (fieldAdded) {
 				FieldsCache.removeFields(slideSt);
-				StructureCache.removeStructure(slideSt);
+				CacheLocator.getContentTypeCache().remove(slideSt);
 				StructureServices.removeStructureFile(slideSt);
 				StructureFactory.saveStructure(slideSt);
 			}

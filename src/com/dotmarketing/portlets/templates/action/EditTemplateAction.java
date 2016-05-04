@@ -200,7 +200,7 @@ public class EditTemplateAction extends DotPortletAction implements
 						Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
 						// call for invalidation on the live cache if the theme changed
 						if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
-							APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false, false);
+							APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false);
 						}
 					}
 					try{
@@ -253,7 +253,7 @@ public class EditTemplateAction extends DotPortletAction implements
 					Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
 					// call for invalidation on the live cache if the theme changed
 					if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
-						APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false, false);
+						APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false);
 					}
 
 

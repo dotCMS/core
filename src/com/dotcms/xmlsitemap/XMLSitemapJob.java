@@ -1,10 +1,31 @@
 package com.dotcms.xmlsitemap;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -25,20 +46,14 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.XMLUtils;
 import com.liferay.portal.model.User;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.util.*;
-import java.util.Calendar;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * This class manage the generation of the XMLSitemap<X>.xml.gz files from every
@@ -566,7 +581,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			file.setFolder(folder.getInode());
 			file.setHost(currentHost.getIdentifier());
 			file.setBinary(FileAssetAPI.BINARY_FIELD, uploadedFile);
-            if ( StructureCache.getStructureByInode( file.getStructureInode() ).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
+            if ( CacheLocator.getContentTypeCache().getStructureByInode( file.getStructureInode() ).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
 				file.setStringProperty("fileName", sitemapName);
             }
 			file = APILocator.getContentletAPI().checkin(file, systemUser,false);

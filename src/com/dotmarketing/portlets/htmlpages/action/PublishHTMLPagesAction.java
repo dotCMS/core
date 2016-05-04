@@ -138,7 +138,7 @@ public class PublishHTMLPagesAction extends DotPortletAction {
                     //Publish the content related to this page along with the page
                     PublishFactory.publishHTMLPage( htmlPageAsset, relatedAssets, reqImpl.getHttpServletRequest() );
 
-                    ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user + " publishing page " + htmlPageAsset.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
+                    ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user.getUserId() + " publishing page " + htmlPageAsset.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
                     SessionMessages.add( reqImpl.getHttpServletRequest(), "message", "message.htmlpage_list.published" );
                 } catch ( WebAssetException wax ) {
                     Logger.error( this, wax.getMessage(), wax );
@@ -153,7 +153,7 @@ public class PublishHTMLPagesAction extends DotPortletAction {
                         //Publish the content related to this page along with the page
                         PublishFactory.publishAsset( htmlpage, reqImpl.getHttpServletRequest() );
 
-                        ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user + " publishing page " + htmlpage.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
+                        ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user.getUserId() + " publishing page " + htmlpage.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
                         SessionMessages.add( reqImpl.getHttpServletRequest(), "message", "message.htmlpage_list.published" );
                     } catch ( WebAssetException wax ) {
                         Logger.error( this, wax.getMessage(), wax );

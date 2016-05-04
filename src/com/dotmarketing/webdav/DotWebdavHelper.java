@@ -50,7 +50,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -860,7 +859,7 @@ public class DotWebdavHelper {
 
 			if(destinationFile==null){
 				Contentlet fileAsset = new Contentlet();
-				Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+				Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 				Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 				fileAsset.setStructureInode(folder.getDefaultFileType());
 				fileAsset.setFolder(folder.getInode());
@@ -901,7 +900,7 @@ public class DotWebdavHelper {
 				if(destinationFile instanceof File){
 					fileData=workingFile;
 				} else {
-					Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+					Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 
 					// Create user temp folder and create file inside of it
@@ -954,27 +953,7 @@ public class DotWebdavHelper {
 
 				//Wiping out the thumbnails and resized versions
 				//http://jira.dotmarketing.net/browse/DOTCMS-5911
-				String inode = destinationFile.getInode();
-				if(UtilMethods.isSet(inode)){
-					String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
-					java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator + "dotGenerated" + java.io.File.separator + inode.charAt(0) + java.io.File.separator + inode.charAt(1));
-					if(tumbnailDir!=null){
-						java.io.File[] files = tumbnailDir.listFiles();
-						if(files!=null){
-							for (java.io.File iofile : files) {
-								try {
-									if(iofile.getName().startsWith("dotGenerated_")){
-										iofile.delete();
-									}
-								} catch (SecurityException e) {
-									Logger.error(this,"EditFileAction._saveWorkingFileData(): " + iofile.getName() + " cannot be erased. Please check the file permissions.");
-								} catch (Exception e) {
-									Logger.error(this,"EditFileAction._saveWorkingFileData(): "	+ e.getMessage());
-								}
-							}
-						}
-					}
-				}
+				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
 			}
 		}
 	}
@@ -1188,9 +1167,13 @@ public class DotWebdavHelper {
 				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
 					Logger.debug(this, "Calling Folderfactory to rename " + fromPath + " to " + toPath);
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(toPath), host,user,false);
-						removeObject(toPath, user);
-						fc.removeFolder(folder,idapi.find(folder));
+					    // Folder must end with "/", otherwise we get the parent folder
+                        String folderToPath = getPath(toPath);
+                        if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
+
+                        Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
+                        removeObject(toPath, user);
+                        fc.removeFolder(folder, idapi.find(folder));
 					}catch (Exception e) {
 						Logger.debug(this, "Unable to delete toPath " + toPath);
 					}
@@ -1314,7 +1297,7 @@ public class DotWebdavHelper {
 				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				        throw new DotDataException(e.getMessage(), e);
 				    }
-			    	
+
 				    WorkingCache.removeAssetFromCache(fileAssetCont);
 				    LiveCache.removeAssetFromCache(fileAssetCont);
 				    fileResourceCache.remove(uri + "|" + user.getUserId());

@@ -300,11 +300,6 @@
 		<class>com.dotmarketing.viewtools.XsltTool</class>
 	</tool>
 	<tool>
-		<key>php</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.PHPTool</class>
-	</tool>
-	<tool>
 		<key>groovy</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.scripting.viewtool.GroovyTool</class>
@@ -395,7 +390,11 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.SQLResultsViewTool</class>
 	</tool>
-
+	<tool>
+		<key>useragent</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.UserAgentTool</class>
+	</tool>
 	<!-- Dotmarketing View Tools End -->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->

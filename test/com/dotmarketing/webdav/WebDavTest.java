@@ -11,22 +11,20 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.TestBase;
+import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.TestBase;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.UUIDGenerator;
@@ -35,7 +33,6 @@ import com.ettrema.httpclient.Folder;
 import com.ettrema.httpclient.Host;
 import com.ettrema.httpclient.InternalServerError;
 import com.ettrema.httpclient.Resource;
-import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
 
@@ -157,7 +154,7 @@ public class WebDavTest extends TestBase {
 	    file.setStringProperty(FileAssetAPI.TITLE_FIELD, filename);
 	    file.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD,hostid);
 	    file.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
-	    file.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+	    file.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("fileAsset").getInode());
 	    file.setLanguageId(1);
 	    file.setHost(hostid);
 	    file.setFolder("SYSTEM_FOLDER");
@@ -203,7 +200,7 @@ public class WebDavTest extends TestBase {
         file.setStringProperty(FileAssetAPI.TITLE_FIELD, filename);
         file.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD,hostid);
         file.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
-        file.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        file.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("fileAsset").getInode());
         file.setLanguageId(1);
         file.setHost(hostid);
         file.setFolder("SYSTEM_FOLDER");
@@ -308,7 +305,7 @@ public class WebDavTest extends TestBase {
         file.setStringProperty(FileAssetAPI.TITLE_FIELD, filename);
         file.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD,hostid);
         file.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
-        file.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        file.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("fileAsset").getInode());
         file.setLanguageId(1);
         file.setHost(hostid);
         file.setFolder("SYSTEM_FOLDER");

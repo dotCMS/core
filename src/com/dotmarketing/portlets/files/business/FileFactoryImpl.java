@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.dotmarketing.beans.Host;
@@ -41,6 +42,7 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -545,30 +547,10 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
 
 				}
 			}
+
 			// Wiping out the thumbnails and resized versions
 			// http://jira.dotmarketing.net/browse/DOTCMS-5911
-			String inode = file.getInode();
-			if (UtilMethods.isSet(inode)) {
-				String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
-				java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator + "dotGenerated" + java.io.File.separator + inode.charAt(0) + java.io.File.separator + inode.charAt(1));
-				if (tumbnailDir != null) {
-					java.io.File[] files = tumbnailDir.listFiles();
-					if (files != null) {
-						for (java.io.File iofile : files) {
-							try {
-								if (iofile.getName().startsWith("dotGenerated_")) {
-									iofile.delete();
-								}
-							} catch (SecurityException e) {
-								Logger.error(FileFactory.class, "EditFileAction._saveWorkingFileData(): " + iofile.getName()
-										+ " cannot be erased. Please check the file permissions.");
-							} catch (Exception e) {
-								Logger.error(FileFactory.class, "EditFileAction._saveWorkingFileData(): " + e.getMessage());
-							}
-						}
-					}
-				}
-			}
+			APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(file);
 		}
 	}
 

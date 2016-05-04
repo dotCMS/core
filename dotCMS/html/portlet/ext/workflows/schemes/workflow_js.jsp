@@ -790,8 +790,7 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 //
 
 dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
-	actionClasses : new Array(),
-	dndHandle : null,
+	actionClasses : [],
 	addSelectedToActionClasses : function(){
 		var select = dijit.byId("wfActionlets");
 
@@ -802,143 +801,133 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
         else
            showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "Workflow-please-choose-actionlet") %>");
 	},
+    /**
+     * Add subaction into the system (using ajax) and table
+     */
+    addActionClass : function (clazz, myName){
+        var actionId = dojo.byId("actionId").value;
 
-	addToActionClassesArray: function ( id, myName){
+        var xhrArgs = {
+                url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax",
+                content: {
+                  cmd: "add",
+                  actionId: actionId,
+                  actionletClass: clazz,
+                  actionletName: myName
+                },
+                handle : function(dataOrError, ioArgs) {
+                    if (dojo.isString(dataOrError)) {
+                        if (dataOrError.indexOf("FAILURE") == 0) {
+                            showDotCMSSystemMessage(dataOrError, true);
+                        } else {
+                            var x = dataOrError.split(":");
+                            var entry = {id:x[0], name:x[1]};
+                            actionClassAdmin.actionClasses.push(entry);
 
-		var entry = {id:id,name:myName};
-		this.actionClasses[this.actionClasses.length] =entry;
+                            actionClassAdmin.refreshActionClasses();
+                            showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
+                        }
+                    } else {
+                        showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-save-subaction")%>", true);
+                    }
+                }
+            };
+            dojo.xhrPost(xhrArgs);
+    },
+    /**
+     * Delete subaction from the system (using ajax) and table
+     */
+    deleteActionClass : function (actionClassId){
+        if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Subaction")%>")){
+            return;
+        }
 
+        var xhrArgs = {
+             url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax?cmd=delete&actionClassId=" + actionClassId ,
+            handle : function(dataOrError, ioArgs) {
+                if (dojo.isString(dataOrError)) {
+                    if (dataOrError.indexOf("FAILURE") == 0) {
+                        showDotCMSSystemMessage(dataOrError, true);
+                    } else {
+                        actionClassAdmin.removeFromActionClasses(actionClassId);
+
+                        // Refresh table
+                        actionClassAdmin.refreshActionClasses();
+                        showDotCMSSystemMessage("Deleted");
+                    }
+                } else {
+                    showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-delete-subaction")%>", true);
+                }
+            }
+        };
+        dojo.xhrPut(xhrArgs);
+
+        return;
+    },
+    /**
+     * Delete action class using id.
+     *
+     * @returns null if action class not found, otherwise the action class object
+     */
+    removeFromActionClasses: function (actionClassId) {
+        var deletedActionClass = null;
+
+        // Find action class with id in actions array
+        var actionClassPosition = -1;
+        dojo.forEach(actionClassAdmin.actionClasses, function(entry, i){
+            if(actionClassId == entry.id){
+                deletedActionClass = entry;
+                actionClassPosition = i;
+                return;
+            }
+        });
+
+        // Delete action class with position
+        if(actionClassPosition != -1) {
+            actionClassAdmin.actionClasses.splice(actionClassPosition, 1);
+        }
+
+        return deletedActionClass;
 	},
+	/**
+	 * Method to reorder the action classes array
+	 */
+    moveFromActionClasses: function (actionClassId, newOrder) {
+        if(actionClassAdmin.actionClasses.length > 1) {
+            var deletedActionClass = actionClassAdmin.removeFromActionClasses(actionClassId);
+            actionClassAdmin.actionClasses.splice(newOrder, 0, deletedActionClass);
+        }
+    },
+    /**
+     * Method that recreates table from action class array. Also add drag and drop events to the table
+     */
+    refreshActionClasses : function (){
+        if(!dojo.byId("actionletsTbl")){
+            return;
+        }
 
+        var tbody = dojo.byId("actionletsTblBody");
+        dojo.empty(tbody);
 
+        dojo.forEach(actionClassAdmin.actionClasses, function(entry, i){
+            var tr = dojo.create("tr", {className:"dojoDndItem dndMyActionClasses", id:"myRow" + entry.id}, tbody);
 
-	addActionClass : function ( clazz, myName){
-		var actionId = dojo.byId("actionId").value;
+            dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"actionClassAdmin.deleteActionClass('" + entry.id +"');" }, tr);
+            dojo.create("td", { innerHTML: entry.name, onClick:"actionClassAdmin.manageParams('" + entry.id + "');", className:"showPointer" }, tr);
+        });
 
-		var xhrArgs = {
-				url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax",
-				content: {
-			      cmd: "add",
-			      actionId: actionId,
-			      actionletClass: clazz,
-			      actionletName: myName
-			    },
-				handle : function(dataOrError, ioArgs) {
-					if (dojo.isString(dataOrError)) {
-						if (dataOrError.indexOf("FAILURE") == 0) {
-							showDotCMSSystemMessage(dataOrError, true);
+        if(actionClassAdmin.actionClasses.length == 0){
+            var tr = dojo.create("tr", null, tbody);
+            dojo.create("td", { colSpan: 2, className:"wfnoSubActions", innerHTML:"<%=LanguageUtil.get(pageContext, "No-Sub-Actions-Configured")%>" }, tr);
+        }
 
-						} else {
+        var myDnD = new dojo.dnd.Source("actionletsTblBody", {autoSync : true});
+        myDnD.on("DndDrop", actionClassAdmin.reorderActionClasses);
+    },
 
-							var x = dataOrError.split(":",2);
-							actionClassAdmin.addToActionClassesArray(x[0], x[1]);
-							actionClassAdmin.refreshActionClasses();
-							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Added")%>", false);
-							// actionAdmin.doChange();
-						}
-					} else {
-						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-save-subaction")%>", true);
-
-
-					}
-				}
-			};
-			dojo.xhrPost(xhrArgs);
-
-
-	},
-
-
-	deleteActionClass : function (actionClassId){
-		if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Subaction")%>")){
-			return;
-		}
-
-
-
-		var xhrArgs = {
-			 url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax?cmd=delete&actionClassId=" + actionClassId ,
-			handle : function(dataOrError, ioArgs) {
-				if (dojo.isString(dataOrError)) {
-					if (dataOrError.indexOf("FAILURE") == 0) {
-
-						showDotCMSSystemMessage(dataOrError, true);
-					} else {
-						actionClassAdmin.removeFromActionClasses(actionClassId);
-						actionClassAdmin.refreshActionClasses();
-						showDotCMSSystemMessage("Deleted");
-					}
-				} else {
-					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-delete-subaction")%>", true);
-
-
-				}
-			}
-		};
-		dojo.xhrPut(xhrArgs);
-
-		return;
-	},
-
-
-	removeFromActionClasses: function (id){
-		var x=0;
-		var newActionlets = new Array();
-		for(i=0;i < this.actionClasses.length;i++){
-			if(id != this.actionClasses[i].id){
-				newActionlets[x] = this.actionClasses[i];
-				x++;
-			}
-
-		}
-		this.actionClasses= newActionlets;
-		this.refreshActionClasses();
-
-	},
-
-	refreshActionClasses : function (){
-		if(!dojo.byId("actionletsTbl")){
-			return;
-		}
-
-
-		dojo.empty("actionletsTbl");
-		var table = dojo.byId("actionletsTbl");
-		var x = "";
-		/***********************************************************************
-		 * this.actionlets = this.actionlets.sort(function(a,b){ var x =
-		 * a.name.toLowerCase(); var y = b.name.toLowerCase(); return ((x < y) ?
-		 * -1 : ((x > y) ? 1 : 0)); });
-		 **********************************************************************/
-
-		var tr = dojo.create("tr", null, table);
-		dojo.create("th", {colspan:2, innerHTML:"<%= LanguageUtil.get(pageContext, "Workflow-SubActions") %>    "}, tr);
-		var tbody = dojo.create("tbody", null, table);
-
-
-		for(i=0; i< this.actionClasses.length ; i++){
-
-			x = x + this.actionClasses[i].id + ",";
-			tr = dojo.create("tr", {className:"dojoDndItem", id:"myRow" +  this.actionClasses[i].id}, tbody);
-			dojo.addClass(tr, "dndMyActionClasses");
-			dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"actionClassAdmin.deleteActionClass('" + this.actionClasses[i].id +"');actionClassAdmin.refreshActionClasses()" }, tr);
-			dojo.create("td", { innerHTML: this.actionClasses[i].name, onClick:"actionClassAdmin.manageParams('" + this.actionClasses[i].id +"');", className:"showPointer" }, tr);
-
-		}
-		if(this.actionClasses.length ==0){
-
-			tr = dojo.create("tr", null, tbody);
-			dojo.create("td", { colSpan: 2, className:"wfnoSubActions", innerHTML:"<%=LanguageUtil.get(pageContext, "No-Sub-Actions-Configured")%>" }, tr);
-		}
-
-
-
-		var c1 = new dojo.dnd.Container(dojo.byId("actionletsTbl"));
-		var myDnD = new dojo.dnd.Source("actionletsTbl");
-		this.dndHandle = dojo.connect(myDnD, "onDndDrop", actionClassAdmin.reorderActionClasses);
-	},
-
-
+    /**
+     * Update order into the system
+     */
 	reorderActionClasses : function(source, nodes, copy){
 		var actionClassId=source.anchor.id.replace("myRow", "");
 		var order=0;
@@ -958,14 +947,13 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 				handle : function(dataOrError, ioArgs) {
 
 					if (dojo.isString(dataOrError)) {
-
 						if (dataOrError.indexOf("FAILURE") == 0) {
-
 							showDotCMSSystemMessage(dataOrError, true);
 						}
 						else{
-							//showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Reordered")%>", false);
-
+							// We need to reorder the "Action Classes" array when an element is moved to a 
+							// different position
+							actionClassAdmin.moveFromActionClasses(nodes[0].id.replace("myRow", ""), order);
 						}
 					} else {
 						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Unable-to-reorder")%>", true);
@@ -975,11 +963,6 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 			dojo.xhrGet(xhrArgs);
 
 			return;
-
-
-
-
-
 	},
 	manageParams : function (actionClassId){
 

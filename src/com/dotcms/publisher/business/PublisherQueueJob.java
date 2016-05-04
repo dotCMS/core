@@ -184,118 +184,124 @@ public class PublisherQueueJob implements StatefulJob {
         // For each bundle
         for (PublishAuditStatus bundleAudit : pendingBundleAudits) {
         	PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
-        	Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
-        	Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<String, Map<String, EndpointDetail>>();
-        	// For each group (environment)
-        	for (String groupID : endpointsMap.keySet()) {
-        		Map<String, EndpointDetail> endpointsGroup = endpointsMap.get(groupID);
-	        	// For each endpoint (server) in the group
-	        	for (String endpointID : endpointsGroup.keySet()) {
-	        		PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
-	        		if (targetEndpoint != null && !targetEndpoint.isSending()) {
-	        			WebResource webResource = client.resource(targetEndpoint.toURL() + "/api/auditPublishing");
-		        		try {
-		        			// Try to get the status of the remote endpoints to
-							// update the local history
-				        	PublishAuditHistory remoteHistory =
-				        			PublishAuditHistory.getObjectFromString(
-				        			webResource
-							        .path("get")
-							        .path(bundleAudit.getBundleId()).get(String.class));
-				        	if (remoteHistory != null) {
-								endpointTrackingMap.putAll(remoteHistory
-										.getEndpointsMap());
-								for (String remoteGroupId : remoteHistory
-										.getEndpointsMap().keySet()) {
-									Map<String, EndpointDetail> remoteGroup = endpointTrackingMap
-											.get(remoteGroupId);
-									for (String remoteEndpointId : remoteGroup
-											.keySet()) {
-										EndpointDetail remoteDetail = remoteGroup
-												.get(remoteEndpointId);
-										localHistory.addOrUpdateEndpoint(
-												groupID, endpointID,
-												remoteDetail);
+
+			//There is no need to keep checking after MAX_NUM_TRIES.
+			if (localHistory.getNumTries() <= (MAX_NUM_TRIES + 1)){
+				Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
+				Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<String, Map<String, EndpointDetail>>();
+				// For each group (environment)
+				for (String groupID : endpointsMap.keySet()) {
+					Map<String, EndpointDetail> endpointsGroup = endpointsMap.get(groupID);
+					// For each endpoint (server) in the group
+					for (String endpointID : endpointsGroup.keySet()) {
+						PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
+						if (targetEndpoint != null && !targetEndpoint.isSending()) {
+							WebResource webResource = client.resource(targetEndpoint.toURL() + "/api/auditPublishing");
+							try {
+								// Try to get the status of the remote endpoints to
+								// update the local history
+								PublishAuditHistory remoteHistory =
+										PublishAuditHistory.getObjectFromString(
+												webResource
+														.path("get")
+														.path(bundleAudit.getBundleId()).get(String.class));
+								if (remoteHistory != null) {
+									endpointTrackingMap.putAll(remoteHistory
+											.getEndpointsMap());
+									for (String remoteGroupId : remoteHistory
+											.getEndpointsMap().keySet()) {
+										Map<String, EndpointDetail> remoteGroup = endpointTrackingMap
+												.get(remoteGroupId);
+										for (String remoteEndpointId : remoteGroup
+												.keySet()) {
+											EndpointDetail remoteDetail = remoteGroup
+													.get(remoteEndpointId);
+											localHistory.addOrUpdateEndpoint(
+													groupID, endpointID,
+													remoteDetail);
+										}
 									}
 								}
-				        	}
-		        		} catch(Exception e) {
-		        			Logger.error(PublisherQueueJob.class, e.getMessage(), e);
-		        		}
-	        		}
-		        }
-	        }
-        	int countGroupOk = 0;
-            int countGroupPublishing = 0;
-            int countGroupFailed = 0;
-            // Check the push status in all groups (environments) to update the  
-            // publish audit table with the latest info
-            for (String groupId : endpointTrackingMap.keySet()) {
-        		Map<String, EndpointDetail> group = endpointTrackingMap.get(groupId);
-        		boolean isGroupOk = false;
-        		boolean isGroupPublishing = false;
-        		boolean isGroupFailed = false;
-	        	for (String endpoint : group.keySet()) {
-	        		EndpointDetail detail = group.get(endpoint);
-					if (detail.getStatus() == Status.SUCCESS.getCode()) {
-						isGroupOk = true;
-					} else if (detail.getStatus() == Status.PUBLISHING_BUNDLE
-							.getCode()) {
-						isGroupPublishing = true;
-					} else if (detail.getStatus() == Status.FAILED_TO_PUBLISH
-							.getCode()) {
-						isGroupFailed = true;
+							} catch(Exception e) {
+								Logger.error(PublisherQueueJob.class, e.getMessage(), e);
+							}
+						}
 					}
-	        	}
-	        	if (isGroupOk) {
-	        		countGroupOk++;
-	        	}
-	        	if (isGroupPublishing) {
-	        		countGroupPublishing++;
-	        	}
-	        	if (isGroupFailed) {
-	        		countGroupFailed++;
-	        	}
-        	}
-            if (localHistory.getNumTries() >= MAX_NUM_TRIES && (countGroupFailed > 0 || countGroupPublishing > 0)) {
-            	// If bundle cannot be installed after [MAX_NUM_TRIES] tries 
-            	// and some groups could not be published
-	    		List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleAudit.getBundleId());
-				for(Environment environment : environments){
-					APILocator.getPushedAssetsAPI().deletePushedAssets(bundleAudit.getBundleId(), environment.getId());
 				}
-	    		pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-	        			PublishAuditStatus.Status.FAILED_TO_PUBLISH,
-	        			localHistory);
-	    		pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        	} else if (countGroupFailed > 0 && countGroupOk > 0) {
-        		// If bundle was installed in some groups only
-        		pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-	        			PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS,
-	        			localHistory);
-        	} else if (countGroupFailed == endpointTrackingMap.size()) {
-        		// If bundle cannot be installed in all groups
-        		pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-	        			PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS,
-	        			localHistory);
-        	} else if (countGroupOk == endpointTrackingMap.size()) {
-        		// If bundle was installed in all groups
-	        	pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-	        			PublishAuditStatus.Status.SUCCESS,
-	        			localHistory);
-	        	pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-        	} else if (countGroupPublishing == endpointTrackingMap.size()){
-        		// If bundle is still publishing in all groups
-        		pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-        				PublishAuditStatus.Status.PUBLISHING_BUNDLE,
-	        			localHistory);
-        	} else {
-        		// Otherwise, just keep trying to publish the bundle
-        		pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-        				PublishAuditStatus.Status.WAITING_FOR_PUBLISHING,
-	        			localHistory);
-        	}
+				int countGroupOk = 0;
+				int countGroupPublishing = 0;
+				int countGroupFailed = 0;
+				// Check the push status in all groups (environments) to update the
+				// publish audit table with the latest info
+				for (String groupId : endpointTrackingMap.keySet()) {
+					Map<String, EndpointDetail> group = endpointTrackingMap.get(groupId);
+					boolean isGroupOk = false;
+					boolean isGroupPublishing = false;
+					boolean isGroupFailed = false;
+					for (String endpoint : group.keySet()) {
+						EndpointDetail detail = group.get(endpoint);
+						if (detail.getStatus() == Status.SUCCESS.getCode()) {
+							isGroupOk = true;
+						} else if (detail.getStatus() == Status.PUBLISHING_BUNDLE
+								.getCode()) {
+							isGroupPublishing = true;
+						} else if (detail.getStatus() == Status.FAILED_TO_PUBLISH
+								.getCode()) {
+							isGroupFailed = true;
+						}
+					}
+					if (isGroupOk) {
+						countGroupOk++;
+					}
+					if (isGroupPublishing) {
+						countGroupPublishing++;
+					}
+					if (isGroupFailed) {
+						countGroupFailed++;
+					}
+				}
+				if (localHistory.getNumTries() >= MAX_NUM_TRIES && (countGroupFailed > 0 || countGroupPublishing > 0)) {
+					// If bundle cannot be installed after [MAX_NUM_TRIES] tries
+					// and some groups could not be published
+					List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleAudit.getBundleId());
+					for(Environment environment : environments){
+						APILocator.getPushedAssetsAPI().deletePushedAssets(bundleAudit.getBundleId(), environment.getId());
+					}
+					pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+							PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+							localHistory);
+					pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
+				} else if (countGroupFailed > 0 && countGroupOk > 0) {
+					// If bundle was installed in some groups only
+					pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS,
+							localHistory);
+				} else if (countGroupFailed == endpointTrackingMap.size()) {
+					// If bundle cannot be installed in all groups
+					pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+							localHistory);
+				} else if (countGroupOk == endpointTrackingMap.size()) {
+					// If bundle was installed in all groups
+					pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+							PublishAuditStatus.Status.SUCCESS,
+							localHistory);
+					pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
+				} else if (countGroupPublishing == endpointTrackingMap.size()){
+					// If bundle is still publishing in all groups
+					pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+							PublishAuditStatus.Status.PUBLISHING_BUNDLE,
+							localHistory);
+				} else {
+					// Otherwise, just keep trying to publish the bundle
+					pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+							PublishAuditStatus.Status.WAITING_FOR_PUBLISHING,
+							localHistory);
+				}
+			} else {
+				//We delete the Publish Queue.
+				pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
+			}
         }
 	}
-    
 }

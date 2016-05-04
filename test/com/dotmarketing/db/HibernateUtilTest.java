@@ -12,7 +12,6 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
@@ -52,7 +51,7 @@ public class HibernateUtilTest {
         
         List<ContainerStructure> containerStructureList = new ArrayList<ContainerStructure>();
         ContainerStructure cs=new ContainerStructure();
-        cs.setStructureId(StructureCache.getStructureByVelocityVarName("webPageContent").getInode());
+        cs.setStructureId(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent").getInode());
         cs.setCode("$body");
         containerStructureList.add(cs);
         container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
@@ -90,7 +89,7 @@ public class HibernateUtilTest {
         
         List<ContainerStructure> containerStructureList = new ArrayList<ContainerStructure>();
         ContainerStructure cs=new ContainerStructure();
-        cs.setStructureId(StructureCache.getStructureByVelocityVarName("webPageContent").getInode());
+        cs.setStructureId(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent").getInode());
         cs.setCode("$body");
         containerStructureList.add(cs);
         container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
@@ -104,7 +103,7 @@ public class HibernateUtilTest {
         container.setPreLoop("pre"); container.setPostLoop("post");
         containerStructureList = new ArrayList<ContainerStructure>();
         cs=new ContainerStructure();
-        cs.setStructureId(StructureCache.getStructureByVelocityVarName("webPageContent").getInode());
+        cs.setStructureId(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent").getInode());
         cs.setCode("$body"); containerStructureList.add(cs);
         container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
         String cInode2=container.getInode();

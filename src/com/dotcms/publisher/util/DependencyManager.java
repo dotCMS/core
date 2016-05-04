@@ -15,13 +15,12 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -143,7 +142,7 @@ public class DependencyManager {
 
 			} else if(asset.getType().equals("structure")) {
 				try {
-					Structure st = StructureCache.getStructureByInode(asset.getAsset());
+					Structure st = CacheLocator.getContentTypeCache().getStructureByInode(asset.getAsset());
 					
 					if(st == null) {
 						Logger.warn(getClass(), "Structure id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
@@ -477,7 +476,7 @@ public class DependencyManager {
 
             //Add the default structure of this folder
             if ( f.getDefaultFileType() != null ) {
-                Structure defaultStructure = StructureCache.getStructureByInode( f.getDefaultFileType() );
+                Structure defaultStructure = CacheLocator.getContentTypeCache().getStructureByInode( f.getDefaultFileType() );
                 if ( (defaultStructure != null && InodeUtils.isSet( defaultStructure.getInode() ))
                         && !structuresSet.contains( defaultStructure.getInode() ) ) {
                     structures.addOrClean( defaultStructure.getInode(), defaultStructure.getModDate() );
@@ -617,7 +616,7 @@ public class DependencyManager {
 					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
 
 					for (ContainerStructure containerStructure : csList) {
-						Structure st = StructureCache.getStructureByInode(containerStructure.getStructureId());
+						Structure st = CacheLocator.getContentTypeCache().getStructureByInode(containerStructure.getStructureId());
 						structures.addOrClean(containerStructure.getStructureId(), st.getModDate());
 						structuresSet.add(containerStructure.getStructureId());
 					}
@@ -741,7 +740,7 @@ public class DependencyManager {
 					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
 
 					for (ContainerStructure containerStructure : csList) {
-						Structure st = StructureCache.getStructureByInode(containerStructure.getStructureId());
+						Structure st = CacheLocator.getContentTypeCache().getStructureByInode(containerStructure.getStructureId());
 						structures.addOrClean(containerStructure.getStructureId(), st.getModDate());
 						structuresSet.add(containerStructure.getStructureId());
 					}
@@ -783,7 +782,7 @@ public class DependencyManager {
 
 
 	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
-		Structure st = StructureCache.getStructureByInode(stInode);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
 		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
 		hosts.addOrClean(st.getHost(), h.getModDate()); // add the host dependency
 
@@ -804,7 +803,7 @@ public class DependencyManager {
 			relationships.addOrClean( r.getInode(), r.getModDate());
 
 			if(!structures.contains(r.getChildStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
-				Structure struct = StructureCache.getStructureByInode(r.getChildStructureInode());
+				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(r.getChildStructureInode());
 				solvedStructures.add(stInode);
 				structures.addOrClean( r.getChildStructureInode(), struct.getModDate());
 
@@ -812,7 +811,7 @@ public class DependencyManager {
 				    structureDependencyHelper( r.getChildStructureInode() );
 			}
 			if(!structures.contains(r.getParentStructureInode()) && config.getOperation().equals( Operation.PUBLISH) ){
-				Structure struct = StructureCache.getStructureByInode(r.getParentStructureInode());
+				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(r.getParentStructureInode());
 				solvedStructures.add(stInode);
 				structures.addOrClean( r.getParentStructureInode(), struct.getModDate());
 
@@ -931,7 +930,7 @@ public class DependencyManager {
 							List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
 
 							for (ContainerStructure containerStructure : csList) {
-								Structure struct = StructureCache.getStructureByInode(containerStructure.getStructureId());
+								Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(containerStructure.getStructureId());
 								structures.addOrClean(containerStructure.getStructureId(), struct.getModDate());
 							}
 						}
@@ -942,7 +941,7 @@ public class DependencyManager {
 			}
 
 			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
-				Structure struct = StructureCache.getStructureByInode(con.getStructureInode());
+				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
             	structures.addOrClean( con.getStructureInode(), struct.getModDate());
             	structureDependencyHelper(con.getStructureInode());
             }

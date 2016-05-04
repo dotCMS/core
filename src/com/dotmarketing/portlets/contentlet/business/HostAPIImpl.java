@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
@@ -20,7 +19,6 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -86,7 +84,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		try {
-	    	Structure st = StructureCache.getStructureByVelocityVarName("Host");
+	    	Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 	    	List<Contentlet> list = null;
 	    	try{
 	    		list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + " +working:true +host.isdefault:true ", 0, 0, null, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
@@ -215,7 +213,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		try {
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			String query = "+structureInode:" + st.getInode() +
 					" +working:true +Host.hostName:" + hostName;
 
@@ -253,7 +251,7 @@ public class HostAPIImpl implements HostAPI {
 		Host host = null;
 
 		try {
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 
 			List<Contentlet> list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() +
 					" +working:true +Host.aliases:" + alias, 0, 0, null, user, respectFrontendRoles);
@@ -301,7 +299,7 @@ public class HostAPIImpl implements HostAPI {
 		    if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
 		        String hostInode=vinfo.getWorkingInode();
     			Contentlet cont= APILocator.getContentletAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-    			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+    			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
     			if(cont.getStructureInode().equals(st.getInode())) {
     			    host=new Host(cont);
     			    hostCache.add(host);
@@ -330,7 +328,7 @@ public class HostAPIImpl implements HostAPI {
 	 */
 	public List<Host> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		try {
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			List<Contentlet> list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + " +working:true", 0, 0, null, user, respectFrontendRoles);
 			return convertToHostList(list);
 		} catch (Exception e) {
@@ -379,7 +377,7 @@ public class HostAPIImpl implements HostAPI {
 		try {
 			c = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
 		} catch (DotContentletStateException e) {
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			c = new Contentlet();
 			c.setStructureInode(st.getInode());
 		}
@@ -428,7 +426,7 @@ public class HostAPIImpl implements HostAPI {
 
 	public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		try {
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			List<Contentlet> list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + " +working:true", 0, 0, null, user, respectFrontendRoles);
 			list = APILocator.getPermissionAPI().filterCollection(list, permissionType, respectFrontendRoles, user);
 			if (includeArchived) {
@@ -460,14 +458,18 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		try {
-			SQLQueryFactory factory = new SQLQueryFactory("SELECT * FROM Host WHERE isSystemHost = 1");
-			List<Map<String, Serializable>> hosts = factory.execute();
-			if(hosts.size() == 0) {
+			String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+			DotConnect db  = new DotConnect();
+			db.setSQL(systemHostSql);
+			db.addParam(Host.SYSTEM_HOST);
+			List<Map<String, Object>> rs = db.loadObjectResults();
+			if(rs.size() == 0) {
 				createSystemHost();
 			} else {
-				systemHost = new Host(conFac.find((String)hosts.get(0).get("inode")));
+				String hostWorkingInode = (String) rs.get(0).get("working_inode");
+				systemHost = new Host(conFac.find(hostWorkingInode));
 			}
-			if(hosts.size() > 1){
+			if(rs.size() > 1){
 				Logger.fatal(this, "There is more than one working version of the system host!!");
 			}
 		} catch (Exception e) {
@@ -708,7 +710,7 @@ public class HostAPIImpl implements HostAPI {
 
 	private synchronized Host createDefaultHost() throws DotDataException,
 	DotSecurityException {
-    	Structure st = StructureCache.getStructureByVelocityVarName("Host");
+    	Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		Field isDefault = null;
     	for(Field f : fields){
@@ -763,10 +765,13 @@ public class HostAPIImpl implements HostAPI {
 	private synchronized Host createSystemHost() throws DotDataException,
 	DotSecurityException {
 
-		SQLQueryFactory factory = new SQLQueryFactory("SELECT * FROM Host WHERE isSystemHost = 1");
-		List<Map<String, Serializable>> hosts = factory.execute();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		if(hosts.size() == 0) {
+		String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+		DotConnect db  = new DotConnect();
+		db.setSQL(systemHostSql);
+		db.addParam(Host.SYSTEM_HOST);
+		List<Map<String, Object>> rs = db.loadObjectResults();
+		if(rs.size() == 0) {
 			Host systemHost = new Host();
 			systemHost.setDefault(false);
 			systemHost.setHostname("system");
@@ -783,10 +788,12 @@ public class HostAPIImpl implements HostAPI {
 			APILocator.getVersionableAPI().setWorking(systemHost);
 			this.systemHost = systemHost;
 		} else {
-			this.systemHost = new Host(conFac.find((String)hosts.get(0).get("inode")));
+			String hostWorkingInode = (String) rs.get(0).get("working_inode");
+			this.systemHost = new Host(conFac.find(hostWorkingInode));
 		}
 		return systemHost;
 	}
+	
 	private List<Host> convertToHostList(List<Contentlet> list) {
 		List<Host> hosts = new ArrayList<Host>();
 		for(Contentlet c : list) {
@@ -826,7 +833,7 @@ public class HostAPIImpl implements HostAPI {
 		if (!UtilMethods.isSet(id))
 			return null;
 
-		Structure st = StructureCache.getStructureByVelocityVarName("Host");
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
 
 		StringBuilder sql = new StringBuilder();

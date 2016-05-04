@@ -13,7 +13,7 @@ import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -42,7 +42,7 @@ public class CSSPreProcessServletTest {
         Contentlet asset = new Contentlet();
         asset.setHost(demo.getIdentifier());
         asset.setFolder(folder.getInode());
-        asset.setStructureInode(StructureCache.getStructureByVelocityVarName("FileAsset").getInode());
+        asset.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset").getInode());
         asset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         asset.setStringProperty(FileAssetAPI.TITLE_FIELD, "hello");
         asset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "hello.txt");

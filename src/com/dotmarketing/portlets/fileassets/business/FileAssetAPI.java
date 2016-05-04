@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -8,11 +13,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 
 public interface FileAssetAPI {
@@ -231,6 +231,20 @@ public interface FileAssetAPI {
 	String getRealAssetPath(String inode, String fileName); 
 	
 	/**
+     * This method returns the relative path for assets
+     * 
+     * @return the relative folder of where assets are stored
+     */
+    public String getRelativeAssetsRootPath();
+
+    /**
+     * This method returns the root path for assets
+     * 
+     * @return the root folder of where assets are stored
+     */
+    public String getRealAssetsRootPath();
+	
+	/**
 	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/metaData/content
 	 * 
 	 * @param inode content inode
@@ -248,4 +262,30 @@ public interface FileAssetAPI {
 	 */
 	String getContentMetadataAsString(File metadataFile) throws Exception;
 
+    /**
+     * Cleans up thumbnails folder from a contentlet file asset, it uses the
+     * identifier to remove the generated folder.
+     * 
+     * <p>
+     * Note: the thumbnails are generated once, so when the image is updated
+     * then we need to clean the old thumbnails; that way it will generate a new
+     * one.
+     * </p>
+     * 
+     * @param contentlet
+     */
+    public void cleanThumbnailsFromContentlet(Contentlet contentlet);
+
+    /**
+     * This method cleans thumbnails folder.
+     * 
+     * <p>
+     * Note: the thumbnails are generated once, so when the image is updated
+     * then we need to clean the old thumbnail; that way it will generate a new
+     * one.
+     * </p>
+     * 
+     * @param fileAsset
+     */
+    public void cleanThumbnailsFromFileAsset(IFileAsset fileAsset);
 }
