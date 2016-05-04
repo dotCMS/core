@@ -153,8 +153,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.platform', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.portlet', version:'1.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.quartz-all', version:'1.8.6_1'
-    compile group: 'com.dotcms.lib', name: 'dot.quercus', version:'3.0.15_1'
-    compile group: 'com.dotcms.lib', name: 'dot.resin-util', version:'3.1.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.rhino', version:'1.7R4_1'
     compile group: 'com.dotcms.lib', name: 'dot.secure-filter', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.simplecaptcha', version:'1.2.1_1'
