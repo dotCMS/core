@@ -1305,17 +1305,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	   User systemUser =  APILocator.getUserAPI().getSystemUser();
+	   updateUserReferences(userId,systemUser.getUserId());
+	}
+	
+	/**
+	 * Method will replace user references of the given userId in Contentlets
+	 * with the replacement user id  
+	 * @param userId User Id to replace
+	 * @param replacementUserId Replacement User Id
+	 * @exception DotDataException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */	
+	protected void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	    DotConnect dc = new DotConnect();
-        User systemUser = null;
-        try {
-           systemUser = APILocator.getUserAPI().getSystemUser();
-           dc.setSQL("Select * from contentlet where mod_user = ?");
+         try {
+           dc.setSQL("Select inode from contentlet where mod_user = ?");
            dc.addParam(userId);
            List<HashMap<String, String>> contentInodes = dc.loadResults();
+           
            dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
-           dc.addParam(systemUser.getUserId());
+           dc.addParam(replacementUserId);
            dc.addParam(userId);
            dc.loadResult();
+           
+           dc.setSQL("update contentlet_version_info set locked_by=? where locked_by  = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+           
            for(HashMap<String, String> ident:contentInodes){
              String inode = ident.get("inode");
              cc.remove(inode);

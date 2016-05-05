@@ -21,6 +21,7 @@ import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
+import com.dotmarketing.business.UserAPITest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -140,7 +141,8 @@ import org.junit.runners.Suite;
         VisitedUrlConditionletFTest.class, //Needs Enterprise License.
         VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
         VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
-        VisitorsCurrentUrlConditionletFTest.class //Needs Enterprise License.
+        VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
+		UserAPITest.class
 })
 
 public class AllTestsSuite {}

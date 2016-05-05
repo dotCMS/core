@@ -1034,4 +1034,17 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		return htmlPageFactory.findUpdatedHTMLPageIdsByURI(host, pattern,
 				include, startDate, endDate);
 	}
+	
+	/**
+	 * Method will replace user references of the given userId in htmlpages 
+	 * with the replacement user id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		htmlPageFactory.updateUserReferences(userId,replacementUserId);
+	}
 }
