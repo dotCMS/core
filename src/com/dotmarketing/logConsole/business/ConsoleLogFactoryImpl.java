@@ -4,6 +4,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
@@ -65,7 +66,16 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
 
         } catch ( final Exception e ) {
             Logger.error( this.getClass(), e.getMessage(), e );
-        }
+        } finally {
+			try {
+				HibernateUtil.closeSession();
+			} catch (DotHibernateException e) {
+				Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
+			}
+			finally {
+				DbConnectionFactory.closeConnection();
+			}
+		}
 
         return (List<LogMapperRow>) this.convertListToObjects( db.loadObjectResults(), LogMapperRow.class );
     }
