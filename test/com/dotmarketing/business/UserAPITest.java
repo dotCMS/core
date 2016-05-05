@@ -391,12 +391,12 @@ public class UserAPITest extends TestBase{
 		contentAsset2.setStringProperty("wfActionId", action1.getId());
 		contentAsset2.setStringProperty("wfActionComments", "step1");
 		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
-		workflowAPI.fireWorkflowNoCheckin(contentAsset2, systemUser);
+		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		contentAsset2.setStringProperty("wfActionId", action2.getId());
 		contentAsset2.setStringProperty("wfActionComments", "step2");
 		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
-		workflowAPI.fireWorkflowNoCheckin(contentAsset2, systemUser);
+		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
 		assertTrue(currentStep.getId().equals(step2.getId()));
@@ -468,7 +468,7 @@ public class UserAPITest extends TestBase{
 
 		List<WorkflowComment> comments = workflowAPI.findWorkFlowComments(task);
 		for(WorkflowComment comm : comments){
-			assertTrue(comm.getPostedBy().equals(newUser.getUserId()));
+			assertTrue(comm.getPostedBy().equals(newUserUserRole.getId()));
 		}
 
 		assertTrue(container.getOwner().equals(newUser.getUserId()));
@@ -519,7 +519,7 @@ public class UserAPITest extends TestBase{
 
 			comments = workflowAPI.findWorkFlowComments(task);
 			for(WorkflowComment comm : comments){
-				assertTrue(comm.getPostedBy().equals(replacementUser.getUserId()));
+				assertTrue(comm.getPostedBy().equals(replacementUserUserRole.getId()));
 			}
 		}
 
