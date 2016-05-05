@@ -715,7 +715,15 @@ dojo.require("dojox.layout.ContentPane");
 				}
 
 				var thumbNailImg = document.createElement("img");
-				thumbNailImg.setAttribute("src","/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300");
+				var thumbnailImage;
+
+				if(!fieldRelatedData.fileName.toLowerCase().endsWith('.svg')) {
+					thumbnailImage = "/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300";
+				}else{
+					thumbnailImage = "/contentAsset/image/" + data['contentletInode'] + "/fileAsset/?byInode=1";
+				}
+
+				thumbNailImg.setAttribute("src", thumbnailImage);
 				thumbNailImg.setAttribute("onmouseover","dojo.attr(this, 'className', 'thumbnailDivHover');");
 				thumbNailImg.setAttribute("onmouseout","dojo.attr(this, 'className', 'thumbnailDiv');");
 				thumbNailImg.setAttribute("onclick","dijit.byId('"+data['contentletInode']+'_Dialog'+"').show()");
