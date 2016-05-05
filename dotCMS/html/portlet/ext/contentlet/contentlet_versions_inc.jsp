@@ -116,7 +116,7 @@
 			 		<a  href="javascript: selectVersion('<%= vinode %>');">
 			 	<%} %>
 
-				<%if(!ident.getAssetName().endsWith(".svg")){%>
+				<%if(!ident.getAssetName().toLowerCase().endsWith(".svg")){%>
 			 		<img src="/contentAsset/image/<%=vinode %>/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_h=125&thumbnail_w=125" style="width:150px;height:150px;border:1px solid silver;padding:3px;"></a>
 				<%}else{%>
 				 <img src="/contentAsset/image/<%=vinode %>/fileAsset/?byInode=1" style="width:150px;height:150px;border:1px solid silver;padding:3px;"></a>

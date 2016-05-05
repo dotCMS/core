@@ -455,11 +455,19 @@
                 <%if(LicenseUtil.getLevel() < 199){ %>
                 <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                     <div style="position:relative;width:<%=showDim+40 %>px;">
-                        <img src="/contentAsset/image/<%=contentlet.getIdentifier()%>/<%=field.getVelocityVarName() %>?filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
-                                class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
-                                onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
-                                onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
-                                onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
+                        <%
+                            String src = null;
+                            if(!fileName.toLowerCase().endsWith("svg")){
+                                src = String.format("/contentAsset/image/%1%s/%2%s/?filter=Thumbnail&thumbnail_w=%3%d&thumbnail_h=%3%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim);
+                            }else{
+                                src = String.format("/contentAsset/image/%s/%s", contentlet.getIdentifier(), field.getVelocityVarName());
+                            }
+                        %>
+                        <img src="<%=src%>"
+                             class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
+                             onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
+                             onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
+                             onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
                     </div>
                </div>
 

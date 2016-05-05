@@ -137,7 +137,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                 //thumbUrl+="?";
             }
 
-            if(this.saveAsFileName.endsWith('.svg') <0) {
+            if(this.saveAsFileName.toLowerCase().endsWith('.svg') < 0) {
                 thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
             }else{
                 console.log("RETURN");
