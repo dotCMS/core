@@ -358,7 +358,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<dl id="target" style="display:<% if(contentLink.getLinkType() != Link.LinkType.CODE.toString()) { %>none;<% } %>">
 			<dt><%= LanguageUtil.get(pageContext, "Target") %>:</dt>
 			<dd>
-				<select dojoType="dijit.form.FilteringSelect" autocomplete="false" name="target" id="target" value="<%= UtilMethods.isSet(linkForm.getTarget()) ? linkForm.getTarget() : "" %>">
+				<select dojoType="dijit.form.FilteringSelect" autocomplete="false" name="target" id="target" value="<%= UtilMethods.isSet(linkForm.getTarget()) ? linkForm.getTarget() : "_self" %>">
 					<option value="_self"><%= LanguageUtil.get(pageContext, "Same-Window") %></option>
 					<option value="_blank"><%= LanguageUtil.get(pageContext, "New-Window") %></option>
 					<option value="_top"><%= LanguageUtil.get(pageContext, "Parent-Window") %></option>
