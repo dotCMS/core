@@ -65,4 +65,14 @@ public interface TemplateFactory {
 	 */
    public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
 
+   /**
+	 * Method will replace user references of the given userId in templates
+	 * with the replacement user Id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 }

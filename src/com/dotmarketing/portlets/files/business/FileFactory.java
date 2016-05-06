@@ -171,5 +171,15 @@ public interface FileFactory {
     
     public List<String> findUpdatedFileIdsByURI(Host host, String pattern, boolean include, Date startDate, Date endDate);
 
+    /**
+	 * Method will replace user references of the given userId in legacy file assets  
+	 * with the replacement user id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
     
 }

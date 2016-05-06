@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpages.business;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -613,4 +614,41 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
         return new ArrayList<String>(ret);
     }
 
+    /**
+	 * Method will replace user references of the given userId in htmlpages 
+	 * with the replacement user id  
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+        
+        try {
+           dc.setSQL("select distinct(identifier) from htmlpage where mod_user = ?");
+           dc.addParam(userId);
+           List<HashMap<String, String>> pages = dc.loadResults();
+           
+           dc.setSQL("UPDATE htmlpage set mod_user = ? where mod_user = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+           
+           dc.setSQL("update htmlpage_version_info set locked_by=? where locked_by  = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+         
+           for(HashMap<String, String> ident:pages){
+               String identifier = ident.get("identifier");
+               HTMLPage page = loadWorkingPageById(identifier);
+               CacheLocator.getHTMLPageCache().remove(page);
+           }
+        } catch (DotDataException e) {
+            Logger.error(HTMLPageFactory.class,e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+	}
 }
