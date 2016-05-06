@@ -1,4 +1,4 @@
-h1. dotCMS
+h1. dotCMS is rewritten
 
 h2. Open Source Enterprise Java Web Content Management System
 
