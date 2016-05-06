@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -203,9 +204,10 @@ public class CMSMaintenanceAjax {
         return result;
     }
 
+
 	/**
 	 * Takes a list of comma-separated Identifiers and deletes them.
-	 * 
+	 *
 	 * @param List
 	 *            - The list of Identifiers as Strings.
 	 * @param userId
@@ -221,14 +223,13 @@ public class CMSMaintenanceAjax {
 	 * @throws DotSecurityException
 	 *             The user does not have permissions to perform this action.
 	 */
-	public String[] deleteContentletsFromIdList(String List, String userId) throws PortalException, SystemException, DotDataException,DotSecurityException {
+	public String deleteContentletsFromIdList(String List, String userId) throws PortalException, SystemException, DotDataException,DotSecurityException {
+		List<String> conditionletWithErrors = new ArrayList<>();
+
 		validateUser();
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		String[] inodes = List.split(",");
 		Integer contdeleted = 0;
-		String contnotfound = "";
-		String conthasreqrel = "";
-		String conthasnoperm = "";
 
 		User user = UserLocalManagerUtil.getUserById(userId);
 		for (int i = 0; i < inodes.length; i++) {
@@ -243,14 +244,41 @@ public class CMSMaintenanceAjax {
 			}
 		}
 
-		for (Contentlet contentlet : contentlets) {
-			conAPI.delete(contentlet, user, true, true);
-			contdeleted++;
+		if (!contentlets.isEmpty()) {
+			for (Contentlet contentlet : contentlets) {
+				boolean delete = conAPI.delete(contentlet, user, true, true);
+
+				if (!delete){
+					conditionletWithErrors.add(contentlet.getIdentifier());
+				}
+			}
+
+			return getDeleteContentletMessage(user, conditionletWithErrors, contdeleted);
+		}else{
+			return LanguageUtil.get(user, "message.contentlet.delete.error.dontExists");
+		}
+	}
+
+	private String getDeleteContentletMessage(User user, List<String> conditionletWithErrors, Integer contdeleted) throws LanguageException {
+		String result = null;
+
+		if (conditionletWithErrors.isEmpty()){
+			result = LanguageUtil.get(user,"contentlets-were-succesfully-deleted");
+		}else{
+			String errorMessage = LanguageUtil.get(user,"message.contentlet.delete.error.archived");
+			String conditionletIdentifier = conditionletWithErrors.toString().replace("[", "").replace("]", "")
+					.replace(", ", ",");
+			errorMessage = MessageFormat.format(errorMessage, conditionletIdentifier);
+
+			if (contdeleted > 0){
+				result = LanguageUtil.get(user, "message.contentlet.delete.success.withError");
+				result = MessageFormat.format(result, errorMessage);
+			}else{
+				result = errorMessage;
+			}
 		}
 
-		String[] results = { contdeleted.toString(), contnotfound, conthasreqrel,conthasnoperm };
-
-		return results;
+		return result;
 	}
 
 	public String deletePushedAssets() throws PortalException, SystemException, DotDataException,DotSecurityException {
