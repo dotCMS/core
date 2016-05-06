@@ -18,6 +18,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -1630,6 +1631,30 @@ public class InodeFactory {
 				throw e; 
 		}
 		return inode;
+	}
+	
+	/**
+	 * Method will change user references of the given userId in Inodes 
+	 * with the replacement user Id 
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public static void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+        DotConnect dc = new DotConnect();
+        
+        try {
+           dc.setSQL("update inode set owner = ? where owner = ?");
+           dc.addParam(replacementUserId);
+           dc.addParam(userId);
+           dc.loadResult();
+
+        } catch (DotDataException e) {
+            Logger.error(InodeFactory.class,e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
 	}
 
 }

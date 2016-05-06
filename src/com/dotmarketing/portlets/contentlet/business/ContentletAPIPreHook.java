@@ -1151,6 +1151,15 @@ public interface ContentletAPIPreHook {
 	 * @param userId
 	 */	
 	public boolean removeUserReferences(String userId)throws DotDataException;
+	
+	/**
+	 * Method will replace User References of the given userId in Contentlets
+	 * with the replacement user id 
+	 * and replaced with the specified replacement userId 
+	 * @param userId User Id to replace
+	 * @param replacementUserId Replacement User Id
+	 */	
+	public boolean updateUserReferences(String userId,String replacementUserId)throws DotDataException;
 
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.

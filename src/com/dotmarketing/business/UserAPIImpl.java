@@ -11,6 +11,14 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
+import com.dotmarketing.portlets.links.business.MenuLinkAPI;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -101,12 +109,12 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
-    /* (non-Javadoc)
+	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.UserAPI#getUsersByName(java.lang.String, int, int)
 	 */
-    public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
-    	return uf.getUsersByName(filter, start, limit);
-    }
+	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
+		return uf.getUsersByName(filter, start, limit);
+	}
 
 	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
 		return uf.createUser(userId, email);
@@ -128,13 +136,13 @@ public class UserAPIImpl implements UserAPI {
 		try {
 			user = uf.loadUserById(SYSTEM_USER_ID);
 		} catch (NoSuchUserException e) {
-		    user = createUser("system", "system@dotcmsfakeemail.org");
-            user.setUserId(SYSTEM_USER_ID);
-            user.setFirstName("system user");
-            user.setLastName("system user");
-            user.setCreateDate(new java.util.Date());
-            user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-            uf.saveUser(user);
+			user = createUser("system", "system@dotcmsfakeemail.org");
+			user.setUserId(SYSTEM_USER_ID);
+			user.setFirstName("system user");
+			user.setLastName("system user");
+			user.setCreateDate(new java.util.Date());
+			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+			uf.saveUser(user);
 		}
 		if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
 			roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
@@ -145,7 +153,7 @@ public class UserAPIImpl implements UserAPI {
 	public User getAnonymousUser() throws DotDataException {
 		User user = null;
 		try {
-				user = uf.loadUserById("anonymous");
+			user = uf.loadUserById("anonymous");
 		} catch (DotDataException e) {
 			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
 			user.setUserId("anonymous");
@@ -186,11 +194,11 @@ public class UserAPIImpl implements UserAPI {
 		return uf.getUsersByNameOrEmail(filter, page, pageSize);
 	}
 
-    public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
-        return uf.getUsersIdsByCreationDate( filterDate, page, pageSize );
-    }
+	public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
+		return uf.getUsersIdsByCreationDate( filterDate, page, pageSize );
+	}
 
-    public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
 		return uf.getCountUsersByNameOrEmailOrUserID(filter);
 	}
 
@@ -232,7 +240,7 @@ public class UserAPIImpl implements UserAPI {
 	@Override
 	public void save(User userToSave, User user, boolean validatePassword,
 			boolean respectFrontEndRoles) throws DotDataException,
-			DotSecurityException, DuplicateUserException {
+	DotSecurityException, DuplicateUserException {
 		String pwd = userToSave.getPassword();
 		if (validatePassword) {
 			PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
@@ -249,13 +257,13 @@ public class UserAPIImpl implements UserAPI {
 						"An error occurred during the save process.");
 			}
 
-            // Use new password hash method
-            try {
-                userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
-            } catch (PasswordException e) {
-                Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
-                throw new DotDataException("An error occurred generating the hashed password.");
-            }
+			// Use new password hash method
+			try {
+				userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+			} catch (PasswordException e) {
+				Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
+				throw new DotDataException("An error occurred generating the hashed password.");
+			}
 		}
 		save(userToSave, user, respectFrontEndRoles);
 	}
@@ -267,9 +275,84 @@ public class UserAPIImpl implements UserAPI {
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
 		}
+		delete(userToDelete,user, user, respectFrontEndRoles);
+	}
+
+	/**
+	 * Delete the specified user on the permission, users_cms_roles, cms_role, user_ tables and change the user references in the db with another replacement user
+	 * on the contentlet, file_asset, containers, template, links, htmlpage, workflow_task, workflow_comment 
+	 * inode and version info tables. 
+	 * @param userToDelete User to delete 
+	 * @param replacementUser User to replace the db reference of the user to delete
+	 * @param user User requesting the delete user
+	 * @param respectFrontEndRoles
+	 * @throws DotDataException The user to delete or the replacement user are not set
+	 * @throws DotSecurityException The user requesting the delete doesn't have permission edit permission
+	 */
+	public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
+		if (!UtilMethods.isSet(userToDelete) || userToDelete.getUserId() == null) {
+			throw new DotDataException("Can't delete a user without a userId");
+		}
+		if (!UtilMethods.isSet(replacementUser) || replacementUser.getUserId() == null) {
+			throw new DotDataException("Can't delete a user without a replacement userId");
+		}
+		if (userToDelete.getUserId() == replacementUser.getUserId()) {
+			throw new DotDataException("Can't delete a user without a replacement userId");
+		}
+		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
+			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
+		}
+
+		//replace the user reference in Inodes
+		InodeFactory.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		//replace the user references in contentlets
+		ContentletAPI conAPI = APILocator.getContentletAPI();
+		conAPI.updateUserReferences(userToDelete.getUserId(),replacementUser.getUserId());
+
+		//replace the user references in menulink
+		MenuLinkAPI menuAPI = APILocator.getMenuLinkAPI();
+		menuAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		//replace user references in htmlpages
+		HTMLPageAPI pageAPI  = APILocator.getHTMLPageAPI();
+		pageAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		//replace user references in file_assets
+		FileAPI fileAPI = APILocator.getFileAPI();
+		fileAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		//replace user references in containers
+		ContainerAPI contAPI = APILocator.getContainerAPI();
+		contAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		//replace user references in templates
+		TemplateAPI temAPI = APILocator.getTemplateAPI();
+		temAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
+		Role userRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
+		Role replacementUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
+
+		//replace the user reference in Inodes
+		WorkflowAPI wofAPI = APILocator.getWorkflowAPI();
+		wofAPI.updateUserReferences(userToDelete.getUserId(), userRole.getId(), replacementUser.getUserId(),replacementUserRole.getId());
+
+		//removing user roles		
+		perAPI.removePermissionsByRole(userRole.getId());
 		roleAPI.removeAllRolesFromUser(userToDelete);
+
+		/**
+		 * Need to edit user name role system value 
+		 * to allow delete the role
+		 * */
+		userRole.setSystem(false);
+		userRole=roleAPI.save(userRole);
+		roleAPI.delete(userRole);
+
+		/*Delete role*/
 		uf.delete(userToDelete);
+
 	}
 
 	public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
@@ -306,26 +389,26 @@ public class UserAPIImpl implements UserAPI {
 		return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
 	}
 
-    @Override
-    public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
-        if(!PwdToolkitUtil.validate(newpass)) {
-            throw new DotInvalidPasswordException("Invalid password");
-        }
+	@Override
+	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
+		if(!PwdToolkitUtil.validate(newpass)) {
+			throw new DotInvalidPasswordException("Invalid password");
+		}
 
-        // Use new password hash method
-        try {
-            user.setPassword(PasswordFactoryProxy.generateHash(newpass));
-        } catch (PasswordException e) {
-            Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + user.getUserId(), e);
-            throw new DotDataException("An error occurred generating the hashed password.");
-        }
+		// Use new password hash method
+		try {
+			user.setPassword(PasswordFactoryProxy.generateHash(newpass));
+		} catch (PasswordException e) {
+			Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + user.getUserId(), e);
+			throw new DotDataException("An error occurred generating the hashed password.");
+		}
 
-        user.setIcqId("");
-        user.setPasswordReset(GetterUtil.getBoolean(
-                PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
-        save(user, currentUser, respectFrontEndRoles);
+		user.setIcqId("");
+		user.setPasswordReset(GetterUtil.getBoolean(
+				PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+		save(user, currentUser, respectFrontEndRoles);
 
-    }
+	}
 
 
 }
