@@ -16,7 +16,7 @@ public abstract class DataType<T> {
     private final String errorMessageKey;
 
     private T defaultValue;
-    private Map<String, TypeConstraint> restrictions = Maps.newHashMap();
+    private Map<String, TypeConstraint> restrictions = Maps.newLinkedHashMap();
 
     public DataType(String id, String errorMessageKey) {
         this.id = id;

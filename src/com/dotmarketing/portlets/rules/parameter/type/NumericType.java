@@ -18,11 +18,11 @@ public class NumericType extends DataType<Number> {
     }
 
     public NumericType maxValue(double maxValue) {
-        return this.restrict(StandardConstraints.max(maxValue));
+        return this.restrict(StandardConstraints.maxValue(maxValue));
     }
 
     public NumericType minValue(double minValue) {
-        return this.restrict(StandardConstraints.min(minValue));
+        return this.restrict(StandardConstraints.minValue(minValue));
     }
 
     @Override
