@@ -21,6 +21,7 @@ import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
+import com.dotmarketing.business.UserAPITest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -63,84 +64,84 @@ import org.junit.runners.Suite;
  */
 @RunWith (Suite.class)
 @Suite.SuiteClasses ({
+	HostAPITest.class, //Needs Enterprise License
+	LinkCheckerAPITest.class, //Needs Enterprise License
+	TemplateAPITest.class,
+	HTMLPageAPITest.class,
+	CategoryAPITest.class,
+	MenuLinkAPITest.class,
+	ContentletFactoryTest.class,
+	ContentletAPITest.class,
+	ContainerAPITest.class,
+	FieldFactoryTest.class,
+	StructureFactoryTest.class,
+	FieldAPITest.class,
+	URLMapTest.class,
+	PermissionAPITest.class,
+	PublishingEndPointAPITest.class,
+	ESContentletIndexAPITest.class,
+	DotCMSCMISTest.class,
+	WebResourceTest.class,
+	RoleResourceTest.class,
+	ESIndexSpeedTest.class,
+	PluginMergerTest.class,
+	WebDavTest.class,
+	ContentResourceTest.class, //Needs Enterprise License
+	RoleAPITest.class,
+	LanguageAPITest.class,
+	FolderAPITest.class,
+	WorkflowSearcherTest.class,
+	NotificationAPITest.class,
+	SassCompilerTest.class,
+	LessCompilerTest.class,
+	IdentifierAPITest.class,
+	ImportUtilTest.class,
+	SiteSearchAjaxActionTest.class,
+	CSSPreProcessServletTest.class, //Needs Enterprise License
+	ESContentFactoryImplTest.class,
+	HibernateUtilTest.class,
+	WorkflowAPITest.class,
+	ContentletAjaxTest.class,
+	SimpleNodeTest.class,
+	DbConnectionFactoryUtilTest.class,
+	RuleResourceFTest.class,
+	ConditionGroupResourceFTest.class,
+	RemotePublishAjaxActionTest.class, //Needs Enterprise License
+	ActionResourceFTest.class,
+	TagAPITest.class,
 
-        HostAPITest.class, //Needs Enterprise License
-        LinkCheckerAPITest.class, //Needs Enterprise License
-        TemplateAPITest.class,
-        HTMLPageAPITest.class,
-        CategoryAPITest.class,
-        MenuLinkAPITest.class,
-        ContentletFactoryTest.class,
-        ContentletAPITest.class,
-        ContainerAPITest.class,
-        FieldFactoryTest.class,
-        StructureFactoryTest.class,
-        FieldAPITest.class,
-        URLMapTest.class,
-        PermissionAPITest.class,
-        PublishingEndPointAPITest.class,
-        ESContentletIndexAPITest.class,
-        DotCMSCMISTest.class,
-        WebResourceTest.class,
-        RoleResourceTest.class,
-        ESIndexSpeedTest.class,
-        PluginMergerTest.class,
-        WebDavTest.class,
-        ContentResourceTest.class, //Needs Enterprise License
-        RoleAPITest.class,
-        LanguageAPITest.class,
-        FolderAPITest.class,
-        WorkflowSearcherTest.class,
-        NotificationAPITest.class,
-        SassCompilerTest.class,
-        LessCompilerTest.class,
-        IdentifierAPITest.class,
-        ImportUtilTest.class,
-        SiteSearchAjaxActionTest.class,
-        CSSPreProcessServletTest.class, //Needs Enterprise License
-        ESContentFactoryImplTest.class,
-        HibernateUtilTest.class,
-        WorkflowAPITest.class,
-        ContentletAjaxTest.class,
-        SimpleNodeTest.class,
-        DbConnectionFactoryUtilTest.class,
-        RuleResourceFTest.class,
-        ConditionGroupResourceFTest.class,
-        RemotePublishAjaxActionTest.class, //Needs Enterprise License
-        ActionResourceFTest.class,
-        TagAPITest.class,
+	//Rules.
+	RulesAPIFTest.class, //Needs Enterprise License.
+	RulesCacheFTest.class, //Needs Enterprise License.
+	RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
 
-        //Rules.
-        RulesAPIFTest.class, //Needs Enterprise License.
-        RulesCacheFTest.class, //Needs Enterprise License.
-        RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
+	//Rules:Actionlets.
+	ActionletResourceFTest.class, //Needs Enterprise License.
+	//TODO: Need to revisit this test. (https://github.com/dotCMS/core/issues/8967)
+	//PersonaActionletFTest.class, //Needs Enterprise License.
+	SetResponseHeaderActionletFTest.class, //Needs Enterprise License.
+	SetSessionAttributeActionletFTest.class, //Needs Enterprise License.
+	//TODO: Need to revisit this test (https://github.com/dotCMS/core/issues/8967)
+	//VisitorsTagsActionletFTest.class, //Needs Enterprise License.
 
-        //Rules:Actionlets.
-        ActionletResourceFTest.class, //Needs Enterprise License.
-        //TODO: Need to revisit this test. (https://github.com/dotCMS/core/issues/8967)
-        //PersonaActionletFTest.class, //Needs Enterprise License.
-        SetResponseHeaderActionletFTest.class, //Needs Enterprise License.
-        SetSessionAttributeActionletFTest.class, //Needs Enterprise License.
-        //TODO: Need to revisit this test (https://github.com/dotCMS/core/issues/8967)
-        //VisitorsTagsActionletFTest.class, //Needs Enterprise License.
-
-        //Rules:Conditionlets.
-        ConditionletOSGIFTest.class, //Needs Enterprise License.
-        CurrentSessionLanguageConditionletFTest.class, //Needs Enterprise License.
-        CurrentSessionLanguageConditionletTest.class, //Needs Enterprise License.
-        NumberOfTimesPreviouslyVisitedConditionletFTest.class, //Needs Enterprise License.
-        NumberOfTimesPreviouslyVisitedConditionletTest.class, //Needs Enterprise License.
-        //TODO: PagesViewedConditionlet has some bugs (https://github.com/dotCMS/core/issues/8971)
-        //PagesViewedConditionletFTest.class, //Needs Enterprise License.
-        UsersBrowserLanguageConditionletFTest.class, //Needs Enterprise License.
-        UsersBrowserLanguageConditionletTest.class, //Needs Enterprise License.
-        UsersSiteVisitsConditionletFTest.class, //Needs Enterprise License.
-        UsersSiteVisitsConditionletTest.class, //Needs Enterprise License.
-        VisitedUrlConditionletTest.class, //Needs Enterprise License.
-        VisitedUrlConditionletFTest.class, //Needs Enterprise License.
-        VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
-        VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
-        VisitorsCurrentUrlConditionletFTest.class //Needs Enterprise License.
+	//Rules:Conditionlets.
+	ConditionletOSGIFTest.class, //Needs Enterprise License.
+	CurrentSessionLanguageConditionletFTest.class, //Needs Enterprise License.
+	CurrentSessionLanguageConditionletTest.class, //Needs Enterprise License.
+	NumberOfTimesPreviouslyVisitedConditionletFTest.class, //Needs Enterprise License.
+	NumberOfTimesPreviouslyVisitedConditionletTest.class, //Needs Enterprise License.
+	//TODO: PagesViewedConditionlet has some bugs (https://github.com/dotCMS/core/issues/8971)
+	//PagesViewedConditionletFTest.class, //Needs Enterprise License.
+	UsersBrowserLanguageConditionletFTest.class, //Needs Enterprise License.
+	UsersBrowserLanguageConditionletTest.class, //Needs Enterprise License.
+	UsersSiteVisitsConditionletFTest.class, //Needs Enterprise License.
+	UsersSiteVisitsConditionletTest.class, //Needs Enterprise License.
+	VisitedUrlConditionletTest.class, //Needs Enterprise License.
+	VisitedUrlConditionletFTest.class, //Needs Enterprise License.
+	VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
+	VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
+	VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
+	UserAPITest.class
 })
 
 public class AllTestsSuite {}

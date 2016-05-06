@@ -4,17 +4,16 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.beans.Permission;
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -153,14 +152,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return step;
 	}
 
-	 private WorkflowHistory convertHistory(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
-			final WorkflowHistory scheme = new WorkflowHistory();
-			row.put("actionId", row.get("workflow_action_id"));
+	private WorkflowHistory convertHistory(Map<String, Object> row) throws IllegalAccessException, InvocationTargetException {
+		final WorkflowHistory scheme = new WorkflowHistory();
+		row.put("actionId", row.get("workflow_action_id"));
 
-			BeanUtils.copyProperties(scheme, row);
+		BeanUtils.copyProperties(scheme, row);
 
-			return scheme;
-		    }
+		return scheme;
+	}
 
 	public void copyWorkflowAction(WorkflowAction from, WorkflowStep step) throws DotDataException {
 		throw new DotWorkflowException("Not implemented");
@@ -239,16 +238,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void deleteStep(WorkflowStep step) throws DotDataException, AlreadyExistException {
 		String schemeId = step.getSchemeId();
 		final DotConnect db = new DotConnect();
-		
+
 		// delete tasks referencing it
 		db.setSQL("select id from workflow_task where status=?");
 		db.addParam(step.getId());
 		for(Map<String,Object> res : db.loadObjectResults()) {
-		    String taskId=(String)res.get("id");
-		    WorkflowTask task=findWorkFlowTaskById(taskId);
-		    deleteWorkflowTask(task);
+			String taskId=(String)res.get("id");
+			WorkflowTask task=findWorkFlowTaskById(taskId);
+			deleteWorkflowTask(task);
 		}
-		
+
 		db.setSQL(sql.DELETE_STEP);
 		db.addParam(step.getId());
 		db.loadResult();
@@ -262,7 +261,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException{
 		int amount = 0;
 		final DotConnect db = new DotConnect();
-		
+
 		// get step related assets
 		db.setSQL(sql.SELECT_COUNT_CONTENTLES_BY_STEP);
 		db.addParam(step.getId());
@@ -270,7 +269,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		amount=Integer.parseInt(String.valueOf(res.get("count")));
 		return amount;
 	}
-	
+
 	public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
@@ -294,7 +293,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
 		final DotConnect db = new DotConnect();
-		
+
 		HibernateUtil.evict(task);
 
 		Contentlet c = new Contentlet();
@@ -323,10 +322,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.setSQL("delete from workflow_task where id = ?");
 			db.addParam(task.getId());
 			db.loadResult();
-			
+
 			if(localTransaction){
-                HibernateUtil.commitTransaction();
-            }
+				HibernateUtil.commitTransaction();
+			}
 
 		} catch (final Exception e) {
 			if(localTransaction){
@@ -533,8 +532,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
-		
-		
+
+
 		if(cache.is404(contentlet)) return new WorkflowTask();
 		WorkflowTask task = cache.getTask(contentlet);
 		if (task == null) {
@@ -648,47 +647,47 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 
 		if(!searcher.getShow4All() || !(APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
-                || APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
-		    final List<Role> userRoles = new ArrayList<Role>();
-		    if (UtilMethods.isSet(searcher.getAssignedTo())) {
+				|| APILocator.getRoleAPI().doesUserHaveRole(searcher.getUser(),RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
+			final List<Role> userRoles = new ArrayList<Role>();
+			if (UtilMethods.isSet(searcher.getAssignedTo())) {
 
-		    	
-		    	final Role r = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());
-		    	if(r!=null)userRoles.add(r);
-    		} else {
-    			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
-    			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
 
-    		}
+				final Role r = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());
+				if(r!=null)userRoles.add(r);
+			} else {
+				userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
+				userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
 
-    		String rolesString = "";
+			}
 
-    		for (final Role role : userRoles) {
-    			if (!rolesString.equals("")) {
-    				rolesString += ",";
-    			}
-    			rolesString += "'" + role.getId() + "'";
-    		}
+			String rolesString = "";
 
-    		if(rolesString.length()>0){
-    			query.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
-    		}
+			for (final Role role : userRoles) {
+				if (!rolesString.equals("")) {
+					rolesString += ",";
+				}
+				rolesString += "'" + role.getId() + "'";
+			}
+
+			if(rolesString.length()>0){
+				query.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
+			}
 		}
 		query.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
 
 		if(searcher.getDaysOld()!=-1) {
-		    if(DbConnectionFactory.isMySql())
-		        query.append(" datediff(now(),workflow_task.creation_date)>=?");
-		    else if(DbConnectionFactory.isPostgres())
-		        query.append(" extract(day from (now()-workflow_task.creation_date))>=?");
-		    else if(DbConnectionFactory.isMsSql())
-		        query.append(" datediff(d,workflow_task.creation_date,GETDATE())>=?");
-		    else if(DbConnectionFactory.isOracle())
-		        query.append(" floor(sysdate-workflow_task.creation_date)>=?");
-		    else if(DbConnectionFactory.isH2())
-		    	query.append(" datediff('YEAR',current_date(),workflow_task.creation_date)>=?");
+			if(DbConnectionFactory.isMySql())
+				query.append(" datediff(now(),workflow_task.creation_date)>=?");
+			else if(DbConnectionFactory.isPostgres())
+				query.append(" extract(day from (now()-workflow_task.creation_date))>=?");
+			else if(DbConnectionFactory.isMsSql())
+				query.append(" datediff(d,workflow_task.creation_date,GETDATE())>=?");
+			else if(DbConnectionFactory.isOracle())
+				query.append(" floor(sysdate-workflow_task.creation_date)>=?");
+			else if(DbConnectionFactory.isH2())
+				query.append(" datediff('YEAR',current_date(),workflow_task.creation_date)>=?");
 
-		    query.append(" and ");
+			query.append(" and ");
 		}
 
 		if (!searcher.isClosed() && searcher.isOpen()) {
@@ -731,7 +730,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		}
 
 		if(searcher.getDaysOld()!=-1) {
-		    dc.addParam(searcher.getDaysOld());
+			dc.addParam(searcher.getDaysOld());
 		}
 
 		if (UtilMethods.isSet(searcher.getSchemeId())) {
@@ -860,24 +859,24 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void saveComment(WorkflowComment comment) throws DotDataException {
-	    if(InodeUtils.isSet(comment.getId())) {
-	        boolean update=false;
-    	    try {
-    	        HibernateUtil.load(WorkflowComment.class, comment.getId());
-    	        // if no exception it exists. just update
-    	        update=true;
-    	    }
-    	    catch(Exception ex) {
-    	        // if it doesn't then save with primary key
-    	        HibernateUtil.saveWithPrimaryKey(comment, comment.getId());
-    	    }
-    	    if(update) {
-    	        HibernateUtil.update(comment);
-    	    }
-	    }
-	    else {
-	        HibernateUtil.save(comment);
-	    }
+		if(InodeUtils.isSet(comment.getId())) {
+			boolean update=false;
+			try {
+				HibernateUtil.load(WorkflowComment.class, comment.getId());
+				// if no exception it exists. just update
+				update=true;
+			}
+			catch(Exception ex) {
+				// if it doesn't then save with primary key
+				HibernateUtil.saveWithPrimaryKey(comment, comment.getId());
+			}
+			if(update) {
+				HibernateUtil.update(comment);
+			}
+		}
+		else {
+			HibernateUtil.save(comment);
+		}
 
 	}
 
@@ -906,7 +905,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				throw new AlreadyExistException("Already exist a scheme with the same name ("+schemeWithSameName.getName()+"). Create different schemes with the same name is not allowed. Please change your workflow scheme name.");
 			}
 			if (isNew) {
-				
+
 				db.setSQL(sql.INSERT_SCHEME);
 				db.addParam(scheme.getId());
 				db.addParam(scheme.getName());
@@ -1015,12 +1014,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.isResolved());
 			db.addParam(step.isEnableEscalation());
 			if(step.isEnableEscalation()) {
-    			db.addParam(step.getEscalationAction());
-    			db.addParam(step.getEscalationTime());
+				db.addParam(step.getEscalationAction());
+				db.addParam(step.getEscalationTime());
 			}
 			else {
-			    db.addParam((Object)null);
-			    db.addParam(0);
+				db.addParam((Object)null);
+				db.addParam(0);
 			}
 			db.loadResult();
 		} else {
@@ -1031,13 +1030,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(step.isResolved());
 			db.addParam(step.isEnableEscalation());
 			if(step.isEnableEscalation()) {
-                db.addParam(step.getEscalationAction());
-                db.addParam(step.getEscalationTime());
-            }
-            else {
-                db.addParam((Object)null);
-                db.addParam(0);
-            }
+				db.addParam(step.getEscalationAction());
+				db.addParam(step.getEscalationTime());
+			}
+			else {
+				db.addParam((Object)null);
+				db.addParam(0);
+			}
 			db.addParam(step.getId());
 			db.loadResult();
 		}
@@ -1093,56 +1092,56 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {
-	    if(InodeUtils.isSet(history.getId())) {
-	        boolean update=false;
-	        try {
-	            HibernateUtil.load(WorkflowHistory.class, history.getId());
-	            // if exists just update
-	            update=true;
-	        }
-	        catch(Exception ex) {
-	            // if not then save with existing key
-	            HibernateUtil.saveWithPrimaryKey(history, history.getId());	            
-	        }
-	        if(update) {
-	            HibernateUtil.update(history);
-	        }
-	    }
-	    else {
-	        HibernateUtil.save(history);
-	    }
+		if(InodeUtils.isSet(history.getId())) {
+			boolean update=false;
+			try {
+				HibernateUtil.load(WorkflowHistory.class, history.getId());
+				// if exists just update
+				update=true;
+			}
+			catch(Exception ex) {
+				// if not then save with existing key
+				HibernateUtil.saveWithPrimaryKey(history, history.getId());	            
+			}
+			if(update) {
+				HibernateUtil.update(history);
+			}
+		}
+		else {
+			HibernateUtil.save(history);
+		}
 	}
 
-    /**
-     * Saves a given WorkflowTask, if the task does not exist it will create a new one and if does exist
-     * it will update the existing record.
-     * <br/>
-     * If the record does not exist and the given task have set an id the new record will be created with that id.
-     *
-     * @param task
-     * @throws DotDataException
-     */
-    public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
+	/**
+	 * Saves a given WorkflowTask, if the task does not exist it will create a new one and if does exist
+	 * it will update the existing record.
+	 * <br/>
+	 * If the record does not exist and the given task have set an id the new record will be created with that id.
+	 *
+	 * @param task
+	 * @throws DotDataException
+	 */
+	public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
 
-        if ( task.isNew() ) {
-            HibernateUtil.save( task );
-        } else {
+		if ( task.isNew() ) {
+			HibernateUtil.save( task );
+		} else {
 
-            try {
-                Object currentWorkflowTask = HibernateUtil.load( WorkflowTask.class, task.getId() );
-                HibernateUtil.evict( currentWorkflowTask );//Remove the object from hibernate cache, we used just to verify if exist
+			try {
+				Object currentWorkflowTask = HibernateUtil.load( WorkflowTask.class, task.getId() );
+				HibernateUtil.evict( currentWorkflowTask );//Remove the object from hibernate cache, we used just to verify if exist
 
-                // if the object exists no exception is thrown so just update it
+				// if the object exists no exception is thrown so just update it
 
-                HibernateUtil.update( task );
-            } catch ( Exception ex ) {
-                // if it doesn't exists then save with that primary key
-                HibernateUtil.saveWithPrimaryKey( task, task.getId() );
-            }
-        }
+				HibernateUtil.update( task );
+			} catch ( Exception ex ) {
+				// if it doesn't exists then save with that primary key
+				HibernateUtil.saveWithPrimaryKey( task, task.getId() );
+			}
+		}
 
-        cache.remove( task );
-    }
+		cache.remove( task );
+	}
 
 	public List<WorkflowTask> searchTasks(WorkflowSearcher searcher) throws DotDataException {
 		DotConnect dc = getWorkflowSqlQuery(searcher, false);
@@ -1209,54 +1208,126 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 	// christian escalation
 
-    @Override
-    public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
-        final DotConnect db = new DotConnect();
-        List<WorkflowTask> list=new ArrayList<WorkflowTask>();
-        try {
-            db.setSQL(sql.SELECT_EXPIRED_TASKS);
-            List<Map<String,Object>> results=db.loadResults();
-            for (Map<String, Object> map : results) {
-                String taskId=(String)map.get("id");
-                WorkflowTask task=findWorkFlowTaskById(taskId);
-                list.add(task);
-            }
-        } catch (final Exception e) {
-            Logger.error(this, e.getMessage(), e);
-        }
-        finally {
-            HibernateUtil.getSession().clear();
-        }
-        return list;
-    }
+	@Override
+	public List<WorkflowTask> findExpiredTasks() throws DotDataException, DotSecurityException {
+		final DotConnect db = new DotConnect();
+		List<WorkflowTask> list=new ArrayList<WorkflowTask>();
+		try {
+			db.setSQL(sql.SELECT_EXPIRED_TASKS);
+			List<Map<String,Object>> results=db.loadResults();
+			for (Map<String, Object> map : results) {
+				String taskId=(String)map.get("id");
+				WorkflowTask task=findWorkFlowTaskById(taskId);
+				list.add(task);
+			}
+		} catch (final Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+		finally {
+			HibernateUtil.getSession().clear();
+		}
+		return list;
+	}
 
-    @Override
-    public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
-        WorkflowScheme scheme = null;
-        try {
-            final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_SCHEME_NAME);
-            db.addParam((schemaName != null ? schemaName.trim() : ""));
-            List<WorkflowScheme> list = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
-            scheme = list.size()>0 ? (WorkflowScheme)list.get(0) : null;
-        } catch (final Exception e) {
-            throw new DotDataException(e.getMessage(),e);
-        }
-        return scheme;
-    }
+	@Override
+	public WorkflowScheme findSchemeByName(String schemaName) throws DotDataException {
+		WorkflowScheme scheme = null;
+		try {
+			final DotConnect db = new DotConnect();
+			db.setSQL(sql.SELECT_SCHEME_NAME);
+			db.addParam((schemaName != null ? schemaName.trim() : ""));
+			List<WorkflowScheme> list = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
+			scheme = list.size()>0 ? (WorkflowScheme)list.get(0) : null;
+		} catch (final Exception e) {
+			throw new DotDataException(e.getMessage(),e);
+		}
+		return scheme;
+	}
 
-    @Override
-    public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
-        DotConnect db=new DotConnect();
-        db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ID);
-        db.addParam(param.getId());
-        db.loadResult();
-        
-        // update scheme mod date
-        WorkflowActionClass clazz = findActionClass(param.getActionClassId());
-        WorkflowAction action = findAction(clazz.getActionId());
-        WorkflowStep step = findStep(action.getStepId());
-        WorkflowScheme scheme = findScheme(step.getSchemeId());
-        saveScheme(scheme);
-    }
+	@Override
+	public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
+		DotConnect db=new DotConnect();
+		db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ID);
+		db.addParam(param.getId());
+		db.loadResult();
+
+		// update scheme mod date
+		WorkflowActionClass clazz = findActionClass(param.getActionClassId());
+		WorkflowAction action = findAction(clazz.getActionId());
+		WorkflowStep step = findStep(action.getStepId());
+		WorkflowScheme scheme = findScheme(step.getSchemeId());
+		saveScheme(scheme);
+	}
+
+	/**
+	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
+	 * with the replacement user id 
+	 * @param userId User Identifier
+	 * @param userRoleId The role id of the user
+	 * @param replacementUserId The user id of the replacement user
+	 * @param replacementUserRoleId The role Id of the replacemente user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+
+		try {
+			dc.setSQL("select id from workflow_task where (assigned_to = ? or assigned_to=? or created_by=? or created_by=?)");
+			dc.addParam(userId);
+			dc.addParam(userRoleId);
+			dc.addParam(userId);
+			dc.addParam(userRoleId);
+			List<HashMap<String, String>> tasks = dc.loadResults();
+
+			dc.setSQL("update workflow_comment set posted_by=? where posted_by  = ?");
+			dc.addParam(replacementUserId);
+			dc.addParam(userId);
+			dc.loadResults();
+
+			dc.setSQL("update workflow_comment set posted_by=? where posted_by  = ?");
+			dc.addParam(replacementUserRoleId);
+			dc.addParam(userRoleId);
+			dc.loadResults();
+
+			dc.setSQL("update workflow_task set assigned_to=? where assigned_to  = ?");
+			dc.addParam(replacementUserRoleId);
+			dc.addParam(userRoleId);
+			dc.loadResult();
+
+			dc.setSQL("update workflow_task set created_by=? where created_by  = ?");
+			dc.addParam(replacementUserId);
+			dc.addParam(userId);
+			dc.loadResult();
+
+			dc.setSQL("update workflow_task set created_by=? where created_by  = ?");
+			dc.addParam(replacementUserRoleId);
+			dc.addParam(userRoleId);
+			dc.loadResult();
+
+			dc.setSQL("update workflow_action set next_assign=? where next_assign = ?");
+			dc.addParam(replacementUserRoleId);
+			dc.addParam(userRoleId);
+			dc.loadResult();
+
+			for(HashMap<String, String> val : tasks){
+				String id = val.get("id");
+				WorkflowTask task = findWorkFlowTaskById(id);
+				cache.remove(task);
+				
+				dc.setSQL("select workflow_step.id from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ?");
+				dc.addParam(task.getWebasset());
+				List<HashMap<String, String>> steps = dc.loadResults();
+				for(HashMap<String, String> v : steps){
+					String stepId = v.get("id");
+					WorkflowStep step = findStep(stepId);
+					cache.remove(step);					
+				}
+			}
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
 }
