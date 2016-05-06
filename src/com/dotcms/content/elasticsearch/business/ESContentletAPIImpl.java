@@ -1156,7 +1156,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void delete(Contentlet contentlet, User user,boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException {
+    public boolean delete(Contentlet contentlet, User user,boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
         try {
@@ -1165,6 +1165,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	logContentletActivity(contentlets, "Error Deleting Content", user);
         	throw e;
         }
+
+        return true;
     }
 
     @Override
