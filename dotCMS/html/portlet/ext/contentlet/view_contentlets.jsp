@@ -408,7 +408,7 @@
 	                                <!-- Language search fields  --->
 	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
                                     <dd>
-                                        <div id="combo_zone2" style="width:215px; height:20px;">
+                                        <div id="combo_zone2">
                                             <input id="language_id"/>
                                         </div>
 
@@ -467,7 +467,7 @@
 
 
 
-                        <div class="buttonRow" style='margin-top:10px;'>
+                        <div class="buttonRow">
                                 <span id="searchButton"></span>
 
                                 <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
@@ -496,7 +496,7 @@
 
 
 <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
 
                         <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
                                 <!-- START Listing Results -->

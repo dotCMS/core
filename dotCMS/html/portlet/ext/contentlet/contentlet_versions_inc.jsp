@@ -35,7 +35,7 @@
 
 
 
-<div class="buttonRow" style="text-align: left;padding-left:20px;">
+<div class="contentIdentifier">
 <%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
 </div>
 <table class="listingTable">

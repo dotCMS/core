@@ -48,8 +48,6 @@
 <%@ include file="/html/common/uservalidation.jsp"%>
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css";
-	#filterTasksFrm dt{height:30px;}
-	#filterTasksFrm dd{height:30px;}
 </style>
 
 <%
@@ -508,8 +506,8 @@ bottom="/html/common/box_bottom.jsp">
 
 <!-- START Left Column -->
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 370px; overflow-x: scroll; overflow-y: hidden; white-space: nowrap;" class="lineRight">
-		<div style="margin-top:48px;">
-			<div  id="filterTasksFrm">
+		<div style="margin-top: 56px;">
+			<div  id="filterTasksFrm" class="filter-tasks-frm">
 				<input type="hidden" name="cmd" value="filterTasks">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
 				<dl>
@@ -517,24 +515,15 @@ bottom="/html/common/box_bottom.jsp">
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="keywords" id="keywords" value="<%=UtilMethods.webifyString(searcher.getKeywords())%>" /></dd>
 					<dt><%=LanguageUtil.get(pageContext, "Assigned-To")%>:</dt>
 					<dd>
-					<div id="container">
-					  <div id="table-row">
-						  <div id="cell-left">
-							<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
-						  </div>
-						  <div id="cell-right">
+						<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
+						<div class="who-user">
 							<%if(isAdministrator) { %>
-							<input type="radio" dojoType="dijit.form.RadioButton" id="showAllLink" name="assignedto" onclick="showTasks4AllUsers()"><%=LanguageUtil.get(pageContext, "all") %> </input>
-	                        <%} %>
-	                      </div>
-					  </div>
-					  <div id="table-row">
-					  	 <div id="cell-left"> </div>
-					     <div id="cell-right">
-                       		 <input type="radio" dojoType="dijit.form.RadioButton" id="showme" name="assignedto" checked="true" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></input>
+								<input type="radio" dojoType="dijit.form.RadioButton" id="showAllLink" name="assignedto" onclick="showTasks4AllUsers()" />
+								<label for="showAllLink"><%=LanguageUtil.get(pageContext, "all") %></label>
+							<%} %>
+							<input type="radio" dojoType="dijit.form.RadioButton" id="showme" name="assignedto" checked="true" onclick="assignedToMe()" />
+							<label for="showme"><%=LanguageUtil.get(pageContext, "me") %></label>
 						</div>
-					 </div>
-					</div>
 					</dd>
 					<dt><%=LanguageUtil.get(pageContext, "Older_than_(days)") %></dt>
 					<dd>
@@ -577,7 +566,7 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <!-- START Right Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" style="margin-top:37px;">
+	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" style="margin-top: 56px;">
 		<div id="hangTaskListHere">
 
 

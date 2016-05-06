@@ -433,7 +433,6 @@ var cmsfile=null;
 		var toSearch = dojo.byId("glossary_term_" + textAreaId).value;
 	    var menu = dojo.byId("glossary_term_popup_" + textAreaId);
 	    //var gtCoords = dojo.coords(gt, true);
-    	dojo.style(menu, { top: "35px", right: "25px" });
 
 	    if (toSearch != "" && lastGlossarySearch != toSearch) {
 	    	lastGlossarySearch = toSearch;
