@@ -70,10 +70,10 @@ public final class StandardConstraintFunctions {
     /**
      * Is a numeric string that is less than or equal to <code>max</code>.
      * An empty string value is considered valid.
-     * @param max the maximum value, inclusive.
+     * @param maxValue the maximum value, inclusive.
      */
-    public static Function<String, Boolean> max(double max) {
-        return StandardConstraintFunctions.max(max, true );
+    public static Function<String, Boolean> maxValue(double maxValue) {
+        return StandardConstraintFunctions.maxValue(maxValue, true );
     }
 
     /**
@@ -81,13 +81,13 @@ public final class StandardConstraintFunctions {
      * depending on the value of <code>inclusive</code>.
      * An empty string value is considered valid.
      */
-    public static Function<String, Boolean> max(double max, boolean inclusive) {
+    public static Function<String, Boolean> maxValue(double maxValue, boolean inclusive) {
         return v -> {
             boolean valid = StringUtils.isEmpty(v);
             if(!valid) {
                 try {
                     double number = Double.parseDouble(v);
-                    valid = inclusive ? (number <= max) : (number < max);
+                    valid = inclusive ? (number <= maxValue) : (number < maxValue);
                 } catch (NumberFormatException e) {
                     valid = false;
                 }
@@ -96,17 +96,17 @@ public final class StandardConstraintFunctions {
         };
     }
 
-    public static Function<String, Boolean> min(double min) {
-        return StandardConstraintFunctions.min(min, true);
+    public static Function<String, Boolean> minValue(double minValue) {
+        return StandardConstraintFunctions.minValue(minValue, true);
     }
 
-    public static Function<String, Boolean> min(double min, boolean inclusive) {
+    public static Function<String, Boolean> minValue(double minValue, boolean inclusive) {
         return v -> {
             boolean valid = StringUtils.isEmpty(v);
             if(!valid) {
                 try {
                     double number = Double.parseDouble(v);
-                    valid = inclusive ? (number >= min) : (number > min);
+                    valid = inclusive ? (number >= minValue) : (number > minValue);
                 } catch (NumberFormatException e) {
                     valid = false;
                 }
@@ -115,17 +115,17 @@ public final class StandardConstraintFunctions {
         };
     }
 
-    public static Function<String, Boolean> max(int max) {
-        return StandardConstraintFunctions.max(max, true);
+    public static Function<String, Boolean> maxValue(int maxValue) {
+        return StandardConstraintFunctions.maxValue(maxValue, true);
     }
 
-    public static Function<String, Boolean> max(int max, boolean inclusive) {
+    public static Function<String, Boolean> maxValue(int maxValue, boolean inclusive) {
         return v -> {
             boolean valid = StringUtils.isEmpty(v);
             if(!valid) {
                 try {
                     int number = Integer.parseInt(v);
-                    valid = inclusive ? (number <= max) : (number < max);
+                    valid = inclusive ? (number <= maxValue) : (number < maxValue);
                 } catch (NumberFormatException e) {
                     valid = false;
                 }
@@ -134,17 +134,17 @@ public final class StandardConstraintFunctions {
         };
     }
 
-    public static Function<String, Boolean> min(int min) {
-        return StandardConstraintFunctions.min(min, true);
+    public static Function<String, Boolean> minValue(int minValue) {
+        return StandardConstraintFunctions.minValue(minValue, true);
     }
 
-    public static Function<String, Boolean> min(int min, boolean inclusive) {
+    public static Function<String, Boolean> minValue(int minValue, boolean inclusive) {
         return v -> {
             boolean valid = StringUtils.isEmpty(v);
             if(!valid) {
                 try {
                     int number = Integer.parseInt(v);
-                    valid = inclusive ? (number >= min) : (number > min);
+                    valid = inclusive ? (number >= minValue) : (number > minValue);
                 } catch (NumberFormatException e) {
                     valid = false;
                 }

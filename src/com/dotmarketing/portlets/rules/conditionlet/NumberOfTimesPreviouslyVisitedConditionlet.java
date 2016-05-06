@@ -26,7 +26,7 @@ public class NumberOfTimesPreviouslyVisitedConditionlet extends Conditionlet<Num
 	public static final String SITE_VISITS_KEY = "site-visits";
 
 	private static final ParameterDefinition<NumericType> siteVisitsValue =
-			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
+			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().required().minValue(0)));
 
 	public NumberOfTimesPreviouslyVisitedConditionlet() {
         super("api.ruleengine.system.conditionlet.NumberOfTimesPreviouslyVisited",
