@@ -479,7 +479,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, boolean)
 	 */
-	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions)	throws DotDataException, DotSecurityException,DotContentletStateException {
+	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions)	throws DotDataException, DotSecurityException,DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles);
 			if(!preResult){
@@ -487,10 +487,12 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		conAPI.delete(contentlet, user, respectFrontendRoles);
+		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.delete(contentlet, user, respectFrontendRoles);
 		}
+
+		return delete;
 	}
 
 	/* (non-Javadoc)
@@ -530,7 +532,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 		return noErrors;
 	}
-	
+
     /*
      * (non-Javadoc)
      * 
