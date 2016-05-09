@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -437,7 +438,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             /*
              Lets reindex all the content under the fixed folder
              */
-            HibernateUtil.addCommitListener(new Runnable() {
+            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
                 public void run () {
 
                     String folderPath = null;

@@ -1046,7 +1046,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isLocked() ){
                 // persists the webasset
                 APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-                indexAPI.addContentToIndex(contentlet);
+                indexAPI.addContentToIndex(contentlet,false);
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
@@ -1637,7 +1637,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 			// persists the webasset
 			APILocator.getVersionableAPI().setLocked(contentlet, true, user);
-			indexAPI.addContentToIndex(contentlet);
+			indexAPI.addContentToIndex(contentlet,false);
 
 		} catch(DotDataException | DotStateException| DotSecurityException e) {
 			ActivityLogger.logInfo(getClass(), "Error Locking Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -1685,6 +1685,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    private void refreshNoDeps(Contentlet contentlet) throws DotReindexStateException,
+	    DotDataException {
+		indexAPI.addContentToIndex(contentlet, false);
+		CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
+	}
+    
+    
     public void refresh(Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
         indexAPI.addContentToIndex(contentlet);
@@ -1952,12 +1959,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // update the contentlets that lost the relationship (when the user remove a relationship).
         if(cons != null) {
             for (Contentlet relatedContentlet : cons) {
-                refresh(relatedContentlet);
+            	refreshNoDeps(relatedContentlet);
             }
         }
 
         // Refresh the parent
-        refresh(contentlet);
+        refreshNoDeps(contentlet);
     }
 
     private void deleteUnrelatedContents(Contentlet contentlet, ContentletRelationshipRecords related, boolean hasParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException,DotContentletStateException {
@@ -2092,7 +2099,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	
 	            if(!child){// when we change the order we need to index all the sibling content
 	            	for(Contentlet con : getSiblings(c.getIdentifier())){
-	            		refresh(con);
+ 	            		refreshNoDeps(con);
 	            	}
 	            }
 	        }
