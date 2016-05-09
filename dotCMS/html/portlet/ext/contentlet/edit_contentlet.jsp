@@ -31,10 +31,14 @@
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
 
 <style>
+.dijitHostFoldersTreeWrapper {
+    overflow: hidden;
+}
 .dijitTree {
-	width: 100% !important;
-	max-height: 100% !important;
-	overflow: auto;
+    width: 100% !important;
+    max-height: 255px !important;
+    overflow: auto;
+    height: 100%;
 }
 .classAce{
 	display: none;
