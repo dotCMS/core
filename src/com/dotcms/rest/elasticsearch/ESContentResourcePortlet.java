@@ -80,7 +80,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			esresult.getContentlets().clear();
 			json.append("esresponse", new JSONObject(esresult.getResponse().toString()));
 
-			return responseResource.response( json.toString() );
+			if ( request.getParameter("pretty") != null ) {
+				return responseResource.response(json.toString(4));
+			} else {
+				return responseResource.response(json.toString());
+			}
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error processing :" + e.getMessage(), e);
