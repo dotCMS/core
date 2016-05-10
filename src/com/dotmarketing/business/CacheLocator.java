@@ -65,6 +65,7 @@ import com.dotmarketing.tag.business.TagInodeCache;
 import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
@@ -127,6 +128,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	public synchronized static void init(){
+		long start = System.currentTimeMillis();
 		if(instance != null)
 			return;
 
@@ -150,6 +152,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		 to work.
 		 */
 		adminCache.initProviders();
+		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
 	}
 
 	public static PermissionCache getPermissionCache() {
