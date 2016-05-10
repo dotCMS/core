@@ -694,8 +694,8 @@ dojo.require("dojox.layout.ContentPane");
 				fieldDiv.appendChild(thumbnailParentDiv);
 			}
 
-			<% if(LicenseUtil.getLevel() < 199){ %>
-
+			var licence = <%=LicenseUtil.getLevel()%>;
+			if ( licence < 199 ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
 				var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
 
 				var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'
@@ -729,7 +729,7 @@ dojo.require("dojox.layout.ContentPane");
 				thumbNailImg.setAttribute("onclick","dijit.byId('"+data['contentletInode']+'_Dialog'+"').show()");
 				thumbnailParentDiv.appendChild(thumbNailImg);
 
-			<%} else { %>
+			} else {
 
 				var newImageEditor = new dotcms.dijit.image.ImageEditor({
 				            editImageText : "<%= LanguageUtil.get(pageContext, "Edit-Image") %>",
@@ -743,7 +743,7 @@ dojo.require("dojox.layout.ContentPane");
                 });
                 newImageEditor.placeAt(thumbnailParentDiv);
 
-			<%}%>
+			}
 		}
 	}
 
