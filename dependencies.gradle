@@ -2,7 +2,6 @@
 dependencies {
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: 'g9749993-SNAPSHOT'
-    compile fileTree(dir: '/Users/oswaldogallango/Documents/workspace2/support/enterprise-2.x/build', include: '*.jar')     
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: 'gaeb6cd0'
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
