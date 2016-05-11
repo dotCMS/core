@@ -117,7 +117,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotHibernateException {
 		HibernateUtil hu = new HibernateUtil(Template.class);
 		String query = !includeArchived?templatesUnderHostSQL + " and vi.deleted = " + DbConnectionFactory.getDBFalse():templatesUnderHostSQL;
-		hu.setSQLQuery(templatesUnderHostSQL);
+		hu.setSQLQuery(query);
 		hu.setParam(parentHost.getIdentifier());
 		return new ArrayList<Template>(new HashSet<Template>(hu.list()));
 	}
