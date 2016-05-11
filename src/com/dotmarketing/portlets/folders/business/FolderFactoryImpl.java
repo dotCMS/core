@@ -37,6 +37,7 @@ import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -972,7 +973,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		for(Map<String,Object> rr : (List<Map<String,Object>>)dc.loadResults()) {
 		    childIdents.add((String)rr.get("id"));
 		}
-		HibernateUtil.addCommitListener(new Runnable() {
+		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             public void run() {
                 for(String id : childIdents) {
                     CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id);
