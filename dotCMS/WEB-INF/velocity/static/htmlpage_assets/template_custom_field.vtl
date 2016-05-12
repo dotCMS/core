@@ -23,7 +23,7 @@ function getTemplateCallBack(data) {
     
     var imageEl=dojo.byId("templateThumbnailHolder");
     if (isInodeSet(imageInode)) {
-        imageEl.src = "/thumbnail?id=" + imageInode + "&w=250&h=250";
+    	imageEl.src = "/contentAsset/image-thumbnail/" + imageInode + "/fileAsset/w/250/h/250/bg/255255255";
         imageEl.style.border = '1px solid #B6CBEB';
     }
     else {
