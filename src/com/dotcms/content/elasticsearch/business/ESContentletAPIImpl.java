@@ -837,8 +837,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     *
-     * @deprecated Use {@link  #loadPageByIdentifier ( String ident, boolean live, Long languageId, User user, boolean frontRoles )} instead.
+     * @deprecated As of release 3.6, use {@link #loadPageByIdentifier(String, boolean, Long, User, boolean)} instead.
      */
 
     @Deprecated
