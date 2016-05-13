@@ -838,15 +838,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     /**
      *
-     * @param ident
-     * @param live
-     * @param user
-     * @param frontRoles
-     * @return
-     * @throws DotDataException
-     * @throws DotContentletStateException
-     * @throws DotSecurityException
+     * @deprecated Use {@link  #loadPageByIdentifier ( String ident, boolean live, Long languageId, User user, boolean frontRoles )} instead.
      */
+
+    @Deprecated
     private IHTMLPage loadPageByIdentifier ( String ident, boolean live, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
         return loadPageByIdentifier(ident, live, 0L, user, frontRoles);
     }
