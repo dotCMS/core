@@ -861,11 +861,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown") + " cannot read Contentlet");
         }
         Identifier id = APILocator.getIdentifierAPI().find(contentlet);
-        if (!InodeUtils.isSet(id.getInode()))
+        if (!InodeUtils.isSet(id.getId()))
             return results;
-        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getInode());
+        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getId());
         for (MultiTree tree : trees) {
-            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, APILocator.getUserAPI().getSystemUser(), false);
+            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 Map<String, Object> map = new HashMap<String, Object>();
