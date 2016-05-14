@@ -1,10 +1,9 @@
 package com.dotmarketing.portlets.linkchecker.util;
 
+import com.dotcms.proxy.request.MockHttpRequest;
+import com.dotcms.proxy.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
@@ -14,10 +13,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.language.LanguageUtil;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.util.HashMap;
+
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Utility class for replace placeholders into mail msg before it was send.
@@ -83,15 +83,10 @@ public class LinkCheckerUtil {
             String link = "http://" + host.getHostname() + Config.getStringProperty("WORKFLOWS_URL") + "&_EXT_21_inode="
                     + String.valueOf(processor.getTask().getId());
 
-            InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
+            HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), null).request();
+    		HttpServletResponse responseProxy 	= new BaseResponse().response();
 
-            DotRequestProxy requestProxy = (DotRequestProxy) Proxy.newProxyInstance(DotRequestProxy.class.getClassLoader(),
-                    new Class[] { DotRequestProxy.class }, dotInvocationHandler);
-            requestProxy.put("host", host);
-            requestProxy.put("host_id", host.getIdentifier());
-            requestProxy.put("user", processor.getUser());
-            DotResponseProxy responseProxy = (DotResponseProxy) Proxy.newProxyInstance(DotResponseProxy.class.getClassLoader(),
-                    new Class[] { DotResponseProxy.class }, dotInvocationHandler);
+
 
             org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
             ctx.put("host", host);

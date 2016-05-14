@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -19,6 +21,8 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.proxy.request.MockHttpRequest;
+import com.dotcms.proxy.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -33,9 +37,7 @@ import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
+
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -783,28 +785,10 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, Long langId, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
-		/*
-		 * The below code is copied from VelocityServlet.doLiveMode() and
-		 * modified to parse a HTMLPage. Replaced the request and response
-		 * objects with DotRequestProxy and DotResponseProxyObjects.
-		 * 
-		 * TODO Code clean-up.
-		 * 
-		 * TODO: I don't think it will work - jorge.urdaneta
-		 */
 
-		InvocationHandler dotInvocationHandler = new DotInvocationHandler(
-				new HashMap());
 
-		DotRequestProxy requestProxy = (DotRequestProxy) Proxy
-				.newProxyInstance(DotRequestProxy.class.getClassLoader(),
-						new Class[] { DotRequestProxy.class },
-						dotInvocationHandler);
-
-		DotResponseProxy responseProxy = (DotResponseProxy) Proxy
-				.newProxyInstance(DotResponseProxy.class.getClassLoader(),
-						new Class[] { DotResponseProxy.class },
-						dotInvocationHandler);
+		HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), uri).request();
+		HttpServletResponse responseProxy 	= new BaseResponse().response();
 
 		StringWriter out = new StringWriter();
 		Context context = null;
@@ -847,10 +831,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 			responseProxy.addCookie(idCookie);
 		}
 
-		requestProxy.put("host", host);
-		requestProxy.put("host_id", host.getIdentifier());
-		requestProxy.put("uri", uri);
-		requestProxy.put("user", user);
+		
 		if (!liveMode) {
 			requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
 			requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");

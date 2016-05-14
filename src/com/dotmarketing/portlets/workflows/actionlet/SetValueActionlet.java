@@ -7,11 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dotcms.proxy.request.MockHttpRequest;
+import com.dotcms.proxy.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -64,16 +66,8 @@ public class SetValueActionlet extends WorkFlowActionlet {
                     host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
                 }
 
-                InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
-
-                DotRequestProxy requestProxy = (DotRequestProxy) Proxy.newProxyInstance(
-                        DotRequestProxy.class.getClassLoader(), new Class[] { DotRequestProxy.class }, dotInvocationHandler);
-                requestProxy.put("host", host);
-                requestProxy.put("host_id", host.getIdentifier());
-                requestProxy.put("user", processor.getUser());
-                DotResponseProxy responseProxy = (DotResponseProxy) Proxy.newProxyInstance(
-                        DotResponseProxy.class.getClassLoader(), new Class[] { DotResponseProxy.class },
-                        dotInvocationHandler);
+                HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), null).request();
+        		HttpServletResponse responseProxy 	= new BaseResponse().response();
 
                 org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
                 ctx.put("host", host);
