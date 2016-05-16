@@ -1,4 +1,4 @@
-package com.dotcms.proxy.request;
+package com.dotcms.mock.request;
 
 import javax.servlet.http.HttpServletRequest;
 

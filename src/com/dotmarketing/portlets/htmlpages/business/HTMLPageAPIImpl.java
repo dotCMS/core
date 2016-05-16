@@ -20,8 +20,8 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotcms.enterprise.cmis.QueryResult;
-import com.dotcms.proxy.request.MockHttpRequest;
-import com.dotcms.proxy.response.BaseResponse;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;

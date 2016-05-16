@@ -1,4 +1,4 @@
-package com.dotcms.proxy.response;
+package com.dotcms.mock.response;
 
 import javax.servlet.http.HttpServletResponse;
 

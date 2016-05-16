@@ -1,11 +1,16 @@
-package com.dotcms.proxy.request;
+package com.dotcms.mock.request;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.mockito.Mockito;
 
 
-
+/**
+ * 
+ * Mocks a full featured request to
+ * a specific host / resource 
+ *
+ */
 public class MockHttpRequest implements MockRequest {
 
 	private final HttpServletRequest request;
