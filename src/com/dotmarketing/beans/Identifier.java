@@ -50,7 +50,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
     //private String inode;
     
     /**
-     * @deprecated As of release 3.6, replaced by {@link #getId()}
+     * @deprecated As of 2016-05-16, replaced by {@link #getId()}
      */
     @Deprecated
 	public String getInode() {

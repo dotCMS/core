@@ -31,12 +31,65 @@ import com.dotmarketing.util.UtilMethods;
 public class Structure extends Inode implements Permissionable, Exportable, Importable,Treeable  {
 
     public static final String STRUCTURE_TYPE_ALL       = "_all";
+
+	/**
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#CONTENT}
+	 */
+	@Deprecated
 	public static final int STRUCTURE_TYPE_CONTENT 		= 1;
+
+	/**
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#WIDGET}
+	 */
+	@Deprecated
 	public static final int STRUCTURE_TYPE_WIDGET 		= 2;
+
+	/**
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#FORM}
+	 */
+	@Deprecated
 	public static final int STRUCTURE_TYPE_FORM 		= 3;
+
+	/**
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#FILEASSET}
+	 */
+	@Deprecated
 	public static final int STRUCTURE_TYPE_FILEASSET 	= 4;
+
+	/**
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#HTMLPAGE}
+	 */
+	@Deprecated
 	public static final int STRUCTURE_TYPE_HTMLPAGE     = 5;
-	public static final int STRUCTURE_TYPE_PERSONA		= 6; 
+
+	/**
+	 * @deprecated As of 2016-05-16, replaced by  {@link Type#PERSONA}
+	 */
+	@Deprecated
+	public static final int STRUCTURE_TYPE_PERSONA		= 6;
+
+	public enum Type {
+		CONTENT(1),
+		WIDGET(2),
+		FORM(3),
+		FILEASSET(4),
+		HTMLPAGE(5),
+		PERSONA(6);
+
+		private int type;
+
+		Type(int type) {
+			this.type = type;
+		}
+
+		/**
+		 * Gets the integer representation of this value.
+		 * @return the integer representation
+         */
+		public int getType() {
+			return type;
+		}
+	}
 			
 	private static final long serialVersionUID = 1L;
 	private String name;
@@ -45,7 +98,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	private String reviewInterval;
 	private String reviewerRole;
 	private String pagedetail;
-	private int structureType = STRUCTURE_TYPE_CONTENT;
+	private int structureType = Type.CONTENT.getType();
 	private boolean fixed;
 	private boolean system;
 	private String velocityVarName;
@@ -72,12 +125,6 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		// TODO Auto-generated method stub
 		return false;
 	}
-
-
-
-
-
-
 
 	public String getDetailPage() {
 		return pagedetail;
