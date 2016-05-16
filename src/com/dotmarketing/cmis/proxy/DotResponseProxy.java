@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * This is  Proxy for HTTPServletResponse, This extends Map to put and get objects.
- * @Deprecated - use  {@link com.dotcms.mock.response.MockHttpResponse.response()} instead
+ * @Deprecated - as of 2016-05-16 use  {@link com.dotcms.mock.response.MockHttpResponse.response()} instead
  */
 @Deprecated 
 public interface DotResponseProxy extends HttpServletResponse,Map{
