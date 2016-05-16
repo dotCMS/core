@@ -22,13 +22,16 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -49,9 +52,7 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
-import com.dotmarketing.portlets.containers.ContainerDataGen;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.ContentletDataGen;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
@@ -59,7 +60,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -70,7 +70,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.TemplateDataGen;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -762,16 +761,34 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void getContentletReferences () throws Exception {
-
-    	ContainerDataGen containerDataGen = new ContainerDataGen();
-    	containerDataGen.code("$!{body}");
+    	
+    	Container container;
+    	ContainerDataGen containerDataGen;
+    	Contentlet defaultPage, extraPage, content;
+    	ContentletDataGen contentletDataGen;
+    	MultiTree multiTree;
+    	List<Contentlet> contents, pages;
+    	List<Language> languages;
+    	Structure newStructure;
+    	TemplateDataGen templateDataGen;
+    	com.dotmarketing.portlets.templates.model.Template template;
+    	
+    	containerDataGen = new ContainerDataGen();
+    	contents = new ArrayList<>();
+	    pages = new ArrayList<>();
+	    
+	    //Create a new content type
+	    newStructure = createStructure( "Test Structure_0_"+System.currentTimeMillis(), "junit_test_st_0_"+System.currentTimeMillis() );
+	    
+	    //Create a container
+	    containerDataGen.code("$!{body}");
     	containerDataGen.friendlyName("JUnit Test Container 1 Friendly Name");
     	containerDataGen.notes("");
     	containerDataGen.title("JUnit Test Container 1");
-    	
-    	Container container = containerDataGen.nextPersisted();
-    	
-    	TemplateDataGen templateDataGen = new TemplateDataGen();
+	    container = containerDataGen.nextPersisted();
+	    	
+	    //Create a template
+	    templateDataGen = new TemplateDataGen();
     	templateDataGen.body("<html>\n<head>\n</head>\n<body>\n</body>\n#parseContainer('" + container.getIdentifier() + "')\n<br>\n<br>\n#parseContainer('" + container.getIdentifier() + "')\n</html>");
     	templateDataGen.footer("");
     	templateDataGen.friendlyName("JUnit Test Template 1 Friendly Name");
@@ -779,45 +796,82 @@ public class ContentletAPITest extends ContentletBaseTest {
     	templateDataGen.image("");
     	templateDataGen.selectedImage("");
     	templateDataGen.title("JUnit Test Template 1");
-    	
-    	com.dotmarketing.portlets.templates.model.Template template = templateDataGen.nextPersisted();
-    	
-    	Contentlet contentlet;
-    	List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-    	List<ContentletDataGen> contentletList = new ArrayList<>();
-    	
-    	ContentletDataGen contentletDataGen = new ContentletDataGen();
+	    template = templateDataGen.nextPersisted();
+	    
+	    //Search for existing languages
+	    languages = APILocator.getLanguageAPI().getLanguages();
+	    
+		//Create a new page
+    	contentletDataGen = new ContentletDataGen();
     	contentletDataGen
 				.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "test-page");
     	
     	contentletDataGen.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
     	contentletDataGen.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD,
 				template.getIdentifier());
-    	for (Language lang:languages){
-    		contentletDataGen.languageId(lang.getId());
-    		contentletDataGen.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
-    				"page " + lang.getLanguage());
-    		contentletDataGen.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
-    				"page " + lang.getLanguage());
-    		contentletList.add(contentletDataGen);
+    	contentletDataGen.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "test-page");
+		contentletDataGen.languageId(languages.get(0).getId());
+		contentletDataGen.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
+				"page " + languages.get(0).getLanguage());
+		contentletDataGen.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
+				"page " + languages.get(0).getLanguage());
+	    	
+    	
+		//Add a relationship among the page, the container and a new contentlet
+		//in the same language
+		defaultPage = contentletDataGen.nextPersisted();
+    		
+		content = createContentlet(newStructure, languages.get(0), false);
+		
+		multiTree = new MultiTree(defaultPage.getIdentifier(), container.getIdentifier(), content.getIdentifier());
+    		
+    	MultiTreeFactory.saveMultiTree(multiTree);
+    		
+		pages.add(defaultPage);
+		contents.add(content);
+		
+		//Create additional pages for other languages
+    	for (int i = 1;i<languages.size();i++){
+    		extraPage = contentletDataGen.next(defaultPage);
+    		extraPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
+					"page " + languages.get(i).getLanguage());
+    		extraPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
+					"page " + languages.get(i).getLanguage());
+    		extraPage.setLanguageId(languages.get(i).getId());
+    		extraPage = contentletDataGen.persist(extraPage);
+    		
+    		content = createContentlet(newStructure, languages.get(i), false);
+    	
+    		multiTree = new MultiTree(extraPage.getIdentifier(), container.getIdentifier(), content.getIdentifier());
+    		
+    		MultiTreeFactory.saveMultiTree(multiTree);
+    		
+    		pages.add(extraPage);
+    		contents.add(content);
     	}
-        //Retrieve all the references for this Contentlet.
+    	
+        //Retrieve all the references for this Contentlet considering its language.
         List<Map<String, Object>> references = null;
-        for (ContentletDataGen c : contentletList) {
-        	contentlet = c.nextPersisted();
-        	references = contentletAPI.getContentletReferences(contentlet, user, false);
+        for(int i=0;i<contents.size();i++){
+
+        	//get references
+        	references = contentletAPI.getContentletReferences(contents.get(i), user, false);
         	
-        	//Validations
+        	//execute validations
         	assertNotNull(references);
             assertTrue(!references.isEmpty());
-            assertEquals(((IHTMLPage)references.get(0).get("page")).getLanguageId(), contentlet.getLanguageId());
+            assertEquals(((IHTMLPage)references.get(0).get("page")).getLanguageId(), contents.get(i).getLanguageId());
             
-            //Remove existing object
-            c.remove(contentlet);
+        }
+ 
+        //Remove created elements
+        //TODO: remove pages, content, and multitree
+        /*for (Contentlet p:pages){
+        	contentletDataGen.remove(p);
         }
         
         containerDataGen.remove(container);
-        templateDataGen.remove(template);
+        templateDataGen.remove(template);*/
     }
 
     /**
