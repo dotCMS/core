@@ -8,7 +8,7 @@ import javax.servlet.http.HttpSession;
  * This is  Proxy for HTTPServletRequest, This extends Map to put and get objects.
  * This uses DotRequestProxy.map to store and retrieve objects.
  */
-
+@Deprecated
 public interface DotSessionProxy extends HttpSession,Map{
 
 }
