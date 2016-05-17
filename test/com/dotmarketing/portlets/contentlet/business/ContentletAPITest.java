@@ -29,6 +29,8 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
@@ -765,20 +767,22 @@ public class ContentletAPITest extends ContentletBaseTest {
     	Container container;
     	ContainerDataGen containerDataGen;
     	Contentlet defaultPage, extraPage, content;
-    	ContentletDataGen contentletDataGen;
+    	ContentletDataGen contentletDataGen, htmlPageDataGen;
     	MultiTree multiTree;
     	List<Contentlet> contents, pages;
     	List<Language> languages;
     	Structure newStructure;
+    	StructureDataGen structureDataGen;
     	TemplateDataGen templateDataGen;
     	com.dotmarketing.portlets.templates.model.Template template;
     	
     	containerDataGen = new ContainerDataGen();
+    	structureDataGen = new StructureDataGen();
     	contents = new ArrayList<>();
 	    pages = new ArrayList<>();
 	    
 	    //Create a new content type
-	    newStructure = createStructure( "Test Structure_0_"+System.currentTimeMillis(), "junit_test_st_0_"+System.currentTimeMillis() );
+	    newStructure = structureDataGen.nextPersistedContentGeneric();
 	    
 	    //Create a container
 	    containerDataGen.code("$!{body}");
@@ -802,26 +806,33 @@ public class ContentletAPITest extends ContentletBaseTest {
 	    languages = APILocator.getLanguageAPI().getLanguages();
 	    
 		//Create a new page
-    	contentletDataGen = new ContentletDataGen();
-    	contentletDataGen
+	    htmlPageDataGen = new HTMLPageDataGen();
+	    htmlPageDataGen
 				.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "test-page");
     	
-    	contentletDataGen.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-    	contentletDataGen.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD,
+	    htmlPageDataGen.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+	    htmlPageDataGen.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD,
 				template.getIdentifier());
-    	contentletDataGen.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "test-page");
-		contentletDataGen.languageId(languages.get(0).getId());
-		contentletDataGen.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
+	    htmlPageDataGen.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "test-page");
+	    htmlPageDataGen.languageId(languages.get(0).getId());
+	    htmlPageDataGen.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
 				"page " + languages.get(0).getLanguage());
-		contentletDataGen.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
+	    htmlPageDataGen.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
 				"page " + languages.get(0).getLanguage());
 	    	
     	
 		//Add a relationship among the page, the container and a new contentlet
 		//in the same language
-		defaultPage = contentletDataGen.nextPersisted();
+		defaultPage = htmlPageDataGen.nextPersisted();
+		
+		contentletDataGen = new ContentletDataGen();
+		contentletDataGen.setProperty("body", "Default contentlet body");
+		contentletDataGen.setProperty("title", "Default contentlet title");
+		contentletDataGen.languageId(languages.get(0).getId());
+		contentletDataGen.structureInode(newStructure.getInode());
+		
     		
-		content = createContentlet(newStructure, languages.get(0), false);
+		content = contentletDataGen.nextPersisted();
 		
 		multiTree = new MultiTree(defaultPage.getIdentifier(), container.getIdentifier(), content.getIdentifier());
     		
@@ -832,15 +843,16 @@ public class ContentletAPITest extends ContentletBaseTest {
 		
 		//Create additional pages for other languages
     	for (int i = 1;i<languages.size();i++){
-    		extraPage = contentletDataGen.next(defaultPage);
+    		extraPage = htmlPageDataGen.next(defaultPage);
     		extraPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
 					"page " + languages.get(i).getLanguage());
     		extraPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
 					"page " + languages.get(i).getLanguage());
     		extraPage.setLanguageId(languages.get(i).getId());
-    		extraPage = contentletDataGen.persist(extraPage);
+    		extraPage = htmlPageDataGen.persist(extraPage);
     		
-    		content = createContentlet(newStructure, languages.get(i), false);
+    		contentletDataGen.languageId(languages.get(i).getId());
+    		content = contentletDataGen.nextPersisted();
     	
     		multiTree = new MultiTree(extraPage.getIdentifier(), container.getIdentifier(), content.getIdentifier());
     		
@@ -865,13 +877,18 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
  
         //Remove created elements
-        //TODO: remove pages, content, and multitree
-        /*for (Contentlet p:pages){
-        	contentletDataGen.remove(p);
+        for (Contentlet p:pages){
+        	htmlPageDataGen.remove(p);
         }
         
+        templateDataGen.remove(template);
         containerDataGen.remove(container);
-        templateDataGen.remove(template);*/
+        
+        for (Contentlet c:contents){
+        	contentletDataGen.remove(c);
+        }
+       
+        structureDataGen.remove(newStructure);
     }
 
     /**

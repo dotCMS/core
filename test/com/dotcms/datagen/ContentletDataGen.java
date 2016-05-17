@@ -25,11 +25,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet>{
 	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 	private static final FolderAPI folderAPI = APILocator.getFolderAPI();
 	private static final String folderPath = "/testfolder" + UUIDGenerator.generateUuid();
-	private static final Folder folder;
+	private static Folder folder;
 
-	private String structureInode = HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE;
-	private Map<String, String> properties = new HashMap<>();
-	private long languageId;
+	protected String structureInode;
+	protected Map<String, String> properties = new HashMap<>();
+	protected long languageId;
 	
     static {
         try {
@@ -134,8 +134,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet>{
     	try{
 	    	this.archive(contentlet);
 	    	this.delete(contentlet);
-	    	folderAPI.delete(folder, user, false);
-    	} catch (DotContentletStateException | DotDataException | DotSecurityException e) {
+    	} catch (DotContentletStateException e) {
 			throw new RuntimeException(e);
 		}
     }
