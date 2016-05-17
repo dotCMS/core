@@ -3,8 +3,7 @@ package com.dotmarketing.business.cache.provider.h2;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.jboss.cache.*;
-import com.dotcms.repackage.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
-import com.dotcms.repackage.org.jboss.cache.loader.CacheLoader;
+
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.util.CacheUtil;
 import com.dotmarketing.cache.RegionLock;
@@ -20,7 +19,7 @@ import java.util.*;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-public class H2CacheLoader extends CacheProvider implements CacheLoader {
+public class H2CacheLoader extends CacheProvider  {
 
 	private static final long serialVersionUID = 5285667050052706116L;
 
@@ -38,13 +37,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
 	private boolean allowConnections = true;
 	
-	public void commit(Object arg0) throws Exception {
-		
-	}
 
-	public boolean exists(Fqn arg0) throws Exception {
-		return false;
-	}
 
 	@Override
 	public String getName () {
@@ -217,17 +210,8 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 			stats.put("isDefault", isDefault);
 			stats.put("memory", -1);
 			stats.put("disk", getGroupCount(group));
-
-			int configured = isDefault
-					? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
-					: (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-					? Config.getIntProperty("cache." + group + ".size")
-					: (group.startsWith(WORKING_CACHE_PREFIX) && Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size", -1) != -1)
-					? Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size")
-					: (group.startsWith(LIVE_CACHE_PREFIX) && Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size", -1) != -1)
-					? Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size")
-					: Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
-			stats.put("configuredSize", configured);
+			// we don't limit the size of the disk cache
+			stats.put("configuredSize", -1);
 
 			list.add(stats);
 		}
@@ -249,25 +233,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		return loadAttributes(arg0);
 	}
 
-	public Set<?> getChildrenNames(Fqn arg0) throws Exception {
-		return null;
-	}
 
-	public IndividualCacheLoaderConfig getConfig() {
-		return null;
-	}
-
-	public void loadEntireState(ObjectOutputStream arg0) throws Exception {
-				
-	}
-
-	public void loadState(Fqn arg0, ObjectOutputStream arg1) throws Exception {
-
-	}
-
-	public void prepare ( Object arg0, List<Modification> arg1, boolean arg2 ) throws Exception {
-		put(arg1);
-	}
 
 	public void put(List<Modification> arg0) throws Exception {
 		for (Modification mod : arg0) {
@@ -302,29 +268,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		
 	}
 
-	public void rollback(Object arg0) {
-		
-	}
 
-	public void setCache(CacheSPI arg0) {
-		
-	}
-
-	public void setConfig(IndividualCacheLoaderConfig arg0) {
-		
-	}
-
-	public void setRegionManager(RegionManager arg0) {
-		
-	}
-
-	public void storeEntireState(ObjectInputStream arg0) throws Exception {
-		
-	}
-
-	public void storeState(Fqn arg0, ObjectInputStream arg1) throws Exception {
-		
-	}
 
 	private class dbInitThread extends Thread {
 		private int x; 
@@ -423,13 +367,6 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		}
 	}
 
-	public void start() throws Exception {
-		
-	}
-
-	public void stop() {
-		
-	}
 
 	private Connection createConnection ( boolean autoCommit, int dbnumber ) throws SQLException {
 		return createConnection(autoCommit, dbnumber, false);
