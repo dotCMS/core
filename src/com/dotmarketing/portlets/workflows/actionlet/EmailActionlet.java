@@ -1,10 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import java.io.File;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -108,8 +105,8 @@ public class EmailActionlet extends WorkFlowActionlet {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
 
-            HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), null).request();
-    		HttpServletResponse responseProxy 	= new BaseResponse().response();
+            HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+            HttpServletResponse responseProxy = new BaseResponse().response();
             org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
             ctx.put("host", host);
             ctx.put("host_id", host.getIdentifier());

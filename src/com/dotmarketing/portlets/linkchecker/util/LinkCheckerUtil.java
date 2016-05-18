@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.linkchecker.util;
 
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
@@ -12,12 +17,6 @@ import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.language.LanguageUtil;
-
-
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Utility class for replace placeholders into mail msg before it was send.
@@ -83,8 +82,8 @@ public class LinkCheckerUtil {
             String link = "http://" + host.getHostname() + Config.getStringProperty("WORKFLOWS_URL") + "&_EXT_21_inode="
                     + String.valueOf(processor.getTask().getId());
 
-            HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), null).request();
-    		HttpServletResponse responseProxy 	= new BaseResponse().response();
+            HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+            HttpServletResponse responseProxy = new BaseResponse().response();
 
 
 

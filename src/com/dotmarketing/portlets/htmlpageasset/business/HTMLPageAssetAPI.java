@@ -1,48 +1,19 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
-import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
-import javax.servlet.http.Cookie;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.UserProxy;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.LanguageWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.ClickstreamFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
 
 /**

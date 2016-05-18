@@ -8,11 +8,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -25,18 +22,15 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -46,9 +40,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -2018,8 +2009,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         contentTester.init(null, null);
 
-		HttpServletRequest requestProxy 	= new MockInternalRequest().request();
-		HttpServletResponse responseProxy 	= new BaseResponse().response();
+        HttpServletRequest requestProxy = new MockInternalRequest().request();
+        HttpServletResponse responseProxy = new BaseResponse().response();
 
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());

@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.workflows.util;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,87 +45,91 @@ public class WorkflowEmailUtil {
 	 * @param isHTML
 	 */
 
-	public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText, Boolean isHTML) {
+    public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText,
+            Boolean isHTML) {
 
 
-		try {
-			if (isHTML == null) {
-				isHTML = false;
-			}
-			if (!UtilMethods.isSet(subject)) {
-				subject = processor.getContentlet().getTitle() + " --> " + processor.getNextStep().getName() + " (dotCMS "
-						+ LanguageUtil.get(processor.getUser(), "Workflow") + ")";
-			}
+        try {
+            if (isHTML == null) {
+                isHTML = false;
+            }
+            if (!UtilMethods.isSet(subject)) {
+                subject = processor.getContentlet().getTitle() + " --> " + processor.getNextStep().getName()
+                        + " (dotCMS " + LanguageUtil.get(processor.getUser(), "Workflow") + ")";
+            }
 
-			// get the host of the content
-			Host host = APILocator.getHostAPI().find(processor.getContentlet().getHost(), APILocator.getUserAPI().getSystemUser(), false);
-			if (host.isSystemHost()) {
-				host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
-			}
-			
-			List<Layout>layouts = APILocator.getLayoutAPI().findAllLayouts();
-			Layout layout = new Layout();
-			for (Layout lout : layouts) {
-				if(lout.getPortletIds().contains("EXT_21")){
-					layout=lout;
-					break;
-				}
-			}	
-			String link = Config.getStringProperty("WORKFLOW_OVERRIDE_LINK_URL");
-			if(!UtilMethods.isSet(link)){
-				String serverPort = Config.getStringProperty("WEB_SERVER_HTTP_PORT", "80");
-				String serverScheme = Config.getStringProperty("WEB_SERVER_SCHEME", "http");
-				link+=serverScheme +"://" + host.getHostname() +":"+serverPort; 
-				
-			}
-			link+= "/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
-					+ processor.getTask().getId();			
+            // get the host of the content
+            Host host = APILocator.getHostAPI().find(processor.getContentlet().getHost(),
+                    APILocator.getUserAPI().getSystemUser(), false);
+            if (host.isSystemHost()) {
+                host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
+            }
 
-            HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), null).request();
-    		HttpServletResponse responseProxy 	= new BaseResponse().response();
-			org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
-			ctx.put("host", host);
-			ctx.put("host_id", host.getIdentifier());
-			ctx.put("user", processor.getUser());
-			ctx.put("workflow", processor);
-			ctx.put("workflowLink", link);
-			ctx.put("stepName", processor.getStep().getName());
-			ctx.put("stepId", processor.getStep().getId());
-			ctx.put("nextAssign", processor.getNextAssign().getName());
-			ctx.put("workflowMessage", processor.getWorkflowMessage());
-			ctx.put("nextStepResolved", processor.getNextStep().isResolved());
-			ctx.put("nextStepId", processor.getNextStep().getId());
-			ctx.put("nextStepName", processor.getNextStep().getName());
-			ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle())?processor.getTask().getTitle() : processor.getContentlet().getTitle());
-			ctx.put("modDate", processor.getTask().getModDate());
-			ctx.put("structureName", processor.getContentlet().getStructure().getName());
+            List<Layout> layouts = APILocator.getLayoutAPI().findAllLayouts();
+            Layout layout = new Layout();
+            for (Layout lout : layouts) {
+                if (lout.getPortletIds().contains("EXT_21")) {
+                    layout = lout;
+                    break;
+                }
+            }
+            String link = Config.getStringProperty("WORKFLOW_OVERRIDE_LINK_URL");
+            if (!UtilMethods.isSet(link)) {
+                String serverPort = Config.getStringProperty("WEB_SERVER_HTTP_PORT", "80");
+                String serverScheme = Config.getStringProperty("WEB_SERVER_SCHEME", "http");
+                link += serverScheme + "://" + host.getHostname() + ":" + serverPort;
+
+            }
+            link += "/c/portal/layout?p_l_id=" + layout.getId()
+                    + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
+                    + processor.getTask().getId();
+
+            HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+            HttpServletResponse responseProxy = new BaseResponse().response();
+            org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
+            ctx.put("host", host);
+            ctx.put("host_id", host.getIdentifier());
+            ctx.put("user", processor.getUser());
+            ctx.put("workflow", processor);
+            ctx.put("workflowLink", link);
+            ctx.put("stepName", processor.getStep().getName());
+            ctx.put("stepId", processor.getStep().getId());
+            ctx.put("nextAssign", processor.getNextAssign().getName());
+            ctx.put("workflowMessage", processor.getWorkflowMessage());
+            ctx.put("nextStepResolved", processor.getNextStep().isResolved());
+            ctx.put("nextStepId", processor.getNextStep().getId());
+            ctx.put("nextStepName", processor.getNextStep().getName());
+            ctx.put("workflowTaskTitle", UtilMethods.isSet(processor.getTask().getTitle())
+                    ? processor.getTask().getTitle() : processor.getContentlet().getTitle());
+            ctx.put("modDate", processor.getTask().getModDate());
+            ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
 
 
-			if (!UtilMethods.isSet(emailText)) {
-				emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.html", ctx);
-				isHTML = true;
-			} else {
-				emailText = VelocityUtil.eval(emailText, ctx);
-			}
-			for(String x: email){
-				Mailer mail = new Mailer();
-				mail.setFromEmail(processor.getUser().getEmailAddress());
-				mail.setFromName(processor.getUser().getFullName());
-				mail.setToEmail(x);
-				mail.setSubject(VelocityUtil.eval(subject, ctx));
-				if (isHTML) {
-					mail.setHTMLAndTextBody(emailText);
-				} else {
-					mail.setTextBody(emailText);
-				}
-				mail.sendMessage();
-			}
-		} catch (Exception e) {
-			throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage());
-		}
+            if (!UtilMethods.isSet(emailText)) {
+                emailText = VelocityUtil.mergeTemplate("static/workflow/workflow_email_template.html", ctx);
+                isHTML = true;
+            } else {
+                emailText = VelocityUtil.eval(emailText, ctx);
+            }
+            for (String x : email) {
+                Mailer mail = new Mailer();
+                mail.setFromEmail(processor.getUser().getEmailAddress());
+                mail.setFromName(processor.getUser().getFullName());
+                mail.setToEmail(x);
+                mail.setSubject(VelocityUtil.eval(subject, ctx));
+                if (isHTML) {
+                    mail.setHTMLAndTextBody(emailText);
+                } else {
+                    mail.setTextBody(emailText);
+                }
+                mail.sendMessage();
+            }
+        } catch (Exception e) {
+            throw new DotWorkflowException("Exception ocurred trying to deliver emails for workflow " + e.getMessage());
+        }
 
-	}
+    }
 
 	/**
 	 * This method will take the "nextAssign" role from the processor and use it

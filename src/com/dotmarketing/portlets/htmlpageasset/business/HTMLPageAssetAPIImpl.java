@@ -1,8 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
 import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,10 +17,10 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -37,7 +35,6 @@ import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -782,205 +779,180 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
 	@Override
-	public String getHTML(String uri, Host host, boolean liveMode,
-			String contentId, User user, Long langId, String userAgent)
-			throws DotStateException, DotDataException, DotSecurityException {
+    public String getHTML(String uri, Host host, boolean liveMode, String contentId, User user, Long langId,
+            String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
 
-		HttpServletRequest requestProxy 	= new MockHttpRequest(host.getHostname(), uri).request();
-		HttpServletResponse responseProxy 	= new BaseResponse().response();
+        HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), uri).request();
+        HttpServletResponse responseProxy = new BaseResponse().response();
 
-		StringWriter out = new StringWriter();
-		Context context = null;
+        StringWriter out = new StringWriter();
+        Context context = null;
 
 
 
-		// Map with all identifier inodes for a given uri.
-		String idInode = APILocator.getIdentifierAPI().find(host, uri)
-				.getInode();
+        // Map with all identifier inodes for a given uri.
+        String idInode = APILocator.getIdentifierAPI().find(host, uri).getInode();
 
-		String cachedUri;
-		if(UtilMethods.isSet(langId)){
-			// Checking the path is really live using the livecache
-			cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host, langId)
-					: WorkingCache.getPathFromCache(uri, host, langId);
-		}else{
+        String cachedUri;
+        if (UtilMethods.isSet(langId)) {
             // Checking the path is really live using the livecache
-            cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host)
-                    : WorkingCache.getPathFromCache(uri, host);
+            cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host, langId)
+                    : WorkingCache.getPathFromCache(uri, host, langId);
+        } else {
+            // Checking the path is really live using the livecache
+            cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host) : WorkingCache.getPathFromCache(uri, host);
         }
 
-		// if we still have nothing.
-		if (!InodeUtils.isSet(idInode) || cachedUri == null) {
-			throw new ResourceNotFoundException(String.format(
-					"Resource %s not found in Live mode!", uri));
-		}
+        // if we still have nothing.
+        if (!InodeUtils.isSet(idInode) || cachedUri == null) {
+            throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
+        }
 
-		responseProxy.setContentType("text/html");
-		requestProxy.setAttribute("User-Agent", userAgent);
-		requestProxy.setAttribute("idInode", String.valueOf(idInode));
+        responseProxy.setContentType("text/html");
+        requestProxy.setAttribute("User-Agent", userAgent);
+        requestProxy.setAttribute("idInode", String.valueOf(idInode));
 
-		/* Set long lived cookie regardless of who this is */
-		String _dotCMSID = UtilMethods.getCookieValue(
-				requestProxy.getCookies(),
-				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
+        /* Set long lived cookie regardless of who this is */
+        String _dotCMSID = UtilMethods.getCookieValue(requestProxy.getCookies(),
+                com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
 
-		if (!UtilMethods.isSet(_dotCMSID)) {
-			/* create unique generator engine */
-			Cookie idCookie = CookieUtil.createCookie();
-			responseProxy.addCookie(idCookie);
-		}
+        if (!UtilMethods.isSet(_dotCMSID)) {
+            /* create unique generator engine */
+            Cookie idCookie = CookieUtil.createCookie();
+            responseProxy.addCookie(idCookie);
+        }
 
-		
-		if (!liveMode) {
-			requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
-			requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
-		}
-		boolean signedIn = false;
 
-		if (user != null) {
-			signedIn = true;
-		}
-		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
+        if (!liveMode) {
+            requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
+            requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
+        }
+        boolean signedIn = false;
 
-		Logger.debug(HTMLPageAssetAPIImpl.class, "Page Permissions for URI=" + uri);
+        if (user != null) {
+            signedIn = true;
+        }
+        Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
 
-		IHTMLPage pageProxy = new HTMLPageAsset();
-		pageProxy.setIdentifier(ident.getInode());
+        Logger.debug(HTMLPageAssetAPIImpl.class, "Page Permissions for URI=" + uri);
 
-		// Check if the page is visible by a CMS Anonymous role
-		try {
-			if (!permissionAPI.doesUserHavePermission(pageProxy,
-					PermissionAPI.PERMISSION_READ, user, true)) {
-				// this page is protected. not anonymous access
+        IHTMLPage pageProxy = new HTMLPageAsset();
+        pageProxy.setIdentifier(ident.getInode());
 
-				/*******************************************************************
-				 * If we need to redirect someone somewhere to login before
-				 * seeing a page, we need to edit the /portal/401.jsp page to
-				 * sendRedirect the user to the proper login page. We are not
-				 * using the REDIRECT_TO_LOGIN variable in the config any
-				 * longer.
-				 ******************************************************************/
-				if (!signedIn) {
-					// No need for the below LAST_PATH attribute on the front
-					// end http://jira.dotmarketing.net/browse/DOTCMS-2675
-					// request.getSession().setAttribute(WebKeys.LAST_PATH,
-					// new ObjectValuePair(uri, request.getParameterMap()));
-					requestProxy.getSession().setAttribute(
-							com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN,
-							uri);
+        // Check if the page is visible by a CMS Anonymous role
+        try {
+            if (!permissionAPI.doesUserHavePermission(pageProxy, PermissionAPI.PERMISSION_READ, user, true)) {
+                // this page is protected. not anonymous access
 
-					Logger.debug(HTMLPageAssetAPIImpl.class,
-							"VELOCITY CHECKING PERMISSION: Page doesn't have anonymous access"
-									+ uri);
+                /*******************************************************************
+                 * If we need to redirect someone somewhere to login before seeing a page, we need
+                 * to edit the /portal/401.jsp page to sendRedirect the user to the proper login
+                 * page. We are not using the REDIRECT_TO_LOGIN variable in the config any longer.
+                 ******************************************************************/
+                if (!signedIn) {
+                    // No need for the below LAST_PATH attribute on the front
+                    // end http://jira.dotmarketing.net/browse/DOTCMS-2675
+                    // request.getSession().setAttribute(WebKeys.LAST_PATH,
+                    // new ObjectValuePair(uri, request.getParameterMap()));
+                    requestProxy.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, uri);
 
-					Logger.debug(HTMLPageAssetAPIImpl.class, "401 URI = " + uri);
+                    Logger.debug(HTMLPageAssetAPIImpl.class,
+                            "VELOCITY CHECKING PERMISSION: Page doesn't have anonymous access" + uri);
 
-					Logger.debug(HTMLPageAssetAPIImpl.class, "Unauthorized URI = "
-							+ uri);
-					responseProxy.sendError(401,
-							"The requested page/file is unauthorized");
-					return "An SYSTEM ERROR OCCURED !";
+                    Logger.debug(HTMLPageAssetAPIImpl.class, "401 URI = " + uri);
 
-				} else if (!permissionAPI.getReadRoles(ident).contains(
-						APILocator.getRoleAPI().loadLoggedinSiteRole())) {
-					// user is logged in need to check user permissions
-					Logger.debug(HTMLPageAssetAPIImpl.class,
-							"VELOCITY CHECKING PERMISSION: User signed in");
+                    Logger.debug(HTMLPageAssetAPIImpl.class, "Unauthorized URI = " + uri);
+                    responseProxy.sendError(401, "The requested page/file is unauthorized");
+                    return "An SYSTEM ERROR OCCURED !";
 
-					// check user permissions on this asset
-					if (!permissionAPI.doesUserHavePermission(ident,
-							PermissionAPI.PERMISSION_READ, user, true)) {
-						// the user doesn't have permissions to see this page
-						// go to unauthorized page
-						Logger.warn(HTMLPageAssetAPIImpl.class,
-								"VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
-						responseProxy.sendError(403,
-								"The requested page/file is forbidden");
-						return "PAGE NOT FOUND!";
-					}
-				}
-			}
+                } else if (!permissionAPI.getReadRoles(ident)
+                        .contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
+                    // user is logged in need to check user permissions
+                    Logger.debug(HTMLPageAssetAPIImpl.class, "VELOCITY CHECKING PERMISSION: User signed in");
 
-			if (UtilMethods.isSet(contentId)) {
-				requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
-			}
+                    // check user permissions on this asset
+                    if (!permissionAPI.doesUserHavePermission(ident, PermissionAPI.PERMISSION_READ, user, true)) {
+                        // the user doesn't have permissions to see this page
+                        // go to unauthorized page
+                        Logger.warn(HTMLPageAssetAPIImpl.class,
+                                "VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
+                        responseProxy.sendError(403, "The requested page/file is forbidden");
+                        return "PAGE NOT FOUND!";
+                    }
+                }
+            }
 
-			if (langId != null && langId > 0) {
-				requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE,
-						Long.toString(langId));
-			}
-			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
-			langWebAPI.checkSessionLocale(requestProxy);
+            if (UtilMethods.isSet(contentId)) {
+                requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
+            }
 
-			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
+            if (langId != null && langId > 0) {
+                requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(langId));
+            }
+            LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
+            langWebAPI.checkSessionLocale(requestProxy);
 
-			if (langId != null && langId > 0) {
-				context.put("language", Long.toString(langId));
-			}
+            context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 
-			if (!liveMode) {
-				context.put("PREVIEW_MODE", new Boolean(true));
-			} else {
-				context.put("PREVIEW_MODE", new Boolean(false));
+            if (langId != null && langId > 0) {
+                context.put("language", Long.toString(langId));
+            }
+
+            if (!liveMode) {
+                context.put("PREVIEW_MODE", new Boolean(true));
+            } else {
+                context.put("PREVIEW_MODE", new Boolean(false));
             }
 
             context.put("host", host);
-			VelocityEngine ve = VelocityUtil.getEngine();
+            VelocityEngine ve = VelocityUtil.getEngine();
 
-			Logger.debug(HTMLPageAssetAPIImpl.class, "Got the template!!!!"
-					+ idInode);
+            Logger.debug(HTMLPageAssetAPIImpl.class, "Got the template!!!!" + idInode);
 
-			requestProxy.setAttribute("velocityContext", context);
+            requestProxy.setAttribute("velocityContext", context);
 
             String langStr = "";
-            if ( langId != null && langId > 0 ) {
+            if (langId != null && langId > 0) {
                 langStr = "_" + langId;
             }
 
-			String VELOCITY_HTMLPAGE_EXTENSION = Config
-					.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-			String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "."
-					+ VELOCITY_HTMLPAGE_EXTENSION : "/working/" + idInode + langStr + "."
-					+ VELOCITY_HTMLPAGE_EXTENSION;
+            String VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
+            String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION
+                    : "/working/" + idInode + langStr + "." + VELOCITY_HTMLPAGE_EXTENSION;
 
-			ve.getTemplate(vTempalate).merge(context, out);
+            ve.getTemplate(vTempalate).merge(context, out);
 
-		} catch (Exception e1) {
-			Logger.error(this, e1.getMessage(), e1);
-		} finally {
-			context = null;
-			VelocityServlet.velocityCtx.remove();
-		}
+        } catch (Exception e1) {
+            Logger.error(this, e1.getMessage(), e1);
+        } finally {
+            context = null;
+            VelocityServlet.velocityCtx.remove();
+        }
 
-		if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-			Logger.debug(HTMLPageAssetAPIImpl.class, "Into the ClickstreamFilter");
-			// Ensure that clickstream is recorded only once per request.
-			if (requestProxy.getAttribute(ClickstreamFilter.FILTER_APPLIED) == null) {
-				requestProxy.setAttribute(ClickstreamFilter.FILTER_APPLIED,
-						Boolean.TRUE);
+        if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+            Logger.debug(HTMLPageAssetAPIImpl.class, "Into the ClickstreamFilter");
+            // Ensure that clickstream is recorded only once per request.
+            if (requestProxy.getAttribute(ClickstreamFilter.FILTER_APPLIED) == null) {
+                requestProxy.setAttribute(ClickstreamFilter.FILTER_APPLIED, Boolean.TRUE);
 
-				if (user != null) {
-					UserProxy userProxy = null;
-					try {
-						userProxy = com.dotmarketing.business.APILocator
-								.getUserProxyAPI()
-								.getUserProxy(
-										user,
-										APILocator.getUserAPI().getSystemUser(),
-										false);
-					} catch (DotRuntimeException e) {
-						e.printStackTrace();
-					} catch (DotSecurityException e) {
-						e.printStackTrace();
-					} catch (DotDataException e) {
-						e.printStackTrace();
-					}
+                if (user != null) {
+                    UserProxy userProxy = null;
+                    try {
+                        userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
+                                APILocator.getUserAPI().getSystemUser(), false);
+                    } catch (DotRuntimeException e) {
+                        e.printStackTrace();
+                    } catch (DotSecurityException e) {
+                        e.printStackTrace();
+                    } catch (DotDataException e) {
+                        e.printStackTrace();
+                    }
 
-				}
-			}
-		}
+                }
+            }
+        }
 
-		return out.toString();
-	}
+        return out.toString();
+    }
 }

@@ -6,12 +6,7 @@ import org.mockito.Mockito;
 
 public class BaseRequest implements MockRequest {
 
-
-	public HttpServletRequest request() {
-		return Mockito.mock(HttpServletRequest.class);
-	}
-
-	
-	
-	
+    public HttpServletRequest request() {
+        return Mockito.mock(HttpServletRequest.class);
+    }
 }

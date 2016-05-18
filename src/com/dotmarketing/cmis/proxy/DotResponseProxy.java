@@ -5,10 +5,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * This is  Proxy for HTTPServletResponse, This extends Map to put and get objects.
- * @Deprecated - as of 2016-05-16 use  {@link com.dotcms.mock.response.MockHttpResponse.response()} instead
+ * This is Proxy for HTTPServletResponse, This extends Map to put and get objects.
+ * 
+ * @deprecated As of release 3.6 use {@link com.dotcms.mock.response.MockHttpResponse#response()}
+ *             instead
  */
-@Deprecated 
-public interface DotResponseProxy extends HttpServletResponse,Map{
-	
+@Deprecated
+public interface DotResponseProxy extends HttpServletResponse, Map {
+
 }
