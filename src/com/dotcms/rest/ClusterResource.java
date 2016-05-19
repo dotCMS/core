@@ -127,7 +127,7 @@ public class ClusterResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         
         ServerAPI serverAPI = APILocator.getServerAPI();
-        List<Server> servers = serverAPI.getAllServers();
+        List<Server> servers = serverAPI.getAliveServers();
         String myServerId = serverAPI.readServerId();
 
         List<ServerActionBean> actionBeans = new ArrayList<ServerActionBean>();
@@ -539,7 +539,7 @@ public class ClusterResource {
         String serverId = initData.getParamsMap().get("serverid");
         try {
         	HibernateUtil.startTransaction();
-            APILocator.getServerAPI().removeServerFromCluster(serverId);  
+            APILocator.getServerAPI().removeServerFromClusterTable(serverId);
             HibernateUtil.commitTransaction();
         }
         catch(Exception ex) {
