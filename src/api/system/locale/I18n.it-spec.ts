@@ -1,8 +1,8 @@
-import {Injector, Provider} from 'angular2/core';
+import {Injector, Provider} from '@angular/core';
 import {UserModel} from '../../../api/auth/UserModel';
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {I18nService} from "./I18n";
-import {HTTP_PROVIDERS} from "angular2/http";
+import {HTTP_PROVIDERS} from "@angular/http";
 
 
 var injector = Injector.resolveAndCreate([

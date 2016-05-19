@@ -1,7 +1,7 @@
 import {Observable} from 'rxjs/Rx'
 
-import {Http, Response} from "angular2/http";
-import {Injectable} from "angular2/core";
+import {Http, Response} from "@angular/http";
+import {Injectable} from "@angular/core";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {ConditionGroupModel, IConditionGroup} from "./Rule";
 
@@ -57,7 +57,7 @@ export class ConditionGroupService {
   }
 
   all(ruleKey:string, keys:string[]):Observable<ConditionGroupModel> {
-    return Observable.fromArray(keys).flatMap(groupKey=> {
+    return Observable.from(keys).flatMap(groupKey=> {
       return this.get(ruleKey, groupKey)
     })
   }

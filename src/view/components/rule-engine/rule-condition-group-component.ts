@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output} from 'angular2/core';
-import {CORE_DIRECTIVES} from 'angular2/common';
+import { Component, EventEmitter, Input, Output} from '@angular/core';
+import {CORE_DIRECTIVES} from '@angular/common';
 
 
 import {ConditionComponent} from './rule-condition-component';
@@ -32,7 +32,7 @@ import {
   <div flex layout="column" class="cw-conditions">
     <div layout="row"
          class="cw-condition-row"
-         *ngFor="#condition of group?._conditions; var i=index">
+         *ngFor="let condition of group?._conditions; let i=index">
       <rule-condition flex layout="row"
                       [condition]="condition"
                       [conditionTypes]="conditionTypes"

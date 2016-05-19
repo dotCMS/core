@@ -69,12 +69,12 @@ var project = {
 
     var libs =
     {
-      'angular2/bundles/': [
-        { dev: 'angular2-polyfills.js', prod: 'angular2-polyfills.min.js', out: 'angular2-polyfills.js' },
-        { dev: 'angular2.dev.js', prod: 'angular2.min.js', out: 'angular2.js' },
-        { dev: 'http.dev.js', prod: 'http.min.js', out: 'http.js' },
-        { dev: 'router.dev.js', prod: 'router.min.js', out: 'router.js' }
-      ],
+      //'angular2/bundles/': [
+      //  { dev: 'angular2-polyfills.js', prod: 'angular2-polyfills.min.js', out: 'angular2-polyfills.js' },
+      //  { dev: 'angular2.dev.js', prod: 'angular2.min.js', out: 'angular2.js' },
+      //  { dev: 'http.dev.js', prod: 'http.min.js', out: 'http.js' },
+      //  { dev: 'router.dev.js', prod: 'router.min.js', out: 'router.js' }
+      //],
       'rxjs/bundles/': [
         { dev: 'Rx.js', prod: 'Rx.min.js', out: 'Rx.js' },
         { dev: 'Rx.min.js.map', prod: null, out: 'Rx.min.js.map' }
@@ -109,6 +109,12 @@ var project = {
       ],
       'whatwg-fetch/': [
         { dev: 'fetch.js', prod: 'fetch.js', out: 'fetch.js' }
+      ],
+      'zone.js/dist/': [
+        { dev: 'zone.js', prod: 'zone.js', out: 'zone.js' }
+      ],
+      'reflect-metadata/temp/': [
+        { dev: 'Reflect.js', prod: 'Reflect.js', out: 'Reflect.js' }
       ]
     }
 

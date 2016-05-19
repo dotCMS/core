@@ -1,4 +1,4 @@
-import {Attribute, Component} from 'angular2/core'
+import {Attribute, Component} from '@angular/core'
 import {AreaPickerDialogComponent} from "./area-picker-dialog.component";
 import {GCircle} from "../../../../api/maps/GoogleMapService";
 

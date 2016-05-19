@@ -1,6 +1,6 @@
-import {bootstrap} from 'angular2/bootstrap'
-import {Attribute, Component, View} from 'angular2/core'
-import {HTTP_PROVIDERS} from 'angular2/http'
+import {bootstrap} from '@angular/bootstrap'
+import {Attribute, Component, View} from '@angular/core'
+import {HTTP_PROVIDERS} from '@angular/http'
 
 import {ServersideCondition} from './serverside-condition';
 import {ServerSideTypeModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
@@ -10,9 +10,7 @@ import {UserModel} from "../../../../../api/auth/UserModel";
 import {ConditionModel} from "../../../../../api/rule-engine/Rule";
 
 @Component({
-  selector: 'demo'
-})
-@View({
+  selector: 'demo',
   directives: [ServersideCondition],
   template: `<div flex layout="row" layout-wrap layout-align="start start" style="height:5em">
   <div flex="100" layout="row" layout-wrap >

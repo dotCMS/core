@@ -1,8 +1,8 @@
-import {Injector} from 'angular2/core';
+import {Injector} from '@angular/core';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {I18nService} from "../system/locale/I18n";
-import {HTTP_PROVIDERS} from "angular2/http";
+import {HTTP_PROVIDERS} from "@angular/http";
 import {BundleService, IUser, IBundle, IPublishEnvironment} from "./bundle-service";
 import {RuleModel, IRule, RuleService} from "../rule-engine/Rule";
 

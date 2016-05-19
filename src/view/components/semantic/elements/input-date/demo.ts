@@ -1,6 +1,6 @@
-import {bootstrap} from 'angular2/bootstrap'
-import {Attribute, Component, View} from 'angular2/core'
-import {CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
+import {bootstrap} from '@angular/bootstrap'
+import {Attribute, Component, View} from '@angular/core'
+import {CORE_DIRECTIVES, FORM_DIRECTIVES} from '@angular/common'
 import {InputDate} from './input-date'
 
 
@@ -65,9 +65,7 @@ export class InputDateModel {
 }
 
 @Component({
-  selector: 'demo'
-})
-@View({
+  selector: 'demo',
   directives: [InputDate],
   template: `<div class="ui three column grid">
   <div class="column">
@@ -101,7 +99,7 @@ export class InputDateModel {
     </div>
   </div>
 </div>
-  `
+`
 })
 class App {
   demoValue:InputDateModel

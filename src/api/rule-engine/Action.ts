@@ -1,8 +1,8 @@
-import {Injectable} from 'angular2/core';
+import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx'
 import {ApiRoot} from "../persistence/ApiRoot";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
-import {Http, Response} from "angular2/http";
+import {Http, Response} from "@angular/http";
 import {ActionModel} from "./Rule";
 import {
     UNKNOWN_RESPONSE_ERROR, CwError, SERVER_RESPONSE_ERROR,
@@ -72,7 +72,7 @@ export class ActionService {
   }
 
   all(ruleKey:string, keys:string[], ruleActionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ActionModel> {
-    return Observable.fromArray(keys).flatMap(groupKey=> {
+    return Observable.from(keys).flatMap(groupKey=> {
       return this.get(ruleKey, groupKey, ruleActionTypes)
     })
   }

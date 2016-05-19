@@ -1,5 +1,5 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
-import {CORE_DIRECTIVES} from "angular2/common";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
+import {CORE_DIRECTIVES} from "@angular/common";
 import {PushPublishDialogComponent} from "./push-publish-dialog-component";
 import {BehaviorSubject} from "rxjs/Rx";
 import {BundleService, IPublishEnvironment} from "../../../../api/services/bundle-service";

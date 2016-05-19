@@ -1,6 +1,6 @@
-import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from 'angular2/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 
-import {CORE_DIRECTIVES} from 'angular2/common'
+import {CORE_DIRECTIVES} from '@angular/common'
 import {Observable} from 'rxjs/Rx'
 
 import {RuleComponent} from './rule-component'
@@ -49,7 +49,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
       <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
-  <rule *ngFor="#rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
+  <rule *ngFor="let rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
         [environmentStores]="environmentStores"
         [ruleActions]="rule._ruleActions"
         [ruleActionTypes]="ruleActionTypes"

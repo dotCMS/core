@@ -1,12 +1,10 @@
-import {bootstrap} from 'angular2/platform/browser'
-import {Attribute, Component, View} from 'angular2/core'
+import {bootstrap} from '@angular/platform-browser-dynamic'
+import {Attribute, Component, View} from '@angular/core'
 import {Dropdown, InputOption} from './dropdown'
 import {Observable} from 'rxjs/Rx'
 
 @Component({
-  selector: 'demo'
-})
-@View({
+  selector: 'demo',
   directives: [Dropdown, InputOption],
   template: `<div class="ui three column grid">
   <!--<div class="column">-->
@@ -56,6 +54,7 @@ import {Observable} from 'rxjs/Rx'
 </div>
   `
 })
+
 export class App {
   demo2:any
   demo3:any

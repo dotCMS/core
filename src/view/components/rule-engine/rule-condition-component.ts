@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output} from 'angular2/core';
-import {CORE_DIRECTIVES} from 'angular2/common';
+import { Component, EventEmitter, Input, Output} from '@angular/core';
+import {CORE_DIRECTIVES} from '@angular/common';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 
@@ -34,7 +34,7 @@ import {VisitorsLocationContainer} from "./custom-types/visitors-location/visito
       placeholder="{{conditionTypePlaceholder}}"
       (change)="onTypeChange($event)">
     <cw-input-option
-        *ngFor="#opt of typeDropdown.options"
+        *ngFor="let opt of typeDropdown.options"
         [value]="opt.value"
         [label]="opt.label"
         icon="{{opt.icon}}"></cw-input-option>

@@ -1,14 +1,14 @@
 import * as Rx from 'rxjs/Rx'
 
 import {RuleModel, RuleService, ActionModel} from '../../api/rule-engine/Rule';
-import {Injector} from 'angular2/core';
+import {Injector} from '@angular/core';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from "../../api/auth/UserModel";
 import {ActionService} from "../../api/rule-engine/Action";
 import {ConditionGroupService} from "../../api/rule-engine/ConditionGroup";
 import {ConditionService} from "../../api/rule-engine/Condition";
 import {I18nService} from "../system/locale/I18n";
-import {HTTP_PROVIDERS} from "angular2/http";
+import {HTTP_PROVIDERS} from "@angular/http";
 
 var injector = Injector.resolveAndCreate([ApiRoot,
   I18nService,

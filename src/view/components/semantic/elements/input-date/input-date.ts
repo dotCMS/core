@@ -1,4 +1,4 @@
-import {bootstrap} from 'angular2/bootstrap'
+import {bootstrap} from '@angular/bootstrap'
 import {
     Attribute,
     ChangeDetectionStrategy,
@@ -9,9 +9,9 @@ import {
     Input,
     Output,
     Optional
-} from 'angular2/core'
-import {Control, Validators, NgControl, ControlValueAccessor} from 'angular2/common'
-import {isBlank} from 'angular2/src/facade/lang';
+} from '@angular/core'
+import {Control, Validators, NgControl, ControlValueAccessor} from '@angular/common'
+import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html

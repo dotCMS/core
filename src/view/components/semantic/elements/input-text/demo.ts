@@ -1,5 +1,5 @@
-import {Component, Optional} from 'angular2/core'
-import { FormBuilder, NgControl, Control, Validators, FORM_DIRECTIVES, NgFormModel, CORE_DIRECTIVES } from 'angular2/common'
+import {Component, Optional} from '@angular/core'
+import { FormBuilder, NgControl, Control, Validators, FORM_DIRECTIVES, NgFormModel, CORE_DIRECTIVES } from '@angular/common'
 import {InputText} from "./input-text";
 
 export class Hero {

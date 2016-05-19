@@ -1,5 +1,5 @@
-import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
-import {FORM_DIRECTIVES, CORE_DIRECTIVES, DecimalPipe, Control} from "angular2/common";
+import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
+import {FORM_DIRECTIVES, CORE_DIRECTIVES, DecimalPipe, Control} from "@angular/common";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {Observable} from "rxjs/Observable";
 import {I18nService} from "../../../../../api/system/locale/I18n";

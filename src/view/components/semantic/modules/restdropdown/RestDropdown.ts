@@ -1,13 +1,13 @@
-import {Component, EventEmitter, Optional } from 'angular2/core';
-import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
-import {CORE_DIRECTIVES, NgControl, ControlValueAccessor,} from 'angular2/common';
-import {Http} from 'angular2/http';
+import {Component, EventEmitter, Optional } from '@angular/core';
+import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/core';
+import {CORE_DIRECTIVES, NgControl, ControlValueAccessor,} from '@angular/common';
+import {Http} from '@angular/http';
 
 import {Dropdown, InputOption} from '../dropdown/dropdown'
 import {Verify} from "../../../../../api/validation/Verify";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 import {Observer} from "rxjs/Observer";
-import {isBlank} from "angular2/src/facade/lang";
+import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
 //
 //<cw-input-dropdown [value]="value"  placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)" [maxSelections]="maxSelections"
 // [minSelections]="minSelections" [allowAdditions]="allowAdditions">
@@ -27,7 +27,7 @@ import {isBlank} from "angular2/src/facade/lang";
       (change)="fireChange($event)"
       (touch)="fireTouch($event)"
       >
-        <cw-input-option *ngFor="#opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
+        <cw-input-option *ngFor="let opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
       </cw-input-dropdown>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,5 +1,5 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
-import {CORE_DIRECTIVES} from "angular2/common";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
+import {CORE_DIRECTIVES} from "@angular/common";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {IPublishEnvironment} from "../../../../api/services/bundle-service";
@@ -23,7 +23,7 @@ import {IPublishEnvironment} from "../../../../api/services/bundle-service";
       (click)="$event.stopPropagation()"
       (change)="setSelectedEnvironment($event)">
     <cw-input-option
-        *ngFor="#opt of environmentStores"
+        *ngFor="let opt of environmentStores"
         [value]="opt.id"
         [label]="opt.name"
     ></cw-input-option>

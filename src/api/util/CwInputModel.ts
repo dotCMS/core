@@ -1,5 +1,5 @@
 
-import {Validators} from "angular2/common";
+import {Validators} from "@angular/common";
 import {CustomValidators} from "../validation/CustomValidators";
 export class CwValidationResults{
   valid:boolean

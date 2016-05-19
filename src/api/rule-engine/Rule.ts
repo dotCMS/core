@@ -1,5 +1,5 @@
-import {EventEmitter, Injectable} from 'angular2/core'
-import {Http, Response, RequestMethod, Request, Headers} from 'angular2/http'
+import {EventEmitter, Injectable} from '@angular/core'
+import {Http, Response, RequestMethod, Request, Headers} from '@angular/http'
 import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
@@ -352,7 +352,7 @@ export class RuleService extends CoreWebService {
   private loadActionTypes():Observable<ServerSideTypeModel[]> {
     let obs
     if (this._ruleActionTypesAry.length) {
-      obs = Observable.fromArray(this._ruleActionTypesAry)
+      obs = Observable.from(this._ruleActionTypesAry)
     } else {
       return this.actionAndConditionTypeLoader(this._doLoadRuleActionTypes(), this._ruleActionTypes)
     }
@@ -370,7 +370,7 @@ export class RuleService extends CoreWebService {
       requestObserver:Observable<ServerSideTypeModel[]>,
       typeMap:any):Observable<ServerSideTypeModel[]> {
       return requestObserver.flatMap((types:ServerSideTypeModel[])=> {
-        return Observable.fromArray(types).flatMap((type)=> {
+        return Observable.from(types).flatMap((type)=> {
           return this._resources.get(type.i18nKey + '.name', type.i18nKey).map(( label:string ) => {
             type._opt = {value: type.key, label: label}
             return type
@@ -393,7 +393,7 @@ export class RuleService extends CoreWebService {
   private loadConditionTypes():Observable<ServerSideTypeModel[]> {
     let obs
     if (this._conditionTypesAry.length) {
-      obs = Observable.fromArray(this._conditionTypesAry)
+      obs = Observable.from(this._conditionTypesAry)
     } else {
       return this.actionAndConditionTypeLoader(this._doLoadConditionTypes(), this._conditionTypes)
     }

@@ -1,5 +1,5 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
-import {CORE_DIRECTIVES} from "angular2/common";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
+import {CORE_DIRECTIVES} from "@angular/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {GoogleMapService, GCircle} from "../../../../api/maps/GoogleMapService";
 

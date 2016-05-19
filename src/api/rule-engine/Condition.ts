@@ -1,9 +1,9 @@
-import {Injectable} from 'angular2/core';
+import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
-import {Http, Response} from "angular2/http";
+import {Http, Response} from "@angular/http";
 import {ConditionGroupModel, ConditionModel, ICondition} from "./Rule";
 
 
@@ -47,7 +47,7 @@ export class ConditionService {
   }
 
   listForGroup(group:ConditionGroupModel, conditionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ConditionModel[]> {
-    return Observable.fromArray(Object.keys(group.conditions)).flatMap(conditionId => {
+    return Observable.from(Object.keys(group.conditions)).flatMap(conditionId => {
       return this.get(conditionId, conditionTypes)
     }).reduce(( acc:ConditionModel[], entity:ConditionModel ) => {
       acc.push(entity)

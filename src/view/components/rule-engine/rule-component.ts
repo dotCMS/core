@@ -1,8 +1,8 @@
-import {Component, EventEmitter, ElementRef, Input, Output, ChangeDetectionStrategy} from 'angular2/core';
+import {Component, EventEmitter, ElementRef, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {
     CORE_DIRECTIVES, Control, Validators, FORM_DIRECTIVES, NgFormModel, FormBuilder,
     ControlGroup
-} from 'angular2/common';
+} from '@angular/common';
 
 import {Observable} from 'rxjs/Rx'
 
@@ -59,7 +59,7 @@ var rsrc = {
     InputOption,
     AddToBundleDialogContainer,
     PushPublishDialogContainer],
-  template: `<form [ngFormModel]="formModel" #rf="ngForm">
+  template: `<form [ngFormModel]="formModel" let rf="ngForm">
   <cw-add-to-bundle-dialog-container
       [assetId]="rule.id || rule.key"
       [hidden]="!showAddToBundleDialog"
@@ -90,8 +90,7 @@ var rsrc = {
                          placeholder="{{fireOn.placeholder | async}}"
                          (change)="updateFireOn.emit({type: 'RULE_UPDATE_FIRE_ON', payload:{rule:rule, value:$event}})"
                          (click)="$event.stopPropagation()">
-        <cw-input-option
-            *ngFor="#opt of fireOn.options"
+        <cw-input-option *ngFor="let opt of fireOn.options"
             [value]="opt.value"
             [label]="opt.label | async"
             icon="{{opt.icon}}"></cw-input-option>
@@ -125,7 +124,7 @@ var rsrc = {
     </div>
   </div>
   <div class="cw-accordion-body" *ngIf="rule._expanded">
-    <condition-group *ngFor="#group of rule._conditionGroups; var i=index"
+    <condition-group *ngFor="let group of rule._conditionGroups; let i=index"
                      [rule]="rule"
                      [group]="group"
                      [conditionTypes]="conditionTypes"
@@ -143,7 +142,7 @@ var rsrc = {
         {{rsrc('inputs.action.firesActions') | async}}
       </div>
       <div flex layout="column" class="cw-rule-actions">
-        <div layout="row" class="cw-action-row" *ngFor="#ruleAction of ruleActions; #i=index">
+        <div layout="row" class="cw-action-row" *ngFor="let ruleAction of ruleActions; let i=index">
           <rule-action flex layout="row" [action]="ruleAction" [index]="i" 
               [actionTypePlaceholder]="actionTypePlaceholder"
               [ruleActionTypes]="ruleActionTypes"

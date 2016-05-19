@@ -1,5 +1,5 @@
-import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy, provide} from 'angular2/core';
-import {Control, Validators, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES, NG_VALUE_ACCESSOR} from 'angular2/common';
+import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy, provide} from '@angular/core';
+import {Control, Validators, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES, NG_VALUE_ACCESSOR} from '@angular/common';
 import { Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
@@ -22,7 +22,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<form>
   <div flex layout="row" class="cw-condition-component-body">
-    <template ngFor #input [ngForOf]="_inputs" #islast="last">
+    <template ngFor let-input [ngForOf]="_inputs">
       <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
@@ -36,7 +36,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                          (touch)="onBlur(input)"
                          placeholder="{{input.placeholder | async}}">
         <cw-input-option
-            *ngFor="#opt of input.options"
+            *ngFor="let opt of input.options"
             [value]="opt.value"
             [label]="opt.label | async"
             icon="{{opt.icon}}"></cw-input-option>
@@ -62,7 +62,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                                 #rdInput="ngForm"
                                 >
         </cw-input-rest-dropdown>
-        <div flex="50" *ngIf="rdInput.touched && !rdInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)" 
+        <div flex="50" *ngIf="rdInput.touched && !rdInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"
             class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>
 
@@ -76,7 +76,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
             (blur)="onBlur(input)"
             #fInput="ngForm"
         ></cw-input-text>
-        <div flex="50" *ngIf="fInput.touched && !fInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"  
+        <div flex="50" *ngIf="fInput.touched && !fInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"
             class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>
 

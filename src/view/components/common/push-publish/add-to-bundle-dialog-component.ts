@@ -1,9 +1,9 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "angular2/core";
-import {CORE_DIRECTIVES} from "angular2/common";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
+import {CORE_DIRECTIVES} from "@angular/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 import {IBundle} from "../../../../api/services/bundle-service";
-import {ViewChild} from "angular2/core";
+import {ViewChild} from "@angular/core";
 
 @Component({
   selector: 'cw-add-to-bundle-dialog-component',
@@ -27,7 +27,7 @@ import {ViewChild} from "angular2/core";
       (change)="setSelectedBundle($event)"
       (enter)="addToBundle.emit(selectedBundle)">
     <cw-input-option
-        *ngFor="#opt of bundleStores"
+        *ngFor="let opt of bundleStores"
         [value]="opt.id"
         [label]="opt.name"
     ></cw-input-option>

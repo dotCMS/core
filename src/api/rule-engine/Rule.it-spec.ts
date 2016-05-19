@@ -3,13 +3,13 @@ import {
     IConditionGroup, ConditionGroupModel
 } from '../../api/rule-engine/Rule';
 import {ConditionService} from '../../api/rule-engine/Condition';
-import {Injector} from 'angular2/core';
+import {Injector} from '@angular/core';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {ActionService} from '../../api/rule-engine/Action';
 import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
 import {I18nService} from "../system/locale/I18n";
-import {HTTP_PROVIDERS} from "angular2/http";
+import {HTTP_PROVIDERS} from "@angular/http";
 import {Observable} from "rxjs/Observable";
 import {CwError} from "../system/http-response-util";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
@@ -45,7 +45,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   });
 
   afterAll(function (done) {
-    Observable.fromArray(rulesToRemove).flatMap((ruleId:string)=>{
+    Observable.from(rulesToRemove).flatMap((ruleId:string)=>{
       console.log("Removing rule: ", ruleId)
       return ruleService.deleteRule(ruleId);
     }).subscribe(()=>{}, ( e ) => {

@@ -1,7 +1,7 @@
 import {CwModel} from "../util/CwModel";
 import {ParameterDefinition} from "../util/CwInputModel";
 import {ParameterModel} from "./Rule";
-import {Control, Validators} from "angular2/common";
+import {Control, Validators} from "@angular/common";
 import {CustomValidators} from "../validation/CustomValidators";
 
 export class ServerSideFieldModel extends CwModel {

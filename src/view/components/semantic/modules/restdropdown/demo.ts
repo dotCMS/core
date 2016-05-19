@@ -1,12 +1,10 @@
-import {bootstrap} from 'angular2/platform/browser'
-import {Attribute, Component, View} from 'angular2/core'
+import {bootstrap} from '@angular/platform-browser-dynamic'
+import {Attribute, Component, View} from '@angular/core'
 import {RestDropdown} from './RestDropdown'
 import {Observable} from 'rxjs/Rx'
 
 @Component({
-  selector: 'demo'
-})
-@View({
+  selector: 'demo',
   directives: [RestDropdown],
   template: `<div class="ui three column grid">
   <!--<div class="column">-->

@@ -1,4 +1,4 @@
-import {Http, Response, Request, Headers} from 'angular2/http'
+import {Http, Response, Request, Headers} from '@angular/http'
 import {Observable} from 'rxjs/Rx'
 
 import {

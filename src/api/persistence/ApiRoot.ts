@@ -1,5 +1,5 @@
-import {Injectable} from 'angular2/core';
-import {Headers, RequestOptions} from 'angular2/http';
+import {Injectable} from '@angular/core';
+import {Headers, RequestOptions} from '@angular/http';
 import {UserModel} from "../auth/UserModel";
 
 @Injectable()

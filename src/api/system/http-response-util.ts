@@ -1,4 +1,4 @@
-import {Response, Request} from "angular2/http";
+import {Response, Request} from "@angular/http";
 
 export const NETWORK_CONNECTION_ERROR = 1;
 export const UNKNOWN_RESPONSE_ERROR = 2;

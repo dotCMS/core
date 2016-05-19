@@ -1,8 +1,8 @@
-import {ElementRef, Component, Directive, EventEmitter, Optional} from 'angular2/core';
-import { Host, AfterViewInit, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
-import {CORE_DIRECTIVES, ControlValueAccessor, NgControl,} from 'angular2/common';
+import {ElementRef, Component, Directive, EventEmitter, Optional} from '@angular/core';
+import { Host, AfterViewInit, OnDestroy, Output, Input, ChangeDetectionStrategy } from '@angular/core';
+import {CORE_DIRECTIVES, ControlValueAccessor, NgControl,} from '@angular/common';
 import {BehaviorSubject, Observable} from 'rxjs/Rx'
-import {isBlank} from "angular2/src/facade/lang";
+import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
 
 
 /**
@@ -39,7 +39,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   <i class="dropdown icon"></i>
   <div class="default text">{{placeholder}}</div>
   <div class="menu" tabindex="-1">
-    <div *ngFor="#opt of _options | async" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
+    <div *ngFor="let opt of _options | async" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
       <i [ngClass]="opt.icon" ></i>
       {{opt.label}}
     </div>

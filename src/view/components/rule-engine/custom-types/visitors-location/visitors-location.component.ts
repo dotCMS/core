@@ -1,5 +1,5 @@
-import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
-import {FORM_DIRECTIVES, CORE_DIRECTIVES, DecimalPipe, Control} from "angular2/common";
+import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
+import {FORM_DIRECTIVES, CORE_DIRECTIVES, DecimalPipe, Control} from "@angular/common";
 import {AreaPickerDialogComponent} from "../../../../../view/components/common/google-map/area-picker-dialog.component";
 import {Observable} from "rxjs/Observable";
 import {Dropdown, InputOption} from "../../../semantic/modules/dropdown/dropdown";
@@ -54,7 +54,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
                      [class.cw-comparator-selector]="true"
                      (change)="comparisonChange.emit($event)"
                      placeholder="{{comparisonDropdown.placeholder}}">
-    <cw-input-option *ngFor="#opt of comparisonDropdown.options"
+    <cw-input-option *ngFor="let opt of comparisonDropdown.options"
                      [value]="opt.value"
                      [label]="opt.label | async"
                      icon="{{opt.icon}}"></cw-input-option>

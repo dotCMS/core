@@ -1,5 +1,5 @@
-import {Injectable} from 'angular2/core'
-import {Http, RequestMethod} from 'angular2/http'
+import {Injectable} from '@angular/core'
+import {Http, RequestMethod} from '@angular/http'
 import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
@@ -59,7 +59,7 @@ export class BundleService extends CoreWebService {
   loadBundleStores(){
     let obs
     if (this._bundlesAry.length) {
-      obs = Observable.fromArray(this._bundlesAry)
+      obs = Observable.from(this._bundlesAry)
     } else {
       obs = this._doLoadBundleStores().map((bundles:IBundle[])=> {
         this._bundlesAry = bundles
@@ -81,7 +81,7 @@ export class BundleService extends CoreWebService {
   loadPublishEnvironments() {
     let obs
     if (this._environmentsAry.length) {
-      obs = Observable.fromArray(this._environmentsAry)
+      obs = Observable.from(this._environmentsAry)
     } else {
       obs = this._doLoadPublishEnvironments().map((environments:IDBEnvironment[])=> {
         this._environmentsAry = environments

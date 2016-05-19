@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output} from 'angular2/core';
-import {CORE_DIRECTIVES} from 'angular2/common';
+import { Component, EventEmitter, Input, Output} from '@angular/core';
+import {CORE_DIRECTIVES} from '@angular/common';
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
@@ -27,7 +27,7 @@ import {RuleActionActionEvent} from "./rule-engine.container";
       placeholder="{{actionTypePlaceholder}}"
       (change)="onTypeChange($event)">
         <cw-input-option
-        *ngFor="#opt of typeDropdown.options"
+        *ngFor="let opt of typeDropdown.options"
         [value]="opt.value"
         [label]="opt.label"
         icon="{{opt.icon}}"></cw-input-option>

@@ -1,5 +1,5 @@
-import {Component, EventEmitter} from 'angular2/core'
-import {CORE_DIRECTIVES} from 'angular2/common'
+import {Component, EventEmitter} from '@angular/core'
+import {CORE_DIRECTIVES} from '@angular/common'
 import {
     RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel,
     RuleEngineState, RULE_CONDITION_CREATE
@@ -66,12 +66,12 @@ export interface ConditionActionEvent extends RuleActionEvent {
       (updateFireOn)="onUpdateFireOn($event)"
       (updateEnabledState)="onUpdateEnabledState($event)"
       (updateExpandedState)="onUpdateExpandedState($event)"
-      
+
       (createRuleAction)="onCreateRuleAction($event)"
       (updateRuleActionType)="onUpdateRuleActionType($event)"
       (updateRuleActionParameter)="onUpdateRuleActionParameter($event)"
       (deleteRuleAction)="onDeleteRuleAction($event)"
-      
+
       (createConditionGroup)="onCreateConditionGroup($event)"
       (updateConditionGroupOperator)="onUpdateConditionGroupOperator($event)"
       (createCondition)="onCreateCondition($event)"

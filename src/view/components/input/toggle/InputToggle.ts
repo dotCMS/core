@@ -1,9 +1,7 @@
-import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/core';
+import {Component, View, EventEmitter, Attribute, Input, Output} from '@angular/core';
 
 @Component({
-  selector: 'cw-toggle-input'
-})
-@View({
+  selector: 'cw-toggle-input',
   template: `<style>
   .ui.toggle.checkbox label {
     float: left
@@ -41,6 +39,7 @@ import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/
   </span>
   `
 })
+
 export class InputToggle {
   @Input() value:boolean = false
   @Input() disabled:boolean = false

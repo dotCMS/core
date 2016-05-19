@@ -1,12 +1,10 @@
-import {bootstrap} from 'angular2/bootstrap'
-import {Attribute, Component, View} from 'angular2/core'
+import {bootstrap} from '@angular/bootstrap'
+import {Attribute, Component, View} from '@angular/core'
 import {InputToggle} from './InputToggle'
 
 
 @Component({
-  selector: 'demo'
-})
-@View({
+  selector: 'demo',
   directives: [InputToggle],
   template: `
   <div class="ui three column grid">
