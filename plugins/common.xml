@@ -109,7 +109,7 @@
 	    </condition>
 	</target>
 	<target name="if_target" if="p">
-	    <jar destfile="${basedir}/../../${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
+	    <jar destfile="${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
 	</target>
 
 	<target name="clean">
