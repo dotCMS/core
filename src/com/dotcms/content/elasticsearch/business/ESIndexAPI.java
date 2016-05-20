@@ -17,12 +17,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.org.python.modules.synchronize;
+
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.hppc.cursors.ObjectCursor;
 import com.dotmarketing.util.*;
@@ -64,6 +67,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
+import com.dotcms.cluster.bean.Server;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -75,6 +79,7 @@ public class ESIndexAPI {
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+    private  final int DEFAULT_HEARTBEAT_TIMEOUT = 1800; // 1800 seconds = 30 mins
 
 	private  ESClient esclient = new ESClient();
 	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
@@ -118,7 +123,7 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 */
 	public  File backupIndex(String index, File toFile) throws IOException {
-		
+
 		AdminLogger.log(this.getClass(), "backupIndex", "Trying to backup index: " + index);
 
 	    boolean indexExists = indexExists(index);
@@ -265,7 +270,7 @@ public class ESIndexAPI {
 			    Matcher matcher = pattern.matcher(mapping);
 			    boolean matchFound = matcher.find();
 			    if (matchFound){
-			        type = matcher.group(1); 
+			        type = matcher.group(1);
 
 			// we recover the line that wasn't a mapping so it should be content
 
@@ -278,7 +283,7 @@ public class ESIndexAPI {
 					}
 					jsons.add(br.readLine());
 				}
-				
+
 				if (jsons.size() > 0) {
 				    try {
 						Client client = new ESClient().getClient();
@@ -292,7 +297,7 @@ public class ESIndexAPI {
         							@SuppressWarnings("unchecked")
 									Map<String, Object> oldMap= mapper.readValue(json, HashMap.class);
         							Map<String, Object> newMap = new HashMap<String, Object>();
-        							
+
         							for(String key : oldMap.keySet()){
         								Object val = oldMap.get(key);
         								if(val!= null && UtilMethods.isSet(val.toString())){
@@ -617,7 +622,7 @@ public class ESIndexAPI {
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
     	AdminLogger.log(this.getClass(), "updateReplicas", "Trying to update replicas to index: " + indexName);
-    	
+
     	Map<String,ClusterIndexHealth> idxs = getClusterHealth();
 		ClusterIndexHealth health = idxs.get( indexName);
 		if(health ==null){
@@ -636,8 +641,70 @@ public class ESIndexAPI {
 			usrb.setSettings(newSettings);
 			usrb.execute().actionGet();
 		}
-		
+
 		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
+    }
+
+
+    /**
+     * Updates replicas based on live and inactive servers yet to timeout count for all active indexes
+     */
+    public synchronized void updateReplicas() throws DotDataException {
+
+    	if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",false)
+    			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",false)){
+
+	    	// Gets all live servers
+	    	String[] liveServers = APILocator.getServerAPI().getAliveServersIds();
+
+	    	// Gets all inactive servers
+	    	List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
+
+	    	// final server count of live/inactive (yet to hit the max hearbeat limit) servers
+	    	int serverCount = liveServers.length;
+	    	// check inactive servers for hearbeat timeout
+	    	for(Server server : inactiveServers){
+	    		Date hearbeat = server.getLastHeartBeat();
+	    		if(!UtilMethods.isSet(hearbeat))
+	    			hearbeat = new Date();
+	    		Date now = new Date();
+	    		int timeout = Config.getIntProperty("HEARTBEAT_TIMEOUT",DEFAULT_HEARTBEAT_TIMEOUT);
+	    		if((hearbeat.getTime() - now.getTime()) < TimeUnit.SECONDS.toMillis(timeout)){
+	    			serverCount++;
+	    		}
+	    	}
+	    	Client client = new ESClient().getClient();
+	    	// get index list to apply replica count to every index
+	    	Set<String> indexList = listIndices();
+	    	for(String entry : indexList) {
+	    	    if(getIndexStatus(entry) == Status.ACTIVE){
+	    	    	try{
+	    	    		// disable autoupdate replicas before attempting to set the replica count
+		    	    	UpdateSettingsResponse resp = client.admin().indices().updateSettings(
+		    	    	          new UpdateSettingsRequest(entry).settings(
+		    	    	        		  /*
+		    	    	        		   * {
+		    	    	        		   *	"index" : {
+		    	    	        		   * 		"auto_expand_replicas" : "false"
+		    	    	        		   * 	}
+		    	    	        		   * }'
+		    	    	        		   */
+		    	    	                jsonBuilder().startObject()
+		    	    	                     .startObject("index")
+		    	    	                        .field("auto_expand_replicas","false")
+		    	    	                     .endObject()
+		    	    	               .endObject().string()
+		    	    	        )).actionGet();
+	    	    	}catch(IOException e){
+	    	    		Logger.error(this.getClass(), "Updating auto expand replicas for index " + entry,e);
+	    	    		// log the error but don't fail, try the next index
+	    	    		continue;
+	    	    	}
+
+	    	    	updateReplicas(entry,serverCount-1);
+	    	    }
+	    	}
+    	}
     }
 
     public void putToIndex(String idx, String json, String id){
@@ -714,19 +781,19 @@ public class ESIndexAPI {
 
     public void closeIndex(String indexName) {
     	AdminLogger.log(this.getClass(), "closeIndex", "Trying to close index: " + indexName);
-    	
+
         Client client=new ESClient().getClient();
         client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
-        
+
         AdminLogger.log(this.getClass(), "closeIndex", "Index: " + indexName + " closed");
     }
 
     public void openIndex(String indexName) {
     	AdminLogger.log(this.getClass(), "openIndex", "Trying to open index: " + indexName);
-    	
+
         Client client=new ESClient().getClient();
         client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
-        
+
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
 

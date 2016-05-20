@@ -145,7 +145,8 @@ public class ESClient {
         /*
          If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
          */
-        if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+        if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+        		Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",false) &&
                 !Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
 
             //Getting the number of replicas
