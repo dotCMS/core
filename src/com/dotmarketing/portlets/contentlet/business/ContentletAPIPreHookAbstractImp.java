@@ -607,17 +607,17 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
     @Override
     public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) {
 
-        return false;
+        return true;
     }
 
     @Override
     public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) {
-        return false;
+        return true;
     }
 
     @Override
     public boolean updateUserReferences(String userId, String replacementUserId) throws DotDataException {
-        return false;
+        return true;
     }
 
     
