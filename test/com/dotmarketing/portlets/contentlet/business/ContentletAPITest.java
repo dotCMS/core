@@ -8,15 +8,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -32,6 +30,8 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.mock.request.MockInternalRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 import com.dotmarketing.beans.Host;
@@ -43,9 +43,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -2056,17 +2053,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         contentTester.init(null, null);
 
-        InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
-
-        DotRequestProxy requestProxy = (DotRequestProxy) Proxy
-                .newProxyInstance(DotRequestProxy.class.getClassLoader(),
-                        new Class[] { DotRequestProxy.class },
-                        dotInvocationHandler);
-
-        DotResponseProxy responseProxy = (DotResponseProxy) Proxy
-                .newProxyInstance(DotResponseProxy.class.getClassLoader(),
-                        new Class[] { DotResponseProxy.class },
-                        dotInvocationHandler);
+        HttpServletRequest requestProxy = new MockInternalRequest().request();
+        HttpServletResponse responseProxy = new BaseResponse().response();
 
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
