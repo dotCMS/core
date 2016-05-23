@@ -1320,7 +1320,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			for (MultiTree mt : mts) {
 				Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
 				if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
-					IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, user, false);
+					IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, con.getLanguageId(), user, false);
 					if (page != null && UtilMethods.isSet(page.getIdentifier()))
 						PageServices.invalidateAll(page);
 				}

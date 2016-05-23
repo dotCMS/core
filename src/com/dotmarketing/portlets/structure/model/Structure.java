@@ -365,14 +365,23 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return urlMapPattern;
 	}
 
-
-
+	/**
+	 * Returns the inode of the folder where this structure lives under, if persisted, or if not persisted, where
+	 * it will live under when saved/updated
+	 *
+	 * @return the inode of the folder
+	 */
 	public String getFolder() {
 		return folder;
 	}
 
-	public void setFolder(String folder) {
-		this.folder = folder;
+	/**
+	 * Sets the inode of the folder where this structure will live under when saved/udpdated
+	 *
+	 * @param folderInode the inode of the folder
+	 */
+	public void setFolder(String folderInode) {
+		this.folder = folderInode;
 	}
 
 	public String getHost() {
