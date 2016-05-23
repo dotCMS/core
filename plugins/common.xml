@@ -112,10 +112,6 @@
 	    <condition property="jar.destfile" value="${basedir}/../../${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" else="${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar">
 	      <isset property="target.root"/>
 	    </condition>
-		<echo>jar.destfile ${jar.destfile}</echo>
-		<echo>target.root: ${target.root}</echo>
-		        <echo>target.root.dir: ${target.root.dir}</echo>
-		        <echo>base.dir: ${basedir}</echo>
 	    <jar destfile="${jar.destfile}" basedir="${classpath.dir}" />
 	</target>
 
