@@ -30,7 +30,7 @@ import com.liferay.portal.model.User;
  * A dummy implementation of the interface ContentletAPIPreHook. Developers should use this abstract class to override the needed methods instead of implement the interface
  * ContentletAPIPostHook and all its methods.
  */
-public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
+public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 
 	public boolean addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles) {
 		return true;
@@ -604,4 +604,21 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
+    @Override
+    public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) {
+
+        return false;
+    }
+
+    @Override
+    public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) {
+        return false;
+    }
+
+    @Override
+    public boolean updateUserReferences(String userId, String replacementUserId) throws DotDataException {
+        return false;
+    }
+
+    
 }

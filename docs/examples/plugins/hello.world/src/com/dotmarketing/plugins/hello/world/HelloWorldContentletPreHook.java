@@ -1033,18 +1033,6 @@ public class HelloWorldContentletPreHook extends ContentletAPIPreHookAbstractImp
             boolean respectFrontendRoles) {
 		return true;
 	}
-	@Override
-	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) {
-		return true;
-	}
-	@Override
-	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) {
-		return true;
-	}
-	@Override
-	public boolean updateUserReferences(String userId, String replacementUserId) throws DotDataException {
-		return true;
-	}
 
 
 }
