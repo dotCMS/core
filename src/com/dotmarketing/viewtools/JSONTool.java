@@ -1,6 +1,8 @@
 package com.dotmarketing.viewtools;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.velocity.tools.view.ImportSupport;
@@ -8,6 +10,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 
 public class JSONTool extends ImportSupport implements ViewTool {
@@ -15,17 +18,25 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	public void init(Object obj) {
 
 	}
+	
+	
+	public Object fetch(String url, Map<String, String> headers) {
+		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), headers);
+	}
+	
 	/**
 	 * Takes a url and reads the result.  By default, it will timeout in 15 sec
 	 * @param url
 	 * @return
 	 */
-	public JSONObject fetch(String url) {
-		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000));
-		
+	public Object fetch(String url) {
+		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), new HashMap<String, String>());
 	}
+	
+	
 	/**
 	 * Will retrieve data from the remote URL returning for you the JSON Object
+	 * or JSON Array
 	 * Example use from Velocity would be
 	 * 
 	 * #set($myjson = $json.test('http://oohembed.com/oohembed/?url=http%3A//www.amazon.com/Myths-Innovation-Scott-Berkun/dp/0596527055/')
@@ -85,20 +96,23 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	 * @param url
 	 * @return
 	 */
-	public JSONObject fetch(String url, int timeout) {
+	public Object fetch(String url, int timeout) {
+		return fetch(url, timeout, new HashMap<String, String>());
+	}
+
+	
+	public Object fetch(String url, int timeout, Map<String, String> headers) {
 		try {
-			String x = acquireString(url, timeout);
-            x = x.substring(x.indexOf('{'), x.length());
-            x = x.substring(0, x.lastIndexOf('}')+1);
-			return new JSONObject(x);
+			String x = acquireString(url, timeout, headers);
+			return generate(x);
 		} catch (IOException e) {
-			Logger.error(JSONObject.class, e.getMessage(), e);
+			Logger.error(JSONTool.class, e.getMessage(), e);
 		} catch (Exception e) {
-			Logger.error(JSONObject.class, e.getMessage(), e);
+			Logger.error(JSONTool.class, e.getMessage(), e);
 		}
 		return null;
 	}
-
+	
 	/**
 	 * Returns a JSONObject from a passed in Map
 	 * @param o
@@ -109,13 +123,28 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	}
 	
 	/**
+	 * Returns a JSONArray from a passed in array
+	 * @param o
+	 * @return
+	 */
+	public JSONArray generate(List list){
+		return new JSONArray(list);
+	}
+	/**
 	 * Returns a JSONObject from a passed in Object
 	 * @param o
 	 * @return
 	 */
-	public JSONObject generate(Object o){
+	public Object generate(Object o){
+		if(o instanceof List){
+			return generate((List)o);
+		}
 		return new JSONObject(o);
 	}
+	
+	
+	
+	
 
     /**
      * Returns a JSONObject as constructed from the provided string.
@@ -123,14 +152,20 @@ public class JSONTool extends ImportSupport implements ViewTool {
      * @param s The JSON string.
      * @return A JSONObject as parsed from the provided string, null in the event of an error.
      */
-    public JSONObject generate(String s) {
-        JSONObject result;
+    public Object generate(String s) {
+        Object result;
+
         try {
-            result = new JSONObject(s);
+    		if(s.startsWith("[") && s.endsWith("]")){
+    			result = new JSONArray(s);
+    		}
+    		else{
+    			result = new JSONObject(s);
+    		}
         }
         catch (Exception e)
         {
-            Logger.error(JSONObject.class, e.getMessage(), e);
+            Logger.error(this.getClass(), e.getMessage(), e);
             result = null;
         }
 

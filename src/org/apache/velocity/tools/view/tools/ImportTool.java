@@ -16,7 +16,11 @@
 
 package org.apache.velocity.tools.view.tools;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.dotmarketing.util.Config;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.ImportSupport;
@@ -68,7 +72,7 @@ public class ImportTool extends ImportSupport implements ViewTool {
     }
 
     public String read(String url) {
-    	return read(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000));
+    	return read(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), new HashMap<String, String>());
     }
     
     
@@ -80,6 +84,16 @@ public class ImportTool extends ImportSupport implements ViewTool {
      * @return the URL as a string
      */
     public String read(String url, int timeout) {
+    	return read(url, timeout, new HashMap<String, String>());
+    }
+    
+    /**
+     * Returns the supplied URL rendered as a String.
+     *
+     * @param url the URL to import
+     * @return the URL as a string
+     */
+    public String read(String url, int timeout, Map<String, String> headers) {
         try {
             // check the URL
             if (url == null || url.equals("")) {
@@ -87,12 +101,11 @@ public class ImportTool extends ImportSupport implements ViewTool {
                 return null;
             }
 
-            return acquireString(url, timeout);
+            return acquireString(url, timeout, headers);
         }
         catch (Exception ex) {
             LOG.error("Exception while importing URL: " + ex.getMessage());
             return null;
         }
     }
-
 }
