@@ -34,7 +34,7 @@ import java.util.Map;
  * A dummy implementation of the interface ContentletAPIPostHook. Developers should use this abstract class to override the needed methods instead of implement the interface
  * ContentletAPIPostHook and all its methods.
  */
-public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
+public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 
 	public void findAllContent(int offset, int limit, List<Contentlet> returnValue) {
 	}
@@ -474,5 +474,20 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 
 	public void deleteByHost(Host host, User user, boolean respectFrontendRoles) {
 	}
+
+    @Override
+    public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) {
+        return true;
+    }
+
+    @Override
+    public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) {
+        return true;
+    }
+
+    @Override
+    public void updateUserReferences(String userId, String replacementUserId) throws DotDataException {
+
+    }
 
 }
