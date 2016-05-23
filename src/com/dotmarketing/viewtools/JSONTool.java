@@ -100,7 +100,6 @@ public class JSONTool extends ImportSupport implements ViewTool {
 		return fetch(url, timeout, new HashMap<String, String>());
 	}
 
-	
 	public Object fetch(String url, int timeout, Map<String, String> headers) {
 		try {
 			String x = acquireString(url, timeout, headers);
