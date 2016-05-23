@@ -5,10 +5,10 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 
-public class FieldDataGen implements DataGen<Field> {
+public class FieldDataGen extends AbstractDataGen<Field> {
 
-    private long currentTime =  System.currentTimeMillis();
-    private String name = "test-field-name-"+currentTime;
+    private long currentTime = System.currentTimeMillis();
+    private String name = "test-field-name-" + currentTime;
     private Field.FieldType type = Field.FieldType.TEXT;
     private Field.DataType dataType = Field.DataType.TEXT;
     private boolean required;
@@ -133,7 +133,8 @@ public class FieldDataGen implements DataGen<Field> {
 
     @Override
     public Field next() {
-        Field ff=new Field(name, type,dataType,structure,required,listed,indexed,sortOrder,values, defaultValue, regexCheck, fixed,readOnly,searchable);
+        Field ff = new Field(name, type, dataType, structure, required, listed, indexed, sortOrder, values,
+                defaultValue, regexCheck, fixed, readOnly, searchable);
         ff.setHint(hint);
         ff.setUnique(unique);
         ff.setVelocityVarName(velocityVarName);
@@ -151,8 +152,11 @@ public class FieldDataGen implements DataGen<Field> {
         return object;
     }
 
-    @Override
     public void remove(Field object) {
-
+        try {
+            FieldFactory.deleteField(object);
+        } catch (DotHibernateException e) {
+            throw new RuntimeException("Error persisting Field", e);
+        }
     }
 }

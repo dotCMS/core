@@ -8,12 +8,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
 
 import java.util.Date;
 
 public class StructureDataGen extends AbstractDataGen<Structure> {
 
-    private long currentTime =  System.currentTimeMillis();
+    private long currentTime = System.currentTimeMillis();
     private Structure.Type structureType = Structure.Type.CONTENT;
     private String description = "test-structure-desc-" + currentTime;
     private boolean fixed;
@@ -23,8 +24,6 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
     private boolean system;
     private Inode.Type type = Inode.Type.STRUCTURE;
     private String velocityVarName = "test-structure-varname-" + currentTime;
-    private String folderIdentifier = Folder.SYSTEM_FOLDER;
-    private String hostIdentifier = Host.SYSTEM_HOST;
 
     @SuppressWarnings("unused")
     public StructureDataGen structureType(Structure.Type structureType) {
@@ -81,14 +80,20 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
     }
 
     @SuppressWarnings("unused")
-    public StructureDataGen folderIdentifier(String folderIdentifier) {
-        this.folderIdentifier = folderIdentifier;
+    public StructureDataGen folder(Folder folder) {
+        this.folder = folder;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public StructureDataGen hostIdentifier(String hostIdentifier) {
-        this.hostIdentifier = hostIdentifier;
+    public StructureDataGen host(Host host) {
+        this.host = host;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public StructureDataGen user(User user) {
+        this.user = user;
         return this;
     }
 
@@ -104,39 +109,16 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
         s.setSystem(system);
         s.setType(type.getValue());
         s.setVelocityVarName(velocityVarName);
-        s.setFolder(folderIdentifier);
-        s.setHost(hostIdentifier);
+        s.setFolder(folder.getInode());
+        s.setHost(host.getIdentifier());
         s.setIDate(iDate);
-        return s;
-    }
-
-    /**
-     * Gets an equivalent of the starters' 'Content (Generic)' structure for Integration Tests
-     * @return the structure
-     */
-    public Structure nextPersistedContentGeneric() {
-        Structure s = nextPersisted();
-        FieldDataGen fdg = new FieldDataGen(s);
-
-        // title field
-        fdg.type(Field.FieldType.TEXT).name("Title").required(true).searchable(true).listed(true)
-                .velocityVarName("title").nextPersisted();
-
-        // host field
-        fdg.type(Field.FieldType.HOST_OR_FOLDER).name("Host").velocityVarName("contentHost").required(true)
-                .searchable(false).listed(false).nextPersisted();
-
-        // body field
-        fdg.type(Field.FieldType.WYSIWYG).name("Body").velocityVarName("body").required(true)
-                .searchable(false).listed(false).nextPersisted();
-
         return s;
     }
 
     @Override
     public Structure persist(Structure object) {
         try {
-            StructureFactory.saveStructure( object );
+            StructureFactory.saveStructure(object);
         } catch (DotHibernateException e) {
             throw new RuntimeException("Unable to persist structure.", e);
         }
@@ -144,10 +126,9 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
         return object;
     }
 
-    @Override
-    public void remove(Structure object) {
+    public static void remove(Structure object) {
         try {
-            StructureFactory.deleteStructure( object );
+            StructureFactory.deleteStructure(object);
         } catch (DotDataException e) {
             throw new RuntimeException("Unable to remove structure.", e);
         }
