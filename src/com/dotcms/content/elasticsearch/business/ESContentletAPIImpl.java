@@ -837,16 +837,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     *
-     * @param ident
-     * @param live
-     * @param user
-     * @param frontRoles
-     * @return
-     * @throws DotDataException
-     * @throws DotContentletStateException
-     * @throws DotSecurityException
+     * @deprecated As of 2016-05-16, replaced by {@link #loadPageByIdentifier(String, boolean, Long, User, boolean)}
      */
+
+    @Deprecated
     private IHTMLPage loadPageByIdentifier ( String ident, boolean live, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
         return loadPageByIdentifier(ident, live, 0L, user, frontRoles);
     }
@@ -861,11 +855,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown") + " cannot read Contentlet");
         }
         Identifier id = APILocator.getIdentifierAPI().find(contentlet);
-        if (!InodeUtils.isSet(id.getInode()))
+        if (!InodeUtils.isSet(id.getId()))
             return results;
-        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getInode());
+        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getId());
         for (MultiTree tree : trees) {
-            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, APILocator.getUserAPI().getSystemUser(), false);
+            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 Map<String, Object> map = new HashMap<String, Object>();
@@ -1326,7 +1320,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			for (MultiTree mt : mts) {
 				Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
 				if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
-					IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, user, false);
+					IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, con.getLanguageId(), user, false);
 					if (page != null && UtilMethods.isSet(page.getIdentifier()))
 						PageServices.invalidateAll(page);
 				}

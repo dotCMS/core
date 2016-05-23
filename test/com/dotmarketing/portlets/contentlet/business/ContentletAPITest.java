@@ -13,11 +13,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -27,6 +24,12 @@ import org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -48,10 +51,14 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -63,6 +70,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -745,35 +753,71 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull( nextReview );
     }
 
-    /**
-     * Testing {@link ContentletAPI#getContentletReferences(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @see ContentletAPI
-     * @see Contentlet
-     */
     @Test
-    public void getContentletReferences () throws DotSecurityException, DotDataException {
+    public void getContentletReferences() throws Exception {
+        int english = 1;
+        int spanish = 2;
+        HibernateUtil.startTransaction();
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
+        try {
+            Structure structure = new StructureDataGen().nextPersisted();
+            Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+            Template template = new TemplateDataGen().withContainer(container).nextPersisted();
+            Folder folder = new FolderDataGen().nextPersisted();
 
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder);
+            HTMLPageAsset englishPage = htmlPageDataGen.languageId(english).template(template).nextPersisted();
+            HTMLPageAsset spanishPage = htmlPageDataGen.pageURL(englishPage.getPageUrl() + "SP").languageId(spanish)
+                .nextPersisted();
 
-        //Retrieve all the references for this Contentlet.
-        List<Map<String, Object>> references = null;
-        for (Contentlet c : contentletList) {
-        	references = contentletAPI.getContentletReferences( c, user, false );
-        	if (references != null && references.size() > 0) {
-        		break;
-        	}
+            ContentletDataGen contentletDataGen = new ContentletDataGen();
+            Contentlet contentInEnglish = contentletDataGen.structure(structure).languageId(english).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+            // let's add the content to the page in english (create the page-container-content relationship)
+            MultiTree multiTreeEN = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
+                contentInEnglish.getIdentifier());
+            MultiTreeFactory.saveMultiTree(multiTreeEN, english);
+
+            // let's add the content to the page in spanish (create the page-container-content relationship)
+            MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
+                contentInSpanish.getIdentifier());
+            MultiTreeFactory.saveMultiTree(multiTreeSP, spanish);
+
+            // let's get the references for english content
+            List<Map<String, Object>> references = contentletAPI.getContentletReferences(contentInEnglish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(((IHTMLPage) references.get(0).get("page")).getLanguageId(), english);
+            // let's check the referenced container is the expected
+            assertEquals(((Container) references.get(0).get("container")).getInode(), container.getInode());
+
+            // let's get the references for spanish content
+            references = contentletAPI.getContentletReferences(contentInSpanish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(((IHTMLPage) references.get(0).get("page")).getLanguageId(), spanish);
+            // let's check the referenced container is the expected
+            assertEquals(((Container) references.get(0).get("container")).getInode(), container.getInode());
+
+            ContentletDataGen.remove(contentInEnglish);
+            ContentletDataGen.remove(contentInSpanish);
+            HTMLPageDataGen.remove(englishPage);
+            HTMLPageDataGen.remove(spanishPage);
+            TemplateDataGen.remove(template);
+            ContainerDataGen.remove(container);
+            StructureDataGen.remove(structure);
+            FolderDataGen.remove(folder);
+
+            HibernateUtil.commitTransaction();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            throw e;
         }
-
-        //Validations
-        assertNotNull( references );
-        assertTrue( !references.isEmpty() );
     }
 
     /**
@@ -2015,8 +2059,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
 
-        Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
+        org.apache.velocity.Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
 
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         StringWriter writer=new StringWriter();
@@ -2036,8 +2080,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(w2.getInode(),true);
 
         // now if everything have been cleared correctly those should match again
-        Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
+        org.apache.velocity.Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
         ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         writer=new StringWriter();
         teng3.merge(ctx, writer);

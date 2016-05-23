@@ -533,10 +533,10 @@ public class StructureFactory {
 	
 	protected static void fixFolderHost(Structure st) {
 	    if(!UtilMethods.isSet(st.getFolder())) {
-	        st.setFolder("SYSTEM_FOLDER");
+	        st.setFolder(Folder.SYSTEM_FOLDER);
 	    }
 	    if(!UtilMethods.isSet(st.getHost())) {
-	        st.setHost("SYSTEM_HOST");
+	        st.setHost(Host.SYSTEM_HOST);
 	    }
 	}
 
@@ -566,13 +566,13 @@ public class StructureFactory {
 	}
 
 	//### DELETE ###
-	public static void deleteStructure(String inode) throws DotHibernateException, DotDataException
+	public static void deleteStructure(String inode) throws DotDataException
 	{
 		Structure structure = getStructureByInode(inode);
 		deleteStructure(structure);
 	}
 
-	public static void deleteStructure(Structure structure) throws DotHibernateException, DotDataException
+	public static void deleteStructure(Structure structure) throws DotDataException
 	{
 
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
