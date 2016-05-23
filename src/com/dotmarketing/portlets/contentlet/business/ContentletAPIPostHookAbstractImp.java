@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -22,19 +28,13 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 /**
  * @author Armando Siem
  * @since 1.9.1.3
  * A dummy implementation of the interface ContentletAPIPostHook. Developers should use this abstract class to override the needed methods instead of implement the interface
  * ContentletAPIPostHook and all its methods.
  */
-public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
+public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 
 	public void findAllContent(int offset, int limit, List<Contentlet> returnValue) {
 	}
@@ -474,5 +474,10 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 
 	public void deleteByHost(Host host, User user, boolean respectFrontendRoles) {
 	}
+
+    @Override
+    public void updateUserReferences(String userId, String replacementUserId) throws DotDataException {
+
+    }
 
 }
