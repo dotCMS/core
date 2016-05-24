@@ -140,7 +140,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		endpoint.setProtocol( "http" );
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
-		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
+		endpoint.setSending( false );
 		endpoint.setGroupId( environment.getId() );
 		//Save the endpoint.
 		publisherEndPointAPI.saveEndPoint( endpoint );
@@ -255,7 +255,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		receivingFromEndpoint.setProtocol( "http" );
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
-		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
+		receivingFromEndpoint.setSending( true );
 		receivingFromEndpoint.setGroupId( environment.getId() );
 		//Save the endpoint.
 		publisherEndPointAPI.saveEndPoint( receivingFromEndpoint );
@@ -488,7 +488,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		endpoint.setProtocol( "http" );
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
-		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
+		endpoint.setSending( false );
 		endpoint.setGroupId( environment.getId() );
 		/*
 		 * Save the endpoint.
@@ -632,7 +632,6 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Cleaning test values
 		 */
-		APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
 		//TODO: We have the improve this test because of the new license updates
 		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
 		APILocator.getFolderAPI().delete(folder, systemUser, false);

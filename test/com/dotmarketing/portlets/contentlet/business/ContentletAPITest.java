@@ -763,16 +763,16 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void getContentletReferences() throws Exception {
         int english = 1;
         int spanish = 2;
-        HibernateUtil.startTransaction();
 
         try {
+            HibernateUtil.startTransaction();
             Structure structure = new StructureDataGen().nextPersisted();
             Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
             Template template = new TemplateDataGen().withContainer(container).nextPersisted();
             Folder folder = new FolderDataGen().nextPersisted();
 
-            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder);
-            HTMLPageAsset englishPage = htmlPageDataGen.languageId(english).template(template).nextPersisted();
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+            HTMLPageAsset englishPage = htmlPageDataGen.languageId(english).nextPersisted();
             HTMLPageAsset spanishPage = htmlPageDataGen.pageURL(englishPage.getPageUrl() + "SP").languageId(spanish)
                 .nextPersisted();
 
