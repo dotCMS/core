@@ -3,7 +3,10 @@ package com.dotcms.datagen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -46,10 +49,11 @@ public class HTMLPageDataGen extends ContentletDataGen {
      *
      * @param host the host object
      */
-    public HTMLPageDataGen(Host host) {
+    public HTMLPageDataGen(Host host, Template template) {
         this();
         this.host = host;
-    }
+        this.template = template;
+     }
 
     /**
      * Constructs a data-gen for building {@link HTMLPageAsset} objects.
@@ -57,9 +61,10 @@ public class HTMLPageDataGen extends ContentletDataGen {
      *
      * @param folder the folder object
      */
-    public HTMLPageDataGen(Folder folder) {
+    public HTMLPageDataGen(Folder folder, Template template) {
         this();
         this.folder = folder;
+        this.template = template;
     }
 
     private HTMLPageDataGen() {
