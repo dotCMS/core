@@ -56,7 +56,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -297,7 +296,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void findContentlets () throws DotSecurityException, DotDataException {
 
         //Getting our test inodes
-        List<String> inodes = new ArrayList<String>();
+        List<String> inodes = new ArrayList<>();
         for ( Contentlet contentlet : contentlets ) {
             inodes.add( contentlet.getInode() );
         }
@@ -642,7 +641,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getInode() );
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -868,15 +867,13 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void addLinkToContentlet () throws Exception {
 
-        Link menuLink = null;
-
         String RELATION_TYPE = new Link().getType();
 
         //Getting a known structure
         Structure structure = structures.iterator().next();
 
         //Create a menu link
-        menuLink = createMenuLink();
+        Link menuLink = createMenuLink();
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -892,14 +889,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier menuLinkIdentifier = APILocator.getIdentifierAPI().find( menuLink );
 
         //Verify if the relation was created
-        Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getInode(), RELATION_TYPE );
+        Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getId(), RELATION_TYPE );
 
         //Validations
         assertNotNull( tree );
         assertNotNull( tree.getParent() );
         assertNotNull( tree.getChild() );
         assertEquals( tree.getParent(), contentlet.getInode() );
-        assertEquals( tree.getChild(), menuLinkIdentifier.getInode() );
+        assertEquals( tree.getChild(), menuLinkIdentifier.getId() );
         assertEquals( tree.getRelationType(), RELATION_TYPE );
         
         try{
@@ -957,7 +954,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
 
             //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getInode(), RELATION_TYPE );
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
 
             //Validations
             assertNotNull( tree );
@@ -1020,14 +1017,14 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
 
             //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getInode(), RELATION_TYPE );
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
 
             //Validations
             assertNotNull( tree );
             assertNotNull( tree.getParent() );
             assertNotNull( tree.getChild() );
             assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), fileIdentifier.getInode() );
+            assertEquals( tree.getChild(), fileIdentifier.getId() );
             assertEquals( tree.getRelationType(), RELATION_TYPE );
 
             /*//Validations
@@ -1043,7 +1040,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Testing {@link ContentletAPI#findPageContentlets(String, String, String, boolean, long, com.liferay.portal.model.User, boolean)}
      *
-     * @throws Exception
      * @see ContentletAPI
      * @see Contentlet
      */
@@ -1057,7 +1053,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getInode() );
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {
@@ -1067,7 +1063,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     Identifier containerPageIdentifier = APILocator.getIdentifierAPI().find( multiTree.getParent2() );
 
                     //Find the related contentlets, at this point should return something....
-                    List<Contentlet> pageContentlets = contentletAPI.findPageContentlets( htmlPageIdentifier.getInode(), containerPageIdentifier.getInode(), null, true, -1, user, false );
+                    List<Contentlet> pageContentlets = contentletAPI.findPageContentlets( htmlPageIdentifier.getId(), containerPageIdentifier.getId(), null, true, -1, user, false );
 
                     //Validations
                     assertTrue( pageContentlets != null && !pageContentlets.isEmpty() );
@@ -1125,7 +1121,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1154,7 +1150,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void getAllLanguages () throws DotSecurityException, DotDataException {
 
         Structure st=new Structure();
-        st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+        st.setStructureType(Structure.Type.CONTENT.getType());
         st.setName("JUNIT-test-getAllLanguages"+System.currentTimeMillis());
         st.setVelocityVarName("testAllLanguages"+System.currentTimeMillis());
         st.setHost(defaultHost.getIdentifier());
@@ -1522,7 +1518,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet.getIdentifier() );
 
         //Now test this delete
-        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        List<Contentlet> testContentlets = new ArrayList<>();
         testContentlets.add( newContentlet );
         contentletAPI.deleteAllVersionsandBackup( testContentlets, user, false );
 
@@ -1553,7 +1549,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Now test this delete
         contentletAPI.archive(newContentlet, user, false);
-        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        List<Contentlet> testContentlets = new ArrayList<>();
         testContentlets.add( newContentlet );
         contentletAPI.delete( testContentlets, user, false );
 
@@ -1582,7 +1578,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newContentlet = createContentlet( testStructure, null, false );
 
         //Now test this delete
-        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        List<Contentlet> testContentlets = new ArrayList<>();
         testContentlets.add( newContentlet );
         contentletAPI.delete( testContentlets, user, false, true );
 
@@ -1615,7 +1611,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
         ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
 
@@ -1656,7 +1652,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
         ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
 
@@ -1699,7 +1695,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
         ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
 
@@ -1749,7 +1745,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1796,7 +1792,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1841,7 +1837,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -2009,7 +2005,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
         FieldFactory.saveField( field );
 
-        List<Contentlet> list=new ArrayList<Contentlet>();
+        List<Contentlet> list=new ArrayList<>();
         String[] letters={"a","b","c","d","e","f","g"};
         for(String letter : letters) {
             Contentlet conn=new Contentlet();
@@ -2054,7 +2050,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         /*
          * For every language we should get the same content and contentMap template code
          */
-        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION", "content");
         VelocityEngine engine = VelocityUtil.getEngine();
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
 
@@ -2119,7 +2115,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         testStructure.setName( "structure2709" );
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
-        testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
+        testStructure.setStructureType( Structure.Type.CONTENT.getType() );
         testStructure.setType( "structure" );
         testStructure.setVelocityVarName( "structure2709" );
 
