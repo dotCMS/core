@@ -23,7 +23,8 @@ The general steps are as follows:
   * Checkout this repo
   * Update [Node JS](https://nodejs.org/en/download/) to at least v0.12.x and NPM to 2.14.x
   * Install global NPM hooks: Typescript Compiler and [Karma Command Line Interface](http://karma-runner.github.io/0.13/intro/installation.html)
-  * Run NPM Install
+  * Run ```npm install```
+  * Run ```npm run typings install``` if you don't have typing install run ```npm install -g typings```
   * Run a server
   
 On a mac you should be able to get by with these commands, once you've installed/updated npm  

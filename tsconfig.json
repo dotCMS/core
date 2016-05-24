@@ -11,6 +11,11 @@
     "suppressImplicitAnyIndexErrors":true,
     "outDir": "./build/"
   },
+  "exclude": [
+    "node_modules",
+    "typings/main",
+    "typings/main.d.ts"
+  ],
   "files":[
     "./src/api/auth/UserModel.ts",
     "./src/api/maps/GoogleMapService.ts",

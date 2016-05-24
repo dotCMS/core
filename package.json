@@ -66,7 +66,8 @@
     "webdriver-update": "webdriver-manager update",
     "webdriver-update-ie": "webdriver-manager update --ie",
     "webdriver-update-ie32": "webdriver-manager update --ie32",
-    "webdriver-start": "webdriver-manager start"
+    "webdriver-start": "webdriver-manager start",
+    "typings": "typings"
   },
   "dependencies": {
     "angular-material": "1.0.2",

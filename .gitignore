@@ -9,7 +9,7 @@ out/
 gh_pages/
 staging/
 *.zip
-
+/typings/
 !staging/.gitkeep
 
 
