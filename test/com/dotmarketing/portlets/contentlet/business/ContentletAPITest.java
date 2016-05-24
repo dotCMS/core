@@ -76,6 +76,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 /**
  * Created by Jonathan Gamba.
@@ -752,6 +753,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( nextReview );
     }
+
+    /**
+     * Tests method {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}.
+     * <p>
+     * Checks that expected containers and pages (in the correct language) are returned by the method.
+     */
 
     @Test
     public void getContentletReferences() throws Exception {
