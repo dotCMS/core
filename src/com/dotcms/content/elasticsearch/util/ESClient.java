@@ -145,32 +145,50 @@ public class ESClient {
         /*
          If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
          */
-        if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-        		Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",false) &&
-                !Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
-
-            //Getting the number of replicas
-            int replicas = Config.getIntProperty("es.index.number_of_replicas", 0);
-
-            settingsRequest = settingsRequest.settings(
-                    jsonBuilder().startObject()
-                            .startObject("index")
-                            .field("auto_expand_replicas", "false")
-                            .field("number_of_replicas", replicas)
-                            .endObject()
-                            .endObject().string()
-            );
-        } else {
-            settingsRequest = settingsRequest.settings(
-                    jsonBuilder().startObject()
-                            .startObject("index")
-                            .field("auto_expand_replicas", "0-all")
-                            .endObject()
-                            .endObject().string()
-            );
+        if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)){
+        	if (Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",false)){
+        		int serverCount = 1;
+        		// Gets all live servers
+    	    	String[] liveServers;
+				try {
+					liveServers = APILocator.getServerAPI().getAliveServersIds();
+					serverCount = liveServers.length;
+				} catch (DotDataException e) {
+					Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+					serverCount = 1;
+				}
+				// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+    	    	return setReplicasUpdateSettings(false, serverCount - 1);
+        	}else if (!Config.getBooleanProperty("es.index.auto_expand_replicas", false)) {
+	            return setReplicasUpdateSettings(true, Config.getIntProperty("es.index.number_of_replicas", 0));
+        	}
         }
+        return setReplicasUpdateSettings(false, Config.getIntProperty("es.index.number_of_replicas", 0));
 
-        return settingsRequest;
+    }
+
+    private UpdateSettingsRequest setReplicasUpdateSettings(Boolean autoexpand, int replicas) throws IOException{
+    	UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+    	if(autoexpand){
+    		settingsRequest = settingsRequest.settings(
+	                jsonBuilder().startObject()
+	                        .startObject("index")
+	                        .field("auto_expand_replicas", autoexpand)
+	                        .field("number_of_replicas", "0-all")
+	                        .endObject()
+	                        .endObject().string()
+	        );
+    	}else{
+	    	settingsRequest = settingsRequest.settings(
+	                jsonBuilder().startObject()
+	                        .startObject("index")
+	                        .field("auto_expand_replicas", autoexpand)
+	                        .field("number_of_replicas", replicas)
+	                        .endObject()
+	                        .endObject().string()
+	        );
+    	}
+    	return settingsRequest;
     }
 
 	private  void loadConfig(){

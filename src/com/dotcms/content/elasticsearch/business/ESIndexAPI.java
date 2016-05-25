@@ -512,6 +512,7 @@ public class ESIndexAPI {
 		 If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
 		 */
 		if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+				!Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_RESPLICAS", false) &&
 				!Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
 
 			//Getting the number of replicas
@@ -519,8 +520,21 @@ public class ESIndexAPI {
 
 			map.put("auto_expand_replicas", "false");
 			map.put("number_of_replicas", replicas);
-		} else {
+		} else if(!Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", false)){
 			map.put("auto_expand_replicas", "0-all");
+		} else{
+			int serverCount = 1;
+    		// Gets all live servers
+	    	String[] liveServers;
+			try {
+				liveServers = APILocator.getServerAPI().getAliveServersIds();
+				serverCount = liveServers.length;
+			} catch (DotDataException e) {
+				Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+				serverCount = 1;
+			}
+			map.put("auto_expand_replicas", "false");
+			map.put("number_of_replicas", serverCount - 1);
 		}
 
         // create actual index
@@ -657,52 +671,38 @@ public class ESIndexAPI {
 	    	// Gets all live servers
 	    	String[] liveServers = APILocator.getServerAPI().getAliveServersIds();
 
-	    	// Gets all inactive servers
-	    	List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
-
 	    	// final server count of live/inactive (yet to hit the max hearbeat limit) servers
-	    	int serverCount = liveServers.length;
-	    	// check inactive servers for hearbeat timeout
-	    	for(Server server : inactiveServers){
-	    		Date hearbeat = server.getLastHeartBeat();
-	    		if(!UtilMethods.isSet(hearbeat))
-	    			hearbeat = new Date();
-	    		Date now = new Date();
-	    		int timeout = Config.getIntProperty("HEARTBEAT_TIMEOUT",DEFAULT_HEARTBEAT_TIMEOUT);
-	    		if((hearbeat.getTime() - now.getTime()) < TimeUnit.SECONDS.toMillis(timeout)){
-	    			serverCount++;
-	    		}
+	    	int serverCount = (liveServers.length > 0 )? liveServers.length : 0;
+	    	Client client = new ESClient().getClientInCluster();
+	    	if(client == null){
+	    		client = new ESClient().getClient();
 	    	}
-	    	Client client = new ESClient().getClient();
 	    	// get index list to apply replica count to every index
 	    	Set<String> indexList = listIndices();
 	    	for(String entry : indexList) {
-	    	    if(getIndexStatus(entry) == Status.ACTIVE){
-	    	    	try{
-	    	    		// disable autoupdate replicas before attempting to set the replica count
-		    	    	UpdateSettingsResponse resp = client.admin().indices().updateSettings(
-		    	    	          new UpdateSettingsRequest(entry).settings(
-		    	    	        		  /*
-		    	    	        		   * {
-		    	    	        		   *	"index" : {
-		    	    	        		   * 		"auto_expand_replicas" : "false"
-		    	    	        		   * 	}
-		    	    	        		   * }'
-		    	    	        		   */
-		    	    	                jsonBuilder().startObject()
-		    	    	                     .startObject("index")
-		    	    	                        .field("auto_expand_replicas","false")
-		    	    	                     .endObject()
-		    	    	               .endObject().string()
-		    	    	        )).actionGet();
-	    	    	}catch(IOException e){
-	    	    		Logger.error(this.getClass(), "Updating auto expand replicas for index " + entry,e);
-	    	    		// log the error but don't fail, try the next index
-	    	    		continue;
-	    	    	}
-
-	    	    	updateReplicas(entry,serverCount-1);
-	    	    }
+    	    	try{
+    	    		// disable autoupdate replicas before attempting to set the replica count
+	    	    	UpdateSettingsResponse resp = client.admin().indices().updateSettings(
+	    	    	          new UpdateSettingsRequest(entry).settings(
+	    	    	        		  /*
+	    	    	        		   * {
+	    	    	        		   *	"index" : {
+	    	    	        		   * 		"auto_expand_replicas" : "false"
+	    	    	        		   * 	}
+	    	    	        		   * }'
+	    	    	        		   */
+	    	    	                jsonBuilder().startObject()
+	    	    	                     .startObject("index")
+	    	    	                        .field("auto_expand_replicas","false")
+	    	    	                     .endObject()
+	    	    	               .endObject().string()
+	    	    	        )).actionGet();
+    	    	}catch(IOException e){
+    	    		Logger.error(this.getClass(), "Updating auto expand replicas for index " + entry,e);
+    	    		// log the error but don't fail, try the next index
+    	    		continue;
+    	    	}
+    	    	updateReplicas(entry,serverCount-1);
 	    	}
     	}
     }

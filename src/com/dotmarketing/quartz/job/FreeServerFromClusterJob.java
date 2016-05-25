@@ -53,7 +53,7 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
                     if (shouldRewire) {
                         //Updates the replica Count.
-                        //TODO Mauricio Rizo
+                        APILocator.getESIndexAPI().updateReplicas();
 
                         //Rewires the other nodes.
                         ClusterFactory.addNodeToCacheCluster(null, APILocator.getServerAPI().getCurrentServer());
