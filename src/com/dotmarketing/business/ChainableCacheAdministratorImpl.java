@@ -112,8 +112,8 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			    
 			    String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
 	                    ?localServer.getHost():localServer.getIpAddress();
-	            bindAddr = UtilMethods.isSet(cacheProperties.get("BIND_ADDRESS"))?cacheProperties.get("BIND_ADDRESS")
-	                    :Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
+
+	            bindAddr = UtilMethods.isSet(localServer.getIpAddress()) ? localServer.getIpAddress() : storedBindAddr;
 
 				if(UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))){
 					bindPort = cacheProperties.get("CACHE_BINDPORT");
@@ -127,7 +127,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 	                    
                 localServer.setCachePort(Integer.parseInt(bindPort));
 
-                localServer.setHost(Config.getStringProperty("CACHE_BINDADDRESS", null));                
+                localServer.setHost(bindAddr);
 
                 List<String> myself = new ArrayList<String>();
                 myself.add(localServer.getServerId());
