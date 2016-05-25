@@ -121,7 +121,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @param contentletBase Contentlet instance that will be used as a model for the new Contentlet instance
      * @return Contentlet instance created from existing one
      */
-    public Contentlet next(Contentlet contentletBase){
+    public static Contentlet checkout(Contentlet contentletBase){
         try{
             return APILocator.getContentletAPI().checkout(
                 contentletBase.getInode(), user, false);
@@ -150,6 +150,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
+        return checkin(contentlet);
+    }
+
+    public static Contentlet checkin(Contentlet contentlet) {
         try{
             return contentletAPI.checkin(contentlet, user, false);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
