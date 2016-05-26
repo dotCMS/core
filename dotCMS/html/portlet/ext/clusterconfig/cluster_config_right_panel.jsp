@@ -66,6 +66,11 @@
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_shards") %></td>
 			<td align="right">{es.activeShards}</td>
 		</tr>
+		tr>
+		<td>&nbsp;</td>
+		<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_primary_shards") %></td>
+		<td align="right">{es.activePrimaryShards}</td>
+		</tr>
 		<tr>
 			<td>&nbsp;</td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></td>
