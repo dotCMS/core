@@ -24,10 +24,13 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * <p>Provides methods to import arbitrary local or remote resources as strings.</p>
@@ -69,7 +72,9 @@ public abstract class ImportSupport {
      * but I thought this implementation was instructive, not to mention
      * somewhat cute...)
      */
-
+    protected String acquireString(String url, long timeout) throws IOException, Exception {
+    	   return acquireString(url, timeout, new HashMap<String, String>());
+    }
     /**
      *
      * @param url the URL resource to return as string
@@ -77,13 +82,13 @@ public abstract class ImportSupport {
      * @throws IOException
      * @throws java.lang.Exception
      */
-    protected String acquireString(String url, long timeout) throws IOException, Exception {
+    protected String acquireString(String url, long timeout, Map<String, String> headers) throws IOException, Exception {
         // Record whether our URL is absolute or relative
         this.isAbsoluteUrl = isAbsoluteUrl(url);
         if (this.isAbsoluteUrl)
         {
             // for absolute URLs, delegate to our peer
-            BufferedReader r = new BufferedReader(acquireReader(url, timeout));
+            BufferedReader r = new BufferedReader(acquireReader(url, timeout, headers));
             StringBuffer sb = new StringBuffer();
             int i;
             // under JIT, testing seems to show this simple loop is as fast
@@ -153,7 +158,10 @@ public abstract class ImportSupport {
             return irw.getString();
         }
     }
-
+    protected Reader acquireReader(final String url, final long timeout) throws IOException, Exception
+    {
+    	return acquireReader(url, timeout, new HashMap<String, String>());
+    }
     /**
      *
      * @param url the URL to read
@@ -161,12 +169,12 @@ public abstract class ImportSupport {
      * @throws IOException
      * @throws java.lang.Exception
      */
-    protected Reader acquireReader(final String url, final long timeout) throws IOException, Exception
+    protected Reader acquireReader(final String url, final long timeout, Map<String, String> headers) throws IOException, Exception
     {
         if (!this.isAbsoluteUrl)
         {
             // for relative URLs, delegate to our peer
-            return new StringReader(acquireString(url, timeout));
+            return new StringReader(acquireString(url, timeout, headers));
         }
         else
         {
@@ -177,6 +185,9 @@ public abstract class ImportSupport {
                 URL u = new URL(url);
                 //URL u = new URL("http", "proxy.hi.is", 8080, target);
                 final HttpURLConnection uc = (HttpURLConnection) u.openConnection();
+                for(String key : headers.keySet()){
+                	uc.addRequestProperty(key, headers.get(key));
+                }
                 Thread killme = new Thread(new Runnable() {
                     public void run () {
                         try {
@@ -190,7 +201,6 @@ public abstract class ImportSupport {
                     }
                 });
                 killme.start();
-
                 InputStream i = uc.getInputStream();
 
                 // okay, we've got a stream; encode it appropriately
