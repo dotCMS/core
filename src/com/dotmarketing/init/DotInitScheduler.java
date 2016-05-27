@@ -1,27 +1,9 @@
 package com.dotmarketing.init;
 
-import java.lang.management.ManagementFactory;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
-import com.dotcms.workflow.EscalationThread;
-import org.quartz.CronTrigger;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
@@ -34,6 +16,7 @@ import com.dotmarketing.quartz.job.DeleteOldClickstreams;
 import com.dotmarketing.quartz.job.DeliverCampaignThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread2;
+import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.PopBouncedMailThread;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
@@ -44,6 +27,24 @@ import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+
+import java.lang.management.ManagementFactory;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 
 /**
  *
@@ -807,6 +808,44 @@ public class DotInitScheduler {
 			} else {
 				if ((sched.getJobDetail(ETjobName, ETjobGroup)) != null) {
 					sched.deleteJob(ETjobName, ETjobGroup);
+				}
+			}
+
+			//Schedule FreeServerFromClusterJob.
+			String FSCjobName = "FreeServerFromClusterJob";
+			String FSCobGroup = "dotcms_jobs";
+			String FSCtriggerName = "trigger25";
+			String FSCtriggerGroup = "group25";
+
+			if ( Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true ) ) {
+				try {
+					isNew = false;
+
+					try {
+						if ((job = sched.getJobDetail(FSCjobName, FSCobGroup)) == null) {
+							job = new JobDetail(FSCjobName, FSCobGroup, FreeServerFromClusterJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob(FSCjobName, FSCobGroup);
+						job = new JobDetail(FSCjobName, FSCobGroup, FreeServerFromClusterJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+					trigger = new CronTrigger(FSCtriggerName, FSCtriggerGroup, FSCjobName, FSCobGroup, calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION", "0 0/1 * * * ?"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob(FSCtriggerName, FSCtriggerGroup, trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+				if ((sched.getJobDetail(FSCjobName, FSCobGroup)) != null) {
+					sched.deleteJob(FSCjobName, FSCobGroup);
 				}
 			}
             
