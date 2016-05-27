@@ -120,6 +120,7 @@ MemoryMeter meter = new MemoryMeter();
 				String myMemoryUsed = "-";
 				String avgMemoryUsed = "-";
 				String sizeHighlightColor = "#aaaaaa";
+				String memoryMessage = "-";
 				if ( !isDefault ) {
 
 					if ( configuredSize > 0 ) {
@@ -144,11 +145,13 @@ MemoryMeter meter = new MemoryMeter();
 					} catch ( Exception e ) {
 					}
 
-					if ( showSize ) {
+					
+					if ( showSize && !toDisk) {
 						try {
 							memoryUsed = meter.measureDeep(cache);
 							myMemoryUsed = UtilMethods.prettyMemory(memoryUsed);
 							avgMemoryUsed = myMemoryUsed;
+							memoryMessage = myMemoryUsed + " / " +  avgMemoryUsed;
 							try {
 								avgMemoryUsed = UtilMethods.prettyMemory(memoryUsed / new Integer(s.get("memory").toString()));
 							} catch ( Exception e ) {
@@ -162,22 +165,23 @@ MemoryMeter meter = new MemoryMeter();
 							}
 						} catch ( Exception e ) {
 							sizeHighlightColor = "silver";
-							myMemoryUsed = "Jamm not set as -javaagent";
+							memoryMessage = "requires -javaagent";
 
 						}
 					}
+
 				}
 
         	%>
 
-		        <tr>
+		        <tr <%if(toDisk){ %>style="background:#eeeeee"<%} %>>
 		                <td align="left">
 						<%=!isDefault ? "<b>":"" %>
 						<%= region %>
 						<%=!isDefault ? "</b>":"" %>
 						<%=isDefault ? "(default)":"" %></td>
 						<td <%=isDefault ? "style='color:silver;'":"" %>><%=name%></td>
-						<td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSize%></td>
+						<td <%=isDefault ? "style='color:silver;'":"" %>><%=(toDisk) ? "-" : configuredSize%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=memory%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=disk%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.loadCount()) %><%}else{%>-<%}%></td>
@@ -186,7 +190,7 @@ MemoryMeter meter = new MemoryMeter();
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= cacheStats.evictionCount() %><%}else{%>-<%}%></td>
 		                <%if(showSize){ %>
 		                	<td style="color:<%=sizeHighlightColor%>">
-		                		<%= myMemoryUsed %>  / <%=avgMemoryUsed %>
+		                		<%= memoryMessage %> 
 		                	</td>
 		                <%} %>
 		                
