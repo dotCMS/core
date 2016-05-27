@@ -100,7 +100,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 			    Logger.info(this, "Using automatic port placement as CLUSTER_AUTOWIRE is ON");
 
-				String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null);
+				String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null, false);
 
 				if(UtilMethods.isSet(bindAddressFromProperty)) {
 					try {
