@@ -17,10 +17,6 @@ import com.liferay.portal.model.User;
  * @since Feb 11, 2013
  *
  */
-/**
- * @author nollymar
- *
- */
 public interface StructureAPI {
 
 	/**
