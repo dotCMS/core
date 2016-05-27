@@ -929,9 +929,9 @@ function loadUsers() {
 		    
             dojo.query('#loggedUsersProgress').style({display:"none"});
 
-			if(sessionList.size() > 0) {
+			if(sessionList.length > 0) {
 
-                for(var i=0;i<sessionList.size();i++) {
+                for(var i=0;i<sessionList.length;i++) {
 					var session=sessionList[i];
 					var html ="<td>"+session.sessionTime+"</td> ";
 					html+="<td>"+session.address+"</td> ";
@@ -950,7 +950,7 @@ function loadUsers() {
                     createRow(tableId, html, rowsClass, "loggedUser-"+session.sessionId)
 				}
 
-				for(var i=0;i<sessionList.size();i++) {
+				for(var i=0;i<sessionList.length;i++) {
                     var session=sessionList[i];
 
                     var id = invalidateButtonIdPrefix + session.sessionId;
