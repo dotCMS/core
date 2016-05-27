@@ -199,7 +199,7 @@ public class ESClient {
 		}
 	}
 
-	public void setClusterNode(Map<String, String> properties) throws Exception {
+	public void setClusterNode() throws Exception {
 	    String httpPort=null, transportTCPPort, bindAddr, initData;
 	    ServerAPI serverAPI = APILocator.getServerAPI();
 	    Server currentServer=null;
@@ -214,22 +214,18 @@ public class ESClient {
 			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
 					?currentServer.getHost():currentServer.getIpAddress();
 
-			bindAddr = properties!=null && UtilMethods.isSet(properties.get("BIND_ADDRESS")) ? properties.get("BIND_ADDRESS")
-					:Config.getStringProperty("es.network.host", storedBindAddr);
+			bindAddr = Config.getStringProperty("es.network.host", storedBindAddr);
 
 			currentServer.setHost(Config.getStringProperty("es.network.host", null));
 
-			if(properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT"))){
-				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,properties.get("ES_TRANSPORT_TCP_PORT"));
-			} else if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
+			if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
 				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString());
 			}else{
 				transportTCPPort = getNextAvailableESPort(serverId, bindAddr, null);
 			}
 
 			if(Config.getBooleanProperty("es.http.enabled", false)) {
-				httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
-						:UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
+				httpPort = UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
 						:ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT);
 
 				currentServer.setEsHttpPort(Integer.parseInt(httpPort));
