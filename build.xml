@@ -671,7 +671,7 @@
         <echo>Deploying plugins to: ${plugin.root.dir} | ${plugin.jar.deploy.dir}</echo>
     </target>
 
-    <target name="deploy-plugins" depends="build-plugins" description="builds and deploys plugins">
+    <target name="deploy-plugins" depends="build-plugins, undeploy-plugins" description="builds and deploys plugins">
 
         <echo>Copying plugins to: ${plugin.root.dir}</echo>
 
@@ -741,7 +741,7 @@
 
     </target>
 
-    <target name="undeploy-plugins" depends="setup-deploy-location" description="undeploys all plugins, returns overridden files to default state">
+    <target name="undeploy-plugins" depends="setup-deploy-location" description="Undeploys all plugins, returns overridden files to default state. This task does not need to be executed as a pre-condition of deploy-plugins because that task executes it automatically.">
 
         <var name="lib.app" unset="true"/>
         <property name="lib.app" value="${plugin.root.dir}/WEB-INF/lib"/>
