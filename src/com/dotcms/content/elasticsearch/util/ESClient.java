@@ -158,16 +158,18 @@ public class ESClient {
             }
             // formula is (live server count (including the ones that are down but not yet timed out) - 1)
 
-            UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
-            settingsRequest.settings(jsonBuilder().startObject()
-                .startObject("index")
-                .field("auto_expand_replicas", false)
-                .field("number_of_replicas", serverCount - 1)
-                .endObject()
-                .endObject().string()
-            );
+            if(serverCount>0) {
+                UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+                settingsRequest.settings(jsonBuilder().startObject()
+                    .startObject("index")
+                    .field("auto_expand_replicas", false)
+                    .field("number_of_replicas", serverCount - 1)
+                    .endObject()
+                    .endObject().string()
+                );
 
-            return Optional.of(settingsRequest);
+                return Optional.of(settingsRequest);
+            }
         }
 
         return updateSettingsRequest;
@@ -213,7 +215,7 @@ public class ESClient {
 			shutDownNode();
 			currentServer = serverAPI.getServer(serverId);
 
-            String bindAddressFromProperty = Config.getStringProperty("es.network.host", null);
+            String bindAddressFromProperty = Config.getStringProperty("es.network.host", null, false);
 
             if(UtilMethods.isSet(bindAddressFromProperty)) {
                 try {
