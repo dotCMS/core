@@ -160,9 +160,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             createContentIndex(workingIndex,0);
             createContentIndex(liveIndex,0);
 
-			//Build the replicas config settings for the indices client
-            esClient.setReplicasSettings();
-
             IndiciesInfo info=new IndiciesInfo();
             info.working=workingIndex;
             info.live=liveIndex;
