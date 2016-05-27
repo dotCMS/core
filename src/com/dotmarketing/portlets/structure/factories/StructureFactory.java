@@ -847,15 +847,6 @@ public class StructureFactory {
         } catch (Exception e) {
             Logger.error(WebAssetFactory.class, "getStructuresCount failed:" + e, e);
         }
-
-        /*
-         * 
-         * 
-         * List<Structure> all = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, condition, orderBy,
-         * limit, offset, direction); if (!allowedStructsOnly) { return all; } List<Structure> retList = new
-         * ArrayList<Structure>(); for (Structure st : all) { if (permissionAPI.doesUserHavePermission(st,
-         * PERMISSION_READ, user, respectFrontendRoles) && !st.isSystem()) { retList.add(st); } } return retList;
-         */
         return 0;
     }
 
