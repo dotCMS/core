@@ -17,6 +17,10 @@ import com.liferay.portal.model.User;
  * @since Feb 11, 2013
  *
  */
+/**
+ * @author nollymar
+ *
+ */
 public interface StructureAPI {
 
 	/**
@@ -157,5 +161,14 @@ public interface StructureAPI {
 	 *             database.
 	 */
 	Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException;
+
+	
+    /**
+     * Counts the amount of structures in DB filtering by the given condition
+     * 
+     * @param condition to be used
+     * @return Amount of structures found
+     */
+    int countStructures(String condition);
 
 }
