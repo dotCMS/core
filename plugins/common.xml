@@ -48,7 +48,7 @@
 		<pathelement path="../../build/classes" />
 	</path>
 
-	<target name="build" depends="compile,jar" />
+	<target name="build" depends="clean,compile,jar" />
 	<target name="compile">
 
 		<echo>Building at: ${plugin.name} at ${basedir}</echo>
@@ -109,7 +109,10 @@
 	    </condition>
 	</target>
 	<target name="if_target" if="p">
-	    <jar destfile="${basedir}/../../${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" basedir="${classpath.dir}"/>
+	    <condition property="jar.destfile" value="${basedir}/../../${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" else="${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar">
+	      <isset property="target.root"/>
+	    </condition>
+	    <jar destfile="${jar.destfile}" basedir="${classpath.dir}" />
 	</target>
 
 	<target name="clean">

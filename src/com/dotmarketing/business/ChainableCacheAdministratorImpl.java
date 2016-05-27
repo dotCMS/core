@@ -6,14 +6,15 @@ package com.dotmarketing.business;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.cache.RemovalListener;
 import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
-import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -111,16 +112,22 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			    
 			    String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
 	                    ?localServer.getHost():localServer.getIpAddress();
-	            bindAddr = UtilMethods.isSet(cacheProperties.get("BIND_ADDRESS"))?cacheProperties.get("BIND_ADDRESS")
-	                    :Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
-	            
-	            bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
-	                    :localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
-	                    :ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
+
+	            bindAddr = UtilMethods.isSet(localServer.getIpAddress()) ? localServer.getIpAddress() : storedBindAddr;
+
+				if(UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))){
+					bindPort = cacheProperties.get("CACHE_BINDPORT");
+				} else {
+					if(UtilMethods.isSet(localServer.getCachePort())){
+						bindPort = Long.toString(localServer.getCachePort());
+					} else {
+						bindPort = ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
+					}
+				}
 	                    
                 localServer.setCachePort(Integer.parseInt(bindPort));
 
-                localServer.setHost(Config.getStringProperty("CACHE_BINDADDRESS", null));                
+                localServer.setHost(bindAddr);
 
                 List<String> myself = new ArrayList<String>();
                 myself.add(localServer.getServerId());
@@ -339,7 +346,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			return;
 		}
 
-		Runnable cacheRemoveRunnable=new Runnable() {
+		FlushCacheRunnable cacheRemoveRunnable=new FlushCacheRunnable() {
 	         public void run() {
 
 				String k = key.toLowerCase();

@@ -482,12 +482,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setHost(String host) {
 		map.put(HOST_KEY, host);
 	}
+
+	/**
+	 * Returns the inode of the folder where this contentlet lives under, if persisted, or if not persisted, where
+	 * it will live under when saved/updated
+	 *
+	 * @return the inode of the folder
+	 */
 	public String getFolder() {
 		return (String) map.get(FOLDER_KEY);
 	}
 
-	public void setFolder(String folder) {
-		map.put(FOLDER_KEY, folder);
+	/**
+	 * Sets the inode of the folder where this contentlet will live under when saved/updated
+	 *
+	 * @param folderInode the inode of the folder
+	 */
+	public void setFolder(String folderInode) {
+		map.put(FOLDER_KEY, folderInode);
 	}
 
 

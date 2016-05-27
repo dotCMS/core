@@ -328,19 +328,21 @@ public class ImportContentletsAction extends DotPortletAction {
 			Field field = fields.get(i);
 			if (ImportUtil.isImportableField(field)) {
 				if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-					out.print("MM/dd/yyyy");
+					out.print("\"MM/dd/yyyy\"");
 				}        	
 				else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-					out.print("MM/dd/yyyy hh:mm aa");
+					out.print("\"MM/dd/yyyy hh:mm aa\"");
 				}         	
 				else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-					out.print("hh:mm aa");
+					out.print("\"hh:mm aa\"");
 				}else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-						out.print("Host/Folder Identifier");
+						out.print("\"Host/Folder Identifier\"");
 				}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-					out.print("Category Unique Key");
-				} else {
-					out.print("XXX");
+					out.print("\"Category Unique Key\"");
+				}else if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+				    out.print("\"{'key1':'value','key2':'value2'}\"");
+				}    else {
+					out.print("\"XXX\"");
 				}
 				if(i < fields.size() - 1) 
 					out.print(",");

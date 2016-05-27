@@ -21,6 +21,7 @@ import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.logConsole.model.LogMapperCache;
@@ -105,7 +106,7 @@ public class CacheLocator extends Locator<CacheIndex>{
             dotcache.put(key, content, group);
             try {
                 if(DbConnectionFactory.inTransaction()) {
-                    HibernateUtil.addRollbackListener(new Runnable() {
+                    HibernateUtil.addRollbackListener(new FlushCacheRunnable() {
                        public void run() {
                            dotcache.remove(key, group);
                        }

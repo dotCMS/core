@@ -128,7 +128,7 @@ import com.liferay.util.FileUtil;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
- * 
+ *
  * @author Jason Tesser
  * @author David Torres
  * @since 1.5
@@ -159,7 +159,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	};
 
 	/**
-	 * 
+	 *
 	 */
     public ESContentletAPIImpl () {
         fAPI = APILocator.getFieldAPI();
@@ -837,16 +837,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
-     * @param ident
-     * @param live
-     * @param user
-     * @param frontRoles
-     * @return
-     * @throws DotDataException
-     * @throws DotContentletStateException
-     * @throws DotSecurityException
+     * @deprecated As of 2016-05-16, replaced by {@link #loadPageByIdentifier(String, boolean, Long, User, boolean)}
      */
+
+    @Deprecated
     private IHTMLPage loadPageByIdentifier ( String ident, boolean live, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
         return loadPageByIdentifier(ident, live, 0L, user, frontRoles);
     }
@@ -861,11 +855,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown") + " cannot read Contentlet");
         }
         Identifier id = APILocator.getIdentifierAPI().find(contentlet);
-        if (!InodeUtils.isSet(id.getInode()))
+        if (!InodeUtils.isSet(id.getId()))
             return results;
-        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getInode());
+        List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getId());
         for (MultiTree tree : trees) {
-            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, APILocator.getUserAPI().getSystemUser(), false);
+            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 Map<String, Object> map = new HashMap<String, Object>();
@@ -1084,7 +1078,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isLocked() ){
                 // persists the webasset
                 APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-                indexAPI.addContentToIndex(contentlet);
+                indexAPI.addContentToIndex(contentlet,false);
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
@@ -1269,7 +1263,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	 * Completely destroys the given list of {@link Contentlet} objects
 	 * (versions, relationships, associated contents, binary files) in all of
 	 * their languages.
-	 * 
+	 *
 	 * @param contentlets
 	 *            - The list of contentlets that will be completely destroyed.
 	 * @param user
@@ -1326,7 +1320,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			for (MultiTree mt : mts) {
 				Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
 				if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
-					IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, user, false);
+					IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, con.getLanguageId(), user, false);
 					if (page != null && UtilMethods.isSet(page.getIdentifier()))
 						PageServices.invalidateAll(page);
 				}
@@ -1424,7 +1418,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	 * specified language. If any of the specified contentlets is not archived,
 	 * an exception will be thrown. If there's only one language for a given
 	 * contentlet, the object will be destroyed.
-	 * 
+	 *
 	 * @param contentlets
 	 *            - The list of contentlets that will be deleted.
 	 * @param user
@@ -1468,11 +1462,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if(perCons.size() != contentlets.size()){
         	logContentletActivity(contentlets, "Error Deleting Content", user);
-            throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown") 
+            throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown")
             		+" does not have permission to delete some or all of the contentlets");
         }
 
-        // Log contentlet identifiers that we are going to delete 
+        // Log contentlet identifiers that we are going to delete
         HashSet<String> l = new HashSet<String>();
         for (Contentlet contentlet : contentlets) {
             l.add(contentlet.getIdentifier());
@@ -1792,7 +1786,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 			// persists the webasset
 			APILocator.getVersionableAPI().setLocked(contentlet, true, user);
-			indexAPI.addContentToIndex(contentlet);
+			indexAPI.addContentToIndex(contentlet,false);
 
 		} catch(DotDataException | DotStateException| DotSecurityException e) {
 			ActivityLogger.logInfo(getClass(), "Error Locking Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -1837,6 +1831,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+
+    private void refreshNoDeps(Contentlet contentlet) throws DotReindexStateException,
+	    DotDataException {
+		indexAPI.addContentToIndex(contentlet, false);
+		CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
+	}
 
     @Override
     public void refresh(Contentlet contentlet) throws DotReindexStateException,
@@ -2116,12 +2116,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // update the contentlets that lost the relationship (when the user remove a relationship).
         if(cons != null) {
             for (Contentlet relatedContentlet : cons) {
-                refresh(relatedContentlet);
+            	refreshNoDeps(relatedContentlet);
             }
         }
 
         // Refresh the parent
-        refresh(contentlet);
+        refreshNoDeps(contentlet);
     }
 
     @Override
@@ -2199,7 +2199,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	
 	            if(!child){// when we change the order we need to index all the sibling content
 	            	for(Contentlet con : getSiblings(c.getIdentifier())){
-	            		refresh(con);
+ 	            		refreshNoDeps(con);
 	            	}
 	            }
 	        }
@@ -2495,7 +2495,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param contentlet
      * @param contentRelationships
      * @param cats
@@ -3253,7 +3253,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param fromContentlet
      * @param toContentlet
      * @param contentRelationships
@@ -4294,7 +4294,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param field
      * @return
      */
@@ -4306,7 +4306,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param field
      * @return
      */
@@ -4318,7 +4318,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param field
      * @return
      */
@@ -4352,7 +4352,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param content
      * @return
      * @throws DotSecurityException
@@ -4373,7 +4373,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param contentlet
      * @return
      * @throws DotDataException
@@ -4469,7 +4469,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param contentlets
      * @param field
      */
@@ -4982,7 +4982,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * 
+     *
      * @param structureInode
      * @return
      */
@@ -5064,15 +5064,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void removeUserReferences(String userId)throws DotDataException, DotSecurityException {
         conFac.removeUserReferences(userId);
     }
-    
+
     /**
 	 * Method will replace user references of the given userId in Contentlets
-	 * with the replacement user id  
+	 * with the replacement user id
 	 * @param userId User Id to replace
 	 * @param replacementUserId Replacement User Id
 	 * @exception DotDataException There is a data error
-	 * @throws DotSecurityException 
-	 */	
+	 * @throws DotSecurityException
+	 */
 	public void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotSecurityException{
 		conFac.updateUserReferences(userId, replacementUserId);
 	}

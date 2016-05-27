@@ -105,7 +105,7 @@ MemoryMeter meter = new MemoryMeter();
 				boolean isDefault = (Boolean) s.get("isDefault");
 				String region = ((String) s.get("region")).toLowerCase();
 				int configuredSize = (Integer) s.get("configuredSize");
-
+				String configuredSizeStr =(configuredSize<1) ? "-" : String.valueOf(configuredSize);
 				String memory = "-";
 				if ( s.get("memory") != null && !toDisk ) {
 					memory = s.get("memory").toString();
@@ -181,7 +181,7 @@ MemoryMeter meter = new MemoryMeter();
 						<%=!isDefault ? "</b>":"" %>
 						<%=isDefault ? "(default)":"" %></td>
 						<td <%=isDefault ? "style='color:silver;'":"" %>><%=name%></td>
-						<td <%=isDefault ? "style='color:silver;'":"" %>><%=(toDisk) ? "-" : configuredSize%></td>
+						<td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSizeStr%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=memory%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=disk%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.loadCount()) %><%}else{%>-<%}%></td>

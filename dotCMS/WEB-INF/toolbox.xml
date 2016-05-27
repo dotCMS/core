@@ -400,6 +400,11 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.PersonaTool</class>
 	</tool>
+	<tool>
+		<key>markdown</key>
+		<scope>request</scope>
+		<class>com.dotmarketing.viewtools.MarkdownTool</class>
+	</tool>
 	<!-- Dotmarketing View Tools End -->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->

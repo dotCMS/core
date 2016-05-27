@@ -360,10 +360,10 @@
 <input type="hidden" name="structureInode" id="structureInode" value="">
 <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
 <input type="hidden" name="categoriesValues" id="categoriesValues" value="">
-<input type="hidden" name="showDeleted" id="showDeleted" value="">
-<input type="hidden" name="filterSystemHost" id="filterSystemHost" value="">
-<input type="hidden" name="filterLocked" id="filterLocked" value="">
-<input type="hidden" name="filterUnpublish" id="filterUnpublish" value="">
+<input type="hidden" name="showDeleted" id="showDeleted" value="<%= showDeleted %>">
+<input type="hidden" name="filterSystemHost" id="filterSystemHost" value="<%= filterSystemHost %>">
+<input type="hidden" name="filterLocked" id="filterLocked" value="<%= filterLocked %>">
+<input type="hidden" name="filterUnpublish" id="filterUnpublish" value="<%= filterUnpublish %>">
 <input type="hidden" name="currentPage" id="currentPage" value="">
 <input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
 <input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
@@ -435,11 +435,10 @@
 	                                     <dd>
 
 	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
-	                                     		<option value="all"><%= LanguageUtil.get(pageContext, "All") %></option>
-	                                     		<option value="locked"><%= LanguageUtil.get(pageContext, "Locked") %></option>
-	                                     		<option value="unpublished"><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
-	                                     		<option value="archived"><%= LanguageUtil.get(pageContext, "Archived") %></option>
-
+                                                <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
+                                                <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
+                                                <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
+                                                <option value="archived" <% if (showDeleted) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Archived") %></option>
 	                                     	</select>
 
 	                                     </dd>
