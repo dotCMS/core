@@ -22,6 +22,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -88,23 +90,38 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 	}
 
 	public void setCluster(Server localServer) throws Exception {
-
 			Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 			journalAPI = APILocator.getDistributedJournalAPI();
-
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
+
 			if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 			    Logger.info(this, "Using automatic port placement as CLUSTER_AUTOWIRE is ON");
+
+				String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null, false);
+
+				if(UtilMethods.isSet(bindAddressFromProperty)) {
+					try {
+						InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+						if(ClusterFactory.isValidIP(bindAddressFromProperty)){
+							bindAddressFromProperty = addr.getHostAddress();
+						}else{
+							Logger.info(ClusterFactory.class, "Address provided in CACHE_BINDADDRESS property is not "
+								+ "valid: " + bindAddressFromProperty);
+							bindAddressFromProperty = null;
+						}
+					} catch(UnknownHostException e) {
+						Logger.info(ClusterFactory.class, "Address provided in CACHE_BINDADDRESS property is not "
+							+ " valid: " + bindAddressFromProperty);
+						bindAddressFromProperty = null;
+					}
+				}
 			    
 			    cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-			    
-			    String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
-	                    ?localServer.getHost():localServer.getIpAddress();
 
-	            bindAddr = UtilMethods.isSet(localServer.getIpAddress()) ? localServer.getIpAddress() : storedBindAddr;
+	            bindAddr = bindAddressFromProperty!=null ? bindAddressFromProperty : localServer.getIpAddress();
 
 				if(UtilMethods.isSet(localServer.getCachePort())){
 					bindPort = Long.toString(localServer.getCachePort());
@@ -112,10 +129,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 					bindPort = ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
 				}
 
-	                    
                 localServer.setCachePort(Integer.parseInt(bindPort));
-
-                localServer.setHost(bindAddr);
 
                 List<String> myself = new ArrayList<String>();
                 myself.add(localServer.getServerId());

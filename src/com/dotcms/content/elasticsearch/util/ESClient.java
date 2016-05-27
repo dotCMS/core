@@ -4,6 +4,8 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -156,16 +158,18 @@ public class ESClient {
             }
             // formula is (live server count (including the ones that are down but not yet timed out) - 1)
 
-            UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
-            settingsRequest.settings(jsonBuilder().startObject()
-                .startObject("index")
-                .field("auto_expand_replicas", false)
-                .field("number_of_replicas", serverCount - 1)
-                .endObject()
-                .endObject().string()
-            );
+            if(serverCount>0) {
+                UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+                settingsRequest.settings(jsonBuilder().startObject()
+                    .startObject("index")
+                    .field("auto_expand_replicas", false)
+                    .field("number_of_replicas", serverCount - 1)
+                    .endObject()
+                    .endObject().string()
+                );
 
-            return Optional.of(settingsRequest);
+                return Optional.of(settingsRequest);
+            }
         }
 
         return updateSettingsRequest;
@@ -211,12 +215,26 @@ public class ESClient {
 			shutDownNode();
 			currentServer = serverAPI.getServer(serverId);
 
-			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
-					?currentServer.getHost():currentServer.getIpAddress();
+            String bindAddressFromProperty = Config.getStringProperty("es.network.host", null, false);
 
-			bindAddr = Config.getStringProperty("es.network.host", storedBindAddr);
+            if(UtilMethods.isSet(bindAddressFromProperty)) {
+                try {
+                    InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+                    if(ClusterFactory.isValidIP(bindAddressFromProperty)){
+                        bindAddressFromProperty = addr.getHostAddress();
+                    }else{
+                        Logger.info(ClusterFactory.class, "Address provided in es.network.host property is not "
+                            + "valid: " + bindAddressFromProperty);
+                        bindAddressFromProperty = null;
+                    }
+                } catch(UnknownHostException e) {
+                    Logger.info(ClusterFactory.class, "Address provided in es.network.host property is not "
+                        + " valid: " + bindAddressFromProperty);
+                    bindAddressFromProperty = null;
+                }
+            }
 
-			currentServer.setHost(Config.getStringProperty("es.network.host", null));
+            bindAddr = bindAddressFromProperty!=null ? bindAddressFromProperty : currentServer.getIpAddress();
 
 			if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
 				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString());
