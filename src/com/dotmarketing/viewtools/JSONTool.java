@@ -1,6 +1,6 @@
 package com.dotmarketing.viewtools;
 
-import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,10 +104,9 @@ public class JSONTool extends ImportSupport implements ViewTool {
 		try {
 			String x = acquireString(url, timeout, headers);
 			return generate(x);
-		} catch (IOException e) {
-			Logger.error(JSONTool.class, e.getMessage(), e);
 		} catch (Exception e) {
-			Logger.error(JSONTool.class, e.getMessage(), e);
+            Logger.warn(this.getClass(), e.getMessage());
+            Logger.debug(this.getClass(), e.getMessage(), e);
 		}
 		return null;
 	}
@@ -164,7 +163,8 @@ public class JSONTool extends ImportSupport implements ViewTool {
         }
         catch (Exception e)
         {
-            Logger.error(this.getClass(), e.getMessage(), e);
+            Logger.warn(this.getClass(), e.getMessage());
+            Logger.debug(this.getClass(), e.getMessage(), e);
             result = null;
         }
 
