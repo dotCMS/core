@@ -659,54 +659,6 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
     }
 
-
-    /**
-     * Updates replicas based on live and inactive servers yet to timeout count for all active indexes
-     */
-    public synchronized void updateReplicas() throws DotDataException {
-
-    	if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",false)
-    			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",false)){
-
-	    	// Gets all live servers
-	    	String[] liveServers = APILocator.getServerAPI().getAliveServersIds();
-
-	    	// final server count of live/inactive (yet to hit the max hearbeat limit) servers
-	    	int serverCount = (liveServers.length > 0 )? liveServers.length : 0;
-	    	Client client = new ESClient().getClientInCluster();
-	    	if(client == null){
-	    		client = new ESClient().getClient();
-	    	}
-	    	// get index list to apply replica count to every index
-	    	Set<String> indexList = listIndices();
-	    	for(String entry : indexList) {
-    	    	try{
-    	    		// disable autoupdate replicas before attempting to set the replica count
-	    	    	UpdateSettingsResponse resp = client.admin().indices().updateSettings(
-	    	    	          new UpdateSettingsRequest(entry).settings(
-	    	    	        		  /*
-	    	    	        		   * {
-	    	    	        		   *	"index" : {
-	    	    	        		   * 		"auto_expand_replicas" : "false"
-	    	    	        		   * 	}
-	    	    	        		   * }'
-	    	    	        		   */
-	    	    	                jsonBuilder().startObject()
-	    	    	                     .startObject("index")
-	    	    	                        .field("auto_expand_replicas","false")
-	    	    	                     .endObject()
-	    	    	               .endObject().string()
-	    	    	        )).actionGet();
-    	    	}catch(IOException e){
-    	    		Logger.error(this.getClass(), "Updating auto expand replicas for index " + entry,e);
-    	    		// log the error but don't fail, try the next index
-    	    		continue;
-    	    	}
-    	    	updateReplicas(entry,serverCount-1);
-	    	}
-    	}
-    }
-
     public void putToIndex(String idx, String json, String id){
 	   try{
 		   Client client=new ESClient().getClient();
