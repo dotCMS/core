@@ -4,6 +4,8 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -211,12 +213,26 @@ public class ESClient {
 			shutDownNode();
 			currentServer = serverAPI.getServer(serverId);
 
-			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
-					?currentServer.getHost():currentServer.getIpAddress();
+            String bindAddressFromProperty = Config.getStringProperty("es.network.host", null);
 
-			bindAddr = Config.getStringProperty("es.network.host", storedBindAddr);
+            if(UtilMethods.isSet(bindAddressFromProperty)) {
+                try {
+                    InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+                    if(ClusterFactory.isValidIP(bindAddressFromProperty)){
+                        bindAddressFromProperty = addr.getHostAddress();
+                    }else{
+                        Logger.info(ClusterFactory.class, "Address provided in es.network.host property is not "
+                            + "valid: " + bindAddressFromProperty);
+                        bindAddressFromProperty = null;
+                    }
+                } catch(UnknownHostException e) {
+                    Logger.info(ClusterFactory.class, "Address provided in es.network.host property is not "
+                        + " valid: " + bindAddressFromProperty);
+                    bindAddressFromProperty = null;
+                }
+            }
 
-			currentServer.setHost(Config.getStringProperty("es.network.host", null));
+            bindAddr = bindAddressFromProperty!=null ? bindAddressFromProperty : currentServer.getIpAddress();
 
 			if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
 				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString());
