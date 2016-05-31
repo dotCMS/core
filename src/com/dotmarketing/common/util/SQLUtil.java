@@ -35,7 +35,8 @@ public class SQLUtil {
 			"category_name","category_velocity_var_name",
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
-			"description","category_","sort_order","hostName", "keywords");
+			"description","category_","sort_order","hostName", "keywords",
+			"mod_date,upper(name)");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();

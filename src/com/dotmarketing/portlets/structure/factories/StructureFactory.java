@@ -814,28 +814,41 @@ public class StructureFactory {
 		return tagFields;
 	}
 
-	public static int getStructuresCount(String condition)
-	{
-		DotConnect db = new DotConnect();
+    /**
+     * Counts the amount of structures in DB filtering by the given condition
+     * 
+     * @param condition to be used
+     * @return Amount of structures found
+     */
+    public static int getStructuresCount(String condition) {
+        DotConnect db = new DotConnect();
 
-		StringBuffer sb = new StringBuffer();
-		try {
+        StringBuffer sb = new StringBuffer();
 
-			sb.append("select count(distinct structure.inode ) as count ");
-			sb.append(" from structure ");
-			if(condition != null && UtilMethods.isSet(condition)){
-				sb.append(" where " + condition);
-			}
-			Logger.debug(StructureFactory.class, sb.toString());
-			db.setSQL(sb.toString());
-			return db.getInt("count");
+        condition = (UtilMethods.isSet(condition.trim())) ? condition + " AND " : "";
+        if (LicenseUtil.getLevel() < 200) {
+            condition += " structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", "
+                    + Structure.STRUCTURE_TYPE_PERSONA + ") AND ";
+        }
 
-		} catch (Exception e) {
-			Logger.error(WebAssetFactory.class, "getStructuresCount failed:" + e, e);
-		}
+        condition += " 1=1 ";
 
-		return 0;
-	}
+        try {
+
+            sb.append("select count(distinct structure.inode ) as count ");
+            sb.append(" from structure ");
+            if (condition != null && UtilMethods.isSet(condition)) {
+                sb.append(" where " + condition);
+            }
+            Logger.debug(StructureFactory.class, sb.toString());
+            db.setSQL(sb.toString());
+            return db.getInt("count");
+
+        } catch (Exception e) {
+            Logger.error(WebAssetFactory.class, "getStructuresCount failed:" + e, e);
+        }
+        return 0;
+    }
 
 	/**
 	 * Get the list of image fields of a structure having a value in a list of parameters

@@ -158,4 +158,13 @@ public interface StructureAPI {
 	 */
 	Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException;
 
+	
+    /**
+     * Counts the amount of structures in DB filtering by the given condition
+     * 
+     * @param condition to be used
+     * @return Amount of structures found
+     */
+    int countStructures(String condition);
+
 }
