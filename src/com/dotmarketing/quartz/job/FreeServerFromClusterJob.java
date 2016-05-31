@@ -4,7 +4,10 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 
 import org.quartz.JobExecutionContext;
@@ -66,6 +69,15 @@ public class FreeServerFromClusterJob implements StatefulJob {
             Logger.error(FreeServerFromClusterJob.class, "Error trying to get the License Repo List", iOException);
         } catch (Exception exception) {
             Logger.error(FreeServerFromClusterJob.class, "Error trying to Free Server from Cluster", exception);
+        } finally {
+            try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            }
+            finally {
+                DbConnectionFactory.closeConnection();
+            }
         }
     }
 }
