@@ -876,7 +876,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    		name = shortenString(name, 30)
 	    		var title = shortenLongWords(asset.title, 30);
 	    		var modUserName = shortenString(asset.modUserName, 20);
-	    		//Show Language Banner for Contents (Pages, Files)
+	    		//Show Language Icon for Contents (Pages, Files)
 				var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
 					?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode + 
 							".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":""; 
