@@ -10,14 +10,14 @@
 
     // wildcard paths
     var paths = {
-        'n:*': '/node_modules/*'
+        'n:*': 'thirdparty/*'
     };
 
     // map tells the System loader where to look for things
     var map = {
         'build': 'build',
         'rxjs': 'n:rxjs',
-        '@angular': 'n:@angular',
+        '@angular': 'n:@angular'
     };
 
     // packages tells the System loader how to load when no filename and/or no extension

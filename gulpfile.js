@@ -510,7 +510,22 @@ gulp.task('compile-ts', function (cb) {
 });
 
 gulp.task('copy-node-files', function (cb) {
-  project.copyNodeFiles(cb)
+  //project.copyNodeFiles(cb)
+
+  return gulp.src([
+        '@angular/**/*.js',
+        'angular-material/angular-material.layouts.css',
+        'es6-shim/es6-shim.min.js',
+        'reflect-metadata/Reflect.js',
+        'rxjs/**',
+        'systemjs/dist/system-polyfills.js',
+        'systemjs/dist/system.src.js',
+        'zone.js/dist/**',
+        'jquery/dist/jquery.min.js',
+        'semantic-ui/dist/*.min.{css,js}',
+        'semantic-ui/dist/themes/default/**'
+      ], {cwd: "node_modules/**"}) /* Glob required here. */
+      .pipe(gulp.dest("build/thirdparty"));
 });
 
 gulp.task('compile-styles', function (done) {

@@ -6,27 +6,18 @@
 
 
   <link rel="stylesheet" type="text/css" href="view/components/rule-engine/styles/rule-engine.css">
-  <link rel="stylesheet" type="text/css" href="thirdparty/semantic/dist/semantic.css">
+  <link rel="stylesheet" type="text/css" href="thirdparty/semantic-ui/dist/semantic.min.css">
   <link rel="stylesheet" type="text/css" href="thirdparty/angular-material/angular-material.layouts.css">
 
-  <!--<script src="thirdparty/systemjs/dist/system.js"></script>-->
-  <!--<script src="thirdparty/angular2/bundles/angular2-polyfills.js"></script>-->
-  <!--<script src="thirdparty/es6-shim/es6-shim.js"></script>-->
-  <!--<script src="thirdparty/rxjs/bundles/Rx.js"></script>-->
-  <!--<script src="thirdparty/angular2/bundles/angular2.js"></script>-->
-  <!--<script src="thirdparty/angular2/bundles/http.js"></script>-->
-  <!--<script src="thirdparty/jquery/dist/jquery.js"></script>-->
-  <!--<script src="thirdparty/semantic/dist/semantic.min.js"></script>-->
-  <!--<script src="thirdparty/core-js/client/shim.js"></script>-->
 
-  <script src="thirdparty/es6-shim/es6-shim.js"></script>
-  <script src="thirdparty/zone.js/dist/zone.js"></script>
-  <script src="thirdparty/reflect-metadata/temp/Reflect.js"></script>
-  <script src="thirdparty/systemjs/dist/system.js"></script>
-  <script src="thirdparty/jquery/dist/jquery.js"></script>
-  <script src="thirdparty/semantic/dist/semantic.min.js"></script>
-  <script src="thirdparty/core-js/client/shim.js"></script>
-
+  <!-- 1. Load libraries -->
+  <!-- Polyfill(s) for older browsers -->
+  <script src="thirdparty/es6-shim/es6-shim.min.js"></script>
+  <script src="thirdparty/zone.js/dist/zone.min.js"></script>
+  <script src="thirdparty/reflect-metadata/Reflect.js"></script>
+  <script src="thirdparty/systemjs/dist/system.src.js"></script>
+  <script src="thirdparty/jquery/dist/jquery.min.js"></script>
+  <script src="thirdparty/semantic-ui/dist/semantic.min.js"></script>
 
   <!-- 2. Configure SystemJS -->
   <script src="systemjs.config.js"></script>
@@ -34,7 +25,6 @@
     System.import('view/boot.js')
             .catch(function(err) { console.error(err); });
   </script>
-
 </head>
 
 
