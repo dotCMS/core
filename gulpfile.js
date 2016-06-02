@@ -66,91 +66,105 @@ var project = {
   },
 
   copyNodeFiles: function (cb) {
+    gulp.src([
+        '@angular/**/*.js',
+        'angular-material/angular-material.layouts.css',
+        'es6-shim/es6-shim.min.js',
+        'reflect-metadata/Reflect.js',
+        'rxjs/**',
+        'systemjs/dist/system-polyfills.js',
+        'systemjs/dist/system.src.js',
+        'zone.js/dist/**',
+        'jquery/dist/jquery.min.js',
+        'semantic-ui/dist/*.min.{css,js}',
+        'semantic-ui/dist/themes/default/**'
+      ], {cwd: "node_modules/**"}) /* Glob required here. */
+      .pipe(gulp.dest("build/thirdparty")).on('finish', cb);
 
-    var libs =
-    {
-      //'angular2/bundles/': [
-      //  { dev: 'angular2-polyfills.js', prod: 'angular2-polyfills.min.js', out: 'angular2-polyfills.js' },
-      //  { dev: 'angular2.dev.js', prod: 'angular2.min.js', out: 'angular2.js' },
-      //  { dev: 'http.dev.js', prod: 'http.min.js', out: 'http.js' },
-      //  { dev: 'router.dev.js', prod: 'router.min.js', out: 'router.js' }
-      //],
-      'rxjs/bundles/': [
-        { dev: 'Rx.js', prod: 'Rx.min.js', out: 'Rx.js' },
-        { dev: 'Rx.min.js.map', prod: null, out: 'Rx.min.js.map' }
-      ],
-      'angular-material/': [
-        { dev: 'angular-material.layouts.css', prod: 'angular-material.layouts.min.css', out: 'angular-material.layouts.css' }
-      ],
-      'core-js/client/': [
-        { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
-      ],
-      'es6-shim/': [
-        { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
-      ],
-      // '@ngrx/store/dist/': [
-      //   { dev: 'store.js', prod: 'store.js', out: 'store.js' }
-      // ],
-      // 'immutable/dist/': [
-      //   { dev: 'immutable.js', prod: 'immutable.min.js', out: 'immutable.js' }
-      // ],
-      // 'normalizr/dist/': [
-      //   { dev: 'normalizr.min.js', prod: 'normalizr.min.js', out: 'normalizr.js' }
-      // ],
-      'jquery/dist/': [
-        { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
-        { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
-      ],
-      'systemjs/dist/': [
-        { dev: 'system.src.js', prod: 'system.js', out: 'system.js' },
-        { dev: 'system.js.map', prod: null, out: 'system.js.map' },
-        { dev: 'system-polyfills.src.js', prod: 'system-polyfills.js', out: 'system-polyfills.js' },
-        { dev: 'system-polyfills.js.map', prod: null, out: 'system-polyfills.js.map' }
-      ],
-      'whatwg-fetch/': [
-        { dev: 'fetch.js', prod: 'fetch.js', out: 'fetch.js' }
-      ],
-      'zone.js/dist/': [
-        { dev: 'zone.js', prod: 'zone.js', out: 'zone.js' }
-      ],
-      'reflect-metadata/temp/': [
-        { dev: 'Reflect.js', prod: 'Reflect.js', out: 'Reflect.js' }
-      ]
-    }
-
-    var baseOutPath =  config.buildDir + '/thirdparty/'
-    var libKeys = Object.keys(libs)
-
-
-    var count = 0
-    libKeys.forEach(function(basePath) {
-      var lib = libs[basePath]
-      lib.forEach(function(libFile){
-        // build target is either dev or prod; we're counting the number of file copy promises we'll need to wait for.
-        if((libFile[config.buildTarget] != null) || (libFile['all'] != null)) {
-          count++
-        }
-      })
-    })
-    var done = project.callbackOnCount(count, cb)
-
-    libKeys.forEach(function(basePath) {
-      var lib = libs[basePath]
-      lib.forEach(function(libFile){
-        var inFile = libFile[config.buildTarget] || libFile['all']
-        if(inFile) {
-          gulp.src('./node_modules/' + basePath + inFile)
-              .pipe(rename(function (path) {
-                var outFile = libFile['out'] || libFile['all']
-                path.basename = outFile.substring(0, outFile.lastIndexOf("."))
-                return path
-              }))
-              .pipe(gulp.dest(baseOutPath + basePath)).on('finish', done);
-        }
-      })
-
-
-    })
+    // var libs =
+    // {
+    //   //'angular2/bundles/': [
+    //   //  { dev: 'angular2-polyfills.js', prod: 'angular2-polyfills.min.js', out: 'angular2-polyfills.js' },
+    //   //  { dev: 'angular2.dev.js', prod: 'angular2.min.js', out: 'angular2.js' },
+    //   //  { dev: 'http.dev.js', prod: 'http.min.js', out: 'http.js' },
+    //   //  { dev: 'router.dev.js', prod: 'router.min.js', out: 'router.js' }
+    //   //],
+    //   'rxjs/bundles/': [
+    //     { dev: 'Rx.js', prod: 'Rx.min.js', out: 'Rx.js' },
+    //     { dev: 'Rx.min.js.map', prod: null, out: 'Rx.min.js.map' }
+    //   ],
+    //   'angular-material/': [
+    //     { dev: 'angular-material.layouts.css', prod: 'angular-material.layouts.min.css', out: 'angular-material.layouts.css' }
+    //   ],
+    //   'core-js/client/': [
+    //     { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
+    //   ],
+    //   'es6-shim/': [
+    //     { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
+    //   ],
+    //   // '@ngrx/store/dist/': [
+    //   //   { dev: 'store.js', prod: 'store.js', out: 'store.js' }
+    //   // ],
+    //   // 'immutable/dist/': [
+    //   //   { dev: 'immutable.js', prod: 'immutable.min.js', out: 'immutable.js' }
+    //   // ],
+    //   // 'normalizr/dist/': [
+    //   //   { dev: 'normalizr.min.js', prod: 'normalizr.min.js', out: 'normalizr.js' }
+    //   // ],
+    //   'jquery/dist/': [
+    //     { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
+    //     { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
+    //   ],
+    //   'systemjs/dist/': [
+    //     { dev: 'system.src.js', prod: 'system.js', out: 'system.js' },
+    //     { dev: 'system.js.map', prod: null, out: 'system.js.map' },
+    //     { dev: 'system-polyfills.src.js', prod: 'system-polyfills.js', out: 'system-polyfills.js' },
+    //     { dev: 'system-polyfills.js.map', prod: null, out: 'system-polyfills.js.map' }
+    //   ],
+    //   'whatwg-fetch/': [
+    //     { dev: 'fetch.js', prod: 'fetch.js', out: 'fetch.js' }
+    //   ],
+    //   'zone.js/dist/': [
+    //     { dev: 'zone.js', prod: 'zone.js', out: 'zone.js' }
+    //   ],
+    //   'reflect-metadata/temp/': [
+    //     { dev: 'Reflect.js', prod: 'Reflect.js', out: 'Reflect.js' }
+    //   ]
+    // }
+    //
+    // var baseOutPath =  config.buildDir + '/thirdparty/'
+    // var libKeys = Object.keys(libs)
+    //
+    //
+    // var count = 0
+    // libKeys.forEach(function(basePath) {
+    //   var lib = libs[basePath]
+    //   lib.forEach(function(libFile){
+    //     // build target is either dev or prod; we're counting the number of file copy promises we'll need to wait for.
+    //     if((libFile[config.buildTarget] != null) || (libFile['all'] != null)) {
+    //       count++
+    //     }
+    //   })
+    // })
+    // var done = project.callbackOnCount(count, cb)
+    //
+    // libKeys.forEach(function(basePath) {
+    //   var lib = libs[basePath]
+    //   lib.forEach(function(libFile){
+    //     var inFile = libFile[config.buildTarget] || libFile['all']
+    //     if(inFile) {
+    //       gulp.src('./node_modules/' + basePath + inFile)
+    //           .pipe(rename(function (path) {
+    //             var outFile = libFile['out'] || libFile['all']
+    //             path.basename = outFile.substring(0, outFile.lastIndexOf("."))
+    //             return path
+    //           }))
+    //           .pipe(gulp.dest(baseOutPath + basePath)).on('finish', done);
+    //     }
+    //   })
+    //
+    //
+    // })
 
   },
 
@@ -510,22 +524,7 @@ gulp.task('compile-ts', function (cb) {
 });
 
 gulp.task('copy-node-files', function (cb) {
-  //project.copyNodeFiles(cb)
-
-  return gulp.src([
-        '@angular/**/*.js',
-        'angular-material/angular-material.layouts.css',
-        'es6-shim/es6-shim.min.js',
-        'reflect-metadata/Reflect.js',
-        'rxjs/**',
-        'systemjs/dist/system-polyfills.js',
-        'systemjs/dist/system.src.js',
-        'zone.js/dist/**',
-        'jquery/dist/jquery.min.js',
-        'semantic-ui/dist/*.min.{css,js}',
-        'semantic-ui/dist/themes/default/**'
-      ], {cwd: "node_modules/**"}) /* Glob required here. */
-      .pipe(gulp.dest("build/thirdparty"));
+  project.copyNodeFiles(cb)
 });
 
 gulp.task('compile-styles', function (done) {

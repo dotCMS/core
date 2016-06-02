@@ -1,6 +1,6 @@
 {
   "name": "core-web",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "license": "GPLv3",
   "description": "DotCMS Core-Web: ReST Client API and UI Components",
   "repository": {
