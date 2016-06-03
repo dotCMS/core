@@ -32,7 +32,9 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
@@ -78,8 +80,14 @@ public class ESIndexResource {
                     }
                     catch(Exception ex) {
                         Logger.error(ESIndexResource.class, "Error restoring "+indexToRestore,ex);
-                    }finally{
-                        DbConnectionFactory.closeConnection();
+                    }finally {
+                        try {
+                            HibernateUtil.closeSession();
+                        } catch (DotHibernateException e) {
+                            Logger.warn(this, e.getMessage(), e);
+                        }finally {
+                            DbConnectionFactory.closeConnection();
+                        }
                     }
                 }
             }.start();
