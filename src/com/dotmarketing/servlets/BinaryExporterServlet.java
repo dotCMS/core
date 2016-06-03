@@ -222,7 +222,16 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			String downloadName = "file_asset";
 			long lang = defaultLang;
-			try {
+			String request_language = req.getParameter("language_id");
+			if(request_language != null){
+				lang = Long.parseLong(request_language);
+			}else{
+				lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+			}
+			//Identifier assetId = APILocator.getIdentifierAPI().find(assetIdentifier);
+			//List<Contentlet> allAssets = APILocator.getContentletAPI().findAllVersions(assetId, userAPI.getSystemUser(), false);
+			//long lang = (!allAssets.isEmpty()) ? allAssets.get(0).getLanguageId() : defaultLang;
+			/*try {
 				String x = null;
 				if (session != null) {
 					x = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
@@ -232,7 +241,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				lang = Long.parseLong(x);
 			} catch(Exception e){
 				// Number parsing exception
-			}
+			}*/
 
 			boolean isContent = false;
 			try {
