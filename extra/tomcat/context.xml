@@ -26,7 +26,7 @@
         Documentation for Resource settings:  http://commons.apache.org/proper/commons-dbcp/configuration.html
      -->
 
-    <!-- H2 -->
+    <!-- H2
     <Resource name="jdbc/dotCMSPool" auth="Container"
               type="javax.sql.DataSource"
               driverClassName="org.h2.Driver"
@@ -34,40 +34,40 @@
               username="sa" password="sa" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
               removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
               timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />
-
+     -->
     <!-- POSTGRESQL
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource"
           driverClassName="org.postgresql.Driver"
           url="jdbc:postgresql://localhost/dotcms"
-          username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
+          username="postgres" password="admin" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
           removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />
-    -->
-    <!-- MYSQL UTF8
+     -->
+    <!-- MYSQL UTF8 -->
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
-          url="jdbc:mysql://localhost/dotcms2?characterEncoding=UTF-8"
-          username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
+          url="jdbc:mysql://localhost/dotcmspub1?characterEncoding=UTF-8"
+          username="root" password="" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
           removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />
-    -->
+    
     <!-- Oracle
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource" driverClassName="oracle.jdbc.OracleDriver"
-          url="jdbc:oracle:thin:@localhost:1521:XE"
-          username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
+          url="jdbc:oracle:thin:@192.168.1.63:1521:XE"
+          username="DOTCMS" password="dotcms" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
           removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
           timeBetweenEvictionRunsMillis="30000" testOnBorrow="true" validationQuery="SELECT 1 from DUAL" testWhileIdle="true" />
-    -->
+     -->
     <!-- MSSQL
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-          url="jdbc:sqlserver://{your server}.database.windows.net:1433;databaseName={your DB name}"
-          username="{your user}@{your server}" password="{your password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
+          url="jdbc:sqlserver://192.168.1.63:1433;databaseName=dotcms"
+          username="sa" password="D0tcms#1" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
           removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
           timeBetweenEvictionRunsMillis="30000" testOnBorrow="true" testWhileIdle="true" validationQuery="SELECT 1" defaultTransactionIsolation="READ_COMMITTED"/>
-    -->
+     -->
 
 
 </Context>
