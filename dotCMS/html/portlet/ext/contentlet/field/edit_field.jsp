@@ -458,7 +458,7 @@
                         <%
                             String src = null;
                             if(!fileName.toLowerCase().endsWith("svg")){
-                                src = String.format("/contentAsset/image/%1%s/%2%s/?filter=Thumbnail&thumbnail_w=%3%d&thumbnail_h=%3%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim);
+                                src = String.format("/contentAsset/image/%1%s/%2%s/?language_id=%4%s&filter=Thumbnail&thumbnail_w=%3%d&thumbnail_h=%3%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, contentlet.getLanguageId());
                             }else{
                                 src = String.format("/contentAsset/image/%s/%s", contentlet.getIdentifier(), field.getVelocityVarName());
                             }
@@ -473,7 +473,7 @@
 
                     <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
                         <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
-                            <img src="/contentAsset/image/<%=contentlet.getIdentifier()%>/<%=field.getVelocityVarName() %>" />
+                            <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=true" />
                         </div>
                         <div class="callOutBox">
                             <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
@@ -549,7 +549,7 @@
 						  	if(request.getServerPort() != 80 && request.getServerPort() != 443){
 						  		resourceLink.append(":" + request.getServerPort());
 						  	}
-						  	resourceLink.append(UtilMethods.encodeURIComponent(identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)));
+						  	resourceLink.append(UtilMethods.encodeURIComponent(identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)+"?language_id="+contentlet.getLanguageId()));
 						  }
 
 						  com.dotmarketing.portlets.fileassets.business.FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(contentlet);
@@ -557,7 +557,7 @@
 						  String fileAssetName = fa.getFileName();
 						 %>
 
-							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)%></a>
+							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)+"?language_id="+contentlet.getLanguageId()%></a>
 								<% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("javascript")!=-1
                                         || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1) || fileAssetName.endsWith(".vm")) { %>
 									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
