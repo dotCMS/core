@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys;
 
 /**
  *
@@ -528,6 +529,7 @@ public class HibernateUtil {
     }
 
 	private static void buildSessionFactory() throws DotHibernateException{
+		long start = System.currentTimeMillis();
 		try {
 			// Initialize the Hibernate environment
 			/*
@@ -573,7 +575,8 @@ public class HibernateUtil {
 			mappings = cfg.createMappings();
 			sessionFactory = cfg.buildSessionFactory();
 			dialect = cfg.getProperty("hibernate.dialect");
-
+			System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB, String.valueOf(System.currentTimeMillis() - start));
+			
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to build Session Factory ", e);
 		}

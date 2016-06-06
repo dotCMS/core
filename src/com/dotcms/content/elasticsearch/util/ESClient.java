@@ -15,18 +15,23 @@ import java.util.Optional;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+
 import org.elasticsearch.indices.IndexMissingException;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
+
 import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.liferay.util.FileUtil;
@@ -56,8 +61,9 @@ public class ESClient {
 	}
 
     private void initNode () {
-
+    	
         if ( _nodeInstance == null || _nodeInstance.isClosed()) {
+        	long start = System.currentTimeMillis();
             synchronized (syncMe) {
                 if ( _nodeInstance == null || _nodeInstance.isClosed()) {
 
@@ -101,7 +107,9 @@ public class ESClient {
                     }
                 }
             }
+            System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
         }
+        
     }
 
     public void shutDownNode () {
