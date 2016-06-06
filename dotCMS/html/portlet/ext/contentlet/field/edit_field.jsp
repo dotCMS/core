@@ -42,7 +42,7 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
 <%
-    Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+    long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
     long contentLanguage = contentlet.getLanguageId();
     Field field = (Field) request.getAttribute("field");
@@ -537,6 +537,7 @@
 
 						  <%
 						  StringBuffer resourceLink = new StringBuffer();
+						  String resourceLinkUri = "";
 						  Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 						  Host host = APILocator.getHostAPI().find((String)request.getAttribute("host") , user, false);
 						  if (identifier!=null && InodeUtils.isSet(identifier.getInode())){
@@ -549,7 +550,13 @@
 						  	if(request.getServerPort() != 80 && request.getServerPort() != 443){
 						  		resourceLink.append(":" + request.getServerPort());
 						  	}
-						  	resourceLink.append(UtilMethods.encodeURIComponent(identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)+"?language_id="+contentlet.getLanguageId()));
+						  	resourceLinkUri = identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+						  	resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri));
+						  	if(defaultLang != contentlet.getLanguageId()){
+						  		//resourceLinkUri.concat("?language_id="+contentlet.getLanguageId());
+						  		resourceLinkUri+="?language_id="+contentlet.getLanguageId();
+						  		resourceLink.append("?language_id="+contentlet.getLanguageId());
+						  	}
 						  }
 
 						  com.dotmarketing.portlets.fileassets.business.FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(contentlet);
@@ -557,7 +564,7 @@
 						  String fileAssetName = fa.getFileName();
 						 %>
 
-							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)+"?language_id="+contentlet.getLanguageId()%></a>
+							<a href="<%=resourceLink %>" target="_new"><%=resourceLinkUri %></a>
 								<% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("javascript")!=-1
                                         || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1) || fileAssetName.endsWith(".vm")) { %>
 									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
