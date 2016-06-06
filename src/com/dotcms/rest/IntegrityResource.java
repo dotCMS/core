@@ -38,6 +38,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -398,8 +399,13 @@ public class IntegrityResource {
                                 } finally {
                                     try {
                                         integrityUtil.dropTempTables(endpointId);
-                                    } catch (DotDataException e) {
+                                        HibernateUtil.closeSession();
+                                    }catch (DotHibernateException e) {
+                                        Logger.warn(this, e.getMessage(), e);
+                                    }catch (DotDataException e) {
                                         Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
+                                    }finally {
+                                        DbConnectionFactory.closeConnection();
                                     }
                                 }
 

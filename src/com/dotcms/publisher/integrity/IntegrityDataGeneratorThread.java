@@ -5,6 +5,9 @@ import javax.servlet.ServletContext;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rest.IntegrityResource.ProcessStatus;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 
 public class IntegrityDataGeneratorThread extends Thread {
@@ -30,7 +33,6 @@ public class IntegrityDataGeneratorThread extends Thread {
             integrityUtil.generateDataToCheckZip(requesterEndPoint.getId());
 
         } catch (Exception e) {
-
             //Special handling if the thread was interrupted
             if ( e instanceof InterruptedException ) {
                 //Setting the process status
@@ -44,6 +46,13 @@ public class IntegrityDataGeneratorThread extends Thread {
             servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.ERROR);
             servletContext.setAttribute("integrityDataGenerationError", e.getMessage());
         } finally {
+            try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, e.getMessage(), e);
+            } finally{
+                DbConnectionFactory.closeConnection();
+            }
             servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.FINISHED);
         }
     }
