@@ -294,8 +294,8 @@ public class BinaryExporterServlet extends HttpServlet {
 				        }
 				    }
 
-					//If the DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in session...
-					if ( Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)
+					//If the DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in request/session...
+					if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)
 							&& defaultLang != lang ) {
 
 						ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -323,9 +323,10 @@ public class BinaryExporterServlet extends HttpServlet {
 							return;
 						}
 
-					} else {
+					}
+					else {
 						/*
-						If the property DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is false OR the language in session
+						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 						 */
 						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
