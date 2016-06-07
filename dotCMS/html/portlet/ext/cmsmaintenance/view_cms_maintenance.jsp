@@ -1779,7 +1779,8 @@ dd.leftdl {
 	            </thead>
 
 	            <%Map<String,String> s = System.getenv();%>
-	            <%for(Object key : s.keySet()){ %>
+	            <%TreeSet<Object> keys = new TreeSet(s.keySet()); %>
+	            <%for(Object key : keys){ %>
 	            <tr>
 	                <td valign="top"><%=key %></td>
 	                <td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
@@ -1808,8 +1809,8 @@ dd.leftdl {
 	                    <%} %>
 	                </td>
 	            </tr>
-
-	            <%for(Object key : p.keySet()){ %>
+				<%keys = new TreeSet(p.keySet()); %>
+	            <%for(Object key : keys){ %>
 
 	            <tr>
 	                <td valign="top"><%=key %></td>
