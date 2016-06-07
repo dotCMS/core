@@ -400,11 +400,11 @@ public class IntegrityResource {
                                     try {
                                         integrityUtil.dropTempTables(endpointId);
                                         HibernateUtil.closeSession();
-                                    }catch (DotHibernateException e) {
-                                        Logger.warn(this, e.getMessage(), e);
-                                    }catch (DotDataException e) {
+                                    } catch (DotHibernateException e) {
+                                            Logger.warn(this, e.getMessage(), e);
+                                    } catch (DotDataException e) {
                                         Logger.error(IntegrityResource.class, "Error while deleting temp tables", e);
-                                    }finally {
+                                    } finally {
                                         DbConnectionFactory.closeConnection();
                                     }
                                 }

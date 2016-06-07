@@ -33,6 +33,7 @@ public class IntegrityDataGeneratorThread extends Thread {
             integrityUtil.generateDataToCheckZip(requesterEndPoint.getId());
 
         } catch (Exception e) {
+
             //Special handling if the thread was interrupted
             if ( e instanceof InterruptedException ) {
                 //Setting the process status
@@ -46,14 +47,15 @@ public class IntegrityDataGeneratorThread extends Thread {
             servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.ERROR);
             servletContext.setAttribute("integrityDataGenerationError", e.getMessage());
         } finally {
+            servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.FINISHED);
+            
             try {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {
                 Logger.warn(this, e.getMessage(), e);
-            } finally{
+            }finally {
                 DbConnectionFactory.closeConnection();
             }
-            servletContext.setAttribute("integrityDataGenerationStatus", ProcessStatus.FINISHED);
         }
     }
 
