@@ -1,16 +1,23 @@
-"use strict";
+'use strict';
 
 
-var glob = require('glob')
-var fs = require('fs')
-var gulp = require('gulp')
-var rename = require('gulp-rename')
-var del = require('del')
-var minimist = require('minimist')
-var replace = require('gulp-replace')
+var del = require('del');
+var exec = require('child_process').exec;
+var flatten = require('gulp-flatten');
+var fs = require('fs');
+var glob = require('glob');
+var gulp = require('gulp');
+var karmaServer = require('karma').Server;
+var minifyCss = require('gulp-minify-css');
+var minifyHtml = require('gulp-minify-html');
+var minimist = require('minimist');
+var rename = require('gulp-rename');
+var replace = require('gulp-replace');
+var rev = require('gulp-rev');
+var sass = require('gulp-sass')
 var ts = require('gulp-typescript');
-var karmaServer = require('karma').Server
-var exec = require('child_process').exec
+var uglify = require('gulp-uglify');
+var usemin = require('gulp-usemin');
 
 var config = {
   appProtocol: 'http',
@@ -54,133 +61,64 @@ var typescriptProject = ts.createProject('./tsconfig.json');
 var project = {
   server: null,
 
-  clean: function (cb) {
-    console.log("Starting 'Clean'")
+  clean: function(cb) {
+    console.log('Starting Clean')
+    console.log(cssRuleEngine)
     del.sync([config.distDir, config.buildDir, './gh_pages'])
-    console.log("Finished 'Clean'")
+    console.log('Finished Clean')
     cb()
   },
 
-  compileJavascript: function (cb) {
+  compileJavascript: function(cb) {
     cb()
   },
 
-  copyNodeFiles: function (cb) {
+  copyModules: function(cb) {
     gulp.src([
         '@angular/**/*.js',
-        'angular-material/angular-material.layouts.css',
-        'es6-shim/es6-shim.min.js',
-        'reflect-metadata/Reflect.js',
-        'rxjs/**',
-        'systemjs/dist/system-polyfills.js',
-        'systemjs/dist/system.src.js',
-        'zone.js/dist/**',
-        'jquery/dist/jquery.min.js',
-        'semantic-ui/dist/*.min.{css,js}',
-        'semantic-ui/dist/themes/default/**'
-      ], {cwd: "node_modules/**"}) /* Glob required here. */
-      .pipe(gulp.dest("build/thirdparty")).on('finish', cb);
+        'rxjs/**'
+      ], {cwd: 'node_modules/**'}) /* Glob required here. */
+      .pipe(gulp.dest('build/thirdparty')).on('finish', cb);
 
-    // var libs =
-    // {
-    //   //'angular2/bundles/': [
-    //   //  { dev: 'angular2-polyfills.js', prod: 'angular2-polyfills.min.js', out: 'angular2-polyfills.js' },
-    //   //  { dev: 'angular2.dev.js', prod: 'angular2.min.js', out: 'angular2.js' },
-    //   //  { dev: 'http.dev.js', prod: 'http.min.js', out: 'http.js' },
-    //   //  { dev: 'router.dev.js', prod: 'router.min.js', out: 'router.js' }
-    //   //],
-    //   'rxjs/bundles/': [
-    //     { dev: 'Rx.js', prod: 'Rx.min.js', out: 'Rx.js' },
-    //     { dev: 'Rx.min.js.map', prod: null, out: 'Rx.min.js.map' }
-    //   ],
-    //   'angular-material/': [
-    //     { dev: 'angular-material.layouts.css', prod: 'angular-material.layouts.min.css', out: 'angular-material.layouts.css' }
-    //   ],
-    //   'core-js/client/': [
-    //     { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
-    //   ],
-    //   'es6-shim/': [
-    //     { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
-    //   ],
-    //   // '@ngrx/store/dist/': [
-    //   //   { dev: 'store.js', prod: 'store.js', out: 'store.js' }
-    //   // ],
-    //   // 'immutable/dist/': [
-    //   //   { dev: 'immutable.js', prod: 'immutable.min.js', out: 'immutable.js' }
-    //   // ],
-    //   // 'normalizr/dist/': [
-    //   //   { dev: 'normalizr.min.js', prod: 'normalizr.min.js', out: 'normalizr.js' }
-    //   // ],
-    //   'jquery/dist/': [
-    //     { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
-    //     { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
-    //   ],
-    //   'systemjs/dist/': [
-    //     { dev: 'system.src.js', prod: 'system.js', out: 'system.js' },
-    //     { dev: 'system.js.map', prod: null, out: 'system.js.map' },
-    //     { dev: 'system-polyfills.src.js', prod: 'system-polyfills.js', out: 'system-polyfills.js' },
-    //     { dev: 'system-polyfills.js.map', prod: null, out: 'system-polyfills.js.map' }
-    //   ],
-    //   'whatwg-fetch/': [
-    //     { dev: 'fetch.js', prod: 'fetch.js', out: 'fetch.js' }
-    //   ],
-    //   'zone.js/dist/': [
-    //     { dev: 'zone.js', prod: 'zone.js', out: 'zone.js' }
-    //   ],
-    //   'reflect-metadata/temp/': [
-    //     { dev: 'Reflect.js', prod: 'Reflect.js', out: 'Reflect.js' }
-    //   ]
-    // }
-    //
-    // var baseOutPath =  config.buildDir + '/thirdparty/'
-    // var libKeys = Object.keys(libs)
-    //
-    //
-    // var count = 0
-    // libKeys.forEach(function(basePath) {
-    //   var lib = libs[basePath]
-    //   lib.forEach(function(libFile){
-    //     // build target is either dev or prod; we're counting the number of file copy promises we'll need to wait for.
-    //     if((libFile[config.buildTarget] != null) || (libFile['all'] != null)) {
-    //       count++
-    //     }
-    //   })
-    // })
-    // var done = project.callbackOnCount(count, cb)
-    //
-    // libKeys.forEach(function(basePath) {
-    //   var lib = libs[basePath]
-    //   lib.forEach(function(libFile){
-    //     var inFile = libFile[config.buildTarget] || libFile['all']
-    //     if(inFile) {
-    //       gulp.src('./node_modules/' + basePath + inFile)
-    //           .pipe(rename(function (path) {
-    //             var outFile = libFile['out'] || libFile['all']
-    //             path.basename = outFile.substring(0, outFile.lastIndexOf("."))
-    //             return path
-    //           }))
-    //           .pipe(gulp.dest(baseOutPath + basePath)).on('finish', done);
-    //     }
-    //   })
-    //
-    //
-    // })
+  },
+
+  copyFontFiles: function(cb) {
+    gulp.src([
+          'semantic-ui/dist/themes/default/assets/fonts/**'
+        ], {cwd: 'node_modules/**'}) /* Glob required here. */
+        .pipe(flatten())
+        .pipe(gulp.dest('build/styles/themes/default/assets/fonts')).on('finish', cb);
+  },
+
+  deployResources: function(cb) {
+    gulp.src('./src/**/*.scss')
+        .pipe(sass({outputStyle: 'expanded'}))
+        .pipe(gulp.dest(function(file) {return file.base})).on('finish', function() {
+          gulp.src('./src/index.html')
+              .pipe(usemin({
+                css: [ rev() ],
+                //html: [ minifyHtml({ empty: false }) ],
+                js: [ uglify(), rev() ],
+                inlinejs: [ uglify() ],
+                inlinecss: [ minifyCss(), 'concat' ]
+              }))
+              .pipe(gulp.dest('build/')).on('finish', cb);
+    });
 
   },
 
   /**
    *
    */
-  compileTypescript: function (cb) {
-    exec('npm run tsc-no', function (err, stdout, stderr) {
+  compileTypescript: function(cb) {
+    exec('npm run tsc-no', function(err, stdout, stderr) {
       // Ignoring non-zero exit code errors, as tsc will provide non-zero exit codes on warnings.
       console.log(stdout);
       cb();
     })
   },
 
-  compileStyles: function (cb) {
-    var sass = require('gulp-sass')
+  compileStyles: function(cb) {
     var sourcemaps = require('gulp-sourcemaps');
     gulp.src('./src/**/*.scss')
         .pipe(sourcemaps.init())
@@ -189,20 +127,20 @@ var project = {
         .pipe(gulp.dest(config.buildDir)).on('finish', cb);
   },
 
-  callbackOnCount: function (count, cb) {
-    return function () {
+  callbackOnCount: function(count, cb) {
+    return function() {
       if (--count === 0) {
         cb()
       }
     }
   },
 
-  compileStatic: function (cb) {
+  compileStatic: function(cb) {
 
     var done = project.callbackOnCount(2, cb)
     var gitRev = require('git-rev')
     gulp.src('./src/**/*.{js,css,eot,svg,ttf,woff,woff2,png}').pipe(gulp.dest(config.buildDir)).on('finish', done);
-    gitRev.short(function (rev) {
+    gitRev.short(function(rev) {
       gulp.src([config.srcDir + '/**/*.html'])
           .pipe(replace(/\$\{build.revision\}/, rev))
           .pipe(replace(/\$\{build.date\}/, new Date().toISOString()))
@@ -210,18 +148,20 @@ var project = {
     })
   },
 
-  compile: function (cb) {
+  compile: function(cb) {
     var done = project.callbackOnCount(5, cb, 'compile')
     project.compileJavascript(done)
     project.compileTypescript(done)
     project.compileStyles(done)
     project.compileStatic(done)
-    project.copyNodeFiles(done)
+    project.deployResources(done)
+    project.copyModules(done)
+    project.copyFontFiles(done)
   },
 
-  packageRelease: function (done) {
-    project.clean(function () {
-      project.compile(function () {
+  packageRelease: function(done) {
+    project.clean(function() {
+      project.compile(function() {
         var outPath = config.distDir + '/core-web.zip'
         if (!fs.existsSync(config.distDir)) {
           fs.mkdirSync(config.distDir)
@@ -230,12 +170,12 @@ var project = {
         var archiver = require('archiver')
         var archive = archiver.create('zip', {})
 
-        output.on('close', function () {
-          console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
+        output.on('close', function() {
+          console.log('Archive Created: ' + outPath + '. Size: ' + archive.pointer() / 1000000 + 'MB')
           done()
         });
 
-        archive.on('error', function (err) {
+        archive.on('error', function(err) {
           done(err)
         });
 
@@ -248,28 +188,28 @@ var project = {
   },
   catchError: function(msg){
     return function(e){
-      console.log(msg || "Error: ", e)
+      console.log(msg || 'Error: ', e)
     }
   },
-  watch: function () {
+  watch: function() {
     project.watchTs()
-    gulp.watch('./src/**/*.html', ['compile-templates']).on('error', project.catchError("Error watching HTML files"))
-    gulp.watch('./src/**/*.js', ['compile-templates']).on('error', project.catchError("Error watching JS files"))
-    return gulp.watch('./src/**/*.scss', ['compile-styles']).on('error', project.catchError("Error watching SCSS files"))
+    gulp.watch('./src/**/*.html', ['compile-templates']).on('error', project.catchError('Error watching HTML files'))
+    gulp.watch('./src/**/*.js', ['compile-templates']).on('error', project.catchError('Error watching JS files'))
+    return gulp.watch('./src/**/*.scss', ['compile-styles']).on('error', project.catchError('Error watching SCSS files'))
   },
 
   watchTs: function(){
     var spawn = require('cross-spawn')
-    var tsc = spawn('npm', ['run', 'tsc']).on('error', project.catchError("Error running typescript compiler."))
-    tsc.stdout.on('data', function (data) {
+    var tsc = spawn('npm', ['run', 'tsc']).on('error', project.catchError('Error running typescript compiler.'))
+    tsc.stdout.on('data', function(data) {
       console.log('tsc: ' + data)
     })
 
-    tsc.stderr.on('data', function (data) {
+    tsc.stderr.on('data', function(data) {
       console.log('tsc: ' + data)
     })
 
-    tsc.on('close', function (code) {
+    tsc.on('close', function(code) {
       console.log('tsc process exited with code ' + code)
     })
   },
@@ -277,8 +217,8 @@ var project = {
   /**
    * Configure the proxy and start the webserver.
    */
-  startServer: function () {
-    console.log("startServer ")
+  startServer: function() {
+    console.log('startServer ')
 
     var http = require('http');
     var proxy = require('proxy-middleware');
@@ -299,14 +239,14 @@ var project = {
 
     var app = connect();
     // proxy API requests to the node server
-    proxyBasePaths.forEach(function (pathSegment) {
+    proxyBasePaths.forEach(function(pathSegment) {
       var target = config.proxyHost + '/' + pathSegment;
       var proxyOptions = url.parse(target)
       proxyOptions.route = '/' + pathSegment
       proxyOptions.preserveHost = true
-      app.use(function (req, res, next) {
+      app.use(function(req, res, next) {
         if (req.url.indexOf('/' + pathSegment + '/') === 0) {
-          console.log("Forwarding request: ", req.url)
+          console.log('Forwarding request: ', req.url)
           proxy(proxyOptions)(req, res, next)
         } else {
           next()
@@ -317,8 +257,8 @@ var project = {
     app.use(serveIndex('./'))
 
     project.server = http.createServer(app);
-    project.server.on('error', project.catchError("Error connecting to httpServer"));
-    project.server.on('listening', function () {
+    project.server.on('error', project.catchError('Error connecting to httpServer'));
+    project.server.on('listening', function() {
       console.log('Started connect web server on ' + config.appHost)
       if (config.args.open) {
         var openTo = config.args.open === true ? '/index-dev.html' : config.args.open
@@ -326,19 +266,19 @@ var project = {
         open(config.appHost + openTo)
       }
       else {
-        console.log("add the '-o' flag to automatically open the default browser")
+        console.log('add the "-o" flag to automatically open the default browser')
       }
     });
     project.server.listen(config.appPort)
   },
 
-  stopServer: function (callback) {
+  stopServer: function(callback) {
     project.server.close(callback)
   }
 }
 
 
-gulp.task('start-server', function (done) {
+gulp.task('start-server', function(done) {
   project.startServer()
   done()
 })
@@ -347,15 +287,16 @@ gulp.task('start-server', function (done) {
 /**
  *  Deploy Tasks
  */
-gulp.task('package', [], function (done) {
+
+gulp.task('package', [], function(done) {
   project.packageRelease(done)
 });
 
-var generatePom = function (baseDeployName, groupId, artifactId, version, packaging, callback) {
+var generatePom = function(baseDeployName, groupId, artifactId, version, packaging, callback) {
   var pom = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"',
-    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"> <modelVersion>4.0.0</modelVersion>',
+    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"> <modelVersion>4.0.0</modelVersion>"',
     '<groupId>' + groupId + '</groupId>',
     '<artifactId>' + artifactId + '</artifactId>',
     '<version>' + version + '</version>',
@@ -368,7 +309,7 @@ var generatePom = function (baseDeployName, groupId, artifactId, version, packag
     fs.mkdirSync(outDir)
   }
 
-  fs.writeFile(outPath, pom.join('\n'), function (err) {
+  fs.writeFile(outPath, pom.join('\n'), function(err) {
     if (err) {
       callback(null, err)
       return
@@ -383,7 +324,7 @@ gulp.task('set-build-target-to-prod', function(done){
   done()
 })
 
-gulp.task('publish-snapshot', ['package'], function (done) {
+gulp.task('publish-snapshot', ['package'], function(done) {
   var artifactoryUpload = require('gulp-artifactory-upload');
   var getRev = require('git-rev')
   var deployConfig = require('./deploy-config.js').artifactory.snapshot
@@ -394,17 +335,17 @@ gulp.task('publish-snapshot', ['package'], function (done) {
     version: require('./package.json').version
   }
 
-  getRev.short(function (rev) {
+  getRev.short(function(rev) {
     var versionStr = mvn.version + '-SNAPSHOT';
     var baseDeployName = 'core-web-' + versionStr
-    var deployName = baseDeployName + ".zip"
+    var deployName = baseDeployName + '.zip'
     var artifactoryUrl = deployConfig.url + '/' + mvn.group.replace('.', '/') + '/' + mvn.artifactId + '/' + versionStr
 
-    console.log("Deploying artifact: PUT ", artifactoryUrl + '/' + deployName)
+    console.log('Deploying artifact: PUT ', artifactoryUrl + '/' + deployName)
 
     var pomPath;
 
-    generatePom(baseDeployName, mvn.group, mvn.artifactId, versionStr, 'zip', function (path, err) {
+    generatePom(baseDeployName, mvn.group, mvn.artifactId, versionStr, 'zip', function(path, err) {
       if (err) {
         done(err)
         return;
@@ -416,21 +357,23 @@ gulp.task('publish-snapshot', ['package'], function (done) {
             url: artifactoryUrl,
             username: deployConfig.username,
             password: deployConfig.password,
-            rename: function (filename) {
+            rename: function(filename) {
               return filename.replace(mvn.artifactId, baseDeployName)
             }
           }))
-          .on('error', function (err) {
+          .on('error', function(err) {
             throw err
-          }).on('end', function () {
-        console.log("All done.")
-      })
+          }).on('end', function() {
+            project.clean(function() {
+              console.log('All done.');
+            })
+          })
     })
   })
 
 });
 
-gulp.task('ghPages-clone', ['package'], function (done) {
+gulp.task('ghPages-clone', ['package'], function(done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -440,20 +383,20 @@ gulp.task('ghPages-clone', ['package'], function (done) {
   if (fs.existsSync(__dirname + '/gh_pages')) {
     del.sync('./gh_pages')
   }
-  exec('git clone -b gh-pages git@github.com:dotCMS/core-web.git gh_pages', options, function (err, stdout, stderr) {
+  exec('git clone -b gh-pages git@github.com:dotCMS/core-web.git gh_pages', options, function(err, stdout, stderr) {
     console.log(stdout);
     if (err) {
       done(err)
       return;
     }
     del.sync(['./gh_pages/**/*', '!./gh_pages/.git'])
-    gulp.src('./dist/**/*').pipe(gulp.dest('./gh_pages')).on('finish', function () {
+    gulp.src('./dist/**/*').pipe(gulp.dest('./gh_pages')).on('finish', function() {
       done()
     })
   })
 })
 
-gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
+gulp.task('publish-github-pages', ['ghPages-clone'], function(done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -461,9 +404,9 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
     timeout: 300000
   }
 
-  var gitAdd = function (opts) {
+  var gitAdd = function(opts) {
     console.log('adding files to git.')
-    exec('git add .', opts, function (err, stdout, stderr) {
+    exec('git add .', opts, function(err, stdout, stderr) {
       console.log(stdout);
       if (err) {
         console.log(stderr);
@@ -475,8 +418,8 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
     })
   }
 
-  var gitCommit = function (opts) {
-    exec('git commit -m "Autobuild gh-pages..."', opts, function (err, stdout, stderr) {
+  var gitCommit = function(opts) {
+    exec('git commit -m "Autobuild gh-pages..."', opts, function(err, stdout, stderr) {
       console.log(stdout);
       if (err) {
         console.log(stderr);
@@ -487,8 +430,8 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
     })
   }
 
-  var gitPush = function (opts) {
-    exec('git push -u  origin gh-pages', opts, function (err, stdout, stderr) {
+  var gitPush = function(opts) {
+    exec('git push -u  origin gh-pages', opts, function(err, stdout, stderr) {
       if (err) {
         console.log(stderr);
         done(err);
@@ -501,11 +444,11 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
 })
 
 
-gulp.task('copy-dist-main', [], function (done) {
+gulp.task('copy-dist-main', [], function(done) {
   var gitRev = require('git-rev')
 
-  gitRev.short(function (rev) {
-    console.log("Revision is: ", rev)
+  gitRev.short(function(rev) {
+    console.log('Revision is: ', rev)
     var result = gulp.src([config.buildDir + '/index.html'])
         .pipe(replace(/\$\{build.revision\}/, rev))
         .pipe(replace(/\$\{build.date\}/, new Date().toISOString()))
@@ -515,56 +458,53 @@ gulp.task('copy-dist-main', [], function (done) {
 
 })
 
-gulp.task('copy-dist-all', ['copy-dist-main'], function () {
-  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
+gulp.task('copy-dist-all', ['copy-dist-main'], function() {
+  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace('./dist/core-web.sfx.js', './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 
-gulp.task('compile-ts', function (cb) {
+gulp.task('compile-ts', function(cb) {
   project.compileTypescript(cb)
 });
 
-gulp.task('copy-node-files', function (cb) {
-  project.copyNodeFiles(cb)
+gulp.task('copy-node-files', function(cb) {
+  project.copyModules(cb)
 });
 
-gulp.task('compile-styles', function (done) {
+gulp.task('compile-styles', function(done) {
   project.compileStyles(done)
 });
 
-gulp.task('compile-js', function (done) {
+gulp.task('compile-js', function(done) {
   project.compileJavascript(done)
 })
 
-gulp.task('compile-templates', [], function (done) {
+gulp.task('compile-templates', [], function(done) {
   project.compileStatic(done)
 })
 
-gulp.task('compile', [], function (done) {
+gulp.task('compile', [], function(done) {
   project.compile(done)
 })
 
-gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates', 'copy-node-files'], function () {
+gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates', 'copy-node-files'], function() {
   return project.watch()
 });
 
-gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function (done) {
+gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function(done) {
   done()
 })
 
-
-
-
-gulp.task('serve', ['start-server', 'watch'], function (done) {
+gulp.task('serve', ['start-server', 'watch'], function(done) {
   // if 'done' is not passed in this task will not block.
 })
 
-gulp.task('build', ['package'], function (done) {
+gulp.task('build', ['package'], function(done) {
 })
 
-gulp.task('clean', [], function (done) {
+gulp.task('clean', [], function(done) {
   project.clean(done)
 })
 
-gulp.task('default', function (done) {
+gulp.task('default', function(done) {
   done()
 });
