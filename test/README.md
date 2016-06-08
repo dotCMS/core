@@ -34,7 +34,7 @@ There are three parameters the test server can expect:
     
     * http://localhost:8081/servlet/test?class=com.dotmarketing.portlets.structure.factories.StructureFactoryTest&method=getStructureByInode   -->  Only execute StructureFactoryTest.getStructureByInode method
 			
-3) resultType: Expecting values are "file" and "plain". If nothing is set "file" is the default behaviour.
+3. resultType: Expecting values are "file" and "plain". If nothing is set "file" is the default behaviour.
 file: It will generate an xml report under /tomcat/logs/test/
 plain: It will display the result of the tests as plain/text on the browser and console, also it will append the result of the tests in a log file (./tomcat/logs/dotcms-testing.log). This method is very usefull when local testing is made.
 
