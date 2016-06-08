@@ -515,6 +515,7 @@
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
                fieldName="<%=field.getVelocityVarName()%>"
                inode="<%= binInode%>"
+               lang="<%=contentlet.getLanguageId() %>"
                identifier="<%=contentlet.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
                dojoType="dotcms.dijit.form.FileAjaxUploader" onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
             </div>
