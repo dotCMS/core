@@ -5256,17 +5256,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             		+" does not have Edit Permissions to lock content: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
         }
 
+        if (!Config.getBooleanProperty(Config.ENABLE_LOCK_STEALING, false)) {
+            String lockedBy = null;
+            try {
+                lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
+            } catch (Exception e) {
+                Logger.warn(this.getClass(),
+                        "Error getting 'locked by' user for contentlet.getIdentifier()=" + contentlet.getIdentifier());
+            }
+            if (lockedBy != null && !user.getUserId().equals(lockedBy)) {
+                throw new DotLockException(CANT_GET_LOCK_ON_CONTENT);
+            }
+        }
 
-        String lockedBy =null;
-        try{
-            lockedBy=APILocator.getVersionableAPI().getLockedBy(contentlet);
-        }
-        catch(Exception e){
-
-        }
-        if(lockedBy != null && !user.getUserId().equals(lockedBy)){
-            throw new DotLockException(CANT_GET_LOCK_ON_CONTENT);
-        }
         return true;
 
     }
