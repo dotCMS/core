@@ -24,19 +24,19 @@ List of properties you can pass (to ant file) OR modify (build.properties) with 
 There are diferent ways to call the tests and depending of the way they are call it the result will change as well.
 There are three parameters the test server can expect:
 
-1. class: You can specify which junit class you want to run, if this parameter is not present all the tests are call.
+1. class: You can specify which junit class you want to run, if this parameter is not present all the tests are call. Examples:
     
     * http://localhost:8081/servlet/test?class=com.dotmarketing.portlets.structure.factories.StructureFactoryTest   -->  Only execute StructureFactoryTest class
 
     * http://localhost:8081/servlet/test     --> Will execute all the tests
 				
-2. method: You can specify which test method of a test class you want to run. This needs to be combined with "class" in 1.
+2. method: You can specify which test method of a test class you want to run. This needs to be combined with the "class" parameter. Example:
     
     * http://localhost:8081/servlet/test?class=com.dotmarketing.portlets.structure.factories.StructureFactoryTest&method=getStructureByInode   -->  Only execute StructureFactoryTest.getStructureByInode method
 			
 3. resultType: Expecting values are "file" and "plain". If nothing is set "file" is the default behaviour.
 file: It will generate an xml report under /tomcat/logs/test/
-plain: It will display the result of the tests as plain/text on the browser and console, also it will append the result of the tests in a log file (./tomcat/logs/dotcms-testing.log). This method is very usefull when local testing is made.
+plain: It will display the result of the tests as plain/text on the browser and console, also it will append the result of the tests in a log file (./tomcat/logs/dotcms-testing.log). This method is very usefull when local testing is made. Examples:
 
     * http://localhost:8081/servlet/test?resultType=file    	--> xml report
     * http://localhost:8081/servlet/test?resultType=plain	--> plain/text result
