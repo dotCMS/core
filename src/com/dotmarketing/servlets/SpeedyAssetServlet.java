@@ -196,6 +196,18 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}else{
 							f = new File(realPath + uri);
 						}
+						
+						//If URI cannot be found with selected language and property above is true, 
+						//let's pull the file with default Language Instead
+						if(uri == null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+							uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+							if(!UtilMethods.isSet(realPath)){
+								f = new File(FileUtil.getRealPath(assetPath + uri));
+								}else{
+									f = new File(realPath + uri);
+							 	}
+							}
+						
 						if(uri == null || !f.exists() || !f.canRead()) {
 							if(uri == null){
 								Logger.warn(SpeedyAssetServlet.class, "URI is null");
@@ -229,6 +241,27 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}else{
 							f = new File(realPath + uri);
 						}
+						
+						//If URI cannot be found with selected language and property above is true, 
+						//let's pull the file with default Language Instead
+						if(StringUtils.isBlank(uri) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+							try{
+								uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+								}catch (Exception e) {
+									if(isLoggedToBackend){
+										response.setHeader( "Pragma", "no-cache" );
+										response.setHeader( "Cache-Control", "no-cache" );
+										response.setDateHeader( "Expires", 0 );
+										response.sendError(404);
+										return;
+										}
+									}
+							if(!UtilMethods.isSet(realPath)){
+								f = new File(FileUtil.getRealPath(assetPath + uri));
+								}else{
+									f = new File(realPath + uri);
+									}
+							}
 
 						if(StringUtils.isBlank(uri)) {
 						    Logger.warn(SpeedyAssetServlet.class, "URI is null");
