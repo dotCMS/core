@@ -23,6 +23,7 @@ List of properties you can pass (to ant file) OR modify (build.properties) with 
 ##### [Test URLs](#test-urls) :
 There are diferent ways to call the tests and depending of the way they are call it the result will change as well.
 There are three parameters the test server can expect:
+
 1. class: You can specify which junit class you want to run, if this parameter is not present all the tests are call.
     
     * http://localhost:8081/servlet/test?class=com.dotmarketing.portlets.structure.factories.StructureFactoryTest   -->  Only execute StructureFactoryTest class
