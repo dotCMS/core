@@ -56,19 +56,19 @@ public class FileUtil {
 	final static long TERA_BYTE = 1024*1024*1024*1024;
 
 	public static void copyDirectory(
-			String sourceDirName, String destinationDirName, boolean hardLinks) {
+			String sourceDirName, String destinationDirName, boolean hardLinks) throws IOException {
 
 			copyDirectory(new File(sourceDirName), new File(destinationDirName), hardLinks);
 		}
 
 	public static void copyDirectory(
-		String sourceDirName, String destinationDirName) {
+		String sourceDirName, String destinationDirName) throws IOException {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
 
 	public static void copyDirectory(
-			String sourceDirName, String destinationDirName, FileFilter filter) {
+			String sourceDirName, String destinationDirName, FileFilter filter) throws IOException {
 
 			copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
 		}
@@ -76,11 +76,11 @@ public class FileUtil {
 	
 	
 	
-	public static void copyDirectory(File source, File destination, boolean hardLinks) {
+	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
 	    copyDirectory(source,destination,hardLinks,null);
 	}
 	
-	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) {
+	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) throws IOException {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				destination.mkdirs();
@@ -110,24 +110,27 @@ public class FileUtil {
 		}
 	}
 
-	public static void copyDirectory(File source, File destination) {
+	public static void copyDirectory(File source, File destination) throws IOException {
 		copyDirectory(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 	
 
 	public static void copyFile(
-		String sourceFileName, String destinationFileName) {
+		String sourceFileName, String destinationFileName) throws IOException {
 
 		copyFile(new File(sourceFileName), new File(destinationFileName));
 	}
 
-	public static void copyFile(File source, File destination) {
+	public static void copyFile(File source, File destination) throws IOException {
 		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 
-	public static void copyFile(File source, File destination, boolean hardLinks) {
-		if (!source.exists()) {
-			return;
+	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+		if (!source.exists()){
+			throw new IOException("Source file does not exist" + source);
+		}
+		if (source.length()==0 && Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+			throw new IOException("Source file is 0 length, failing " + source);
 		}
 
 		
@@ -146,53 +149,33 @@ public class FileUtil {
 			// I think we need to be sure to unlink first
             if ( destination.exists() ) {
                 Path destinationPath = Paths.get( destination.getAbsolutePath() );
-                try {
-                    //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-                    Files.delete( destinationPath );
-                } catch ( IOException e ) {
-                    Logger.error( FileUtil.class, "Error removing hardLink: " + destination.getAbsolutePath(), e );
-                }
+                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+                Files.delete( destinationPath );
             }
+            Path newLink = Paths.get( destination.getAbsolutePath() );
+            Path existingFile = Paths.get( source.getAbsolutePath() );
 
-            try {
-
-                Path newLink = Paths.get( destination.getAbsolutePath() );
-                Path existingFile = Paths.get( source.getAbsolutePath() );
-
-                Files.createLink( newLink, existingFile );
-                // setting this means we will try again if we cannot hard link
-				if( !destination.exists() ){
-					hardLinks = false;
-				}
-			} catch (IOException e) {
-				Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-						+ ", destination: " + destination.getAbsolutePath());
-				// setting this means we will try again if we cannot hard link
+            Files.createLink( newLink, existingFile );
+            // setting this means we will try again if we cannot hard link
+			if( !destination.exists()  || destination.length()==0){
 				hardLinks = false;
+				Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+						+ ", destination: " + destination.getAbsolutePath());
 			}
-		
 		}
+		
 		if(!hardLinks) {
-			
-			FileChannel srcChannel = null;
-			FileChannel dstChannel = null;
-			
-			try {
-				srcChannel = new FileInputStream(source).getChannel();
-				dstChannel = new FileOutputStream(destination).getChannel();
 
-				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());				
-			}catch (IOException ioe) {
-				Logger.error(FileUtil.class,ioe.getMessage(),ioe);
-			}	
-			finally {
-				try {
-					srcChannel.close();
-					dstChannel.close();
-				} catch (IOException ioe) {
-					Logger.error(FileUtil.class,ioe.getMessage(),ioe);
-				}
-			}
+			
+			FileInputStream ios = new FileInputStream(source);
+			FileOutputStream fos = new FileOutputStream(destination);
+			FileChannel srcChannel = ios.getChannel();
+			FileChannel dstChannel = fos.getChannel();
+			dstChannel.transferFrom(srcChannel, 0, srcChannel.size());		
+			srcChannel.close();
+			dstChannel.close();
+			ios.close();
+			fos.close();
 			
 			
 		}
@@ -458,12 +441,12 @@ public class FileUtil {
 	}
 
 	public static boolean move(
-		String sourceFileName, String destinationFileName) {
+		String sourceFileName, String destinationFileName) throws IOException {
 
 		return move(new File(sourceFileName), new File(destinationFileName));
 	}
 
-	public static boolean move(File source, File destination) {
+	public static boolean move(File source, File destination) throws IOException {
 		if (!source.exists()) {
 			return false;
 		}
