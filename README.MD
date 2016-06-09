@@ -35,11 +35,6 @@ npm -g install karma-cli
 npm install
 npm run itest
 ```
-
-Note that `npm install` will produce a number of 'peer dependency' warnings and errors. Ignore them and move on with life.    
-
-If `npm install` fails, do try at least one additional time. Occasionally npm has issues due to dependency order... or something like that. 
-
 To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests,
 and will start a server on http://localhost:9000 that by default will proxy all ReST requests to http://localhost:8080, which is where you should
 have an up-to-date instance of dotCMS running.
@@ -47,13 +42,29 @@ have an up-to-date instance of dotCMS running.
 The `itest` target will also maintain a watch task that will compile your files when changes are detected. You will need
 to refresh the test page manually to re-run the integration tests.
 
+Also you can run just the dev server and watch the file by:
+
+```Shell
+npm run dev
+```
+
+This will run a server over the ```/build/``` folder and watch the ts, js, html and css files for change, you still need to reload the browser manually after each compile.
+
+Note that `npm install` will produce a number of 'peer dependency' warnings and errors. Ignore them and move on with life.    
+
+If `npm install` fails, do try at least one additional time. Occasionally npm has issues due to dependency order... or something like that. 
+
 To see the main site as you develop, open another browser tab to http://localhost:9000/index.html
+
+## Deploy to artifactory
+
+  * Edit ```deploy-config.local.js``` file with your artifactory credentials.
+  * Run ```npm run publish-snapshot```
 
 ## The Build System
 
   * Gulp with NPM script targets for convenience.
-  * Jasmine+Karma
-  * 
+  * Jasmine + Karma
     
 
 ## API Layer
