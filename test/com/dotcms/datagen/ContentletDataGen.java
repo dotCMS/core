@@ -23,9 +23,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
 	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-	protected Structure structure;
+	protected String structureId;
 	protected Map<String, String> properties = new HashMap<>();
 	protected long languageId;
+
+    public ContentletDataGen(String structureId) {
+        this.structureId = structureId;
+    }
 
     /**
      * Sets languageId property to the ContentletDataGen instance. 
@@ -41,11 +45,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     /**
 	 * Sets the structure that will be the type of the  {@link Contentlet} created by this data-gen.
 	 * 
-	 * @param structure the structure
+	 * @param structureId the id of the structure
 	 * @return ContentletDataGen with structure set
 	 */
-    public ContentletDataGen structure(Structure structure){
-    	this.structure = structure;
+    public ContentletDataGen structure(String structureId){
+    	this.structureId = structureId;
     	return this;
     }
 
@@ -110,7 +114,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             contentlet.setProperty(element.getKey(), element.getValue());
         }
 
-        contentlet.setStructureInode(structure.getInode());
+        contentlet.setStructureInode(structureId);
 
         return contentlet;
     }

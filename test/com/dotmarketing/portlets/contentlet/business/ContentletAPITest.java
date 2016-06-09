@@ -776,8 +776,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             HTMLPageAsset spanishPage = htmlPageDataGen.pageURL(englishPage.getPageUrl() + "SP").languageId(spanish)
                 .nextPersisted();
 
-            ContentletDataGen contentletDataGen = new ContentletDataGen();
-            Contentlet contentInEnglish = contentletDataGen.structure(structure).languageId(english).nextPersisted();
+            ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+            Contentlet contentInEnglish = contentletDataGen.languageId(english).nextPersisted();
             Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
 
             // let's add the content to the page in english (create the page-container-content relationship)
