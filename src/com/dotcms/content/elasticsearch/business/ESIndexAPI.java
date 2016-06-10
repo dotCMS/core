@@ -482,9 +482,9 @@ public class ESIndexAPI {
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticsearchException, IOException {
 
 		AdminLogger.log(this.getClass(), "createIndex",
-                "Trying to create index: " + indexName + " with shards: " + shards);
+			"Trying to create index: " + indexName + " with shards: " + shards);
 
-        IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 
 		if(shards <1){
 			try{
@@ -508,44 +508,34 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
-		/*
-		 If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
-		 */
-		if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-				!Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", false) &&
-				!Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
+		if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
+			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+			int serverCount;
 
-			//Getting the number of replicas
-			int replicas = Config.getIntProperty("es.index.number_of_replicas", 0);
-
-			map.put("auto_expand_replicas", "false");
-			map.put("number_of_replicas", replicas);
-		} else if(!Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", false)){
-			map.put("auto_expand_replicas", "0-all");
-		} else{
-			int serverCount = 1;
-    		// Gets all live servers
-	    	String[] liveServers;
 			try {
-				liveServers = APILocator.getServerAPI().getAliveServersIds();
-				serverCount = liveServers.length;
+				serverCount = APILocator.getServerAPI().getAliveServersIds().length;
 			} catch (DotDataException e) {
 				Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
 				serverCount = 1;
 			}
-			map.put("auto_expand_replicas", "false");
-			map.put("number_of_replicas", serverCount - 1);
+			// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+
+			if(serverCount>0) {
+				map.put("auto_expand_replicas", "false");
+				map.put("number_of_replicas", serverCount - 1);
+			}
 		}
 
-        // create actual index
+		// create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
-        CreateIndexResponse createIndexResponse = cirb.execute().actionGet();
+		CreateIndexResponse createIndexResponse = cirb.execute().actionGet();
 
-        AdminLogger.log(this.getClass(), "createIndex",
-                "Index created: " + indexName + " with shards: " + shards);
+		AdminLogger.log(this.getClass(), "createIndex",
+			"Index created: " + indexName + " with shards: " + shards);
 
 		return createIndexResponse;
 	}
+
 
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticsearchException, IOException {
 
