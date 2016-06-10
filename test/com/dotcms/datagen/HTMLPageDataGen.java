@@ -172,7 +172,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setShowOnMenu(showOnMenu);
         htmlPageAsset.setSortOrder(sortOrder);
 
-        for (Map.Entry<String, String> element : properties.entrySet()) {
+        for (Map.Entry<String, Object> element : properties.entrySet()) {
             htmlPageAsset.setProperty(element.getKey(), element.getValue());
         }
 

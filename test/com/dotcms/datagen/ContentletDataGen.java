@@ -24,7 +24,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	protected String structureId;
-	protected Map<String, String> properties = new HashMap<>();
+	protected Map<String, Object> properties = new HashMap<>();
 	protected long languageId;
 
     public ContentletDataGen(String structureId) {
@@ -84,7 +84,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @param value the value
      * @return ContentletDataGen with a new property set
      */
-    public ContentletDataGen setProperty(String key, String value){
+    public ContentletDataGen setProperty(String key, Object value){
     	this.properties.put(key, value);
     	return this;
     }
@@ -107,10 +107,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @Override
     public Contentlet next(){
         Contentlet contentlet = new Contentlet();
-        contentlet.setFolder(Folder.SYSTEM_FOLDER);
+        contentlet.setFolder(folder.getInode());
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(languageId);
-        for(Entry<String, String> element:properties.entrySet()){
+        for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }
 
