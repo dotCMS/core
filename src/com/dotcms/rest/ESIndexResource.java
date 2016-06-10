@@ -331,6 +331,9 @@ public class ESIndexResource {
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on updateReplica from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
+        }catch(DotDataException dt){
+        	Logger.error(this, dt.getMessage());
+        	return Response.status(Status.BAD_REQUEST).build();
         } catch (Exception de) {
             Logger.error(this, "Error on updateReplica. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
