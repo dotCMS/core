@@ -512,7 +512,7 @@ public class ESIndexAPI {
 		 If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
 		 */
 		if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-				!Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_RESPLICAS", false) &&
+				!Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", false) &&
 				!Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
 
 			//Getting the number of replicas
@@ -634,6 +634,12 @@ public class ESIndexAPI {
 	 * @throws DotDataException
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
+
+    	if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+				Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", false)){
+    		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
+    		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
+    	}
 
     	AdminLogger.log(this.getClass(), "updateReplicas", "Trying to update replicas to index: " + indexName);
 
