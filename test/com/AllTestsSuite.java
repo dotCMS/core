@@ -54,6 +54,8 @@ import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.tag.business.TagAPITest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
+import com.liferay.portal.ejb.UserLocalManagerTest;
+
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -142,7 +144,8 @@ import org.junit.runners.Suite;
         VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
         VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
         VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
-		UserAPITest.class
+    UserAPITest.class,
+    UserLocalManagerTest.class
 })
 
 public class AllTestsSuite {}

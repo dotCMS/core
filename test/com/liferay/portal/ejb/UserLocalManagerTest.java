@@ -1,26 +1,23 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.RegEX;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserFirstNameException;
 import com.liferay.portal.UserLastNameException;
 import com.liferay.portal.model.User;
-import org.junit.Assert;
-import org.junit.BeforeClass;
+
 import org.junit.Test;
 
-import java.util.regex.Pattern;
-
 /**
- * Created by nollymar on 6/8/16.
+ * Tests for user management operations (create, validate, delete)
+ *
+ * @author Nollymar Longa
  */
-public class UserLocalManagerTest extends TestBase{
+public class UserLocalManagerTest extends TestBase {
 
     @Test
     public void testValidName() throws DotDataException, SystemException, PortalException, DotSecurityException {
@@ -39,9 +36,9 @@ public class UserLocalManagerTest extends TestBase{
         UserLocalManager userManager = new UserLocalManagerImpl();
         try {
             userManager.validate(user.getUserId(), firstName, lastName, email, null);
-        }catch(SystemException | PortalException e){
+        } catch (SystemException | PortalException e) {
             throw e;
-        }finally {
+        } finally {
             userManager.deleteUser(user.getUserId());
         }
     }
@@ -61,9 +58,9 @@ public class UserLocalManagerTest extends TestBase{
         UserLocalManager userManager = new UserLocalManagerImpl();
         try {
             userManager.validate(user.getUserId(), firstName, lastName, email, null);
-        }catch(SystemException | PortalException e){
+        } catch (SystemException | PortalException e) {
             throw e;
-        }finally {
+        } finally {
             userManager.deleteUser(user.getUserId());
         }
     }
@@ -83,9 +80,9 @@ public class UserLocalManagerTest extends TestBase{
         UserLocalManager userManager = new UserLocalManagerImpl();
         try {
             userManager.validate(user.getUserId(), firstName, lastName, email, null);
-        }catch(SystemException | PortalException e){
+        } catch (SystemException | PortalException e) {
             throw e;
-        }finally {
+        } finally {
             userManager.deleteUser(user.getUserId());
         }
     }
