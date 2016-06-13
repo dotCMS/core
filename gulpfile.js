@@ -63,7 +63,6 @@ var project = {
 
   clean: function(cb) {
     console.log('Starting Clean')
-    console.log(cssRuleEngine)
     del.sync([config.distDir, config.buildDir, './gh_pages'])
     console.log('Finished Clean')
     cb()
