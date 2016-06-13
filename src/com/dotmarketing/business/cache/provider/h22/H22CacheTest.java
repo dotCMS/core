@@ -13,9 +13,20 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.repackage.org.apache.log4j.BasicConfigurator;
+import com.dotcms.repackage.org.apache.log4j.Logger;
+import com.dotcms.repackage.org.apache.logging.log4j.Level;
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+import com.dotcms.repackage.org.apache.logging.log4j.core.LoggerContext;
+import com.dotcms.repackage.org.apache.logging.log4j.core.appender.ConsoleAppender;
+import com.dotcms.repackage.org.apache.logging.log4j.core.config.AbstractConfiguration;
+import com.dotcms.repackage.org.apache.logging.log4j.core.config.AppenderRef;
+import com.dotcms.repackage.org.apache.logging.log4j.core.config.LoggerConfig;
 import com.liferay.util.FileUtil;
 
 public class H22CacheTest {
@@ -36,18 +47,25 @@ public class H22CacheTest {
 	final int numberOfThreads = 20;
 	final int numberOfGroups = 100;
 	final int maxCharOfObjects = 10000;
+	private static final Logger LOGGER = Logger.getLogger(H22CacheTest.class);
+	
+
 
 	@Test
 	public void testInit() throws Exception {
-
+		  LOGGER.info("INFO TEST");
+	       LOGGER.debug("DEBUG TEST");
+	       LOGGER.error("ERROR TEST");
 		// File dir = Files.createTempDir();
 		File dir = new File("/tmp/h2cachetest");
 		dir.delete();
 		dir.mkdirs();
 
-		H22Cache cache = new H22Cache(dir.getCanonicalPath(), true);
+		H22Cache cache = new H22Cache(dir.getCanonicalPath());
 		cache.init();
 
+		
+		
 		assertThat("Are we the H2 Cache Loader?", "H22Cache".equals(cache.getKey()));
 
 		for (String group : GROUPNAMES) {
@@ -98,10 +116,10 @@ public class H22CacheTest {
 		cache.removeAll();
 		assertThat("Cache flushed, we have no groups", cache.getGroups().size() == 0);
 
-		//testMultithreaded(cache, true, false);
+
 		
 		// test dumping and rebuilding cache
-		testMultithreaded(cache, numberOfThreads,true, false, true);
+		//testMultithreaded(cache, numberOfThreads,true, false, true);
 		
 		// test causing an error and recovering
 		testMultithreaded(cache, numberOfThreads,false, true, false);
@@ -128,7 +146,7 @@ public class H22CacheTest {
 			
 			//test dumping the db mid test
 			if(i==numberOfPuts/2 && dumpCacheInMiddle){
-				cache.dispose();
+				cache.dispose(true);
 			}
 			pool.execute(new TestRunner(cache, i, errors));
 			

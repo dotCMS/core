@@ -4,23 +4,24 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.io.StreamCorruptedException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,16 +30,18 @@ import java.util.concurrent.Semaphore;
 
 import com.dotcms.repackage.com.google.common.cache.CacheStats;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-import com.dotcms.repackage.org.jboss.cache.util.concurrent.ConcurrentHashSet;
+import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
+import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class H22Cache extends CacheProvider {
 
-	private static final long serialVersionUID = 4485667050052706116L;
+
 
 	private Boolean isInitialized = false;
 
@@ -49,39 +52,34 @@ public class H22Cache extends CacheProvider {
 
 	// number of different dbs to shard against
 	private final int numberOfDbs = Config.getIntProperty("cache.h22.number.of.dbs", 2);
-	
-	//number of tables in each db shard
-	private final int numberOfTablesPerDb = Config.getIntProperty("cache.h22.number.of.tables.per.db", 5);
+
+	// number of tables in each db shard
+	private final int numberOfTablesPerDb = Config.getIntProperty("cache.h22.number.of.tables.per.db", 9);
 
 	// limit error message to every 5 seconds;
-	private final int limitErrorLogMillis = Config.getIntProperty("cache.h22.limit.error.logging.per.milliseconds", 5000);
-	
-	// create a new cache store if our errors are greater that this.  Anything <0 will disable auto
-	private final long recoverAfterErrors= Config.getIntProperty("cache.h22.recover.after.errors", 5000);
-	
-	private long lastLog = System.currentTimeMillis();
-	private long errorCounter = 0;
+	private final int limitErrorLogMillis = Config.getIntProperty("cache.h22.limit.one.error.log.per.milliseconds", 5000);
 
+	// create a new cache store if our errors are greater that this. Anything <1
+	// will disable auto recover
+	private final long recoverAfterErrors = Config.getIntProperty("cache.h22.recover.after.errors", 5000);
+
+	// try to recover with h2 if within this time (30m defualt)
+	private final long recoverOnRestart = Config.getIntProperty("cache.h22.recover.if.restarted.in.milliseconds", 1000 * 60 * 30);
+	private long lastLog = System.currentTimeMillis();
+	private long[] errorCounter = new long[numberOfDbs];
 	private final H22HikariPool[] pools = new H22HikariPool[numberOfDbs];
-	private final Set<String> allowCacheRegions = new ConcurrentHashSet<String>();
-	private final boolean allRegions;
+
+
 	final String dbRoot;
 	final private H2GroupStatsList stats = new H2GroupStatsList();
 
-
-	public H22Cache(final String dbRoot, boolean allRegions) {
-		this.dbRoot = dbRoot;
-		this.allRegions = allRegions;
-	}
-
 	public H22Cache(final String dbRoot) {
-		this(ConfigUtils.getDynamicContentPath(), Config.getBooleanProperty("cache.default.h22", false));
+		this.dbRoot = dbRoot;
 	}
 
 	public H22Cache() {
-		this(ConfigUtils.getDynamicContentPath());
+		this(ConfigUtils.getDynamicContentPath() + File.separator + "h22cache");
 	}
-
 	@Override
 	public String getName() {
 		return "H22 Cache";
@@ -95,23 +93,9 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public void init() throws Exception {
 
-		Iterator<String> it = Config.getKeys();
-		while (it.hasNext()) {
-			String key = it.next();
-			if (key == null || !key.startsWith("cache.") || !key.endsWith(".h22")) {
-				continue;
-			}
-			boolean useDisk = Config.getBooleanProperty(key, allRegions);
-
-			if (useDisk) {
-				String cacheName = key.split("\\.")[1];
-				allowCacheRegions.add(cacheName);
-				Logger.info(this.getClass(), "H22 Cache for region: " + cacheName);
-			}
-		}
-
+		// init the databases
 		for (int i = 0; i < numberOfDbs; i++) {
-			getPool(i);
+			getPool(i, true);
 		}
 		isInitialized = true;
 
@@ -145,18 +129,21 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public Object get(String group, String key) {
 
+
 		Object foundObject = null;
 		long start = System.nanoTime();
 		Fqn fqn = new Fqn(group, key);
+		
 		try {
 			// Get the content from the group and for a given key;
 			foundObject = doSelect(fqn);
-
+			stats.group(fqn.group).hitOrMiss(foundObject);
+			stats.group(fqn.group).readTime(System.nanoTime() - start);
 		} catch (Exception e) {
 			handleError(e, fqn);
 		}
-		stats.group(fqn.group).hitOrMiss(foundObject);
-		stats.group(fqn.group).readTime(System.nanoTime() - start);
+		
+		
 
 		return foundObject;
 	}
@@ -192,7 +179,7 @@ public class H22Cache extends CacheProvider {
 
 	@Override
 	public void remove(String group, String key) {
-		Fqn fqn =new Fqn(group, key);
+		Fqn fqn = new Fqn(group, key);
 		try {
 
 			if (!UtilMethods.isSet(key)) {
@@ -210,7 +197,9 @@ public class H22Cache extends CacheProvider {
 	public void removeAll() {
 
 		Logger.info(this, "Starting Full Cache Flush in h22");
-		dispose();
+
+		dispose(true);
+		
 		stats.clear();
 		DONT_CACHE_ME.clear();
 
@@ -259,8 +248,8 @@ public class H22Cache extends CacheProvider {
 		currentGroups.addAll(getGroups());
 		for (String group : currentGroups) {
 			H22GroupStats groupStats = stats.group(group);
-			groupStats.compute();
-			CacheStats googleStats = new CacheStats(groupStats.hits, groupStats.misses, groupStats.reads, 0, groupStats.avgReadTime, 0);
+
+			CacheStats googleStats = new CacheStats(groupStats.hits, groupStats.misses, groupStats.hits, 0, groupStats.totalTimeReading, 0);
 
 			Map<String, Object> stats = new HashMap<>();
 			stats.put("CacheStats", googleStats);
@@ -268,7 +257,7 @@ public class H22Cache extends CacheProvider {
 			stats.put("key", getKey());
 			stats.put("region", group);
 			stats.put("toDisk", true);
-			stats.put("entrySize", groupStats.avgEntrySize);
+			stats.put("entrySize", groupStats.totalSize);
 			boolean isDefault = false;
 			stats.put("isDefault", isDefault);
 			stats.put("memory", -1);
@@ -291,43 +280,58 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public void shutdown() {
 		isInitialized = false;
-		dispose();
-
+		// don't trash on shutdown
+		dispose(false);
 	}
 
-	protected void dispose() {
-		for (int x = 0; x < numberOfDbs; x++) {
-
-			try {
-				H22HikariPool pool = pools[x];
-				pools[x] = null;
-				if (pool != null) {
-					pool.dispose();
-				}
-			} catch (Exception e) {
-				Logger.error(this.getClass(), e.getMessage(), e);
-			}
+	protected void dispose(boolean trashMe) {
+		for (int db = 0; db < numberOfDbs; db++) {
+			dispose(db, trashMe);
 		}
 	}
-	private final Semaphore available = new Semaphore(1, true);
+
+	protected void dispose(int db, boolean trashMe) {
+		try {
+			H22HikariPool pool = pools[db];
+			pools[db] = null;
+			if (pool != null) {
+				pool.close();
+				if(trashMe){
+					new H22CacheCleanupThread(dbRoot, db, pool.database, 20*1000).run();
+				}
+			}
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+		}
+	}
+
+
 	private Optional<H22HikariPool> getPool(final int dbNum) throws SQLException {
+		return getPool(dbNum, false);
+	}
+
+	private final Semaphore building = new Semaphore(1, true);
+
+	private Optional<H22HikariPool> getPool(final int dbNum, final boolean startup) throws SQLException {
 
 		H22HikariPool source = pools[dbNum];
-
-		
 		if (source == null) {
-			if(available.tryAcquire()){
+			if (building.tryAcquire()) {
 				Runnable creater = new Runnable() {
-					Exception e = null;
 					@Override
 					public void run() {
 						try {
-							pools[dbNum] = createPool(dbNum);
+							Logger.info(H22Cache.class, "Initing H22 cache db:" + dbNum);
+							if (startup) {
+								pools[dbNum] = recoverLatestPool(dbNum);
+							} else {
+								pools[dbNum] = createPool(dbNum);
+							}
 						} catch (SQLException e) {
-							Logger.error(H22Cache.class, e.getMessage(),e);
-						}
-						finally{
-							available.release();
+							Logger.error(H22Cache.class, e.getMessage(), e);
+						} finally {
+							building.release();
+							errorCounter[dbNum] = 0;
 						}
 					}
 				};
@@ -335,29 +339,57 @@ public class H22Cache extends CacheProvider {
 			}
 			return Optional.empty();
 		}
-			
-		
 
 		return Optional.of(source);
 
 	}
 
 	private H22HikariPool createPool(int dbNum) throws SQLException {
-		Logger.info(this, "Starting H22 Cache, db:" + dbNum);
+		Logger.info(this, "Building new H22 Cache, db:" + dbNum);
 		// create pool
 		H22HikariPool source = new H22HikariPool(dbRoot, dbNum);
 		// create table
 		createTables(source);
-		
 		pools[dbNum] = source;
 		return pools[dbNum];
-
 	}
 
+	private H22HikariPool recoverLatestPool(int dbNum) throws SQLException {
+		H22HikariPool source = null;
+		File dbs = new File(dbRoot + File.separator + dbNum);
+		if (dbs.exists() && dbs.isDirectory()) {
+			File[] files = dbs.listFiles((FileFilter) DirectoryFileFilter.DIRECTORY);
+			Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+			if (files.length > 0) {
+				File myDb = files[0];
+				if (files[0].isDirectory()) {
+					files = myDb.listFiles();
+					if (files.length > 0) {
+						Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+						if (files[0].lastModified() + recoverOnRestart > System.currentTimeMillis()) {
+							Logger.info(this, "Recovering H22 Cache, db:" + dbNum + ":" + myDb.getName());
+							try {
+								source = new H22HikariPool(dbRoot, dbNum, myDb.getName());
+								createTables(source);
+								pools[dbNum] = source;
+							} catch (PoolInitializationException e) {
+								Logger.warn(getClass(), "Failed to recover H2 Cache:" + e.getMessage());
+							}
+
+						}
+					}
+				}
+			}
+		}
+		if(source==null){
+			source = createPool(dbNum);
+		}
+		return source;
+	}
+	
 	Optional<Connection> createConnection(boolean autoCommit, int dbnumber) throws SQLException {
-		
 		Optional<H22HikariPool> poolOpt = getPool(dbnumber);
-		if(poolOpt.isPresent()){
+		if (poolOpt.isPresent()) {
 			Optional<Connection> opt = poolOpt.get().connection();
 			if (opt.isPresent()) {
 				if (autoCommit == false) {
@@ -366,27 +398,29 @@ public class H22Cache extends CacheProvider {
 			}
 			return opt;
 		}
-
 		return Optional.empty();
 	}
 
 	private boolean doUpsert(final Fqn fqn, final Serializable obj) throws Exception {
 		long start = System.nanoTime();
 		long bytes = 0;
+		boolean worked = false;
 		if (fqn == null || exclude(fqn)) {
-			return false;
+			return worked;
 		}
 
 		Optional<Connection> opt = createConnection(true, db(fqn));
 		if (!opt.isPresent()) {
-			return false;
+			return worked;
 		}
 		Connection c = opt.get();
+
+
+
+		String upsertSQL = "MERGE INTO `" + TABLE_PREFIX + table(fqn) + "` key(cache_id) VALUES (?,?, ?)";
+
 		PreparedStatement upsertStmt = null;
-		try {
-
-			String upsertSQL = "MERGE INTO `" + TABLE_PREFIX + table(fqn) + "` key(cache_id) VALUES (?,?, ?)";
-
+		try{
 			upsertStmt = c.prepareStatement(upsertSQL);
 			upsertStmt.setString(1, fqn.id);
 			upsertStmt.setString(2, fqn.group);
@@ -402,47 +436,37 @@ public class H22Cache extends CacheProvider {
 			bytes = data.length;
 			upsertStmt.setBytes(3, data);
 
-			boolean test = upsertStmt.execute();
-
-		} catch (StreamCorruptedException | RuntimeException e) {
-			handleError(e, fqn);
-			try {
-
-				DONT_CACHE_ME.put(fqn.id, fqn.toString());
-			} catch (Exception e1) {
-				handleError(e1, fqn);
-			}
-			return false;
-		} finally {
-			if (upsertStmt != null) {
-				upsertStmt.close();
-			}
-			c.close();
+			worked = upsertStmt.execute();
 			stats.group(fqn.group).writeSize(bytes * 8);
 			stats.group(fqn.group).writeTime(System.nanoTime() - start);
 		}
-		return true;
+		finally{
+			if(upsertStmt!=null)upsertStmt.close();
+			c.close();
+		}
+			
+		
+		return worked;
 	}
 
-	private Object doSelect(Fqn fqn) throws SQLException {
+	private Object doSelect(Fqn fqn) throws Exception {
 		if (fqn == null || exclude(fqn)) {
 			return null;
 		}
 
-		ObjectInputStream input;
-		InputStream bin;
-		InputStream is;
+		ObjectInputStream input=null;
+		InputStream bin=null;
+		InputStream is=null;
 		Optional<Connection> opt = createConnection(true, db(fqn));
 		if (!opt.isPresent()) {
 			return null;
 		}
 		Connection c = opt.get();
 
-		int tableNumber = table(fqn);
 		PreparedStatement stmt = null;
 		try {
 
-			stmt = c.prepareStatement("select CACHE_DATA from `" + TABLE_PREFIX + tableNumber + "` WHERE cache_id = ?");
+			stmt = c.prepareStatement("select CACHE_DATA from `" + TABLE_PREFIX + table(fqn) + "` WHERE cache_id = ?");
 			stmt.setString(1, fqn.id);
 			ResultSet rs = stmt.executeQuery();
 			if (!rs.next()) {
@@ -454,22 +478,32 @@ public class H22Cache extends CacheProvider {
 			input = new ObjectInputStream(bin);
 			return input.readObject();
 
-		} catch (RuntimeException | IOException | ClassNotFoundException e) {
-			handleError(e, fqn);
-			try {
-				doDelete(fqn);
-				DONT_CACHE_ME.put(fqn.id, fqn.toString());
-			} catch (Exception e1) {
-				handleError(e1, fqn);
-			}
-			return null;
-
 		} finally {
-			if (stmt != null) {
-				stmt.close();
-			}
-			c.close();
 
+			if (stmt != null) stmt.close();
+			c.close();
+			if (input != null){
+				try {
+					input.close();
+				} catch (IOException e) {
+					Logger.warn(getClass(), "should not be here:" + e.getMessage(),e);
+				}
+			}
+			if (bin != null){
+				try {
+					bin.close();
+				} catch (IOException e) {
+					Logger.warn(getClass(), "should not be here:" + e.getMessage(),e);
+				}
+			}
+			
+			if (is != null){
+				try {
+					is.close();
+				} catch (IOException e) {
+					Logger.warn(getClass(), "should not be here:" + e.getMessage(),e);
+				}
+			}
 		}
 	}
 
@@ -483,32 +517,24 @@ public class H22Cache extends CacheProvider {
 			return;
 		}
 		Connection c = opt.get();
-		String sql = "DELETE from " + TABLE_PREFIX + table(fqn) + " WHERE cache_id = ?";
-		PreparedStatement pstmt = c.prepareStatement(sql);
-		pstmt.setString(1, fqn.id);
-		pstmt.execute();
-		pstmt.close();
-		c.close();
-		DONT_CACHE_ME.remove(fqn.id);
-	}
-
-	private void setCompression(int db) throws SQLException {
-		Connection conn;
-		if (Config.getBooleanProperty("USE_CACHE_COMPRESSION", false)) {
-			Optional<Connection> opt = createConnection(true, db);
-			if (!opt.isPresent()) {
-				return;
-			}
-			conn = opt.get();
-			Statement s = conn.createStatement();
-			s.execute("SET COMPRESS_LOB LZF");
-			s.close();
-			conn.close();
+		PreparedStatement pstmt = null;
+		try{
+			String sql = "DELETE from " + TABLE_PREFIX + table(fqn) + " WHERE cache_id = ?";
+			pstmt = c.prepareStatement(sql);
+			pstmt.setString(1, fqn.id);
+			pstmt.execute();
+			pstmt.close();
+			c.close();
+			DONT_CACHE_ME.remove(fqn.id);
+		}
+		finally{
+			pstmt.close();
+			c.close();
 		}
 	}
 
 	private void createTables(H22HikariPool source) throws SQLException {
-		Connection conn = null;
+		Connection c = null;
 		int i = 0;
 		while (!source.running) {
 			try {
@@ -522,20 +548,20 @@ public class H22Cache extends CacheProvider {
 			}
 		}
 		Optional<Connection> opt = source.connection();
-		conn = opt.get();
+		c = opt.get();
 
 		for (int table = 0; table < numberOfTablesPerDb; table++) {
 
-			Statement s = conn.createStatement();
+			Statement s = c.createStatement();
 			s.execute("CREATE CACHED TABLE IF NOT EXISTS `" + TABLE_PREFIX + table
 					+ "` (cache_id bigint PRIMARY KEY,cache_group VARCHAR(255), CACHE_DATA BLOB)");
 			s.close();
-			s = conn.createStatement();
-			s.execute("CREATE INDEX `idx_" + TABLE_PREFIX + table + "_index_" + System.currentTimeMillis() + "` on " + TABLE_PREFIX + table
-					+ "(cache_group)");
+			s = c.createStatement();
+			s.execute("CREATE INDEX IF NOT EXISTS `idx_" + TABLE_PREFIX + table + "_index_` on "
+					+ TABLE_PREFIX + table + "(cache_group)");
 
 		}
-		conn.close();
+		c.close();
 	}
 
 	@Override
@@ -551,17 +577,21 @@ public class H22Cache extends CacheProvider {
 					continue;
 				}
 				Connection c = opt.get();
-				for (int table = 0; table < numberOfTablesPerDb; table++) {
-					PreparedStatement stmt = c.prepareStatement("select cache_id from " + TABLE_PREFIX + table + " where cache_group = ?");
-					stmt.setString(1, fqn.group);
-					stmt.setFetchSize(1000);
-					ResultSet rs = stmt.executeQuery();
-					while (rs.next()) {
-						keys.add(rs.getString(1));
+				try{
+					for (int table = 0; table < numberOfTablesPerDb; table++) {
+						PreparedStatement stmt = c.prepareStatement("select cache_id from " + TABLE_PREFIX + table + " where cache_group = ?");
+						stmt.setString(1, fqn.group);
+						stmt.setFetchSize(1000);
+						ResultSet rs = stmt.executeQuery();
+						while (rs.next()) {
+							keys.add(rs.getString(1));
+						}
+						rs.close();
 					}
-					rs.close();
 				}
-				c.close();
+				finally{
+					c.close();
+				}
 			}
 		} catch (Exception ex) {
 			handleError(ex, fqn);
@@ -572,20 +602,22 @@ public class H22Cache extends CacheProvider {
 
 	private void handleError(final Exception ex, final Fqn fqn) {
 		// debug all errors
-		Logger.debug(this.getClass(), ex.getMessage() + " on " + fqn , ex);
-		
-		if(lastLog + limitErrorLogMillis <  System.currentTimeMillis()){
-			lastLog=System.currentTimeMillis();
-			Logger.warn(this.getClass(), ex.getMessage() + " on " + fqn , ex);
+		Logger.debug(this.getClass(), ex.getMessage() + " on " + fqn, ex);
+		int db = db(fqn);
+		if (lastLog + limitErrorLogMillis < System.currentTimeMillis()) {
+			lastLog = System.currentTimeMillis();
+			Logger.warn(this.getClass(), "Error #" + errorCounter[db] + " " + ex.getMessage() + " on " + fqn, ex);
+			
 		}
-		errorCounter++;
-		if(errorCounter>recoverAfterErrors&&recoverAfterErrors>0){
-			Logger.error(getClass(), "Errors exceeded " + recoverAfterErrors + " rebuilding H22 Cache");
-			dispose();
-		}
-		
-	}
 
+		errorCounter[db]++;
+		if (errorCounter[db] > recoverAfterErrors && recoverAfterErrors > 0) {
+			errorCounter[db] = 0;
+			Logger.error(getClass(), "Errors exceeded " + recoverAfterErrors + " rebuilding H22 Cache for db" + db);
+			dispose(db, true);
+		}
+
+	}
 
 	private String _getGroupCount(String groupName) throws SQLException {
 		Fqn fqn = new Fqn(groupName);
@@ -598,7 +630,7 @@ public class H22Cache extends CacheProvider {
 			Connection c = opt.get();
 			for (int table = 0; table < numberOfTablesPerDb; table++) {
 				PreparedStatement stmt = c.prepareStatement("select count(*) from " + TABLE_PREFIX + table + " where cache_group = ?");
-				stmt.setString(1,fqn.group);
+				stmt.setString(1, fqn.group);
 				ResultSet rs = stmt.executeQuery();
 				if (rs != null) {
 					while (rs.next()) {
@@ -633,15 +665,8 @@ public class H22Cache extends CacheProvider {
 	 */
 	private boolean exclude(Fqn fqn) {
 
-		boolean exclude = false;
+		boolean exclude = DONT_CACHE_ME.containsKey(fqn.id);
 
-		if (!allowCacheRegions.contains(fqn.group) && !allRegions) {
-			exclude = true;
-		}
-		if (!exclude) {
-			exclude = DONT_CACHE_ME.containsKey(fqn.id);
-
-		}
 
 		return exclude;
 	}

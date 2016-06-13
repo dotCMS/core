@@ -28,7 +28,7 @@ public class H2GroupStatsList extends ConcurrentHashMap<String, H22GroupStats> i
 		for(String group: keySet() ){
 
 			H22GroupStats stats = get(group);
-			stats.compute();
+
 			sw.append("[\n");
 			sw.append("\t'group':");
 			sw.append("'" + group + "',\n");

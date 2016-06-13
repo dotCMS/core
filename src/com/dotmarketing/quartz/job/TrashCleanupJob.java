@@ -23,7 +23,7 @@ public class TrashCleanupJob implements Job {
 	
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 		
-		TrashUtils.emptyTrash();
+		new TrashUtils().emptyTrash();
 		
 	}
 
