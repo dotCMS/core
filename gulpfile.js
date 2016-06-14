@@ -9,7 +9,6 @@ var glob = require('glob');
 var gulp = require('gulp');
 var karmaServer = require('karma').Server;
 var minifyCss = require('gulp-minify-css');
-var minifyHtml = require('gulp-minify-html');
 var minimist = require('minimist');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
@@ -75,7 +74,13 @@ var project = {
   copyModules: function(cb) {
     gulp.src([
         '@angular/**/*.js',
-        'rxjs/**'
+        '@ngrx/**/*.js',
+        'rxjs/**',
+        'path-to-regexp/**',
+        'isarray/**',
+        'query-string/**',
+        'strict-uri-encode/**',
+        'object-assign/**'
       ], {cwd: 'node_modules/**'}) /* Glob required here. */
       .pipe(gulp.dest('build/thirdparty')).on('finish', cb);
 
@@ -96,7 +101,6 @@ var project = {
           gulp.src('./src/index.html')
               .pipe(usemin({
                 css: [ rev() ],
-                //html: [ minifyHtml({ empty: false }) ],
                 js: [ uglify(), rev() ],
                 inlinejs: [ uglify() ],
                 inlinecss: [ minifyCss(), 'concat' ]

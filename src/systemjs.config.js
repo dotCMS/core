@@ -17,7 +17,21 @@
     var map = {
         'build': 'build',
         'rxjs': 'n:rxjs',
-        '@angular': 'n:@angular'
+        '@angular': 'n:@angular',
+
+        // @ngrx/core
+        '@ngrx/core': 'n:@ngrx/core',
+
+        // @ngrx/router
+        '@ngrx/router': 'n:@ngrx/router',
+
+        // @ngrx/router dependencies
+        // TODO: WTF?
+        'path-to-regexp': 'n:@ngrx/router/node_modules/path-to-regexp',
+        'isarray': 'n:@ngrx/router/node_modules/path-to-regexp/node_modules/isarray',
+        'query-string': 'n:@ngrx/router/node_modules/query-string',
+        'strict-uri-encode': 'n:@ngrx/router/node_modules/query-string/node_modules/strict-uri-encode',
+        'object-assign': 'n:@ngrx/router/node_modules/query-string/node_modules/object-assign'
     };
 
     // packages tells the System loader how to load when no filename and/or no extension
@@ -36,10 +50,46 @@
         },
         'rxjs': {
             defaultExtension: 'js'
+        },
+
+        // @ngrx/core package
+        '@ngrx/core': {
+            main: 'index.js',
+            defaultExtension: 'js'
+        },
+
+        // @ngrx/router package
+        '@ngrx/router': {
+            main: 'index.js',
+            defaultExtension: 'js'
+        },
+
+        // @ngrx/router dependencies
+        'path-to-regexp': {
+            main: 'index.js',
+            defaultExtension: 'js'
+        },
+        'isarray': {
+            main: 'index.js',
+            defaultExtension: 'js'
+        },
+        'query-string': {
+            main: 'index.js',
+            defaultExtension: 'js'
+        },
+        'strict-uri-encode': {
+            main: 'index.js',
+            defaultExtension: 'js'
+        },
+        'object-assign': {
+            main: 'index.js',
+            defaultExtension: 'js'
         }
     };
 
     var packageNames = [
+        "@ngrx/core",
+        "@ngrx/router",
         '@angular/common',
         '@angular/compiler',
         '@angular/core',
