@@ -25,7 +25,7 @@ export class Routing{
 
         if (this.menus){
             return Promise.resolve( this.menus );
-        }else {
+        } else {
             return new Promise((resolve, reject) => {
                 // TODO: this needs to be done with http
                 $.get('/api/core_web/menu', response => {

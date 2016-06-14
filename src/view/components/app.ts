@@ -1,17 +1,16 @@
 import {Component} from "@angular/core";
-// import {FooterComponent} from "./FooterComponent";
-// import {HeaderComponent} from "./HeaderComponent";
+import {HeaderComponent} from "./HeaderComponent";
 
 @Component({
     selector: "app",
     template: `
+    <header-component></header-component>
     <div class="container">
-        <h1>App</h1>
-        <router-outlet></router-outlet>
+        <route-view></route-view>
     </div>
     `,
     providers: [],
-    directives: []
+    directives: [HeaderComponent]
 })
 export class AppComponent {
     constructor() {
