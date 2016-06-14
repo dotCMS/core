@@ -32,6 +32,7 @@ import com.dotcms.repackage.com.google.common.cache.CacheStats;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -140,6 +141,7 @@ public class H22Cache extends CacheProvider {
 			stats.group(fqn.group).hitOrMiss(foundObject);
 			stats.group(fqn.group).readTime(System.nanoTime() - start);
 		} catch (Exception e) {
+			foundObject=null;
 			handleError(e, fqn);
 		}
 		
@@ -350,8 +352,7 @@ public class H22Cache extends CacheProvider {
 		H22HikariPool source = new H22HikariPool(dbRoot, dbNum);
 		// create table
 		createTables(source);
-		pools[dbNum] = source;
-		return pools[dbNum];
+		return source;
 	}
 
 	private H22HikariPool recoverLatestPool(int dbNum) throws SQLException {
@@ -559,7 +560,6 @@ public class H22Cache extends CacheProvider {
 			s = c.createStatement();
 			s.execute("CREATE INDEX IF NOT EXISTS `idx_" + TABLE_PREFIX + table + "_index_` on "
 					+ TABLE_PREFIX + table + "(cache_group)");
-
 		}
 		c.close();
 	}
