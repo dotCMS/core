@@ -49,6 +49,8 @@
     <property name="tomcat.version" value="${tomcat.install.version}"/>
     <property name="jboss7.home" value="${jboss7.install.location}"/>
     <property name="jboss7.version" value="${jboss7.install.version}"/>
+	
+	<property name="release.build" value="${dotcms.release.build}"/>
 
     <tstamp>
         <format property="TODAY_FORMATTED" pattern="MMM dd, yyyy"/>
@@ -156,8 +158,8 @@
     <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
 
         <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
-            <arg value="describe"/>
-            <arg value="--always"/>
+            <arg value="rev-parse"/>
+            <arg value="--short=7"/>
             <arg value="HEAD"/>
         </exec>
         <condition property="repository.version" value="${git.revision}" else="unknown">
@@ -171,7 +173,14 @@
             <entry key="dotcms.release.build" value="${repository.version}"/>
             <entry key="dotcms.release.date" value="${TODAY_FORMATTED}"/>
         </propertyfile>
-
+        <!--
+        If the Hash for the repo version (${repository.version}) has changed, 
+        it needs to be read from a variable instead of read directly from the 
+        build.properties file because Core Ant properties are immutable
+        -->
+    	<var name="release.build" unset="true"/>
+    	<property name="release.build" value="${repository.version}"/>
+    	
     </target>
 
     <target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
@@ -206,7 +215,7 @@
     </target>
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="1024m">
             <classpath refid="files-classpath" />
         </javac>
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
@@ -234,7 +243,7 @@
         <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
         <copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
+        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" basedir="${build.classes}" />
     </target>
 
     <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
@@ -245,7 +254,7 @@
         <copydir dest="${build.classes}/com/dotmarketing/startup/runonce/sql" src="${src.dir}/com/dotmarketing/startup/runonce/sql"></copydir>
         <copy file="${src.dir}/com/liferay/portal/util/build.properties" tofile="${build.classes}/com/liferay/portal/util/build.properties" />
 
-        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
+        <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" basedir="${build.classes}" />
     </target>
 
     <!-- Configure the directory into which the web application is built -->
@@ -291,7 +300,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -300,7 +309,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -309,7 +318,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -318,7 +327,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${release.build}.jar" />
         <!-- Freetts -->
         <delete dir="${build.classes}" />
     </target>
@@ -331,7 +340,7 @@
         <delete>
             <fileset dir="${deploy.dir}" includes="dotcms_*.jar" excludes="dotcms_ant.jar" />
         </delete>
-        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
+        <copy file="${build.lib}/dotcms_${dotcms.release.version}_${release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${release.build}.jar" />
         <antcall target="deploy-plugins" />
     </target>
 
@@ -354,7 +363,7 @@
         <javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8"
                fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.8"
                target="1.8" compiler="javac1.8" nowarn="true" optimize="true"
-               memoryinitialsize="256m" memorymaximumsize="512m">
+               memoryinitialsize="256m" memorymaximumsize="1024m">
             <classpath refid="files-classpath" />
         </javac>
 
@@ -504,7 +513,7 @@
             </fileset>
         </copy>
 
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="1024m">
             <classpath refid="files-classpath" />
         </javac>
         <copy todir="${build.classes}">
@@ -517,7 +526,7 @@
 
     <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
         <mkdir dir="${build.dir}/testbuild" />
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="1024m">
             <classpath refid="tests-classpath" />
         </javac>
         <copy todir="${build.dir}/testbuild">
