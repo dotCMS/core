@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
+import com.dotmarketing.portlets.contentlet.business.FileAssetTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
@@ -110,6 +111,7 @@ import org.junit.runners.Suite;
         RemotePublishAjaxActionTest.class, //Needs Enterprise License
         ActionResourceFTest.class,
         TagAPITest.class,
+        FileAssetTest.class,
 
         //Rules.
         RulesAPIFTest.class, //Needs Enterprise License.
