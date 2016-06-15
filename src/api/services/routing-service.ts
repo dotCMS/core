@@ -1,12 +1,10 @@
 import { Routes } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx'
 
-// import {ANGULAR_PORTLET3} from "./ANGULAR_PORTLET3";
-// import {ANGULAR_PORTLET4} from "./ANGULAR_PORTLET4";
-import {RedirectComponent} from "../../view/components/RedirectComponent";
-import {RuleEngineContainer} from "../../view/components/rule-engine/rule-engine.container";
-
-var $ = window['$'];
+// import {ANGULAR_PORTLET3} from './ANGULAR_PORTLET3';
+// import {ANGULAR_PORTLET4} from './ANGULAR_PORTLET4';
+import {RedirectComponent} from '../../view/components/RedirectComponent';
+import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
 
 export class RoutingService {
 
@@ -25,25 +23,30 @@ export class RoutingService {
     private getMenus() {
 
         return Observable.create(observer => {
-            $.get('/api/core_web/menu', response => {
-                this.menus = <any[]> response;
-                observer.next(this.menus);
-                observer.complete();
-            });
+            let oReq = new XMLHttpRequest();
+
+            oReq.onreadystatechange = function() {
+                if (oReq.readyState === XMLHttpRequest.DONE) {
+                    observer.next(JSON.parse(oReq.response));
+                    observer.complete();
+                }
+            }
+            oReq.open('GET', '/api/core_web/menu');
+            oReq.send();
         });
     }
 
     public getRoutes() {
         return Observable.create(observer => {
-            this.getMenus().subscribe((items) => {
+            this.getMenus().subscribe((navigationItems) => {
                 // TODO: do this more elegant
                 let routes : Routes = [];
-                items.forEach((menu) => {
-                    menu.menuItems.forEach(menuItem => {
-                        if (menuItem.angular) {
+                navigationItems.forEach((item) => {
+                    item.menuItems.forEach(subMenuItem => {
+                        if (subMenuItem.angular) {
                             routes.push({
-                                path: menuItem.url,
-                                component: this.mapComponents[menuItem.id]
+                                path: subMenuItem.url,
+                                component: this.mapComponents[subMenuItem.id]
                             });
                         }
                     })
@@ -53,7 +56,7 @@ export class RoutingService {
                     component: RedirectComponent
                 });
                 observer.next({
-                    menuItems: this.menus,
+                    menuItems: navigationItems,
                     routes: routes
                 });
                 observer.complete();
