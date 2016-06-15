@@ -23,9 +23,9 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 	String errorTemplate = "/static/preview_mode/error_template.vtl";
 
 	public Object methodException(Class clazz, String message, Exception e) throws Exception {
-
 		if (!isEditMode(e)) {
-			Logger.error(clazz, message);
+			Logger.velocityWarn(clazz, message + " " + e.getMessage());
+			Logger.velocityDebug(clazz, e.getMessage(),e);
 			return null;
 		}
 

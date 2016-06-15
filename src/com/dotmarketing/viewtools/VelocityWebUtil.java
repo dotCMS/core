@@ -79,7 +79,10 @@ public class VelocityWebUtil implements ViewTool {
 			Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);			
 		}
 		try{
-		    Thread.currentThread().setName(threadName  + " >" + templatePath);
+			String newThreadName = (threadName.contains("{")) 
+					? threadName.replaceAll("\\{[^\\}]*\\}", "{" + templatePath + "}")
+					: threadName + " {" + templatePath + "}";
+		    Thread.currentThread().setName(newThreadName);
 			template = ve.getTemplate(templatePath);
 		
 
