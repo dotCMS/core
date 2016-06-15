@@ -132,13 +132,10 @@ public class ContentUtils {
 					//If anything else match, return the firs result. 
 					return (Contentlet) l.get(0);
 				}
-			} catch(SearchPhaseExecutionException e){
+			} catch (Exception e) {
 				String msg = e.getMessage();
 				msg = (msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
 				Logger.warn(ContentUtils.class,msg);
-				Logger.debug(ContentUtils.class,e.getMessage(),e);
-			} catch (Exception e) {
-				Logger.warn(ContentUtils.class,e.getMessage());
 				Logger.debug(ContentUtils.class,e.getMessage(),e);
 			}
 			return null;
