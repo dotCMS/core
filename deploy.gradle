@@ -36,14 +36,14 @@ def taskDescription = """
             As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
 
          Enterprise jar
-            Name convention: ee_hash.jar -> ee_6536e59.jar
-            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_6536e59.jar
+            Name convention: ee_dotcmsversion.jar -> ee_3.6.jar
+            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
+            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
 
         Enterprise license jar
-            Name convention: eelic_hash.jar -> eelic_57b3ae9.jar
-            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_57b3ae9.jar
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_57b3ae9.jar
+            Name convention: eelic_dotcmsversion.jar -> eelic_3.6.jar
+            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
+            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
 
          starter zip
             Name convention: starter_timestamp.zip -> starter_20140805.zip
