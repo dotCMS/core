@@ -415,7 +415,6 @@ public class ContentTool implements ViewTool {
 			
 			query=addPersonalizationToQuery(query);
 			String sort = secondarySort==null ? "score" : "score " + secondarySort;
-if(true) throw new DotStateException("bad");
 			return pull(query, offset, limit, sort);
 			
 		}
