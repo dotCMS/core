@@ -295,6 +295,8 @@ public class IntegrityUtil {
                 if (doesTableExist(tempTableName)) {
                     dc.executeStatement("truncate table " + tempTableName);
                     dc.executeStatement("drop table " + tempTableName);
+                }else if (DbConnectionFactory.isMySql()){
+                    dc.executeStatement("drop table if exists " + tempTableName);
                 }
             }
         } catch (SQLException e) {

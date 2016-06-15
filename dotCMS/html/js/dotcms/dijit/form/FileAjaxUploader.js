@@ -59,6 +59,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	identifier:'0',
 	inode:'0',
 	fieldName:'fileAsset',
+	lang:'0',
 	invalidFileSelectedMessage: 'You have selected a non allowed file',
 	
 	fileInfoTemplate: '<div>\
@@ -174,7 +175,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		fileInfo['fileName'] = this.fileName;
 		if(this.identifier != '0') {
 			fileInfo['path'] = location.protocol +"//"+ location.host +
-			'/contentAsset/raw-data/' + this.identifier + '/' + this.id;
+			'/contentAsset/raw-data/' + this.identifier + '/' + this.id+'?language_id='+this.lang;
 		} else {
 			fileInfo['path'] = location.protocol +"//"+ location.host +
 			'/contentAsset/raw-data/' + this.inode + '/' + this.id + "?byInode=true";

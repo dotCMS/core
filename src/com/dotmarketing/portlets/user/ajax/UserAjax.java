@@ -1165,7 +1165,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				@Override
 				public int getUserCount() {
 					try {
-						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter)).intValue();
+						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter,false)).intValue();
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;
@@ -1177,7 +1177,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 					try {
 						int page = (start/limit)+1;
 						int pageSize = limit;
-						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize,false);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return new ArrayList<User>();
@@ -1706,8 +1706,13 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
         }
         return loggedInUser;
 	}
-	
-	
-	
-	
+
+	/** UserAPI getAnonymousUser() wrapper use to validate anonymous on the UI
+	 * @return Anonymous user
+	 * @throws DotDataException
+	 */
+	public String getAnonymousUserId() throws DotDataException{
+		return APILocator.getUserAPI().getAnonymousUser().getUserId();
+	}
+
 }

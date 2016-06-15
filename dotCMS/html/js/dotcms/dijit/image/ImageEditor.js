@@ -37,21 +37,17 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
  * document.getElementsByTagName("head")[0].appendChild(e); },
  */
     _initBaseFilterUrl: function() {
-        var byIdentifier = this.identifier != '' && this.identifier != '0';
-
-        if(byIdentifier) {
-            this.baseFilterUrl+= "/" + this.identifier;
-        } else {
-            this.baseFilterUrl+= "/" + this.inode;
-        }
-
-        if(this.fieldName != undefined){
-            this.baseFilterUrl+= "/" + this.fieldName;
-        }
-
-        if(!byIdentifier){
-            this.baseFilterUrl+= "/byInode/1";
-        }
+    	if(this.inode != '0'){
+    		this.baseFilterUrl+= "/" + this.inode;
+    	}else{
+    		this.baseFilterUrl+= "/" + this.identifier;
+    	}
+    	if(this.fieldName != undefined){
+    		this.baseFilterUrl+= "/" + this.fieldName;
+    	}
+    	if(this.inode != '0'){
+    		 this.baseFilterUrl+= "/byInode/1";
+    	 }
 
         this.currentUrl = this.baseFilterUrl;
     },

@@ -202,8 +202,16 @@ public class UserAPIImpl implements UserAPI {
 		return uf.getCountUsersByNameOrEmailOrUserID(filter);
 	}
 
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
+		return uf.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
+	}
+
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
 		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+	}
+
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
+		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -298,6 +306,9 @@ public class UserAPIImpl implements UserAPI {
 		}
 		if (userToDelete.getUserId() == replacementUser.getUserId()) {
 			throw new DotDataException("Can't delete a user without a replacement userId");
+		}
+		if (getAnonymousUser().getUserId() == userToDelete.getUserId()){
+			throw new DotDataException("Anonymous user can not be deleted.");
 		}
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");

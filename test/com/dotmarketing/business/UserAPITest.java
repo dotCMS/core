@@ -538,5 +538,24 @@ public class UserAPITest extends TestBase{
 		dwrAuthentication.shutdownWebContext();
 	}
 
+	/**
+	 * Validates rule to forbid anonymous user delete
+	 * as in other restrictions an exception is returned
+	 * @throws DotDataException
+	 */
+	@Test(expected=DotDataException.class)
+	public void deleteAnonymous() throws DotDataException{
 
+		UserAPI userAPI = APILocator.getUserAPI();
+		User systemUser = null;
+		User anonymousUser = null;
+
+		try{
+			systemUser = userAPI.getSystemUser();
+			anonymousUser = userAPI.getAnonymousUser();
+			userAPI.delete(anonymousUser, systemUser, false);
+		}catch(DotSecurityException e){
+			// no need to validate this, only used to get the user objects
+		}
+	}
 }

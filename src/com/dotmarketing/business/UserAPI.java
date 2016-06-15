@@ -140,7 +140,7 @@ public interface UserAPI {
     
     /**
 	 * This Method return the number of user that have a firstname, lastname or email like the filter string.
-	 * For example all amount of user with lastName "Andrews"
+	 * For example all amount of user with lastName "Andrews", includes anonymous
 	 * This method will ALWAYS hit DB
 	 * @param filter Compare string
 	 * @return long
@@ -149,6 +149,15 @@ public interface UserAPI {
 	 */
     public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException;
 
+    /**
+	 * This Method return the number of user that have a firstname, lastname or email like the filter string.
+	 * For example all amount of user with lastName "Andrews", this might exclude anonymous
+	 * This method will ALWAYS hit DB
+	 * @param filter Compare string
+	 * @return long
+	 * @throws DotDataException
+	 */
+    public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException;
 
     /**
      * This method return a a paginated list of user that have a firstname, lastname or email like
@@ -176,7 +185,7 @@ public interface UserAPI {
 
     /**
      * This method return a a paginated list of user that have a firstname, lastname or email like
-     * the compare string passed
+     * the compare string passed, includes anonymous
 	 * This method will ALWAYS hit DB
      * @param filter compare string
      * @param page page to display
@@ -185,6 +194,17 @@ public interface UserAPI {
      * @version 1.9
      */
     public List<User> getUsersByNameOrEmailOrUserID(String filter,int page,int pageSize) throws DotDataException;
+
+    /**
+     * This method return a a paginated list of user that have a firstname, lastname or email like
+     * the compare string passed, this might exclude the anonymous user
+	 * This method will ALWAYS hit DB
+     * @param filter compare string
+     * @param page page to display
+     * @param pageSize number of element to show in the page
+     * @return List<User>
+     */
+    public List<User> getUsersByNameOrEmailOrUserID(String filter,int page,int pageSize, boolean includeAnonymous) throws DotDataException;
 
     /**
      * This method return a list of users and roles which name are like the compared string passed

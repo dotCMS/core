@@ -413,34 +413,14 @@ public class BrowserAPI {
 			    wfdata=new WfData(contentlet, permissions, user, showArchived);
 			}
 
-			// check for multilingual. we don't need to see the item
-			// more than once for every language
-			boolean skip = false;
 			if (contentlet != null) {
-				List<Map<String, Object>> toDelete = new ArrayList<Map<String, Object>>();
-				for (Map<String, Object> map : returnList) {
-					if (map.get("identifier").equals(
-							contentlet.getIdentifier())) {
-						if (contentlet.getLanguageId() != APILocator
-								.getLanguageAPI().getDefaultLanguage()
-								.getId()) {
-							// if this is no for the default lang and
-							// there is another one in the list skip.
-							skip = true;
-						} else {
-							// if this is for def lang then delete any
-							// other we find
-							toDelete.add(map);
-						}
-					}
-				}
-				returnList.removeAll(toDelete);
+			    //Show only files versions if a language filter is in place
+                if(languageId > 0 && contentlet.getLanguageId()!= languageId)
+                    continue;
+                if (wfdata != null && wfdata.skip)
+                    continue;
 			}
 
-			if ( skip || (wfdata != null && wfdata.skip) ) {
-				continue;
-			}
-			
 			IFileAsset fileAsset=(IFileAsset)file;
 			Map<String, Object> fileMap = fileAsset.getMap();
 
@@ -478,9 +458,13 @@ public class BrowserAPI {
 			if (contentlet != null) {
 				fileMap.put("identifier", contentlet.getIdentifier());
 				fileMap.put("inode", contentlet.getInode());
-				fileMap.put("languageId", contentlet.getLanguageId());
 				fileMap.put("isLocked", contentlet.isLocked());
 				fileMap.put("isContentlet", true);
+				//Add Language Attributes to FileMap, required in Website Browser
+                Language lang = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+                fileMap.put("languageId", contentlet.getLanguageId());
+                fileMap.put("languageCode", lang.getLanguageCode());
+                fileMap.put("countryCode", lang.getCountryCode());
 			}
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));

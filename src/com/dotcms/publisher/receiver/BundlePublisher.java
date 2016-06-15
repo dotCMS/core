@@ -1,27 +1,63 @@
 package com.dotcms.publisher.receiver;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.tools.tar.TarEntry;
+import org.apache.tools.tar.TarInputStream;
+
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.remote.handler.*;
-import com.dotcms.publisher.business.*;
+import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
+import com.dotcms.enterprise.publishing.remote.handler.CategoryHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandler;
+import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
+import com.dotcms.enterprise.publishing.remote.handler.HTMLPageHandler;
+import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
+import com.dotcms.enterprise.publishing.remote.handler.LanguageHandler;
+import com.dotcms.enterprise.publishing.remote.handler.LanguageVariablesHandler;
+import com.dotcms.enterprise.publishing.remote.handler.LinkHandler;
+import com.dotcms.enterprise.publishing.remote.handler.OSGIHandler;
+import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
+import com.dotcms.enterprise.publishing.remote.handler.RuleHandler;
+import com.dotcms.enterprise.publishing.remote.handler.StructureHandler;
+import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
+import com.dotcms.enterprise.publishing.remote.handler.UserHandler;
+import com.dotcms.enterprise.publishing.remote.handler.WorkflowHandler;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.receiver.handler.IHandler;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.rest.BundlePublisherResource;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
-
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
-
-import java.io.*;
-import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -207,6 +243,8 @@ public class BundlePublisher extends Publisher {
             HibernateUtil.closeSession();
         } catch ( DotHibernateException e ) {
             Logger.warn( this, e.getMessage(), e );
+        } finally {
+            DbConnectionFactory.closeConnection();
         }
         return config;
     }
