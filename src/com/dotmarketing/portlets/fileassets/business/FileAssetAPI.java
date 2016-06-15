@@ -39,6 +39,7 @@ public interface FileAssetAPI {
 	public static final String DEFAULT_FILE_ASSET_STRUCTURE_NAME = "File Asset";
 	public static final String DEFAULT_FILE_ASSET_STRUCTURE_DESCRIPTION = "Default structure for all uploaded files";
 	public static final String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
+	public static final String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
 
 	public void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
 
