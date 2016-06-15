@@ -16,6 +16,7 @@ import {provide} from '@angular/core';
 
 
 new RoutingService().getRoutes().subscribe(menu => {
+  console.log(menu.routes)
   bootstrap(AppComponent, [
     ApiRoot,
     GoogleMapService,

@@ -1,8 +1,8 @@
 import { Routes } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx'
 
-// import {ANGULAR_PORTLET3} from './ANGULAR_PORTLET3';
-// import {ANGULAR_PORTLET4} from './ANGULAR_PORTLET4';
+import {ANGULAR_PORTLET3} from '../../view/components/ANGULAR_PORTLET3';
+import {ANGULAR_PORTLET4} from '../../view/components/ANGULAR_PORTLET4';
 import {RedirectComponent} from '../../view/components/RedirectComponent';
 import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
 
@@ -14,8 +14,8 @@ export class RoutingService {
 
     constructor() {
         this.mapComponents = {
-            // 'ANGULAR_PORTLET3': ANGULAR_PORTLET3,
-            // 'ANGULAR_PORTLET4': ANGULAR_PORTLET4,
+            'ANGULAR_PORTLET3': ANGULAR_PORTLET3,
+            'ANGULAR_PORTLET4': ANGULAR_PORTLET4,
             'RuleEngineContainer': RuleEngineContainer
         };
     }
@@ -52,7 +52,7 @@ export class RoutingService {
                     })
                 });
                 routes.push({
-                    path: '/html/ng',
+                    path: '/html/ng/p/',
                     component: RedirectComponent
                 });
                 observer.next({

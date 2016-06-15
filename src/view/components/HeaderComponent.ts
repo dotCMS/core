@@ -3,24 +3,25 @@ import {Component, Inject} from "@angular/core";
 @Component({
     selector: "header-component",
     template: `
-    <div class="container">
-        <h1>Header</h1>
-        <span *ngFor="let menu of menuItems">
-            <a href="{{menu.url}}">{{menu.tabName}}</a>
-            <ul>
-                <li *ngFor="let menuItem of menu.menuItems">
-                    <a href="{{menuItem.url}}" *ngIf="!menuItem.angular && !menuItem.ajax">
+    <div class="ui vertical menu">
+        <div class="item" *ngFor="let menu of menuItems">
+            <div class="header">{{menu.tabName}}</div>
+        
+            <div class="menu">
+                <!--TODO: find a way to do this without the span-->
+                <span *ngFor="let menuItem of menu.menuItems">
+                    <a class="item" href="{{menuItem.url}}">
                         {{menuItem.name}}
                     </a>
-                    <a linkTo="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
+                    <a class="item" linkTo="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
                         {{menuItem.name}}
                     </a>
-                    <a linkTo="{{menuItem.url}}" *ngIf="menuItem.ajax">
+                    <a class="item" linkTo="{{menuItem.url}}" *ngIf="menuItem.ajax">
                         {{menuItem.name}}
                     </a>
-                </li>
-            </ul>
-        </span>
+                </span>
+            </div>
+        </div>
     </div>
     `,
     providers: []

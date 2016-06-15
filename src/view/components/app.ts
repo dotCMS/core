@@ -6,6 +6,7 @@ import {HeaderComponent} from "./HeaderComponent";
     template: `
     <header-component></header-component>
     <div class="container">
+        <h1>Hello World</h1>
         <route-view></route-view>
     </div>
     `,
