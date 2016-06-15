@@ -324,7 +324,7 @@ public class ContentMap {
 				VelocityEngine ve = VelocityUtil.getEngine();
 				Template template = null;
 				StringWriter sw = new StringWriter();
-				VelocityServlet.velocityCtx.set(context);
+
 				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? "working/":"live/") + content.getInode() + "_" + f.getInode() + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION"));
 				template.merge(context, sw);
 				ret = sw.toString();
