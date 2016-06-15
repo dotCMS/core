@@ -7,8 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
 
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -131,11 +132,16 @@ public class ContentUtils {
 					//If anything else match, return the firs result. 
 					return (Contentlet) l.get(0);
 				}
-			} catch (Exception e) {
-				Logger.error(ContentUtils.class,e.getMessage());
+			} catch(SearchPhaseExecutionException e){
+				String msg = e.getMessage();
+				msg = (msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
+				Logger.warn(ContentUtils.class,msg);
 				Logger.debug(ContentUtils.class,e.getMessage(),e);
-				return null;
+			} catch (Exception e) {
+				Logger.warn(ContentUtils.class,e.getMessage());
+				Logger.debug(ContentUtils.class,e.getMessage(),e);
 			}
+			return null;
 		}
 		
 		/**
@@ -236,8 +242,11 @@ public class ContentUtils {
 			    }
 				for(Contentlet c : contentlets)
 					ret.add(c);
-			} catch (Exception e) {
-				Logger.error(ContentUtils.class,e.getMessage());
+			} 
+			catch (Exception e) {
+				String msg = e.getMessage();
+				msg = (msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
+				Logger.warn(ContentUtils.class,msg);
 				Logger.debug(ContentUtils.class,e.getMessage(),e);
 			}
 			

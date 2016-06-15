@@ -889,7 +889,6 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			Logger.error(this, e1.getMessage(), e1);
 		} finally {
 			context = null;
-			VelocityServlet.velocityCtx.remove();
 		}
 
 		if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {

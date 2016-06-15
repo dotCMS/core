@@ -13,11 +13,11 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -415,6 +415,7 @@ public class ContentTool implements ViewTool {
 			
 			query=addPersonalizationToQuery(query);
 			String sort = secondarySort==null ? "score" : "score " + secondarySort;
+if(true) throw new DotStateException("bad");
 			return pull(query, offset, limit, sort);
 			
 		}

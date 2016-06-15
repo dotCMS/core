@@ -26,11 +26,11 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -94,7 +94,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
-	public static  ThreadLocal<Context> velocityCtx = Logger.velocityCtx;
+	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
