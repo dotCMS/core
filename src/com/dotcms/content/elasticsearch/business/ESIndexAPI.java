@@ -626,7 +626,7 @@ public class ESIndexAPI {
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
     	if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-				Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", false)){
+				Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true)){
     		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     	}
