@@ -38,7 +38,6 @@ public class HTMLPageDataGen extends ContentletDataGen {
     private String title = "test-page-title-" + currentTime;
     private boolean showOnMenu;
     private Template template;
-    private String structureInode;
     private long sortOrder = 1;
     private ContentletWebAPI contentletWebAPI;
     private HTMLPageAssetAPI pageAssetAPI;
@@ -68,7 +67,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
     }
 
     private HTMLPageDataGen() {
-        structureInode = HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE;
+        super(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         contentletWebAPI = WebAPILocator.getContentletWebAPI();
         pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     }
@@ -159,7 +158,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setFolder(folder.getInode());
         htmlPageAsset.setHost(host.getIdentifier());
         htmlPageAsset.setLanguageId(languageId);
-        htmlPageAsset.setStructureInode(structureInode);
+        htmlPageAsset.setStructureInode(structureId);
         htmlPageAsset.setCacheTTL(cacheTTL);
         htmlPageAsset.setSeoKeywords(seoKeywords);
         htmlPageAsset.setSeoDescription(seoDescription);
@@ -173,7 +172,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setShowOnMenu(showOnMenu);
         htmlPageAsset.setSortOrder(sortOrder);
 
-        for (Map.Entry<String, String> element : properties.entrySet()) {
+        for (Map.Entry<String, Object> element : properties.entrySet()) {
             htmlPageAsset.setProperty(element.getKey(), element.getValue());
         }
 
