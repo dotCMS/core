@@ -16,7 +16,7 @@ configurations.all({
     // dynamic: e.g. 'version: 2.0+'
     resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
     // changing: e.g. 'version 2.0.0-SNAPSHOT'
-    resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 })
 
 repositories {
