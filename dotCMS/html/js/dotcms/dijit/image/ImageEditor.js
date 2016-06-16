@@ -129,11 +129,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             thumbUrl = beforeFilter + "filter/" + filter + ",Thumbnail/" + afterFilter +"/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/" + this.thumbnailHeight;
         }
         else{
-            if(thumbUrl.indexOf("?") <0){
-                //thumbUrl+="?";
-            }
-
-            if(this.saveAsFileName.toLowerCase().endsWith('.svg') < 0) {
+            if(!this.saveAsFileName.toLowerCase().endsWith('.svg')) {
                 thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
             }else{
                 console.log("RETURN");

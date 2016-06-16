@@ -30,6 +30,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -333,7 +334,7 @@ public class ESIndexResource {
             return Response.status(Status.UNAUTHORIZED).build();
         }catch(DotDataException dt){
         	Logger.error(this, dt.getMessage());
-        	return Response.status(Status.BAD_REQUEST).build();
+        	throw new BadRequestException(dt, dt.getMessage());
         } catch (Exception de) {
             Logger.error(this, "Error on updateReplica. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();
