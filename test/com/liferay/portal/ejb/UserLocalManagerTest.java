@@ -28,8 +28,8 @@ public class UserLocalManagerTest extends TestBase {
         String email;
 
         email = "user.test@dotcms.com";
-        firstName = "TestFirstNameá";
-        lastName = "Test Last Name";
+        firstName = "TestFirstName á~";
+        lastName = "繁體中文";
 
         User user = APILocator.getUserAPI().createUser(null, email);
 
@@ -50,7 +50,7 @@ public class UserLocalManagerTest extends TestBase {
         String email;
 
         email = "user.test@dotcms.com";
-        firstName = "TestFirstName$";
+        firstName = "Test>FirstName$";
         lastName = "Test Last Name";
 
         User user = APILocator.getUserAPI().createUser(null, email);
@@ -73,7 +73,7 @@ public class UserLocalManagerTest extends TestBase {
 
         email = "user.test8@dotcms.com";
         firstName = "TestFirstName";
-        lastName = "Test Last Name~";
+        lastName = "Test Last< Name";
 
         User user = APILocator.getUserAPI().createUser(null, email);
 
