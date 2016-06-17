@@ -1,9 +1,7 @@
 import {bootstrap} from '@angular/bootstrap'
 import {
-    Attribute,
     ChangeDetectionStrategy,
     Component,
-    Directive,
     ElementRef,
     EventEmitter,
     Input,
@@ -69,7 +67,11 @@ import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
       let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
       if (f) {
         let el = this._elementRef.nativeElement
-        el.children[0].children[0].focus()
+
+        // More info: http://stackoverflow.com/questions/36332418/angular-2-exception-expression-ngclassuntouched-has-changed-after-it-was-che
+        setTimeout(() => {
+          el.querySelector('input').focus()
+        }, 0);
       }
     }
   }
