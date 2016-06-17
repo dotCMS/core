@@ -897,7 +897,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(), e);
 
 		}
 	}
