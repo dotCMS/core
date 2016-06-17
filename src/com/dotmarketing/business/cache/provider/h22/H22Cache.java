@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import com.dotcms.repackage.com.google.common.cache.CacheStats;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
@@ -69,7 +70,7 @@ public class H22Cache extends CacheProvider {
 	private long lastLog = System.currentTimeMillis();
 	private long[] errorCounter = new long[numberOfDbs];
 	private final H22HikariPool[] pools = new H22HikariPool[numberOfDbs];
-
+	private int failedFlushAlls=0;
 
 	final String dbRoot;
 	final private H2GroupStatsList stats = new H2GroupStatsList();
@@ -195,15 +196,61 @@ public class H22Cache extends CacheProvider {
 		}
 	}
 
+	public void doTruncateTables() throws SQLException {
+
+			for (int db = 0; db < numberOfDbs; db++) {
+				Optional<H22HikariPool> poolOpt = getPool(db);
+				if(!poolOpt.isPresent())continue;
+				H22HikariPool pool = poolOpt.get();
+				Optional<Connection> connOpt = pool.connection();
+				if(!connOpt.isPresent())continue;
+				Connection c = connOpt.get();
+				try{
+					pool.running=false;
+					for (int table = 0; table < numberOfTablesPerDb; table++) {
+						Statement stmt = c.createStatement();
+						stmt.execute("truncate table " + TABLE_PREFIX + table);
+						stmt.close();
+					}
+				}
+				finally{
+					pool.running=true;
+					c.close();
+				}
+			}
+
+	}
+	
+
+	
+	
 	@Override
 	public void removeAll() {
 
-		Logger.info(this, "Starting Full Cache Flush in h22");
-
-		dispose(true);
+		Logger.info(this, "Start Full Cache Flush in h22");
+		long start = System.nanoTime();
+		int failedThreshold = Config.getIntProperty("cache.h22.rebuild.on.removeAll.failure.threshhold", 1);
+		failedThreshold = (failedThreshold<1) ? 1: failedThreshold;
+		// we either truncate the tables on a full flush or rebuild the tables
+		if(Config.getBooleanProperty("cache.h22.rebuild.on.removeAll", false) || failedFlushAlls==failedThreshold){
+			dispose(true);
+		}
+		else{
+			try {
+				doTruncateTables();
+				failedFlushAlls=0;
+			} catch (SQLException e) {
+				Logger.error(getClass(), e.getMessage());
+				failedFlushAlls++;
+			}
+		}
+		
+		if(failedFlushAlls==failedThreshold)
 		
 		stats.clear();
 		DONT_CACHE_ME.clear();
+		long end = System.nanoTime();
+		Logger.info(this, "End Full Cache Flush in h22 : " + TimeUnit.MILLISECONDS.convert(end-start, TimeUnit.NANOSECONDS)+ "ms");
 
 	}
 
