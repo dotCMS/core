@@ -45,6 +45,7 @@
 	<%
 	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
 	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
+	String frameName = (String)request.getSession().getAttribute("frame");
 	%>
 
 	var filesMandatoryWorkflow = <%=fileWorkflow.isMandatory()%>
@@ -73,20 +74,20 @@
 			strHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox">';
 
 			if (write) {
-				strHTML += '<a class="contextPopupMenu" href="javascript: editHost(\'' + objInode + '\',\''+referer+'\')">';
+				strHTML += '<a class="contextPopupMenu" href="javascript: editHost(\'' + objInode + '\',\''+referer+'\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    		strHTML += '<span class="hostIcon"></span>';
     				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Host")) %>';
 				strHTML += '</a>';
 
                 if (enterprise) {
                     if (sendingEndpoints) {
-                        strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                        strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                             strHTML += '<span class="sServerIcon"></span>';
                             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                         strHTML += '</a>';
                     }
 
-					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 						strHTML += '<span class="bundleIcon"></span>';
 						strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 					strHTML += '</a>';
@@ -102,20 +103,20 @@
 				var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
 
 				if(isAdminUser || userRoles.folderModifiable) {
-					strHTML += '<a class="contextPopupMenu" href="javascript: addTopFolder(\'' + objId + '\',\''+referer+'\')">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addTopFolder(\'' + objId + '\',\''+referer+'\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 				  	  	strHTML += '<span class="folderAddIcon"></span>';
 		    			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Folder")) %>';
 					strHTML += '</a>';
 				}
 
 				if(containerperm && (isAdminUser || userRoles.containerModifiable)){
-					strHTML += '<a class="contextPopupMenu" href="javascript: addContainer(\''+referer+'\')">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addContainer(\''+referer+'\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 				    	strHTML += '<span class="container"></span>';
 		    			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
 					strHTML += '</a>';
 				}
 				if(templateperm && (isAdminUser || userRoles.templateModifiable)){
-					strHTML += '<a class="contextPopupMenu" href="javascript: addTemplate(\''+referer+'\')">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addTemplate(\''+referer+'\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    		strHTML += '<span class="templateIcon"></span>';
 	    				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
 					strHTML += '</a>'
@@ -126,7 +127,7 @@
 				if(isAdminUser || userRoles.fileModifiable) {
 					
 					
-					strHTML += '<a class="contextPopupMenu" href="javascript: addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addHTMLPage(\'' + objId + '\',\'' + referer + '\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 					strHTML += '<span class="newPageIcon"></span>&nbsp;';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 					strHTML += '</a>';
@@ -135,12 +136,12 @@
 					
 					
 					
-					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				    strHTML += '</a>';
 
-				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                     strHTML += '<span class="fileNewIcon"></span>';
                     strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
                     strHTML += '</a>';
@@ -150,14 +151,14 @@
             if (write) {
                 strHTML += '<div class="pop_divider" ></div>';
 
-                strHTML += '<a id="' + objId + '-PasteREF" href="javascript: pasteToFolder(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                strHTML += '<a id="' + objId + '-PasteREF" href="javascript: pasteToFolder(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                 strHTML += '<span class="pasteIcon"></span>';
                 strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Paste")) %>';
                 strHTML += '</a>';
             }
 
 			strHTML += '<div class="pop_divider" ></div>';
-			strHTML += '<a class="contextPopupMenu" href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');">';
+			strHTML += '<a class="contextPopupMenu" href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 			strHTML += '</a>';
@@ -215,46 +216,46 @@
 
 		if (write) {
 
-			strHTML += '<a class="contextPopupMenu" href="javascript: editFolder(\'' + objId + '\',\''+referer+'\')">';
+			strHTML += '<a class="contextPopupMenu" href="javascript: editFolder(\'' + objId + '\',\''+referer+'\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    strHTML += '<span class="folderEditIcon"></span>';
 	    		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Folder")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a class="contextPopupMenu" href="javascript:deleteFolder(\'' + objId + '\' , \'' + referer + '\');">';
+			strHTML += '<a class="contextPopupMenu" href="javascript:deleteFolder(\'' + objId + '\' , \'' + referer + '\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="folderDeleteIcon"></span>';
         		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a class="contextPopupMenu" href="javascript: publishFolder(\'' + objId + '\', \'' + referer + '\');">';
+			strHTML += '<a class="contextPopupMenu" href="javascript: publishFolder(\'' + objId + '\', \'' + referer + '\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="folderGlobeIcon"></span>';
         		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publishall")) %>';
 			strHTML += '</a>';
 
             if (enterprise) {
                 if (sendingEndpoints) {
-                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                         strHTML += '<span class="sServerIcon"></span>';
                         strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                     strHTML += '</a>';
                 }
 
-				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
 
-			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="folderCopyIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    strHTML += '<span class="cutIcon"></span>';
 			    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a id="' + objId + '-PasteREF" href="javascript: pasteToFolder(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a id="' + objId + '-PasteREF" href="javascript: pasteToFolder(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    strHTML += '<span class="pasteIcon"></span>';
 			    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Paste")) %>';
 			strHTML += '</a>';
@@ -263,7 +264,7 @@
 		}
 
 		if(addChildren) {
-			strHTML += '<a class="contextPopupMenu" id="contextChildMenu' + objId + 'REF" href="javascript:;">';
+			strHTML += '<a class="contextPopupMenu" id="contextChildMenu' + objId + 'REF" href="javascript:;" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    strHTML += '<div id="newArrowHack"></div>';
 			strHTML += '<span class="plusIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "New")) %>';
@@ -272,7 +273,7 @@
 			strHTML += '<div class="pop_divider"></div>';
 		}
 
-		strHTML += '<a class="contextPopupMenu" href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');">';
+		strHTML += '<a class="contextPopupMenu" href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		strHTML += '<span class="closeIcon"></span>';
 		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</a>';
@@ -289,34 +290,34 @@
 
 		//"Add New" Sub Menu
 
-		strHTML += '<a class="contextPopupMenu" href="javascript:addFolder(\'' + objId + '\',\''+referer+'\')">';
+		strHTML += '<a class="contextPopupMenu" href="javascript:addFolder(\'' + objId + '\',\''+referer+'\')" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    strHTML += '<span class="folderAddIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
 		strHTML += '</a>'
 
-	    strHTML += '<a class="contextPopupMenu" href="javascript:addHTMLPage(\'' + objId + '\',\'' + referer + '\');" >';
+	    strHTML += '<a class="contextPopupMenu" href="javascript:addHTMLPage(\'' + objId + '\',\'' + referer + '\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    strHTML += '<span class="newPageIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 		strHTML += '</a>';
 
-	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
+	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    strHTML += '<span class="fileNewIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 		strHTML += '</a>';
 
-	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
+	    strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    strHTML += '<span class="fileMultiIcon"></span>';
 		    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
 		strHTML += '</a>';
 
-    	strHTML += '<a class="contextPopupMenu" href="javascript:addLink(\'' + objId + '\',\'' + referer + '\');">';
+    	strHTML += '<a class="contextPopupMenu" href="javascript:addLink(\'' + objId + '\',\'' + referer + '\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    strHTML += '<span class="linkAddIcon"></span>';
     		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Menu-Link")) %>';
 		strHTML += '</a>';
 
 		strHTML += '<div class="pop_divider" ></div>';
 
-		strHTML += '<a class="contextPopupMenu" href="javascript:hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
+		strHTML += '<a class="contextPopupMenu" href="javascript:hidePopUp(\'context_child_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %></a>';
 		strHTML += '</a>';
@@ -357,12 +358,12 @@
 	            var isLocked = content.isLocked;
 	            var contentEditable = content.contentEditable;
 	            if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
-	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	                strHTML += '<span class=\''+icon+'\'></span>';
 	                strHTML += wfActionNameStr;
 	                strHTML += '</a>';
 	            }else if(!requiresCheckout)  {
-	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	                strHTML += '<span class=\''+icon+'\'></span>';
 	                strHTML += wfActionNameStr;
 	                strHTML += '</a>';
@@ -411,7 +412,7 @@
 		contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(ident,objId,contentletLanguageId);
 
 	  	if (read && !archived) {
-			strHTML += '<a href="javascript: viewFile(\'' + ident + '\', \'' + ext + '\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: viewFile(\'' + ident + '\', \'' + ext + '\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="previewIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
@@ -419,12 +420,12 @@
 
 		if ((live || working) && write && !archived) {
 			if(file.isContent){
-   				strHTML += '<a href="javascript: editFileAsset(\'' + objId + '\',\'' + file.fileAssetType + '\');" class="contextPopupMenu">';
+   				strHTML += '<a href="javascript: editFileAsset(\'' + objId + '\',\'' + file.fileAssetType + '\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
    				strHTML += '<span class="editIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>';
 			    strHTML += '</a>';
    			}else{
-			    strHTML += '<a href="javascript: editFile(\'' + objId + '\',\'' + referer + '\');" class="contextPopupMenu">';
+			    strHTML += '<a href="javascript: editFile(\'' + objId + '\',\'' + referer + '\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
    				strHTML += '<span class="editIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>';
 			    strHTML += '</a>';
@@ -438,7 +439,7 @@
 		
 		if(!file.wfMandatoryWorkflow) {
 			if (working && publish && !archived ) {
-				strHTML += '<a href="javascript: publishFile (\'' + objId + '\',\'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: publishFile (\'' + objId + '\',\'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	    		if (live) {
 	            	strHTML += '<span class="republishIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
@@ -450,13 +451,13 @@
 	
 	            if (enterprise) {
 	                if (sendingEndpoints) {
-	                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+	                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	                        strHTML += '<span class="sServerIcon"></span>';
 	                        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 	                    strHTML += '</a>';
 	                }
 	
-					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 						strHTML += '<span class="bundleIcon"></span>';
 						strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 					strHTML += '</a>';
@@ -467,7 +468,7 @@
 			if (archived) {
 				if (enterprise) {
                     if (sendingEndpoints) {
-                        strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                        strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                             strHTML += '<span class="sServerIcon"></span>';
                             strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                         strHTML += '</a>';
@@ -476,7 +477,7 @@
 			}
 			
 			if ((live || hasLiveVersion) && publish) {
-				strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                 strHTML += '<span class="unpublishIcon"></span>';
                 strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 				strHTML += '</a>';
@@ -484,13 +485,13 @@
 	
 			if (!live && working && publish && !hasLiveVersion) {
 				if (!archived) {
-					strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+					strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		   				strHTML += '<span class="archiveIcon"></span>';
 		            	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
 					strHTML += '</a>';
 				}
 				else {
-					strHTML += '<a  href="javascript: unarchiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+					strHTML += '<a  href="javascript: unarchiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	   					strHTML += '<span class="unarchiveIcon"></span>';
 	               		strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
 					strHTML += '</a>';
@@ -498,7 +499,7 @@
 			}
 	
 			if (locked && write) {
-				strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    		strHTML += '<span class="keyIcon"></span>';
 		        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 				strHTML += '</a>';
@@ -506,7 +507,7 @@
 	
 			if (write && archived)
 			{
-				strHTML += '<a href="javascript: deleteFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: deleteFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    	strHTML += '<span class="stopIcon"></span>';
 		    	   	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-File")) %>';
 				strHTML += '</a>';
@@ -517,12 +518,12 @@
 			
 			strHTML += '<div class="pop_divider" ></div>';
 
-			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	    		strHTML += '<span class="docCopyIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="cutIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
@@ -531,7 +532,7 @@
 
 		strHTML += '<div class="pop_divider" ></div>';
 
-		strHTML += '<a href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+		strHTML += '<a href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %></a>';
 		strHTML += '</a>';
@@ -566,7 +567,7 @@
 
 		if ((live || working) && read && !archived) {
 			var actionLabel = write ? '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>' : '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>';
-			strHTML += '<a href="javascript: editLink(\'' + objId + '\', \'' + referer + '\')" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: editLink(\'' + objId + '\', \'' + referer + '\')" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	    		strHTML += '<span class="editIcon"></span>';
 	            strHTML += '' + actionLabel;
 			strHTML += '</a>';
@@ -576,7 +577,7 @@
         if (archived) {
             if (enterprise) {
                 if (sendingEndpoints) {
-                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                         strHTML += '<span class="sServerIcon"></span>';
                         strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                     strHTML += '</a>';
@@ -586,13 +587,13 @@
         
 		if (!live && working && publish && !hasLiveVersion) {
 			if (!archived) {
-				strHTML += '<a href="javascript: archiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: archiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
     				strHTML += '<span class="archiveIcon"></span>';
                 	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
 				strHTML += '</a>';
 			}
 			else {
-				strHTML += '<a href="javascript: unarchiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: unarchiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
     				strHTML += '<span class="unarchiveIcon"></span>';
                 	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
 				strHTML += '</a>';
@@ -600,7 +601,7 @@
 		}
 
 		if (working && publish && !archived) {
-			strHTML += '<a href="javascript: publishLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: publishLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
     			if (live){
 					strHTML += '<span class="republishIcon"></span>';
 	            	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
@@ -612,13 +613,13 @@
 
             if (enterprise) {
                 if (sendingEndpoints) {
-                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                         strHTML += '<span class="sServerIcon"></span>';
                         strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                     strHTML += '</a>';
                 }
 
-				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+				strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
@@ -626,14 +627,14 @@
 		}
 
         if ((live || hasLiveVersion) && publish) {
-			strHTML += '<a href="javascript: unpublishLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: unpublishLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	    		strHTML += '<span class="unpublishIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 			strHTML += '</a>';
 		}
 
 		if (locked && write) {
-			strHTML += '<a href="javascript: unlockLink(\'' + objId + '\', \'' + referer + '\');  hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: unlockLink(\'' + objId + '\', \'' + referer + '\');  hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="keyIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 			strHTML += '</a>';
@@ -644,12 +645,12 @@
 
 			strHTML += '<div class="pop_divider" ></div>';
 
-			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	    		strHTML += '<span class="docCopyIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="cutIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
@@ -658,14 +659,14 @@
 
 		if (write && archived)
 		{
-			strHTML += '<a href="javascript: deleteLink(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: deleteLink(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="stopIcon"></span>';
 	    	   	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>';
 			strHTML += '</a>';
 		}
 
 		strHTML += '<div class="pop_divider" ></div>';
-		strHTML += '<a href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+		strHTML += '<a href="javascript:hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</a>';
@@ -700,7 +701,7 @@
 		var strHTML = '';
 
 		if ((live || working) && read && !archived) {
-			strHTML += '<a href="javascript: previewHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: previewHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="pageIcon"></span>';
 	    	    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
@@ -712,7 +713,7 @@
 						                  "editHTMLPageAsset('" + objId + "','" + page.stInode + "')"
 						                : "editHTMLPage('" + objId + "', '" + referer + "')";  
 				
-				strHTML += "<a href=\"javascript: "+editFunction+";\" class=\"contextPopupMenu\">";
+				strHTML += "<a href=\"javascript: "+editFunction+";\" class=\"contextPopupMenu\" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>";
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
 				strHTML += '</a>';
@@ -720,7 +721,7 @@
 		}
 
         if (!archived) {
-	      strHTML += '<a href="javascript: viewHTMLPageStatistics(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
+	      strHTML += '<a href="javascript: viewHTMLPageStatistics(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		      strHTML += '<span class="statisticsIcon"></span>';
 		      strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Statistics")) %>';
 	      strHTML += '</a>';
@@ -732,7 +733,7 @@
         
         if(!page.isContentlet || !page.wfMandatoryWorkflow) {
 			if (working && !archived && publish) {
-				strHTML += '<a href="javascript: publishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: publishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	if(live) {
 					strHTML += '<span class="republishIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %>';
@@ -745,13 +746,13 @@
 	
 	            if (enterprise) {
 	                if (sendingEndpoints) {
-	                    strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                    strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	                    strHTML += '<span class="sServerIcon"></span>';
 	                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 	                    strHTML += '</a>';
 	                }
 	
-					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objIden + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+					strHTML += '<a class="contextPopupMenu" href="javascript: addToBundle(\'' + objIden + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 					strHTML += '</a>';
@@ -763,7 +764,7 @@
 			if (archived) {
 				if (enterprise) {
                     if (sendingEndpoints) {
-                        strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                        strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
                         strHTML += '<span class="sServerIcon"></span>';
                         strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                         strHTML += '</a>';
@@ -772,7 +773,7 @@
 			}
 
             if ((live || hasLiveVersion) && publish) {
-				strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    	strHTML += '<span class="unpublishIcon"></span>';
 			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 				strHTML += '</a>';
@@ -780,13 +781,13 @@
 	
 			if (!live && working && publish && !hasLiveVersion) {
 				if (!archived) {
-					strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+					strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			   			strHTML += '<span class="archiveIcon"></span>';
 	    	          	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
 					strHTML += '</a>';
 				}
 				else {
-					strHTML += '<a href="javascript: unarchiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+					strHTML += '<a href="javascript: unarchiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			   			strHTML += '<span class="unarchiveIcon"></span>';
 	    		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %>';
 					strHTML += '</a>';
@@ -794,7 +795,7 @@
 			}
 	
 			if (locked && write) {
-				strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+				strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			    	strHTML += '<span class="keyIcon"></span>';
 			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 				strHTML += '</a>';
@@ -802,7 +803,7 @@
 			
 			if (write && archived)
 	        {
-	            strHTML += '<a href="javascript: deleteHTMLPagePreCheck(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	            strHTML += '<a href="javascript: deleteHTMLPagePreCheck(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	                strHTML += '<span class="stopIcon"></span>';
 	                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
 	            strHTML += '</a>';
@@ -812,12 +813,12 @@
 		if (write && !archived)  {
 			strHTML += '<div class="pop_divider" ></div>';
 
-			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 	    		strHTML += '<span class="docCopyIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %>';
 			strHTML += '</a>';
 
-			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: markForCut(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 		    	strHTML += '<span class="cutIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
@@ -826,14 +827,14 @@
 		
 		if(!page.isContentlet) {
 			strHTML += '<div class="pop_divider" ></div>';
-			strHTML += '<a href="javascript: migratePage(\''+objId+'\',\''+referer+'\');" class="contextPopupMenu">';
+			strHTML += '<a href="javascript: migratePage(\''+objId+'\',\''+referer+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			strHTML += '<span class="repeatIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Migrate-To-Content")) %>';
 			strHTML += '</a>';
 		}
 
 		strHTML += '<div class="pop_divider" ></div>';
-		strHTML += '<a href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+		strHTML += '<a href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu" <%=(UtilMethods.isSet(frameName))?"target=\'"+frameName+"\'" :""%>>';
 			strHTML += '<span class="closeIcon"></span>';
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
 		strHTML += '</a>';
@@ -859,8 +860,11 @@
 
 		var popup = $(id);
 
-		var windowHeight = top.document.body.clientHeight;
-
+		<%if(UtilMethods.isSet(frameName)){%>
+		var windowHeight = window.innerHeight;
+        <%}else{%>
+        var windowHeight = top.document.body.clientHeight;
+        <%}%>
 		var popupHeight = Element.getHeight(popup);
 
 		var noPx = document.childNodes ? 'px' : 0;
@@ -891,8 +895,11 @@
 
 		var popup = $(id);
 
+		<%if(UtilMethods.isSet(frameName)){%>
+		var windowHeight = window.innerHeight;
+        <%}else{%>
 		var windowHeight = top.document.body.clientHeight;
-
+       <%}%>
 		var popupHeight = Element.getHeight(popup);
 
 		var noPx = document.childNodes ? 'px' : 0;
