@@ -6,12 +6,14 @@
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%
 
 if(user == null){
 	return;	
 }
 boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
+boolean isLockStealEnabled = Config.getBooleanProperty(Config.ENABLE_LOCK_STEALING, false);
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
@@ -42,7 +44,7 @@ catch(Exception e){
 
 
 
-<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
+<%if(isContLocked && (contentEditable || isUserCMSAdmin || isLockStealEnabled)) {%>
 
 		<%if(contentEditable){ %>
 		    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">

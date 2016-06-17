@@ -27,6 +27,9 @@ public class Config {
 	public static final int PERMISSION_WRITE = 2;
 	public static final int PERMISSION_PUBLISH = 4;
 
+	// CONFIG CONSTANTS
+	public static final String ENABLE_LOCK_STEALING = "ENABLE_LOCK_STEALING";
+
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
