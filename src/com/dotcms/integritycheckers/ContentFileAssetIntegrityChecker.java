@@ -103,12 +103,9 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
             int counter = versionCount.get(oldIdentifier);
             boolean isTheLastConflict = counter == 1 ? true : false;
-            try{
-            	fixContentletConflicts(result, Structure.STRUCTURE_TYPE_FILEASSET, isTheLastConflict);
-            }
-            catch(IOException e){
-            	throw new DotDataException(e.getMessage(),e);
-            }
+
+            fixContentletConflicts(result, Structure.STRUCTURE_TYPE_FILEASSET, isTheLastConflict);
+
             if (!isTheLastConflict) {
                 // Decrease version counter if greater than 1
                 versionCount.put(oldIdentifier, counter - 1);
@@ -166,14 +163,14 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
      *            be updated in order to keep data consistency. Otherwise, ONLY
      *            the specified page and language will be updated. This is when
      *            we need to do an update once not each time.
-     * @throws IOException 
+     * @throws DotDataException
      * @throws DotRuntimeException 
      * @throws Exception
      * @throws SQLException
      */
     private void fixContentletConflicts(Map<String, Object> contentletData,
             final int structureTypeId, final boolean isTheLastConflict) throws DotDataException,
-            DotSecurityException, DotRuntimeException, IOException {
+            DotSecurityException, DotRuntimeException {
         final String oldContentletIdentifier = (String) contentletData.get("local_identifier");
         final String newContentletIdentifier = (String) contentletData.get("remote_identifier");
 
@@ -420,8 +417,8 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
     /**
      * Clean index from lucene
      * 
-     * @param localWorkingInode
-     * @param localLiveInode
+     * @param existingWorkingContentlet
+     * @param existingLiveContentlet
      * @throws DotHibernateException
      */
     private void cleanIndex(final Contentlet existingWorkingContentlet,
@@ -474,7 +471,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
     private Contentlet generateNewContentlet(Contentlet existingContentlet,
             final int structureTypeId, final String newContentletIdentifier,
             final String remoteInode) throws DotContentletStateException, DotRuntimeException,
-            DotSecurityException, DotDataException, IOException {
+            DotSecurityException, DotDataException {
 
         // If its an asset file, move the asset to a new location
         if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET) {
@@ -538,7 +535,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
      * @throws IOException 
      */
     private void moveInodeFolder(Contentlet oldContentlet, final String newInode)
-            throws DotDataException, IOException {
+            throws DotDataException {
 
         // We need to copy files and folder from inode folder
         File currentInodeFolder = getInodeFolder(oldContentlet);
@@ -557,10 +554,14 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
         if (!newInodeFolder.exists()) {
             if (newInodeFolder.mkdirs()) {
-                FileUtil.copyDirectory(currentInodeFolder, newInodeFolder);
-                FileUtil.deltree(currentInodeFolder, true);
-                Logger.info(this, "Relocated file assets from inode=[" + oldContentlet.getInode()
+                try {
+                    FileUtil.copyDirectory(currentInodeFolder, newInodeFolder);
+                    FileUtil.deltree(currentInodeFolder, true);
+                    Logger.info(this, "Relocated file assets from inode=[" + oldContentlet.getInode()
                         + "] to inode = [" + newInode + "]");
+                }catch(IOException e){
+                    throw new DotDataException(e.getMessage(),e);
+                }
                 return;
             }
         }
