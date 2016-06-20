@@ -4,10 +4,13 @@ import {HeaderComponent} from "./HeaderComponent";
 @Component({
     selector: "app",
     template: `
-    <header-component></header-component>
-    <div class="container">
-        <h1>Hello World</h1>
-        <route-view></route-view>
+    <div class="ui grid">
+        <div class="four wide column">
+            <header-component></header-component>
+        </div>
+        <div class="twelve wide column">
+            <route-view></route-view>
+        </div>
     </div>
     `,
     providers: [],
