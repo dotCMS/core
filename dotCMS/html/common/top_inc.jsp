@@ -148,20 +148,20 @@ THIS FILE AND ITS INCLUDES
 			return mb;
 		};
 <%
-		 if(UtilMethods.isSet(request.getParameter("in_frame")) && UtilMethods.isSet(request.getParameter("frame"))){
-	    	  request.getSession().setAttribute("in_frame",request.getParameter("in_frame"));
+	if(UtilMethods.isSet(request.getParameter("in_frame")) && UtilMethods.isSet(request.getParameter("frame"))){
+		boolean inFrame = Boolean.valueOf(request.getParameter("in_frame"));
+		%>
+		alert('In frame <%=inFrame%>');
+		<%
+		if(inFrame){
+			  request.getSession().setAttribute("in_frame",inFrame);
 	    	  request.getSession().setAttribute("frame",request.getParameter("frame"));
-	%>
-	//alert('FFFFFFF:<%=(String)request.getSession().getAttribute("frame")%>');
-	<%
-	      }else if(!UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && !UtilMethods.isSet(request.getSession().getAttribute("frame"))){
-	    	  	request.getSession().removeAttribute("in_frame");
-	    	  	request.getSession().removeAttribute("frame");
-	    	  %>
-	    	  //alert('HHHHHHHH');
-	    	  <%
-	      }
-	      %>
+		}else{
+			  request.getSession().removeAttribute("in_frame");
+	  	      request.getSession().removeAttribute("frame");
+		}
+	}
+%>
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>
