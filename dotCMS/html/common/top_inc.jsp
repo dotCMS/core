@@ -150,9 +150,7 @@ THIS FILE AND ITS INCLUDES
 <%
 	if(UtilMethods.isSet(request.getParameter("in_frame")) && UtilMethods.isSet(request.getParameter("frame"))){
 		boolean inFrame = Boolean.valueOf(request.getParameter("in_frame"));
-		%>
-		alert('In frame <%=inFrame%>');
-		<%
+		
 		if(inFrame){
 			  request.getSession().setAttribute("in_frame",inFrame);
 	    	  request.getSession().setAttribute("frame",request.getParameter("frame"));
@@ -171,7 +169,7 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 
-<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || UtilMethods.isSet(request.getParameter("in_frame")) || UtilMethods.isSet(request.getSession().getAttribute("in_frame"))){ %>
+<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || (UtilMethods.isSet(request.getParameter("in_frame")) && "true".equals((String) request.getParameter("in_frame")))|| (UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"))){ %>
 	<body class="dmundra" style="background:white url()">
 <%}else{ %>
 	<body class="dmundra" style="visibility:hidden">

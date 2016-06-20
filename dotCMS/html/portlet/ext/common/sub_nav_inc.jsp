@@ -21,7 +21,7 @@
 
 <%
 
-	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, "popup")) ||(UtilMethods.isSet(ParamUtil.getString(request, "in_frame")) && "true".equals(ParamUtil.getString(request, "in_frame")))|| (UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"));
+	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, "popup")) ||(UtilMethods.isSet(ParamUtil.getString(request, "in_frame")) && "true".equals(ParamUtil.getString(request, "in_frame"))) || (UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"));
 
 	if(!inPopupIFrame) {
 		UserAPI userAPI = APILocator.getUserAPI();
