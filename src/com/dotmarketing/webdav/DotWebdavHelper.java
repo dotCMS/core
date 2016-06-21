@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -105,6 +106,8 @@ public class DotWebdavHelper {
 	private FolderCache fc = CacheLocator.getFolderCache();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
 	private static FileResourceCache fileResourceCache = new FileResourceCache();
+	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+	private boolean legacyPath = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false);
 
 	/**
 	 * MD5 message digest provider.
@@ -147,11 +150,19 @@ public class DotWebdavHelper {
 
 	}
 
+	//Check if the contentlets to upload are going to be live or working
 	public boolean isAutoPub(String path){
-		if(path.startsWith("/webdav/autopub")){
-			return true;
+		if(legacyPath){
+			if(path.startsWith("/webdav/autopub")){
+				return true;
+			}
+				return false;
+		}else{
+			if(path.startsWith("/webdav/live")){
+				return true;
+			}
+				return false;
 		}
-		return false;
 	}
 
 	public User authorizePrincipal(String username, String passwd)	throws DotSecurityException, NoSuchUserException, DotDataException {
@@ -359,7 +370,10 @@ public class DotWebdavHelper {
 	}
 
 	public java.io.File loadTempFile(String url){
-		url = stripMapping(url);
+		try {
+			url = stripMapping(url);
+		} catch (IOException e) {
+		}
 		Logger.debug(this, "Getting temp file from path " + url);
 		java.io.File f = new java.io.File(tempHolderDir.getPath() + url);
 		return f;
@@ -376,11 +390,21 @@ public class DotWebdavHelper {
      */
     public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub ) throws IOException {
 
-        String prePath;
-        if ( isAutoPub ) {
-            prePath = "/webdav/autopub/";
-        } else {
-            prePath = "/webdav/nonpub/";
+        String prePath = "/webdav/";
+        if(legacyPath){
+        	if ( isAutoPub ) {
+            	prePath += "autopub/";
+        	} else {
+            	prePath += "nonpub/";
+        	}
+        }else{
+        	if ( isAutoPub ) {
+            	prePath += "live/";
+        	} else {
+            	prePath += "working/";
+        	}
+        	prePath += defaultLang;
+        	prePath += "/";
         }
 
         Host folderHost;
@@ -462,7 +486,11 @@ public class DotWebdavHelper {
     }
 
     public String getHostName ( String uri ) {
-		return getHostname(stripMapping(uri));
+		try {
+			return getHostname(stripMapping(uri));
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	public boolean isTempResource(String path){
@@ -473,7 +501,10 @@ public class DotWebdavHelper {
 	}
 
 	public java.io.File createTempFolder(String path){
-		path = stripMapping(path);
+		try {
+			path = stripMapping(path);
+		} catch (IOException e) {
+		}
 		if(path.startsWith(tempHolderDir.getPath()))
 			path = path.substring(tempHolderDir.getPath().length(), path.length());
 		if(path.startsWith("/") || path.startsWith("\\")){
@@ -1462,17 +1493,43 @@ public class DotWebdavHelper {
 		uri = uri.substring(begin, end);
 		return uri;
 	}
+	
+	public long getLanguage(){
+		return defaultLang;
+	}
+	
+	public void setLanguage(String uri){
+		try {
+			stripMapping(uri);
+		} catch (IOException e) {
+		}
+	}
 
-	private String stripMapping(String uri) {
+	private String stripMapping(String uri) throws IOException {
 		String r = uri;
 		if (r.startsWith("/webdav")) {
 			r = r.substring(7, r.length());
 		}
-		if (r.startsWith("/nonpub")) {
-			r = r.substring(7, r.length());
-		}
-		if (r.startsWith("/autopub")) {
-			r = r.substring(8, r.length());
+		if(legacyPath){
+			if (r.startsWith("/nonpub")) {
+				r = r.substring(7, r.length());
+			}
+			if (r.startsWith("/autopub")) {
+				r = r.substring(8, r.length());
+			}
+		}else{
+			if (r.startsWith("/working")) {
+				r = r.substring(8, r.length());
+			}
+			if (r.startsWith("/live")) {
+				r = r.substring(5, r.length());
+			}
+			defaultLang = Long.parseLong(r.substring(1, 2));
+			if(!APILocator.getLanguageAPI().getLanguages().contains(APILocator.getLanguageAPI().getLanguage(defaultLang))){
+				Logger.error( this, "The language id specified in the path does not exists");
+				throw new IOException("The language id specified in the path does not exists");
+			}
+			r = r.substring(2);
 		}
 		return r;
 	}
@@ -1489,7 +1546,7 @@ public class DotWebdavHelper {
 			fileName = fileName.replace("|", "");
 			if (!UtilMethods.isSet(fileName)) {
 				throw new IOException(
-						"Please specify a name wothout special characters \\/:*?\"<>|");
+						"Please specify a name without special characters \\/:*?\"<>|");
 			}
 		}
 		return fileName;

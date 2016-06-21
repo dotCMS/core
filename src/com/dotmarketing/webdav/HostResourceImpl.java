@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -172,13 +173,23 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		frs.add(tfrl);
 		**/
 		
-		
-		String prePath;
-		if(isAutoPub){
-			prePath = "/webdav/autopub/";
-		}else{
-			prePath = "/webdav/nonpub/";
-		}
+		dotDavHelper.setLanguage(path);
+        String prePath = "/webdav/";
+        if(Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
+        	if ( isAutoPub ) {
+            	prePath += "autopub/";
+        	} else {
+            	prePath += "nonpub/";
+        	}
+        }else{
+        	if ( isAutoPub ) {
+            	prePath += "live/";
+        	} else {
+            	prePath += "working/";
+        	}
+        	prePath += dotDavHelper.getLanguage();
+        	prePath += "/";
+        }
 		java.io.File tempDir = new java.io.File(dotDavHelper.getTempDir().getPath() + java.io.File.separator + host.getHostname());
 		if(tempDir.exists() && tempDir.isDirectory()){
 			java.io.File[] files = tempDir.listFiles();
