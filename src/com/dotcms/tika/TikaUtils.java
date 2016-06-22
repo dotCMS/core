@@ -48,6 +48,11 @@ public class TikaUtils {
 		t.setMaxStringLength(-1);
 		Reader fulltext = null;
 		InputStream is = null;
+
+		char[] buf;
+		byte[] bytes;
+		int count;
+
 		// if the limit is not "unlimited"
 		// I can use the faster parseToString
 		try {
@@ -83,7 +88,10 @@ public class TikaUtils {
 					}
 				}
 
-				if(!contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
+				buf = new char[1024];
+				bytes = new byte[1024];
+				count = fulltext.read(buf);
+				if(count > 0 && !contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
 					OutputStream out=new FileOutputStream(contentM);
 
 					// compressor config
@@ -98,22 +106,19 @@ public class TikaUtils {
 					ReaderInputStream ris = null;
 
 					try {
-						int count;
+
 						ris = new ReaderInputStream(fulltext, StandardCharsets.UTF_8);
 
 						int metadataLimit = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
 						int numOfChunks = metadataLimit / 1024;
 
-						char[] buf = new char[1024];
-						byte[] bytes = new byte[1024];
-
-						while ((count = fulltext.read(buf)) > 0 && numOfChunks>0) {
+						do {
 							String lowered = new String(buf);
 							lowered = lowered.toLowerCase();
 							bytes = lowered.getBytes(StandardCharsets.UTF_8);
 							out.write(bytes, 0, count);
 							numOfChunks --;
-						}
+						} while ((count = fulltext.read(buf)) > 0 && numOfChunks>0);
 					}catch(IOException ioExc){
 						Logger.debug( this.getClass(), "Error Reading TikaParse Stream.", ioExc );
 					}finally {
