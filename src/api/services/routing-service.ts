@@ -51,7 +51,7 @@ export class RoutingService {
                     })
                 });
                 routes.push({
-                    path: '/porlet/:id',
+                    path: '/portlet/:id',
                     component: IframeComponent,
                 });
                 observer.next({

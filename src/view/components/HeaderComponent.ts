@@ -10,7 +10,7 @@ import {Component, Inject} from "@angular/core";
         
             <div class="menu">
                 <span *ngFor="let menuItem of menu.menuItems">
-                    <a class="item" linkTo="/porlet/{{menuItem.id}}" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
+                    <a class="item" linkTo="/portlet/{{menuItem.id}}" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
                         {{menuItem.name}}
                     </a>
                     <a class="item" linkTo="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
