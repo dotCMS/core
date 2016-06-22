@@ -19,10 +19,9 @@ import com.dotcms.spring.portlet.PortletController;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
@@ -40,29 +39,29 @@ public class MenuResource {
 	public enum App{CORE, CORE_WEB};
 
 	/**
-	 * Get the layout menus and submenues that the logged in a user have access 
-	 * @param response
-	 * @param from
-	 * @param httpServletRequest
-	 * @return a collection of menu
-	 * @throws SystemException
-	 * @throws PortalException
-	 * @throws DotDataException
-	 * @throws ClassNotFoundException
+	 * /**
+	 * Get the layout menus and sub-menus that the logged in a user have access 
+	 * @return  a collection of menu portlet
+	 * @throws NoSuchUserException If the user doesn't exist
+	 * @throws DotDataException If there is a data inconsistency
+	 * @throws DotSecurityException
+	 * @throws LanguageException
+	 * @throws ClassNotFoundException If the portet class is not assignable to PortletController or BaseRestPortlet
 	 */
 	@GET
 	@Produces({MediaType.APPLICATION_JSON})
-	public Collection<Menu> getMenus(@Context HttpServletResponse response, @PathParam("from") String from, @Context HttpServletRequest httpServletRequest)
-			throws SystemException, PortalException, DotDataException, ClassNotFoundException {
+	public Collection<Menu> getMenus(@Context HttpServletResponse response, @PathParam("from") String from, @Context HttpServletRequest httpServletRequest) throws NoSuchUserException, DotDataException, DotSecurityException, LanguageException, ClassNotFoundException 
+	{
 
-		//checkToken(httpServletRequest);
+		//TODO include user validation
+
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		App appFrom = App.valueOf(from.toUpperCase());
 		Collection<Menu> menus = new ArrayList<Menu>();
 
 		HttpSession session = httpServletRequest.getSession();
 		LayoutAPI api= APILocator.getLayoutAPI();
-		User user = UserLocalManagerUtil.getUserById((String) session.getAttribute(WebKeys.USER_ID));
+		User user = APILocator.getUserAPI().loadUserById((String) session.getAttribute(WebKeys.USER_ID));
 
 		List<Layout> layouts = api.loadLayoutsForUser(user);
 
