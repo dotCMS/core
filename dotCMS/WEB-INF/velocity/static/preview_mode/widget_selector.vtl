@@ -21,7 +21,6 @@ function _dotWidgetSelectOnChange() {
 					<td  valign="top" width="250" style="padding-right:10px;">
 						<div class="dotPopUpText"><strong>$languagewebapi.getFromUserLanguage("modes.Select-the-type")</strong> $languagewebapi.getFromUserLanguage("modes.of-widget-you-would-like-to-insert-or-create-from-the-list-below")</div>
 						<select id="_dotWidgetSelect" class="dotLightboxSelect" #if($_dotWidgets.size()>20)size="20"#else size="$math.add($_dotWidgets.size(),1)"#end onchange="_dotWidgetSelectOnChange();">
-							#set($widgets=$structures.findWidgets(true))
 							#foreach($w in $_dotWidgets)
 							    #if(!$w.isSystem())
 								<option value="$w.inode">$w.name</option>

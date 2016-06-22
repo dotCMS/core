@@ -51,8 +51,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
 
-import static com.dotmarketing.beans.PermissionType.TEMPLATE;
-
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
  * a big storage improvement that will let us reduces the amount of rows in the permissions table
@@ -1402,7 +1400,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	protected List<Permission> getInheritablePermissions(Permissionable permissionable, boolean bitPermissions) throws DotDataException {
 		List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
-		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
+		if (bitPermissionsList == null) {
 			bitPermissionsList = loadPermissions(permissionable);
 		}
 
@@ -1432,7 +1430,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
         //Checking individual permissions
         List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache( permissionable.getPermissionId() );
-        if ( bitPermissionsList == null || bitPermissionsList.isEmpty()) {//Already in cache
+        if (bitPermissionsList == null) {//Already in cache
             bitPermissionsList = loadPermissions( permissionable );
             permissionCache.addToPermissionCache( permissionable.getPermissionId(), bitPermissionsList );
         }
@@ -1450,11 +1448,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
+		if(bitPermissionsList == null) {
 			synchronized(permissionable.getPermissionId().intern()){
 				//Checking individual permissions
 				bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
-				if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
+				if (bitPermissionsList == null) {
 					bitPermissionsList = loadPermissions(permissionable);
 					permissionCache.addToPermissionCache(permissionable.getPermissionId(), bitPermissionsList);
 				}
@@ -1485,13 +1483,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
+		if (bitPermissionsList == null) {
 			synchronized(permissionable.getPermissionId().intern()){
 
 				if(!forceLoadFromDB)
 					bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 				//Checking individual permissions
-				if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
+				if (bitPermissionsList == null) {
 					bitPermissionsList = loadPermissions(permissionable);
 					permissionCache.addToPermissionCache(permissionable.getPermissionId(), bitPermissionsList);
 				}

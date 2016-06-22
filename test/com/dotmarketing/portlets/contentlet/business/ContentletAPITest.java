@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -42,6 +44,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -776,8 +779,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             HTMLPageAsset spanishPage = htmlPageDataGen.pageURL(englishPage.getPageUrl() + "SP").languageId(spanish)
                 .nextPersisted();
 
-            ContentletDataGen contentletDataGen = new ContentletDataGen();
-            Contentlet contentInEnglish = contentletDataGen.structure(structure).languageId(english).nextPersisted();
+            ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+            Contentlet contentInEnglish = contentletDataGen.languageId(english).nextPersisted();
             Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
 
             // let's add the content to the page in english (create the page-container-content relationship)
@@ -2199,6 +2202,44 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
 
+    }
+    
+    @Test
+    public void newFileAssetLanguageDifferentThanDefault() throws DotSecurityException, DotDataException, IOException{
+    	  int spanish = 2;
+    	  Folder folder = APILocator.getFolderAPI().findSystemFolder();
+    	  java.io.File file = java.io.File.createTempFile("texto", ".txt");
+          
+    	  FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+    	  Contentlet fileInSpanish = fileAssetDataGen.languageId(spanish).nextPersisted();
+    	  Contentlet result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, user, false);
+    	  assertEquals(fileInSpanish.getInode(), result.getInode());
+    	  
+    	  fileAssetDataGen.remove(fileInSpanish);
+    }
+    
+    @Test
+    public void newVersionFileAssetLanguageDifferentThanDefault() throws DotDataException, IOException, DotSecurityException{
+    	int english = 1;
+    	int spanish = 2;
+    	
+    	Folder folder = APILocator.getFolderAPI().findSystemFolder();
+    	java.io.File file = java.io.File.createTempFile("file", ".txt");
+        
+    	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+    	Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
+  	  
+    	Contentlet resultEnglish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
+  	  
+    	Contentlet contentletSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
+    	contentletSpanish.setInode("");
+    	contentletSpanish.setLanguageId(spanish);
+    	contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+  	  
+    	Contentlet resultSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, spanish, user, false);
+    	assertNotNull( resultSpanish );
+    	
+    	fileAssetDataGen.remove(resultSpanish);
     }
 
 }
