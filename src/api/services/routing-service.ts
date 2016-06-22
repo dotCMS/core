@@ -1,10 +1,8 @@
 import { Routes } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx'
 
-import {ANGULAR_PORTLET3} from '../../view/components/ANGULAR_PORTLET3';
-import {ANGULAR_PORTLET4} from '../../view/components/ANGULAR_PORTLET4';
-import {RedirectComponent} from '../../view/components/RedirectComponent';
 import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
+import {IframeComponent} from '../../view/components/IframeComponent';
 
 export class RoutingService {
 
@@ -14,8 +12,6 @@ export class RoutingService {
 
     constructor() {
         this.mapComponents = {
-            'ANGULAR_PORTLET3': ANGULAR_PORTLET3,
-            'ANGULAR_PORTLET4': ANGULAR_PORTLET4,
             'RULES_ENGINE_PORTLET': RuleEngineContainer
         };
     }
@@ -41,6 +37,7 @@ export class RoutingService {
             this.getMenus().subscribe((navigationItems) => {
                 // TODO: do this more elegant
                 let routes : Routes = [];
+                let mapPaths = {};
                 navigationItems.forEach((item) => {
                     item.menuItems.forEach(subMenuItem => {
                         if (subMenuItem.angular) {
@@ -48,15 +45,20 @@ export class RoutingService {
                                 path: subMenuItem.url,
                                 component: this.mapComponents[subMenuItem.id]
                             });
+                        } else {
+                            mapPaths[subMenuItem.id] = subMenuItem.url;
                         }
                     })
                 });
                 routes.push({
-                    path: '/html/ng/p/',
-                    component: RedirectComponent
+                    path: '/porlet/:id',
+                    component: IframeComponent,
                 });
                 observer.next({
-                    menuItems: navigationItems,
+                    menuItems: {
+                        navigationItems: navigationItems,
+                        mapPaths: mapPaths
+                    },
                     routes: routes
                 });
                 observer.complete();
