@@ -22,14 +22,25 @@
 
 package com.liferay.util;
 
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.org.apache.commons.codec.digest.DigestUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
@@ -39,7 +50,11 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -127,68 +142,65 @@ public class FileUtil {
 
 	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
 
-		final String metaDataPath = "metaData" + File.separator + "content";
-		final String languagePropertyPath = "messages"+ File.separator + "cms_language";
-		if (!source.exists()){
-			throw new IOException("Source file does not exist" + source);
-		}
+        final String metaDataPath = "metaData" + File.separator + "content";
+        final String languagePropertyPath = "messages" + File.separator + "cms_language";
+        if (!source.exists()) {
+            throw new IOException("Source file does not exist" + source);
+        }
 
-		if (source.length()==0) {
-			Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
-			if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
-				.endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
-				throw new IOException("Source file is 0 length, failing " + source);
-			}
-		}
-
-		
-		if(hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)){
-			hardLinks = false;
-		}
-		
-		
-		if ((destination.getParentFile() != null) &&
-			(!destination.getParentFile().exists())) {
-
-			destination.getParentFile().mkdirs();
-		}
-
-		if ( hardLinks ) {
-			// I think we need to be sure to unlink first
-            if ( destination.exists() ) {
-                Path destinationPath = Paths.get( destination.getAbsolutePath() );
-                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-                Files.delete( destinationPath );
+        if (source.length() == 0) {
+            Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
+            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
+                .endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
+                throw new IOException("Source file is 0 length, failing " + source);
             }
-            Path newLink = Paths.get( destination.getAbsolutePath() );
-            Path existingFile = Paths.get( source.getAbsolutePath() );
+        }
 
-            Files.createLink( newLink, existingFile );
+        if (hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)) {
+            hardLinks = false;
+        }
+
+        if ((destination.getParentFile() != null) &&
+            (!destination.getParentFile().exists())) {
+
+            destination.getParentFile().mkdirs();
+        }
+
+        if (hardLinks) {
+            // I think we need to be sure to unlink first
+            if (destination.exists()) {
+                Path destinationPath = Paths.get(destination.getAbsolutePath());
+                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+                Files.delete(destinationPath);
+            }
+            Path newLink = Paths.get(destination.getAbsolutePath());
+            Path existingFile = Paths.get(source.getAbsolutePath());
+
+            Files.createLink(newLink, existingFile);
             // setting this means we will try again if we cannot hard link
-			if( !destination.exists()  || destination.length()==0){
-				hardLinks = false;
-				Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-						+ ", destination: " + destination.getAbsolutePath());
-			}
-		}
-		
-		if(!hardLinks) {
+            if (!destination.exists() || destination.length() == 0) {
+                hardLinks = false;
+                Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+                    + ", destination: " + destination.getAbsolutePath());
+            }
+        }
 
-			
-			FileInputStream ios = new FileInputStream(source);
-			FileOutputStream fos = new FileOutputStream(destination);
-			FileChannel srcChannel = ios.getChannel();
-			FileChannel dstChannel = fos.getChannel();
-			dstChannel.transferFrom(srcChannel, 0, srcChannel.size());		
-			srcChannel.close();
-			dstChannel.close();
-			ios.close();
-			fos.close();
-			
-			
-		}
+        if (!hardLinks) {
 
-	}
+            FileInputStream ios = new FileInputStream(source);
+            FileOutputStream fos = new FileOutputStream(destination);
+            FileChannel srcChannel = ios.getChannel();
+            FileChannel dstChannel = fos.getChannel();
+            dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
+            srcChannel.close();
+            dstChannel.close();
+            ios.close();
+            fos.close();
+
+
+        }
+
+    }
 
 	public static void copyFileLazy(String source, String destination)
 		throws IOException {

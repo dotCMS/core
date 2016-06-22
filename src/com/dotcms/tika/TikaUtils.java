@@ -1,17 +1,5 @@
 package com.dotcms.tika;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.commons.io.input.ReaderInputStream;
@@ -25,141 +13,153 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+
 public class TikaUtils {
 
 
-	/**
-	 * Right now the method use the Tika facade directly for parse the document without any kind of restriction about the parser because the
-	 * new Tika().parse method use the AutoDetectParser by default.
-	 *
-	 *
-	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
-	 *
-	 * May 31, 2013 - 12:27:19 PM
-	 */
-	public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType, boolean forceMemory) {
-		Map<String, String> metaMap = new HashMap<String, String>();
+    /**
+     * Right now the method use the Tika facade directly for parse the document without any kind of restriction about the parser because the
+     * new Tika().parse method use the AutoDetectParser by default.
+     *
+     * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+     *
+     * May 31, 2013 - 12:27:19 PM
+     */
+    public Map<String, String> getMetaDataMap(String inode, File binFile, String mimeType, boolean forceMemory) {
+        Map<String, String> metaMap = new HashMap<String, String>();
 
-		// store content metadata on disk
-        File contentM=APILocator.getFileAssetAPI().getContentMetadataFile(inode);
+        // store content metadata on disk
+        File contentM = APILocator.getFileAssetAPI().getContentMetadataFile(inode);
 
-		Tika t = new Tika();
-		Metadata met = new Metadata();
-		t.setMaxStringLength(-1);
-		Reader fulltext = null;
-		InputStream is = null;
+        Tika t = new Tika();
+        Metadata met = new Metadata();
+        t.setMaxStringLength(-1);
+        Reader fulltext = null;
+        InputStream is = null;
 
-		char[] buf;
-		byte[] bytes;
-		int count;
+        char[] buf;
+        byte[] bytes;
+        int count;
 
-		// if the limit is not "unlimited"
-		// I can use the faster parseToString
-		try {
+        // if the limit is not "unlimited"
+        // I can use the faster parseToString
+        try {
 
-			if(forceMemory){
-				// no worry about the limit and less time to process.
-				String content = t.parseToString(new FileInputStream(binFile), met);
-				metaMap = new HashMap<String, String>();
-				for (int i = 0; i < met.names().length; i++) {
-					String name = met.names()[i];
-					if (UtilMethods.isSet(name) && met.get(name) != null) {
-						// we will want to normalize our metadata for searching
-						String[] x = translateKey(name);
-						for (String y : x)
-							metaMap.put(y, met.get(name));
-					}
-				}
-				metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
-			}
-			else {
+            if (forceMemory) {
+                // no worry about the limit and less time to process.
+                String content = t.parseToString(new FileInputStream(binFile), met);
+                metaMap = new HashMap<String, String>();
+                for (int i = 0; i < met.names().length; i++) {
+                    String name = met.names()[i];
+                    if (UtilMethods.isSet(name) && met.get(name) != null) {
+                        // we will want to normalize our metadata for searching
+                        String[] x = translateKey(name);
+                        for (String y : x) {
+                            metaMap.put(y, met.get(name));
+                        }
+                    }
+                }
+                metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+            } else {
 
+                is = TikaInputStream.get(binFile);
+                fulltext = t.parse(is, met);
+                metaMap = new HashMap<String, String>();
+                for (int i = 0; i < met.names().length; i++) {
+                    String name = met.names()[i];
+                    if (UtilMethods.isSet(name) && met.get(name) != null) {
+                        // we will want to normalize our metadata for searching
+                        String[] x = translateKey(name);
+                        for (String y : x) {
+                            metaMap.put(y, met.get(name));
+                        }
+                    }
+                }
 
-				is = TikaInputStream.get(binFile);
-				fulltext = t.parse(is, met);
-				metaMap = new HashMap<String, String>();
-				for (int i = 0; i < met.names().length; i++) {
-					String name = met.names()[i];
-					if (UtilMethods.isSet(name) && met.get(name) != null) {
-						// we will want to normalize our metadata for searching
-						String[] x = translateKey(name);
-						for (String y : x)
-							metaMap.put(y, met.get(name));
-					}
-				}
+                buf = new char[1024];
+                bytes = new byte[1024];
+                count = fulltext.read(buf);
+                if (count > 0 && !contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
+                    OutputStream out = new FileOutputStream(contentM);
 
-				buf = new char[1024];
-				bytes = new byte[1024];
-				count = fulltext.read(buf);
-				if(count > 0 && !contentM.exists() && contentM.getParentFile().mkdirs() && contentM.createNewFile()) {
-					OutputStream out=new FileOutputStream(contentM);
+                    // compressor config
+                    String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                    if (compressor.equals("gzip")) {
+                        out = new GZIPOutputStream(out);
+                    } else if (compressor.equals("bzip2")) {
+                        out = new BZip2CompressorOutputStream(out);
+                    }
 
-					// compressor config
-					String compressor=Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-					if(compressor.equals("gzip")) {
-						out = new GZIPOutputStream(out);
-					}
-					else if(compressor.equals("bzip2")) {
-						out = new BZip2CompressorOutputStream(out);
-					}
+                    ReaderInputStream ris = null;
 
-					ReaderInputStream ris = null;
+                    try {
 
-					try {
+                        ris = new ReaderInputStream(fulltext, StandardCharsets.UTF_8);
 
-						ris = new ReaderInputStream(fulltext, StandardCharsets.UTF_8);
+                        int metadataLimit = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
+                        int numOfChunks = metadataLimit / 1024;
 
-						int metadataLimit = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
-						int numOfChunks = metadataLimit / 1024;
+                        do {
+                            String lowered = new String(buf);
+                            lowered = lowered.toLowerCase();
+                            bytes = lowered.getBytes(StandardCharsets.UTF_8);
+                            out.write(bytes, 0, count);
+                            numOfChunks--;
+                        } while ((count = fulltext.read(buf)) > 0 && numOfChunks > 0);
+                    } catch (IOException ioExc) {
+                        Logger.debug(this.getClass(), "Error Reading TikaParse Stream.", ioExc);
+                    } finally {
+                        if (out != null) {
+                            try {
+                                out.close();
+                            } catch (IOException e) {
+                                Logger.warn(this.getClass(), "Error Closing Stream.", e);
+                            }
+                        }
 
-						do {
-							String lowered = new String(buf);
-							lowered = lowered.toLowerCase();
-							bytes = lowered.getBytes(StandardCharsets.UTF_8);
-							out.write(bytes, 0, count);
-							numOfChunks --;
-						} while ((count = fulltext.read(buf)) > 0 && numOfChunks>0);
-					}catch(IOException ioExc){
-						Logger.debug( this.getClass(), "Error Reading TikaParse Stream.", ioExc );
-					}finally {
-						if ( out != null ) {
-							try {
-								out.close();
-							} catch ( IOException e ) {
-								Logger.warn( this.getClass(), "Error Closing Stream.", e );
-							}
-						}
+                        if (ris != null) {
+                            try {
+                                ris.close();
+                            } catch (IOException e) {
+                                Logger.warn(this.getClass(), "Error Closing Stream.", e);
+                            }
+                        }
 
-						if ( ris != null ) {
-							try {
-								ris.close();
-							} catch ( IOException e ) {
-								Logger.warn( this.getClass(), "Error Closing Stream.", e );
-							}
-						}
-
-						IOUtils.closeQuietly(out);
-						IOUtils.closeQuietly(fulltext);
-					}
-				}
-			}
-		} catch (Exception e) {
-			Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +e.getMessage());
-		}
-		finally {
-			if(null!=fulltext)
-				IOUtils.closeQuietly(fulltext);
-			if(null!=is)
-				IOUtils.closeQuietly(is);
-			try{
-				metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
-			}
-			catch(Exception ex){
-				Logger.error(this.getClass(), "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " +ex.getMessage());
-			}
-		}
-		return metaMap;
-	}
+                        IOUtils.closeQuietly(out);
+                        IOUtils.closeQuietly(fulltext);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " + e.getMessage());
+        } finally {
+            if (null != fulltext) {
+                IOUtils.closeQuietly(fulltext);
+            }
+            if (null != is) {
+                IOUtils.closeQuietly(is);
+            }
+            try {
+                metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length()));
+            } catch (Exception ex) {
+                Logger.error(this.getClass(),
+                    "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " + ex.getMessage());
+            }
+        }
+        return metaMap;
+    }
 
 	/**
 	 * This method takes a file and uses tika to parse the metadata from it. It
