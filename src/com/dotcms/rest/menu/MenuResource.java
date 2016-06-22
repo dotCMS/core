@@ -22,11 +22,13 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.portlet.JSPPortlet;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.portlet.StrutsPortlet;
 
@@ -153,9 +155,9 @@ public class MenuResource {
 		Class classs = Class.forName( portletClass );
 		App appFrom = menuContext.getAppFrom();
 
-		System.out.println("### getPortletId" + menuContext.getPortletId());
-		System.out.println("### portletClass" + portletClass);
-		if(StrutsPortlet.class.isAssignableFrom( classs )) {
+		Logger.debug(MenuResource.class,"### getPortletId" + menuContext.getPortletId());
+		Logger.debug(MenuResource.class,"### portletClass" + portletClass);
+		if(StrutsPortlet.class.isAssignableFrom( classs ) || JSPPortlet.class.isAssignableFrom( classs )) {
 			PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
 					menuContext.getPortletId(), menuContext.getLayout().getId(), false);
 			return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
