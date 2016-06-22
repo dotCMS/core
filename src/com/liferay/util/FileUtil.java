@@ -126,11 +126,19 @@ public class FileUtil {
 	}
 
 	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+
+		final String metaDataPath = "metaData" + File.separator + "content";
+		final String languagePropertyPath = "messages"+ File.separator + "cms_language";
 		if (!source.exists()){
 			throw new IOException("Source file does not exist" + source);
 		}
-		if (source.length()==0 && Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
-			throw new IOException("Source file is 0 length, failing " + source);
+
+		if (source.length()==0) {
+			Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
+			if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
+				.endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
+				throw new IOException("Source file is 0 length, failing " + source);
+			}
 		}
 
 		
