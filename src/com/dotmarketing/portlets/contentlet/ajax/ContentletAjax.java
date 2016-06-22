@@ -1319,8 +1319,11 @@ public class ContentletAjax {
 	                            elementValue = acopy;
 	                        } catch (Exception e) {
 	                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-	                            throw new SystemException(e);
-	                        }
+                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                                saveContentErrors.add(errorString);
+                                callbackData.put("saveContentErrors", saveContentErrors);
+                                return callbackData;
+                            }
 						}
 					}
 				}else{
