@@ -16,7 +16,7 @@ export class RoutingService {
         this.mapComponents = {
             'ANGULAR_PORTLET3': ANGULAR_PORTLET3,
             'ANGULAR_PORTLET4': ANGULAR_PORTLET4,
-            'RuleEngineContainer': RuleEngineContainer
+            'RULES_ENGINE_PORTLET': RuleEngineContainer
         };
     }
 
