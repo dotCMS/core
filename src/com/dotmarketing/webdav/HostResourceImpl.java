@@ -143,6 +143,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
 		List<Resource> frs = new ArrayList<Resource>();
+		dotDavHelper.setLanguage(path);
 		for (Folder folder : folders) {
 			String p = path;
 			if(p.endsWith("/"))
@@ -161,8 +162,10 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, false);
 			for(FileAsset fa:fas){
 			    if(!fa.isArchived()) {
-			        FileResourceImpl fr = new FileResourceImpl(fa, path + fa.getFileName());
-				    frs.add(fr);
+			    	if(fa.getLanguageId()==dotDavHelper.getLanguage()){
+			    		FileResourceImpl fr = new FileResourceImpl(fa, path + fa.getFileName());
+			    		frs.add(fr);
+			    	}
 			    }
 			}
 		} catch (Exception e) {
@@ -173,7 +176,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		frs.add(tfrl);
 		**/
 		
-		dotDavHelper.setLanguage(path);
+		
         String prePath = "/webdav/";
         if(Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
         	if ( isAutoPub ) {
