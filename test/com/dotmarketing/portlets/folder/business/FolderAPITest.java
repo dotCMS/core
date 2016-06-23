@@ -25,7 +25,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
 
 public class FolderAPITest {
@@ -171,8 +173,19 @@ public class FolderAPITest {
 		APILocator.getVersionableAPI().setLive(link2);
 		
 		/*Adding file asset to folder */
-		String fileTitle="logo.gif";
-		File destFile = testFolder.newFile(fileTitle);
+        String fileTitle = "testMove.txt";
+        File destFile = testFolder.newFile(fileTitle);
+
+        String text = "Hello world";
+        BufferedWriter output = null;
+        try {
+            output = new BufferedWriter(new FileWriter(destFile));
+            output.write(text);
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
 
 		Contentlet contentAsset3=new Contentlet();
 		Structure st = StructureFactory.getStructureByVelocityVarName("FileAsset");
