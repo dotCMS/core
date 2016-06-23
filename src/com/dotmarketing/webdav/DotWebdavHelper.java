@@ -333,7 +333,7 @@ public class DotWebdavHelper {
     		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
     		if(id!=null && InodeUtils.isSet(id.getId())) {
     		    if(id.getAssetType().equals("contentlet")){
-    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
     	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
     	            }
@@ -435,8 +435,10 @@ public class DotWebdavHelper {
             for ( Versionable file : filesListSubChildren ) {
                 if ( !file.isArchived() ) {
                     IFileAsset fileAsset = (IFileAsset) file;
-                    FileResourceImpl resource = new FileResourceImpl( fileAsset, prePath + folderHost.getHostname() + "/" + fileAsset.getPath() );
-                    result.add( resource );
+                    if(fileAsset.getLanguageId()==defaultLang){
+                    	FileResourceImpl resource = new FileResourceImpl( fileAsset, prePath + folderHost.getHostname() + "/" + fileAsset.getPath() );
+                    	result.add( resource );
+                    }
                 }
             }
             for ( Folder folder : folderListSubChildren ) {
@@ -619,7 +621,7 @@ public class DotWebdavHelper {
 				Identifier identifier  = APILocator.getIdentifierAPI().find(children[i].getHost(), destinationPath + "/" + children[i].getName());
 				Permissionable destinationFile = null;
  				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
- 					destinationFile = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+ 					destinationFile = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), live, defaultLang, user, false);
 				}else{
 					destinationFile = fileAPI.getFileByURI(destinationPath + "/" + children[i].getName(), children[i].getHost(), live, user, false);
 				}
@@ -862,7 +864,7 @@ public class DotWebdavHelper {
 			Contentlet fileAssetCont = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 				workingFile = fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD);
 				destinationFile = APILocator.getFileAssetAPI().fromContentlet(fileAssetCont);
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
@@ -1127,7 +1129,7 @@ public class DotWebdavHelper {
 				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
 
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 					if(!destinationExists) {
     					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
     						String fileName = getFileName(toPath);
@@ -1141,8 +1143,8 @@ public class DotWebdavHelper {
 					}
 					else {
 					    // if the destination exists lets just create a new version and delete the original file
-					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
 					    Contentlet newversion = APILocator.getContentletAPI().checkout(toContentlet.getInode(), user, false);
 
 					    // get a copy in a tmp folder to avoid filename change
@@ -1318,7 +1320,7 @@ public class DotWebdavHelper {
 
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI()
-			    		.findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+			    		.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 
 			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
 			    //No need to wait 10 seconds with files with 0 length.
@@ -1727,7 +1729,7 @@ public class DotWebdavHelper {
 			java.io.File workingFile  = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-                Contentlet cont  = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+                Contentlet cont  = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 			    workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
 			}else{
 				File file = fileAPI.getFileByURI(path, host, false, user, false);
