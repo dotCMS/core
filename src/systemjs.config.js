@@ -26,12 +26,11 @@
         '@ngrx/router': 'n:@ngrx/router',
 
         // @ngrx/router dependencies
-        // TODO: WTF?
-        'path-to-regexp': 'n:@ngrx/router/node_modules/path-to-regexp',
-        'isarray': 'n:@ngrx/router/node_modules/path-to-regexp/node_modules/isarray',
-        'query-string': 'n:@ngrx/router/node_modules/query-string',
-        'strict-uri-encode': 'n:@ngrx/router/node_modules/query-string/node_modules/strict-uri-encode',
-        'object-assign': 'n:@ngrx/router/node_modules/query-string/node_modules/object-assign'
+        'path-to-regexp': 'n:path-to-regexp',
+        'isarray': 'n:isarray',
+        'query-string': 'n:query-string',
+        'strict-uri-encode': 'n:strict-uri-encode',
+        'object-assign': 'n:object-assign'
     };
 
     // packages tells the System loader how to load when no filename and/or no extension

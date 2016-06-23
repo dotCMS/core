@@ -46,7 +46,7 @@ export class RoutingService {
                                 component: this.mapComponents[subMenuItem.id]
                             });
                         } else {
-                            mapPaths[subMenuItem.id] = subMenuItem.url+'&in_frame=true&frame=detailFrame';
+                            mapPaths[subMenuItem.id] = subMenuItem.url + '&in_frame=true&frame=detailFrame';
                         }
                     })
                 });

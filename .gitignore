@@ -11,7 +11,7 @@ staging/
 *.zip
 /typings/
 !staging/.gitkeep
-
+/semantic/
 
 
 #NodeJs / Package Manager dirs

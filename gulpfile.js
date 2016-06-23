@@ -75,8 +75,13 @@ var project = {
     gulp.src([
         '@angular/**/*.js',
         '@ngrx/**/*.js',
-        'rxjs/**'
-      ], {cwd: 'node_modules/**'}) /* Glob required here. */
+        'rxjs/**',
+        'query-string/*.js',
+        'path-to-regexp/index.js',
+        'strict-uri-encode/index.js',
+        'object-assign/index.js',
+        'isarray/index.js'
+        ], {cwd: 'node_modules/**'}) /* Glob required here. */
       .pipe(gulp.dest('build/thirdparty')).on('finish', cb);
 
   },
