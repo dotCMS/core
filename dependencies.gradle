@@ -268,7 +268,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    compile group: 'com.dotcms', name: 'starter', version: '20160404', ext: 'zip'
+    compile group: 'com.dotcms', name: 'starter', version: '20160622-SNAPSHOT', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.6.0-SNAPSHOT', ext: 'zip', changing: true
 
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
