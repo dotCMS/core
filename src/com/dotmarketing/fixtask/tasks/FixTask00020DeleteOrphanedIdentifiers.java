@@ -38,12 +38,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 	
 	public List<Map<String, Object>> executeFix() throws DotDataException,
 			DotRuntimeException {
-		/*String inodesToDelete = "SELECT * from inode where (type = 'identifier' and inode not in (SELECT inode FROM identifier)) OR identifier in (SELECT inode from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier))";
-		String treesToDelete = "SELECT * from tree where child IN (SELECT inode from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier)) OR parent IN (SELECT inode from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier))";
-		
-		String deleteTreesToDelete = "DELETE FROM tree where child IN (SELECT inode from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier)) OR parent IN (SELECT inode from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier))";
-		String deleteInodesToDelete = "DELETE FROM inode where (type = 'identifier' and inode not in (SELECT inode FROM identifier)) OR identifier in (SELECT inode from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier))";
-		*/
+
 		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
 		Logger.info(FixTask00020DeleteOrphanedIdentifiers.class,"Beginning DeleteOrphanedIdentifiers");
 		
@@ -90,8 +85,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 			FixAssetsProcessStatus.startProgress();
 			FixAssetsProcessStatus.setDescription("task 20: DeleteOrphanedIdentifiers");
 			HibernateUtil.startTransaction();
-			int total=0;	
-			int error=0;
+			int total=0;
 		    try {
 				DotConnect dc = new DotConnect();
 				dc.setSQL(treesToDelete);
@@ -107,12 +101,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 					HibernateUtil.startTransaction();
 					dc.executeStatement(deleteTreesToDelete);
 					dc.executeStatement(deleteIdentifiersToDelete);
-					FixAssetsProcessStatus.setError(total);
-					/*if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
-						deleteInodesInMySQL(dc);
-					}else{
-					    dc.executeStatement(deleteIdentifiersToDelete);
-					}*/
+					FixAssetsProcessStatus.setErrorsFixed(total);
 					HibernateUtil.commitTransaction();
 				 }catch (Exception e) {
 					Logger.error(this, "Unable to clean orphaned identifiers",e);

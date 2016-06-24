@@ -215,15 +215,19 @@ public class MultiMessageResources extends PropertyMessageResources {
 	}
 
 	public synchronized void reload() {
-	    locales.clear();
-	    messages.clear();
-	    formats.clear();
+		reloadLocally();
 
-	    ChainableCacheAdministratorImpl dotCache = ((ChainableCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject());
-	    if(dotCache.isClusteringEnabled()) {
-	    	dotCache.send("MultiMessageResources.reload");
-	    }
-	 }
+		ChainableCacheAdministratorImpl dotCache = ((ChainableCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject());
+		if(dotCache.isClusteringEnabled()) {
+			dotCache.send("MultiMessageResources.reload");
+		}
+	}
+
+	public void reloadLocally() {
+		locales.clear();
+		messages.clear();
+		formats.clear();
+	}
 
 	private static final Log _log =
 		LogFactory.getLog(MultiMessageResources.class);

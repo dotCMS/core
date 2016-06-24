@@ -1,7 +1,7 @@
 package com.dotmarketing.viewtools.navigation;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -13,7 +13,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by Oscar Arrieta on 5/4/15.

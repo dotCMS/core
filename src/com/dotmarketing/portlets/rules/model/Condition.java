@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -22,25 +20,33 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
     private static final long serialVersionUID = 1L;
     private transient RuleComponentInstance instance;
 
-    public enum Operator {
-        AND,
-        OR;
-
-        @Override
-        public String toString() {
-            return super.name();
-        }
-    }
-
     private String id;
-    private String name;
     private String conditionletId;
     private String conditionGroup;
     private List<ParameterModel> values;
     private Date modDate;
-    private Operator operator;
+    private LogicalOperator operator;
     private int priority;
     private transient Conditionlet conditionlet;
+
+    public Condition(){
+
+    }
+
+    public Condition(Condition conditionToCopy){
+        id = conditionToCopy.id;
+        conditionletId = conditionToCopy.conditionletId;
+        conditionGroup = conditionToCopy.conditionGroup;
+        if(conditionToCopy.getValues() != null){
+            values = Lists.newArrayList();
+            for (ParameterModel value : conditionToCopy.getValues()) {
+                values.add(new ParameterModel(value));
+            }
+        }
+        modDate = conditionToCopy.modDate;
+        operator = conditionToCopy.operator;
+        priority = conditionToCopy.priority;
+    }
 
     public String getId() {
         return id;
@@ -48,14 +54,6 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getConditionletId() {
@@ -115,11 +113,11 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
         this.modDate = modDate;
     }
 
-    public Operator getOperator() {
+    public LogicalOperator getOperator() {
         return operator;
     }
 
-    public void setOperator(Operator operator) {
+    public void setOperator(LogicalOperator operator) {
         this.operator = operator;
     }
 
@@ -150,8 +148,7 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
 
 	@Override
 	public String toString() {
-		return "Condition [id=" + id + ", name=" + name
-                + ", conditionletId=" + conditionletId + ", conditionGroup="
+		return "Condition [id=" + id + ", conditionletId=" + conditionletId + ", conditionGroup="
 				+ conditionGroup + ", values="
 				+ values + ", modDate=" + modDate + ", operator=" + operator
 				+ ", priority=" + priority + "]";

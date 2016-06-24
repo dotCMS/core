@@ -1,24 +1,36 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
+import com.dotmarketing.portlets.rules.util.LogicalCondition;
+import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+/**
+ * A Rule is composed of a list of conditions that get checked against when a 
+ * visitor requests a page. If the conditions in a rule are met, then one or 
+ * more actions are fired. Rules can be configured from their specific portlet 
+ * in the back-end and via RESTful services as well.
+ * 
+ * @author Daniel Silva
+ * @version 1.0
+ * @since Mar 10, 2015
+ *
+ */
 public class Rule implements Permissionable, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -58,6 +70,35 @@ public class Rule implements Permissionable, Serializable {
     private List<ConditionGroup> groups;
     private List<RuleAction> ruleActions;
     private Permissionable parentPermissionable;
+
+    public Rule(){
+
+    }
+
+    public Rule(Rule ruleToCopy) {
+
+        id = ruleToCopy.id;
+        name = ruleToCopy.name;
+        fireOn = ruleToCopy.fireOn;
+        shortCircuit = ruleToCopy.shortCircuit;
+        parent = ruleToCopy.parent;
+        folder = ruleToCopy.folder;
+        priority = ruleToCopy.priority;
+        enabled = ruleToCopy.enabled;
+        modDate = ruleToCopy.modDate;
+        if(ruleToCopy.getGroups() != null) {
+            groups = Lists.newArrayList();
+            for (ConditionGroup group : ruleToCopy.getGroups()) {
+                groups.add(new ConditionGroup(group));
+            }
+        }
+        if(ruleToCopy.getRuleActions() != null){
+            ruleActions = Lists.newArrayList();
+            for (RuleAction ruleAction : ruleToCopy.getRuleActions()) {
+                ruleActions.add(new RuleAction(ruleAction));
+            }
+        }
+    }
 
     public String getParent() {
 		return parent;
@@ -134,29 +175,19 @@ public class Rule implements Permissionable, Serializable {
     public List<ConditionGroup> getGroups() {
         if(groups == null) {
             try {
+                //This will return the Groups sorted by priority asc directly from DB.
                 groups = FactoryLocator.getRulesFactory().getConditionGroupsByRule(id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not read groups for Rule %s ", this.toString());
             }
         }
-        Collections.sort(groups);
-        return groups;
+
+        //Return a shallow copy of the list.
+        return Lists.newArrayList(groups);
     }
 
     public void setGroups(List<ConditionGroup> groups) {
         this.groups = groups;
-    }
-
-    public void addGroup(ConditionGroup group) {
-        if(groups != null) {
-            groups.add(group);
-        }
-    }
-
-    public void removeGroup(ConditionGroup group) {
-        if(groups != null) {
-            groups.remove(group);
-        }
     }
 
     public List<RuleAction> getRuleActions() {
@@ -229,10 +260,25 @@ public class Rule implements Permissionable, Serializable {
         }
     }
 
-    public void evaluate(HttpServletRequest req, HttpServletResponse res) {
+	/**
+	 * Evaluates the set of conditions that make up this rule based on the
+	 * issued HTTP request. If the final result of such an evaluation is true,
+	 * then a set of one or more actions is executed.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object that is triggering the
+	 *            rules evaluation/execution.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 * @return If the given conditions satisfy the rule, returns
+	 *         <code>true</code>. Otherwise, returns <code>false</code>.
+	 */
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         if(this.evaluateConditions(req, res, getGroups())) {
             this.evaluateActions(req, res, getRuleActions());
+            return true;
         }
+        return false;
     }
 
     private void evaluateActions(HttpServletRequest req, HttpServletResponse res, List<RuleAction> actions) {
@@ -258,23 +304,17 @@ public class Rule implements Permissionable, Serializable {
      * A && B || C && D     ==> ( A && B ) || ( C && D )
      */
     public boolean evaluateConditions(HttpServletRequest req, HttpServletResponse res, List<ConditionGroup> groups) {
-        /**
-         *  @todo ggranum: this logic fails for three groups where:  (Group1 AND Group2 OR Group3). Also, as written it can be greatly simplified.
-         *  The correct logic cannot be implemented without a stack.
-         **/
-        boolean result = true;
+        LogicalStatement statement = new LogicalStatement();
         for (ConditionGroup group : groups) {
-            boolean groupResult = group.evaluate(req, res, group.getConditions());
-            if(group.getOperator() == Condition.Operator.AND) {
-                result = result && groupResult;
+            GroupLogicalCondition logicalCondition = new GroupLogicalCondition(group, req, res);
+            if(group.getOperator() == LogicalOperator.AND) {
+                statement.and(logicalCondition);
             } else {
-                result = result || groupResult;
+                statement.or(logicalCondition);
             }
-
-            if(!result) { return false; }
         }
 
-        return result;
+        return statement.evaluate();
     }
 
     @Override
@@ -298,5 +338,23 @@ public class Rule implements Permissionable, Serializable {
                + ", shortCircuit=" + shortCircuit + ", parent=" + parent
                + ", folder=" + folder + ", priority=" + priority
                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
+    }
+
+    private final class GroupLogicalCondition implements LogicalCondition {
+
+        private final ConditionGroup group;
+        private final HttpServletRequest req;
+        private final HttpServletResponse res;
+
+        public GroupLogicalCondition(ConditionGroup group, HttpServletRequest req, HttpServletResponse res) {
+            this.group = group;
+            this.req = req;
+            this.res = res;
+        }
+
+        @Override
+        public boolean evaluate() {
+            return group.evaluate(req, res, group.getConditions());
+        }
     }
 }

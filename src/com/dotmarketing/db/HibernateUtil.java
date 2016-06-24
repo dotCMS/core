@@ -10,13 +10,19 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.client.Client;
+
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.net.sf.hibernate.*;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
@@ -26,9 +32,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys;
 
 /**
  *
@@ -57,15 +66,15 @@ public class HibernateUtil {
 	public static final String addToIndex="-add-to-index";
 	public static final String removeFromIndex="-remove-from-index";
 
-	private static final ThreadLocal< Map<String,Runnable> > commitListeners=new ThreadLocal<Map<String,Runnable>>() {
-	    protected java.util.Map<String,Runnable> initialValue() {
-	        return new LinkedHashMap<String,Runnable>();
+	private static final ThreadLocal< Map<String,DotRunnable> > commitListeners=new ThreadLocal<Map<String,DotRunnable>>() {
+	    protected java.util.Map<String,DotRunnable> initialValue() {
+	        return new LinkedHashMap<String,DotRunnable>();
 	    }
 	};
 
-	private static final ThreadLocal< List<Runnable> > rollbackListeners=new ThreadLocal<List<Runnable>>() {
-        protected java.util.List<Runnable> initialValue() {
-            return new ArrayList<Runnable>();
+	private static final ThreadLocal< List<DotRunnable> > rollbackListeners=new ThreadLocal<List<DotRunnable>>() {
+        protected java.util.List<DotRunnable> initialValue() {
+            return new ArrayList<DotRunnable>();
         }
     };
 
@@ -520,6 +529,7 @@ public class HibernateUtil {
     }
 
 	private static void buildSessionFactory() throws DotHibernateException{
+		long start = System.currentTimeMillis();
 		try {
 			// Initialize the Hibernate environment
 			/*
@@ -565,7 +575,8 @@ public class HibernateUtil {
 			mappings = cfg.createMappings();
 			sessionFactory = cfg.buildSessionFactory();
 			dialect = cfg.getProperty("hibernate.dialect");
-
+			System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB, String.valueOf(System.currentTimeMillis() - start));
+			
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to build Session Factory ", e);
 		}
@@ -666,17 +677,16 @@ public class HibernateUtil {
 		}
 	}
 
-	public static void addCommitListener(Runnable listener) throws DotHibernateException {
+	public static void addCommitListener(DotRunnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
 	}
 
-	public static void addCommitListener(String tag, Runnable listener) throws DotHibernateException {
+	public static void addCommitListener(String tag, DotRunnable listener) throws DotHibernateException {
 	    try {
     	    if(getSession().connection().getAutoCommit())
     	        listener.run();
     	    else {
-    	        if(!commitListeners.get().containsKey(tag))
-    	            commitListeners.get().put(tag,listener);
+    	    	commitListeners.get().put(tag,listener);
     	    }
 	    }
 	    catch(Exception ex) {
@@ -684,7 +694,7 @@ public class HibernateUtil {
 	    }
 	}
 
-	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
+	public static void addRollbackListener(DotRunnable listener) throws DotHibernateException{
         try {
             if(getSession().connection().getAutoCommit())
                 listener.run();
@@ -696,24 +706,13 @@ public class HibernateUtil {
         }
     }
 
-	static class RunnablesExecutor extends Thread {
-		private List<Runnable> runnables;
-
-		public RunnablesExecutor(List<Runnable> runnables) {
-			this.runnables = runnables;
-		}
-		public void run(){
-			for(Runnable listeners : runnables){
-			    listeners.run();
-			}
-		}
-	}
 
 	public static void closeSession()  throws DotHibernateException{
 		try{
 			// if there is nothing to close
-			if (sessionHolder.get() == null)
+			if (sessionHolder.get() == null){
 				return;
+			}
 			Session session = getSession();
 
 			if (session != null) {
@@ -723,10 +722,7 @@ public class HibernateUtil {
 						session.connection().commit();
 						session.connection().setAutoCommit(true);
 						if(commitListeners.get().size()>0) {
-    						List<Runnable> r = new ArrayList<Runnable>(commitListeners.get().values());
-    						commitListeners.get().clear();
-    						RunnablesExecutor t = new RunnablesExecutor(r);
-    						t.run();
+							finalizeCommitListeners();
 						}
 					}
 					DbConnectionFactory.closeConnection();
@@ -735,6 +731,7 @@ public class HibernateUtil {
 					sessionHolder.set(null);
 			}
 		}catch (Exception e) {
+			Logger.error(HibernateUtil.class, e.getMessage(), e);
 			throw new DotHibernateException("Unable to close Hibernate Session ", e);
 		}
 		finally {
@@ -743,6 +740,58 @@ public class HibernateUtil {
 		}
 	}
 
+	private static void finalizeCommitListeners() throws DotDataException{
+		
+		List<DotRunnable> listeners = new ArrayList<DotRunnable>(commitListeners.get().values());
+		commitListeners.get().clear();
+		
+		Set<String> reindexInodes= new HashSet<String>();
+		List<Contentlet> contentToIndex = new ArrayList<Contentlet>();
+		
+		
+		List<List<Contentlet>> listOfLists = new ArrayList<List<Contentlet>>();
+		int batchSize = Config.getIntProperty("INDEX_COMMIT_LISTENER_BATCH_SIZE", 50);
+		
+		
+		for(DotRunnable runner : listeners){
+			if(runner instanceof FlushCacheRunnable){
+				runner.run();
+			}
+			else if(runner instanceof ReindexRunnable){
+				ReindexRunnable rrunner = (ReindexRunnable) runner;
+				if(rrunner.getAction().equals(ReindexRunnable.Action.REMOVING)){
+					rrunner.run();
+					continue;
+				}
+				List<Contentlet> cons  	=  rrunner.getReindexIds();
+				for(Contentlet con : cons){
+					if(!reindexInodes.contains(con.getInode())){
+						reindexInodes.add(con.getInode());
+						contentToIndex.add(con);
+						if(contentToIndex.size() == batchSize){
+							listOfLists.add(contentToIndex);
+							contentToIndex = new ArrayList<Contentlet>();
+						}
+					}
+				}
+			}
+		}
+		listOfLists.add(contentToIndex);
+		
+		for(List<Contentlet> batchList : listOfLists){
+			
+			new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING) {}.run();
+		}
+		
+
+	}
+	
+	
+	
+	
+	
+	
+	
 	public static void startTransaction()  throws DotHibernateException{
 		try{
 
@@ -823,10 +872,11 @@ public class HibernateUtil {
 		}
 
 		if(rollbackListeners.get().size()>0) {
-            List<Runnable> r = new ArrayList<Runnable>(rollbackListeners.get());
+            List<DotRunnable> r = new ArrayList<DotRunnable>(rollbackListeners.get());
             rollbackListeners.get().clear();
-            RunnablesExecutor t = new RunnablesExecutor(r);
-            t.run();
+            for(DotRunnable runnable :r){
+            	runnable.run();
+            }
         }
 	}
 

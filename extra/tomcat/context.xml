@@ -1,5 +1,5 @@
 <Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
-
+<Resources allowLinking="true" />
     <!--
     The class loader behaviour changed on recent tomcat versions, with the new default behaviour
      we are unable to set a -javaagent and with that we won't be able to use instrumentation, setting the

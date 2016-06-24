@@ -1,0 +1,14 @@
+{
+  "analysis": {
+	    "analyzer": {
+			"dot_comma_analyzer": {
+				"type": "pattern",
+				"pattern":",,"
+			},
+			"default" : {
+			    "type" : "whitespace"
+			}
+		}
+	}
+}
+

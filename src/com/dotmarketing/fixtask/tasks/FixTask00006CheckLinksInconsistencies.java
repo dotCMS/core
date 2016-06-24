@@ -121,7 +121,7 @@ public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 						db.addParam(identifierInode);
 						db.getResult();
 
-						FixAssetsProcessStatus.addAError();
+						FixAssetsProcessStatus.addAErrorFixed();
 						counter++;
 					}
 

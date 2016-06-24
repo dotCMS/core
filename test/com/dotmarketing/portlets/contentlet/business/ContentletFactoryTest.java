@@ -4,11 +4,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 
 import java.util.List;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.

@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -13,10 +14,28 @@ import com.liferay.portal.model.User;
 import java.io.StringWriter;
 import java.util.List;
 
+/**
+ * Utility methods for common operations related to the Push Publish process.
+ * 
+ * @author Will Ezell
+ * @version 1.0
+ * @since Mar 13, 2013
+ *
+ */
 public class PublishAuditUtil {
 
     private static PublishAuditUtil instance = null;
 
+	/**
+	 * Returns the title of an asset. This title depends on the type of asset,
+	 * since it depends on the context.
+	 * 
+	 * @param assetType
+	 *            - Type of asset: Contentlet, folder, template, etc.
+	 * @param id
+	 *            - The Identifier of the asset.
+	 * @return The human-readable name of the asset.
+	 */
     public String getTitle ( String assetType, String id ) {
         StringWriter sw = new StringWriter();
 
@@ -24,31 +43,36 @@ public class PublishAuditUtil {
 
             User user = APILocator.getUserAPI().getSystemUser();
 
-            if ( "contentlet".equals( assetType ) || "host".equals( assetType ) ) {
+            if ( PusheableAsset.CONTENTLET.getType().equals( assetType ) || PusheableAsset.SITE.getType().equals( assetType ) ) {
                 sw.append( findContentletByIdentifier(id).getTitle() );
-            } else if ( "folder".equals( assetType ) ) {
+            } else if ( PusheableAsset.FOLDER.getType().equals( assetType ) ) {
                 sw.append( APILocator.getFolderAPI().find( id, user, false ).getName() );
-            } else if ( "osgi".equals( assetType ) ) {
+            } else if ( PusheableAsset.OSGI.getType().equals( assetType ) ) {
                 sw.append( id );
-            } else if ( "user".equals( assetType ) ) {
+            } else if ( PusheableAsset.USER.getType().equals( assetType ) ) {
                 sw.append( id.replace( "user_", "" ) );
-            } else if ( "structure".equals( assetType ) ) {
+            } else if ( PusheableAsset.CONTENT_TYPE.getType().equals( assetType ) ) {
                 sw.append( APILocator.getStructureAPI().find( id, user ).getName() );
-            } else if ( "template".equals( assetType ) ) {
+            } else if ( PusheableAsset.TEMPLATE.getType().equals( assetType ) ) {
                 sw.append( APILocator.getTemplateAPI().findWorkingTemplate( id, user, false ).getTitle() );
-            } else if ( "containers".equals( assetType ) ) {
+            } else if ( PusheableAsset.CONTAINER.getType().equals( assetType ) ) {
                 sw.append( APILocator.getContainerAPI().getWorkingContainerById( id, user, false ).getTitle() );
-            } else if ( "htmlpage".equals( assetType ) ) {
+            } else if ( PusheableAsset.HTMLPAGE.getType().equals( assetType ) ) {
                 sw.append( APILocator.getHTMLPageAPI().loadWorkingPageById( id, user, false ).getTitle() );
-            } else if ( "category".equals( assetType ) ) {
+            } else if ( PusheableAsset.CATEGORY.getType().equals( assetType ) ) {
                 sw.append( APILocator.getCategoryAPI().find( id, user, false ).getCategoryName() );
-            } else if ( "links".equals( assetType ) ) {
+            } else if ( PusheableAsset.LINK.getType().equals( assetType ) ) {
                 sw.append( APILocator.getMenuLinkAPI().findWorkingLinkById( id, user, false ).getTitle() );
+            } else if (PusheableAsset.LANGUAGE.getType().equals(assetType)) {
+            	Language language = APILocator.getLanguageAPI().getLanguage(id);
+                sw.append(language.getLanguage() + " - " + language.getCountry());
+            } else if (PusheableAsset.RULE.getType().equals(assetType)) {
+                sw.append(APILocator.getRulesAPI().getRuleById(id, user, false).getName());
             } else {
                 sw.append( assetType );
             }
         } catch ( Exception e ) {
-            Logger.debug( this.getClass(), "unable to get title for asset " + assetType + " " + id );
+            Logger.debug( this.getClass(), "Unable to get title for asset " + assetType + " " + id );
             sw.append( assetType );
         }
         return sw.toString();
@@ -97,6 +121,11 @@ public class PublishAuditUtil {
         return foundContentlet;
     }
 
+	/**
+	 * Returns a single instance of this class.
+	 * 
+	 * @return An instance of this class.
+	 */
     public static PublishAuditUtil getInstance () {
         if ( instance == null ) {
             instance = new PublishAuditUtil();

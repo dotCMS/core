@@ -15,9 +15,6 @@ public final class RestCondition extends Validated {
     public final String id;
 
     @NotNull
-    public final String name;
-
-    @NotNull
     public final String owningGroup;
 
     @NotNull
@@ -33,7 +30,6 @@ public final class RestCondition extends Validated {
 
     private RestCondition(Builder builder) {
         id = builder.id;
-        name = builder.name;
         owningGroup = builder.owningGroup;
         conditionlet = builder.conditionlet;
         values = builder.values;
@@ -44,17 +40,11 @@ public final class RestCondition extends Validated {
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private String name;
         @JsonProperty private String owningGroup;
         @JsonProperty private String conditionlet;
         @JsonProperty private String operator;
         @JsonProperty private Map<String, RestConditionValue> values;
         @JsonProperty private int priority = 0;
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
 
         public Builder owningGroup(String owningGroup) {
             this.owningGroup = owningGroup;

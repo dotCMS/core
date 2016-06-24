@@ -30,7 +30,7 @@ import com.liferay.portal.model.User;
  * A dummy implementation of the interface ContentletAPIPreHook. Developers should use this abstract class to override the needed methods instead of implement the interface
  * ContentletAPIPostHook and all its methods.
  */
-public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
+public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 
 	public boolean addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles) {
 		return true;
@@ -584,17 +584,41 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
-	@Override
 	public boolean publishAssociated(Contentlet contentlet, boolean isNew)
 	        throws DotSecurityException, DotDataException,
 	        DotContentletStateException, DotStateException {
 	    return true;
 	}
 	
-	@Override
 	public boolean publishAssociated(Contentlet contentlet, boolean isNew,
 	        boolean isNewVersion) throws DotSecurityException,
 	        DotDataException, DotContentletStateException, DotStateException {
 	    return true;
 	}
+
+	public boolean findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return true;
+	}
+
+	public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles) {
+		return true;
+	}
+
+    @Override
+    public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) {
+
+        return true;
+    }
+
+    @Override
+    public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) {
+        return true;
+    }
+
+    @Override
+    public boolean updateUserReferences(String userId, String replacementUserId) throws DotDataException {
+        return true;
+    }
+
+    
 }

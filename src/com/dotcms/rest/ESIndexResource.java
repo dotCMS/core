@@ -1,5 +1,15 @@
 package com.dotcms.rest;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.elasticsearch.action.admin.indices.status.IndexStatus;
+
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -18,23 +28,20 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 @Path("/esindex")
 public class ESIndexResource {
@@ -74,6 +81,14 @@ public class ESIndexResource {
                     }
                     catch(Exception ex) {
                         Logger.error(ESIndexResource.class, "Error restoring "+indexToRestore,ex);
+                    }finally {
+                        try {
+                            HibernateUtil.closeSession();
+                        } catch (DotHibernateException e) {
+                            Logger.warn(this, e.getMessage(), e);
+                        }finally {
+                            DbConnectionFactory.closeConnection();
+                        }
                     }
                 }
             }.start();
@@ -317,6 +332,9 @@ public class ESIndexResource {
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on updateReplica from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
+        }catch(DotDataException dt){
+        	Logger.error(this, dt.getMessage());
+        	throw new BadRequestException(dt, dt.getMessage());
         } catch (Exception de) {
             Logger.error(this, "Error on updateReplica. URI: "+request.getRequestURI(),de);
             return Response.serverError().build();

@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
@@ -18,10 +18,12 @@ import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionDataGen;
@@ -41,6 +43,11 @@ public class VisitedUrlConditionletFTest {
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
 
     private List<Rule> rulesToRemove = Lists.newArrayList();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init() {
@@ -66,13 +73,12 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Is Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
-        condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
+        condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        URLConnection conn = apiRequest.makeRequest("about-us/");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("products/");
         assertEquals("Specified response header should be present in the Response.", value,
@@ -89,7 +95,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Is Not Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contact-us/");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -115,7 +120,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Starts With Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contac");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -138,7 +142,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Ends With Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, ENDS_WITH.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "dex");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -158,16 +161,15 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Contains Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, CONTAINS.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "duct");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        URLConnection conn = apiRequest.makeRequest("about-us/");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("products/");
-        conn = apiRequest.makeRequest("about-us/index");
+        conn = apiRequest.makeRequest("about-us/");
         assertEquals("Specified response header should be present in the Response.", value,
                 conn.getHeaderField(randomKey));
     }
@@ -179,7 +181,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Regex Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, REGEX.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, ".*-us.*");
         createRandomSetResponseHeaderRule(condition, randomKey, value);

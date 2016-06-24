@@ -38,6 +38,15 @@
                         "type": "geo_point"
                     }
                 }
+            },
+            {
+            	"tags" : {
+		            "match": "tags",
+		            "mapping": {
+		                "type": "string",
+		                "analyzer": "dot_comma_analyzer"	
+					}
+	            }
             }
         ]
     }

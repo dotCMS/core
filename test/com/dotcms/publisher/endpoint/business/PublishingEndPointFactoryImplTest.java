@@ -1,11 +1,11 @@
 package com.dotcms.publisher.endpoint.business;
 
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import static com.dotcms.repackage.org.jgroups.util.Util.assertFalse;
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class PublishingEndPointFactoryImplTest {
 

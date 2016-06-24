@@ -97,7 +97,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 				boolean runDelete = false;
 				for (HashMap<String, String> r : results) {
 					inodesToClean.add(r.get("inode"));
-					FixAssetsProcessStatus.addAError();
+					FixAssetsProcessStatus.addAErrorFixed();
 					runDelete = true;
 				}
 				if (runDelete) {

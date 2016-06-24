@@ -60,54 +60,6 @@ public class ClusterResource {
     private final WebResource webResource = new WebResource();
 
     /**
-     * Returns a Map of the Cache Cluster Status
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws JSONException
-     */
-    @GET
-    @Path ("/getCacheClusterStatus/{params:.*}")
-    @Produces ("application/json")
-    public Response getCacheClusterStatus ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-
-        InitDataObject initData = webResource.init( params, true, request, false, "9" );
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
-		// JGroups Cache
-		CacheTransport cacheTransport = CacheLocator.getCacheAdministrator().getImplementationObject().getTransport();
-		View view = null;
-		JChannel channel = null;
-		if ( cacheTransport != null ) {
-			JGroupsCacheTransport cacheTransportImplementation = (JGroupsCacheTransport) cacheTransport;
-			view = cacheTransportImplementation.getView();
-			channel = cacheTransportImplementation.getChannel();
-		}
-
-       	JSONObject jsonClusterStatusObject = new JSONObject();
-
-        if(view!=null) {
-        	List<Address> members = view.getMembers();
-        	jsonClusterStatusObject.put( "clusterName", channel.getClusterName());
-        	jsonClusterStatusObject.put( "open", channel.isOpen());
-        	jsonClusterStatusObject.put( "numberOfNodes", members.size());
-        	jsonClusterStatusObject.put( "address", channel.getAddressAsString());
-        	jsonClusterStatusObject.put( "receivedBytes", channel.getReceivedBytes());
-        	jsonClusterStatusObject.put( "receivedMessages", channel.getReceivedMessages());
-        	jsonClusterStatusObject.put( "sentBytes", channel.getSentBytes());
-        	jsonClusterStatusObject.put( "sentMessages", channel.getSentMessages());
-        }
-
-
-        return responseResource.response( jsonClusterStatusObject.toString() );
-
-    }
-
-    /**
      * Returns a Map of the Cache Cluster Nodes Status
      *
      * @param request
@@ -127,7 +79,7 @@ public class ClusterResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         
         ServerAPI serverAPI = APILocator.getServerAPI();
-        List<Server> servers = serverAPI.getAllServers();
+        List<Server> servers = serverAPI.getAliveServers();
         String myServerId = serverAPI.readServerId();
 
         List<ServerActionBean> actionBeans = new ArrayList<ServerActionBean>();
@@ -252,54 +204,6 @@ public class ClusterResource {
 		}	
 
         return responseResource.response( jsonNodes.toString() );
-    }
-
-    /**
-     * Returns a Map of the ES Cluster Status
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws JSONException
-     */
-    @GET
-    @Path ("/getESClusterStatus/{params:.*}")
-    @Produces ("application/json")
-    public Response getESClusterStatus ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-
-        InitDataObject initData = webResource.init( params, true, request, false, "9" );
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
-        AdminClient client=null;
-
-        JSONObject jsonNode = new JSONObject();
-
-        try {
-        	client = new ESClient().getClient().admin();
-        } catch (Exception e) {
-        	Logger.error(ClusterResource.class, "Error getting ES Client", e);
-        	jsonNode.put("error", e.getMessage());
-        	return responseResource.response( jsonNode.toString() );
-        }
-
-		ClusterHealthRequest clusterReq = new ClusterHealthRequest();
-		ActionFuture<ClusterHealthResponse> afClusterRes = client.cluster().health(clusterReq);
-		ClusterHealthResponse clusterRes = afClusterRes.actionGet();
-
-
-		jsonNode.put("clusterName", clusterRes.getClusterName());
-		jsonNode.put("numberOfNodes", clusterRes.getNumberOfNodes());
-		jsonNode.put("activeShards", clusterRes.getActiveShards());
-		jsonNode.put("activePrimaryShards", clusterRes.getActivePrimaryShards());
-		jsonNode.put("unasignedPrimaryShards", clusterRes.getUnassignedShards());
-		ClusterHealthStatus clusterStatus = clusterRes.getStatus();
-		jsonNode.put("status", clusterStatus);
-
-        return responseResource.response( jsonNode.toString() );
-
     }
 
     /**
@@ -450,70 +354,6 @@ public class ClusterResource {
 
     }
 
-    /**
-     * Wires a new node to the Cache and ES Cluster
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws JSONException
-     */
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path ("/wirenode/{params:.*}")
-    @Produces ("application/json")
-    public Response wireNode ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = webResource.init( params, true, request, true, "9" );
-
-        JSONObject jsonNode = new JSONObject();
-
-        if(request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
-            HashMap<String,String> map=new HashMap<String,String>();
-
-            try {
-            	String payload = IOUtils.toString(request.getInputStream());
-	            JSONObject obj = new JSONObject(payload);
-
-	            Iterator<String> keys = obj.keys();
-	            while(keys.hasNext()) {
-	                String key=keys.next();
-	                Object value=obj.get(key);
-	                map.put(key, value.toString());
-	            }
-
-	            ClusterFactory.addNodeToCluster(map, APILocator.getServerAPI().readServerId());
-
-	            jsonNode.put("result", "OK");
-
-            } catch ( Exception e ) {
-                Logger.error( ClusterResource.class, "Error wiring a new node to the Cluster", e );
-
-                //Get the error information and send it to the client
-                String errorMessage = e.getMessage() == null ? e.toString() : e.getMessage();
-                String errorDetail;
-                if ( e.getCause() == null ) {
-                    StringWriter errors = new StringWriter();
-                    e.printStackTrace( new PrintWriter( errors ) );
-                    errorDetail = errors.toString();
-                } else {
-                    errorDetail = e.getCause().toString();
-                }
-
-                //Setting the response
-                jsonNode.put( "result", "ERROR: " + errorMessage );
-                jsonNode.put( "detail", errorDetail );
-            }
-        }
-
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        return responseResource.response(jsonNode.toString());
-
-
-    }
-
     @GET
     @Path("/licenseRepoStatus")
     @Produces("application/json")
@@ -539,7 +379,7 @@ public class ClusterResource {
         String serverId = initData.getParamsMap().get("serverid");
         try {
         	HibernateUtil.startTransaction();
-            APILocator.getServerAPI().removeServerFromCluster(serverId);  
+            APILocator.getServerAPI().removeServerFromClusterTable(serverId);
             HibernateUtil.commitTransaction();
         }
         catch(Exception ex) {

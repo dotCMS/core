@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -25,14 +27,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -46,6 +52,27 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * The main purpose of this class is to determine all possible content
+ * dependencies associated to the asset(s) the user wants to push via the Push
+ * Publish feature. Including the dependencies makes sure that pushing an asset
+ * will not fail when saved in the destination server(s).
+ * <p>
+ * Most of the assets in dotCMS <b>MUST</b> be associated to another parent
+ * structure. For example, pushing a Content Page requires the bundle to include
+ * information regarding the Site (host) in was created in, its folder,
+ * template, containers, contentlets, and so on. Whereas pushing a Language only
+ * needs the language information and the push will work correctly.
+ * <p>
+ * The Dependency Manager analyzes the type of each asset to push and includes
+ * dependent information in the bundle. This way, it can be seen by users
+ * exactly the same in both the sender and receiver servers.
+ * 
+ * @author Daniel Silva
+ * @version 1.0
+ * @since Jan 11, 2013
+ *
+ */
 public class DependencyManager {
 
 	private DependencySet hosts;
@@ -59,6 +86,7 @@ public class DependencyManager {
 	private DependencySet relationships;
 	private DependencySet workflows;
 	private DependencySet languages;
+	private DependencySet rules;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -68,6 +96,7 @@ public class DependencyManager {
 	private Set<String> containersSet;
 	private Set<String> contentsSet;
 	private Set<String> linksSet;
+	private Set<String> ruleSet;
 	private Set<String> solvedStructures;
 
 	private User user;
@@ -75,11 +104,14 @@ public class DependencyManager {
 	private PushPublisherConfig config;
 
 	/**
-	 * Initializes for a given {@link PushPublisherConfig Config} the list of dependencies this manager<br/>
-	 * needs to satisfy
+	 * Initializes the list of dependencies that this manager needs to satisfy,
+	 * based on the {@link PushPublisherConfig} specified for the bundle.
 	 *
-	 * @param user   The user who requested to create this Bundle
-	 * @param config Class that have the main configuration values for the Bundle we are trying to create
+	 * @param user
+	 *            - The user requesting the generation of the bundle.
+	 * @param config
+	 *            - The main configuration values for the bundle we are trying
+	 *            to create.
 	 */
 	public DependencyManager(User user, PushPublisherConfig config) {
 		this.config = config;
@@ -96,6 +128,7 @@ public class DependencyManager {
 		links = new DependencySet(config.getId(),"links",config.isDownloading(), isPublish);
 		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish);
 		languages = new DependencySet(config.getId(),"languages",config.isDownloading(), isPublish);
+		this.rules = new DependencySet(config.getId(), PushPublisherConfig.AssetTypes.RULES.toString(), config.isDownloading(), isPublish);
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -106,23 +139,31 @@ public class DependencyManager {
 		containersSet = new HashSet<String>();
 		contentsSet = new HashSet<String>();
 		linksSet = new HashSet<String>();
+		this.ruleSet = new HashSet<String>();
 		solvedStructures = new HashSet<String>();
 
 		this.user = user;
 	}
 
 	/**
-	 * Initial method to start search for dependencies, it start identifying the type of assets the user wants to<br/>
-	 * remote publish and base on those types the dependencies will be search and found.
-	 *
-	 * @throws DotDataException   If fails retrieving dependency objects
-	 * @throws DotBundleException If fails trying to set the Contentlets dependencies
+	 * Initializes the main mechanism to search for dependencies. It starts with
+	 * the identification of the type of assets in the queue, and their
+	 * dependencies will be searched and found base on those types.
+	 * 
+	 * @throws DotSecurityException
+	 *             The specified user does not have the required permissions to
+	 *             perform the action.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 * @throws DotBundleException
+	 *             An error occurred when generating the bundle data.
 	 */
 	public void setDependencies() throws DotSecurityException, DotDataException, DotBundleException {
 		List<PublishQueueElement> assets = config.getAssets();
 
 		for (PublishQueueElement asset : assets) {
-			if(asset.getType().equals("htmlpage")) {
+			if(asset.getType().equals(PusheableAsset.HTMLPAGE.getType())) {
 				try {
 					HTMLPage page = APILocator.getHTMLPageAPI().loadLivePageById(asset.getAsset(), user, false);
 
@@ -141,7 +182,7 @@ public class DependencyManager {
 					Logger.error(getClass(), "Couldn't add the HtmlPage to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
 				}
 
-			} else if(asset.getType().equals("structure")) {
+			} else if(asset.getType().equals(PusheableAsset.CONTENT_TYPE.getType())) {
 				try {
 					Structure st = CacheLocator.getContentTypeCache().getStructureByInode(asset.getAsset());
 					
@@ -156,7 +197,7 @@ public class DependencyManager {
 					Logger.error(getClass(), "Couldn't add the Structure to the Bundle. Bundle ID: " + config.getId() + ", Structure ID: " + asset.getAsset(), e);
 				}
 
-			} else if(asset.getType().equals("template")) {
+			} else if(asset.getType().equals(PusheableAsset.TEMPLATE.getType())) {
 				try {
 					Template t = APILocator.getTemplateAPI().findLiveTemplate(asset.getAsset(), user, false);
 
@@ -173,7 +214,7 @@ public class DependencyManager {
 				} catch (Exception e) {
 					Logger.error(getClass(), "Couldn't add the Template to the Bundle. Bundle ID: " + config.getId() + ", Template ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("containers")) {
+			} else if(asset.getType().equals(PusheableAsset.CONTAINER.getType())) {
 				try {
 					Container c = (Container) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
 
@@ -191,7 +232,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Container to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("folder")) {
+			} else if(asset.getType().equals(PusheableAsset.FOLDER.getType())) {
 				try {
 					Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
 					
@@ -205,7 +246,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("host")) {
+			} else if(asset.getType().equals(PusheableAsset.SITE.getType())) {
 				try {
 					Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
 					
@@ -219,7 +260,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("links")) {
+			} else if(asset.getType().equals(PusheableAsset.LINK.getType())) {
 				try {
 					Link link = (Link) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
 					
@@ -237,7 +278,7 @@ public class DependencyManager {
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
-			} else if(asset.getType().equals("workflow")) {
+			} else if(asset.getType().equals(PusheableAsset.WORKFLOW.getType())) {
 				WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(asset.getAsset());
 				
 				if(scheme == null){
@@ -245,7 +286,7 @@ public class DependencyManager {
 				} else {
 					workflows.add(asset.getAsset(),scheme.getModDate());
 				}
-			} else if (asset.getType().equals(Language.ASSET_TYPE)) {
+			} else if (asset.getType().equals(PusheableAsset.LANGUAGE.getType())) {
 				Language language = APILocator.getLanguageAPI()
 						.getLanguage(asset.getAsset());
 				if (language == null || !UtilMethods.isSet(language.getLanguage())) {
@@ -255,6 +296,18 @@ public class DependencyManager {
 							+ " is not present in the database, not Pushed");
 				} else {
 					languages.add(asset.getAsset());
+				}
+			} else if (asset.getType().equals(PusheableAsset.RULE.getType())) {
+				Rule rule = APILocator.getRulesAPI()
+							.getRuleById(asset.getAsset(), user, false);
+				if (rule != null && StringUtils.isNotBlank(rule.getId())) {
+					this.rules.add(rule.getId());
+					this.ruleSet.add(rule.getId());
+				} else {
+					Logger.warn(getClass(), "Rule id: "
+							+ (asset.getAsset() != null ? asset.getAsset()
+									: "N/A")
+							+ " is not present in the database, not Pushed.");
 				}
 			}
 		}
@@ -277,9 +330,8 @@ public class DependencyManager {
         setContainerDependencies();
         setStructureDependencies();
         setLinkDependencies();
-
-        
         setContentDependencies();
+        setRuleDependencies();
 
 		config.setHostSet(hosts);
 		config.setFolders(folders);
@@ -292,6 +344,7 @@ public class DependencyManager {
 		config.setRelationships(relationships);
 		config.setWorkflows(workflows);
 		config.setLanguages(languages);
+		config.setRules(this.rules);
 	}
 
 	/**
@@ -350,29 +403,31 @@ public class DependencyManager {
 	}
 
 	/**
-	 * For given Host adds its dependencies:
+	 * Collects the different dependent objects that are required for pushing
+	 * {@link Host} objects. The required dependencies of a site are:
 	 * <ul>
-	 * <li>Templates</li>
-	 * <li>Containers</li>
-	 * <li>Contentlets</li>
-	 * <li>Structures</li>
-	 * <li>Folders</li>
+	 * <li>Templates.</li>
+	 * <li>Containers.</li>
+	 * <li>Contentlets.</li>
+	 * <li>Content Types.</li>
+	 * <li>Folders.</li>
+	 * <li>Rules.</li>
 	 * </ul>
 	 */
 	private void setHostDependencies () {
 		try {
 			for (String id : hostsSet) {
-				Host h = APILocator.getHostAPI().find(id, user, false);
+				final Host h = APILocator.getHostAPI().find(id, user, false);
 
 				// Template dependencies
-				List<Template> templateList = APILocator.getTemplateAPI().findTemplatesAssignedTo(h);
+				final List<Template> templateList = APILocator.getTemplateAPI().findTemplatesAssignedTo(h);
 				for (Template template : templateList) {
 					templates.addOrClean( template.getIdentifier(), template.getModDate());
 					templatesSet.add(template.getIdentifier());
 				}
 
 				// Container dependencies
-				List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
+				final List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
 				for (Container container : containerList) {
 					containers.addOrClean( container.getIdentifier(), container.getModDate());
 					containersSet.add(container.getIdentifier());
@@ -381,32 +436,36 @@ public class DependencyManager {
 				// Content dependencies
 				String luceneQuery = "+conHost:" + h.getIdentifier();
 
-				List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
+				final List<Contentlet> contentList = APILocator.getContentletAPI().search(luceneQuery, 0, 0, null, user, false);
 				for (Contentlet contentlet : contentList) {
 					contents.addOrClean( contentlet.getIdentifier(), contentlet.getModDate());
 					contentsSet.add(contentlet.getIdentifier());
 				}
 
 				// Structure dependencies
-				List<Structure> structuresList = StructureFactory.getStructuresUnderHost(h, user, false);
+				final List<Structure> structuresList = StructureFactory.getStructuresUnderHost(h, user, false);
 				for (Structure structure : structuresList) {
 					structures.addOrClean( structure.getInode(), structure.getModDate());
 					structuresSet.add(structure.getInode());
 				}
 
 				// Folder dependencies
-				List<Folder> folderList = APILocator.getFolderAPI().findFoldersByHost(h, user, false);
+				final List<Folder> folderList = APILocator.getFolderAPI().findFoldersByHost(h, user, false);
 				for (Folder folder : folderList) {
 					folders.addOrClean( folder.getInode(), folder.getModDate());
 					foldersSet.add(folder.getInode());
 				}
+				
+				// Rule dependencies
+				final List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(h, user, false);
+				for (final Rule rule : ruleList) {
+					this.rules.add(rule.getId());
+					this.ruleSet.add(rule.getId());
+				}
 			}
-
 		} catch (DotSecurityException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -449,6 +508,13 @@ public class DependencyManager {
 		}
 	}
 
+	/**
+	 * 
+	 * @param folderList
+	 * @throws DotIdentifierStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private void setFolderListDependencies(List<Folder> folderList) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		for (Folder f : folderList) {
 
@@ -510,15 +576,9 @@ public class DependencyManager {
 	}
 
 	/**
-	 * For given HTMLPages adds its dependencies:
-	 * <ul>
-	 * <li>Hosts</li>
-	 * <li>Folders</li>
-	 * <li>Templates</li>
-	 * <li>Containers</li>
-	 * <li>Structures</li>
-	 * <li>Contentlet</li>
-	 * </ul>
+	 * Traverses the list of selected contentlets that are being pushed and
+	 * determines which of them are actually {@link IHTMLPage} objects. After
+	 * that, the respective dependencies will be retrieved and added acordingly.
 	 */
 	private void setHTMLPagesDependencies() {
 		try {
@@ -545,17 +605,18 @@ public class DependencyManager {
 	}
 
 	/**
-	 * For given HTMLPages adds its dependencies:
+	 * Collects the different dependent objects that are required for pushing
+	 * {@link IHTMLPage} objects. The required dependencies of a page are:
 	 * <ul>
-	 * <li>Hosts</li>
-	 * <li>Folders</li>
-	 * <li>Templates</li>
-	 * <li>Containers</li>
-	 * <li>Structures</li>
-	 * <li>Contentlet</li>
+	 * <li>Host.</li>
+	 * <li>Template.</li>
+	 * <li>Containers.</li>
+	 * <li>Content Types.</li>
+	 * <li>Contentlets.</li>
+	 * <li>Rules.</li>
 	 * </ul>
-	 *
-	 * @param idsToWork List of pages to process
+	 * 
+	 * @param idsToWork
 	 */
 	private void setHTMLPagesDependencies(Set<String> idsToWork) {
 
@@ -673,12 +734,17 @@ public class DependencyManager {
                         }
                     }
 				}
+				
+				// Rule dependencies
+				final List<Rule> ruleList = APILocator.getRulesAPI().getAllRulesByParent(workingPage, user, false);
+				for (final Rule rule : ruleList) {
+					this.rules.add(rule.getId());
+					this.ruleSet.add(rule.getId());
+				}
 			}
 		} catch (DotSecurityException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
-
 			Logger.error(this, e.getMessage(),e);
 		}
 	}
@@ -718,18 +784,22 @@ public class DependencyManager {
 				
 				//Adding theme
 				if(UtilMethods.isSet(wkT.getTheme())){
-					Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
-					if(themeFolder != null &&  InodeUtils.isSet(themeFolder.getInode())){
-						Folder parent = APILocator.getFolderAPI().findParentFolder(themeFolder, user, false);
-						if(UtilMethods.isSet(parent)) {
-							folders.addOrClean( parent.getInode(), parent.getModDate());
-							foldersSet.add(parent.getInode());
+					try{
+						Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
+						if(themeFolder != null &&  InodeUtils.isSet(themeFolder.getInode())){
+							Folder parent = APILocator.getFolderAPI().findParentFolder(themeFolder, user, false);
+							if(UtilMethods.isSet(parent)) {
+								folders.addOrClean( parent.getInode(), parent.getModDate());
+								foldersSet.add(parent.getInode());
+							}
+							List<Folder> folderList = new ArrayList<Folder>();
+							folderList.add(themeFolder);
+							setFolderListDependencies(folderList);
 						}
-						List<Folder> folderList = new ArrayList<Folder>();
-						folderList.add(themeFolder);
-						setFolderListDependencies(folderList);
+					}catch(DotDataException e1){
+						Logger.error(DependencyManager.class, "Error trying to add theme folder for template Id: "+id+". Theme folder ignored because: "+e1.getMessage(),e1);
 					}
-				}
+				}				
 			}
 
 		} catch (DotSecurityException e) {
@@ -818,8 +888,12 @@ public class DependencyManager {
 		}
 	}
 
-
-
+	/**
+	 * 
+	 * @param stInode
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private void structureDependencyHelper(String stInode) throws DotDataException, DotSecurityException{
 		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
 		Host h = APILocator.getHostAPI().find(st.getHost(), user, false);
@@ -860,7 +934,12 @@ public class DependencyManager {
 		}
 	}
 
-
+	/**
+	 * 
+	 * @param cons
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private void processList(Set<Contentlet> cons) throws DotDataException, DotSecurityException {
 		Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
 		Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
@@ -904,7 +983,6 @@ public class DependencyManager {
 						if(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(con, ff))){
 							value = APILocator.getContentletAPI().getFieldValue(con, ff).toString();
 						}
-						//Identifier id = (Identifier) InodeFactory.getInode(value, Identifier.class);
 						Identifier id = APILocator.getIdentifierAPI().find(value);
 						if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
 							contentsWithDependenciesToProcess.addAll(
@@ -1004,6 +1082,51 @@ public class DependencyManager {
 					+ e.getMessage() + ": Unable to pull content", e);
 		}
 
+	}
+
+	/**
+	 * Collects the different dependent objects that are required for pushing
+	 * {@link Rule} objects. The required dependency of a rule is either:
+	 * <ol>
+	 * <li>The Site (host) they were created in.</li>
+	 * <li>Or the Content Page they were created in.</li>
+	 * </ol>
+	 */
+	private void setRuleDependencies() {
+		String ruleToProcess = "";
+		final RulesAPI rulesAPI = APILocator.getRulesAPI();
+		final HostAPI hostAPI = APILocator.getHostAPI();
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		try {
+			for (String ruleId : this.rules) {
+				final Rule rule = rulesAPI.getRuleById(ruleId, this.user, false);
+				ruleToProcess = ruleId;
+				final List<Contentlet> contentlets = contentletAPI.searchByIdentifier(
+						"+identifier:" + rule.getParent(), 1, 0, null, this.user, false);
+				if (contentlets != null && contentlets.size() > 0) {
+					final Contentlet parent = contentlets.get(0);
+					// If the parent of the rule is a Site...
+					if (parent.isHost()) {
+						final Host host = hostAPI.find(rule.getParent(), this.user, false);
+						this.hosts.addOrClean(host.getIdentifier(), host.getModDate());
+						this.hostsSet.add(host.getIdentifier());
+					}
+					// If the parent of the rule is a Content Page...
+					else if (parent.isHTMLPage()) {
+						this.contents.addOrClean(parent.getIdentifier(), parent.getModDate());
+						this.contentsSet.add(parent.getIdentifier());
+					} else {
+						throw new DotDataException("The parent ID [" + parent.getIdentifier() + "] is a non-valid parent.");
+					}
+				} else {
+					throw new DotDataException("The parent ID [" + rule.getParent() + "] cannot be found for Rule [" + rule.getId() + "]");
+				}
+			}
+		} catch (DotDataException e) {
+			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
+		}
 	}
 
 }

@@ -35,13 +35,30 @@ public abstract class HttpStatusCodeException extends WebApplicationException {
     }
 
     HttpStatusCodeException(Throwable cause, Response.Status status, String key, String message, String... messageArgs) {
-        super(cause, toResponse(status, key, String.format(message, (Object[])messageArgs)));
+        super(cause, toResponse(status, key, getFormattedMessage( message, messageArgs )));
         if(Response.Status.NOT_FOUND == status ){
         	Logger.getLogger(this.getClass()).debug(this.getResponse().getEntity().toString(),this);
         }
         else{
         	Logger.getLogger(this.getClass()).warn(this.getResponse().getEntity().toString(), this);
         }
+    }
+
+    private static String getFormattedMessage(String message, String... messageArgs){
+
+        String messageFormatted;
+
+        if (message == null){
+            messageFormatted =  null;
+        }else{
+            if (messageArgs == null){
+                messageFormatted = message;
+            }else{
+                messageFormatted = String.format(message, (Object[])messageArgs);
+            }
+        }
+
+        return messageFormatted;
     }
 
     private static Response toResponse(Response.Status status,

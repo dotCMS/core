@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
-import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
+import eu.bitwalker.useragentutils.DeviceType;
+import eu.bitwalker.useragentutils.UserAgent;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;

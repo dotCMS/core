@@ -60,7 +60,8 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 				locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 			}
 		}
-		
+
+		boolean validLang = true;
 		
 		// update page language
 		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
@@ -79,6 +80,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			try{
 				languageIdLong = Long.parseLong(languageId);
 			} catch (Exception e){
+				validLang = false;
 				Logger.error(this.getClass(),
 						"Language Id from request is not a long value. " +
 								"We will use Default Language. " +
@@ -91,15 +93,17 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 		
 		// if we are changing the language, we NEED a session
 		boolean changeLang = false;
-		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
-				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))){
+		if (validLang && (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
+				|| UtilMethods.isSet(httpRequest.getParameter("language_id")))){
 			changeLang=true;
 		
 		}
 		
-		
-		httpRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
-		httpRequest.setAttribute(WebKeys.LOCALE, locale);
+		if(validLang) {
+			httpRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
+			httpRequest.setAttribute(WebKeys.LOCALE, locale);
+		}
+
 		if(sessionOpt!=null || changeLang){
 			sessionOpt= httpRequest.getSession(true);
 			sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);

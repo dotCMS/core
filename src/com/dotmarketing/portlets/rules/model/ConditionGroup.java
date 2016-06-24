@@ -1,24 +1,43 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.dotmarketing.portlets.rules.util.LogicalCondition;
+import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class ConditionGroup implements Serializable, Comparable<ConditionGroup> {
     private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
-    private Condition.Operator operator;
+    private LogicalOperator operator;
     private Date modDate;
     private int priority;
     List<Condition> conditions;
+
+    public ConditionGroup(){
+
+    }
+
+    public ConditionGroup(ConditionGroup conditionGroupToCopy){
+        id = conditionGroupToCopy.id;
+        ruleId = conditionGroupToCopy.ruleId;
+        operator = conditionGroupToCopy.operator;
+        modDate = conditionGroupToCopy.modDate;
+        priority = conditionGroupToCopy.priority;
+        if(conditionGroupToCopy.getConditions() != null) {
+            conditions = Lists.newArrayList();
+            for (Condition condition : conditionGroupToCopy.getConditions()) {
+                conditions.add(new Condition(condition));
+            }
+        }
+    }
 
     public String getId() {
         return id;
@@ -36,11 +55,11 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
         this.ruleId = ruleId;
     }
 
-    public Condition.Operator getOperator() {
+    public LogicalOperator getOperator() {
         return operator;
     }
 
-    public void setOperator(Condition.Operator operator) {
+    public void setOperator(LogicalOperator operator) {
         this.operator = operator;
     }
 
@@ -63,23 +82,15 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     public List<Condition> getConditions() {
         if(conditions == null) {
             try {
+                //This will return the Conditions sorted by priority asc directly from DB.
                 conditions = FactoryLocator.getRulesFactory().getConditionsByGroup(this.id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
-        Collections.sort(conditions);
-        return conditions;
-    }
 
-    public void setConditions(List<Condition> conditions) {
-        this.conditions = conditions;
-    }
-
-    public void addCondition(Condition condition) {
-        if(conditions!=null) {
-            conditions.add(condition);
-        }
+        //Return a shallow copy of the list.
+        return Lists.newArrayList(conditions);
     }
 
     public void checkValid(){
@@ -89,19 +100,16 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {
-        boolean result = true;
-
-        /* @todo ggranum: This also fails for ( A AND B OR C)*/
-        for (Condition condition : conditions) {
-            if(condition.getOperator()== Condition.Operator.AND) {
-                result = result && condition.evaluate(req, res);
+        LogicalStatement statement = new LogicalStatement();
+        for (Condition cond : conditions) {
+            ConditionLogicalCondition logicalCondition = new ConditionLogicalCondition(cond, req, res);
+            if(cond.getOperator() == LogicalOperator.AND) {
+                statement.and(logicalCondition);
             } else {
-                result = result || condition.evaluate(req, res);
+                statement.or(logicalCondition);
             }
-            if(!result) return false;
         }
-
-        return result;
+        return statement.evaluate();
     }
 
     @Override
@@ -115,4 +123,22 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     public int compareTo(ConditionGroup c) {
         return Integer.compare(this.priority, c.getPriority());
     }
+    private final class ConditionLogicalCondition implements LogicalCondition {
+
+        private final Condition condition;
+        private final HttpServletRequest req;
+        private final HttpServletResponse res;
+
+        public ConditionLogicalCondition(Condition condition, HttpServletRequest req, HttpServletResponse res) {
+            this.condition = condition;
+            this.req = req;
+            this.res = res;
+        }
+
+        @Override
+        public boolean evaluate() {
+            return condition.evaluate(req, res);
+        }
+    }
+
 }

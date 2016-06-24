@@ -26,9 +26,13 @@ public class ConditionletTestUtil {
     private List<Rule> rulesToRemove = Lists.newArrayList();
 
     public Rule createRandomSetResponseHeaderRule (Condition condition, String randomKey, String value , String name) {
+        return createRandomSetResponseHeaderRule(condition, randomKey, value, name, Rule.FireOn.EVERY_REQUEST);
+    }
+
+    public Rule createRandomSetResponseHeaderRule (Condition condition, String randomKey, String value , String name, Rule.FireOn fireOn) {
 
         //Create the rule
-        ruleDataGen = new RuleDataGen(Rule.FireOn.EVERY_REQUEST).name(name);
+        ruleDataGen = new RuleDataGen(fireOn).name(name);
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
 

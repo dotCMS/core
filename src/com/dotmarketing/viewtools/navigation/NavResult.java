@@ -39,8 +39,16 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String type;
     private String permissionId;
     private String target;
-    
-    private String hostId;
+    private boolean showOnMenu;
+    public String getHostId() {
+		return hostId;
+	}
+
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
+
+	private String hostId;
     private String folderId;
     private List<String> childrenFolderIds;
     private List<NavResult> children;
@@ -88,7 +96,15 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         return href;
     }
 
-    public void setHref(String href) {
+    public boolean isShowOnMenu() {
+		return showOnMenu;
+	}
+
+	public void setShowOnMenu(boolean showOnMenu) {
+		this.showOnMenu = showOnMenu;
+	}
+
+	public void setHref(String href) {
         this.href = href;
     }
     
@@ -122,8 +138,23 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public boolean isActive() {
         Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
         HttpServletRequest req=(HttpServletRequest) ctx.get("request");
-        if(req!=null)
-            return !isCodeLink() && req.getRequestURI().startsWith(href);
+        if(req!=null){
+            //We exclude the page name from the Request URI so we can check if page's parent object is the real active object
+            String reqURI = req.getRequestURI();
+            String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
+            if(!parentPath.endsWith("/"))
+                //Adding a slash at the end of the path, so it avoids false positives
+                //when two or more paths from the same level starts with the same name
+                parentPath = parentPath + "/";
+            //If the current item is a folder, we check if it's part of current URI
+            if(isFolder() && !href.endsWith("/")){
+                String tempHref = href + "/";
+                return parentPath.startsWith(tempHref);
+            } else {
+                //If it's a page, we check instead if it's the current URI 
+                return !isCodeLink() && href.equalsIgnoreCase(reqURI);
+            }
+        }
         else
             return false;
     }
@@ -159,6 +190,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     ff.setOrder(nn.getOrder());
                     ff.setType(nn.getType());
                     ff.setPermissionId(nn.getPermissionId());
+                    ff.setShowOnMenu(nn.isShowOnMenu());
                     list.add(ff);
                 }
                 else {

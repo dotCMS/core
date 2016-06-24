@@ -112,7 +112,7 @@ public class FixTask00008CheckTreeInconsistencies  implements FixTask {
 				    }
 				    catch(Exception ex)
 				    {
-				    	FixAssetsProcessStatus.addAError();
+				    	FixAssetsProcessStatus.addAErrorFixed();
 				    	counter++;
 				    }
 				    FixAssetsProcessStatus.addActual();

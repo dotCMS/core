@@ -21,6 +21,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionedWebAssetUtil;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -39,18 +40,30 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+/**
+ * Implementation class of the {@link ContainerAPI}.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	protected PermissionAPI permissionAPI;
 	protected ContainerFactory containerFactory;
 	protected HostAPI hostAPI;
 
+	/**
+	 * 
+	 */
 	public ContainerAPIImpl () {
 		permissionAPI = APILocator.getPermissionAPI();
 		containerFactory = FactoryLocator.getContainerFactory();
 		hostAPI = APILocator.getHostAPI();
 	}
 
+	@Override
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
@@ -71,10 +84,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		String appendToName = getAppendToContainerTitle(source.getTitle(), destination);
        	newContainer.setFriendlyName(source.getFriendlyName() + appendToName);
        	newContainer.setTitle(source.getTitle() + appendToName);
-
-        //Copy the structure relationship
-//        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(source.getStructureInode());
-//        newContainer.setStructureInode(st.getInode());
 
         //creates new identifier for this webasset and persists it
 		Identifier newIdentifier = APILocator.getIdentifierAPI().createNew(newContainer, destination);
@@ -109,14 +118,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		}
 
-		/*TreeFactory.saveTree(new Tree(destination.getIdentifier(), newContainer.getInode()));
-
-		//Copy the structure relationship
-        Structure st = (Structure) InodeFactory.getParentOfClass(source, Structure.class);
-        TreeFactory.saveTree(new Tree(st.getInode(), newContainer.getInode()));*/
-
-
-
 		//Copy permissions
 		permissionAPI.copyPermissions(source, newContainer);
 
@@ -126,22 +127,47 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return newContainer;
 	}
 
+	/**
+	 * 
+	 * @param container
+	 * @throws DotDataException
+	 */
 	private void save(Container container) throws DotDataException {
 		containerFactory.save(container);
 	}
 
+	/**
+	 * 
+	 * @param container
+	 * @param existingId
+	 * @throws DotDataException
+	 */
 	private void save(Container container, String existingId) throws DotDataException {
 		containerFactory.save(container, existingId);
 	}
 
+	@Override
 	protected void save(WebAsset webAsset) throws DotDataException {
 		save((Container) webAsset);
 	}
 
+	/**
+	 * 
+	 * @param webAsset
+	 * @param existingId
+	 * @throws DotDataException
+	 */
 	protected void save(WebAsset webAsset, String existingId) throws DotDataException {
 		save((Container) webAsset, existingId);
 	}
 
+	/**
+	 * 
+	 * @param containerTitle
+	 * @param destination
+	 * @return
+	 * @throws DotDataException
+	 */
 	@SuppressWarnings("unchecked")
 	private String getAppendToContainerTitle(String containerTitle, Host destination) throws DotDataException {
 		String temp = new String(containerTitle);
@@ -175,6 +201,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return result;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -215,7 +242,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return container;
 	}
 
-
+	@Override
 	@SuppressWarnings("unchecked")
 	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
@@ -256,18 +283,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return container;
 	}
 
-	/**
-	 *
-	 * Retrieves the children working containers attached to the given template
-	 *
-	 * @param parentTemplate
-	 * @return
-	 * @author David H Torres
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 *
-	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public List<Container> getContainersInTemplate(Template parentTemplate) throws DotStateException, DotDataException, DotSecurityException  {
 
@@ -286,17 +302,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containers;
 	}
 
-	/**
-	 *
-	 * saves a list of container-structure relationships
-	 *
-	 * @param containerStructureList
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 *
-	 */
+	@Override
 	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException  {
 	    
 		if(!containerStructureList.isEmpty()) {
@@ -342,17 +348,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 	}
 
-	/**
-	 *
-	 * Retrieves a list of container-structure relationships by container
-	 *
-	 * @param container
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 *
-	 */
+	@Override
 	@SuppressWarnings({ "unchecked" })
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 		
@@ -378,17 +374,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containerStructures;
 	}
 
-	/**
-	 *
-	 * Retrieves the list of structures related to the given container
-	 *
-	 * @param container
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 *
-	 */
+	@Override
 	public List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
 		List<ContainerStructure> csList =  getContainerStructures(container);
@@ -402,19 +388,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return structureList;
 	}
 
-
-
-	/**
-	 * Retrieves all the containers attached to the given host
-	 * @param parentPermissionable
-	 * @return
-	 * @throws DotDataException
-	 *
-	 */
+	@Override
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
 		return containerFactory.findContainersUnder(parentPermissionable);
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Container currentContainer = null;
@@ -464,12 +443,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		String userId = user.getUserId();
-
-		// Associating the current structure
-//		if ((structure != null) && InodeUtils.isSet(structure.getInode()))
-//			container.setStructureInode(structure.getInode());
-			//TreeFactory.saveTree(new Tree(structure.getInode(), container.getInode()));
-
 		container.setModUser(user.getUserId());
 		container.setModDate(new Date());
 
@@ -509,16 +482,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
             cs.setContainerInode(container.getInode());
 		}
 		saveContainerStructures(containerStructureList);
-
-        //Saving the host of the templatecontainers
-        //TreeFactory.saveTree(new Tree(host.getIdentifier(), container.getInode()));
-
 		// saves to working folder under velocity
 		ContainerServices.invalidate(container, true);
 
 		return container;
 	}
 
+	@Override
 	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			deleteContainerStructuresByContainer(container);
@@ -529,6 +499,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	}
 
+	@Override
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		if ((user != null)
@@ -541,10 +512,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 	}
 
+	@Override
 	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		return hostAPI.findParentHost(cont, user, respectFrontendRoles);
 	}
 
+	@Override
 	public List<Container> findContainers(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId,String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,
@@ -552,6 +525,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return containerFactory.findContainers(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
+	@Override
 	public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
 	    return containerFactory.findContainersForStructure(structureInode);
 	}
@@ -574,4 +548,28 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 	}
 
+	@Override
+	public void deleteContainerContentTypesByContainerInode(final Container container) throws DotStateException, DotDataException {
+		if (container != null && UtilMethods.isSet(container.getIdentifier()) && UtilMethods.isSet(container.getInode())) {
+			DotConnect dc = new DotConnect();
+			dc.setSQL("DELETE FROM container_structures WHERE container_inode = ? AND container_id = ?");
+			dc.addParam(container.getInode());
+			dc.addParam(container.getIdentifier());
+			dc.loadResult();
+			CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
+		}
+	}
+
+	/**
+	 * Method will replace user references of the given userId in containers 
+	 * with the replacement user id   
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+		containerFactory.updateUserReferences(userId, replacementUserId);
+	}
 }

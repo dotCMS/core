@@ -125,7 +125,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				File zipFile = new File(FileUtil.getRealPath(backupFilePath + "/backup_" + x + "_.zip"));
 
 				response.setHeader("Content-type", "");
-				response.setHeader("Content-Disposition", "attachment; filename=" + zipFile.getName());
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + zipFile.getName() + "\"");
 
 				createXMLFiles();
 

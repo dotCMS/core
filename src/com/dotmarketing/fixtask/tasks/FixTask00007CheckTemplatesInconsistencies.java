@@ -120,7 +120,7 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 						db.addParam(identifierInode);
 						db.getResult();
 
-						FixAssetsProcessStatus.addAError();
+						FixAssetsProcessStatus.addAErrorFixed();
 						counter++;
 					}
 

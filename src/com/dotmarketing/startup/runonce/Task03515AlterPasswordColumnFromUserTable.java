@@ -35,7 +35,7 @@ public class Task03515AlterPasswordColumnFromUserTable extends AbstractJDBCStart
      */
     @Override
     public String getMySQLScript() {
-        return "ALTER TABLE `User_` MODIFY COLUMN `password_` LONGTEXT NULL DEFAULT NULL;";
+        return "ALTER TABLE `user_` MODIFY COLUMN `password_` LONGTEXT NULL DEFAULT NULL;";
     }
 
     /**
@@ -58,7 +58,7 @@ public class Task03515AlterPasswordColumnFromUserTable extends AbstractJDBCStart
      */
     @Override
     public String getMSSQLScript() {
-        return "ALTER TABLE user_ ALTER COLUMN password_ TEXT SET NULL;";
+        return "ALTER TABLE user_ ALTER COLUMN password_ TEXT NULL;";
     }
 
     /**
@@ -68,7 +68,7 @@ public class Task03515AlterPasswordColumnFromUserTable extends AbstractJDBCStart
      */
     @Override
     public String getH2Script() {
-        return "ALTER TABLE user_ ALTER COLUMN password_ TEXT SET NULL;";
+        return "ALTER TABLE user_ ALTER COLUMN password_ TEXT NULL;";
     }
 
     @Override

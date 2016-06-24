@@ -18,30 +18,17 @@ public class TagAPIImpl implements TagAPI {
 
     private TagFactory tagFactory = FactoryLocator.getTagFactory();
 
-    /**
-	 * Get a list of all the tags created
-	 * @return list of all tags created
-	 */
+    @Override
     public java.util.List<Tag> getAllTags () throws DotDataException {
         return tagFactory.getAllTags();
     }
 
-    /**
-	 * Gets a Tag by name
-	 * @param name name of the tag to get
-	 * @return tag
-	 */
+    @Override
     public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException {
         return tagFactory.getTagsByName(name);
     }
 
-    /**
-	 * Get the list of tags related to a user by the user Id
-	 * @param userId User id
-	 * @return List<Tag>
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
+    @Override
     public java.util.List<Tag> getTagsForUserByUserId ( String userId ) throws DotDataException, DotSecurityException {
 
         //First lets seach for the user
@@ -51,77 +38,33 @@ public class TagAPIImpl implements TagAPI {
         return getTagsForUserByUserInode(user.getInode());
     }
 
-    /**
-	 * Get the list of tags by the users TagInode inode
-	 * @param userInode Users TagInode inode
-	 * @return List<Tag>
-     * @throws DotDataException
-     */
+    @Override
     public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
         return tagFactory.getTagsForUserByUserInode(userInode);
     }
 
-    /**
-	 * Gets all tags filtered by tag name and/or host name paginated. <strong>This method excludes Persona Tags by default.</strong>
-	 * @param tagName tag name
-	 * @param hostFilter host name
-	 * @param globalTagsFilter 
-	 * @param sort Tag field to order
-	 * @param start first entry to get
-	 * @param count max amount of entries to show
-	 * @return List<Tag>
-	 */
+    @Override
     public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
         return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, true, sort, start, count);
     }
 
-    /**
-	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-	 * @param name name of the tag to get
-	 * @param hostId host identifier
-	 * @return Tag
-	 * @throws Exception
-	 */
+    @Override
     public Tag getTagAndCreate ( String name, String hostId ) throws DotDataException, DotSecurityException {
-        return getTagAndCreate(name, "", hostId, false);
+        return getTagAndCreate(name, "", hostId, false, false);
     }
 
-    /**
-     * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-     *
-     * @param name   name of the tag to get
-     * @param userId owner of the tag
-     * @param hostId host identifier
-     * @return Tag
-     * @throws Exception
-     */
+    @Override
     public Tag getTagAndCreate ( String name, String userId, String hostId ) throws DotDataException, DotSecurityException {
-        return getTagAndCreate(name, userId, hostId, false);
+        return getTagAndCreate(name, userId, hostId, false, false);
     }
 
-    /**
-     * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-     *
-     * @param name    name of the tag to get
-     * @param hostId  host identifier
-     * @param persona True if is a persona key tag
-     * @return Tag
-     * @throws Exception
-     */
+    @Override
     public Tag getTagAndCreate ( String name, String hostId, boolean persona ) throws DotDataException, DotSecurityException {
-        return getTagAndCreate(name, "", hostId, persona);
+        return getTagAndCreate(name, "", hostId, persona, false);
     }
 
-    /**
-     * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-	 * @param name name of the tag to get
-	 * @param userId owner of the tag
-	 * @param hostId host identifier
-     * @param persona True if is a persona key tag
-     * @return Tag
-     * @throws Exception
-     */
-    public Tag getTagAndCreate ( String name, String userId, String hostId, boolean persona ) throws DotDataException, DotSecurityException {
+    @Override
+    public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -133,10 +76,58 @@ public class TagAPIImpl implements TagAPI {
             Tag newTag = new Tag();
 
             //Search for tags with this given name
-            Tag tag = tagFactory.getTagByNameAndHost(name, hostId);
+            Tag existingTag = null;
+
+            //Before to decide if exist or not lets give it a try to the System host
+            if ( searchInSystemHost ) {
+
+                /*
+                When we find multiple possible tags with the same tag name we need to choose what tag to use.
+                First to choose are Persona tags, then the tag with the given host id and finally the tag living in the
+                system host
+                 */
+
+                Tag personaTag = null;
+                Tag hostTag = null;
+                Tag globalTag = null;
+
+                List<Tag> existingTags = tagFactory.getTagsByName(name);
+                if ( existingTags != null ) {
+                    for ( Tag foundTag : existingTags ) {
+
+                        String currentTagHostId = foundTag.getHostId();
+
+                        //Only use tags living in the given and system host
+                        if ( currentTagHostId.equals(Host.SYSTEM_HOST) || currentTagHostId.equals(hostId) ) {
+
+                            if ( currentTagHostId.equals(Host.SYSTEM_HOST) ) {
+                                globalTag = foundTag;
+                            } else if ( currentTagHostId.equals(hostId) ) {
+                                hostTag = foundTag;
+                            }
+
+                            if ( foundTag.isPersona() ) {
+                                personaTag = foundTag;
+                            }
+
+                        }
+                    }
+
+                    if ( personaTag != null ) {
+                        existingTag = personaTag;
+                    } else if ( hostTag != null ) {
+                        existingTag = hostTag;
+                    } else {
+                        existingTag = globalTag;
+                    }
+
+                }
+            } else {
+                existingTag = tagFactory.getTagByNameAndHost(name, hostId);
+            }
 
             // if doesn't exists then the tag is created
-            if ( tag == null || !UtilMethods.isSet(tag.getTagId()) ) {
+            if ( existingTag == null || !UtilMethods.isSet(existingTag.getTagId()) ) {
                 // creating tag
                 return saveTag(name, userId, hostId, persona);
             } else {
@@ -156,12 +147,12 @@ public class TagAPIImpl implements TagAPI {
                     existHostId = host.getMap().get("tagStorage").toString();
                 }
 
-                if ( isGlobalTag(tag) ) {
-                    newTag = tag;
+                if ( isGlobalTag(existingTag) ) {
+                    newTag = existingTag;
                     globalTagExists = true;
                 }
-                if ( tag.getHostId().equals(existHostId) ) {
-                    newTag = tag;
+                if ( existingTag.getHostId().equals(existHostId) ) {
+                    newTag = existingTag;
                     tagExists = true;
                 }
 
@@ -173,11 +164,11 @@ public class TagAPIImpl implements TagAPI {
 
                     if ( newTag.getHostId().equals(Host.SYSTEM_HOST) ) {
                         //move references of non-global tags to new global tag and delete duplicate non global tags
-                        List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
+                        List<TagInode> tagInodes = getTagInodesByTagId(existingTag.getTagId());
                         for ( TagInode tagInode : tagInodes ) {
                             tagFactory.updateTagInode(tagInode, newTag.getTagId());
                         }
-                        deleteTag(tag);
+                        deleteTag(existingTag);
                     }
                 }
             }
@@ -198,51 +189,29 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-	 * Gets a Tag by a tagId retrieved from a TagInode.
-	 *
-	 * @param tagId the tag id to get
-	 * @return tag
-	 */
+    @Override
     public Tag getTagByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagByTagId(tagId);
     }
 
-    /**
-	 * Get the tags seaching by Tag Name and Host identifier 
-	 * @param name Tag name
-	 * @param hostId Host identifier
-	 * @return Tag
-     * @throws DotDataException
-     */
+    @Override
     public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
         return tagFactory.getTagByNameAndHost(name, hostId);
     }
 
-    /**
-	 * Creates a new tag
-	 * @param tagName name of the new tag
-	 * @param userId owner of the new tag
-	 * @param hostId host identifier
-	 * @return Tag
-	 * @throws Exception
-	 */
+    @Override
     public Tag saveTag ( String tagName, String userId, String hostId ) throws DotDataException {
         return saveTag(tagName, userId, hostId, false);
     }
 
-    /**
-	 * Creates a new tag
-	 * @param tagName name of the new tag
-	 * @param userId owner of the new tag
-	 * @param hostId host identifier
-	 * @param persona indicate if a persona tag
-	 * @return Tag
-	 * @throws Exception
-	 */
+    @Override
     public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotDataException {
 
         boolean localTransaction = false;
+
+        if (tagName == null || tagName.length() > 255){
+            throw new InvalidTagNameLengthException( tagName );
+        }
 
         try {
 
@@ -279,50 +248,36 @@ public class TagAPIImpl implements TagAPI {
                 hostId = Host.SYSTEM_HOST;
             }
             tag.setHostId(hostId);
-
-            Tag createdTag = tagFactory.createTag(tag);
+            
+            Tag foundTagInStorage = tagFactory.getTagByNameAndHost(tag.getTagName(),tag.getHostId());
+            
+            if(foundTagInStorage == null){
+            	foundTagInStorage = tagFactory.createTag(tag);
+            }
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
                 HibernateUtil.commitTransaction();
             }
 
-            return createdTag;
+            return foundTagInStorage;
         } catch ( Exception e ) {
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
-            throw e;
+
+            throw new GenericTagException( e );
         }
     }
 
-    /**
-     * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-     * and then tags the User
-     *
-     * @param tagName tag(s) to create
-     * @param userId  owner of the tag
-     * @param inode   User to tag
-     * @return a list of all tags assigned to an object
-     * @throws Exception
-     * @deprecated it doesn't handle host id. Call getTagsInText then addUserTagInode on each
-     */
+    @Override
+    @Deprecated
     public List addUserTag(String tagName, String userId, String inode) throws DotDataException, DotSecurityException {
         return addContentleTag(tagName, userId, inode, inode);
     }
 
-    /**
-     * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-     * and then tags the Contentlet
-     *
-     * @param tagName      tag(s) to create
-     * @param userId       owner of the tag
-     * @param inode        Contenlet to tag
-     * @param fieldVarName var name of the tag field related to the given Contentlet inode
-     * @return a list of all tags assigned to an object
-     * @throws Exception
-     * @deprecated it doesn't handle host id. Call getTagsInText then addContentletTagInode on each
-     */
+    @Override
+    @Deprecated
     public List addContentleTag(String tagName, String userId, String inode, String fieldVarName) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
@@ -357,24 +312,12 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-	 * Updates an existing tag.
-	 * @param tagId tag to update
-	 * @param tagName owner of the tag
-     * @throws DotDataException
-     */
+    @Override
     public void updateTag ( String tagId, String tagName ) throws DotDataException {
         updateTag(tagId, tagName, false, Host.SYSTEM_HOST);
     }
 
-    /**
-	 * Updates an existing tag.
-	 * @param tagId tag to update
-	 * @param tagName owner of the tag
-	 * @param updateTagReference
-	 * @param hostId the storage host id
-	 * @throws Exception
-	 */
+    @Override
     public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException {
 
         Tag tag = getTagByTagId(tagId);
@@ -409,13 +352,7 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-     * Updates the persona attribute of a given tag
-     *
-     * @param tagId
-     * @param enableAsPersona
-     * @throws DotDataException
-     */
+    @Override
     public void enableDisablePersonaTag ( String tagId, boolean enableAsPersona ) throws DotDataException {
 
         //First check if the requested tag exist
@@ -432,36 +369,21 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-	 * Deletes a tag
-	 * @param tag tag to be deleted
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTag ( Tag tag ) throws DotDataException {
-        List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
-        for ( TagInode t : tagInodes ) {
-            deleteTagInode(t);
-        }
-
+        //First delete the references to this tag
+        deleteTagInodesByTagId(tag.getTagId());
+        //And finally remove the tag
         tagFactory.deleteTag(tag);
     }
 
-    /**
-     * Deletes a tag
-     * @param tagId tagId of the tag to be deleted
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTag ( String tagId ) throws DotDataException {
         Tag tag = getTagByTagId(tagId);
         deleteTag(tag);
     }
 
-    /**
-	 * Renames a tag
-	 * @param tagName new tag name
-	 * @param oldTagName current tag name
-	 * @param userId owner of the tag
-	 */
+    @Override
     public void editTag ( String tagName, String oldTagName, String userId ) throws DotDataException {
 
         tagName = escapeSingleQuote(tagName);
@@ -479,31 +401,12 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag name and a given User inode.
-     * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
-     *
-     * @param tagName      Tag name of the tag to relate with the Contentlet inode
-     * @param inode        inode of the object tagged
-     * @param hostId       Host id where the tag name must be found
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addUserTagInode(String tagName, String inode, String hostId) throws DotDataException, DotSecurityException {
         return addContentletTagInode(tagName, inode, hostId, inode);
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag name and a given Contentlet inode.
-     * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
-     *
-     * @param tagName      Tag name of the tag to relate with the Contentlet inode
-     * @param inode        inode of the object tagged
-     * @param hostId       Host id where the tag name must be found
-     * @param fieldVarName var name of the tag field related to the given Contentlet inode
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addContentletTagInode(String tagName, String inode, String hostId, String fieldVarName) throws DotDataException, DotSecurityException {
 
         //Ensure the tag exists in the tag table
@@ -513,97 +416,77 @@ public class TagAPIImpl implements TagAPI {
         return addContentletTagInode(existingTag, inode, fieldVarName);
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag and a given User inode
-     *
-     * @param tag
-     * @param inode inode of the object tagged
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addUserTagInode(Tag tag, String inode) throws DotDataException {
         return addContentletTagInode(tag, inode, inode);
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag and a given Contentlet inode
-     * @param tag Tag to relate with the Contentlet inode
-     * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the given Contentlet inode
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addContentletTagInode(Tag tag, String inode, String fieldVarName) throws DotDataException {
 
-        //validates the tagInode already exists
-        TagInode existingTagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
+        boolean localTransaction = false;
 
-        if ( existingTagInode == null || existingTagInode.getTagId() == null ) {
+        try {
 
-            //the tagInode does not exists, so creates a new TagInode
-            TagInode tagInode = new TagInode();
-            tagInode.setTagId(tag.getTagId());
-            tagInode.setInode(inode);
-            tagInode.setFieldVarName(fieldVarName);
-            tagInode.setModDate(new Date());
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-            return tagFactory.createTagInode(tagInode);
-        } else {
-            // returning the existing tagInode
+            //validates the tagInode already exists
+            TagInode existingTagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
+
+            if ( existingTagInode == null || existingTagInode.getTagId() == null ) {
+
+                //the tagInode does not exists, so create a new TagInode
+                TagInode tagInode = new TagInode();
+                tagInode.setTagId(tag.getTagId());
+                tagInode.setInode(inode);
+                tagInode.setFieldVarName(fieldVarName);
+                tagInode.setModDate(new Date());
+
+                existingTagInode = tagFactory.createTagInode(tagInode);
+            }
+
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
             return existingTagInode;
+
+        } catch (Exception e) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
     }
 
-    /**
-	 * Gets all tagInode associated to an object
-     * @param inode inode of the object tagged
-	 * @return list of all the TagInode where the tags are associated to the object
-     * @throws DotDataException
-     */
+    @Override
     public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagInodesByInode(inode);
     }
 
-    /**
-	 * Gets all tags associated to an object
-	 * @param tagId tagId of the object tagged
-	 * @return list of all the TagInode where the tags are associated to the object
-     * @throws DotDataException
-     */
+    @Override
+    public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
+        return tagFactory.getTagsByInodeAndFieldVarName(inode, fieldVarName);
+    }
+
+    @Override
     public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagInodesByTagId(tagId);
     }
 
-    /**
-	 * Gets a tagInode by name and inode
-	 * @param tagId id of the tag
-	 * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @return the tagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException {
         return tagFactory.getTagInode(tagId, inode, fieldVarName);
     }
 
-    /**
-	 * Deletes a TagInode
-	 * @param tagInode TagInode to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
         tagFactory.deleteTagInode(tagInode);
     }
 
-    /**
-	 * Removes the relationship between a tag and an inode, ALSO <strong>if the tag does not have more relationships the Tag itself will be remove it.</strong>
-	 * @param tagId TagId
-	 * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @throws DotDataException
-     */
+    @Override
     public void removeTagRelationAndTagWhenPossible ( String tagId, String inode, String fieldVarName ) throws DotDataException {
 
         boolean localTransaction = false;
@@ -665,24 +548,17 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-     * Deletes TagInodes references by inode
-     *
-     * @param inode inode reference to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInodesByInode(String inode) throws DotDataException {
         tagFactory.deleteTagInodesByInode(inode);
     }
 
-    /**
-	 * Deletes a TagInode
-	 * @param tag Tag related to the object
-	 * @param inode Inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @throws DotDataException
-     */
+    @Override
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException {
+        tagFactory.deleteTagInodesByTagId(tagId);
+    }
+
+    @Override
     public void deleteTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
 
         TagInode tagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
@@ -691,16 +567,7 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-     * Deletes an object tag assignment
-     *
-     * @param tagName name of the tag
-     * @param inode   inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInode ( String tagName, String inode, String fieldVarName ) throws DotSecurityException, DotDataException {
 
         StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
@@ -733,33 +600,24 @@ public class TagAPIImpl implements TagAPI {
         return tagName.replace("'", "''");
     }
 
-    /**
-	 * Gets a suggested tag(s), by name
-	 * @param name name of the tag searched
-	 * @param selectedHostId Host identifier
-	 * @return list of suggested tags
-	 */
+    @Override
     @SuppressWarnings ( "unchecked" )
-    public List<Tag> getSuggestedTag ( String name, String selectedHostId ) {
-        try {
-            name = escapeSingleQuote(name);
+    public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException {
 
-            //if there's a host field on form, retrieve it
-            Host hostOnForm;
-            if ( UtilMethods.isSet(selectedHostId) ) {
-                try {
-                    hostOnForm = APILocator.getHostAPI().find(selectedHostId, APILocator.getUserAPI().getSystemUser(), true);
-                    selectedHostId = hostOnForm.getMap().get("tagStorage").toString();
-                } catch ( Exception e ) {
-                    Logger.error(this, "Unable to load current host.");
-                }
+        name = escapeSingleQuote(name);
+
+        //if there's a host field on form, retrieve it
+        Host hostOnForm;
+        if ( UtilMethods.isSet(selectedHostId) ) {
+            try {
+                hostOnForm = APILocator.getHostAPI().find(selectedHostId, APILocator.getUserAPI().getSystemUser(), true);
+                selectedHostId = hostOnForm.getMap().get("tagStorage").toString();
+            } catch (Exception e) {
+                Logger.error(this, "Unable to load current host.");
             }
-
-            return tagFactory.getTagsLikeNameAndHostIncludingSystemHost(name, selectedHostId);
-        } catch ( Exception e ) {
-            Logger.error(e, "Error retrieving suggested tags");
         }
-        return new ArrayList<>();
+
+        return tagFactory.getSuggestedTags(name, selectedHostId);
     }
 
     /**
@@ -774,12 +632,8 @@ public class TagAPIImpl implements TagAPI {
             return false;
     }
 
-    /**
-	 * Update, copy or move tags if the hosst changes its tag storage
-	 * @param oldTagStorageId
-	 * @param newTagStorageId
-	 */
-    public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException {
+    @Override
+    public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -797,20 +651,15 @@ public class TagAPIImpl implements TagAPI {
                 List<Tag> hostTagList = tagFactory.getTagsByHost(hostIdentifier);
 
                 for ( Tag tag : list ) {
-                    try {
-                        if ( (hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST) ) {
-                            //copy old tag to host with new tag storage
-                            saveTag(tag.getTagName(), "", hostIdentifier);
-                        } else if ( newTagStorageId.equals(Host.SYSTEM_HOST) ) {
-                            //update old tag to global tags
-                            getTagAndCreate(tag.getTagName(), Host.SYSTEM_HOST);
-                        } else if ( hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId) ) {
-                            // update old tag with new tag storage
-                            updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
-                        }
-
-                    } catch ( Exception e ) {
-                        Logger.error(e, "Error updating Tag references");
+                    if ( (hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST) ) {
+                        //copy old tag to host with new tag storage
+                        saveTag(tag.getTagName(), "", hostIdentifier);
+                    } else if ( newTagStorageId.equals(Host.SYSTEM_HOST) ) {
+                        //update old tag to global tags
+                        getTagAndCreate(tag.getTagName(), Host.SYSTEM_HOST);
+                    } else if ( hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId) ) {
+                        // update old tag with new tag storage
+                        updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
                     }
                 }
 
@@ -828,57 +677,53 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-	 * Gets all tags associated to an object
-	 * @param inode object inode
-	 * @return List<Tag>
-     * @throws DotDataException
-     */
     @Override
     public List<Tag> getTagsByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagsByInode(inode);
     }
 
-    /**
-     * Extract tag names in the specified text and return the list
-     * of Tag Object found
-     *
-     * @param text   tag name to search
-     * @param hostId Host identifier
-     * @return list of tag found
-     * @throws Exception
-     */
     @Override
     public List<Tag> getTagsInText ( String text, String hostId ) throws DotSecurityException, DotDataException {
         return getTagsInText(text, "", hostId);
     }
 
-    /**
-     * Extract tag names in the specified text and return the list
-	 * of Tag Object found
-	 * 
-	 * @param text tag name to search
-	 * @param userId User id
-	 * @param hostId Host identifier
-	 * @return list of tag found
-	 * @throws Exception 
-	 */
     @Override
     public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException {
 
-        List<Tag> tags = new ArrayList<>();
+        boolean localTransaction = false;
 
-        //Split the given list of tasks
-        String[] tagNames = text.split("[,\\n\\t\\r]");
-        for ( String tagname : tagNames ) {
-            tagname = tagname.trim();
-            if ( tagname.length() > 0 ) {
-                //Search for this given tag and create it if does not exist
-                tags.add(getTagAndCreate(tagname, userId, hostId));
+        try {
+
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+            List<Tag> tags = new ArrayList<>();
+
+            //Split the given list of tasks
+            String[] tagNames = text.split("[,\\n\\t\\r]");
+            for ( String tagname : tagNames ) {
+                tagname = tagname.trim();
+                if ( tagname.length() > 0 ) {
+                    /*
+                    Search for this given tag and create it if does not exist, the search in order to define
+                    if the tag exist will include the system host
+                     */
+                    tags.add(getTagAndCreate(tagname, userId, hostId, false, true));
+                }
             }
-        }
 
-        return tags;
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
+            return tags;
+        } catch (Exception e) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
+        }
     }
 
 }

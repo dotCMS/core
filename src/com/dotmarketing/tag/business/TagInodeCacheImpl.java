@@ -51,6 +51,10 @@ public class TagInodeCacheImpl extends TagInodeCache {
             fieldVarName = object.getFieldVarName();
         }
 
+        //First clean up list references to this inode and tag id
+        cache.remove(getTagInodesByInodeGroup() + object.getInode(), getTagInodesByInodeGroup());
+        cache.remove(getTagInodesByTagIdGroup() + object.getTagId(), getTagInodesByTagIdGroup());
+
         //Adding the tag inode using the ids
         cache.put(getPrimaryGroup() + object.getTagId() + "_" + object.getInode() + "_" + fieldVarName, object, getPrimaryGroup());
     }

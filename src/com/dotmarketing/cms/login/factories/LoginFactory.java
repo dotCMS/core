@@ -64,8 +64,7 @@ public class LoginFactory {
                 if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
                 	userName = user.getUserId();
                 }
-
-                return doLogin(userName, user.getPassword(), true, request, response);
+                return doLogin(userName, null, true, request, response, true);
             } catch (Exception e) { // $codepro.audit.disable logExceptions
         		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
 
@@ -156,8 +155,25 @@ public class LoginFactory {
      * @param request
      * @param response
      * @return
+     * @throws NoSuchUserException
      */
-    public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
+	public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request,
+			HttpServletResponse response) throws NoSuchUserException {
+		return doLogin(userName, password, rememberMe, request, response, false);
+	}
+
+	/**
+	 * 
+	 * @param userName
+	 * @param password
+	 * @param rememberMe
+	 * @param request
+	 * @param response
+	 * @param skipPasswordCheck
+	 * @return
+	 * @throws NoSuchUserException
+	 */
+    public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request, HttpServletResponse response, boolean skipPasswordCheck) throws NoSuchUserException {
         try {
         	User user = null;
         	boolean match = false;
@@ -233,9 +249,11 @@ public class LoginFactory {
 
 	            	return false;
 	            }
-
+	            match = true;
+	            if (!skipPasswordCheck) {
 	            // Validate password and rehash when is needed
 	            match = passwordMatch(password, user);
+	            }
 
 	            if (match) {
 	            	if(useSalesForceLoginFilter){/*Custom Code */
@@ -299,7 +317,7 @@ public class LoginFactory {
             // if passwords match
             if (match) {
             	HttpSession ses = request.getSession();
-
+            	ses.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
                 // session stuff
                 ses.setAttribute(WebKeys.CMS_USER, user);
 
@@ -328,10 +346,11 @@ public class LoginFactory {
                 return true;
             }
         } catch (NoSuchUserException e) {
+            Logger.error(LoginFactory.class, "User " + userName + " does not exist.", e);
 			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made from IP: " + request.getRemoteAddr());
         	throw e;
         } catch (Exception e) {
-            Logger.error(LoginFactory.class, "Login Failed: " + e);
+            Logger.error(LoginFactory.class, "Login Failed: " + e, e);
 			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made from IP: " + request.getRemoteAddr());
         }
 
@@ -343,9 +362,6 @@ public class LoginFactory {
     *
     * @param userName
     * @param password
-    * @param rememberMe
-    * @param request
-    * @param response
     * @return
     */
     public static boolean doLogin(String userName, String password) throws NoSuchUserException {
@@ -463,7 +479,7 @@ public class LoginFactory {
         request.getSession().removeAttribute(WebKeys.LOGGED_IN_USER_CATS);
         request.getSession().removeAttribute(WebKeys.LOGGED_IN_USER_TAGS);
         request.getSession().removeAttribute(WebKeys.USER_FAVORITES);
-
+        request.getSession().removeAttribute(WebKeys.VISITOR);
         /*Custom Code*/
         if(useSalesForceLoginFilter){
         	request.getSession().removeAttribute(SalesForceUtils.ACCESS_TOKEN);

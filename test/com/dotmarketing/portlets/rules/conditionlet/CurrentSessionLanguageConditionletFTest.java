@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionDataGen;
@@ -22,8 +24,8 @@ import java.net.URLConnection;
 import java.util.List;
 import java.util.Random;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 
@@ -40,6 +42,11 @@ public class CurrentSessionLanguageConditionletFTest {
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
 
     private List<Rule> rulesToRemove = Lists.newArrayList();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init () {
@@ -67,7 +74,6 @@ public class CurrentSessionLanguageConditionletFTest {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(CurrentSessionLanguageConditionlet.class.getSimpleName());
-        condition.setName("Current Session Language");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
         condition.addValue(CurrentSessionLanguageConditionlet.LANGUAGE_KEY, "en");
 
@@ -94,7 +100,6 @@ public class CurrentSessionLanguageConditionletFTest {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(CurrentSessionLanguageConditionlet.class.getSimpleName());
-        condition.setName("Current Session Language");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
         condition.addValue(CurrentSessionLanguageConditionlet.LANGUAGE_KEY, "en");
 

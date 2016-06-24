@@ -32,13 +32,14 @@ public interface TagFactory {
     public java.util.List<Tag> getTagsByHost ( String hostId ) throws DotDataException;
 
     /**
-     * Gets all the tags containing the tag name specified and the host Identifier is the specified hostId or the system host id
-     * @param name  Tag name
+     * Returns all the suggested tags starting with the given tag name word and within the given host or system host.
+     *
+     * @param name   Tag name
      * @param hostId Host id
      * @return list of tags
      * @throws DotDataException
      */
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException;
+    public List<Tag> getSuggestedTags(String name, String hostId) throws DotDataException;
 
     /**
      * Get all the tags matched by name and hostId
@@ -151,6 +152,14 @@ public interface TagFactory {
     public void deleteTagInodesByInode(String inode) throws DotDataException;
 
     /**
+     * Deletes TagInodes references by tag id
+     *
+     * @param tagId tag reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException;
+
+    /**
      * Deletes a TagInode
      * @param tagInode TagInode to delete
      * @throws DotDataException
@@ -165,4 +174,12 @@ public interface TagFactory {
      */
     public List<Tag> getTagsByInode ( String inode ) throws DotDataException;
 
+    /**
+     * Gets all tags associated to given inode and field var name
+     * @param inode inode of the object tagged
+     * @param fieldVarName velocity var name of a field
+     * @return a list with all the tags associated with the given inode and field var name
+     * @throws DotDataException
+     */
+    public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException;
 }

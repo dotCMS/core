@@ -29,6 +29,7 @@ import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
 
@@ -213,6 +214,8 @@ public class ActionResource {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
+        }catch(Exception e){
+            throw new BadRequestException(e, e.getMessage());
         }
     }
 
@@ -240,6 +243,10 @@ public class ActionResource {
         if(actionlet == null){
             throw new BadRequestException("Actionlet with id '%s' not found: ", ruleAction.getActionlet());
         }
-        actionlet.doCheckValid(ruleAction);
+        try {
+            actionlet.doCheckValid(ruleAction);
+        } catch (InvalidActionInstanceException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 }

@@ -1,1 +1,0 @@
-Visit http://extjs.com/products/extcore/docs/ for the full API Documentation

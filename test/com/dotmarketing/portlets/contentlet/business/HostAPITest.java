@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.repackage.org.junit.*;
+import org.junit.*;
 
 import org.quartz.SimpleTrigger;
 

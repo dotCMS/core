@@ -418,6 +418,23 @@ public class EmailFactory {
 				String subject = (String)getMapValue("subject", parameters);
 				subject = (subject == null) ? "Mail from " + host.getHostname() + "" : subject;
 
+				
+				// strip line breaks from headers
+				from = from.replaceAll("\\s", " ");
+				to = to.replaceAll("\\s", " ");
+				cc = cc.replaceAll("\\s", " ");
+				bcc = bcc.replaceAll("\\s", " ");
+				fromName = fromName.replaceAll("\\s", " ");
+				subject = subject.replaceAll("\\s", " ");
+				
+				
+				
+				
+				
+				
+				
+				
+				
 				String emailFolder = (String)getMapValue("emailFolder", parameters);
 
 				boolean html = getMapValue("html", parameters) != null?Parameter.getBooleanFromString((String)getMapValue("html", parameters)):true;

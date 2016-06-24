@@ -23,7 +23,7 @@ public class TagCacheImpl extends TagCache {
     private String byHostCacheGroup = "tagsByHostCache";
 
     //Region's name for the cache
-    private String[] groupNames = { primaryGroup, byNameCacheGroup };
+    private String[] groupNames = { primaryGroup, byNameCacheGroup, byNameAndHostCacheGroup, byInodeCacheGroup, byHostCacheGroup};
 
     public TagCacheImpl () {
         cache = CacheLocator.getCacheAdministrator();
@@ -103,6 +103,13 @@ public class TagCacheImpl extends TagCache {
 
     @Override
     protected void put ( Tag object ) {
+
+        //First clean up list references to this tag name and host
+        //Removing by name
+        cache.remove(getTagsByNameGroup() + object.getTagName().toLowerCase(), getTagsByNameGroup());
+        //Removing by host
+        cache.remove(getTagsByHostGroup() + object.getHostId(), getTagsByHostGroup());
+
         //Adding the tag by id
         cache.put(getPrimaryGroup() + object.getTagId(), object, getPrimaryGroup());
         cache.put(getTagByNameHostGroup() + object.getTagName().toLowerCase() + "_" + object.getHostId(), object, getTagByNameHostGroup());
@@ -126,12 +133,10 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    public void clearCache () {
-        cache.flushGroup(getPrimaryGroup());
-        cache.flushGroup(getTagByNameHostGroup());
-        cache.flushGroup(getTagsByNameGroup());
-        cache.flushGroup(getTagsByHostGroup());
-        cache.flushGroup(getTagsByInodeGroup());
+    public void clearCache() {
+        for (String cacheGroup : getGroups()) {
+            cache.flushGroup(cacheGroup);
+        }
     }
 
     @Override

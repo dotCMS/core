@@ -7,8 +7,11 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
+import com.dotmarketing.util.NumberOfTimeVisitedCounter;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.dotmarketing.util.WebKeys;
+
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,7 +27,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String SITE_VISITS_KEY = "site-visits";
+	public static final String SITE_VISITS_KEY = "site-visits";
 	
 	private static final ParameterDefinition<NumericType> siteVisitsValue =
 			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
@@ -38,10 +41,10 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	@Override
 	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-		
-		String siteVisits = (UtilMethods.isSet(request.getCookies())) ? UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE) : "1";
+
+		String siteVisits = String.valueOf( NumberOfTimeVisitedCounter.getNumberSiteVisits( request ) );
 		String siteVisitsValue = instance.siteVisits;
-		
+
 		return instance.comparison.perform(siteVisits, siteVisitsValue);
 		
 	}

@@ -24,6 +24,7 @@ import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -32,6 +33,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -595,5 +597,45 @@ public class LinkFactory {
 				
 		return QueryUtil.DBSearch(query, dbColToObjectAttribute, null, user, true, respectFrontendRoles);
 	}
+
+	/**
+		 * Method will replace user references of the given userId in MenuLinks 
+		 * with the replacement user id 
+		 * @param userId User Identifier
+		 * @param replacementUserId The user id of the replacement user
+		 * @throws DotDataException There is a data inconsistency
+		 * @throws DotStateException There is a data inconsistency
+		 * @throws DotSecurityException 
+		 */
+		public static void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, DotSecurityException {
+		    DotConnect dc = new DotConnect();
+	        User systemUser = null;
+	        try {
+	           systemUser = APILocator.getUserAPI().getSystemUser();
+	           dc.setSQL("select inode from links where mod_user = ?");
+	           dc.addParam(userId);
+	           List<HashMap<String, String>> links = dc.loadResults();
+	           
+	           dc.setSQL("UPDATE links set mod_user = ? where mod_user = ? ");
+	           dc.addParam(replacementUserId);
+	           dc.addParam(userId);
+	           dc.loadResult();
+	           
+	           dc.setSQL("update link_version_info set locked_by=? where locked_by  = ?");
+	           dc.addParam(replacementUserId);
+	           dc.addParam(userId);
+	           dc.loadResult();
+	           
+	           for(HashMap<String, String> ident:links){
+	             String inode = ident.get("inode");
+	             Link link = getLinkFromInode(inode, systemUser.getUserId());
+	             CacheLocator.getNavToolCache().removeNav(link.getHostId(),link.getInode());
+	    		 RefreshMenus.deleteMenu(link);
+	          }
+	        } catch (DotDataException e) {
+	            Logger.error(LinkFactory.class,e.getMessage(),e);
+	            throw new DotDataException(e.getMessage(), e);
+	        }
+		}	
 	
 }

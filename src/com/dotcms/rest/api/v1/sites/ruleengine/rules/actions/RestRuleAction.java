@@ -21,9 +21,6 @@ public class RestRuleAction extends Validated {
     @JsonIgnore
     public final String id;
 
-    @NotBlank
-    public final String name;
-
     @NotNull
     @Length(min = 36, max = 36)
     public final String owningRule;
@@ -37,7 +34,6 @@ public class RestRuleAction extends Validated {
 
     private RestRuleAction(Builder builder) {
         id = builder.id;
-        name = builder.name;
         owningRule = builder.owningRule;
         priority = builder.priority;
         actionlet = builder.actionlet;

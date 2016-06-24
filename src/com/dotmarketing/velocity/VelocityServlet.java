@@ -26,11 +26,11 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -94,7 +94,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
-	public static  ThreadLocal<Context> velocityCtx = Logger.velocityCtx;
+	public static final ThreadLocal<Context> velocityCtx = new ThreadLocal<Context>();
 
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -122,7 +122,6 @@ public abstract class VelocityServlet extends HttpServlet {
         /*
 		 * Getting host object form the session
 		 */
-        HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
         Host host;
         try {
             host = hostWebAPI.getCurrentHost(request);
@@ -379,7 +378,13 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
 			String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-    		Host host = (Host)request.getAttribute("host");
+    		Host host;
+            try {
+                host = hostWebAPI.getCurrentHost(request);
+            } catch (Exception e) {
+                Logger.error(this, "Unable to retrieve current request host for URI " + uri);
+                throw new ServletException(e.getMessage(), e);
+            }
 
 			//Find the current language
 			long currentLanguageId = VelocityUtil.getLanguageId(request);
@@ -445,20 +450,11 @@ public abstract class VelocityServlet extends HttpServlet {
 				}
 
     		}
-    		
-    		String _siteVisitsCookie = UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
-    		
-    		if(!UtilMethods.isSet(_siteVisitsCookie)){
-    			Cookie cookie = CookieUtil.createSiteVisitsCookie();
-    			response.addCookie(cookie);
-    		}
 
             String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
                     WebKeys.ONCE_PER_VISIT_COOKIE);
 
             if (!UtilMethods.isSet(_oncePerVisitCookie)) {
-                Cookie cookie = CookieUtil.createOncePerVisitCookie();
-                response.addCookie(cookie);
 				newVisit = true;
             }
 
@@ -472,16 +468,6 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 			if(newVisit) {
-				if(UtilMethods.isSet(_siteVisitsCookie)){
-					//Increment siteVisitsCookie
-					int visits = Integer.parseInt(_siteVisitsCookie);
-					visits++;
-					Cookie siteVisitsCookie = UtilMethods.getCookie(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
-					siteVisitsCookie.setValue(Integer.toString(visits));
-					siteVisitsCookie.setMaxAge(60 * 60 * 24 * 356 * 5);
-					siteVisitsCookie.setPath("/");
-					response.addCookie(siteVisitsCookie);
-				}
    				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
 				if(response.isCommitted()) {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
@@ -559,6 +545,9 @@ public abstract class VelocityServlet extends HttpServlet {
     				}
     			}
     		}
+
+			//Fire the page rules until we know we have permission.
+			RulesEngine.fireRules(request, response, page, Rule.FireOn.EVERY_PAGE);
 
     		Logger.debug(VelocityServlet.class, "Recording the ClickStream");
     		if(Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {

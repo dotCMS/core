@@ -20,7 +20,6 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String id;
-    private String name;
     private String ruleId;
     private int priority;
     private String actionlet;
@@ -29,20 +28,30 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private transient RuleActionlet actionDef;
     private transient RuleComponentInstance instance;
 
+    public RuleAction() {
+
+    }
+
+    public RuleAction(RuleAction ruleActionToCopy){
+        id = ruleActionToCopy.id;
+        ruleId = ruleActionToCopy.ruleId;
+        priority = ruleActionToCopy.priority;
+        actionlet = ruleActionToCopy.actionlet;
+        modDate = ruleActionToCopy.modDate;
+        if(ruleActionToCopy.getParameters().values() != null){
+            parameters = Maps.newHashMap();
+            for (ParameterModel parameterModel : ruleActionToCopy.getParameters().values()) {
+                parameters.put(parameterModel.getKey(), new ParameterModel(parameterModel));
+            }
+        }
+    }
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getRuleId() {
@@ -104,7 +113,14 @@ public class RuleAction implements RuleComponentModel, Serializable {
     }
 
     public void checkValid() {
-        this.instance = getActionDefinition().doCheckValid(this);
+        RuleActionlet actionDefinition = getActionDefinition();
+
+        if (actionDefinition == null){
+            String message = String.format("RuleActionlet %1$s doesn't exist", actionlet);
+            throw new IllegalArgumentException(message);
+        }else{
+            this.instance = actionDefinition.doCheckValid(this);
+        }
     }
 
     public final boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
@@ -121,8 +137,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
 
 	@Override
 	public String toString() {
-		return "RuleAction [id=" + id + ", name=" + name + ", ruleId=" + ruleId
-				+ ", priority=" + priority + ", actionlet=" + actionlet
+		return "RuleAction [id=" + id + ", priority=" + priority + ", actionlet=" + actionlet
 				+ ", modDate=" + modDate + "]";
 	}
 

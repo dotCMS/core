@@ -289,7 +289,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the CacheOSGIService
-            CacheProviderAPI cacheProviderAPI = APILocator.getCacheProviderPI();
+            CacheProviderAPI cacheProviderAPI = APILocator.getCacheProviderAPI();
             if ( cacheProviderAPI != null ) {
 
                 serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
@@ -680,7 +680,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private void registerBundleResourceMessages(BundleContext context) {
         //Register Language under /resources/messages folder.
         Enumeration<String> langFiles = context.getBundle().getEntryPaths("messages");
-        while( langFiles.hasMoreElements() ){
+        while(langFiles != null && langFiles.hasMoreElements() ){
 
             String langFile = langFiles.nextElement();
 

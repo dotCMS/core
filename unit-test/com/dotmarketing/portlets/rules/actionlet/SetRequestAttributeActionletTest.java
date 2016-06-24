@@ -64,10 +64,8 @@ public class SetRequestAttributeActionletTest {
         assertThat(theCase.msg, exception, theCase.valid ? nullValue() : notNullValue());
     }
 
-
-
     @Test
-    public void testExecuteActionClearsWhenNullValueSent() throws Exception {
+    public void testExecuteActionTreatsNullValueAsEmptyString() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         String keyValue = "Foo";
@@ -80,7 +78,7 @@ public class SetRequestAttributeActionletTest {
         SetRequestAttributeActionlet actionlet = new SetRequestAttributeActionlet();
         actionlet.evaluate(request, null, new SetRequestAttributeActionlet.Instance(params));
 
-        Mockito.verify(request).removeAttribute(keyValue);
+        Mockito.verify(request).setAttribute(keyValue, "");
     }
 
     public static class TestCase {

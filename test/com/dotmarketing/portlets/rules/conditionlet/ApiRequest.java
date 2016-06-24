@@ -31,6 +31,10 @@ class ApiRequest {
         return makeRequest(new URL(baseUrl + path), propertiesValues);
     }
 
+    public URLConnection makeRequest (String path, String[] propertiesValues, String... cookies  ) throws IOException {
+        return makeRequest(new URL(baseUrl + path), propertiesValues, cookies);
+    }
+
     public URLConnection makeRequest ( URL url, String[] propertiesValues, String... cookies ) throws IOException {
 
         URLConnection con = url.openConnection();

@@ -7,6 +7,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 public class NotificationAPIImpl implements NotificationAPI {
@@ -16,7 +17,25 @@ public class NotificationAPIImpl implements NotificationAPI {
 	public NotificationAPIImpl() {
 		notificationFactory = FactoryLocator.getNotificationFactory();
 	}
-	
+
+	@Override
+	public void info(String message, String userId) {
+		try {
+			generateNotification(message, NotificationLevel.INFO, userId);
+		} catch (DotDataException e) {
+			Logger.error(this, "Error generating INFO Notification", e);
+		}
+	}
+
+	@Override
+	public void error(String message, String userId) {
+		try {
+			generateNotification(message, NotificationLevel.ERROR, userId);
+		} catch (DotDataException e) {
+			Logger.error(this, "Error generating ERROR Notification", e);
+		}
+	}
+
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
 		Notification n = new Notification(message, level, userId);
 		notificationFactory.saveNotification(n);

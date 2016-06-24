@@ -12,7 +12,7 @@
 
 <option value="SYSTEM_HOST" #if($tagStorage.equals("SYSTEM_HOST")) selected="selected" #end>All Sites</option>
 
-#foreach($c in $dotcontent.pull('+structureName:Host +live:true +deleted:false', 0, 'host.hostName asc'))
+#foreach($c in $dotcontent.pull('+structureName:Host +deleted:false', 0, 'host.hostName asc'))
 <option value="$c.identifier" #if($c.identifier.equals($tagStorage) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier))) selected="selected" #end>$c.hostName</option>
 #end
 </select>

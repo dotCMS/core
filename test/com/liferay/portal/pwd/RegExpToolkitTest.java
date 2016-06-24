@@ -1,8 +1,8 @@
 package com.liferay.portal.pwd;
 
-import static com.dotcms.repackage.org.junit.Assert.assertFalse;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
-import com.dotcms.repackage.org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 import com.dotcms.TestBase;
 
 public class RegExpToolkitTest extends TestBase {

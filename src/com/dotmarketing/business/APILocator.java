@@ -10,6 +10,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
+import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
@@ -80,7 +81,6 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPIImpl;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -287,7 +287,7 @@ public class APILocator extends Locator<APIIndex>{
 		return (WorkflowAPI) getInstance(APIIndex.WORKFLOW_API);
 	}
 
-	public static CacheProviderAPI getCacheProviderPI () {
+	public static CacheProviderAPI getCacheProviderAPI () {
 		return (CacheProviderAPI) getInstance(APIIndex.CACHE_PROVIDER_API);
 	}
 
@@ -521,7 +521,7 @@ enum APIIndex
 		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
 		case ES_SEARCH_API: return new ESSearchProxy();
-		case RULES_API: return new RulesAPIImpl();
+		case RULES_API: return new RulesAPIProxy();
 		case VISITOR_API: return new VisitorAPIImpl();
 
 		

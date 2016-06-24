@@ -47,6 +47,7 @@
         var headers;
         var userRolesIds = new Array ();
         var selectedStructureVarName = '';
+        var bindTagFieldEvent;
 
         var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
@@ -173,7 +174,6 @@
 
 
         function fillResults(data) {
-        	//console.log("searching:" +  amISearching);
         	if(amISearching <0){
         		amISearching=0;
         	}
@@ -192,7 +192,7 @@
             var begin = counters["begin"];
             var end = counters["end"];
     		var totalPages = counters["totalPages"];
-    		
+
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
@@ -587,18 +587,52 @@
                     return result;
 
           }else if(type=='tag'){
+                        var fieldId = selectedStruct + fieldContentlet + "Field";
+                        var searchFieldId = selectedStruct + "." + fieldContentlet + "Field";
+
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
-                        var result="<table style='width:210px;' border=\"0\">";
-                        result = result + "<tr><td style='padding:0px;'>";
-                        result = result +"<textarea onchange=\"setTimeout(doSearch, 500);\" value=\""+value+"\" dojoType=\"dijit.form.Textarea\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"+ selectedStruct+"."+ fieldContentlet + "suggestedTagsDiv');\" style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\"></textarea><br/><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span></td></tr>";
-                        result = result + "<tr><td valign=\"top\" style='padding:0px;'>";
-                        result = result + "<div id=\"" + selectedStruct+"." + fieldContentlet + "suggestedTagsDiv\" style=\"height: 50px; font-size:10px;font-color:gray; width: 146px; border:1px solid #ccc;overflow: auto;\"></div><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></span><br></td></tr></table>";
+                        dijit.registry.remove(selectedStruct + fieldContentlet + "Field");
+
+                        var result = [
+                            "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
+                            "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
+                            "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
+                            "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
+                            "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
+                            "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
+                            "</div>"
+                        ].join("");
+
+                        bindTagFieldEvent = function() {
+                          var tagField = dojo.byId(fieldId);
+                          dojo.connect(tagField, "onkeyup", function(e) {
+
+                            <%
+                                //Search for the selected host
+                                String selectedHost = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                if(UtilMethods.isSet(selectedHost) && !selectedHost.equals("allHosts")) {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId,'<%=selectedHost%>');
+                            <%
+                                } else {
+                            %>
+                                    suggestTagsForSearch(e, searchFieldId);
+                            <%
+                                }
+                            %>
+                          });
+                          dojo.connect(tagField, "onblur", closeSuggetionBox);
+                          if (value.length) {
+                            fillExistingTags(fieldId, value, searchFieldId);
+                          }
+                        }
 
                         setDotFieldTypeStr = setDotFieldTypeStr
-                                                                        + "dojo.attr("
-                                                                        + "'" + selectedStruct + "." + fieldContentlet + "Field" + "'"
-                                                                        + ",'" + DOT_FIELD_TYPE + "'"
-                                                                        + ",'" + type + "');";
+                                            + "bindTagFieldEvent();\n"
+                                            + "dojo.attr("
+                                            + "'" + selectedStruct + "." + fieldContentlet + "Field" + "'"
+                                            + ",'" + DOT_FIELD_TYPE + "'"
+                                            + ",'" + type + "');";
 
                     return result;
           }//http://jira.dotmarketing.net/browse/DOTCMS-3232
@@ -1468,7 +1502,7 @@
                 	fieldsValues[fieldsValues.length] = "languageId";
                 	fieldsValues[fieldsValues.length] = getSelectedLanguageId();
                 }
-                
+
                 if(getSelectedLanguageId() == ""){
                         dijit.byId('language_id').focus() ;
                         return false;
@@ -1553,7 +1587,6 @@
                 document.getElementById('filterSystemHost').value = filterSystemHost;
                 document.getElementById('filterLocked').value = filterLocked;
                 document.getElementById('filterUnpublish').value = filterUnpublish;
-				//console.log(fieldsValues);
                 if(isInodeSet(structureInode) || "_all" == structureInode){
                         var dateFrom=null;
                         var dateTo= null;
@@ -1663,7 +1696,7 @@
                 }
         }
 
-        /* Displays the Push Publish dialog. If the content is archived, allow 
+        /* Displays the Push Publish dialog. If the content is archived, allow
         users to ONLY do a "Remove", not a "Push" or "Push & Remove". */
         function remotePublish(objId, referrer, isArchived) {
             pushHandler.showDialog(objId, false, isArchived);
@@ -1757,15 +1790,14 @@
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
-                                //console.log(headers[j]);
                                 cell.setAttribute("align","left");
                                 if (j == 0 ) {
-                                
+
                                 	if(languages.length>1){
                                 		cell.setAttribute("nowrap","true");
                                         languageId = cellData["languageId"];
                                         locale = "";
-                                        	
+
                                         for (var n = 0; n < languages.length; ++n) {
                                             if (languages[n][0] == languageId) {
 	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif' width='16px' height='11px' />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
@@ -1814,6 +1846,7 @@
                         workflowMandatory = cellData["workflowMandatory"];
                         contentStructureType = cellData["contentStructureType"];
                         structure_id = cellData["structureInode"];
+                        hasLiveVersion = cellData["hasLiveVersion"];
 
                         contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 
@@ -1890,7 +1923,7 @@
 
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
-						
+
 						if (cellData.allowUnpublishOfLiveVersion=="true" && workflowMandatory=="false"){
                           if(selectedStructureVarName == 'calendarEvent'){
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
@@ -1910,7 +1943,7 @@
 						// END NEW CONTEXT MENU
 
 
-                        if ((!live) && working && (publish=="1") && workflowMandatory=="false") {
+                        if ((!live) && working && (publish=="1") && workflowMandatory=="false" && hasLiveVersion!="true") {
                            if(selectedStructureVarName == 'calendarEvent'){
                              if (!deleted){
                                         popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"deleteContentlet('" + cellData.inode + "','','" + escape('<%= referer %>') + "'" + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
@@ -2005,15 +2038,25 @@
                                                 opt.selected = false;
                                           }
                                   } else {
-                                          formField.value = "";
-                                          var temp = dijit.byId(formField.id);
-                                          temp.attr('value','');
-                                          if(temp){
-					                        try{
-					                           temp.setDisplayedValue('');
-					                         }catch(e){console.log(e);}
+
+                                          var dotCurrentFieldType = formField.getAttribute("dotfieldtype");
+                                          if (dotCurrentFieldType && dotCurrentFieldType == "tag") {
+                                              //Clean up the tag search field
+                                              clearSuggestTagsForSearch();
+                                              removeAllTags();
+                                          } else {
+
+                                              formField.value = "";
+
+                                              var temp = dijit.byId(formField.id);
+                                              temp.attr('value','');
+                                              if(temp){
+                                                try{
+                                                   temp.setDisplayedValue('');
+                                                 }catch(e){console.log(e);}
+                                              }
 					                      }
-					                    }
+                                  }
                         }
                 }
 

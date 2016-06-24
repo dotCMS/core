@@ -14,7 +14,17 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * This class represents an HTML Page as a {@link Contentlet}, which is the new 
+ * version of Content Pages in dotCMS.
+ * 
+ * @author Jorge Urdaneta
+ * @version 1.0
+ * @since Aug 28, 2014
+ *
+ */
 public class HTMLPageAsset extends Contentlet implements IHTMLPage {
+
     private static final long serialVersionUID = -4775734788059690797L;
 
     @Override
@@ -130,10 +140,10 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         map.put("friendlyName", getFriendlyName());
         
         try {
-            map.put("live", isLive());
-            map.put("working", isWorking());
-            map.put("deleted", isArchived());
-            map.put("locked", isLocked());
+            map.put("live", map.containsKey("live") ? map.get("live") : isLive());
+            map.put("working", map.containsKey("working") ? map.get("working") : isWorking());
+            map.put("deleted", map.containsKey("deleted") ? map.get("deleted") : isArchived());
+            map.put("locked", map.containsKey("locked") ? map.get("locked") : isLocked());
         }
         catch(Exception ex) {
             throw new DotRuntimeException(ex.getMessage(),ex);
@@ -210,4 +220,5 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
     public int getMenuOrder() {
         return (int)getSortOrder();
     }
+
 }

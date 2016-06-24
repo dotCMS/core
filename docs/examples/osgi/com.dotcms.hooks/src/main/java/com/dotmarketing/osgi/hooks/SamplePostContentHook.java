@@ -3,8 +3,10 @@ package com.dotmarketing.osgi.hooks;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPIPostHookAbstractImp;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.util.Logger;
@@ -22,9 +24,9 @@ public class SamplePostContentHook extends ContentletAPIPostHookAbstractImp {
     @Override
     public long contentletCount ( long returnValue ) throws DotDataException {
 
-        System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++" );
-        System.out.println( "INSIDE SamplePostContentHook.contentletCount() -->" + String.valueOf( returnValue ) );
-        System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++" );
+        Logger.info(this, "+++++++++++++++++++++++++++++++++++++++++++++++" );
+        Logger.info(this, "INSIDE SamplePostContentHook.contentletCount() -->" + String.valueOf( returnValue ) );
+        Logger.info(this, "+++++++++++++++++++++++++++++++++++++++++++++++" );
 
         return super.contentletCount( returnValue );
     }
@@ -35,12 +37,8 @@ public class SamplePostContentHook extends ContentletAPIPostHookAbstractImp {
         Logger.info( this, "+++++++++++++++++++++++++++++++++++++++++++++++" );
         Logger.info( this, "INSIDE SamplePostContentHook.checkin()" );
         Logger.info( this, "+++++++++++++++++++++++++++++++++++++++++++++++" );
-        super.checkin( currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, returnValue );
-    }
 
-    @Override
-    public void deleteByHost(Host host, User user, boolean respectFrontendRoles) {
-        // TODO Auto-generated method stub
+        super.checkin( currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, returnValue );
     }
 
 }

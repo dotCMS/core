@@ -96,6 +96,7 @@ public class NavTool implements ViewTool {
             List<String> folderIds=new ArrayList<String>();
             result.setChildren(children);
             result.setChildrenFolderIds(folderIds);
+            result.setShowOnMenu(folder.isShowOnMenu());
 
             List menuItems;
             if(path.equals("/"))
@@ -113,6 +114,8 @@ public class NavTool implements ViewTool {
                     nav.setOrder(itemFolder.getSortOrder());
                     nav.setType("folder");
                     nav.setPermissionId(itemFolder.getPermissionId());
+                    nav.setShowOnMenu(itemFolder.isShowOnMenu());
+                    
                     // it will load lazily its children
                     folderIds.add(itemFolder.getInode());
                     children.add(nav);
@@ -142,7 +145,7 @@ public class NavTool implements ViewTool {
                     nav.setOrder(itemPage.getMenuOrder());
                     nav.setType("htmlpage");
                     nav.setPermissionId(itemPage.getPermissionId());
-                    
+                    nav.setShowOnMenu(itemPage.isShowOnMenu());
                     if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId) )) {
                     	children.add(nav);
                     }
@@ -161,6 +164,7 @@ public class NavTool implements ViewTool {
                     nav.setType("link");
                     nav.setTarget(itemLink.getTarget());
                     nav.setPermissionId(itemLink.getPermissionId());
+                    nav.setShowOnMenu(itemLink.isShowOnMenu());
                     children.add(nav);
                 }
                 else if(item instanceof IFileAsset) {
@@ -172,6 +176,7 @@ public class NavTool implements ViewTool {
                     nav.setOrder(itemFile.getMenuOrder());
                     nav.setType("file");
                     nav.setPermissionId(itemFile.getPermissionId());
+                    nav.setShowOnMenu(itemFile.isShowOnMenu());
                     children.add(nav);
                 }
             }

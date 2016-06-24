@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public interface CacheTransport {
 
-    void init ( Server localServer, Map<String, String> cacheProperties ) throws CacheTransportException;
+    void init ( Server localServer ) throws CacheTransportException;
 
     /**
      * Sends a message to the transport channel

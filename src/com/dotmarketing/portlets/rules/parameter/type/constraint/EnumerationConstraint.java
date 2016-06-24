@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.parameter.type.constraint;
 
-import com.dotcms.repackage.com.oracle.webservices.api.databinding.DatabindingModeFeature;
 
 /**
  * @author Geoff M. Granum

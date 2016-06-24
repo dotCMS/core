@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -921,10 +922,28 @@ public class DotConnect {
 		if (DbConnectionFactory.isOracle()) {
 			BigDecimal result = (BigDecimal) loadObjectResults().get(0).get("count");
 			recordCount = new Long(result.toPlainString());
+		} else if (DbConnectionFactory.isMsSql()) {
+			Integer result = (Integer) loadObjectResults().get(0).get("count");
+			recordCount = new Long(result.toString());
 		} else {
 			recordCount = (Long) loadObjectResults().get(0).get("count");
 		}
 		return recordCount;
 	}
+
+    /**
+     * It will create a String like (?,?,?) depending on the number of Parameters.
+     *
+     * @param numberParameters how many '?' you want.
+     * @return
+     */
+    public static String createParametersPlaceholder(int numberParameters){
+        String parameterPlaceholders = "";
+
+        if(numberParameters > 0){
+            parameterPlaceholders = StringUtils.repeat(",?", numberParameters).substring(1);
+        }
+        return parameterPlaceholders;
+    }
 
 }

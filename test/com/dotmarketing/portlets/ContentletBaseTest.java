@@ -1,15 +1,11 @@
 package com.dotmarketing.portlets;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
@@ -92,6 +88,8 @@ public class ContentletBaseTest extends TestBase {
     protected static Collection<Identifier> identifiers;
     protected static int FIELDS_SIZE = 14;
 
+    protected static Map<String, Long> uniqueIdentifier = new HashMap<>();
+
     private static String wysiwygValue = "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. " +
             "Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem.</p>" +
             "<p>Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer " +
@@ -162,7 +160,8 @@ public class ContentletBaseTest extends TestBase {
 
         //Adding the fields to the structures
         for ( Structure structure : structures ) {
-            addFields( structure );
+            long l = addFields(structure);
+            uniqueIdentifier.put( structure.getName(), l );
         }
 
         //*******************************************************************************
@@ -290,50 +289,55 @@ public class ContentletBaseTest extends TestBase {
      * @throws com.dotmarketing.exception.DotHibernateException
      *
      */
-    protected static void addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
+    protected static long addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
+
+        Random random = new Random();
+        long uniqueIdentifier = random.nextLong();
 
         //Create the fields
-        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, jUnitTestStructure, false, true, false, 1, false, false, false );
+        Field field = new Field( "JUnit Test Text-" + uniqueIdentifier, Field.FieldType.TEXT, Field.DataType.TEXT, jUnitTestStructure, false, true, false, 1, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Text Area", Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, jUnitTestStructure, false, false, false, 2, false, false, false );
+        field = new Field( "JUnit Test Text Area-" + uniqueIdentifier, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, jUnitTestStructure, false, false, false, 2, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Wysiwyg", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, jUnitTestStructure, false, false, false, 3, false, false, false );
+        field = new Field( "JUnit Test Wysiwyg-" + uniqueIdentifier, Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, jUnitTestStructure, false, false, false, 3, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Date", Field.FieldType.DATE, Field.DataType.DATE, jUnitTestStructure, false, false, false, 4, false, false, false );
+        field = new Field( "JUnit Test Date-" + uniqueIdentifier, Field.FieldType.DATE, Field.DataType.DATE, jUnitTestStructure, false, false, false, 4, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Time", Field.FieldType.TIME, Field.DataType.DATE, jUnitTestStructure, false, false, false, 5, false, false, false );
+        field = new Field( "JUnit Test Time-" + uniqueIdentifier, Field.FieldType.TIME, Field.DataType.DATE, jUnitTestStructure, false, false, false, 5, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Date Time", Field.FieldType.DATE_TIME, Field.DataType.DATE, jUnitTestStructure, false, false, false, 6, false, false, false );
+        field = new Field( "JUnit Test Date Time-" + uniqueIdentifier, Field.FieldType.DATE_TIME, Field.DataType.DATE, jUnitTestStructure, false, false, false, 6, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Integer", Field.FieldType.TEXT, Field.DataType.INTEGER, jUnitTestStructure, false, false, false, 7, false, false, false );
+        field = new Field( "JUnit Test Integer-"+ uniqueIdentifier, Field.FieldType.TEXT, Field.DataType.INTEGER, jUnitTestStructure, false, false, false, 7, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Float", Field.FieldType.TEXT, Field.DataType.FLOAT, jUnitTestStructure, false, false, false, 8, false, false, false );
+        field = new Field( "JUnit Test Float-" + uniqueIdentifier, Field.FieldType.TEXT, Field.DataType.FLOAT, jUnitTestStructure, false, false, false, 8, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Boolean", Field.FieldType.RADIO, Field.DataType.BOOL, jUnitTestStructure, false, false, false, 9, false, false, false );
+        field = new Field( "JUnit Test Boolean-" + uniqueIdentifier, Field.FieldType.RADIO, Field.DataType.BOOL, jUnitTestStructure, false, false, false, 9, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test File", Field.FieldType.FILE, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 10, false, false, false );
+        field = new Field( "JUnit Test File-" + uniqueIdentifier, Field.FieldType.FILE, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 10, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Image", Field.FieldType.IMAGE, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 11, false, false, false );
+        field = new Field( "JUnit Test Image-" + uniqueIdentifier, Field.FieldType.IMAGE, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 11, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Binary", Field.FieldType.BINARY, Field.DataType.BINARY, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Binary-" + uniqueIdentifier, Field.FieldType.BINARY, Field.DataType.BINARY, jUnitTestStructure, false, false, false, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Host Folder", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Host Folder-" + uniqueIdentifier, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Tag", Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
         FieldFactory.saveField( field );
+
+        return uniqueIdentifier;
     }
 
     /**

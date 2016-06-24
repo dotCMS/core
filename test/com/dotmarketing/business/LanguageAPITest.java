@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.junit.framework.Assert;
-import com.dotcms.repackage.org.junit.Test;
+import junit.framework.Assert;
+import org.junit.Test;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 
 public class LanguageAPITest {

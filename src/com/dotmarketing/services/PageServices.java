@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -120,10 +121,19 @@ public class PageServices {
 		if(st.hasMoreTokens()){
 			pageChannel = st.nextToken();
 		}
-		
-		
-		
-		
+
+		//List of tags found in this page
+		List<Tag> pageFoundTags = new ArrayList<>();
+
+		//Check if we want to accrue the tags of this HTMLPage contentlet
+		if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_PAGES", true) ) {
+
+			List<Tag> htmlPageFoundTags = APILocator.getTagAPI().getTagsByInode(htmlPage.getInode());
+			if ( htmlPageFoundTags != null ) {
+				pageFoundTags.addAll(htmlPageFoundTags);
+			}
+		}
+
 		// set the page cache var
 		if(htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() > 99){
 			sb.append("#set($dotPageCacheDate = \"").append( new java.util.Date() ).append("\")");
@@ -273,7 +283,19 @@ public class PageServices {
                 }
                 if(++countFull>=c.getMaxContentlets()) break;
             }
-			
+
+			//Check if we want to accrue the tags associated to each contentlet on this page
+			if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false) ) {
+
+				for ( Contentlet contentlet : contentletsFull ) {
+					//Search for the tags associated to this contentlet inode
+					List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
+					if ( contentletFoundTags != null ) {
+						pageFoundTags.addAll(contentletFoundTags);
+					}
+				}
+			}
+
 			sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
 			   sb.append(widgetpreeFull);
 			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
@@ -289,6 +311,12 @@ public class PageServices {
 			sb.append("#end ");
 			langCounter++;
 
+		}
+
+		//Now we need to use the found tags in order to accrue them each time this page is visited
+		if ( !pageFoundTags.isEmpty() ) {
+			//Velocity call to accrue tags on each request to this page
+			sb.append("$tags.accrueTags(\"" + TagUtil.tagListToString(pageFoundTags) + "\" )");
 		}
 
 		if(htmlPage.isHttpsRequired()){		

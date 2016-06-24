@@ -1,13 +1,10 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper;
 import com.dotcms.repackage.javax.ws.rs.ext.Provider;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 
 /**
  * Created by Oscar Arrieta on 8/25/15.
@@ -17,7 +14,7 @@ import com.dotmarketing.util.json.JSONObject;
  * alert the user they are sending incorrect data and should fix it before try again.
  */
 @Provider
-public class InvalidFormatExceptionMapper extends DotExceptionMapper implements ExceptionMapper<InvalidFormatException> {
+public class InvalidFormatExceptionMapper implements ExceptionMapper<InvalidFormatException> {
 
     @Override
     public Response toResponse(InvalidFormatException exception)
@@ -30,9 +27,9 @@ public class InvalidFormatExceptionMapper extends DotExceptionMapper implements 
                         + "': not a valid " + exception.getTargetType() + " value";
 
         //Creating the message in JSON format.
-        String entity = getJsonErrorAsString(message);
+        String entity = ExceptionMapperUtil.getJsonErrorAsString(message);
 
         //Return 4xx message to the client.
-        return createResponse(entity);
+        return ExceptionMapperUtil.createResponse(entity, message);
     }
 }

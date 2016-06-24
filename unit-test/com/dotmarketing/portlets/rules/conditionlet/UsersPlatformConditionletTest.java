@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMultimap;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
+import eu.bitwalker.useragentutils.DeviceType;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -16,7 +16,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType.COMPUTER;
+import static eu.bitwalker.useragentutils.DeviceType.COMPUTER;
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionlet.PLATFORM_KEY;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EXISTS;
