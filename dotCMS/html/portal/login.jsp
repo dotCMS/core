@@ -1,3 +1,4 @@
+
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -24,7 +25,7 @@ if(!UtilMethods.isSet(login)){
 }
 login = Xss.strip(login);
 
-
+request.getSession().removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
 
 String uId = null;
 Cookie[] cookies = request.getCookies();
@@ -46,7 +47,7 @@ if(cookies != null){
 if(UtilMethods.isSet(uId)){
 	session.setAttribute(WebKeys.USER_ID, uId);
 	String referer = (String)session.getAttribute(WebKeys.REFERER);
-
+	
 	//DOTCMS-4943
 	UserAPI userAPI = APILocator.getUserAPI();
 	boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(request);
@@ -167,7 +168,6 @@ if(errorMessage != null){
 
  -->
 
-<script type="text/javascript" src="/html/js/chrome_frame/CFInstall.min.js"></script>
 
 <style>
 	body{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;}

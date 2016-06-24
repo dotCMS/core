@@ -110,8 +110,7 @@ td {font-size: 100%;}
     var confirmRemoveTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tag")) %>';
     var confirmRemoveTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tags")) %>';
     var exportTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-tags-message")) %>';
-    var tagNameAlreadyExistForSelectedHost = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-for-host-already-exists")) %>';
-    var noResultsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-no-search-results")) %>';
+     var noResultsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-no-search-results")) %>';
     var allTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-all"))%>';
     var addTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-tag"))%>';
     var editTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-tag"))%>';
@@ -328,8 +327,9 @@ td {font-size: 100%;}
 
         function saveTagCallback (data) {
             if(data["saveTagErrors"] != null ) {
+                console.log(data);
                 dojo.byId('addTagErrorMessagesList').innerHTML = '';
-                dojo.place("<li>" + tagNameAlreadyExistForSelectedHost + "</li>", "addTagErrorMessagesList", "last");
+                dojo.place("<li>" + data["saveTagErrors"] + "</li>", "addTagErrorMessagesList", "last");
             }else{
                 dijit.byId('addTagDialog').hide();
                 showDotCMSSystemMessage(tagSavedMsg);
@@ -518,10 +518,11 @@ td {font-size: 100%;}
         <div style="text-align: center">
                 <span  id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
                 </span>
+
+                <ul id="addTagErrorMessagesList" style="color:red; font-size:11px; font-family: verdana; " ></ul>
         </div>
         <dl>
             <dt></dt>
-            <dd><ul id="addTagErrorMessagesList"></ul></dd>
 
             <dt><%= LanguageUtil.get(pageContext, "tag") %>:</dt>
             <dd><input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>

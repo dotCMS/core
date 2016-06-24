@@ -53,4 +53,13 @@ public abstract class ContentTypeCache implements Cachable {
 
     public abstract void removeContainerStructures(String containerIdentifier,
             String containerInode);
+    
+    public abstract String getStructuresByTypeGroup();
+    
+    public abstract List<Structure> getStructuresByType(int structureType);
+    
+    public abstract void addStructuresByType(List<Structure> structures, int structureType);
+    
+    public abstract void removeStructuresByType(int structureType);
+    
 }

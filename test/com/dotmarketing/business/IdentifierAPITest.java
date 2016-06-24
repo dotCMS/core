@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Assert;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;

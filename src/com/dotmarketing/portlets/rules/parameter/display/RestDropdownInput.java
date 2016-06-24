@@ -1,6 +1,13 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.rest.exception.InvalidRuleParameterException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.util.Logger;
 
 /**
  * Defines a Select input field that populates its Options from the values returned by a call to
@@ -85,4 +92,4 @@ public class RestDropdownInput extends TextInput<TextType> {
         return jsonLabelField;
     }
 }
- 
+

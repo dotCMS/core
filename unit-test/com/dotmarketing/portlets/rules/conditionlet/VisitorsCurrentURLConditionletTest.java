@@ -11,7 +11,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.List;
@@ -134,15 +134,6 @@ public class VisitorsCurrentURLConditionletTest {
             e.printStackTrace();
             throw e;
         }
-    }
-
-    @Test
-    public void testUriProcessing() throws Exception {
-        VisitorsCurrentUrlConditionlet conditionlet = new VisitorsCurrentUrlConditionlet();
-        assertEquals(conditionlet.processUrl("/products/", "index"),"/products/index");
-        assertEquals(conditionlet.processUrl("/products/?some=property", "index"),"/products/index");
-        assertEquals(conditionlet.processUrl("/products?", "index"),"/products");
-        assertEquals(conditionlet.processUrl("/products?some=property", "index"),"/products");
     }
 
     @Test(dataProvider = "cases")

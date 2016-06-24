@@ -1,37 +1,41 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 
-import java.time.LocalDateTime;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.StandardConstraints;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
 import java.time.format.DateTimeParseException;
+import org.joda.time.DateTime;
 
-public class DateTimeType extends DataType {
+public class DateTimeType extends DataType<DateTime> {
 
-    private int minLength = 0;
+    public DateTimeType() {
+        super("dateTime", "api.system.type.datetime");
+    }
 
     @Override
-    public Object convert(String from) {
-        return null;
+    public DateTime convert(String from) {
+        return DateTime.parse(from);
     }
 
     @Override
     public void checkValid(String value) {
         if(!Strings.isNullOrEmpty(value)) {
             try {
-                LocalDateTime.parse(value);
+                DateTime.parse(value);
             } catch (DateTimeParseException e) {
                 throw new ParameterNotValidException(e, "Could not parse %s into a date-time type.", value);
             }
         }
     }
 
-    public DateTimeType() {
-        super("dateTime", "api.system.type.datetime");
+    public DateTimeType required(){
+        return this.restrict(StandardConstraints.required);
     }
 
-    public DateTimeType minLength(int minLength) {
-        this.minLength = minLength;
-        return this;
+    @Override
+    public DateTimeType restrict(TypeConstraint restriction) {
+        return (DateTimeType)super.restrict(restriction);
     }
+
 }

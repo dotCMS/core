@@ -222,7 +222,18 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			String downloadName = "file_asset";
 			long lang = defaultLang;
-			try {
+			String request_language = req.getParameter("language_id");
+			if(request_language != null){
+				lang = Long.parseLong(request_language);
+			}else{ 
+				if(session != null){
+					lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+				}
+			}
+			//Identifier assetId = APILocator.getIdentifierAPI().find(assetIdentifier);
+			//List<Contentlet> allAssets = APILocator.getContentletAPI().findAllVersions(assetId, userAPI.getSystemUser(), false);
+			//long lang = (!allAssets.isEmpty()) ? allAssets.get(0).getLanguageId() : defaultLang;
+			/*try {
 				String x = null;
 				if (session != null) {
 					x = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
@@ -232,7 +243,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				lang = Long.parseLong(x);
 			} catch(Exception e){
 				// Number parsing exception
-			}
+			}*/
 
 			boolean isContent = false;
 			try {
@@ -283,8 +294,8 @@ public class BinaryExporterServlet extends HttpServlet {
 				        }
 				    }
 
-					//If the DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in session...
-					if ( Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)
+					//If the DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in request/session...
+					if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)
 							&& defaultLang != lang ) {
 
 						ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -312,9 +323,10 @@ public class BinaryExporterServlet extends HttpServlet {
 							return;
 						}
 
-					} else {
+					}
+					else {
 						/*
-						If the property DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is false OR the language in session
+						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 						 */
 						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
@@ -452,7 +464,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 			resp.setContentType(mimeType);
-			resp.setHeader("Content-Disposition", "inline; filename=" + UtilMethods.encodeURL(downloadName));
+			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
@@ -462,7 +474,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				if(!x.equals(y)){
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
-				resp.setHeader("Content-Disposition", "attachment; filename=" + UtilMethods.encodeURL(downloadName));
+				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
 				resp.setHeader("Content-Type", "application/force-download");
 			} else {
 

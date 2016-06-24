@@ -12,11 +12,16 @@
 	.dijitDialogPaneContent {
 	    height: 100% !important;
 	}
+    .editor-options {
+        margin-top: 5px;
+    }
 </style>
 
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
+<script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
+
 
 <script language="JavaScript">
     var aceEditor;
@@ -33,12 +38,15 @@
 	    aceEditor = ace.edit('editor');
 	    aceEditor.setTheme("ace/theme/textmate");
 	    aceEditor.getSession().setMode("ace/mode/"+parser);
-  		aceEditor.getSession().setUseWrapMode(true);
   		aceEditor.setValue(file.text);
   		editorText= aceEditor.getValue();
   		aceEditor.clearSelection();
   		iAmOpen = true;
 	 }
+
+     function handleWrapMode(e) {
+         aceEditor.getSession().setUseWrapMode(e);
+     }
 
 	dojo.declare("dotcms.file.EditTextManager", null, {
 
@@ -120,22 +128,22 @@
 
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" style="top:5%;left:5%;right:5%;bottom:5%;padding-top:15px\9; height: 75%" onCancel="javascript:editTextManager.close();">
-
- 	<div>
-		<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>
-  	</div>
+<div dojoType="dijit.Dialog" id="editTextDialog" style="top:5%;left:5%;right:5%;bottom:5%;padding-top:15px; height: 80%" onCancel="javascript:editTextManager.close();">
+ 	<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>
 	<form name="fm" id="fm" method="post" action="" style="height: 100%">
 		<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
 		<input type="hidden" name="<portlet:namespace />referer" value="<%= request.getParameter("referer") %>">
 		<input type="hidden" name="<portlet:namespace />cmd" value="">
 
-		<div id="editor" style="padding-bottom: 5px\15;height: 80%"></div>
-		<div class="buttonRow" style="height: 20%">
+		<div id="editor" style="padding-bottom: 5px; height: 75%"></div>
+        <div class="editor-options">
+            <input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
+            <label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+        </div>
+		<div class="buttonRow">
 	           <button id="editTextButton" dojoType="dijit.form.Button" iconClass="saveIcon" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp;
 	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:editTextManager.close();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
 		</div>
 	</form>
 
 </div>
-

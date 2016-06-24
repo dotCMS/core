@@ -1,7 +1,7 @@
 package com.dotcms.notification.business;
 
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.UUID;
@@ -9,7 +9,7 @@ import java.util.UUID;
 import com.dotcms.TestBase;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.liferay.portal.model.User;

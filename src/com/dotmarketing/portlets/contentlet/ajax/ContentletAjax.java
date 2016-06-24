@@ -1,25 +1,8 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -49,7 +32,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
-import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.hostadmin.business.CopyHostContentUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -65,7 +47,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -89,8 +70,37 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 /**
- * @author David
+ * This class handles the communication between the view and the back-end
+ * service that returns information to the user regarding Contentlets in dotCMS.
+ * The information provided by this service is accessed via DWR.
+ * <p>
+ * For example, the <b>Content Search</b> portlet uses this class to display the
+ * Contentlet data to the users, which can be filtered by certain criteria
+ * depending on the selected Content Type.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
  */
 public class ContentletAjax {
 
@@ -100,7 +110,6 @@ public class ContentletAjax {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
-	private FormAPI formAPI = APILocator.getFormAPI();
 
 	public List<Map<String, Object>> getContentletsData(String inodesStr) {
 		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
@@ -367,18 +376,16 @@ public class ContentletAjax {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
+	@SuppressWarnings("rawtypes")
 	public List searchContentlet(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, int perPage, String orderBy) throws DotStateException, DotDataException, DotSecurityException {
 
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		HttpSession sess = WebContextFactory.get().getSession();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
 		// User info
 		User currentUser = null;
-		String userId = "";
 		try {
 			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			userId = currentUser.getUserId();
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
@@ -386,10 +393,12 @@ public class ContentletAjax {
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	    return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost, page, orderBy, modDateFrom, modDateTo, true);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo, boolean saveLastSearch) throws DotStateException, DotDataException, DotSecurityException {
 	    HttpSession sess = null;
         if(saveLastSearch)
@@ -398,10 +407,8 @@ public class ContentletAjax {
 
 		// User info
 		User currentUser = null;
-		String userId = "";
 		try {
 			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			userId = currentUser.getUserId();
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
@@ -409,26 +416,25 @@ public class ContentletAjax {
 		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom,
 	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
 	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		HttpSession sess = WebContextFactory.get().getSession();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
 		// User info
 		User currentUser = null;
-		String userId = "";
 		try {
 			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			userId = currentUser.getUserId();
 		} catch (Exception e) {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
@@ -442,22 +448,8 @@ public class ContentletAjax {
 	 * if the widget doesn't exist then is created and also checks the user
 	 * permissions to see the content
 	 *
-	 * @param structureInode
+	 * @param formStructureInode
 	 *            Inode of the structure content to be listed
-	 * @param fields
-	 *            Fields to filters, where the position i (where i is odd)
-	 *            represent the field name and the position i + 1 represent the
-	 *            field value to filter
-	 * @param categories
-	 *            The categories inodes to filter
-	 * @param showDeleted
-	 *            If true show the deleted elements only
-	 * @param page
-	 *            The page number to show (starting with 1)
-	 *            If page is 0, this will return all possible contentlets
-	 * @param perPage
-	 * @param orderBy
-	 *            The field name to be used to sort the content
 	 * @return The list of contents that match the parameters at the position 0
 	 *         the result included a hashmap with some useful information like
 	 *         the total number of results, ...
@@ -470,47 +462,48 @@ public class ContentletAjax {
 	}
 
 	/**
-	 * This method is used by the backend to pull the content from the lucene
-	 * index and also checks the user permissions to see the content
+	 * This method is used by the back-end to pull the content from the Lucene
+	 * index and also checks the user permissions to see the content.
 	 *
 	 * @param structureInode
-	 *            Inode of the structure content to be listed
+	 *            - Inode of the structure content to be listed
 	 * @param fields
-	 *            Fields to filters, where the position i (where i is odd)
-	 *            represent the field name and the position i + 1 represent the
-	 *            field value to filter
+	 *            - Fields to use for filtering, where the position i (where i
+	 *            is odd) represent the field name and the position i + 1
+	 *            represent the field value to filter
 	 * @param categories
-	 *            The categories inodes to filter
+	 *            - The categories inodes to filter.
 	 * @param showDeleted
-	 *            If true show the deleted elements only
+	 *            - If true show the deleted elements only.
 	 * @param filterSystemHost
-	 *            If true filter elements of system host
+	 *            - If true filter elements of system host.
 	 * @param page
-	 *            The page number to show (starting with 1)
-	 *            If page is 0, this will return all posible contentlets
+	 *            - The page number to show (starting with 1). If page is 0,
+	 *            this will return all possible contentlets.
 	 * @param perPage
-	 * 				Number of contents to display per page
+	 *            - Number of contents to display per page.
 	 * @param orderBy
-	 *            The field name to be used to sort the content
+	 *            - The field name to be used to sort the content.
 	 * @param currentUser
-	 *            The user needed to check the permissions
+	 *            - The user needed to check the permissions.
 	 * @param sess
-	 *            HttpSession to save some values if is set
+	 *            HttpSession to save some values if is set.
 	 * @return The list of contents that match the parameters at the position 0
-	 *         the result included a hashmap with some useful information like
-	 *         the total number of results, ...
+	 *         the result included a {@link HashMap} with some useful
+	 *         information like the total number of results, etc.
 	 * @throws DotSecurityException
+	 *             The user does not have the permissions to perform this
+	 *             action.
 	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
 	 * @throws DotStateException
+	 *             A system error has occurred.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-
-
-
-
 		if(perPage < 1){
-			perPage = Config.getIntProperty("PER_PAGE");
+			perPage = Config.getIntProperty("PER_PAGE", 40);
 		}
 		if(!InodeUtils.isSet(structureInode)) {
 			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
@@ -532,7 +525,6 @@ public class ContentletAjax {
 		Structure st = null;
 		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
-		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
 		}
@@ -556,9 +548,9 @@ public class ContentletAjax {
 		    luceneQuery.append("-contentType:Host ");
 		    luceneQuery.append("-baseType:3 ");
 		}
-
-		WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
-
+		if (LicenseUtil.getLevel() < 300) {
+			luceneQuery.append("-contentType:Persona ");
+		}
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
 		if(st!=null){
@@ -566,14 +558,8 @@ public class ContentletAjax {
 		}
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
-
-		boolean hasHostFolderField = false;
-
 		for( Field f : targetFields ) {
 			fieldContentletNames.put(f.getFieldContentlet(), f.getFieldType());
-			if(f.getFieldType().toString().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-				hasHostFolderField = true;
-			}
 			if(f.getFieldContentlet().startsWith("float")){
 				decimalFields.put(st.getVelocityVarName()+"."+f.getVelocityVarName(), f);
 			}
@@ -666,7 +652,6 @@ public class ContentletAjax {
 
 						if( fieldbcontentname.startsWith("text") ){
 
-
 							if(thisField.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
 								fieldValue = fieldValue.trim();
 								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
@@ -674,34 +659,20 @@ public class ContentletAjax {
 									fieldValue = fieldValue.replaceFirst("\"", "");
 									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
 								}
-
-
 								try{
 									String[] splitter = fieldValue.split(":");
 									String metakey = "";
 									for(int x=0;x< splitter.length-1;x++){
 										metakey+= splitter[x];
 									}
-
-
-
 									metakey = VelocityUtil.convertToVelocityVariable(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
 									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscape, "\\\\$1") + " ");
-
-
+								} catch (Exception e) {
+									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}
-								catch(Exception e){
-
-								}
-
-
-
-
-
 							}else if( FieldFactory.isTagField(fieldbcontentname,st)== false){
-//								String quotes = fieldValue.contains(" ") ? "\"" : "";
 								fieldValue = fieldValue.trim();
 								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
 								if(hasQuotes){
@@ -776,11 +747,6 @@ public class ContentletAjax {
 		}
 
 		lastSearchMap.put("fieldsSearch", fieldsSearch);
-
-		//for (String cat : categories) {
-		//	luceneQuery.append("+c" + cat + "c:on ");
-		//}
-
 		lastSearchMap.put("categories", categories);
 
 		//Adding the headers as the second row of the results
@@ -1003,8 +969,10 @@ public class ContentletAjax {
 			searchResult.put("working", working.toString());
 			Boolean live=con.isLive();
 			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+			searchResult.put("hasLiveVersion", "false");
 			if(!con.isLive() && con.isWorking() && !con.isArchived()){
 				if(APILocator.getVersionableAPI().hasLiveVersion(con)){
+					searchResult.put("hasLiveVersion", "true");
 					searchResult.put("allowUnpublishOfLiveVersion", "true");
 					searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
 				}
@@ -1144,17 +1112,6 @@ public class ContentletAjax {
 		}
 
 		return list;
-	}
-
-	private String getGlobalVariablesPath() {
-		String globalVarsPath = Config.getStringProperty("GLOBAL_VARIABLES_PATH");
-		if (!UtilMethods.isSet(globalVarsPath)) {
-			globalVarsPath = FileUtil.getRealPath(File.separator + ".." + File.separator + "common"
-					+ File.separator + "ext-ejb" + File.separator + "content" + File.separator);
-		}
-		if (!globalVarsPath.endsWith(File.separator))
-			globalVarsPath = globalVarsPath + File.separator;
-		return globalVarsPath;
 	}
 
 	private List<LanguageKey> retrieveProperties(long langId) throws Exception {
@@ -1329,7 +1286,9 @@ public class ContentletAjax {
 					Contentlet binaryContentlet =  new Contentlet();
 					try{
 						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-					}catch(Exception e){}
+					}catch(Exception e){
+						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
+					}
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
 							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
@@ -1358,9 +1317,12 @@ public class ContentletAjax {
 	                            FileUtil.copyFile(binaryFile, acopy);
 	                            elementValue = acopy;
 	                        } catch (Exception e) {
-	                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-	                            throw new SystemException(e);
-	                        }
+                                Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
+                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                                saveContentErrors.add(errorString);
+                                callbackData.put("saveContentErrors", saveContentErrors);
+                                return callbackData;
+                            }
 						}
 					}
 				}else{

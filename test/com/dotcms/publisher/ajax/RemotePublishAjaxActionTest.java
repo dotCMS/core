@@ -1,9 +1,9 @@
 package com.dotcms.publisher.ajax;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.org.junit.Assert.assertNotSame;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,12 +39,12 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -140,7 +140,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		endpoint.setProtocol( "http" );
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
-		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
+		endpoint.setSending( false );
 		endpoint.setGroupId( environment.getId() );
 		//Save the endpoint.
 		publisherEndPointAPI.saveEndPoint( endpoint );
@@ -255,7 +255,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		receivingFromEndpoint.setProtocol( "http" );
 		receivingFromEndpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		receivingFromEndpoint.setEnabled( true );
-		receivingFromEndpoint.setSending( true );//TODO: Shouldn't this be false as we are creating this end point to receive bundles from another server..?
+		receivingFromEndpoint.setSending( true );
 		receivingFromEndpoint.setGroupId( environment.getId() );
 		//Save the endpoint.
 		publisherEndPointAPI.saveEndPoint( receivingFromEndpoint );
@@ -488,7 +488,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		endpoint.setProtocol( "http" );
 		endpoint.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
 		endpoint.setEnabled( true );
-		endpoint.setSending( false );//TODO: Shouldn't this be true as we are creating this end point to send bundles to another server..?
+		endpoint.setSending( false );
 		endpoint.setGroupId( environment.getId() );
 		/*
 		 * Save the endpoint.
@@ -632,7 +632,6 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Cleaning test values
 		 */
-		APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
 		//TODO: We have the improve this test because of the new license updates
 		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
 		APILocator.getFolderAPI().delete(folder, systemUser, false);

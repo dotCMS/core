@@ -874,21 +874,33 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    		//processing asset description and name to avoid long words that break the column width
 	    		name = shortenLongWords(name, 30)
 	    		name = shortenString(name, 30)
-	    		var title = shortenLongWords(asset.title, 30);
+	    		var title = shortenString(asset.title, 30);
 	    		var modUserName = shortenString(asset.modUserName, 20);
-				var languageHTML = (asset.type=='htmlpage' && asset.isContentlet && multipleLanguages)
+	    		//Show Language Icon for Contents (Pages, Files)
+				var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
 					?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode + 
 							".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":""; 
-	    		
+	    		if(asset.type == 'file_asset'){
 				var html = 	'<tr id="' + asset.inode + '-TR">\n' +
 						   	'	<td class="nameTD" id="' + asset.inode + '-NameTD">' +
 									'<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
 									'<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-									'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+									'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + title + '</span>' +
 									'</a>' +
 							'	</td>\n' +
 							'	<td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
 							'		<span id="' + asset.inode + '-ShowOnMenuSPAN"';
+	    		}else{
+					var html = 	'<tr id="' + asset.inode + '-TR">\n' +
+				   	'	<td class="nameTD" id="' + asset.inode + '-NameTD">' +
+							'<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+							'<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+							'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+							'</a>' +
+					'	</td>\n' +
+					'	<td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
+					'		<span id="' + asset.inode + '-ShowOnMenuSPAN"';
+	    		}
 							
 							
 				if (asset.showOnMenu || asset.showOnMenu == 'true') {
@@ -948,8 +960,6 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	 function getStatusHTML (asset) {
 		var html = 	'<table class="browserTableStatus"><tr>';
 
-        //if(!v.isLive() && v.isWorking() && (!v.isArchived() && v.isWorking())){
-
         if(!asset.live && asset.working) {
             html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="workingIcon"></span></td>\n';
         } else {
@@ -964,7 +974,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
         }
 
-	 	if (asset.locked)
+	 	if (asset.isLocked)
 			html +=	'		<td><span id="' + asset.inode + '-StatusLockedIMG" class="lockIcon"><span></td>\n';
 		else
 			html +=	'		<td><span id="' + asset.inode + '-StatusLockedIMG" class="shimIcon"></span></td>\n';

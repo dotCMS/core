@@ -53,7 +53,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 
 	function addNewField(){
-		
+
 		dijit.byId("saveButton").set("disabled",true);
 
 		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -130,11 +130,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 	function disableSelect(){
 		var form = document.getElementById("field");
-	    var fieldinode='<%=request.getParameter("inode")%>';
-	    if(fieldinode!="null"){
-	    	dijit.byId("elementSelectBox").setDisabled(true);
-	    	//document.getElementById('fieldVarLink').style.display = "";
-	    }
+		var fieldinode='<%=request.getParameter("inode")%>';
+		if(fieldinode!="null"){
+			dijit.byId("elementSelectBox").setDisabled(true);
+			//document.getElementById('fieldVarLink').style.display = "";
+		}
 	}
 
 
@@ -368,9 +368,9 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	   document.getElementById("valueRowLabel").innerHTML = '<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "category") %>: ';
 
 	  }else{
-	    document.getElementById("textAreaValues").style.display="";
-	    document.getElementById("categories").style.display="none";
-	    document.getElementById("valueRowLabel").innerHTML = '<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Code") %>: ';
+		document.getElementById("textAreaValues").style.display="";
+		document.getElementById("categories").style.display="none";
+		document.getElementById("valueRowLabel").innerHTML = '<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Code") %>: ';
 	  }
 	}
 
@@ -399,38 +399,38 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		var form = document.getElementById("field");
 		var indexed = <%=fieldForm.isIndexed()%>;
 
-	    if(form.unique.checked){
-	    	dijit.byId("indexedCB").attr('value', 'on');
-	       dijit.byId("requiredCB").attr('value', 'on');
-	       <%if(!hasInode){%>
+		if(form.unique.checked){
+			dijit.byId("indexedCB").attr('value', 'on');
+		   dijit.byId("requiredCB").attr('value', 'on');
+		   <%if(!hasInode){%>
 			dijit.byId('indexedCB').attr('disabled', true);
 			dijit.byId('requiredCB').attr('disabled', true);
-	     	<%}%>
+		 	<%}%>
 
 
-	    }else{
+		}else{
 			dijit.byId('indexedCB').attr('disabled', false);
 			dijit.byId('requiredCB').attr('disabled', false);
 
-	    	if(!form.searchable.checked){
-	     		if(form.fieldType.value != "category"){
-	      			if(!indexed){
-	      				dijit.byId("indexedCB").attr('value', 'off');
-	          			dijit.byId("requiredCB").attr('value', 'off');
-	      			}
+			if(!form.searchable.checked){
+		 		if(form.fieldType.value != "category"){
+		  			if(!indexed){
+		  				dijit.byId("indexedCB").attr('value', 'off');
+			  			dijit.byId("requiredCB").attr('value', 'off');
+		  			}
 
-	       			<%if(hasInode){%>
-		    			dijit.byId('indexedCB').attr('disabled', false);
-		       			dijit.byId("requiredCB").attr('value', 'off');
-	       			<%}%>
-	      		}
-	     	}
+		   			<%if(hasInode){%>
+						dijit.byId('indexedCB').attr('disabled', false);
+			   			dijit.byId("requiredCB").attr('value', 'off');
+		   			<%}%>
+		  		}
+		 	}
 
-	       <%if(!hasInode){%>
+		   <%if(!hasInode){%>
 			  dijit.byId('requiredCB').attr('disabled', false);
-	       <%}%>
-	    }
-	    ifUniqueChecked();
+		   <%}%>
+		}
+		ifUniqueChecked();
 	}
 
 
@@ -440,11 +440,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 		if(form.fieldType.value != 'text'){
 			//if(dataType != 'integer' && dataType != 'text'){
-		         //document.getElementById("unique").style.display = "none";
-		         //document.getElementById("unique").style.display = "none";
+				 //document.getElementById("unique").style.display = "none";
+				 //document.getElementById("unique").style.display = "none";
 		   	//}else{
-		       document.getElementById("uniqueCB").style.display = "none";
-		       document.getElementById("unique").style.display = "none";
+			   document.getElementById("uniqueCB").style.display = "none";
+			   document.getElementById("unique").style.display = "none";
 		   	//}
 		}
 	}
@@ -456,8 +456,8 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 
 	function myLabelFunc(item, store) {
-        return store.getValue(item, "label");
-    }
+		return store.getValue(item, "label");
+	}
 
 	var myStore = new dojo.data.ItemFileReadStore({data: myData});
 
@@ -483,7 +483,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 				typeChangeonload();
 
-			    disableSelect();
+				disableSelect();
 				//setSearchable();
 				//ifRequiredChecked();
 				//ifRequiredCBChecked();
@@ -491,7 +491,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				ifUserSearchableChecked();
 				ifShowInListingChecked();
 				//setInitialValues();
-                //ifRequiredCBChecked;
+				//ifRequiredCBChecked;
 
 				var form=document.getElementById("field");
 				dojo.place("<input type=\"hidden\" id=\"requiredId\" value=\"" + dijit.byId("requiredCB").attr('value') + "\"/>", dojo.body(), 'last');
@@ -503,11 +503,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 	function editFieldVariables(){
 		var fieldId='<%=request.getParameter("inode")%>';
-	    if(fieldId!="null"){
-	    	fieldVariablesAdmin.showFieldVariables(fieldId,false);
-	    } else {
-	    	fieldVariablesAdmin.showInitFieldVariables();
-	    }
+		if(fieldId!="null"){
+			fieldVariablesAdmin.showFieldVariables(fieldId,false);
+		} else {
+			fieldVariablesAdmin.showInitFieldVariables();
+		}
 	}
 </script>
 
@@ -623,12 +623,59 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		</dd>
 	</dl>
 
+	<script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
+	<script>
+		var editor;
+		function aceArea(){
+			var textarea = document.getElementById("textAreaValues");
+			editor = ace.edit('esEditor');
+			editor.setTheme("ace/theme/textmate");
+			editor.getSession().setMode("ace/mode/velocity");
+
+			editor.getSession().on('change', function () {
+				textarea.value = editor.getSession().getValue();
+			});
+		}
+
+        function handleWrapMode(e) {
+            editor.getSession().setUseWrapMode(e);
+        }
+		dojo.addOnLoad(aceArea);
+	</script>
+	<style type="text/css" media="screen">
+		#esEditor {
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+		}
+		.esEditorWrapper {
+			border: solid 1px #C0C0C0;
+			position: relative;
+			width: 550px;
+			height: 300px;
+		}
+		.hidden {
+			display: none;
+		}
+        .wrap-editor {
+            margin-top: 5px;
+        }
+	</style>
+
 	<dl id="valueRow" style="display:none">
 		<dt id="valueRowLabel">
 			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Value") %>:
 		</dt>
 		<dd>
-			<div id="valueRow_inner"><textarea dojoType="dijit.form.Textarea" name="values" style="width:300px;min-height:120px;" id="textAreaValues"><%=UtilMethods.htmlifyString(textArea)%></textarea></div>
+			<div id="valueRow_inner" class="esEditorWrapper">
+				<div id="esEditor"><%=UtilMethods.htmlifyString(textArea)%></div>
+			</div>
+            <div class="wrap-editor">
+                <input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" /> <label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+            </div>
+			<textarea class="hidden" dojoType="dijit.form.Textarea" name="values" id="textAreaValues"><%=UtilMethods.htmlifyString(textArea)%></textarea>
 		</dd>
 	</dl>
 
@@ -654,8 +701,6 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 			</select>
 		</dd>
 	</dl>
-
-
 
 	<dl style="display:none;">
 		<dt>&nbsp;</dt>
@@ -739,8 +784,8 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 		<dt>&nbsp;</dt>
 		<dd>
 			<button dojoType="dijit.form.Button" onClick="javascript:editFieldVariables();" iconClass="plusIcon">
-                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-new-Field-Variable")) %>
-            </button>
+				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-new-Field-Variable")) %>
+			</button>
 		</dd>
 	</dl>-->
 	<%@ include file="/html/portlet/ext/structure/view_field_variables_inc.jsp" %>
@@ -752,15 +797,14 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 <!-- START Button Row -->
 <div class="buttonRow">
 	<button id="saveButton" dojoType="dijit.form.Button" type="button" onClick="addNewField();" >
-       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Field")) %>
-    </button>
-    <button id="cancelButton" dojoType="dijit.form.Button" type="button" onClick="cancel" >
-       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-    </button>
+	   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Field")) %>
+	</button>
+	<button id="cancelButton" dojoType="dijit.form.Button" type="button" onClick="cancel" >
+	   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+	</button>
 </div>
 <!-- END Button Row -->
 
 
 </html:form>
 </liferay:box>
-

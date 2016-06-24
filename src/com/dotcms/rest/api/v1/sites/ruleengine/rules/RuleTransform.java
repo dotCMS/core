@@ -15,13 +15,9 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
@@ -53,6 +49,7 @@ public class RuleTransform {
         app.setShortCircuit(rest.shortCircuit);
         app.setEnabled(rest.enabled);
         List<ConditionGroup> groups = checkGroupsExist(rest, app, user);
+        Collections.sort(groups);
 
         app.setGroups(groups);
         return app;

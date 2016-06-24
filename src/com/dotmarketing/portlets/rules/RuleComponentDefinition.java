@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.rules;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
@@ -54,16 +55,24 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
 
     public final T doCheckValid(RuleComponentModel data) {
         Map<String, ParameterModel> params = data.getParameters();
-        for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
-            entry.getValue().checkValid(params.get(entry.getKey()));
+        String key = null;
+        try {
+            for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
+                key = entry.getKey();
+                entry.getValue().checkValid(params.get(key));
+            }
+        } catch (Exception e) {
+            throw new RuleConstructionFailedException(e, "Could not create Component Instance of type %s from provided model %s: "
+                                                         + "validation failed for parameter '%s'",
+                                                      this.getId(), data.toString(), key);
         }
-
         T instance;
         try {
             instance = instanceFrom(params);
-        } catch (RuleEngineException e) {
+        } catch (RuleEngineException | InvalidRuleParameterException e) {
             throw e;
         } catch (Exception e) {
+            Logger.warn(RuleComponentDefinition.class, "Unexpected error creating component.", e);
             throw new RuleConstructionFailedException(e, "Could not create Component Instance of type %s from provided model %s.",
                                                       this.getId(), data.toString());
         }
@@ -112,4 +121,4 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
 
     public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, T instance);
 }
- 
+

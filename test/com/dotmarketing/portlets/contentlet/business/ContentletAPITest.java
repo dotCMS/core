@@ -1,34 +1,41 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertFalse;
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.org.junit.Assert.assertNotSame;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.velocity.Template;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.mock.request.MockInternalRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.org.junit.Ignore;
-import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -37,10 +44,8 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -49,10 +54,13 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -64,11 +72,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 
 /**
  * Created by Jonathan Gamba.
@@ -289,7 +299,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void findContentlets () throws DotSecurityException, DotDataException {
 
         //Getting our test inodes
-        List<String> inodes = new ArrayList<String>();
+        List<String> inodes = new ArrayList<>();
         for ( Contentlet contentlet : contentlets ) {
             inodes.add( contentlet.getInode() );
         }
@@ -634,7 +644,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getInode() );
+        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -747,34 +757,76 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#getContentletReferences(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @see ContentletAPI
-     * @see Contentlet
+     * Tests method {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}.
+     * <p>
+     * Checks that expected containers and pages (in the correct language) are returned by the method.
      */
+
     @Test
-    public void getContentletReferences () throws DotSecurityException, DotDataException {
+    public void getContentletReferences() throws Exception {
+        int english = 1;
+        int spanish = 2;
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
+        try {
+            HibernateUtil.startTransaction();
+            Structure structure = new StructureDataGen().nextPersisted();
+            Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+            Template template = new TemplateDataGen().withContainer(container).nextPersisted();
+            Folder folder = new FolderDataGen().nextPersisted();
 
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+            HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+            HTMLPageAsset englishPage = htmlPageDataGen.languageId(english).nextPersisted();
+            HTMLPageAsset spanishPage = htmlPageDataGen.pageURL(englishPage.getPageUrl() + "SP").languageId(spanish)
+                .nextPersisted();
 
-        //Retrieve all the references for this Contentlet.
-        List<Map<String, Object>> references = null;
-        for (Contentlet c : contentletList) {
-        	references = contentletAPI.getContentletReferences( c, user, false );
-        	if (references != null && references.size() > 0) {
-        		break;
-        	}
+            ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+            Contentlet contentInEnglish = contentletDataGen.languageId(english).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+            // let's add the content to the page in english (create the page-container-content relationship)
+            MultiTree multiTreeEN = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
+                contentInEnglish.getIdentifier());
+            MultiTreeFactory.saveMultiTree(multiTreeEN, english);
+
+            // let's add the content to the page in spanish (create the page-container-content relationship)
+            MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
+                contentInSpanish.getIdentifier());
+            MultiTreeFactory.saveMultiTree(multiTreeSP, spanish);
+
+            // let's get the references for english content
+            List<Map<String, Object>> references = contentletAPI.getContentletReferences(contentInEnglish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(((IHTMLPage) references.get(0).get("page")).getLanguageId(), english);
+            // let's check the referenced container is the expected
+            assertEquals(((Container) references.get(0).get("container")).getInode(), container.getInode());
+
+            // let's get the references for spanish content
+            references = contentletAPI.getContentletReferences(contentInSpanish, user, false);
+
+            assertNotNull(references);
+            assertTrue(!references.isEmpty());
+            // let's check if the referenced page is in the expected language
+            assertEquals(((IHTMLPage) references.get(0).get("page")).getLanguageId(), spanish);
+            // let's check the referenced container is the expected
+            assertEquals(((Container) references.get(0).get("container")).getInode(), container.getInode());
+
+            ContentletDataGen.remove(contentInEnglish);
+            ContentletDataGen.remove(contentInSpanish);
+            HTMLPageDataGen.remove(englishPage);
+            HTMLPageDataGen.remove(spanishPage);
+            TemplateDataGen.remove(template);
+            ContainerDataGen.remove(container);
+            StructureDataGen.remove(structure);
+            FolderDataGen.remove(folder);
+
+            HibernateUtil.commitTransaction();
+        } catch (Exception e) {
+            HibernateUtil.rollbackTransaction();
+            throw e;
         }
-
-        //Validations
-        assertNotNull( references );
-        assertTrue( !references.isEmpty() );
     }
 
     /**
@@ -791,9 +843,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Getting a known structure
         Structure structure = structures.iterator().next();
 
+        Long identifier = uniqueIdentifier.get(structure.getName());
+
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
+        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg-" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -816,15 +870,13 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void addLinkToContentlet () throws Exception {
 
-        Link menuLink = null;
-
         String RELATION_TYPE = new Link().getType();
 
         //Getting a known structure
         Structure structure = structures.iterator().next();
 
         //Create a menu link
-        menuLink = createMenuLink();
+        Link menuLink = createMenuLink();
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -840,14 +892,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier menuLinkIdentifier = APILocator.getIdentifierAPI().find( menuLink );
 
         //Verify if the relation was created
-        Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getInode(), RELATION_TYPE );
+        Tree tree = TreeFactory.getTree( contentlet.getInode(), menuLinkIdentifier.getId(), RELATION_TYPE );
 
         //Validations
         assertNotNull( tree );
         assertNotNull( tree.getParent() );
         assertNotNull( tree.getChild() );
         assertEquals( tree.getParent(), contentlet.getInode() );
-        assertEquals( tree.getChild(), menuLinkIdentifier.getInode() );
+        assertEquals( tree.getChild(), menuLinkIdentifier.getId() );
         assertEquals( tree.getRelationType(), RELATION_TYPE );
         
         try{
@@ -905,7 +957,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
 
             //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getInode(), RELATION_TYPE );
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
 
             //Validations
             assertNotNull( tree );
@@ -968,14 +1020,14 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
 
             //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getInode(), RELATION_TYPE );
+            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
 
             //Validations
             assertNotNull( tree );
             assertNotNull( tree.getParent() );
             assertNotNull( tree.getChild() );
             assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), fileIdentifier.getInode() );
+            assertEquals( tree.getChild(), fileIdentifier.getId() );
             assertEquals( tree.getRelationType(), RELATION_TYPE );
 
             /*//Validations
@@ -991,7 +1043,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Testing {@link ContentletAPI#findPageContentlets(String, String, String, boolean, long, com.liferay.portal.model.User, boolean)}
      *
-     * @throws Exception
      * @see ContentletAPI
      * @see Contentlet
      */
@@ -1005,7 +1056,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getInode() );
+            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreeByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {
@@ -1015,7 +1066,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     Identifier containerPageIdentifier = APILocator.getIdentifierAPI().find( multiTree.getParent2() );
 
                     //Find the related contentlets, at this point should return something....
-                    List<Contentlet> pageContentlets = contentletAPI.findPageContentlets( htmlPageIdentifier.getInode(), containerPageIdentifier.getInode(), null, true, -1, user, false );
+                    List<Contentlet> pageContentlets = contentletAPI.findPageContentlets( htmlPageIdentifier.getId(), containerPageIdentifier.getId(), null, true, -1, user, false );
 
                     //Validations
                     assertTrue( pageContentlets != null && !pageContentlets.isEmpty() );
@@ -1073,7 +1124,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1102,7 +1153,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void getAllLanguages () throws DotSecurityException, DotDataException {
 
         Structure st=new Structure();
-        st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+        st.setStructureType(Structure.Type.CONTENT.getType());
         st.setName("JUNIT-test-getAllLanguages"+System.currentTimeMillis());
         st.setVelocityVarName("testAllLanguages"+System.currentTimeMillis());
         st.setHost(defaultHost.getIdentifier());
@@ -1350,6 +1401,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void unpublishCollection () throws DotDataException, DotSecurityException {
 
+        contentletAPI.publish(contentlets, user, false);
+
         //Unpublish all the test contentlets
         contentletAPI.unpublish( contentlets, user, false );
 
@@ -1468,7 +1521,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet.getIdentifier() );
 
         //Now test this delete
-        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        List<Contentlet> testContentlets = new ArrayList<>();
         testContentlets.add( newContentlet );
         contentletAPI.deleteAllVersionsandBackup( testContentlets, user, false );
 
@@ -1499,7 +1552,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Now test this delete
         contentletAPI.archive(newContentlet, user, false);
-        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        List<Contentlet> testContentlets = new ArrayList<>();
         testContentlets.add( newContentlet );
         contentletAPI.delete( testContentlets, user, false );
 
@@ -1528,7 +1581,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newContentlet = createContentlet( testStructure, null, false );
 
         //Now test this delete
-        List<Contentlet> testContentlets = new ArrayList<Contentlet>();
+        List<Contentlet> testContentlets = new ArrayList<>();
         testContentlets.add( newContentlet );
         contentletAPI.delete( testContentlets, user, false, true );
 
@@ -1561,7 +1614,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
         ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
 
@@ -1602,7 +1655,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
         ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
 
@@ -1645,7 +1698,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
         ContentletRelationships contentletRelationships = createContentletRelationships( testRelationship, parentContentlet, testStructure, contentRelationships );
 
@@ -1695,7 +1748,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1742,7 +1795,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1787,7 +1840,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Relationship testRelationship = createRelationShip( testStructure, false );
 
         //Create the contentlet relationships
-        List<Contentlet> contentRelationships = new ArrayList<Contentlet>();
+        List<Contentlet> contentRelationships = new ArrayList<>();
         contentRelationships.add( childContentlet );
 
         //Relate the content
@@ -1955,7 +2008,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
         FieldFactory.saveField( field );
 
-        List<Contentlet> list=new ArrayList<Contentlet>();
+        List<Contentlet> list=new ArrayList<>();
         String[] letters={"a","b","c","d","e","f","g"};
         for(String letter : letters) {
             Contentlet conn=new Contentlet();
@@ -2000,29 +2053,20 @@ public class ContentletAPITest extends ContentletBaseTest {
         /*
          * For every language we should get the same content and contentMap template code
          */
-        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
+        String contentEXT=Config.getStringProperty("VELOCITY_CONTENT_EXTENSION", "content");
         VelocityEngine engine = VelocityUtil.getEngine();
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
 
         contentTester.init(null, null);
 
-        InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
-
-        DotRequestProxy requestProxy = (DotRequestProxy) Proxy
-                .newProxyInstance(DotRequestProxy.class.getClassLoader(),
-                        new Class[] { DotRequestProxy.class },
-                        dotInvocationHandler);
-
-        DotResponseProxy responseProxy = (DotResponseProxy) Proxy
-                .newProxyInstance(DotResponseProxy.class.getClassLoader(),
-                        new Class[] { DotResponseProxy.class },
-                        dotInvocationHandler);
+        HttpServletRequest requestProxy = new MockInternalRequest().request();
+        HttpServletResponse responseProxy = new BaseResponse().response();
 
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
 
-        Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng1 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
+        org.apache.velocity.Template tesp1 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
 
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         StringWriter writer=new StringWriter();
@@ -2042,8 +2086,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(w2.getInode(),true);
 
         // now if everything have been cleared correctly those should match again
-        Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
-        Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
+        org.apache.velocity.Template teng3 = engine.getTemplate("/live/"+w.getIdentifier()+"_1."+contentEXT);
+        org.apache.velocity.Template tesp3 = engine.getTemplate("/live/"+w.getIdentifier()+"_2."+contentEXT);
         ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         writer=new StringWriter();
         teng3.merge(ctx, writer);
@@ -2074,7 +2118,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         testStructure.setName( "structure2709" );
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
-        testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
+        testStructure.setStructureType( Structure.Type.CONTENT.getType() );
         testStructure.setType( "structure" );
         testStructure.setVelocityVarName( "structure2709" );
 
@@ -2158,6 +2202,44 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
 
+    }
+    
+    @Test
+    public void newFileAssetLanguageDifferentThanDefault() throws DotSecurityException, DotDataException, IOException{
+    	  int spanish = 2;
+    	  Folder folder = APILocator.getFolderAPI().findSystemFolder();
+    	  java.io.File file = java.io.File.createTempFile("texto", ".txt");
+          
+    	  FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+    	  Contentlet fileInSpanish = fileAssetDataGen.languageId(spanish).nextPersisted();
+    	  Contentlet result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, user, false);
+    	  assertEquals(fileInSpanish.getInode(), result.getInode());
+    	  
+    	  fileAssetDataGen.remove(fileInSpanish);
+    }
+    
+    @Test
+    public void newVersionFileAssetLanguageDifferentThanDefault() throws DotDataException, IOException, DotSecurityException{
+    	int english = 1;
+    	int spanish = 2;
+    	
+    	Folder folder = APILocator.getFolderAPI().findSystemFolder();
+    	java.io.File file = java.io.File.createTempFile("file", ".txt");
+        
+    	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+    	Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
+  	  
+    	Contentlet resultEnglish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
+  	  
+    	Contentlet contentletSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
+    	contentletSpanish.setInode("");
+    	contentletSpanish.setLanguageId(spanish);
+    	contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
+  	  
+    	Contentlet resultSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, spanish, user, false);
+    	assertNotNull( resultSpanish );
+    	
+    	fileAssetDataGen.remove(resultSpanish);
     }
 
 }

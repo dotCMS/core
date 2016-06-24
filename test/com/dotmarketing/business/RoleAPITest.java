@@ -5,13 +5,13 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.Date;
 import java.util.List;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba

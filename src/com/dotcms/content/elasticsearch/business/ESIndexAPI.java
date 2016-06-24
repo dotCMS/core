@@ -17,12 +17,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.org.python.modules.synchronize;
+
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.hppc.cursors.ObjectCursor;
 import com.dotmarketing.util.*;
@@ -64,6 +67,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
+import com.dotcms.cluster.bean.Server;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -75,6 +79,7 @@ public class ESIndexAPI {
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+    private  final int DEFAULT_HEARTBEAT_TIMEOUT = 1800; // 1800 seconds = 30 mins
 
 	private  ESClient esclient = new ESClient();
 	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
@@ -118,7 +123,7 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 */
 	public  File backupIndex(String index, File toFile) throws IOException {
-		
+
 		AdminLogger.log(this.getClass(), "backupIndex", "Trying to backup index: " + index);
 
 	    boolean indexExists = indexExists(index);
@@ -265,7 +270,7 @@ public class ESIndexAPI {
 			    Matcher matcher = pattern.matcher(mapping);
 			    boolean matchFound = matcher.find();
 			    if (matchFound){
-			        type = matcher.group(1); 
+			        type = matcher.group(1);
 
 			// we recover the line that wasn't a mapping so it should be content
 
@@ -278,7 +283,7 @@ public class ESIndexAPI {
 					}
 					jsons.add(br.readLine());
 				}
-				
+
 				if (jsons.size() > 0) {
 				    try {
 						Client client = new ESClient().getClient();
@@ -292,7 +297,7 @@ public class ESIndexAPI {
         							@SuppressWarnings("unchecked")
 									Map<String, Object> oldMap= mapper.readValue(json, HashMap.class);
         							Map<String, Object> newMap = new HashMap<String, Object>();
-        							
+
         							for(String key : oldMap.keySet()){
         								Object val = oldMap.get(key);
         								if(val!= null && UtilMethods.isSet(val.toString())){
@@ -477,9 +482,9 @@ public class ESIndexAPI {
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticsearchException, IOException {
 
 		AdminLogger.log(this.getClass(), "createIndex",
-                "Trying to create index: " + indexName + " with shards: " + shards);
+			"Trying to create index: " + indexName + " with shards: " + shards);
 
-        IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 
 		if(shards <1){
 			try{
@@ -503,30 +508,34 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
-		/*
-		 If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
-		 */
-		if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-				!Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
+		if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
+			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+			int serverCount;
 
-			//Getting the number of replicas
-			int replicas = Config.getIntProperty("es.index.number_of_replicas", 0);
+			try {
+				serverCount = APILocator.getServerAPI().getAliveServersIds().length;
+			} catch (DotDataException e) {
+				Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+				serverCount = 1;
+			}
+			// formula is (live server count (including the ones that are down but not yet timed out) - 1)
 
-			map.put("auto_expand_replicas", "false");
-			map.put("number_of_replicas", replicas);
-		} else {
-			map.put("auto_expand_replicas", "0-all");
+			if(serverCount>0) {
+				map.put("auto_expand_replicas", "false");
+				map.put("number_of_replicas", serverCount - 1);
+			}
 		}
 
-        // create actual index
+		// create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
-        CreateIndexResponse createIndexResponse = cirb.execute().actionGet();
+		CreateIndexResponse createIndexResponse = cirb.execute().actionGet();
 
-        AdminLogger.log(this.getClass(), "createIndex",
-                "Index created: " + indexName + " with shards: " + shards);
+		AdminLogger.log(this.getClass(), "createIndex",
+			"Index created: " + indexName + " with shards: " + shards);
 
 		return createIndexResponse;
 	}
+
 
 	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticsearchException, IOException {
 
@@ -616,8 +625,14 @@ public class ESIndexAPI {
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
+    	if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+				Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true)){
+    		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
+    		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
+    	}
+
     	AdminLogger.log(this.getClass(), "updateReplicas", "Trying to update replicas to index: " + indexName);
-    	
+
     	Map<String,ClusterIndexHealth> idxs = getClusterHealth();
 		ClusterIndexHealth health = idxs.get( indexName);
 		if(health ==null){
@@ -636,7 +651,7 @@ public class ESIndexAPI {
 			usrb.setSettings(newSettings);
 			usrb.execute().actionGet();
 		}
-		
+
 		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
     }
 
@@ -714,19 +729,19 @@ public class ESIndexAPI {
 
     public void closeIndex(String indexName) {
     	AdminLogger.log(this.getClass(), "closeIndex", "Trying to close index: " + indexName);
-    	
+
         Client client=new ESClient().getClient();
         client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
-        
+
         AdminLogger.log(this.getClass(), "closeIndex", "Index: " + indexName + " closed");
     }
 
     public void openIndex(String indexName) {
     	AdminLogger.log(this.getClass(), "openIndex", "Trying to open index: " + indexName);
-    	
+
         Client client=new ESClient().getClient();
         client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
-        
+
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
 

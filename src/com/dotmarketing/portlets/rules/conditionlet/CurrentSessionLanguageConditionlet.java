@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import com.dotmarketing.portlets.rules.parameter.display.RestDropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,41 +24,28 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 
 
-///**
-// * This conditionlet will allow CMS users to check the language a user has set
-// * in their request. The language selected by the user is in the
-// * {@link HttpServletRequest} object, which is used to perform the validation
-// * and is retrieved using our own API. This {@link Conditionlet} provides a
-// * drop-down menu with the available comparison mechanisms, and a drop-down menu
-// * where users can select one or more languages to compare.
-// *
-// * @author Jose Castro
-// * @version 1.0
-// * @since 04-17-2015
-// *
-// */
+/**
+ * This conditionlet will allow CMS users to check the language a user has set
+ * in their request. The language selected by the user is in the
+ * {@link HttpServletRequest} object, which is used to perform the validation
+ * and is retrieved using our own API. This {@link Conditionlet} provides a
+ * drop-down menu with the available comparison mechanisms, and a drop-down menu
+ * where users can select one or more languages to compare.
+ *
+ * @author Jose Castro
+ * @version 1.0
+ * @since 04-17-2015
+ *
+ */
 public class CurrentSessionLanguageConditionlet extends Conditionlet<CurrentSessionLanguageConditionlet.Instance> {
 
     private static final long serialVersionUID = 1L;
 
     public static final String LANGUAGE_KEY = "language";
-    public static final String SYSTEM_LOCATE_LANGUAGE_KEY = "system.locale.language";
 
-    private static final String defaultLanguageKey = APILocator.getLanguageAPI().getDefaultLanguage().getLanguageCode();
-    private static DropdownInput languagesDropDown = new DropdownInput().allowAdditions().minSelections(1);
-    static {
-        //Getting the current list of languages
-        List<Language> currentLanguages = APILocator.getLanguageAPI().getLanguages();
-        for ( Language language : currentLanguages ) {
-            languagesDropDown.option(language.getLanguageCode().toLowerCase());
-        }
-    }
-
-    private static final ParameterDefinition<TextType> LANGUAGE_PARAMETER = new ParameterDefinition<>(
-            3, LANGUAGE_KEY, SYSTEM_LOCATE_LANGUAGE_KEY,
-            languagesDropDown,
-            defaultLanguageKey
-    );
+    private static final ParameterDefinition<TextType> language = new ParameterDefinition<>(3,
+            LANGUAGE_KEY,
+            new RestDropdownInput("/api/v1/languages", "key", "name").minSelections(1));
 
     private final LanguageWebAPI langApi;
 
@@ -69,7 +57,7 @@ public class CurrentSessionLanguageConditionlet extends Conditionlet<CurrentSess
     CurrentSessionLanguageConditionlet(LanguageWebAPI langApi) {
         super("api.ruleengine.system.conditionlet.CurrentSessionLanguage",
               new ComparisonParameterDefinition(2, IS, IS_NOT),
-              LANGUAGE_PARAMETER);
+                language);
         this.langApi = langApi;
     }
 

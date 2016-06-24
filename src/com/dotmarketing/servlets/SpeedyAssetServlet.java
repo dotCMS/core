@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -175,17 +176,38 @@ public class SpeedyAssetServlet extends HttpServlet {
 					}
 				}
 				
-				
+				//Language is in request, let's load it. Otherwise use the language in session
+				long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+				String request_language = request.getParameter("language_id");
+				if(request_language != null){
+					lang = Long.parseLong(request_language);
+				}else{ 
+					if(session != null){
+						lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+					}
+				}
 				
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
 
 					if(serveWorkingVersion){
-						uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId());
+						uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId(), lang);
 						if(!UtilMethods.isSet(realPath)){
 							f = new File(FileUtil.getRealPath(assetPath + uri));
 						}else{
 							f = new File(realPath + uri);
 						}
+						
+						//If URI cannot be found with selected language and property above is true, 
+						//let's pull the file with default Language Instead
+						if(uri == null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+							uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+							if(!UtilMethods.isSet(realPath)){
+								f = new File(FileUtil.getRealPath(assetPath + uri));
+								}else{
+									f = new File(realPath + uri);
+							 	}
+							}
+						
 						if(uri == null || !f.exists() || !f.canRead()) {
 							if(uri == null){
 								Logger.warn(SpeedyAssetServlet.class, "URI is null");
@@ -204,7 +226,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 					}else {
 						try{
-							uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId());
+							uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId(), lang);
 						}catch (Exception e) {
 							if(isLoggedToBackend){
 								response.setHeader( "Pragma", "no-cache" );
@@ -219,6 +241,27 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}else{
 							f = new File(realPath + uri);
 						}
+						
+						//If URI cannot be found with selected language and property above is true, 
+						//let's pull the file with default Language Instead
+						if(StringUtils.isBlank(uri) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+							try{
+								uri = LiveCache.getPathFromCache(ident.getURI(), ident.getHostId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+								}catch (Exception e) {
+									if(isLoggedToBackend){
+										response.setHeader( "Pragma", "no-cache" );
+										response.setHeader( "Cache-Control", "no-cache" );
+										response.setDateHeader( "Expires", 0 );
+										response.sendError(404);
+										return;
+										}
+									}
+							if(!UtilMethods.isSet(realPath)){
+								f = new File(FileUtil.getRealPath(assetPath + uri));
+								}else{
+									f = new File(realPath + uri);
+									}
+							}
 
 						if(StringUtils.isBlank(uri)) {
 						    Logger.warn(SpeedyAssetServlet.class, "URI is null");

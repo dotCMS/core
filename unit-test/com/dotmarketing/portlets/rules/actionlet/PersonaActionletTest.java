@@ -16,26 +16,28 @@ import java.util.Optional;
 import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
 import static com.dotmarketing.portlets.rules.actionlet.PersonaActionlet.PERSONA_ID_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 public class PersonaActionletTest {
 
     @Test
     public void testActionletSetsPersonaOnHappyPath() throws Exception {
         TestCase test = new TestCase();
-        test.withPersonaId(test.persona.getIdentifier()).withMockPersona(test.persona);
-
+        test.withPersonaId(test.persona.getIdentifier()).withMockPersona(test.persona).withMockVisitor(test.visitor);
         PersonaActionlet pa = new PersonaActionlet(test.personaAPI, test.userAPI, test.visitorAPI);
         PersonaActionlet.Instance foo = pa.instanceFrom(test.params);
         boolean result = pa.evaluate(test.request, test.response, foo);
         assertThat("Result should be true.", result, is(true));
-        assertThat(test.visitor.getPersona(), is(test.persona));
+        verify(test.visitor, times(1)).setPersona(test.persona);
     }
 
     @Test
@@ -67,7 +69,7 @@ public class PersonaActionletTest {
 
         private final User user = new User("000000");
         private final Persona persona = new Persona(new Contentlet());
-        private final Visitor visitor = new Visitor();
+        private final Visitor visitor = mock(Visitor.class);
         private final HttpServletRequest request = mock(HttpServletRequest.class);
         private final HttpServletResponse response= mock(HttpServletResponse.class);
         private PersonaAPI personaAPI = mock(PersonaAPI.class);
@@ -105,7 +107,10 @@ public class PersonaActionletTest {
             return this;
         }
 
-
+        public TestCase withMockVisitor(Visitor visitor) {
+            when(visitorAPI.getVisitor(request)).thenReturn(Optional.of(visitor));
+            return this;
+        }
     }
 
 

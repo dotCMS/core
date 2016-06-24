@@ -1,9 +1,14 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.repackage.org.mockito.Mockito;
+import com.dotcms.LicenseTestUtil;
+import com.dotmarketing.business.web.LanguageWebAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.WebKeys;
@@ -25,7 +30,13 @@ public class CurrentSessionLanguageConditionletTest {
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession session;
-    private CurrentSessionLanguageConditionlet conditionlet = new CurrentSessionLanguageConditionlet();
+    private LanguageWebAPI languageAPI;
+    private CurrentSessionLanguageConditionlet conditionlet;
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void before () {
@@ -35,15 +46,18 @@ public class CurrentSessionLanguageConditionletTest {
         response = Mockito.mock(HttpServletResponse.class);
         //Mock the session
         session = Mockito.mock(HttpSession.class);
+        // Mock Language API
+        languageAPI = Mockito.mock(LanguageWebAPI.class);
+
+        conditionlet = new CurrentSessionLanguageConditionlet(languageAPI);
     }
 
     @Test
     public void testIsComparison () {
 
-        //Mock the request language id
-        Mockito.when(request.getParameter("language_id")).thenReturn("1");
-        Mockito.when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn("1");
-        Mockito.when(request.getSession(true)).thenReturn(session);
+        Language english = new Language();
+        english.setLanguageCode("en");
+        Mockito.when(languageAPI.getLanguage(request)).thenReturn(english);
 
         //++++++++++++++++++++++++++++++
         //Correct case
@@ -104,10 +118,9 @@ public class CurrentSessionLanguageConditionletTest {
     @Test
     public void testIsNotComparison () {
 
-        //Mock the request language id
-        Mockito.when(request.getParameter("language_id")).thenReturn("2");
-        Mockito.when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn("2");
-        Mockito.when(request.getSession(true)).thenReturn(session);
+        Language spanish = new Language();
+        spanish.setLanguageCode("es");
+        Mockito.when(languageAPI.getLanguage(request)).thenReturn(spanish);
 
         //++++++++++++++++++++++++++++++
         //Correct case

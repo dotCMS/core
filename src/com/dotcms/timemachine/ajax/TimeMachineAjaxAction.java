@@ -17,12 +17,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.notifications.bean.NotificationLevel;
-
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -312,9 +314,16 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
                         APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( getUser().getLocale(), "TIMEMACHINE-SNAPSHOT-CREATED" ), NotificationLevel.INFO, getUser().getUserId() );
                     } catch ( Exception e ) {
                         Logger.error( this, "Error creating notification after creation of the Time machine Snapshot.", e );
+                    }finally {
+                        try {
+                            HibernateUtil.closeSession();
+                        } catch (DotHibernateException e) {
+                            Logger.warn(this, e.getMessage(), e);
+                        }finally {
+                            DbConnectionFactory.closeConnection();
+                        }
                     }
-
-                }
+               }
             }.start();
         }
     }

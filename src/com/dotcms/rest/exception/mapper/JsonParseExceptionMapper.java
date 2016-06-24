@@ -1,13 +1,10 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParseException;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper;
 import com.dotcms.repackage.javax.ws.rs.ext.Provider;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -17,7 +14,7 @@ import com.dotmarketing.util.json.JSONObject;
  * alert the user they are sending incorrect data and should fix it before try again.
  */
 @Provider
-public class JsonParseExceptionMapper extends DotExceptionMapper implements ExceptionMapper<JsonParseException> {
+public class JsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {
 
     @Override
     public Response toResponse(JsonParseException exception)
@@ -29,9 +26,9 @@ public class JsonParseExceptionMapper extends DotExceptionMapper implements Exce
         String message = exception.getMessage();
 
         //Creating the message in JSON format.
-        String entity = getJsonErrorAsString(message);
+        String entity = ExceptionMapperUtil.getJsonErrorAsString(message);
 
         //Return 4xx message to the client.
-        return createResponse(entity);
+        return ExceptionMapperUtil.createResponse(entity, message);
     }
 }

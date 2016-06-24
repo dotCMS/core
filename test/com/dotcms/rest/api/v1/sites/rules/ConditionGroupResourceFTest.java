@@ -6,15 +6,15 @@ import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ConditionGroupResourceFTest extends TestBase {
 

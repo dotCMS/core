@@ -55,7 +55,7 @@ public class FixTask00004CheckFileAssetsInconsistencies  implements FixTask {
 						+ "inode i, " + "file_asset c "
 						+ "where ident.id = c.identifier and "
 						+ "ident.id not in (select ident.id "
-						+ "from identifier id, " + "inode i, "
+						+ "from identifier ident, " + "inode i, "
 						+ "file_asset c, " + "fileasset_version_info fvi "
 						+ "where c.identifier = ident.id and "
 						+ "i.inode = c.inode and " + "fvi.working_inode = c.inode) and "
@@ -119,7 +119,7 @@ public class FixTask00004CheckFileAssetsInconsistencies  implements FixTask {
 						db.addParam(identifierInode);
 						db.getResult();
 
-						FixAssetsProcessStatus.addAError();
+						FixAssetsProcessStatus.addAErrorFixed();
 						counter++;
 
 					}

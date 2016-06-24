@@ -18,6 +18,7 @@ import com.dotcms.repackage.com.maxmind.geoip2.record.City;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Country;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Subdivision;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.rules.conditionlet.Location;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -196,6 +197,22 @@ public class GeoIp2CityDbUtil {
 		CityResponse city = getDatabaseReader().city(inetAddress);
 		Country country = city.getCountry();
 		return country.getIsoCode();
+	}
+
+	/**
+	 * returns an instance of {@code Location} from ip address
+	 * @param ipAddress the ip address to represent
+	 * @return the location
+	 * @throws IOException if the connection to the GeoIP2 service could not be
+	 *  established, or the result object could not be created.
+	 * @throws GeoIp2Exception if the IP address is not present in the service database.
+     */
+	public Location getLocationByIp(String ipAddress)
+			throws IOException, GeoIp2Exception {
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse city = getDatabaseReader().city(inetAddress);
+		com.dotcms.repackage.com.maxmind.geoip2.record.Location location = city.getLocation();
+		return new Location(location.getLatitude(), location.getLongitude());
 	}
 
 	/**

@@ -9,9 +9,9 @@
 <%@ include file="/html/portlet/ext/templates/init.jsp" %>
 <%@page import="com.dotmarketing.portlets.containers.business.ContainerAPI"%>
 
-<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
+<script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <style type="text/css">
-    #aceEditorArea { 
+    #aceEditorArea {
         position: relative;
     }
     .show{
@@ -25,6 +25,9 @@
 	.ace_scrollbar {
     	overflow: auto;
 	}
+    .editor-options {
+        margin-top: 5px;
+    }
 </style>
 
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
@@ -103,7 +106,7 @@
 	function submitfm(form,subcmd) {
 		window.onbeforeunload=true;
 		if(dijit.byId("toggleEditor").checked){
-		document.getElementById("bodyField").value=editor.getValue();
+		      document.getElementById("bodyField").value=editor.getValue();
 		}
 		if (form.admin_l2) {
 			for (var i = 0; i < form.admin_l2.length; i++) {
@@ -324,8 +327,14 @@
 					<div id="aceEditorArea" class="show"></div>
 		    		<html:textarea onkeydown="return catchTab(this,event)" style="width:600px; height:500px; font-size: 12px; display:none;" property="body" styleId="bodyField"></html:textarea>
 				</div>
-	        	<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="aceColoration();"  checked="checked"  />
-	        	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+                <div class="editor-options">
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="aceColoration();"  checked="checked"  />
+                    <label for="toggleEditor" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+                    <div id="toggleWrapEditor" style="display: inline-block">
+                        <input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
+                        <label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+                    </div>
+                </div>
 			</dd>
 		</dl>
 	</div>
@@ -339,13 +348,17 @@
     	function aceArea(){
 			editor = ace.edit('aceEditorArea');
 			editor.setTheme("ace/theme/textmate");
-			editor.getSession().setMode("ace/mode/html");
-			editor.getSession().setUseWrapMode(true);
+			editor.getSession().setMode("ace/mode/velocity");
 			editor.setValue(document.getElementById('bodyField').value);
 			editor.clearSelection();
     	}
 
+        function handleWrapMode(e) {
+            editor.getSession().setUseWrapMode(e);
+        }
+
     	function aceColoration(){
+            var toggleWrapper = document.getElementById("toggleWrapEditor");
     		dijit.byId("toggleEditor").disabled=true;
     		var acetId = document.getElementById('aceEditorArea');
 			var aceClass = acetId.className;
@@ -354,12 +367,14 @@
     			acetId.className = aceClass.replace('hidden', 'show');
     			editor.setValue(document.getElementById('bodyField').value);
     			editor.clearSelection();
+                toggleWrapper.setAttribute("style", "display: inline-block")
     		} else {
     			var editorText = editor.getValue();
     			acetId.className = aceClass.replace('show', 'hidden');
     			document.getElementById('bodyField').style.display = "inline";
     			dojo.query('#bodyField').style({display:''})
     			document.getElementById('bodyField').value = editorText;
+                toggleWrapper.setAttribute("style", "display: none")
     		}
     		dijit.byId("toggleEditor").disabled=false;
     	}
@@ -461,5 +476,3 @@
 		<button dojoType="dijit.form.Button" onclick="dijit.byId('containerSelector').hide()" type="button"><%=LanguageUtil.get(pageContext, "Cancel")%></button>
 	</div>
 </div>
-
-

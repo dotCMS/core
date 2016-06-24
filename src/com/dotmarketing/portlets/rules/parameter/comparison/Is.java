@@ -5,15 +5,15 @@ import static org.hamcrest.Matchers.equalTo;
 /**
  * @author Geoff M. Granum
  */
-public class Is extends Comparison<Comparable> {
+public class Is extends Comparison<Object> {
 
     public Is() {
         super("is");
     }
 
     @Override
-    public boolean perform(Comparable expect, Comparable right) {
-        return MatcherCheck.verifyThat(expect, equalTo(right));
+    public boolean perform(Object expect, Object right) {
+        return java.util.Objects.equals(expect, right);
     }
 }
  

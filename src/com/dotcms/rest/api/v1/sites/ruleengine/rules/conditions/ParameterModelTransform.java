@@ -1,29 +1,47 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import com.dotcms.repackage.com.google.common.base.Function;
 import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 
-import java.util.function.Function;
-
 public class ParameterModelTransform {
-    public final Function<ParameterModel, RestConditionValue> toRest = (app) -> {
 
-        RestConditionValue rest = new RestConditionValue.Builder()
-            .id(app.getId())
-            .value(app.getValue())
-            .key(app.getKey())
-            .priority(app.getPriority())
-            .build();
+    public final ToRestFn toRestFn = new ToRestFn();
+    public final ToAppFn toAppFn = new ToAppFn();
 
-        return rest;
+    public static class ToRestFn implements Function<ParameterModel, RestConditionValue> {
+        @Override
+        public RestConditionValue apply(ParameterModel app) {
+            RestConditionValue rest = new RestConditionValue.Builder()
+                .id(app.getId())
+                .value(app.getValue())
+                .key(app.getKey())
+                .priority(app.getPriority())
+                .build();
+
+            return rest;
+        }
+    }
+
+    public static class ToAppFn implements Function<RestConditionValue, ParameterModel> {
+
+        @Override
+        public ParameterModel apply(RestConditionValue rest) {
+            ParameterModel app = new ParameterModel();
+            app.setId(rest.id);
+            app.setPriority(rest.priority);
+            app.setValue(rest.value);
+            app.setKey(rest.key);
+            return app;
+        }
+    }
+
+    public final RestConditionValue toRest(ParameterModel app){
+        return this.toRestFn.apply(app);
+
     };
-    public final Function<RestConditionValue, ParameterModel> toApp = (rest) -> {
-        ParameterModel app = new ParameterModel();
-        app.setId(rest.id);
-        app.setPriority(rest.priority);
-        app.setValue(rest.value);
-        app.setKey(rest.key);
-        return app;
+    public final ParameterModel toApp(RestConditionValue rest) {
+        return this.toAppFn.apply(rest);
     };
 
     public ParameterModel applyRestToApp(RestConditionValue rest, ParameterModel pModel) {

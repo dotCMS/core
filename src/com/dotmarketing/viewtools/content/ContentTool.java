@@ -13,7 +13,6 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
@@ -83,9 +82,9 @@ public class ContentTool implements ViewTool {
 		if(session!=null){
 			tmDate = (String) session.getAttribute("tm_date");
 			boolean tm=tmDate!=null;
-			ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-			EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+			ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null || req.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null || req.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+			EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null || req.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 			if(EDIT_MODE || PREVIEW_MODE){
 				EDIT_OR_PREVIEW_MODE = true;
 			}
@@ -502,7 +501,7 @@ public class ContentTool implements ViewTool {
 		
 		
 		
-		int maxBoost = 10;
+		int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
 		
 		if(tags.size()>0){
 			maxBoost = tags.get(0).getCount() + maxBoost;

@@ -2944,12 +2944,12 @@ create index idx_template_id on template_containers(template_id);
 alter table template_containers add constraint FK_template_id foreign key (template_id) references identifier(id);
 alter table template_containers add constraint FK_container_id foreign key (container_id) references identifier(id);
 
-CREATE OR REPLACE FUNCTION renameFolderChildren(old_path varchar(100),new_path varchar(100),hostInode varchar(100))
+CREATE OR REPLACE FUNCTION renameFolderChildren(old_path varchar(255),new_path varchar(255),hostInode varchar(255))
 RETURNS void AS '
 DECLARE
    fi identifier;
-   new_folder_path varchar(100);
-   old_folder_path varchar(100);
+   new_folder_path varchar(255);
+   old_folder_path varchar(255);
 BEGIN
     UPDATE identifier SET  parent_path  = new_path where parent_path = old_path and host_inode = hostInode;
     FOR fi IN select * from identifier where asset_type=''folder'' and parent_path = new_path and host_inode = hostInode LOOP
@@ -2962,10 +2962,10 @@ END
 CREATE OR REPLACE FUNCTION rename_folder_and_assets()
 RETURNS trigger AS '
 DECLARE
-   old_parent_path varchar(100);
-   old_path varchar(100);
-   new_path varchar(100);
-   old_name varchar(100);
+   old_parent_path varchar(255);
+   old_path varchar(255);
+   new_path varchar(255);
+   old_name varchar(255);
    hostInode varchar(100);
 BEGIN
    IF (tg_op = ''UPDATE'' AND NEW.name<>OLD.name) THEN
@@ -3343,15 +3343,3 @@ create table rule_condition_value (id varchar(36) primary key,condition_id varch
 create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamp);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
-
-CREATE TABLE analytic_summary_user_visits (
-    user_id VARCHAR(255) NOT NULL,
-    host_id VARCHAR(36) NOT NULL,
-    visits INT8 NOT NULL,
-    last_start_date TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id, host_id),
-    UNIQUE (user_id, host_id)
-);           
-CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);
-CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);
-CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);

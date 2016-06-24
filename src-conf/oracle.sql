@@ -3093,9 +3093,8 @@ BEGIN
 END;
 /
 CREATE OR REPLACE PROCEDURE renameFolderChildren(oldPath IN varchar2,newPath IN varchar2,hostInode IN varchar2) IS
-  newFolderPath varchar2(100);
-  oldFolderPath varchar2(100);
-  assetName varchar2(100);
+  newFolderPath varchar2(255);
+  oldFolderPath varchar2(255);
 BEGIN
  UPDATE identifier SET  parent_path  = newPath where parent_path = oldPath and host_inode = hostInode;
  FOR i in (select * from identifier where asset_type='folder' and parent_path = newPath and host_inode = hostInode)
@@ -3110,8 +3109,8 @@ CREATE OR REPLACE TRIGGER rename_folder_assets_trigger
 AFTER UPDATE ON Folder
 FOR EACH ROW
 DECLARE
- oldPath varchar2(100);
- newPath varchar2(100);
+ oldPath varchar2(255);
+ newPath varchar2(255);
  hostInode varchar2(100);
 BEGIN
 	IF :NEW.name <> :OLD.name THEN
@@ -3450,15 +3449,3 @@ create table rule_condition_value (id varchar2(36) primary key,condition_id varc
 create table rule_action (id varchar2(36) primary key,rule_id varchar2(36) references dot_rule(id),priority number(10,0) default 0,actionlet nclob not null,mod_date timestamp);
 create table rule_action_pars(id varchar2(36) primary key,rule_action_id varchar2(36) references rule_action(id), paramkey varchar2(255) not null,value nclob);
 create index idx_rules_fire_on on dot_rule (fire_on);
-
-CREATE TABLE analytic_summary_user_visits (
-    user_id VARCHAR2(255) NOT NULL,
-    host_id VARCHAR2(36) NOT NULL,
-    visits NUMBER(19,0) NOT NULL,
-    last_start_date TIMESTAMP NOT NULL,
-    PRIMARY KEY (user_id, host_id)
-);
-
-CREATE INDEX idx_analytic_user_visits_1 ON analytic_summary_user_visits (user_id);
-CREATE INDEX idx_analytic_user_visits_2 ON analytic_summary_user_visits (host_id);
-CREATE INDEX idx_analytic_user_visits_3 ON analytic_summary_user_visits (last_start_date);

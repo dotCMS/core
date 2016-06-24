@@ -49,12 +49,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
 /**
@@ -100,6 +96,7 @@ public class URLMapFilter implements Filter {
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
 
+		String previewPage = request.getParameter("previewPage");
 		/*
 		 * Getting host object form the session
 		 */
@@ -177,7 +174,7 @@ public class URLMapFilter implements Filter {
 					structure = CacheLocator.getContentTypeCache().getStructureByInode(pc.getStructureInode());
 					List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 					query.append("+structureName:").append(structure.getVelocityVarName()).append(" +deleted:false ");
-					if (EDIT_MODE || ADMIN_MODE) {
+					if ((EDIT_MODE || ADMIN_MODE) && UtilMethods.isSet(previewPage)) {
 						query.append("+working:true ");
 					} else {
 						query.append("+live:true ");
@@ -261,7 +258,18 @@ public class URLMapFilter implements Filter {
 								request.setAttribute("URL_ARG" + i, x[i]);
 							}
 						}
-						
+
+						//Check if we want to accrue the tags of URL maps
+						if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_URLMAPS", true) ) {
+
+							//Search for the tags asocciated to this contentlet inode
+							List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(c.getInode());
+							if ( contentletFoundTags != null ) {
+								//Accrue the found tags
+								TagUtil.accrueTags(request, contentletFoundTags);
+							}
+						}
+
 						break;
 					} catch (DotDataException e) {
 						Logger.warn(this, "DotDataException", e);

@@ -1,6 +1,6 @@
 package com.dotcms.rest;
 
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -10,8 +10,8 @@ import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 
 import com.dotcms.repackage.org.codehaus.cargo.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotcms.rest.config.RestServiceUtil;
@@ -28,7 +28,7 @@ import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.dotcms.repackage.org.mockito.Mockito.*;
+import static org.mockito.Mockito.*;
 
 public class WebResourceTest extends TestBase {
 

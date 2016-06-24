@@ -35,28 +35,28 @@
 	String query = (request.getParameter("query")!=null) ? request.getParameter("query") : (String) session.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_QUERY);
 	String orderby = (request.getParameter("orderby")!=null) ? request.getParameter("orderby") : "";
 
-	//long structureId = 0;
 	String structureId ="";
 	try {
 		if (session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_STRUCTURE_ID) != null)
-			//structureId = Long.parseLong((String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_STRUCTURE_ID));
 			structureId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_STRUCTURE_ID);
 		if (request.getParameter("structure_id") != null)
-			 //structureId = Long.parseLong(request.getParameter("structure_id"));
 		    structureId = request.getParameter("structure_id");
 	} catch (NumberFormatException e) {	}
 
 	Structure st;
-	List structures = StructureFactory.getStructures("structuretype="+Structure.STRUCTURE_TYPE_CONTENT, "name", 0, 0, "asc");
+	List<Structure> allStructures = StructureFactory.getStructures(user, false, true);
+    List<Structure> structures = new ArrayList<Structure>();
+    for (Structure struct : allStructures) {
+        if (!struct.isWidget()) {
+            structures.add(struct);
+        }
+    }
 
-	//long hostId = 0;
 	String hostId = "";
 	try {
 		if (session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID) != null)
-			//hostId = Long.parseLong((String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID));
 			hostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.SEARCH_HOST_ID);
 		if (request.getParameter("host_id") != null)
-		    //hostId = Long.parseLong(request.getParameter("host_id"));
 		          hostId =request.getParameter("host_id");
 	} catch (NumberFormatException e) {
 	}
@@ -70,9 +70,6 @@ function resetSearch() {
 	form = document.getElementById('fm');
 	form.showDeleted.value = '';
 	form.resetQuery.value = 'true';
-	//form.host_id.value = 0;
-	//form.host_id.value = '';
-	//form.structure_id.value= '0';
     dojo.query("input[type='hidden']",'fm').forEach(function(node, index, arr){
 		 	if(node.id === '' || node.id === 'structure_id'){
 	   	   		node.value="";
@@ -111,15 +108,6 @@ function addAsset(event) {
 	 var href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /><portlet:param name="referer" value="<%=referer%>" /></portlet:actionURL>';
      window.location= href;
 }
-
-/*function checkAll(check,selectName) {
-	form = document.getElementById("fm_publish");
-	selectBox = form.publishInode;
-	for (i=0;i<selectBox.length;i++) {
-		selectBox[i].checked = check;
-	}
-	togglePublish();
-}*/
 
 function checkAll() {
 	var check = dijit.byId("checkAll").checked;
@@ -301,7 +289,6 @@ function processDelete(inode, referer) {
             }
 
 			//container properties and permissions
-			//String inode = Long.toString(container.getInode());
 			String inode = container.getInode();
 			String live = (container.isLive())?"1":"0";
 			String working = (container.isWorking())?"1":"0";
@@ -335,7 +322,8 @@ function processDelete(inode, referer) {
 					   ,'<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>'
 					   ,'<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>'
 					   ,'<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>'
-					   ,'<%=user.getUserId()%>'));
+					   ,'<%=user.getUserId()%>'
+					   ,'<%=container.hasLiveVersion() ? "1" : "0"%>'));
 				</script>
 			</td>
 		</tr>

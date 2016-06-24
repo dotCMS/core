@@ -235,9 +235,15 @@ function validate() {
 					</div>
 				<%}%>
 			<div class="buttonRow">
-				<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="validate()" type="button">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-				</button>
+                <% if(hasPushPublishActionlet){ %>
+                    <button dojoType="dijit.form.Button" iconClass="sServerIcon" onClick="validate()" type="button">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push")) %>
+                    </button>
+                <% } else { %>
+                    <button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="validate()" type="button">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+                    </button>
+                <% } %>
 				<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 					</button>

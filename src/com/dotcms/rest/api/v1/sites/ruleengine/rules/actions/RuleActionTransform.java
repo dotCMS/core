@@ -44,6 +44,7 @@ public class RuleActionTransform {
         app.setPriority(rest.priority);
         if(rest.parameters!=null)
             app.setParameters(rest.parameters);
+
         return app;
     }
 

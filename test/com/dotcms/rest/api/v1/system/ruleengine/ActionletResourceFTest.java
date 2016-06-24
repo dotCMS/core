@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.ruleengine;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -8,7 +9,8 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.beans.Host;
@@ -22,7 +24,7 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Oscar Arrieta on 9/21/15.
@@ -31,16 +33,17 @@ import static com.dotcms.repackage.org.junit.Assert.assertTrue;
  */
 public class ActionletResourceFTest extends TestBase {
 
-    private HttpServletRequest request;
-    private String serverName;
-    private Integer serverPort;
-    private User user;
     Host defaultHost;
     Client client;
     private final FunctionalTestConfig config;
 
     public ActionletResourceFTest(){
         config = new FunctionalTestConfig();
+    }
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
     }
 
     /**

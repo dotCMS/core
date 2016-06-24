@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.util.LogicalCondition;
 import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -20,6 +20,24 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     private Date modDate;
     private int priority;
     List<Condition> conditions;
+
+    public ConditionGroup(){
+
+    }
+
+    public ConditionGroup(ConditionGroup conditionGroupToCopy){
+        id = conditionGroupToCopy.id;
+        ruleId = conditionGroupToCopy.ruleId;
+        operator = conditionGroupToCopy.operator;
+        modDate = conditionGroupToCopy.modDate;
+        priority = conditionGroupToCopy.priority;
+        if(conditionGroupToCopy.getConditions() != null) {
+            conditions = Lists.newArrayList();
+            for (Condition condition : conditionGroupToCopy.getConditions()) {
+                conditions.add(new Condition(condition));
+            }
+        }
+    }
 
     public String getId() {
         return id;
@@ -64,23 +82,15 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     public List<Condition> getConditions() {
         if(conditions == null) {
             try {
+                //This will return the Conditions sorted by priority asc directly from DB.
                 conditions = FactoryLocator.getRulesFactory().getConditionsByGroup(this.id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
-        Collections.sort(conditions);
-        return conditions;
-    }
 
-    public void setConditions(List<Condition> conditions) {
-        this.conditions = conditions;
-    }
-
-    public void addCondition(Condition condition) {
-        if(conditions!=null) {
-            conditions.add(condition);
-        }
+        //Return a shallow copy of the list.
+        return Lists.newArrayList(conditions);
     }
 
     public void checkValid(){

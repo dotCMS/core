@@ -19,7 +19,7 @@
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
 	dojo.require("dojox.data.JsonRestStore");
-	
+
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 	dojo.require("dotcms.dojo.data.UsersReadStore");
 	dojo.require('dijit.layout.AccordionContainer');
@@ -31,6 +31,8 @@
 	var abondonUserChangesConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "abondon-user-changes-confirm")) %>';
 	var passwordsDontMatchError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "passwords-dont-match-error")) %>';
 	var deleteYourOwnUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-your-own-user-error")) %>';
+	var replacementUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "replacement-user-required-error")) %>';
+	var deleteAndReplaceUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-and-replace-same-user-error")) %>';
 	var deactivateYourOwnUserError = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "deactivate-your-own-user-error")) %>';
 	var deleteUserConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-user-confirm")) %>';
 	var userDeleted = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "user-deleted")) %>';
@@ -179,7 +181,7 @@
 				label: 'id',
 				items: [  ]
 			};
-		list.data.each(function (record, idx) {
+		list.data.forEach(function (record, idx) {
 			usersData.items.push({ name: record.name, id: record.id, email: record.emailaddress });
 		});
  		var usersStore = new dojo.data.ItemFileReadStore({data: usersData });
@@ -279,14 +281,17 @@
 		dijit.byId('emailAddress').attr('value', user.emailaddress);
 		dijit.byId('password').attr('value', '********');
 		dijit.byId('passwordCheck').attr('value', '********');
-
 		dojo.query(".fullUserName").forEach(function (elem) { elem.innerHTML = user.name; });
 
 		userChanged = false;
 		newUser = false;
 		dojo.byId('userProfileTabs').style.display = '';
 		dojo.byId('loadingUserProfile').style.display = 'none';
-
+		var deletebutton = dijit.byId('deleteButton');
+		if(deleteButton != null){
+			deleteButton.parentNode.show();
+		}
+		
 		initStructures();
 		loadUserRolesTree(currentUser.id);
 		buildRolesTree();
@@ -365,6 +370,12 @@
 		  dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 		}
 		dijit.byId('userTabsContainer').selectChild(dijit.byId('userDetailsTab'));
+		var deletebutton = dijit.byId('deleteButton');
+		if(deleteButton != null){
+			//to avoid the display of a square when the delete button is hide
+			deleteButton.parentNode.hide();
+			
+		}
 		resizeRoleBrowser();
 	}
 
@@ -380,7 +391,7 @@
 		userChanged = true;
 		passwordChanged = true;
 	}
-	
+
 	//Handler from when the user info has changed
 	var emailChanged = false;
 	function userEmailChanged() {
@@ -478,18 +489,36 @@
 	}
 
 	//Event handler then deleting a user
+	function showDeleteUserBox(){
+		dijit.byId('deleteUserDialog').show();
+	}
+	
+	function cancelDeleteUser(){
+		dijit.byId('deleteUserDialog').hide();
+	}
 	function deleteUser() {
+		var replacementUserId = dijit.byId('deleteUsersFilter').attr('value'); 
 		if(currentUserId  == currentUser.id) {
 			alert(deleteYourOwnUserError);
 			return;
 		}
+		if(replacementUserId ==''||replacementUserId==null){
+			alert(replacementUserError);
+			return;
+		}
+		if(currentUser.id  == replacementUserId) {
+			alert(deleteAndReplaceUserError);
+			return;
+		}
+		replacementUserId = replacementUserId.replace('user-','');
 		if(confirm(deleteUserConfirm)) {
-			UserAjax.deleteUser(currentUser.id, deleteUserCallback);
+			UserAjax.deleteUser(currentUser.id, replacementUserId, deleteUserCallback);
 		}
 	}
 
 	//Callaback from the server to confirm a user deletion
 	function deleteUserCallback (isDeleted) {
+		dijit.byId('deleteUserDialog').hide();
 		if(isDeleted) {
 			userChanged = false;
 			passwordChanged = false;
@@ -726,7 +755,7 @@
 
 		//Unregistering any old loaded tree and nodes before try to render a new tree
 		if (dijit.byId('userRolesTree')) {
-			flatTree.each(function (role) {
+			flatTree.forEach(function (role) {
 				if(dijit.byId("role_node_" + role.id + "_chk")) {
 					dijit.registry.remove("role_node_" + role.id + "_chk");
 				}
@@ -818,7 +847,7 @@
 
 		if (checked) {
 			expandWholeTree(tree);
-			flatTree.each(function (role) {
+			flatTree.forEach(function (role) {
 				var treeNode = dijit.byId('treeNode-' + role.id);
 				if(treeNode)
 					dojo.style(treeNode.domNode, { display: 'none' });
@@ -830,7 +859,7 @@
 				var tree = dijit.byId('userRolesTree');
 
 				var branchesUp = getRoleFlatUpBranch(userRole.id);
-				branchesUp.each(function(upRole){
+				branchesUp.forEach(function(upRole){
 					var tree = dijit.byId('userRolesTree');
 					var treeNode = dijit.byId('treeNode-' + upRole.id);
 					if (!treeNode) return;
@@ -938,7 +967,7 @@
 			rolesChecked.push(checkbox);
 			//If role is check everything underneath should be checked
 			var branchDown = getRoleFlatDownBranch(id);
-			branchDown.each(function (role) {
+			branchDown.forEach(function (role) {
 				var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 				if(checkbox != undefined && !checkbox.attr('disabled'))
 					checkbox.attr('value', 'on');
@@ -950,7 +979,7 @@
 
 			//If role is un-checked everything above should be unchecked
 			var branchesUp = getRoleFlatUpBranch(id);
-			branchesUp.each(function (role) {
+			branchesUp.forEach(function (role) {
 				var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 				if(checkbox != undefined &&  !checkbox.attr('disabled'))
 					checkbox.attr('value', false);
@@ -963,7 +992,7 @@
 
 	//Resets the roles selection to how it was when loaded
 	function resetRoles () {
-		flatTree.each(function (role) {
+		flatTree.forEach(function (role) {
 			var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 			if(!findRole(role.id, userRoles))
 				if(!checkbox.attr('disabled'))
@@ -972,7 +1001,7 @@
 				if(!checkbox.attr('disabled'))
 					checkbox.attr('value', 'on');
 				var branchDown = getRoleFlatDownBranch(role.id);
-				branchDown.each(function (role) {
+				branchDown.forEach(function (role) {
 					var checkbox = dijit.byId('role_node_' + role.id + '_chk');
 					if(!checkbox.attr('disabled'))
 						checkbox.attr('value', 'on');
@@ -997,7 +1026,7 @@
 
 	//Utility functions
 	function flattenTree (tree) {
-		tree.each(function (node) {
+		tree.forEach(function (node) {
 			flatTree.push(node);
 			if (node.children)
 				flattenTree(node.children);
@@ -1127,7 +1156,7 @@
 	function loadUserAddressesCallback(addresses){
 		var addressesGrid = dijit.byId('userAddressesGrid');
 		addressesData.items = [];
-		addresses.each(function (newAddress) {
+		addresses.forEach(function (newAddress) {
 			newAddress.address = newAddress.street1 + "<br/>" + newAddress.street2 + "<br/>" + newAddress.city + ", " +
 				newAddress.state + " " + newAddress.zip + "<br/>" + newAddress.country;
 			addressesData.items.push(newAddress);
@@ -1225,7 +1254,7 @@
 		if(currentUser == null)
 			return;
 		if(!dijit.byId('addressForm').validate())
-			return;		
+			return;
 		var id = dojo.byId('addressId').value;
 		var desc = dijit.byId('addressDescription').attr('value');
 		var street1 = dijit.byId('addressStreet1').attr('value');
@@ -1310,7 +1339,7 @@
 		if(currentUser == null)
 			return;
 		if (!dijit.byId('userAdditionalInfoForm').validate())
-			return;		
+			return;
 		var active = dijit.byId('userActive').attr('value') != false;
 		var prefix = dijit.byId('prefix').attr('value');
 		var suffix = dijit.byId('suffix').attr('value');
@@ -1591,6 +1620,3 @@
 
 
 </script>
-
-
-

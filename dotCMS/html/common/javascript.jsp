@@ -21,10 +21,7 @@
 
 
 <%
-	User userToCheck = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(userToCheck == null ){
-		return;
-	}
+
 	String dojoPath = Config.getStringProperty("path.to.dojo");
 	if(!UtilMethods.isSet(dojoPath)){
 		// Change dojopath in dotmarketing-config.properties!
@@ -38,41 +35,20 @@
 	* which will help both in inital loading and
 	* in caching, and in subsequent isUpdated 304 type requests for the files.
 	**/
-	
-	/** generated js **/
-	requires.add("/dwr/util.js");
-	requires.add("/dwr/interface/TemplateAjax.js");
-	requires.add("/dwr/interface/HostAjax.js");
-	requires.add("/dwr/interface/ContainerAjax.js");
-	requires.add("/dwr/interface/RoleAjax.js");
-	requires.add("/dwr/interface/BrowserAjax.js");
-	requires.add("/dwr/interface/UserAjax.js");
-	requires.add("/dwr/interface/InodeAjax.js");
-	requires.add("/dwr/interface/BrowserAjax.js");
-	requires.add("/dwr/interface/UserAjax.js");
-	requires.add("/dwr/interface/HostAjax.js");
-	
 	/** static js **/
-	files.add(dojoPath + "/dojo/dot-dojo.js");
-	files.add("/html/js/dotcms/dojo/data/UsersReadStore.js");
-	files.add("/html/js/calendar/calendar_stripped.js");
-	files.add("/html/js/calendar/calendar-setup_stripped.js");
-	files.add("/html/js/scriptaculous/prototype.js");
-	files.add("/html/js/sniffer.js");
-	files.add("/html/js/menu.js");
-	files.add("/html/js/rollovers.js");
-	files.add("/html/js/init.js");
+
+  files.add("/html/js/dotcms/dojo/data/UsersReadStore.js");
+  files.add("/html/js/calendar/calendar_stripped.js");
+  files.add("/html/js/calendar/calendar-setup_stripped.js");
 	files.add("/html/js/util.js");
 	files.add("/html/js/validation.js");
 	files.add("/html/js/dotcms-utils/dotcms-utils.js");
 	files.add("/html/js/cms_ui_utils.js");
-	//files.add("/html/js/popup.js");
 	files.add("/html/js/form_validation.js");
 	files.add("/html/js/tag.js");
 	files.add("/html/js/uuidUtils.js");
-	files.add("/html/js/states_and_countries.js");
-	
-	
+
+
 	StringBuilder buff = new StringBuilder();
 	for(String x : files){
 		buff.append(x);
@@ -87,7 +63,7 @@
 	_lastModified.add(Calendar.DAY_OF_YEAR, -(buff.length() + files.size()));
 
 	Date _lastModifiedDate = _lastModified.getTime();
-	
+
 	String eTag = "eTag" + buff.toString().hashCode();
 
 	SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT, Locale.US);
@@ -105,7 +81,7 @@
     String ifModifiedSince = request.getHeader("If-Modified-Since");
 	String ifNoneMatch = request.getHeader("If-None-Match");
 
-	
+
     if(ifNoneMatch != null){
         if(eTag.equals(ifNoneMatch) || ifNoneMatch.equals("*")){
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
@@ -115,9 +91,9 @@
     /* Using the If-Modified-Since Header */
     if(ifModifiedSince != null){
 	    try{
-	    	
+
 	        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
-	        
+
 	        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
 
 	            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
@@ -154,7 +130,7 @@
 
 
 
-	
-	
+
+
 %>
 <%@ include file="/html/common/top_js_inc.jsp" %>

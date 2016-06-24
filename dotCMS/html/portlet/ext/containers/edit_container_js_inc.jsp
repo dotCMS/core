@@ -9,15 +9,15 @@
 			if (numContentlets > 0){
 
 				var inputSts = document.createElement('input');
-			    inputSts.type = 'hidden';
-			    inputSts.name = 'structuresIds';
-			    inputSts.id = 'structuresIds';
+				inputSts.type = 'hidden';
+				inputSts.name = 'structuresIds';
+				inputSts.id = 'structuresIds';
 
-			    var tabChildren = dijit.byId("tabContainer").getChildren();
+				var tabChildren = dijit.byId("tabContainer").getChildren();
 
 				structuresAdded = new Array();
 
-			    tabChildren.forEach(function(widget, index, hash){
+				tabChildren.forEach(function(widget, index, hash){
 					var structureInode = widget.id.split("_")[1];
 					structuresAdded.push(structureInode);
 				});
@@ -30,9 +30,9 @@
 				for(var i=0; i < structuresAdded.length; i++) {
 
 					var input = document.createElement('input');
-				    input.type = 'hidden';
-				    input.name = 'code_' + structuresAdded[i];
-				    input.id = 'code_' + structuresAdded[i];
+					input.type = 'hidden';
+					input.name = 'code_' + structuresAdded[i];
+					input.id = 'code_' + structuresAdded[i];
 
 					if(aceMultiEditor[structuresAdded[i]]!=null) {
 						dojo.byId("codeMaskMulti"+structuresAdded[i]).value = aceMultiEditor[structuresAdded[i]].getValue();
@@ -94,9 +94,9 @@
 		dijit.registry.remove('variablesDialog');
 	 	new dijit.Dialog({
 	 		id: 'variablesDialog',
-      		title: "<%= LanguageUtil.get(pageContext, "Add-Variables") %>",
-      		href: "/html/portlet/ext/containers/add_variables.jsp?structureInode=" + structureInode,
-      		style: "width: 450px; height: 500px;"
+	  		title: "<%= LanguageUtil.get(pageContext, "Add-Variables") %>",
+	  		href: "/html/portlet/ext/containers/add_variables.jsp?structureInode=" + structureInode,
+	  		style: "width: 450px; height: 500px;"
   		}, 'variablesDialog').show();
 	}
 
@@ -109,8 +109,8 @@
 
 		if(myFieldName=="codeMask") {
 			var acetId = document.getElementById('aceEditor');
-        	if(acetId.className.indexOf("show") == 0) {
-        		var pos= aceEditor.getCursorPosition();
+			if(acetId.className.indexOf("show") == 0) {
+				var pos= aceEditor.getCursorPosition();
 				aceEditor.getSession().insert(pos, myValue);
 			} else {
 				myField.value=myField.value+myValue;
@@ -120,29 +120,29 @@
 			myField = dojo.byId("codeMaskMulti"+structureInode);
 			var acetId = document.getElementById('aceMaskMulti'+structureInode);
 
-        	if(acetId.className.indexOf("show") == 0) {
-        		var pos= aceMultiEditor[structureInode].getCursorPosition();
+			if(acetId.className.indexOf("show") == 0) {
+				var pos= aceMultiEditor[structureInode].getCursorPosition();
 				aceMultiEditor[structureInode].getSession().insert(pos, myValue);
-        	} else {
-        		myField.value=myField.value+myValue;
-        	}
+			} else {
+				myField.value=myField.value+myValue;
+			}
 
 		} else if(myFieldName=="preLoopMask") {
 			var acetId = document.getElementById('preLoopAceEditor');
 			if(acetId.className.indexOf("pShow") == 0) {
 				var pos= preLoopEditor.getCursorPosition();
-			    preLoopEditor.getSession().insert(pos, myValue);
-            } else {
+				preLoopEditor.getSession().insert(pos, myValue);
+			} else {
 				myField.value=myField.value+myValue;
-            }
+			}
 		} else if(myFieldName=="postLoopMask") {
 			var acetId = document.getElementById('postLoopAceEditor');
 			if(acetId.className.indexOf("pShow") == 0) {
 				var pos= postLoopEditor.getCursorPosition();
-			    postLoopEditor.getSession().insert(pos, myValue);
-            } else {
-            	myField.value=myField.value+myValue;
-            }
+				postLoopEditor.getSession().insert(pos, myValue);
+			} else {
+				myField.value=myField.value+myValue;
+			}
 		} else {
 				myField.value=myField.value+myValue
 		}
@@ -209,10 +209,10 @@
 		dijit.byId('variablesDialog').hide();
 	}
 
-    function addCustomField(velocityVarName) {
-	    var insert = "#if ($" + "{" + velocityVarName+"Code}) \n  $!{"+ velocityVarName + "Code} \n#end \n" ;
-        insertAtCursor(insert, "codeMaskMulti");
-        dijit.byId('variablesDialog').hide();
+	function addCustomField(velocityVarName) {
+		var insert = "#if ($" + "{" + velocityVarName+"Code}) \n  $!{"+ velocityVarName + "Code} \n#end \n" ;
+		insertAtCursor(insert, "codeMaskMulti");
+		dijit.byId('variablesDialog').hide();
 
 	}
 
@@ -277,20 +277,20 @@
 			for(var i=0; i < structuresAdded.length; i++) {
 				if(aceMultiEditor[structuresAdded[i]]==null) {
 					aceMultiEditor[structuresAdded[i]]=aceArea("aceMaskMulti"+structuresAdded[i], "codeMaskMulti"+structuresAdded[i]);
-  	       			aceMultiEditorCreated[structuresAdded[i]]=true;
+  		   			aceMultiEditorCreated[structuresAdded[i]]=true;
    				}
 			}
 
 			if(isNaN(parseInt(val)) || parseInt(val)==0){
 
-			    if(preLoopEditorCreated){
-			    	preLoopEditor=aceRemover(preLoopEditor,"preLoopMask");
-			    	preLoopEditorCreated=false;
-			    }
-			    if(postLoopEditorCreated){
+				if(preLoopEditorCreated){
+					preLoopEditor=aceRemover(preLoopEditor,"preLoopMask");
+					preLoopEditorCreated=false;
+				}
+				if(postLoopEditorCreated){
 			   		postLoopEditor=aceRemover(postLoopEditor,"postLoopMask");
-			    	postLoopEditorCreated=false;
-			    }
+					postLoopEditorCreated=false;
+				}
 				ele.style.display="none";
 				ele2.style.display="none";
 				ele3.style.display="none";
@@ -306,9 +306,9 @@
 					preLoopEditorCreated=true;
 				}
 				if(!postLoopEditorCreated){
-	            	postLoopEditor=aceArea("postLoopAceEditor" ,"postLoopMask");
-	            	postLoopEditorCreated=true;
-	            }
+					postLoopEditor=aceArea("postLoopAceEditor" ,"postLoopMask");
+					postLoopEditorCreated=true;
+				}
 			}
 
 			if(structuresAdded.length==0 && val>0) {
@@ -471,15 +471,15 @@
 
 	}
 
-    function deleteVersion(objId){
-        if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.delete.container.version")) %>')){
+	function deleteVersion(objId){
+		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.delete.container.version")) %>')){
 			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=deleteversion&inode=' + objId + '&referer=' + referer;
-        }
-    }
+		}
+	}
 	function selectVersion(objId) {
-        if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.replace.version")) %>')){
+		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.containers.confirm.replace.version")) %>')){
 			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=getversionback&inode=' + objId + '&inode_version=' + objId + '&referer=' + referer;
-	    }
+		}
 	}
 	function editVersion(objId) {
 		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
@@ -508,8 +508,7 @@
  	function aceArea(editorId, textarea){
 		editor = ace.edit(editorId);
 		editor.setTheme("ace/theme/textmate");
-		editor.getSession().setMode("ace/mode/html");
-		editor.getSession().setUseWrapMode(true);
+		editor.getSession().setMode("ace/mode/velocity");
 		var id = document.getElementById(textarea);
 		if(id == undefined){
 			editor.setValue("");
@@ -517,112 +516,127 @@
 			editor.setValue(document.getElementById(textarea).value);
 		}
 		editor.clearSelection();
-    	return editor;
+		return editor;
 	}
 
 
 
 	function aceRemover(removeEditor, textarea){
 
-	    var editorText=removeEditor.getValue();
+		var editorText=removeEditor.getValue();
 		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
-    	return null;
+		return null;
 	}
 
-    var htmlArea = "<textarea onkeydown='return catchTab(this,event)' property='${textAreaId}' id='${textAreaId}' style='width:${textAreaWidth}; height:${textAreaHeight}; font-size: 12px'></textarea>";
+	var htmlArea = "<textarea onkeydown='return catchTab(this,event)' property='${textAreaId}' id='${textAreaId}' style='width:${textAreaWidth}; height:${textAreaHeight}; font-size: 12px'></textarea>";
 	var aceId;
 	var aceClass;
+
+	function aceWrapToggler(e) {
+		var editorId = e.target.id;
+		var editorInstance;
+		if (editorId == "preloopWrapEditor") {
+			preLoopEditor.getSession().setUseWrapMode(dijit.byId(editorId).checked);
+		} else if (editorId == "postloopWrapEditor") {
+			postLoopEditor.getSession().setUseWrapMode(dijit.byId(editorId).checked);
+		} else if (editorId == "multiWrapEditor") {
+			for(var i=0; i < structuresAdded.length; i++) {
+				aceMultiEditor[structuresAdded[i]].getSession().setUseWrapMode(dijit.byId(editorId).checked);
+			}
+		}
+	}
+
 	function aceToggler(editorId, textareaId){
 
 			if(textareaId=="codeMask"){
 					aceId = document.getElementById(editorId);
 					aceClass = aceId.className;
-	            	if(dijit.byId("toggleEditorCode").checked){
-	            		dijit.byId("toggleEditorCode").disabled=true;
-	            		document.getElementById('codeMask').style.display = "none";
-	           			aceEditor.setValue(document.getElementById(textareaId).value);
+					if(dijit.byId("toggleEditorCode").checked){
+						dijit.byId("toggleEditorCode").disabled=true;
+						document.getElementById('codeMask').style.display = "none";
+						aceEditor.setValue(document.getElementById(textareaId).value);
 						aceEditor.clearSelection();
-	           			aceId.className = aceClass.replace('hidden', 'show');
-	            		dijit.byId("toggleEditorCode").disabled=false;
-	            	} else{
-	            		dijit.byId("toggleEditorCode").disabled=true;
-	            		document.getElementById('codeMask').style.display = "inline";
-	           			aceId.className = aceClass.replace('show', 'hidden');
-	           			aceRemover(aceEditor, textareaId);
-	           			aceEditorCreated=false;
-	            		dijit.byId("toggleEditorCode").disabled=false;
-	            	}
-	         } else if(textareaId=="codeMaskMulti"){
-            	if(dijit.byId("toggleEditorCodeMultiple").checked){
-            		dijit.byId("toggleEditorCodeMultiple").disabled=true;
+			   			aceId.className = aceClass.replace('hidden', 'show');
+						dijit.byId("toggleEditorCode").disabled=false;
+					} else{
+						dijit.byId("toggleEditorCode").disabled=true;
+						document.getElementById('codeMask').style.display = "inline";
+						aceId.className = aceClass.replace('show', 'hidden');
+						aceRemover(aceEditor, textareaId);
+						aceEditorCreated=false;
+						dijit.byId("toggleEditorCode").disabled=false;
+					}
+			 } else if(textareaId=="codeMaskMulti"){
+				if(dijit.byId("toggleEditorCodeMultiple").checked){
+					dijit.byId("toggleEditorCodeMultiple").disabled=true;
 
 					for(var i=0; i < structuresAdded.length; i++) {
 						aceId = document.getElementById(editorId+structuresAdded[i]);
 						aceClass = aceId.className;
 						document.getElementById(textareaId+structuresAdded[i]).style.display = "none";
 						aceMultiEditor[structuresAdded[i]].setValue(document.getElementById(textareaId+structuresAdded[i]).value);
-    	     			aceMultiEditor[structuresAdded[i]].clearSelection();
-    	       			aceId.className = aceClass.replace('hidden', 'show');
+			 			aceMultiEditor[structuresAdded[i]].clearSelection();
+			   			aceId.className = aceClass.replace('hidden', 'show');
 					}
 
-            		dijit.byId("toggleEditorCodeMultiple").disabled=false;
-            	} else{
-            		dijit.byId("toggleEditorCodeMultiple").disabled=true;
+					dijit.byId("toggleEditorCodeMultiple").disabled=false;
+				} else{
+					dijit.byId("toggleEditorCodeMultiple").disabled=true;
 
-            		for(var i=0; i < structuresAdded.length; i++) {
-            			aceId = document.getElementById(editorId+structuresAdded[i]);
+					for(var i=0; i < structuresAdded.length; i++) {
+						aceId = document.getElementById(editorId+structuresAdded[i]);
 						aceClass = aceId.className;
-            			aceRemover(aceMultiEditor[structuresAdded[i]], textareaId+structuresAdded[i]);
-	            		aceId.className = aceClass.replace('show', 'hidden');
-            			document.getElementById(textareaId+structuresAdded[i]).style.display = "inline";
-            			aceMultiEditorCreated[structuresAdded[i]]=false;
-            		}
+						aceRemover(aceMultiEditor[structuresAdded[i]], textareaId+structuresAdded[i]);
+						aceId.className = aceClass.replace('show', 'hidden');
+						document.getElementById(textareaId+structuresAdded[i]).style.display = "inline";
+						aceMultiEditorCreated[structuresAdded[i]]=false;
+					}
 
 
-            		dijit.byId("toggleEditorCodeMultiple").disabled=false;
-            	}
-            }
+					dijit.byId("toggleEditorCodeMultiple").disabled=false;
+				}
+			}
 			else if(textareaId=="preLoopMask"){
 				aceId = document.getElementById(editorId);
 			 	aceClass = aceId.className;
 				if(dijit.byId("toggleEditorPreLoop").checked){
-            		dijit.byId("toggleEditorPreLoop").disabled=true;
-            		document.getElementById('preLoopMask').style.display = "none";
-	            	preLoopEditor.setValue(document.getElementById(textareaId).value);
+					dijit.byId("toggleEditorPreLoop").disabled=true;
+					document.getElementById('preLoopMask').style.display = "none";
+					preLoopEditor.setValue(document.getElementById(textareaId).value);
 					preLoopEditor.clearSelection();
-	            	aceId.className = aceClass.replace('hidden', 'pShow');
-            		dijit.byId("toggleEditorPreLoop").disabled=false;
-            	}
-            	else{
-            		dijit.byId("toggleEditorPreLoop").disabled=true;
-            		document.getElementById('codeMask').style.display = "inline";
-	            	aceId.className = aceClass.replace('pShow', 'hidden');
-	            	aceRemover(preLoopEditor, textareaId);
-            		preLoopEditorCreated=false;
-            		dijit.byId("toggleEditorPreLoop").disabled=false;
-            	}
+					aceId.className = aceClass.replace('hidden', 'pShow');
+					dijit.byId("toggleEditorPreLoop").disabled=false;
+				}
+				else{
+					dijit.byId("toggleEditorPreLoop").disabled=true;
+					document.getElementById('codeMask').style.display = "inline";
+					aceId.className = aceClass.replace('pShow', 'hidden');
+					aceRemover(preLoopEditor, textareaId);
+					preLoopEditorCreated=false;
+					dijit.byId("toggleEditorPreLoop").disabled=false;
+				}
 			}
 			else if(textareaId=="postLoopMask"){
 				aceId = document.getElementById(editorId);
 				aceClass = aceId.className;
 				if(dijit.byId("toggleEditorPostLoop").checked){
-            		dijit.byId("toggleEditorPostLoop").disabled=true;
-            		document.getElementById('postLoopMask').style.display = "none";
-	            	postLoopEditor.setValue(document.getElementById(textareaId).value);
+					dijit.byId("toggleEditorPostLoop").disabled=true;
+					document.getElementById('postLoopMask').style.display = "none";
+					postLoopEditor.setValue(document.getElementById(textareaId).value);
 					postLoopEditor.clearSelection();
-	            	aceId.className = aceClass.replace('hidden', 'pShow');
-            		dijit.byId("toggleEditorPostLoop").disabled=false;
-            	}
-            	else{
-            		dijit.byId("toggleEditorPostLoop").disabled=true;
-            		aceId.className = aceClass.replace('pShow', 'hidden');
-	            	aceRemover(postLoopEditor, textareaId);
-            		preLoopEditorCreated=false;
-            		dijit.byId("toggleEditorPostLoop").disabled=false;
-            	}
+					aceId.className = aceClass.replace('hidden', 'pShow');
+					dijit.byId("toggleEditorPostLoop").disabled=false;
+				}
+				else{
+					dijit.byId("toggleEditorPostLoop").disabled=true;
+					aceId.className = aceClass.replace('pShow', 'hidden');
+					aceRemover(postLoopEditor, textareaId);
+					preLoopEditorCreated=false;
+					dijit.byId("toggleEditorPostLoop").disabled=false;
+				}
 			}
-         return editor;
+		 return editor;
 	}
 
 	function hideEditButtonsRow() {
@@ -658,42 +672,42 @@
 		var tc = dijit.byId("tabContainer");
 		var cp1 = new dijit.layout.ContentPane({
 		 id: "tab_"+structureInode,
-         title: label,
-         style:"padding:0",
-         closable:true
-	    });
+		 title: label,
+		 style:"padding:0",
+		 closable:true
+		});
 
-	    require(["dojo/on"], function(on){
+		require(["dojo/on"], function(on){
 		  on(cp1, "close", function(e){
-		    removeStructure(structureInode);
+			removeStructure(structureInode);
 		  });
 		});
 
-	    cp1.startup();
+		cp1.startup();
 
-	    var textarea = new dijit.form.Textarea({
-		    name: "codeMaskMulti"+structureInode,
-		    id: "codeMaskMulti"+structureInode,
-		    value: "",
-		    style: "width:99%; height:300px"
+		var textarea = new dijit.form.Textarea({
+			name: "codeMaskMulti"+structureInode,
+			id: "codeMaskMulti"+structureInode,
+			value: "",
+			style: "width:99%; height:300px"
 		  });
 
 		var div = dojo.create("div",{
-		    id: "aceMaskMulti"+structureInode,
-		    class: "show",
-		    style: "position: relative;"
+			id: "aceMaskMulti"+structureInode,
+			class: "show",
+			style: "position: relative;"
 		  });
 		cp1.set('content',div);
 		cp1.addChild(textarea);
-	    tc.addChild(cp1);
-	    tc.selectChild(cp1);
-	    addStructureToList(structureInode);
+		tc.addChild(cp1);
+		tc.selectChild(cp1);
+		addStructureToList(structureInode);
 
 	   	// remove the structure added from the filtering select's store
 
-<!-- 	    var structureSelect = dijit.byId("structureSelect"); -->
-<!-- 	    var options = structureSelect.store.data; -->
-<!-- 	    var indexToRemove = null; -->
+<!-- 		var structureSelect = dijit.byId("structureSelect"); -->
+<!-- 		var options = structureSelect.store.data; -->
+<!-- 		var indexToRemove = null; -->
 
 <!-- 		dojo.some(options, function(widget, index, hash){ -->
 <!-- 			if(widget.value==structureInode) { -->
@@ -707,8 +721,8 @@
 		// end removing structure added
 
 
-	    var length = structuresAdded.length;
-	    aceMultiEditor[structuresAdded[length-1]] = aceArea('aceMaskMulti'+structureInode, 'codeMaskMulti'+structureInode);
+		var length = structuresAdded.length;
+		aceMultiEditor[structuresAdded[length-1]] = aceArea('aceMaskMulti'+structureInode, 'codeMaskMulti'+structureInode);
 		aceMultiEditorCreated[structuresAdded[length]]=true;
 
 	}
@@ -726,4 +740,3 @@
 		var index = structuresAdded.indexOf(structureId);
 		structuresAdded.splice(index,1);
 	}
-

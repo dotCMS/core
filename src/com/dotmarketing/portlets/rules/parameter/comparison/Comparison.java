@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import com.dotmarketing.portlets.rules.conditionlet.Location;
 import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
 import java.util.Collection;
@@ -9,8 +10,8 @@ import java.util.Collection;
 public class Comparison<T> {
 
     public static final Comparison<Object> EXISTS = new Exists();
-    public static final Comparison<Comparable> IS = new Is();
-    public static final Comparison<Comparable> IS_NOT = new IsNot();
+    public static final Comparison<Object> IS = new Is();
+    public static final Comparison<Object> IS_NOT = new IsNot();
     public static final Comparison<String> STARTS_WITH = new StartsWith();
     public static final Comparison<String> ENDS_WITH = new EndsWith();
     public static final Comparison<String> CONTAINS = new Contains();
@@ -22,9 +23,11 @@ public class Comparison<T> {
     public static final Comparison<Comparable> GREATER_THAN = new GreaterThanComparison();
     public static final Comparison<Comparable<Object>> LESS_THAN_OR_EQUAL = new LessThanOrEqualComparison();
     public static final Comparison<Comparable<Object>> GREATER_THAN_OR_EQUAL = new GreaterThanOrEqualComparison();
+    public static final Comparison<Location> WITHIN_DISTANCE = new WithinDistanceComparison();
+    public static final Comparison<Location> NOT_WITHIN_DISTANCE = new NotWithinDistanceComparison();
     public static final Comparison<String> NETMASK = new NetmaskComparison();
 
-    public static final Comparison[] NUMERIC_COMPARATION = {EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL,
+    public static final Comparison[] NUMERIC_COMPARISONS = {EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL,
              GREATER_THAN_OR_EQUAL};
 
     private final String id;
@@ -67,6 +70,14 @@ public class Comparison<T> {
 
     public boolean perform(T argA, T argB, T argC) {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with three argument values.");
+    }
+
+    /**
+     * @todo ggranum: This modification of the simple, single type isn't ideal, but it's understandable. Find a better pattern
+     * for future cases.
+     */
+    public boolean perform(T argA, T argB, double argC) {
+        throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed.");
     }
 
     public static class ComparisonOption extends Option {

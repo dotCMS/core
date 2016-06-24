@@ -12,12 +12,14 @@ import java.util.Random;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -70,6 +72,11 @@ public class VisitorsTagsActionletFTest extends TestBase {
 	private final String baseUrl = "http://" + request.getServerName() + ":" + request.getServerPort();
 
 	private final String BLANK_TEMPLATE_INODE = "54b2ca77-4c91-4de5-bcc7-ccd4ce0ecd50";
+
+	@BeforeClass
+	public static void prepare () throws Exception {
+		LicenseTestUtil.getLicense();
+	}
 
 	/**
 	 * Test adding tags to visitor object

@@ -48,6 +48,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
+/**
+ * @deprecated use {@link com.dotmarketing.servlets.BinaryExporterServlet} instead.
+ */
+@Deprecated
 public class ThumbnailImage extends HttpServlet {
 
     private static final FileAPI fileAPI = APILocator.getFileAPI();

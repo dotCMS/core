@@ -51,9 +51,9 @@ public class CMSFilter implements Filter {
 		VANITY_URL,
 		NOTHING_IN_THE_CMS
 	}
-	
-	
-	
+
+
+
 	public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
 	public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
@@ -75,13 +75,13 @@ public class CMSFilter implements Filter {
 		}
 
 
-		
-		IAm iAm = IAm.NOTHING_IN_THE_CMS;
-		
-		LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
-		
 
-		
+		IAm iAm = IAm.NOTHING_IN_THE_CMS;
+
+		LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
+
+
+
 
 		/*
 		 * Getting host object form the session
@@ -125,7 +125,7 @@ public class CMSFilter implements Filter {
 		String queryString = request.getQueryString();
 		// if a vanity URL
 		if (iAm == IAm.VANITY_URL) {
-			
+
 			rewrite = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + ("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
 
 			if (!UtilMethods.isSet(rewrite)) {
@@ -133,7 +133,7 @@ public class CMSFilter implements Filter {
 			}
 			if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
 				response.sendRedirect(rewrite);
-				
+
 				closeDbSilently();
 				return;
 			}
@@ -157,12 +157,16 @@ public class CMSFilter implements Filter {
 
 		if (iAm == IAm.FOLDER) {
 			if (!uri.endsWith("/")) {
+				// If the value comes from the uri override attribute, used it, if not use the same uri as the
+				// current request, no decoding needed.
+				String undecodeUri = (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
+						: request.getRequestURI();
 				if(UtilMethods.isSet(queryString)){
-					response.setHeader("Location", uri + "/?" + queryString );
+					response.setHeader("Location", undecodeUri + "/?" + queryString );
 				}
 				else{
-					response.setHeader("Location", uri +"/" );
-					
+					response.setHeader("Location", undecodeUri +"/" );
+
 				}
 				response.setStatus(301);
 				closeDbSilently();
@@ -182,7 +186,7 @@ public class CMSFilter implements Filter {
 
 		if(iAm == IAm.PAGE){
 			countPageVisit(request);
-
+			countSiteVisit(request, response);
 		}
 
 		// if we are not rewriting anything, use the uri
@@ -192,6 +196,10 @@ public class CMSFilter implements Filter {
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
+				//Serving the file through the /dotAsset servlet
+				StringWriter forward = new StringWriter();
+				forward.append("/dotAsset/");
+				
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
 				request.setAttribute(CMS_FILTER_IDENTITY, ident);
 				RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
@@ -199,7 +207,14 @@ public class CMSFilter implements Filter {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
 					return;
 				}
-				request.getRequestDispatcher("/dotAsset/").forward(request, response);
+				
+				//If language is in session, set as query string
+				if(UtilMethods.isSet(languageId)){
+					forward.append('?');
+					forward.append(WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId);
+				}
+				request.getRequestDispatcher(forward.toString()).forward(request, response);
+				
 			} catch (DotDataException e) {
 				Logger.error(CMSFilter.class, e.getMessage(), e);
 				throw new IOException(e.getMessage());
@@ -245,6 +260,21 @@ public class CMSFilter implements Filter {
 
 	}
 
+	private void countSiteVisit(HttpServletRequest request,  HttpServletResponse response) {
+
+		HttpSession session = request.getSession(false);
+		boolean PAGE_MODE = true;
+
+		if(session != null){
+			PAGE_MODE = PageRequestModeUtil.isPageMode(session);
+		}
+
+		if (PAGE_MODE) {
+			NumberOfTimeVisitedCounter.maybeCount(request, response);
+
+		}
+	}
+
 	private void countPageVisit(HttpServletRequest request) {
 
 		HttpSession session = request.getSession(false);
@@ -262,8 +292,6 @@ public class CMSFilter implements Filter {
 			}
 
 		}
-
-
 	}
 
 
@@ -275,18 +303,18 @@ public class CMSFilter implements Filter {
 	@Deprecated
 	private static final Integer mutex = new Integer(0);
 
-	
+
 	@Deprecated
 	private static void buildExcludeList() {
 		// not needed anymore
 	}
-	
+
 	@Deprecated
 	public static void addExclude(String URLPattern) {
 
 		// not needed anymore
 	}
-	
+
 	@Deprecated
 	public static void removeExclude(String URLPattern) {
 		// not needed anymore
@@ -304,7 +332,7 @@ public class CMSFilter implements Filter {
 
 		} finally {
 			try {
-				
+
 				DbConnectionFactory.closeConnection();
 			} catch (Exception e) {
 
@@ -313,7 +341,7 @@ public class CMSFilter implements Filter {
 	}
 
 	private String xssCheck(String uri, String queryString) throws ServletException{
-		
+
 		String rewrite=null;
 		if (Xss.URIHasXSS(uri)) {
 			Logger.warn(this, "XSS Found in request URI: " +uri );
@@ -331,10 +359,10 @@ public class CMSFilter implements Filter {
 				rewrite=uri;
 			}
 		}
-		
+
 		return rewrite;
 	}
-	
-	
+
+
 
 }

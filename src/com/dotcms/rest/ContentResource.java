@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -62,24 +63,19 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {
-	private static final String RELATIONSHIP_KEY = "__##relationships##__";
 
+	public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
+
+	private static final String RELATIONSHIP_KEY = "__##relationships##__";
 	private static final String IP_ADDRESS = "ipAddress";
 	private static final String HOST_HEADER = "hostHeader";
 	private static final String COOKIES = "cookies";
@@ -472,9 +468,9 @@ public class ContentResource {
 
 		try {
 			if("xml".equals(type)) {
-				result = getXML(cons, request, response, render);
+				result = getXML(cons, request, response, render, user);
 			} else {
-				result = getJSON(cons, request, response, render);
+				result = getJSON(cons, request, response, render, user);
 			}
 		} catch (Exception e) {
 			Logger.warn(this, "Error converting result to XML/JSON");
@@ -484,7 +480,7 @@ public class ContentResource {
 	}
 
 
-	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws DotDataException, IOException {
+	private String getXML(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
 		xstream.registerConverter(new MapEntryConverter());
@@ -493,16 +489,11 @@ public class ContentResource {
 		sb.append("<contentlets>");
 
 		for(Contentlet c : cons){
-			Map<String, Object> m = new HashMap<String, Object>();
+			Map<String, Object> m = new HashMap<>();
 			m.putAll(c.getMap());
 			Structure s = c.getStructure();
 
-			for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-				if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-					m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
-					m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
-				}
-			}
+			c = ContentletUtil.setSpecialFieldValues(user, c);
 
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
@@ -519,6 +510,8 @@ public class ContentResource {
 		sb.append("</contentlets>");
 		return sb.toString();
 	}
+
+
 
 	private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
 		XStream xstream = new XStream(new DomDriver());
@@ -547,13 +540,13 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render) throws IOException{
+	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws IOException{
 		JSONObject json = new JSONObject();
 		JSONArray jsonCons = new JSONArray();
 
 		for(Contentlet c : cons){
 			try {
-				jsonCons.put(contentletToJSON(c, request, response, render));
+				jsonCons.put(contentletToJSON(c, request, response, render, user));
 			} catch (Exception e) {
 				Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 				Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -570,7 +563,7 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	private Set<String> getJSONFields(Structure s) {
+	public static Set<String> getJSONFields(Structure s) {
 		Set<String> jsonFields=new HashSet<String>();
 		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode()))
 			if(f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()))
@@ -578,9 +571,13 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	private JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render) throws JSONException, IOException{
+	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user)
+			throws DotDataException, JSONException, IOException{
+
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
+		con = ContentletUtil.setSpecialFieldValues(user, con);
+
 		Map<String,Object> map = con.getMap();
 
 		Set<String> jsonFields=getJSONFields(s);
@@ -588,18 +585,12 @@ public class ContentResource {
 		for(String key : map.keySet()) {
 			if(Arrays.binarySearch(ignoreFields, key) < 0)
 				if(jsonFields.contains(key)) {
-					Logger.info(this, key+" is a json field: "+map.get(key).toString());
+					Logger.info(ContentResource.class, key+" is a json field: "+map.get(key).toString());
 					jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
 				}
-				else
+				else {
 					jo.put(key, map.get(key));
-		}
-
-		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-				jo.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  con.getIdentifier() + "/" + f.getVelocityVarName()	);
-				jo.put(f.getVelocityVarName() + "ContentAsset", con.getIdentifier() + "/" +f.getVelocityVarName()	);
-			}
+				}
 		}
 
 		if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
@@ -608,8 +599,6 @@ public class ContentResource {
 
 		return jo;
 	}
-
-	final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
 
 	public class MapEntryConverter implements Converter{
 		public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {
@@ -1088,13 +1077,14 @@ public class ContentResource {
 
 				// check for existing identifier
 				if(map.containsKey("identifier")) {
+					contentlet.setIdentifier(String.valueOf(map.get("identifier")));
 					try {
 						Contentlet existing=APILocator.getContentletAPI().findContentletByIdentifier((String)map.get("identifier"), false,
 								contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
 						APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
 						contentlet.setInode("");
 					} catch (Exception e) {
-						throw new RuntimeException("can't get existing content for ident "+map.get("identifier")+" lang "+contentlet.getLanguageId(),e);
+						Logger.debug(this.getClass(), "can't get existing content for ident "+map.get("identifier")+" lang "+contentlet.getLanguageId() + " - creating new one");
 					}
 				}
 

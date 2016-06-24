@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
@@ -19,10 +19,12 @@ import java.util.Random;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionDataGen;
@@ -42,6 +44,11 @@ public class VisitorsCurrentUrlConditionletFTest {
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
 
     private List<Rule> rulesToRemove = Lists.newArrayList();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init() {
@@ -64,118 +71,234 @@ public class VisitorsCurrentUrlConditionletFTest {
     public void testIsComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
+        final String pattern = "/about-us/";
+        final String call1 = "about-us/"; // should work
+        final String call2 = "about-us?something=1";  // should work
+        final String call3 = "about-us/index";  // should work
+        final String call4 = "about-us/index?something=1"; // should work
+        final String call5 = "about-us/what-we-do";  // should fail
+        final String call6 = "about-us/what-we-do?something=1"; // should fail
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
-        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertEquals("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertEquals("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call5);
+        assertNull("Specified '" + pattern + "' , requested '" + call5 + "', response header should not be present in the Response.", conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call6);
+        assertNull("Specified '" + pattern + "' , requested '" + call6 + "', response header should not be present in the Response.", conn.getHeaderField(randomKey));
     }
 
     @Test
     public void testIsNotComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
+        final String pattern = "/contact-us/";
+        final String call1 = "about-us/"; // should work
+        final String call2 = "about-us?something=1";  // should work
+        final String call3 = "about-us/index";  // should work
+        final String call4 = "about-us/index?something=1"; // should work
+        final String call5 = "contact-us/thank-you";  // should work
+        final String call6 = "contact-us/index";  // should fail
+        final String call7 = "contact-us?something=1"; // should fail
+
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
-        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contact-us/");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response: ", value,
-                conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("products/index");
-        assertEquals("Specified response header should be present in the Response: ", value,
-                conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("services/wealth-managers");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("contact-us/index");
-        assertNull("Specified response header should be not present in the Response.", conn.getHeaderField(randomKey));
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertEquals("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertEquals("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call5);
+        assertEquals("Specified '" + pattern + "' , requested '" + call5 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call6);
+        assertNull("Specified '" + pattern + "' , requested '" + call6 + "', response header should not be present in the Response.", conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call7);
+        assertNull("Specified '" + pattern + "' , requested '" + call5 + "', response header should not be present in the Response.", conn.getHeaderField(randomKey));
+
     }
 
     @Test
     public void testStartWithComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
+        final String pattern = "/about";
+        final String call1 = "about-us/"; // should work
+        final String call2 = "about-us?something=1";  // should work
+        final String call3 = "about-us/index";  // should work
+        final String call4 = "about-us/index?something=1"; // should work
+        final String call5 = "contact-us/";  // should fail
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId());
-        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contac");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
-        assertNull("Specified response header should be not present in the Response.", conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("products/");
-        assertNull("Specified response header should be not present in the Response.", conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("contact-us/");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertEquals("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertEquals("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call5);
+        assertNull("Specified '" + pattern + "' , requested '" + call5 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
+    }
+
+    @Test
+    public void testStartWithFullPathComparison() throws IOException {
+        final String randomKey = "test-" + random.nextInt();
+        final String value = randomKey + "-value";
+        final String pattern = "/news-events/";
+        final String call1 = "news-events/events"; // should work
+        final String call2 = "news-events/events?something=1";  // should work
+        final String call3 = "news-events/events/index";  // should work
+        final String call4 = "news-events/news/index?something=1"; // should work
+        final String call5 = "about-us/what-we-do";  // should fail
+
+        Condition condition = conditionDataGen.next();
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
+        condition.addValue(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId());
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
+        createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        ApiRequest apiRequest = new ApiRequest(request);
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertEquals("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertEquals("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call5);
+        assertNull("Specified '" + pattern + "' , requested '" + call5 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
     @Test
     public void testEndsWithComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
+        final String pattern = "gers/";
+        final String call1 = "services/wealth-managers/"; // should work
+        final String call2 = "services/wealth-managers/?something=1";  // should work
+        final String call3 = "services/wealth-managers/index?something=11";  // should work
+        final String call4 = "services/global-investors"; // should fail
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, ENDS_WITH.getId());
-        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "dex");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("products/");
-        assertNull("Specified response header should not be present in the Response.",
-                conn.getHeaderField(randomKey));
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertEquals("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertNull("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
     @Test
     public void testContainsComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
+        final String pattern = "duct";
+        final String call1 = "products/"; // should work
+        final String call2 = "products/index";  // should work
+        final String call3 = "blogs/index?products=1";  // should fail
+        final String call4 = "about-us/"; // should fail
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, CONTAINS.getId());
-        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "duct");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("products/");
-        assertEquals("Specified response header should be present in the Response.", value,
-                conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertNull("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertNull("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
     @Test
     public void testRegexComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
+        final String pattern = ".*-us.*";
+        final String call1 = "about-us/"; // should work
+        final String call2 = "about-us/index?notread=1";  // should work
+        final String call3 = "news-events/news/index?about-us=1";  // should fail
+        final String call4 = "products/";  // should fail
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, REGEX.getId());
-        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, ".*-us.*");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("products/");
-        assertNull("Specified response header should not be present in the Response.", conn.getHeaderField(randomKey));
+        URLConnection conn = apiRequest.makeRequest(call1);
+        assertEquals("Specified '" + pattern + "' , requested '" + call1 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest(call2);
+        assertEquals("Specified '" + pattern + "' , requested '" + call2 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call3);
+        assertNull("Specified '" + pattern + "' , requested '" + call3 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
+
+        conn = apiRequest.makeRequest(call4);
+        assertNull("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
     /**

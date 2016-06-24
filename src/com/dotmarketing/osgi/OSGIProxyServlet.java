@@ -2,14 +2,15 @@ package com.dotmarketing.osgi;
 
 import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
-
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 
 /**
@@ -24,7 +25,7 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
-    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+    	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 	        super.init( config );
 	
 	        try {
@@ -38,7 +39,8 @@ public class OSGIProxyServlet extends HttpServlet {
     }
 
     private void doInit () throws Exception {
-    	if(Config.getBooleanProperty("felix.osgi.enable", true)){
+    	
+    	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 	        tracker = new DispatcherTracker( getBundleContext(), null, getServletConfig() );
 	        tracker.open();
 	
@@ -49,7 +51,7 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     protected void service ( HttpServletRequest req, HttpServletResponse res ) throws ServletException, IOException {
-    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
     		return;
     	}
         HttpServlet dispatcher = tracker.getDispatcher();
@@ -62,7 +64,7 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void destroy () {
-    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
     		return;
     	}
         if ( tracker != null ) {
@@ -73,7 +75,7 @@ public class OSGIProxyServlet extends HttpServlet {
     }
 
     private BundleContext getBundleContext () throws ServletException {
-    	if(!Config.getBooleanProperty("felix.osgi.enable", true)){
+    	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
     		return null;
     	}
         Object context = getServletContext().getAttribute( BundleContext.class.getName() );

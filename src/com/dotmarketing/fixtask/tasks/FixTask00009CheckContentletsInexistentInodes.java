@@ -89,7 +89,7 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 						db.addParam(inode);
 						db.getResult();
 
-						FixAssetsProcessStatus.addAError();
+						FixAssetsProcessStatus.addAErrorFixed();
 						counter++;
 					}
 				

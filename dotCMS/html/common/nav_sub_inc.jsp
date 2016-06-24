@@ -420,10 +420,12 @@ dojo.require("dojo.cookie");
             else {
                 alert(sameUserIdAlreadyRegisteredErrorMsg);
             }
-        } else if(exception.javaClassName == 'com.dotmarketing.exception.DotSecurityException'){
+        } else {
+            if(exception.javaClassName == 'com.dotmarketing.exception.DotSecurityException'){
                 alert(doNotHavePermissionsMsg);
-            }else {
-            alert("Server error: " + exception);
+            } else {
+                alert("Server error: " + exception.message);
+            }
         }
     }
 
@@ -454,7 +456,7 @@ dojo.require("dojo.cookie");
 
     function howTo(){
 
-        var href = "<%= LanguageUtil.get(pageContext, "Autoupdater-link")%>";
+        var href = "<%= LanguageUtil.get(pageContext, "Install-dotCMS-link")%>";
         window.open(href);
     }
 
@@ -685,7 +687,7 @@ dojo.require("dojo.cookie");
                 </div>
                 <br />
                 <br />
-                <a href="javascript:howTo();"><%= LanguageUtil.get(pageContext, "Learn-how-to-use-the-autoupdater") %></a>
+                <a href="javascript:howTo();"><%= LanguageUtil.get(pageContext, "Learn-how-to-install-dotcms") %></a>
                 <br />
                 <br />
                 </div>

@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
-import static com.dotcms.repackage.org.junit.Assert.assertFalse;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.FileWriter;
 import java.util.ArrayList;
@@ -13,9 +13,9 @@ import java.util.Map;
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ajax.RoleAjax;

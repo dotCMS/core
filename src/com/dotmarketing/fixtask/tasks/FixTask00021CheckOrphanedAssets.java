@@ -80,7 +80,7 @@ public class FixTask00021CheckOrphanedAssets implements FixTask {
 						   String identifier = asset.get("id");
 						   if(APILocator.getIdentifierAPI().isIdentifier(identifier)){
 							   deleteOrphanedAsset(asset.get("asset_type"),asset.get("id"),dc);							  
-							   FixAssetsProcessStatus.addAError();
+							   FixAssetsProcessStatus.addAErrorFixed();
 							   CacheLocator.getFileCache().clearCache();
 							   CacheLocator.getHTMLPageCache().clearCache();
 							   CacheLocator.getIdentifierCache().clearCache();

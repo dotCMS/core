@@ -1,5 +1,7 @@
 package com.dotmarketing.tag.business;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -71,9 +73,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //Execute the search
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT * FROM tag WHERE tagname = ?");
-            dc.addParam(name.toLowerCase());
-
+			dc.setSQL("SELECT * FROM tag WHERE tagname = '" + name.toLowerCase() + "'");
             tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
@@ -127,7 +127,8 @@ public class TagFactoryImpl implements TagFactory {
         } else {
             dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND host_id LIKE ? ORDER BY tagname, host_id");
         }
-        dc.addParam(name.toLowerCase() + "%");
+
+        dc.addParam("%" + name.toLowerCase() + "%");
         dc.addParam(Host.SYSTEM_HOST);
         if ( UtilMethods.isSet(hostId) ) {
             dc.addParam(hostId);
@@ -613,6 +614,28 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
+    @Override
+    public List<Tag> getTagsByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(inode));
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(fieldVarName));
+        //Execute the search
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT t.* FROM tag t JOIN tag_inode ti ON t.tag_id = ti.tag_id WHERE ti.inode = ? and ti.field_var_name = ?");
+        dc.addParam(inode);
+        dc.addParam(fieldVarName);
+
+        List<Tag> tags = convertForTags(dc.loadObjectResults());
+
+        //And add the results to the cache
+        for ( Tag tag : tags ) {
+            if ( tagCache.get(tag.getTagId()) == null ) {
+                tagCache.put(tag);
+            }
+        }
+
+        return tags;
+    }
+
     /**
      * Escape a single quote
      *
@@ -714,7 +737,11 @@ public class TagFactoryImpl implements TagFactory {
             tag.setTagName((String) sqlResult.get(TAG_COLUMN_TAGNAME));
             tag.setHostId((String) sqlResult.get(TAG_COLUMN_HOST_ID));
             tag.setUserId((String) sqlResult.get(TAG_COLUMN_USER_ID));
-			tag.setPersona(DbConnectionFactory.isDBTrue(sqlResult.get(TAG_COLUMN_PERSONA).toString()));
+            if(UtilMethods.isSet(sqlResult.get(TAG_COLUMN_PERSONA))){
+                tag.setPersona(DbConnectionFactory.isDBTrue(sqlResult.get(TAG_COLUMN_PERSONA).toString()));
+            } else {
+                tag.setPersona(false);
+            }
             tag.setModDate((Date) sqlResult.get(TAG_COLUMN_MOD_DATE));
         }
 

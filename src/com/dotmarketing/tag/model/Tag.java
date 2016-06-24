@@ -5,8 +5,18 @@ import java.util.Date;
 
 import com.dotmarketing.tag.model.Tag;
 
+/**
+ * Tags are a method of labeling content with one or more terms so that content
+ * can be found and extracted dynamically for display on a page. Tags can be
+ * single words or phrases of multiple words separated by spaces. The
+ * <i>Persona</i> objects are types of tags as well.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class Tag implements Serializable {
-
 
     /**
 	 *
@@ -89,9 +99,6 @@ public class Tag implements Serializable {
 		this.persona = persona;
 	}
 
-	/* (non-Javadoc)
-             * @see java.lang.Object#hashCode()
-             */
 	@Override
 	public int hashCode() {
 		final int PRIME = 31;
@@ -101,9 +108,6 @@ public class Tag implements Serializable {
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -140,4 +144,10 @@ public class Tag implements Serializable {
 		return hostId;
 	}
 
+	@Override
+	public String toString() {
+		return "Tag [userId=" + userId + ", tagName=" + tagName + ", tagId=" + tagId + ", persona=" + persona + ", modDate="
+				+ modDate + ", hostId=" + hostId + "]";
+	}
+	
 }

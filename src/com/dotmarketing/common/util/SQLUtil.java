@@ -14,6 +14,7 @@ import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -24,24 +25,18 @@ import com.liferay.util.StringUtil;
 
 public class SQLUtil {
 
+	private static final Set<String> EVIL_SQL_WORDS = ImmutableSet.of( "select ", "insert ", "delete ", "update ",
+			"replace ", "create ", " distinct ", " like ", " and ", " or ", " limit ", " group ", " order ", " as ",
+			" count ", "drop ", "alter ", "truncate ", "declare ", " where ", "exec ", "--", " procedure ", "pg_",
+			"lock ", "unlock ", "write ", " engine ", "null", "not ", " mode ", "set ", ";" );
 
-	private static final String[] EVIL_SQL_WORDS = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
-			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
-			"unlock","write", "engine", "null","not ","mode", "set ",";"};
-	
-
-	
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
-			"title","filename", "moddate", "tagname","pageUrl", 
-			"category_name","category_velocity_var_name", 
+			"title","filename", "moddate", "tagname","pageUrl",
+			"category_name","category_velocity_var_name",
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
-			"description","category_","sort_order","hostName", "keywords"
-			
-			
-			
-			);
-	
+			"description","category_","sort_order","hostName", "keywords",
+			"mod_date,upper(name)");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -132,20 +127,34 @@ public class SQLUtil {
 		}
 		return bob.toString();
 	}
-	//http://jira.dotmarketing.net/browse/DOTCMS-3689
-	public static String addLimits(String query, long offSet, long limit) {
 
+	/**
+	 * Appends the required SQL code to the existing query to limit the number
+	 * of results returned by such a query. You can also specify the offset if
+	 * paginated results are required. This method will handle all the
+	 * database-specific details related to keywords.
+	 * 
+	 * @param query
+	 *            - The SQL query that will be executed.
+	 * @param offSet
+	 *            - The number of rows to start reading from.
+	 * @param limit
+	 *            - The maximum number of rows to return.
+	 * @return The database-specific SQL statement that will add a row limit
+	 *         and/or offset to the results.
+	 */
+	public static String addLimits(String query, long offSet, long limit) {
 		if ( offSet == 0 && limit == -1 ) {
 			//Nothing to do...
 			return query;
 		}
-
-		StringBuffer queryString = new StringBuffer();
+		StringBuffer queryString = new StringBuffer(); 
 		int count = 0;
 		if(query!=null){
-		  count = StringUtil.count(query.toLowerCase(), "select");
+			query = query.toLowerCase();
+		  count = StringUtil.count(query, "select");
 		}
-		if(!UtilMethods.isSet(query)|| !query.toLowerCase().trim().contains("select")|| count>1){
+		if(!UtilMethods.isSet(query)|| !query.trim().contains("select")|| count>1){
 			return query;
 		}else{
 		     if(DbConnectionFactory.isPostgres()||
@@ -155,10 +164,10 @@ public class SQLUtil {
 
 	         }else if(DbConnectionFactory.isMsSql()){
 	        	 String str = "";
-		    	   if(query.toLowerCase().startsWith("select")){
+		    	   if(query.startsWith("select")){
 					  query = query.substring(6);
 				   }
-		    	   if(query.toLowerCase().contains("order by")){
+		    	   if(query.contains("order by")){
 		  			  str = query.substring(query.indexOf("order by"), query.length());
 		  			  query = query.replace(str,"").trim();
 		  		   }
@@ -198,21 +207,24 @@ public class SQLUtil {
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
 		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return "";
 	}
 
 	public static String sanitizeParameter(String parameter){
 
-
+		
 		if(!UtilMethods.isSet(parameter)){//check if is not null
 			return "";
 		}
-
+		parameter = StringEscapeUtils.escapeSql(parameter);
+		
 		for(String str : EVIL_SQL_WORDS){
 			if(parameter.toLowerCase().contains(str)){//check if the order by requested have any other command
 				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
 				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+				SecurityLogger.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 				return "";
 			}
 		}

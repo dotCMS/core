@@ -28,6 +28,24 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private transient RuleActionlet actionDef;
     private transient RuleComponentInstance instance;
 
+    public RuleAction() {
+
+    }
+
+    public RuleAction(RuleAction ruleActionToCopy){
+        id = ruleActionToCopy.id;
+        ruleId = ruleActionToCopy.ruleId;
+        priority = ruleActionToCopy.priority;
+        actionlet = ruleActionToCopy.actionlet;
+        modDate = ruleActionToCopy.modDate;
+        if(ruleActionToCopy.getParameters().values() != null){
+            parameters = Maps.newHashMap();
+            for (ParameterModel parameterModel : ruleActionToCopy.getParameters().values()) {
+                parameters.put(parameterModel.getKey(), new ParameterModel(parameterModel));
+            }
+        }
+    }
+
     public String getId() {
         return id;
     }
@@ -95,7 +113,14 @@ public class RuleAction implements RuleComponentModel, Serializable {
     }
 
     public void checkValid() {
-        this.instance = getActionDefinition().doCheckValid(this);
+        RuleActionlet actionDefinition = getActionDefinition();
+
+        if (actionDefinition == null){
+            String message = String.format("RuleActionlet %1$s doesn't exist", actionlet);
+            throw new IllegalArgumentException(message);
+        }else{
+            this.instance = actionDefinition.doCheckValid(this);
+        }
     }
 
     public final boolean evaluate(HttpServletRequest req, HttpServletResponse res) {

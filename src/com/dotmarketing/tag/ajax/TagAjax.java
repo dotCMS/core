@@ -11,7 +11,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
+import com.dotmarketing.tag.business.InvalidTagNameLengthException;
 import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.business.TagAlreadyExistsException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
@@ -45,6 +47,7 @@ public class TagAjax {
 		}
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+
 		List<String> saveTagErrors = new ArrayList<>();
 		Map<String, Object> callbackData = new HashMap<>();
 
@@ -56,7 +59,6 @@ public class TagAjax {
 	    		String tagName = tagNameToken.nextToken().trim();
 
 	    		try{
-
 					Tag createdTag = APILocator.getTagAPI().getTagAndCreate(tagName, userId, hostId);
 					String tagStorageForHost = "";
 	    			Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
@@ -90,9 +92,8 @@ public class TagAjax {
 
 	    		}catch(Exception e){
 					//Logging the error because DWR tends to swallow the exceptions
-					Logger.error(TagAjax.class, "There was an error saving the tag", e);
-
-	    			saveTagErrors.add("There was an error saving the tag");
+					Logger.error(TagAjax.class, e.getMessage(), e);
+					saveTagErrors.add(e.getMessage());
 	    			SessionMessages.clear(req.getSession());
 	    		}finally{
 	    			if(saveTagErrors != null && saveTagErrors.size() > 0){

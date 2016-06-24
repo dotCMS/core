@@ -3,10 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.model;
 import java.io.Serializable;
 import java.util.Map;
 
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -21,7 +18,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
  *
  */
 public interface IHTMLPage extends Serializable, Versionable, Permissionable,
-		Treeable {
+		Treeable, Ruleable {
     
     String getIdentifier();
     void setIdentifier(String identifier);

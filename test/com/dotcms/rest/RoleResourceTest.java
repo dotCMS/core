@@ -1,6 +1,6 @@
 package com.dotcms.rest;
 
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -8,8 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;

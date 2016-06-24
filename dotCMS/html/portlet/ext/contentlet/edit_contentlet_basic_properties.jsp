@@ -215,7 +215,6 @@
 				<!--  Start Language -->
 				<%if (languages.size() > 1 
 					&& !structure.getVelocityVarName().equalsIgnoreCase("Host")
-					&& structure.getStructureType() != Structure.STRUCTURE_TYPE_FILEASSET
 					&& structure.getStructureType() != Structure.STRUCTURE_TYPE_FORM
 					&& structure.getStructureType() != Structure.STRUCTURE_TYPE_PERSONA ) { %>
 					<script>

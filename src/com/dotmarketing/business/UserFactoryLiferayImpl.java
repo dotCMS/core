@@ -8,6 +8,7 @@ import java.util.*;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -178,6 +179,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	
 	@Override
 	public List<User> getUsersByName(String filter, int start, int limit) throws DotDataException {
+		filter = SQLUtil.sanitizeParameter(filter);
 		DotConnect dotConnect = new DotConnect();
 		boolean isFilteredByName = UtilMethods.isSet(filter);
 		filter = (isFilteredByName ? filter : "");
@@ -283,10 +285,12 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	@Override
 	public long getCountUsersByNameOrEmail(String filter) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
+		filter = SQLUtil.sanitizeParameter(filter);    	
 		String sql = "select count(*) as count from user_ where " +
 				"lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or " +
 				"lower(emailAddress) like '%" + filter + "%' or " + 
 				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'";
+	
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);
 		return dotConnect.getInt("count");
@@ -301,7 +305,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		    		
+		filter = SQLUtil.sanitizeParameter(filter);    	
 		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
 				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " +
 				"order by firstName asc,lastname asc";
@@ -332,11 +336,17 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+		return getCountUsersByNameOrEmailOrUserID(filter, true);
+	}
+
+	@Override
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
+		filter = SQLUtil.sanitizeParameter(filter);    	
 		String sql = "select count(*) as count from user_ where " +
 				"lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or " +
-				"lower(emailAddress) like '%" + filter + "%' or " + 
-				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'";
+				"lower(emailAddress) like '%" + filter + "%' or " +
+				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'" + ((!includeAnonymous)?"AND userid <> 'anonymous'":"");
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);
 		return dotConnect.getInt("count");
@@ -344,6 +354,11 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
+		return getUsersByNameOrEmailOrUserID(filter, page, pageSize, true);
+	}
+
+	@Override
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		List users = new ArrayList(pageSize);
 		if(page==0){
 			page = 1;
@@ -351,9 +366,9 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		    		
+		filter = SQLUtil.sanitizeParameter(filter);    		
 		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
-				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " +
+				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " + ((!includeAnonymous)?"AND userid <> 'anonymous'":"") +
 				"order by firstName asc,lastname asc";
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);
@@ -419,6 +434,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	@Override
 	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter : "");
+		filter = SQLUtil.sanitizeParameter(filter);    	
 		DotConnect dotConnect = new DotConnect();
 	
 		String baseSql = " (select distinct 0 as isuser, 'role' as type, " + dotConnect.concat( new String[]{"role_.roleId", "''"}) + " as id, role_.name as name, 'role' as emailaddress " +

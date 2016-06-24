@@ -1828,8 +1828,8 @@ create table clickstream (
    clickstream_id bigint not null auto_increment,
    cookie_id varchar(255),
    user_id varchar(255),
-   start_date datetime(3),
-   end_date datetime(3),
+   start_date datetime,
+   end_date datetime,
    referer varchar(255),
    remote_address varchar(255),
    remote_hostname varchar(255),
@@ -2814,11 +2814,11 @@ BEGIN
 END
 #
 DROP PROCEDURE IF EXISTS renameFolderChildren;
-CREATE PROCEDURE renameFolderChildren(IN old_path varchar(100),IN new_path varchar(100),IN hostInode varchar(100))
+CREATE PROCEDURE renameFolderChildren(IN old_path varchar(255),IN new_path varchar(255),IN hostInode varchar(100))
 BEGIN
- DECLARE new_folder_path varchar(100);
- DECLARE old_folder_path varchar(100);
- DECLARE assetName varchar(100);
+ DECLARE new_folder_path varchar(255);
+ DECLARE old_folder_path varchar(255);
+ DECLARE assetName varchar(255);
  DECLARE no_more_rows boolean;
  DECLARE cur1 CURSOR FOR select asset_name from identifier where asset_type='folder' and parent_path = new_path and host_inode = hostInode;
  DECLARE CONTINUE HANDLER FOR NOT FOUND
@@ -2845,10 +2845,10 @@ CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE
 on Folder
 FOR EACH ROW
 BEGIN
-DECLARE old_parent_path varchar(100);
-DECLARE old_path varchar(100);
-DECLARE new_path varchar(100);
-DECLARE old_name varchar(100);
+DECLARE old_parent_path varchar(255);
+DECLARE old_path varchar(255);
+DECLARE new_path varchar(255);
+DECLARE old_name varchar(255);
 DECLARE hostInode varchar(100);
 IF @disable_trigger IS NULL AND NEW.name<>OLD.name THEN
 	select asset_name,parent_path,host_inode INTO old_name,old_parent_path,hostInode from identifier where id = NEW.identifier;
@@ -3181,15 +3181,3 @@ create table rule_condition_value (id varchar(36) primary key,
 create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
-
-CREATE TABLE analytic_summary_user_visits (
-    user_id VARCHAR(255) NOT NULL,
-    host_id VARCHAR(36) NOT NULL,
-    visits BIGINT NOT NULL,
-    last_start_date DATETIME(3) NOT NULL,
-    PRIMARY KEY (user_id, host_id),
-    UNIQUE (user_id, host_id)
-);
-CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);
-CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);
-CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -14,7 +15,6 @@ import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -70,6 +70,35 @@ public class Rule implements Permissionable, Serializable {
     private List<ConditionGroup> groups;
     private List<RuleAction> ruleActions;
     private Permissionable parentPermissionable;
+
+    public Rule(){
+
+    }
+
+    public Rule(Rule ruleToCopy) {
+
+        id = ruleToCopy.id;
+        name = ruleToCopy.name;
+        fireOn = ruleToCopy.fireOn;
+        shortCircuit = ruleToCopy.shortCircuit;
+        parent = ruleToCopy.parent;
+        folder = ruleToCopy.folder;
+        priority = ruleToCopy.priority;
+        enabled = ruleToCopy.enabled;
+        modDate = ruleToCopy.modDate;
+        if(ruleToCopy.getGroups() != null) {
+            groups = Lists.newArrayList();
+            for (ConditionGroup group : ruleToCopy.getGroups()) {
+                groups.add(new ConditionGroup(group));
+            }
+        }
+        if(ruleToCopy.getRuleActions() != null){
+            ruleActions = Lists.newArrayList();
+            for (RuleAction ruleAction : ruleToCopy.getRuleActions()) {
+                ruleActions.add(new RuleAction(ruleAction));
+            }
+        }
+    }
 
     public String getParent() {
 		return parent;
@@ -146,29 +175,19 @@ public class Rule implements Permissionable, Serializable {
     public List<ConditionGroup> getGroups() {
         if(groups == null) {
             try {
+                //This will return the Groups sorted by priority asc directly from DB.
                 groups = FactoryLocator.getRulesFactory().getConditionGroupsByRule(id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not read groups for Rule %s ", this.toString());
             }
         }
-        Collections.sort(groups);
-        return groups;
+
+        //Return a shallow copy of the list.
+        return Lists.newArrayList(groups);
     }
 
     public void setGroups(List<ConditionGroup> groups) {
         this.groups = groups;
-    }
-
-    public void addGroup(ConditionGroup group) {
-        if(groups != null) {
-            groups.add(group);
-        }
-    }
-
-    public void removeGroup(ConditionGroup group) {
-        if(groups != null) {
-            groups.remove(group);
-        }
     }
 
     public List<RuleAction> getRuleActions() {

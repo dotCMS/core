@@ -1,9 +1,9 @@
 package com.dotcms.cluster.business;
 
-import java.util.List;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.exception.DotDataException;
+
+import java.util.List;
 
 public abstract class ServerFactory {
 
@@ -26,11 +26,12 @@ public abstract class ServerFactory {
 	public abstract List<Server> getAllServers() throws DotDataException;
 
 	public abstract void updateServerName(String serverId, String name) throws DotDataException;
+
 	/**
 	 * Remove the specified server from the cluster_server_uptime and cluster_server tables
 	 * @param serverId Server identifier
 	 * @throws DotDataException
 	 */
-	public abstract void removeServer(String serverId) throws DotDataException;
+	public abstract void removeServerFromClusterTable(String serverId) throws DotDataException;
 
 }

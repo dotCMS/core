@@ -404,6 +404,7 @@
 		var archived = file.deleted;
 		var locked = file.locked;
 		var ext = file.extension;
+		var hasLiveVersion = file.hasLiveVersion;
 
 		var strHTML = '';
 		var contentletLanguageId = file.languageId;
@@ -474,14 +475,14 @@
 				}
 			}
 			
-			if (live && publish ) {
+			if ((live || hasLiveVersion) && publish) {
 				strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-		    		strHTML += '<span class="unpublishIcon"></span>';
-		        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
+                strHTML += '<span class="unpublishIcon"></span>';
+                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 				strHTML += '</a>';
 			}
 	
-			if (!live && working && publish ) {
+			if (!live && working && publish && !hasLiveVersion) {
 				if (!archived) {
 					strHTML += '<a href="javascript: archiveFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		   				strHTML += '<span class="archiveIcon"></span>';
@@ -559,6 +560,7 @@
 		var working = link.working;
 		var archived = link.deleted;
 		var locked = link.locked;
+		var hasLiveVersion = link.hasLiveVersion;
 
 		var strHTML = '';
 
@@ -582,7 +584,7 @@
             }
         }
         
-		if (!live && working && publish) {
+		if (!live && working && publish && !hasLiveVersion) {
 			if (!archived) {
 				strHTML += '<a href="javascript: archiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
     				strHTML += '<span class="archiveIcon"></span>';
@@ -623,7 +625,7 @@
 			}
 		}
 
-		if (live && publish) {
+        if ((live || hasLiveVersion) && publish) {
 			strHTML += '<a href="javascript: unpublishLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 	    		strHTML += '<span class="unpublishIcon"></span>';
 	        	strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
@@ -693,6 +695,7 @@
 		var working = page.working;
 		var archived = page.deleted;
 		var locked = page.locked;
+		var hasLiveVersion = page.hasLiveVersion;
 
 		var strHTML = '';
 
@@ -767,15 +770,15 @@
                     }
 				}
 			}
-			
-			if (live && publish) {
+
+            if ((live || hasLiveVersion) && publish) {
 				strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 			    	strHTML += '<span class="unpublishIcon"></span>';
 			        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 				strHTML += '</a>';
 			}
 	
-			if (!live && working && publish) {
+			if (!live && working && publish && !hasLiveVersion) {
 				if (!archived) {
 					strHTML += '<a href="javascript: archiveHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 			   			strHTML += '<span class="archiveIcon"></span>';

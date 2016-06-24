@@ -9,17 +9,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -119,6 +115,7 @@ public final class RulesEngine {
                 	long before = System.currentTimeMillis();
                     rule.checkValid(); // @todo ggranum: this should actually be done on writing to the DB, or at worst reading from.
                     boolean evaled = rule.evaluate(req, res);
+
 					if (evaled) {
 						Rule rCopy = new Rule();
 						rCopy.setId(rule.getId());
@@ -129,7 +126,8 @@ public final class RulesEngine {
 						rCopy.setFolder(rule.getFolder());
 						rCopy.setShortCircuit(rule.isShortCircuit());
 						rCopy.setModDate(rule.getModDate());
-						trackFiredRule(rCopy, fireOn, req);
+						
+						trackFiredRule(rCopy, req);
 					}
                     long after = System.currentTimeMillis();
         			if((after - before) > SLOW_RULE_LOG_MIN) {
@@ -149,54 +147,35 @@ public final class RulesEngine {
 	/**
 	 * Keeps track of the rules that have been fired for a given HTTP request.
 	 * This will allow Web developers to access the list of rules that were
-	 * triggered after a issuing a request. Depending on the rules category,
-	 * developers can examine the list of triggered rules either in the HTTP
-	 * Request or the HTTP Session:
-	 * 
-	 * <pre>
-	 * <table border='1'>
-	 * 	<th>HTTP Request</th>
-	 * 	<th>HTTP Session</th>
-	 * 	<tr>
-	 * 		<td>Per Page</td>
-	 * 		<td>Per Visitor</td>
-	 * 	</tr>
-	 *  <tr>
-	 * 		<td>Per Request</td>
-	 * 		<td></td>
-	 * 	</tr>
-	 *  <tr>
-	 * 		<td>Per Visit</td>
-	 * 		<td></td>
-	 * 	</tr>
-	 * </table>
-	 * </pre>
+	 * triggered after a issuing a request. Developers can examine both the rules
+	 * fired in the current request or the rules fired through the current session.
+	 *
 	 * 
 	 * @param firedRule
 	 *            - The {@link Rule} that has been fired.
-	 * @param fireOn
-	 *            - The category of the {@link Rule} that determines whether the
-	 *            object must be added to the session or the request.
 	 * @param req
 	 *            - The {@link HttpServletRequest} object.
 	 */
 	@SuppressWarnings("unchecked")
-	private static void trackFiredRule(Rule firedRule, FireOn fireOn, HttpServletRequest req) {
-		Set<Rule> firedRules = null;
-		if (fireOn.equals(Rule.FireOn.ONCE_PER_VISITOR)) {
-			firedRules = (Set<Rule>) req.getSession(true).getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
-		} else {
-			firedRules = (Set<Rule>) req.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+	private static void trackFiredRule(Rule firedRule, HttpServletRequest req) {
+		FiredRulesList firedRulesRequest = (FiredRulesList) req.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+		FiredRulesList firedRulesSession = (FiredRulesList) req.getSession(true).getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+
+
+		if (!UtilMethods.isSet(firedRulesRequest)) {
+			firedRulesRequest = new FiredRulesList();
+			req.setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRulesRequest);
 		}
-		if (!UtilMethods.isSet(firedRules)) {
-			firedRules = new HashSet<Rule>();
-			if (fireOn.equals(Rule.FireOn.ONCE_PER_VISITOR)) {
-				req.getSession(true).setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRules);
-			} else {
-				req.setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRules);
-			}
+
+		if (!UtilMethods.isSet(firedRulesSession)) {
+			firedRulesSession = new FiredRulesList();
+			req.getSession(true).setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRulesSession);
 		}
-		firedRules.add(firedRule);
+
+		Date now = new Date();
+		FiredRule ruleFired = new FiredRule(now, firedRule);
+		firedRulesRequest.add( ruleFired );
+		firedRulesSession.add( ruleFired );
 	}
 
 }

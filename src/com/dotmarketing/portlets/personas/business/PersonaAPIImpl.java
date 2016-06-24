@@ -171,6 +171,10 @@ public class PersonaAPIImpl implements PersonaAPI {
 			}
 		}
 
+		if(c.getLanguageId()!=APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+			throw new DotContentletValidationException("Can't create Persona in a Language different than default language");
+		}
+
 		String keyTag = persona.getKeyTag();
 
 		// we need to make sure no other persona has the same keyfield
@@ -211,21 +215,34 @@ public class PersonaAPIImpl implements PersonaAPI {
 	}
 
 	/**
-	 * A Persona key tag should be persist as a Tag, when the @enable param is true the tag will be created if does not
-	 * already exist.
+	 * A Persona key tag should be persist as a Tag. When the
+	 * <code>enable</code> parameter is <code>true</code>, the tag will be
+	 * created if does not already exist. Saving a Persona tag in the <i>Tag</i>
+	 * table will set the value of the "persona" column to <code>true</code>.
 	 *
 	 * @param personaContentlet
-	 * @param enable            When false the tag created based on the Persona key tag will be handle as a regular tag
+	 *            - The Persona contentlet that is being saved.
+	 * @param enable
+	 *            - If <code>true</code> the tag to be saved will be handled as
+	 *            a Persona tag. Otherwise, the tag will be handled as a regular
+	 *            tag.
 	 * @throws DotDataException
+	 *             An error occurred when saving the data.
 	 * @throws DotSecurityException
+	 *             The current user does not have permissions to perform the
+	 *             requested action.
 	 */
 	public void enableDisablePersonaTag ( Contentlet personaContentlet, boolean enable ) throws DotDataException, DotSecurityException {
 
 		Persona persona = fromContentlet(personaContentlet);
 		String keyTag = persona.getKeyTag();
 
-		//Search for the tag related to this key tag
+		// Search for the tag related to this key tag, either in current host or
+		// system host
 		Tag foundPersonaKeyTag = APILocator.getTagAPI().getTagByNameAndHost(keyTag, persona.getHost());
+		if (foundPersonaKeyTag == null || !UtilMethods.isSet(foundPersonaKeyTag.getTagId())) {
+			foundPersonaKeyTag = APILocator.getTagAPI().getTagByNameAndHost(keyTag, Host.SYSTEM_HOST);
+		}
 
 		//Make sure the tag exist for this key tag, if not we need to create it
 		if ( enable && (foundPersonaKeyTag == null || !UtilMethods.isSet(foundPersonaKeyTag.getTagId())) ) {

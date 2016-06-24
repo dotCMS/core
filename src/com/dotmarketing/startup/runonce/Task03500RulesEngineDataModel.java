@@ -77,21 +77,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("paramkey varchar(255) not null,")
             .append("value text")
-            .append(");")
-
-			// Create the ANALYTIC_SUMMARY_USER_VISITS table
-			.append("CREATE TABLE analytic_summary_user_visits (")
-			.append("user_id VARCHAR(255) NOT NULL,")
-			.append("host_id VARCHAR(36) NOT NULL,")
-			.append("visits BIGINT NOT NULL,")
-			.append("last_start_date DATETIME(3) NOT NULL,")
-			.append("PRIMARY KEY (user_id, host_id),")
-			.append("UNIQUE (user_id, host_id)")
-			.append(");")
-			.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
-			.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
-			.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);")
-			.append("");
+            .append(");");
     
     private final StringBuilder POSTGRES = new StringBuilder()
             // create RULE table
@@ -153,20 +139,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("paramkey varchar(255) not null,")
             .append("value text")
-            .append(");")
-            
-            // Create the ANALYTIC_SUMMARY_USER_VISITS table
-			.append("CREATE TABLE analytic_summary_user_visits (")
-			.append("user_id VARCHAR(255) NOT NULL,")
-			.append("host_id VARCHAR(36) NOT NULL,")
-			.append("visits INT8 NOT NULL,")
-			.append("last_start_date TIMESTAMP NOT NULL,")
-			.append("PRIMARY KEY (user_id, host_id)")
-			.append(");")
-    		
-    		.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
-    		.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
-    		.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
+            .append(");");
 
     private final StringBuilder ORACLE = new StringBuilder()
             // create RULE table
@@ -229,20 +202,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar2(36) references rule_action(id),")
             .append("paramkey varchar2(255) not null,")
             .append("value nclob")
-            .append(");")
-    
-    		// Create the ANALYTIC_SUMMARY_USER_VISITS table
- 			.append("CREATE TABLE analytic_summary_user_visits (")
- 			.append("user_id VARCHAR2(255) NOT NULL,")
- 			.append("host_id VARCHAR2(36) NOT NULL,")
- 			.append("visits NUMBER(19,0) NOT NULL,")
- 			.append("last_start_date TIMESTAMP NOT NULL,")
- 			.append("PRIMARY KEY (user_id, host_id)")
- 			.append(");")
-     		
-     		.append("CREATE INDEX idx_analytic_user_visits_1 ON analytic_summary_user_visits (user_id);")
-     		.append("CREATE INDEX idx_analytic_user_visits_2 ON analytic_summary_user_visits (host_id);")
-     		.append("CREATE INDEX idx_analytic_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
+            .append(");");
 
     private final StringBuilder MSSQL = new StringBuilder()
             // create RULE table
@@ -304,20 +264,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("paramkey varchar(255) not null,")
             .append("value text")
-            .append(");")
-    
-	        // Create the ANALYTIC_SUMMARY_USER_VISITS table
-			.append("CREATE TABLE analytic_summary_user_visits (")
-			.append("user_id VARCHAR(255) NOT NULL,")
-			.append("host_id VARCHAR(36) NOT NULL,")
-			.append("visits NUMERIC(19,0) NOT NULL,")
-			.append("last_start_date DATETIME NOT NULL,")
-			.append("PRIMARY KEY (user_id, host_id)")
-			.append(");")
-			
-			.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
-			.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
-			.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
+            .append(");");
 
     private final StringBuilder H2 = new StringBuilder()
             // create RULE table
@@ -379,20 +326,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("paramkey varchar(255) not null,")
             .append("value text")
-            .append(");")
-    
-            // Create the ANALYTIC_SUMMARY_USER_VISITS table
- 			.append("CREATE TABLE analytic_summary_user_visits (")
- 			.append("user_id VARCHAR(255) NOT NULL,")
- 			.append("host_id VARCHAR(36) NOT NULL,")
- 			.append("visits BIGINT NOT NULL,")
- 			.append("last_start_date TIMESTAMP NOT NULL,")
- 			.append("PRIMARY KEY (user_id, host_id)")
- 			.append(");")
- 			
- 			.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
- 			.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
- 			.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
+            .append(");");
 
 
     @Override

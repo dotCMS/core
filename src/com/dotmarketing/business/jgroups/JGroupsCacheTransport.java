@@ -30,7 +30,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
     private JChannel channel;
 
     @Override
-    public void init ( Server localServer, Map<String, String> cacheProperties ) throws CacheTransportException {
+    public void init ( Server localServer ) throws CacheTransportException {
 
         Logger.info(this, "***\t Setting up JChannel");
 
@@ -42,7 +42,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
             String cacheProtocol;
             if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) ) {
-                cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL")) ? cacheProperties.get("CACHE_PROTOCOL") : Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+                cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
             } else {
                 cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
             }
@@ -205,7 +205,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             Logger.info(this, "ACK Received " + new Date());
         } else if ( v.toString().equals("MultiMessageResources.reload") ) {
             MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY);
-            messages.reload();
+            messages.reloadLocally();
         } else if ( v.toString().equals(ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND) ) {
             //Don't do anything is we are only checking sending.
         } else {

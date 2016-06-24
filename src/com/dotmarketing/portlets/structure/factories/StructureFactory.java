@@ -25,6 +25,7 @@ import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -47,6 +48,16 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * Provides access to information related to Content Types and the different
+ * ways it is related to other types of objects in dotCMS. The term "Structure" 
+ * is deprecated, it has been changed to "Content Type" now. 
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class StructureFactory {
 
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -83,6 +94,7 @@ public class StructureFactory {
 	 */
 	public static Structure getStructureByType(String type)
 	{
+		type = SQLUtil.sanitizeParameter(type);
 		Structure structure = null;
 		String condition = " name = '" + type + "'";
 		List list = InodeFactory.getInodesOfClassByCondition(Structure.class,condition);
@@ -104,7 +116,9 @@ public class StructureFactory {
 	@SuppressWarnings("unchecked")
 	public static Structure getStructureByVelocityVarName(String varName)
 	{
-		if(varName ==null) return new Structure();
+		varName = SQLUtil.sanitizeParameter(varName);
+		if(!UtilMethods.isSet(varName)) return new Structure();
+
 		Structure structure = null;
 		String condition = " lower(velocity_var_name) = '" + varName.toLowerCase() + "'";
 		List<Structure> list = InodeFactory.getInodesOfClassByCondition(Structure.class,condition);
@@ -183,12 +197,138 @@ public class StructureFactory {
 		return res;
 	}
 
+	/**
+	 * Retrieves a list of {@link Structure} objects that the current user is
+	 * allowed to access. The result set will contain all possible values,
+	 * grouped by Content Type and name, and in ascendent order. Depending on
+	 * the license level, some Content Types might not be included as part of
+	 * the results.
+	 * 
+	 * @param user
+	 *            - The {@link User} retrieving the list of Content Types.
+	 * @param respectFrontendRoles
+	 *            - If set to <code>true</code>, the permission handling will be
+	 *            based on the currently logged-in user or the Anonymous role.
+	 *            Otherwise, set to <code>false</code>.
+	 * @param allowedStructsOnly
+	 *            - If set to <code>true</code>, returns only the Content Types
+	 *            the specified user has read permission on. Otherwise, set to
+	 *            <code>false</code>.
+	 * @return A list of permissioned {@link Structure} objects.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 */
+	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly)
+			throws DotDataException {
+		String condition = "";
+		String orderBy = "structuretype,upper(name)";
+		int limit = -1;
+		int offset = 0;
+		String direction = "asc";
+		return getStructures(user, respectFrontendRoles, allowedStructsOnly, condition, orderBy, limit, offset, direction);
+	}
+
+	/**
+	 * Retrieves a list of {@link Structure} objects that the current user is
+	 * allowed to access. It also allows you to have more control on the
+	 * filtering criteria for the result set. Depending on the license level,
+	 * some Content Types might not be included as part of the results.
+	 * 
+	 * @param user
+	 *            - The {@link User} retrieving the list of Content Types.
+	 * @param respectFrontendRoles
+	 *            - If set to <code>true</code>, the permission handling will be
+	 *            based on the currently logged-in user or the Anonymous role.
+	 *            Otherwise, set to <code>false</code>.
+	 * @param allowedStructsOnly
+	 *            - If set to <code>true</code>, returns only the Content Types
+	 *            the specified user has read permission on. Otherwise, set to
+	 *            <code>false</code>.
+	 * @param condition
+	 *            - Any specific condition or filtering criteria for the
+	 *            resulting Content Types.
+	 * @param orderBy
+	 *            - The column(s) to order the results by.
+	 * @param limit
+	 *            - The maximum number of records to return.
+	 * @param offset
+	 *            - The record offset for pagination purposes.
+	 * @param direction
+	 *            - The ordering of the results: <code>asc</code>, or
+	 *            <code>desc</code>.
+	 * @return A list of {@link Structure} objects based on the current user's
+	 *         permissions and the system license.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 */
+	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly,
+			String condition, String orderBy, int limit, int offset, String direction) throws DotDataException {
+		condition = (UtilMethods.isSet(condition.trim())) ? condition + " AND " : "";
+		if (LicenseUtil.getLevel() < 200) {
+			condition += " structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", " + Structure.STRUCTURE_TYPE_PERSONA
+					+ ") AND ";
+		}
+		
+		condition += " 1=1 ";
+		List<Structure> all = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, condition, orderBy, limit,
+				offset, direction);
+		if (!allowedStructsOnly) {
+			return all;
+		}
+		List<Structure> retList = new ArrayList<Structure>();
+		for (Structure st : all) {
+			if (permissionAPI.doesUserHavePermission(st, PERMISSION_READ, user, respectFrontendRoles) && !st.isSystem()) {
+				retList.add(st);
+			}
+		}
+		return retList;
+	}
+	
 	public static List<Structure> getStructures()
 	{
 		String orderBy = "name";
 		int limit = -1;
 		return getStructures(orderBy,limit);
 	}
+	
+	   /**
+     * Returns a list of Content Type according to a specific Type
+     * These could be:
+     * 1. Contents.
+     * 2. Widgets.
+     * 3. Forms.
+     * 4. File Assets.
+     * 5. Pages.
+     * 6. Personas
+     * @param type: Integer type, according to valid content types specified in Structure.java class
+     * @return structures: List of Structures 
+     */
+	public static List<Structure> getAllStructuresByType(int structureType)
+    {
+        List<Structure> structures = new ArrayList<Structure>();
+        if(UtilMethods.isSet(structureType) && structureType <= 0){
+            //Invalid Type. Return empty list
+            return structures;
+        }
+        
+        structures = CacheLocator.getContentTypeCache().getStructuresByType(structureType);
+        
+        if(structures == null){
+            String condition = "structuretype = " + structureType;
+            String orderBy = "name";
+            String direction = "asc";
+            int limit = -1; 
+            structures = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
+        }
+        
+        if(structures != null){
+            CacheLocator.getContentTypeCache().addStructuresByType(structures, structureType);
+        }
+        
+        return structures;
+    }
 
 	public static List<Structure> getStructuresByUser(User user, String condition, String orderBy,int limit,int offset,String direction) {
 
@@ -393,10 +533,10 @@ public class StructureFactory {
 	
 	protected static void fixFolderHost(Structure st) {
 	    if(!UtilMethods.isSet(st.getFolder())) {
-	        st.setFolder("SYSTEM_FOLDER");
+	        st.setFolder(Folder.SYSTEM_FOLDER);
 	    }
 	    if(!UtilMethods.isSet(st.getHost())) {
-	        st.setHost("SYSTEM_HOST");
+	        st.setHost(Host.SYSTEM_HOST);
 	    }
 	}
 
@@ -426,13 +566,13 @@ public class StructureFactory {
 	}
 
 	//### DELETE ###
-	public static void deleteStructure(String inode) throws DotHibernateException, DotDataException
+	public static void deleteStructure(String inode) throws DotDataException
 	{
 		Structure structure = getStructureByInode(inode);
 		deleteStructure(structure);
 	}
 
-	public static void deleteStructure(Structure structure) throws DotHibernateException, DotDataException
+	public static void deleteStructure(Structure structure) throws DotDataException
 	{
 
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
@@ -674,28 +814,41 @@ public class StructureFactory {
 		return tagFields;
 	}
 
-	public static int getStructuresCount(String condition)
-	{
-		DotConnect db = new DotConnect();
+    /**
+     * Counts the amount of structures in DB filtering by the given condition
+     * 
+     * @param condition to be used
+     * @return Amount of structures found
+     */
+    public static int getStructuresCount(String condition) {
+        DotConnect db = new DotConnect();
 
-		StringBuffer sb = new StringBuffer();
-		try {
+        StringBuffer sb = new StringBuffer();
 
-			sb.append("select count(distinct structure.inode ) as count ");
-			sb.append(" from structure ");
-			if(condition != null && UtilMethods.isSet(condition)){
-				sb.append(" where " + condition);
-			}
-			Logger.debug(StructureFactory.class, sb.toString());
-			db.setSQL(sb.toString());
-			return db.getInt("count");
+        condition = (UtilMethods.isSet(condition.trim())) ? condition + " AND " : "";
+        if (LicenseUtil.getLevel() < 200) {
+            condition += " structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", "
+                    + Structure.STRUCTURE_TYPE_PERSONA + ") AND ";
+        }
 
-		} catch (Exception e) {
-			Logger.error(WebAssetFactory.class, "getStructuresCount failed:" + e, e);
-		}
+        condition += " 1=1 ";
 
-		return 0;
-	}
+        try {
+
+            sb.append("select count(distinct structure.inode ) as count ");
+            sb.append(" from structure ");
+            if (condition != null && UtilMethods.isSet(condition)) {
+                sb.append(" where " + condition);
+            }
+            Logger.debug(StructureFactory.class, sb.toString());
+            db.setSQL(sb.toString());
+            return db.getInt("count");
+
+        } catch (Exception e) {
+            Logger.error(WebAssetFactory.class, "getStructuresCount failed:" + e, e);
+        }
+        return 0;
+    }
 
 	/**
 	 * Get the list of image fields of a structure having a value in a list of parameters

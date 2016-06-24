@@ -122,6 +122,11 @@ public class BundlerUtil {
 
         try {
             if ( !f.exists() ){
+                //Lets create the folders if necessary to avoid "No such file or directory" error.
+                if(f.getParentFile() != null){
+                    f.getParentFile().mkdirs();
+                    }
+                //Lets create the file.
             	f.createNewFile();
             }	
             

@@ -35,7 +35,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -75,8 +74,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
-import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
@@ -98,25 +95,36 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
+/**
+ * This class processes all the interactions with contentlets that are
+ * originated from the Content Search portlet.
+ * 
+ * @author root
+ * @version 1.0
+ * @since May 22, 2012
+ *
+ */
 public class EditContentletAction extends DotPortletAction implements DotPortletActionInterface {
 
 	private CategoryAPI catAPI;
 	private PermissionAPI perAPI;
 	private ContentletAPI conAPI;
 	private FieldAPI fAPI;
-	private RelationshipAPI relAPI;
 	private HostWebAPI hostWebAPI;
 
 	private String currentHost;
 
+	/**
+	 * Default constructor that initializes all the required dotCMS APIs.
+	 */
 	public EditContentletAction() {
 		catAPI = APILocator.getCategoryAPI();
 		perAPI = APILocator.getPermissionAPI();
 		conAPI = APILocator.getContentletAPI();
 		fAPI = APILocator.getFieldAPI();
-		relAPI= APILocator.getRelationshipAPI();
 		hostWebAPI = WebAPILocator.getHostWebAPI();
 	}
+
 	private Contentlet contentletToEdit;
 
 	@SuppressWarnings("unchecked")
@@ -486,17 +494,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.UNLOCK)) {
 			try {
 				Logger.debug(this, "Calling Unlock Method");
-
-
-				// http://jira.dotmarketing.net/browse/DOTCMS-1073
-				// deleting uploaded files
-				/*Logger.debug(this, "Deleting uploaded files");
-				java.io.File tempUserFolder = new java.io.File(Config.CONTEXT
-						.getRealPath(com.dotmarketing.util.Constants.TEMP_BINARY_PATH)
-						+ java.io.File.separator + user.getUserId());
-
-				FileUtil.deltree(tempUserFolder);*/
-
 				if(perAPI.doesUserHavePermission(contentletToEdit, PermissionAPI.PERMISSION_WRITE, user)) {
 					try{
 						conAPI.unlock(contentletToEdit, user, false);
@@ -690,6 +687,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	// /// ************** ALL METHODS HERE *************************** ////////
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @throws Exception
+	 */
 	protected void _retrieveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form,User user) throws Exception {
 		String inode = req.getParameter("inode");
 		String inodeStr = (InodeUtils.isSet(inode) ? inode : "");
@@ -769,6 +775,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	}
 
+	/**
+	 * 
+	 * @param request
+	 * @param contentlet
+	 * @param structure
+	 * @param user
+	 * @throws DotDataException
+	 */
 	private void _loadContentletRelationshipsInRequest(ActionRequest request, Contentlet contentlet, Structure structure,User user) throws DotDataException {
 		ContentletAPI contentletService = APILocator.getContentletAPI();
 		contentlet.setStructureInode(structure.getInode());
@@ -812,6 +826,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @throws Exception
+	 */
 	private void _addToParents(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
 
@@ -822,8 +845,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		Logger.debug(this, "Inside AddContentletToParentsAction");
 
 		Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_FORM_EDIT);
-		// Contentlet currentContentlet = (Contentlet)
-		// req.getAttribute(WebKeys.CONTENTLET_EDIT);
 		Contentlet currentContentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 
 		Logger.debug(this, "currentContentlet inode=" + currentContentlet.getInode());
@@ -871,6 +892,24 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * Displays the "Add New Content" page where users can add content based on
+	 * a specific Content Type.
+	 * 
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+	 * @param config
+	 *            - The configuration parameters for the Content Search portlet.
+	 * @param form
+	 *            - The form containing the information selected by the user,
+	 *            e.g., the selected Content Type.
+	 * @param user
+	 *            - The {@link User} who wants to create a new content.
+	 * @throws Exception
+	 *             An error occurred when generating the content edit page.
+	 */
 	private void _newContent(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
 
@@ -886,20 +925,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		String inodeStr = (InodeUtils.isSet(inode) ? inode : "");
 		Contentlet contentlet = new Contentlet();
 
-		if(InodeUtils.isSet(inodeStr))
+		if(InodeUtils.isSet(inodeStr)) {
 			contentlet = conAPI.find(inodeStr, user, false);
-
+		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
-		Structure structure = contentlet.getStructure();
+		Structure contentType = contentlet.getStructure();
 
-		String selectedStructure = "";
+		String selectedContentType = "";
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
-			selectedStructure = req.getParameter("selectedStructure");
-			structure = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
-			contentlet.setStructureInode(structure.getInode());
+			selectedContentType = req.getParameter("selectedStructure");
+			contentType = (Structure) InodeFactory.getInode(selectedContentType, Structure.class);
+			contentlet.setStructureInode(contentType.getInode());
 		} else if (cmd.equals("newedit")) {
-			structure = StructureFactory.getDefaultStructure();
-			contentlet.setStructureInode(structure.getInode());
+			contentType = StructureFactory.getDefaultStructure();
+			contentlet.setStructureInode(contentType.getInode());
 		}
 
 		String langId = req.getParameter("lang");
@@ -912,23 +951,24 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}else{
 			contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
+		// Add information regarding the last content search in the session
+		if (httpReq.getSession().getAttribute(WebKeys.CONTENTLET_LAST_SEARCH) == null) {
+			Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+			lastSearchMap.put("structure", contentType);
+			lastSearchMap.put("fieldsSearch", new HashMap<String, String>());
+			lastSearchMap.put("categories", new ArrayList<String>());
+			lastSearchMap.put("showDeleted", false);
+			lastSearchMap.put("filterSystemHost", false);
+			lastSearchMap.put("filterLocked", false);
+			lastSearchMap.put("page", 1);
+			lastSearchMap.put("orderBy", "modDate desc");
+			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+		}
 
-		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
-		lastSearchMap.put("structure", structure);
-		lastSearchMap.put("fieldsSearch",new HashMap<String,String>());
-		lastSearchMap.put("categories",new ArrayList<String>());
-		lastSearchMap.put("showDeleted",false);
-		lastSearchMap.put("filterSystemHost",false);
-		lastSearchMap.put("filterLocked",false);
-		lastSearchMap.put("page",1);
-		lastSearchMap.put("orderBy","modDate desc");
-		httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+		// Checking permissions to add new content of selected content type
+		_checkWritePermissions(contentType, user, httpReq);
 
-
-		// Checking permissions to add new of structure selected
-		_checkWritePermissions(structure, user, httpReq);
-
-		List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(structure.getInode());
+		List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(contentType.getInode());
 		for (Field field : list) {
 			String defaultValue = field.getDefaultValue();
 			if (UtilMethods.isSet(defaultValue)) {
@@ -969,7 +1009,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
  				if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
 						|| field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					try {
-						//Identifier id = (Identifier) InodeFactory.getInode((String) value, Identifier.class);
 					    String value=contentlet.getStringProperty(field.getVelocityVarName());
 						Identifier id = APILocator.getIdentifierAPI().find((String) value);
 						if (InodeUtils.isSet(id.getInode())) {
@@ -991,8 +1030,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		//Setting review intervals form properties
-		if (structure.getReviewInterval() != null) {
-			String interval = structure.getReviewInterval();
+		if (contentType.getReviewInterval() != null) {
+			String interval = contentType.getReviewInterval();
 			Pattern p = Pattern.compile("(\\d+)([dmy])");
 			Matcher m = p.matcher(interval);
 			boolean b = m.matches();
@@ -1004,9 +1043,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				cf.setReviewIntervalSelect(g2);
 			}
 		}
-
 	}
 
+	/**
+	 * 
+	 */
 	@SuppressWarnings("unchecked")
 	public void _editWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
@@ -1077,49 +1118,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		//Return the tags related to this Contentlet in order to show them in the edit window
-		HashMap<String, StringBuilder> contentletTags = new HashMap<>();
-		List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(contentlet.getInode());
-		if ( foundTagInodes != null && !foundTagInodes.isEmpty() ) {
-
-			for ( TagInode foundTagInode : foundTagInodes ) {
-
-				StringBuilder contentletTagsBuilder = new StringBuilder();
-				String fieldVarName = foundTagInode.getFieldVarName();
-
-				if ( UtilMethods.isSet(fieldVarName) ) {
-					//Getting the related tag object
-					Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
-
-					if ( contentletTags.containsKey(fieldVarName) ) {
-						contentletTagsBuilder = contentletTags.get(fieldVarName);
-					}
-					if ( contentletTagsBuilder.length() > 0 ) {
-						contentletTagsBuilder.append(",");
-					}
-					if ( relatedTag.isPersona() ) {
-						contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
-					} else {
-						contentletTagsBuilder.append(relatedTag.getTagName());
-					}
-
-					contentletTags.put(fieldVarName, contentletTagsBuilder);
-				} else {
-					Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
-							"[" + foundTagInode.getInode() + "] without an associated Field var name.");
-				}
-			}
-
-			/*
-			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
-			this is done only for display purposes.
-			 */
-			if ( !contentletTags.isEmpty() ) {
-				for ( Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
-					//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-					contentlet.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
-				}
-			}
-		}
+		contentlet.setTags();
 
 		GregorianCalendar cal = new GregorianCalendar();
 		if (contentlet.getModDate() == null) {
@@ -1146,21 +1145,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
 			SessionMessages.add(req, "custommessage", message);
 		}
-
-		//	http://jira.dotmarketing.net/browse/DOTCMS-1073
-		//  retrieve file names while edit
-		/*Logger.debug(this,"EditContentletAAction : retrieving binary field values.");
-		Structure structure = contentlet.getStructure();
-		List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(structure.getInode());
-		for (Field field : list) {
-			String value = "";
-			if(field.getFieldContentlet().startsWith("binary")){
-				//	http://jira.dotmarketing.net/browse/DOTCMS-2178
-				java.io.File binaryFile = conAPI.getBinaryFile(contentlet.getInode(),field.getVelocityVarName(),user);
-				//http://jira.dotmarketing.net/browse/DOTCMS-3463
-				contentlet.setBinary(field.getVelocityVarName(),binaryFile);
-			}
-		}*/
 		cf.setMap(new HashMap<String, Object>(contentlet.getMap()));
 
 		Logger.debug(this, "EditContentletAction: contentletInode=" + contentlet.getInode());
@@ -1185,6 +1169,18 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param contentlet
+	 * @return
+	 * @throws Exception
+	 * @throws DotContentletValidationException
+	 */
 	@SuppressWarnings("deprecation")
 	private boolean _populateContent(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, Contentlet contentlet) throws Exception, DotContentletValidationException {
 		ContentletForm contentletForm = (ContentletForm) form;
@@ -1256,7 +1252,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
-
+	/**
+	 * 
+	 */
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	public void _saveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception, DotContentletValidationException {
 		ActionErrors ae = new ActionErrors();
@@ -1454,6 +1452,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param con
+	 * @return
+	 */
 	private ArrayList<Permission> _getSelectedPermissions(ActionRequest req, Contentlet con){
 		ArrayList<Permission> pers = new ArrayList<Permission>();
 		String[] readPermissions = req.getParameterValues("read");
@@ -1480,6 +1484,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		return pers;
 	}
 
+	/***
+	 * 
+	 * @param contentlet
+	 * @param req
+	 * @throws Exception
+	 * @throws PortalException
+	 * @throws SystemException
+	 */
 	private void _sendContentletPublishNotification (Contentlet contentlet, HttpServletRequest req) throws Exception,PortalException, SystemException {
 		try
 		{
@@ -1579,6 +1591,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * 
+	 */
 	public void _copyWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
 
@@ -1631,6 +1646,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		SessionMessages.add(httpReq, "message", "message.contentlet.copy");
 	}
 
+	/**
+	 * 
+	 */
 	public void _getVersionBackWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form,
 			User user) throws Exception {
 		Contentlet conVersionToRestore = conAPI.find(req.getParameter("inode_version"), user, false);
@@ -1638,6 +1656,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		req.setAttribute(WebKeys.CONTENTLET_EDIT , conVersionToRestore);
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param validate
+	 * @throws Exception
+	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	private void _loadForm(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,
 			boolean validate) throws Exception {
@@ -1710,6 +1738,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * 
+	 * @param response
+	 * @param user
+	 * @param contentletList
+	 * @param structureInode
+	 * @throws DotSecurityException
+	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	public void downloadToExcel(HttpServletResponse response, User user, List contentletList, String structureInode) throws DotSecurityException{
 		/*http://jira.dotmarketing.net/browse/DOTCMS-72*/
@@ -1767,10 +1803,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							f.getFieldType().equals(Field.FieldType.HIDDEN.toString()))
 						continue;
 					pr.print(","+(f.getFieldName().contains(",")?f.getFieldName().replaceAll(",", "&#44;"):f.getFieldName()));
-					//http://jira.dotmarketing.net/browse/DOTCMS-3232
-					/*if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-						pr.print(","+"Folder");
-					}*/
 				}
 
 
@@ -1843,27 +1875,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							}
 							//Windows carriage return conversion
 							text = text.replaceAll("\r","");
-
-							//Cutting because an excel limitation of 31500 chars per cell
-							//I put it commented it out because it drives to lose of data but if
-							//a cell
-							//if(text.length() > 31500)
-							//	text = text.substring(0, 31500);
-
 							if(text.contains(",") || text.contains("\n")) {
 								//Double quotes replacing
 								text = text.replaceAll("\"","\"\"");
 								pr.print(",\""+text+"\"");
 							} else
 								pr.print(","+text);
-						//http://jira.dotmarketing.net/browse/DOTCMS-3232
-						/*if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-							if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder()))
-							  pr.print(content.getHost());
-							else
-							  pr.print(content.getFolder());
-						}*/ //DOTCMS-4710
-
 						}catch(Exception e){
 							pr.print(",");
 							Logger.error(this,e.getMessage(),e);
@@ -1940,6 +1957,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		return result;
 	}
 
+	/**
+	 * 
+	 * @param currentcontent
+	 * @param user
+	 * @param req
+	 * @return
+	 */
 	private ContentletRelationships retrieveRelationshipsData(Contentlet currentcontent, User user, ActionRequest req ){
 
 		Set<String> keys = req.getParameterMap().keySet();
@@ -1984,6 +2008,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	//Batch operations
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param contentToIndexAfterCommit
+	 */
 	private void _batchUnpublish(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2110,7 +2143,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
-
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param contentToIndexAfterCommit
+	 */
 	private void _batchPublish(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2249,9 +2290,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
-
-
-
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param contentToIndexAfterCommit
+	 */
 	private void _batchArchive(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2305,7 +2352,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						}
 
 						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user))
-							if (!contentlet.isLive())
+							if (!contentlet.hasLiveVersion())
 								contentlets.add(contentlet);
 							else {
 							    someContentIsLive=true;
@@ -2380,7 +2427,24 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
-
+	/**
+	 * Deletes a given list of contentlets. An error will be thrown if the user
+	 * performing this action does not have the required permissions or if the
+	 * contentlets are not archived.
+	 * 
+	 * @param req
+	 *            - The Struts wrapper for the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper for the HTTP Response object.
+	 * @param config
+	 *            - The configuration setting for the Liferay portlet.
+	 * @param form
+	 *            - The Struts wrapper for the HTML form.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param contentToIndexAfterCommit
+	 *            - The list of contentlets that will be indexed.
+	 */
 	private void _batchDelete(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2394,18 +2458,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 			
 			ArrayList<String> inodes = new ArrayList<String>(Arrays.asList(tempInodes));
-
-			for(String inode : tempInodes){
-				Contentlet contentlet = conAPI.find(inode, user, false);
-				List<Contentlet> siblings = conAPI.getSiblings(contentlet.getIdentifier());
-				
-				for(Contentlet sibling : siblings){
-					if(!inodes.contains(sibling.getInode())){
-						inodes.add(sibling.getInode());
-					}
-				}
-			}
-			
 
 			class DeleteThread extends Thread {
 				private List<String> inodes = new ArrayList<String>();
@@ -2442,11 +2494,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							Logger.error(this, "Unable to find contentlet with inode " + inode);
 						}
 
-						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user) && !contentlet.isLive()) {
-
+						if (perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user) && contentlet.isArchived()) {
 							contentlets.add(contentlet);
-						} else
+						} else {
 							hasNoPermissionOnAllContent = true;
+						}
 					}
 					List<Contentlet> cons = new ArrayList<Contentlet>();
 					for (Contentlet content : contentlets) {
@@ -2455,10 +2507,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						try{
 							conAPI.delete(cons, user, false);
 						}catch (DotSecurityException e) {
-							Logger.warn(this, "Unable to delete content because of a lack of permissions" + e.getMessage(), e);
+							Logger.error(this, "Unable to delete content with identifier " + content.getIdentifier()
+									+ " because of a lack of permissions. " + e.getMessage(), e);
 							hasNoPermissionOnAllContent = true;
 						}catch (Exception e) {
-							Logger.warn(this, "Unable to delete content " + e.getMessage(), e);
+							Logger.error(this, "Unable to delete content with identifier " + content.getIdentifier() + ". "
+									+ e.getMessage(), e);
 						}
 					}
 
@@ -2499,6 +2553,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param contentToIndexAfterCommit
+	 */
 	private void _batchUnArchive(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2616,6 +2679,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 */
 	private void _batchReindex(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2692,6 +2763,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * 
+	 * @param contentToIndexAfterCommit
+	 * @param cmd
+	 */
 	private void reindexContentlets(List<Contentlet> contentToIndexAfterCommit,String cmd){
 
 		for (Contentlet con : contentToIndexAfterCommit) {
@@ -2725,7 +2801,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	}
 
-	/* http://jira.dotmarketing.net/browse/DOTCMS-72*/
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param from
+	 * @return
+	 */
 	private List searchContentlets(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String from){
 		try {
 			String structureInode;
@@ -2780,6 +2865,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	}
 
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param webKeyEdit
+	 * @throws Exception
+	 */
 	public void _deleteVersion(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String webKeyEdit)
 	throws Exception {
 
@@ -2795,7 +2890,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		ActionResponseImpl resImpl = (ActionResponseImpl) res;
 		// calls the Contentlet API delete the container version
 		try{
-			//conAPI.delete(webAsset, user, false, false);
 			conAPI.deleteVersion(webAsset,user,false);
 
 
@@ -2804,7 +2898,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
-	/* http://jira.dotmarketing.net/browse/DOTCMS-5986*/
+	/**
+	 * 
+	 * @param req
+	 * @param user
+	 * @return
+	 */
 	private String[] getSelectedInodes(ActionRequest req, User user){
 	    String[] allInodes = new String[0];
         String[] uncheckedInodes = new String[0];
@@ -2846,7 +2945,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		return result;
 	}
 
-
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 * @param config
+	 * @param form
+	 * @param user
+	 * @param contentToIndexAfterCommit
+	 */
 	private void _batchUnlock(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user,List<Contentlet> contentToIndexAfterCommit) {
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
@@ -2959,4 +3066,5 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			return;
 		}
 	}
+
 }

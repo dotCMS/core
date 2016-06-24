@@ -3,23 +3,7 @@ package com.dotmarketing.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
-import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00004CheckFileAssetsInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00005CheckHTMLPagesInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00006CheckLinksInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00007CheckTemplatesInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00008CheckTreeInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00009CheckContentletsInexistentInodes;
-import com.dotmarketing.fixtask.tasks.FixTask00011RenameHostInFieldVariableName;
-import com.dotmarketing.fixtask.tasks.FixTask00012UpdateAssetsHosts;
-import com.dotmarketing.fixtask.tasks.FixTask00020DeleteOrphanedIdentifiers;
-import com.dotmarketing.fixtask.tasks.FixTask00030DeleteOrphanedAssets;
-import com.dotmarketing.fixtask.tasks.FixTask00040CheckFileAssetsMimeType;
-import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
-import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
-import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
-import com.dotmarketing.fixtask.tasks.FixTask00080DeleteOrphanedContentTypeFields;
+import com.dotmarketing.fixtask.tasks.*;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
 import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
 import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
@@ -31,9 +15,25 @@ import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
 
 import com.dotmarketing.startup.runonce.*;
 
-
+/**
+ * This utility class provides access to the lists of dotCMS tasks that are
+ * meant for the initialization of a fresh dotCMS install, for fixing data
+ * inconsistencies, and the database upgrade process usually associated with a
+ * new system version.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class TaskLocatorUtil {
 
+	/**
+	 * Returns the list of tasks that are run to solve internal conflicts
+	 * related to data inconsistency.
+	 * 
+	 * @return The list of Fix Tasks.
+	 */
 	public static List<Class<?>> getFixTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(FixTask00001CheckAssetsMissingIdentifiers.class);
@@ -53,9 +53,23 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00060FixAssetType.class);
 		ret.add(FixTask00070FixVersionInfo.class);
 		ret.add(FixTask00080DeleteOrphanedContentTypeFields.class);
+		ret.add(FixTask00090RecreateMissingFoldersInParentPath.class);
 		return ret;
 	}
 
+	/**
+	 * Returns the list of tasks that are run <b>only once</b>, which deal with
+	 * the updating the existing database objects and information to solve
+	 * existing issues or to add new structures associated to new features.
+	 * <p>
+	 * The number after the "Task" word and before the description represents
+	 * the system version number in the {@code DB_VERSION} table. A successfully
+	 * executed upgrade task will add a new record in such a table with the
+	 * number in the class name. This allows dotCMS to keep track of the tasks 
+	 * that have been run.
+	 * 
+	 * @return The list of Run-Once Tasks.
+	 */
 	public static List<Class<?>> getStartupRunOnceTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00760AddContentletStructureInodeIndex.class);
@@ -147,9 +161,18 @@ public class TaskLocatorUtil {
 		ret.add(Task03530AlterTagInode.class);
 		ret.add(Task03535RemoveTagsWithoutATagname.class);
 		ret.add(Task03540UpdateTagInodesReferences.class);
+		ret.add(Task03545FixVarcharSizeInFolderOperations.class);
         return ret;
     }
 
+	/**
+	 * Returns list of tasks that are run <b>every time</b> that dotCMS starts
+	 * up. In the case of a fresh install, these tasks will deploy the default
+	 * database schema and data, along with the information associated to the
+	 * Starter Site ("demo.dotcms.com").
+	 * 
+	 * @return The list of Run-Always Tasks.
+	 */
     public static List<Class<?>> getStartupRunAlwaysTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00001LoadSchema.class);

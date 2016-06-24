@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ThrowErrorConditionlet;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -18,8 +18,10 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -31,7 +33,7 @@ import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 public class RulesAPIFTest extends TestBase {
 
@@ -47,6 +49,11 @@ public class RulesAPIFTest extends TestBase {
 		robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
 		indexUrl = String.format("http://%s:%s/", serverName, serverPort);
         ruleId = "";
+	}
+
+	@BeforeClass
+	public static void prepare () throws Exception {
+		LicenseTestUtil.getLicense();
 	}
 
 
@@ -212,18 +219,26 @@ public class RulesAPIFTest extends TestBase {
 
 	@Test
 	public void testRefreshConditionletsMapNoExceptionWhenErrorInCustomConditionlet() {
-		RulesAPI rulesAPI = new RulesAPIImpl();
-		// addConditionlet calls refreshConditionletsMap under the cover
-		// shouldn't throw error
-		rulesAPI.addConditionlet(ThrowErrorConditionlet.class);
+		try {
+			RulesAPI rulesAPI = APILocator.getRulesAPI();
+			// addConditionlet calls refreshConditionletsMap under the cover
+			// shouldn't throw error
+			rulesAPI.addConditionlet(ThrowErrorConditionlet.class);
+		}catch(Exception e){
+			Assert.assertTrue( false );
+		}
 	}
 
 	@Test
 	public void testRefreshActionletsMapNoExceptionWhenErrorInCustomActionlet() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		RulesAPI rulesAPI = new RulesAPIImpl();
-		// addRuleActionlet calls refreshActionletsMap under the cover
-		// shouldn't throw error
-		rulesAPI.addRuleActionlet(ThrowErrorActionlet.class);
+		try {
+			RulesAPI rulesAPI = APILocator.getRulesAPI();
+			// addRuleActionlet calls refreshActionletsMap under the cover
+			// shouldn't throw error
+			rulesAPI.addRuleActionlet(ThrowErrorActionlet.class);
+		}catch(Exception e){
+			Assert.assertTrue( false );
+		}
 	}
 
 	@After

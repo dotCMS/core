@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -18,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 
@@ -33,6 +35,11 @@ public class UsersBrowserLanguageConditionletFTest {
     private HttpServletRequest request;
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
     private ConditionletTestUtil conditionletTestUtil = new ConditionletTestUtil();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init () {

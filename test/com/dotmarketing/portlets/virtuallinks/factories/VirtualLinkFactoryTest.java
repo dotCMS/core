@@ -1,9 +1,9 @@
 package com.dotmarketing.portlets.virtuallinks.factories;
 
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.VirtualLinksCache;

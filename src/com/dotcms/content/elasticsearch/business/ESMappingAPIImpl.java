@@ -128,6 +128,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         .get(index).mapping(type).source().string();
 
     }
+    
+    public  String getSettings(String index, String type) throws ElasticsearchException, IOException{
+
+    	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
+    	        .actionGet().getState().metaData().indices()
+    	        
+    	        .get(index).settings().getAsMap().toString();
+
+    }
 
 
 
@@ -504,20 +513,32 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
                     StringBuilder personaTags = new StringBuilder();
                     StringBuilder tagg = new StringBuilder();
-                    for ( Tag t : APILocator.getTagAPI().getTagsByInode(con.getInode()) ) {
-                        tagg.append(t.getTagName()).append(' ');
-
+                    List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
+                    if(tagList ==null || tagList.size()==0) continue;
+                    
+                    final String tagDelimit = Config.getStringProperty("ES_TAG_DELIMITER_PATTERN", ",,");
+                    
+                    
+                    for ( Tag t : tagList ) {
+                    	if(t.getTagName() ==null) continue;
+                    	String myTag = t.getTagName().trim();
+                        tagg.append(myTag).append(tagDelimit);
                         if ( t.isPersona() ) {
-                            personaTags.append(t.getTagName()).append(' ');
+                            personaTags.append(myTag).append(' ');
                         }
                     }
-                    m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), tagg.toString());
-                    m.put("tags", tagg.toString());
+                    if(tagg.length() >tagDelimit.length()){
+                    	String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
+                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr.replaceAll(",,", " "));
+                        m.put("tags", taggStr);
+                    }
+
 
                     if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
-                        if ( personaTags.length() > 0 ) {
-                            m.put(st.getVelocityVarName() + ".personas", personaTags.toString());
-                            m.put("personas", personaTags.toString());
+                        if ( personaTags.length() > tagDelimit.length() ) {
+                        	String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
+                            m.put(st.getVelocityVarName() + ".personas", personaStr);
+                            m.put("personas", personaStr);
                         }
                     }
 

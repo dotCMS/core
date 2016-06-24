@@ -66,32 +66,44 @@
 	color:#fff;
 }
 
+/*NAV STYLES*/
+.navbar ul{list-style:none;margin:0;padding:0}
+.navbar li{list-style:none;position:relative}
+.navbar li a{display:block;text-decoration:none;float:none}
+.navbar .dropdown{background:#fff;border:1px solid #d1d1d1;border-top:0;left:-1px;min-width:200px;position:absolute;opacity:0;transition:opacity .2s;top:44px;visibility:hidden;z-index:999}
+.navbar .dropdown li.level2{padding:0}
+.navbar .dropdown li.level2 a{background:#fff;color:#5f5f5f;display:block;font-size:85%;height:18px;line-height:18px;margin:0;padding:3px 10px;vertical-align:middle}
+.navbar .horizontal li.level1.active .navMenu-title,.navbar .horizontal li.level1:hover .navMenu-title{color:#c00}
+.navbar .dropdown li.level2 a:hover{background:#F2F2F2}
+.navbar .dropdown li.level2 a span{display:inline-block;float:left;height:18px;margin:0 5px 2px;width:18px}
+.navbar .horizontal li.level1{background-color:#F2F2F2;border-top-left-radius:3px;border-top-right-radius:3px;border:1px solid #DADADA;border-right:0;box-shadow:inset 0 1px 1px 0 #FFF;float:left;padding:0;width:auto}
+.navbar .horizontal li.level1.active,.navbar .horizontal li.level1:hover{background-color:#fff}
+.navbar .horizontal li.level1:hover>.dropdown{visibility:visible;opacity:1}
+.navbar .horizontal li.level1:last-child{border-right:solid 1px #DADADA}
+.navbar .horizontal li.level1 .tabLeft{padding:8px 10px 5px}
+.navbar .navMenu-title{color:#404040;font-size:93%;font-weight:700;line-height:14px;margin:0;overflow:hidden;padding:0}
+.navbar .navMenu-subtitle{color:#5f5f5f;font-size:77%;margin:0;overflow:hidden;padding:0}
+
 /* NAV MENU STYLES 2.0 */
-#menu {width:100%;white-space: nowrap;}
-#menu ul {margin:0px;padding:0px;list-style:none;}
-#menu ul li {list-style:none;}
-#menu ul li a {float:left;display:block;text-decoration:none;}
-#menu ul.horizontal li.level1 {float:left;padding:0px;}
-#menu ul.horizontal li.level1 a{background:url(/html/images/skin/skin-sprite.png) repeat left -140px;}
-#menu ul.horizontal li.level1 a:hover,#menu ul.horizontal li.Active a {background-position: left -190px;}
-#menu ul.horizontal li.level1 .tabLeft{background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -240px;padding: 8px 10px 5px 10px;}
-#menu ul.horizontal li.level1 a:hover .navMenu-title,#menu ul.horizontal li.Active a .navMenu-title{color:#cc0000;}
-#menu ul.horizontal > li.level1 a {width: auto;}
-li.level1 .navMenu-title{margin:0;padding:0;line-height:14px;overflow:hidden;color:#404040;font-size:93%;font-weight:bold;}
-li.level1 .navMenu-subtitle{margin:0;padding:0;overflow:hidden;color:#5f5f5f;font-size:77%;}
-li.level1 .navMenu-arrow{display:none;background: url(/html/images/skin/skin-sprite.png) no-repeat -250px -300px;width:13px;height:13px;margin:4px auto 2px auto;font-size:77%;}
-li.smallify .navMenu-subtitle{display:none;}
-li.smallify .navMenu-arrow{display:block;}
+.navbar ul{list-style:none;margin:0;padding:0}
+.navbar li{list-style:none;position:relative}
+.navbar li a{display:block;text-decoration:none;float:none}
+.navbar .dropdown{background:#fff;border:1px solid #d1d1d1;border-top:0;left:-1px;min-width:200px;position:absolute;opacity:0;transition:opacity 200ms;top:44px;visibility:hidden;z-index:999}
+.navbar .dropdown li.level2{padding:0}
+.navbar .dropdown li.level2 a{background:#fff;color:#5f5f5f;display:block;font-size:85%;height:18px;line-height:18px;margin:0;padding:3px 10px;vertical-align:middle}
+.navbar .dropdown li.level2 a:hover{background:#F2F2F2}
+.navbar .dropdown li.level2 a span{display:inline-block;float:left;height:18px;margin:0 5px 2px;width:18px}
+.navbar .horizontal li.level1{background-color:#F2F2F2;border-top-left-radius:3px;border-top-right-radius:3px;border:solid 1px #DADADA;border-right:0;box-shadow:inset 0 1px 1px 0 #FFF;float:left;padding:0;width:auto}
+.navbar .horizontal li.level1:hover{background-color:#fff}
+.navbar .horizontal li.level1:hover > .dropdown{opacity:1;visibility:visible;}
+.navbar .horizontal li.level1:hover .navMenu-title{color:#c00}
+.navbar .horizontal li.level1:last-child{border-right:solid 1px #DADADA}
+.navbar .horizontal li.level1 .tabLeft{padding:8px 10px 5px}
+.navbar .horizontal li.level1.active{background-color:#fff}
+.navbar .horizontal li.level1.active .navMenu-title{color:#c00}
+.navbar .navMenu-title{color:#404040;font-size:93%;font-weight:700;line-height:14px;margin:0;overflow:hidden;padding:0}
+.navbar .navMenu-subtitle{color:#5f5f5f;font-size:77%;margin:0;overflow:hidden;padding:0}
 
-/* Commented Backslash Hack hides rule from IE5-Mac \*/
-	#menu ul li a {float:none;}
-/* End IE5-Mac hack */
-
-#menu ul.dropdown{position:absolute;top: 0px;left: 0px;visibility:hidden;z-index:999;background:#fff;border-bottom: 1px solid #D1D1D1;border-left: 1px solid #D1D1D1;border-right: 1px solid #D1D1D1;text-decoration: none;min-width:220px;-moz-box-shadow:0px 3px 5px #aaa;-webkit-box-shadow:0px 3px 5px #aaa;}
-#menu ul.dropdown li.level2{background-image:none;padding:0;overflow:hidden;}
-#menu ul.dropdown li.level2 a{font-size:85%;color:#5f5f5f;margin:0;background:#fff;background-image:none;display:block;vertical-align:middle;line-height:18px;height:18px;padding:3px 10px;}
-#menu ul.dropdown li.level2 a:hover{background:#F2F2F2;}
-#menu ul.dropdown li.level2 a span{display:inline-block;float:left;width:18px;height:18px;margin:0 5px 2px 5px;}
 
 /* CRUMBTRAIL STYLES 2.0 */
 .subNavCrumbTrail{height:24px;margin:-9px -10px 10px -10px;overflow:hidden;border-bottom:1px solid #ddd;background: url(/html/images/skin/skin-sprite.png) repeat-x 0 -330px;}
@@ -653,9 +665,6 @@ table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-wid
 #portal_login_as_password {width: 150px;}
 #portal_loginas_errors {text-align: center;color: red;padding-bottom: 5px;}
 
-/* for the dotCMS ligthbox overlay utils */
-#dotCMS_lightbox_overlay {z-index: 1000;position: absolute;visibility: hidden;background: url(/html/js/dotcms-utils/overlay.png);}
-
 /* permission hacks */
 .dmundra .dijitAccordionTitle {line-height:0;font-size:0px;}
 .permissionTableTitle td{text-align: center;width: 12%;font-size:11px;line-height:22px;}
@@ -751,11 +760,18 @@ div#_dotHelpMenu{color:red;}
 /*Tags fields*/
 
 .tagsOptions {
-	border: 1px solid #b3b3b3;
-	position: absolute;
 	background: white;
-	z-index: 1;
+	border: 1px solid #b3b3b3;
 	min-width:175px;
+	position: absolute;
+	z-index: 1;
+	padding-top: 7px;
+}
+
+.tagsOptions .personaIcon,
+.tagsOptions .tagIcon {
+	margin-right: 5px;
+	opacity: .7;
 }
 
 .tagsOptions:before {
@@ -788,9 +804,10 @@ div#_dotHelpMenu{color:red;}
 	padding: 5px 10px;
 	border-bottom: 1px solid #b3b3b3;
 	text-decoration: none;
+    white-space: nowrap;
 }
 
-.tagsOptions a:focus {
+.tagsOptions .suggestedTagFocus {
 	box-shadow: none;
 	outline: 0;
 	background-color: #E0E9F6;
@@ -838,7 +855,6 @@ div#_dotHelpMenu{color:red;}
 }
 
 .tagLink:after {
-
 	border-bottom-right-radius: 9px;
 	border-top-right-radius: 9px;
 	color: gray;
@@ -879,7 +895,7 @@ div#_dotHelpMenu{color:red;}
 	padding: 2px 2px 0;
 }
 
-.tagsWrapper .dijitInputField {
+.dmundra .tagsWrapper .dijitInputField {
 	height: auto;
 	cursor: text;
 	display: inline-block;
@@ -887,10 +903,11 @@ div#_dotHelpMenu{color:red;}
 	position: static;
 }
 
-.tagsWrapper .dijitInputField input {
+.dmundra .tagsWrapper .dijitInputField .dijitInputInner {
 	float: none;
 	padding: 0;
-	height: 20px;
+	line-height: 28px;
+	height: 28px;
 	border: none;
 	width: auto !important;
 }
