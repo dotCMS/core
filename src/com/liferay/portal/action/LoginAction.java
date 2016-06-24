@@ -22,16 +22,6 @@
 
 package com.liferay.portal.action;
 
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.Action;
@@ -49,13 +39,15 @@ import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.RequiredLayoutException;
-import com.liferay.portal.SendPasswordException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.UserEmailAddressException;
-import com.liferay.portal.UserIdException;
-import com.liferay.portal.UserPasswordException;
+
+import com.dotmarketing.util.jwt.DotCMSSubjectBean;
+import com.dotmarketing.util.jwt.JWTBean;
+import com.dotmarketing.util.jwt.JsonWebTokenFactory;
+import com.dotmarketing.util.jwt.JsonWebTokenService;
+import com.dotmarketing.util.marshal.MarshalFactory;
+import com.dotmarketing.util.marshal.MarshalUtils;
+import com.liferay.portal.*;
+
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -65,17 +57,23 @@ import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.Constants;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.util.*;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
  * <a href="LoginAction.java.html"><b><i>View Source</i></b></a>
@@ -86,7 +84,12 @@ import com.liferay.util.servlet.SessionMessages;
  */
 public class LoginAction extends Action {
 
-	public ActionForward execute(
+    public static final String JSON_WEB_TOKEN_DAYS_MAX_AGE = "json.web.token.days.max.age";
+
+	// Max days to live the cookie
+    public static final int    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT = 2;
+
+    public ActionForward execute(
 			ActionMapping mapping, ActionForm form, HttpServletRequest req,
 			HttpServletResponse res)
 		throws Exception {
@@ -352,6 +355,9 @@ public class LoginAction extends Action {
 				.append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
 			res.addHeader("SET-COOKIE", headerStr.toString());
 
+            //JWT
+            this.processJsonWebToken(req, res, user, maxAge);
+            
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
 			
@@ -367,7 +373,42 @@ public class LoginAction extends Action {
 		SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
 	}
 
-	private void _sendPassword(HttpServletRequest req) throws Exception {
+    private void processJsonWebToken(final HttpServletRequest req,
+                                     final HttpServletResponse res,
+                                     final User user,
+                                     final String maxAge) throws com.liferay.portal.PortalException, com.liferay.portal.SystemException {
+
+		final MarshalFactory marshalFactory =
+				MarshalFactory.getInstance();
+		final MarshalUtils marshalUtils =
+				marshalFactory.getMarshalUtils();
+		final JsonWebTokenService jsonWebTokenService =
+				JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+
+        final int daysMaxAge = Config.getIntProperty(
+                JSON_WEB_TOKEN_DAYS_MAX_AGE,
+                JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
+
+
+        // create the cookie with the token using the new classes
+        final Long jwtMaxAge = !maxAge.equals("0") ? Long.valueOf(maxAge) : 31536000L;
+		final String encryptUserId = UserManagerUtil.encryptUserId(user.getUserId());
+
+        final String jwtAccessToken =
+                jsonWebTokenService.generateToken(
+                        new JWTBean(encryptUserId,
+								marshalUtils.marshal(
+										new DotCMSSubjectBean(user.getModificationDate(),
+												encryptUserId,
+												user.getCompanyId())),
+										encryptUserId,
+										jwtMaxAge)
+				);
+
+        createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(daysMaxAge));
+    }
+
+    private void _sendPassword(HttpServletRequest req) throws Exception {
 		String emailAddress = ParamUtil.getString(
 			req, "my_account_email_address");
 		String userId = emailAddress;

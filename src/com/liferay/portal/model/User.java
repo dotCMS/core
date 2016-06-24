@@ -22,14 +22,6 @@
 
 package com.liferay.portal.model;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -44,6 +36,9 @@ import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /**
  * <a href="User.java.html"><b><i>View Source</i></b></a>
@@ -296,6 +291,7 @@ public class User extends UserModel implements Recipient {
 
 		_user.setPassword(null);
 		_user.setCreateDate(null);
+        _user.setModificationDate(null);
 		_user.setLoginDate(null);
 		_user.setLoginIP(null);
 		_user.setLastLoginDate(null);
@@ -338,7 +334,18 @@ public class User extends UserModel implements Recipient {
 		return getFullName().toLowerCase().compareTo(
 			user.getFullName().toLowerCase());
 	}
-	
+
+    public Date getModificationDate() {
+
+        return this.modificationDate;
+    }
+
+    public void setModificationDate(final Date modificationDate) {
+
+        this.modificationDate = modificationDate;
+        setModified(true);
+    }
+
 	public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("active", this.getActive());
@@ -347,6 +354,7 @@ public class User extends UserModel implements Recipient {
 		map.put("comments", this.getComments());
 		map.put("companyId", this.getCompanyId());
 		map.put("createDate", this.getCreateDate());
+        map.put("modificationDate", this.getModificationDate());
 		map.put("emailAddress", this.getEmailAddress());
 		map.put("failedLoginAttempts", this.getFailedLoginAttempts());
 		map.put("male", this.getMale());
@@ -361,6 +369,7 @@ public class User extends UserModel implements Recipient {
 		map.put("nickname", this.getNickName());
 		map.put("userId", this.getUserId());
 		map.put("timeZoneId", this.getTimeZoneId());
+
 		return map;
 	}
 
@@ -368,5 +377,6 @@ public class User extends UserModel implements Recipient {
 	private Locale _locale;
 	private TimeZone _timeZone;
 	private User _user;
+	private Date modificationDate;
 
 }
