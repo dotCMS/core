@@ -165,5 +165,15 @@ public class StructureAPIImpl implements StructureAPI {
 		}
 		return s;
 	}
+	
+    /*
+     * (non-Javadoc)
+     * 
+     * @see com.dotmarketing.portlets.structure.business.StructureAPI#countStructures(java.lang.String)
+     */
+    @Override
+    public int countStructures(String condition) {
+        return StructureFactory.getStructuresCount(condition);
+    }
 
 }

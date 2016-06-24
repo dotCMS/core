@@ -922,7 +922,7 @@ public class ImportExportUtil {
 
     }
 
-    private void copyAssetDir(File fromAssetDir){
+    private void copyAssetDir(File fromAssetDir) throws IOException{
         File ad;
         if(!UtilMethods.isSet(assetRealPath)){
             ad = new File(FileUtil.getRealPath(assetPath));

@@ -346,10 +346,11 @@ public class LoginFactory {
                 return true;
             }
         } catch (NoSuchUserException e) {
+            Logger.error(LoginFactory.class, "User " + userName + " does not exist.", e);
 			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made from IP: " + request.getRemoteAddr());
         	throw e;
         } catch (Exception e) {
-            Logger.error(LoginFactory.class, "Login Failed: " + e);
+            Logger.error(LoginFactory.class, "Login Failed: " + e, e);
 			SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " has been made from IP: " + request.getRemoteAddr());
         }
 
@@ -361,9 +362,6 @@ public class LoginFactory {
     *
     * @param userName
     * @param password
-    * @param rememberMe
-    * @param request
-    * @param response
     * @return
     */
     public static boolean doLogin(String userName, String password) throws NoSuchUserException {

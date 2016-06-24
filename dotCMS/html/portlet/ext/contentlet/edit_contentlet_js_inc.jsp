@@ -65,7 +65,7 @@ dojo.require("dojox.layout.ContentPane");
 	function cancelEdit() {
 
 		window.onbeforeunload=true;
-		
+
 		doesUserCancelledEdit = true;
 
 		if(isContentAutoSaving){ //To avoid storage of contentlet while user cancels.
@@ -278,7 +278,7 @@ dojo.require("dojox.layout.ContentPane");
 		var k = 0;
 		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
 				function (textareaObj) {
-					var aceEditor;					
+					var aceEditor;
 					if(textareaObj.id == aceTextId[textareaObj.id]) {
 						aceEditor = textEditor[aceTextId[textareaObj.id]];
 					} else{
@@ -637,33 +637,33 @@ dojo.require("dojox.layout.ContentPane");
     	var y =Math.floor(Math.random()*1123213213);
 
     	var myCp = dijit.byId("contentletRulezDivCp");
-    	
+
 		if (myCp) {
 			return;
 
 		}
     	var myDiv = dijit.byId("contentletRulezDiv");
-    	
+
 		if (myDiv) {
 			dojo.empty(myDiv);
 		}
 		var hideRulePushOptions = false
 		<%if(contentlet.getStructure().isHTMLPageAsset()){%>
-		hideRulePushOptions=true; 
+		hideRulePushOptions=true;
 		<%}%>
 		myCp = new dojox.layout.ContentPane({
 			id : "contentletRulezDivCp",
 			style: "height:100%",
 			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
 		}).placeAt("contentletRulezDiv");
-		
+
 
     }
 
 
-    
-    
-    
+
+
+
 	function saveBinaryFileOnContent(fieldInode, fieldVarName, fieldContentlet, fileName){
 		var fieldRelatedData = {"fieldContentlet" : fieldContentlet,
 								"fieldVarName" : fieldVarName,
@@ -694,8 +694,8 @@ dojo.require("dojox.layout.ContentPane");
 				fieldDiv.appendChild(thumbnailParentDiv);
 			}
 
-			<% if(LicenseUtil.getLevel() < 199){ %>
-
+			var licence = <%=LicenseUtil.getLevel()%>;
+			if ( licence < 199 ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
 				var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
 
 				var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'
@@ -715,13 +715,21 @@ dojo.require("dojox.layout.ContentPane");
 				}
 
 				var thumbNailImg = document.createElement("img");
-				thumbNailImg.setAttribute("src","/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300");
+				var thumbnailImage;
+
+				if(!fieldRelatedData.fileName.toLowerCase().endsWith('.svg')) {
+					thumbnailImage = "/contentAsset/image/"+data['contentletInode']+"/fileAsset/?byInode=1&filter=Thumbnail&thumbnail_w=300&thumbnail_h=300";
+				}else{
+					thumbnailImage = "/contentAsset/image/" + data['contentletInode'] + "/fileAsset/?byInode=1";
+				}
+
+				thumbNailImg.setAttribute("src", thumbnailImage);
 				thumbNailImg.setAttribute("onmouseover","dojo.attr(this, 'className', 'thumbnailDivHover');");
 				thumbNailImg.setAttribute("onmouseout","dojo.attr(this, 'className', 'thumbnailDiv');");
 				thumbNailImg.setAttribute("onclick","dijit.byId('"+data['contentletInode']+'_Dialog'+"').show()");
 				thumbnailParentDiv.appendChild(thumbNailImg);
 
-			<%} else { %>
+			} else {
 
 				var newImageEditor = new dotcms.dijit.image.ImageEditor({
 				            editImageText : "<%= LanguageUtil.get(pageContext, "Edit-Image") %>",
@@ -735,7 +743,7 @@ dojo.require("dojox.layout.ContentPane");
                 });
                 newImageEditor.placeAt(thumbnailParentDiv);
 
-			<%}%>
+			}
 		}
 	}
 
@@ -944,7 +952,7 @@ dojo.require("dojox.layout.ContentPane");
     function unlockContent(contentletInode){
 
 		window.onbeforeunload=true;
-		
+
     	if(_hasUserChanged){
     		if(!confirm("<%=LanguageUtil.get(pageContext, "checkin-without-saving-changes")%>")){
     			return;
@@ -988,7 +996,6 @@ dojo.require("dojox.layout.ContentPane");
 		myCp.refresh();
 
   }
-
 	function toggleLockedMessage(locked, who, when){
 		  if(dojo.byId("contentLockedInfo")){
 			  if (locked) {

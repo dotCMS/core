@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -65,7 +47,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -88,6 +69,24 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -1287,7 +1286,9 @@ public class ContentletAjax {
 					Contentlet binaryContentlet =  new Contentlet();
 					try{
 						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-					}catch(Exception e){}
+					}catch(Exception e){
+						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
+					}
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
 							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
@@ -1316,9 +1317,12 @@ public class ContentletAjax {
 	                            FileUtil.copyFile(binaryFile, acopy);
 	                            elementValue = acopy;
 	                        } catch (Exception e) {
-	                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-	                            throw new SystemException(e);
-	                        }
+                                Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
+                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                                saveContentErrors.add(errorString);
+                                callbackData.put("saveContentErrors", saveContentErrors);
+                                return callbackData;
+                            }
 						}
 					}
 				}else{

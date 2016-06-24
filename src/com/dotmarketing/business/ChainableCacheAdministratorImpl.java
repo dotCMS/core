@@ -6,14 +6,15 @@ package com.dotmarketing.business;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.cache.RemovalListener;
 import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
-import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -21,6 +22,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -87,40 +90,46 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 	}
 
 	public void setCluster(Server localServer) throws Exception {
-		setCluster(null, localServer);
-	}
-
-	public void setCluster(Map<String, String> cacheProperties, Server localServer) throws Exception {
-
 			Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 			journalAPI = APILocator.getDistributedJournalAPI();
-
-			if(cacheProperties==null) {
-				cacheProperties = new HashMap<>();
-			}
-			
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
+
 			if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 			    Logger.info(this, "Using automatic port placement as CLUSTER_AUTOWIRE is ON");
-			    
-			    cacheProtocol = UtilMethods.isSet(cacheProperties.get("CACHE_PROTOCOL"))?cacheProperties.get("CACHE_PROTOCOL")
-	                    :Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-			    
-			    String storedBindAddr = (UtilMethods.isSet(localServer.getHost()) && !localServer.getHost().equals("localhost"))
-	                    ?localServer.getHost():localServer.getIpAddress();
-	            bindAddr = UtilMethods.isSet(cacheProperties.get("BIND_ADDRESS"))?cacheProperties.get("BIND_ADDRESS")
-	                    :Config.getStringProperty("CACHE_BINDADDRESS", storedBindAddr );
-	            
-	            bindPort = UtilMethods.isSet(cacheProperties.get("CACHE_BINDPORT"))?cacheProperties.get("CACHE_BINDPORT")
-	                    :localServer!=null&&UtilMethods.isSet(localServer.getCachePort())?Long.toString(localServer.getCachePort())
-	                    :ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
-	                    
-                localServer.setCachePort(Integer.parseInt(bindPort));
 
-                localServer.setHost(Config.getStringProperty("CACHE_BINDADDRESS", null));                
+				String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null, false);
+
+				if(UtilMethods.isSet(bindAddressFromProperty)) {
+					try {
+						InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+						if(ClusterFactory.isValidIP(bindAddressFromProperty)){
+							bindAddressFromProperty = addr.getHostAddress();
+						}else{
+							Logger.info(ClusterFactory.class, "Address provided in CACHE_BINDADDRESS property is not "
+								+ "valid: " + bindAddressFromProperty);
+							bindAddressFromProperty = null;
+						}
+					} catch(UnknownHostException e) {
+						Logger.info(ClusterFactory.class, "Address provided in CACHE_BINDADDRESS property is not "
+							+ " valid: " + bindAddressFromProperty);
+						bindAddressFromProperty = null;
+					}
+				}
+			    
+			    cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+
+	            bindAddr = bindAddressFromProperty!=null ? bindAddressFromProperty : localServer.getIpAddress();
+
+				if(UtilMethods.isSet(localServer.getCachePort())){
+					bindPort = Long.toString(localServer.getCachePort());
+				} else {
+					bindPort = ClusterFactory.getNextAvailablePort(localServer.getServerId(), ServerPort.CACHE_PORT);
+				}
+
+                localServer.setCachePort(Integer.parseInt(bindPort));
 
                 List<String> myself = new ArrayList<String>();
                 myself.add(localServer.getServerId());
@@ -152,15 +161,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
                     }
                 }
 
-                cacheTCPInitialHosts = UtilMethods.isSet(cacheProperties.get("CACHE_TCP_INITIAL_HOSTS"))?cacheProperties.get("CACHE_TCP_INITIAL_HOSTS")
-                        :Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts.toString());
+                cacheTCPInitialHosts = Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", initialHosts.toString());
 
-                mCastAddr = UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_ADDRESS"))?cacheProperties.get("CACHE_MULTICAST_ADDRESS")
-                        :Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
-                mCastPort = UtilMethods.isSet(cacheProperties.get("CACHE_MULTICAST_PORT"))?cacheProperties.get("CACHE_MULTICAST_PORT")
-                        :Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
-                preferIPv4 = UtilMethods.isSet(cacheProperties.get("CACHE_FORCE_IPV4"))?cacheProperties.get("CACHE_FORCE_IPV4")
-                        :Config.getStringProperty("CACHE_FORCE_IPV4", "true");
+                mCastAddr = Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
+                mCastPort = Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
+                preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
 			}
 			else {
 			    Logger.info(this, "Using manual port placement as CLUSTER_AUTOWIRE is OFF");
@@ -205,7 +210,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			System.setProperty("java.net.preferIPv4Stack", preferIPv4);
 
 		if ( getTransport() != null ) {
-			getTransport().init(localServer, cacheProperties);
+			getTransport().init(localServer);
 			useTransportChannel = true;
 		} else {
 			throw new CacheTransportException("No Cache transport implementation is defined");
@@ -339,7 +344,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			return;
 		}
 
-		Runnable cacheRemoveRunnable=new Runnable() {
+		FlushCacheRunnable cacheRemoveRunnable=new FlushCacheRunnable() {
 	         public void run() {
 
 				String k = key.toLowerCase();

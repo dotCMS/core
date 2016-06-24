@@ -26,6 +26,7 @@
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
 
 <%if( LicenseUtil.getLevel() < 200){ %>
 	<div class="portlet-wrapper">
@@ -122,14 +123,12 @@ if(query == null){
 
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <script>
-
     var editor;
-    function aceArea(){
+    function aceArea() {
+        ace.config.set('basePath', '/html/js/ace-builds-1.2.3/src-noconflict/');
         editor = ace.edit('esEditor');
         editor.setTheme("ace/theme/textmate");
         editor.getSession().setMode("ace/mode/json");
-        editor.getSession().setUseWrapMode(true);
-        editor.setValue(document.getElementById('query').value);
     }
 
     function refreshPane(){
@@ -255,7 +254,7 @@ if(query == null){
 	<%} %>
 
 	<%if(cons!= null && cons.getFacets() !=null){ %>
-		<table class="listingTable" style="width:70%;"">
+		<table class="listingTable" style="width:70%;">
 			<tr><th colspan="3">
 
 
@@ -281,7 +280,7 @@ if(query == null){
 		</div>
 	<%} %>
 	<%if(cons != null && cons.getSuggestions() !=null){ %>
-		<table class="listingTable" style="width:70%;"">
+		<table class="listingTable" style="width:70%;">
 			<tr>
 				<th colspan="3">
 					<h3>Suggestions</h3>
@@ -310,7 +309,7 @@ if(query == null){
 	<%} %>
 	<%if(cons!=null && cons.size() >0){ %>
 
-			<table class="listingTable" style="width:70%;"">
+			<table class="listingTable" style="width:70%;">
 				<tr><th colspan="3">
 
 
@@ -318,7 +317,10 @@ if(query == null){
 				</th></tr>
 
 				<% for (Object x : cons){%>
-					<%Contentlet c =(Contentlet) x;%>
+					<%
+						Contentlet c =(Contentlet) x;
+						c = ContentletUtil.setSpecialFieldValues(user, c);
+					%>
 
 						<tr>
 							<td><strong><%= counter %>.</td>

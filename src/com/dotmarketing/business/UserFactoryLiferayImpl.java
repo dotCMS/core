@@ -336,12 +336,17 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+		return getCountUsersByNameOrEmailOrUserID(filter, true);
+	}
+
+	@Override
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
 		filter = SQLUtil.sanitizeParameter(filter);    	
 		String sql = "select count(*) as count from user_ where " +
 				"lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or " +
-				"lower(emailAddress) like '%" + filter + "%' or " + 
-				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'";
+				"lower(emailAddress) like '%" + filter + "%' or " +
+				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'" + ((!includeAnonymous)?"AND userid <> 'anonymous'":"");
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);
 		return dotConnect.getInt("count");
@@ -349,6 +354,11 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
+		return getUsersByNameOrEmailOrUserID(filter, page, pageSize, true);
+	}
+
+	@Override
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		List users = new ArrayList(pageSize);
 		if(page==0){
 			page = 1;
@@ -358,7 +368,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
 		filter = SQLUtil.sanitizeParameter(filter);    		
 		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
-				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " +
+				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " + ((!includeAnonymous)?"AND userid <> 'anonymous'":"") +
 				"order by firstName asc,lastname asc";
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);

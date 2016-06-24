@@ -18,10 +18,11 @@ public class OsgiFelixListener implements ServletContextListener {
 		// delay init 30 sec
 		final int delay = Config.getIntProperty("felix.osgi.init.delay", 0);
 		
-		final boolean waitForDotCMS = Config.getBooleanProperty("felix.osgi.wait.for.dotcms", false);
+		final boolean waitForDotCMS = Config.getBooleanProperty("felix.osgi.wait.for.dotcms", true);
 		
 		
 		if (Config.getBooleanProperty("felix.osgi.enable", true)) {
+			
 			if (delay > 0 || waitForDotCMS) { // if we spin up a new thread to init OSGI
 				class OsgiInitThread extends Thread {
 					 OsgiInitThread(){
@@ -52,8 +53,9 @@ public class OsgiFelixListener implements ServletContextListener {
 							Logger.error(OsgiFelixListener.class, e.getMessage(), e);
 							//throw new DotRuntimeException(e.getMessage(),e);
 						}
-						
+						long start = System.currentTimeMillis();
 						initializeOsgi(context);
+						System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_OSGI, String.valueOf(System.currentTimeMillis() - start));
 					}
 				}
 				OsgiInitThread thread = new OsgiInitThread();

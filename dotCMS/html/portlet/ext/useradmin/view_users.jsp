@@ -14,6 +14,8 @@
 		additionalVariableLabels[i] = LanguageUtil.get(pageContext, "user.profile.var"+i);
 	}
 
+	boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
+
 %>
 
 <script type="text/javascript">
@@ -131,8 +133,22 @@
 							<div class="clear"></div>
 							<div class="buttonRow">
 								<button dojoType="dijit.form.Button" onclick="saveUserDetails()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
+								<%if(hasAdminRole){ %>
+								<button dojoType="dijit.form.Button" onclick="showDeleteUserBox()" type="button" iconClass="deleteIcon" id="deleteButton"><%= LanguageUtil.get(pageContext, "Delete") %></button>
+								<%} %>
 			        		</div>
-
+			        		<%if(hasAdminRole){ %>
+							<div id="deleteUserDialog" title="<%= LanguageUtil.get(pageContext, "delete-User") %>" dojoType="dijit.Dialog" style="display: none; width:300px;">
+								<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "select-a-user-to-replace-current-user-entries-on-db") %>:</span>
+	                            <div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div> 
+				   			    <select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
+								<div class="clear"></div>
+							    <div class="buttonRow">
+									<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" iconClass="deleteIcon"><%= LanguageUtil.get(pageContext, "Delete") %></button>
+								    <button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+								</div>								
+							</div>
+							<%} %>
 		    		</div>
 				<!-- END User Detail Tab -->
 

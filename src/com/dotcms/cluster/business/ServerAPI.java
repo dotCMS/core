@@ -1,10 +1,10 @@
 package com.dotcms.cluster.business;
 
-import java.io.IOException;
-import java.util.List;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.exception.DotDataException;
+
+import java.io.IOException;
+import java.util.List;
 
 public interface ServerAPI {
 
@@ -33,17 +33,25 @@ public interface ServerAPI {
 	public List<Server> getAllServers() throws DotDataException;
 
 	public void updateServerName(String serverId, String name) throws DotDataException;
+
 	/**
 	 * Remove the specified server from the cluster_server_uptime and cluster_server tables
 	 * @param serverId Server identifier
 	 * @throws DotDataException
 	 */
-	public void removeServerFromCluster(String serverId) throws DotDataException,IOException;
+	void removeServerFromClusterTable(String serverId) throws DotDataException,IOException;
+
 	/**
 	 * Get the list of inactive servers
 	 * @return List<Server>
 	 * @throws DotDataException
 	 */
-	public List<Server> getInactiveServers() throws DotDataException;
+	List<Server> getInactiveServers() throws DotDataException;
+
+	/**
+	 *
+	 * @return the server where the API call is made.
+     */
+    Server getCurrentServer();
 
 }

@@ -66,9 +66,9 @@ dojo.require("dotcms.dijit.tree.HostFolderTreeReadStoreModel")
 dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", "dijit/FileBrowserDialog.jsp"),
-	detailsRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{name}</a></td><td>{description}</td><td>{modUser}</td><td>{modDate}</td>',
-	listRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{name}</a></td>',
-	thumbRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img width="100" height="100" src="{thumbnail}"><br/>{name}</a></td>',
+	detailsRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{title}</a></td><td>{description}</td><td>{modUser}</td><td>{modDate}</td>',
+	listRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{title}</a></td>',
+	thumbRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img width="100" height="100" src="{thumbnail}"><br/>{title}</a></td>',
 	widgetsInTemplate: true,
 	style: "width: 1000px; height: 500px;",
 	currentView: 'details',
@@ -284,7 +284,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			this._normalizeAssetData(asset);
 
 			var rowHTML = dojo.replace(template, { id: asset.identifier, name: asset.name, description: asset.friendlyName,
-					modUser: asset.modUserName, modDate: asset.modDateFormatted, className: className, icon: asset.icon, thumbnail: asset.thumbnail });
+					modUser: asset.modUserName, modDate: asset.modDateFormatted, className: className, icon: asset.icon, thumbnail: asset.thumbnail, title: asset.title });
 
 			if(columnNumber == 0) {
 				if(this.currentView == 'details')
@@ -399,9 +399,14 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
    			name = asset.fileName;
    			assetIcon = '/icon?i=' + asset.extension;
 
-   			if(asset.mimeType != null){
-	   			if(asset.mimeType.indexOf('image') >= 0)
-	   				assetThumbnail = '/thumbnail?w=100&h=100&id=' + asset.identifier;
+   			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
+
+				if(asset.mimeType.indexOf('image/svg') <0 && asset.mimeType.indexOf('image/x-icon')<0){
+					assetThumbnail = '/contentAsset/image/' + asset.identifier + '/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/r/'+asset.inode+'?language_id='+asset.languageId;
+				}
+				else{
+					assetThumbnail= '/contentAsset/image/' + asset.identifier + '/fileAsset/'+asset.inode+'?language_id='+asset.languageId;
+				}
    			}
    		}
    		if (asset.type == 'htmlpage') {

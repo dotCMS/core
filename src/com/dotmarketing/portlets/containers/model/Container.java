@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
@@ -70,20 +71,23 @@ public class Container extends WebAsset implements Serializable {
 	}
 
 	/**
-	 * Returns the code.
+	 * @deprecated  As of release 3.0, see {@link ContainerStructure#getCode()}
 	 *
-	 * @return String
+	 * <p>Since 3.0, containers can have multiple structures related. To get the code for a particular Structure related
+	 * to this container then use {@link ContainerStructure#getCode()}
 	 */
+	@Deprecated
 	public String getCode() {
 		return code;
 	}
 
 	/**
-	 * Sets the code.
+	 * @deprecated  As of release 3.0, see {@link ContainerStructure#setCode(String)}
 	 *
-	 * @param code
-	 *            The code to set
+	 * <p>Since 3.0, containers can have multiple structures related. To set the code for a particular Structure to be
+	 * related, or already related to this container then use {@link ContainerStructure#getCode()}
 	 */
+	@Deprecated
 	public void setCode(String code) {
 		this.code = code;
 	}

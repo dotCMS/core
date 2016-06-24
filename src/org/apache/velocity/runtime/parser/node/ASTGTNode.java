@@ -100,7 +100,7 @@ public class ASTGTNode extends SimpleNode
               throw new VelocityException(msg);
             }
 
-            Logger.error(this,msg);
+            Logger.velocityWarn(this.getClass(),msg);
             return false;
         }
 
@@ -131,7 +131,7 @@ public class ASTGTNode extends SimpleNode
               throw new VelocityException(msg);
             }
             
-            Logger.error(this,msg);
+            Logger.velocityWarn(this.getClass(),msg);
             return false;
         }
 

@@ -507,7 +507,7 @@ public class EditFieldAction extends DotPortletAction {
 
 			List<String> values = new ArrayList<String>();
 			List<String> names = new ArrayList<String>();
-			fieldForm.setDataType(field.getFieldContentlet().replaceAll("[0-9]*", ""));
+			fieldForm.setDataType(field.getDataType());
 			fieldForm.setFreeContentletFieldsValue(values);
 			fieldForm.setFreeContentletFieldsName(names);
 		} catch (Exception ex) {
