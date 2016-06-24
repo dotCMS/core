@@ -1,23 +1,22 @@
 package com.dotmarketing.util.jwt;
 
-import io.jsonwebtoken.impl.crypto.MacProvider;
-
 import java.io.Serializable;
 import java.security.Key;
 
 /**
- * Creates a custom signing key factory, MacProvider by default.
+ * Provides a mechanism for generating secure signing keys.
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jun 14, 2016
  */
 public interface SigningKeyFactory extends Serializable {
 
     /**
-     * Creates the custom key
+     * Creates the custom key to for authenticating secure objects.
+     * 
      * @return Key
      */
-    public default Key getKey () {
-
-        return MacProvider.generateKey();
-    } // createKey
+    public Key getKey();
 
 } // E:O:F:SigningKeyFactory.

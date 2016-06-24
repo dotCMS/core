@@ -1,25 +1,28 @@
 package com.dotmarketing.util.marshal;
 
 import com.dotcms.repackage.com.google.gson.*;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ReflectionUtils;
-import com.dotmarketing.util.jwt.JsonWebTokenService;
+import com.dotmarketing.util.*;
 
 import java.io.*;
 import java.lang.reflect.Type;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Date;
 
 /**
  * Marshal Factory, provides the default implementation for the MarhalUtils
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jun 14, 2016
  */
 public class MarshalFactory implements Serializable {
 
-    private static MarshalFactory instance = null;
-
-    private MarshalUtils marshalUtils = null;
+    /**
+     * Used to keep the instance of the MarshalUtils.
+     * Should be volatile to avoid thread-caching
+     */
+    private volatile MarshalUtils marshalUtils = null;
 
     /**
      * In order to set a custom gson configuration in case you use the gon
@@ -27,13 +30,18 @@ public class MarshalFactory implements Serializable {
     public static final String GSON_CONFIGURATOR_KEY = "gson.configurator";
 
     /**
-     * Get the  marshal factory implementation from the dotmarketing-config.properties
+     * Get the  marshal class implementation from the dotmarketing-config.properties
      */
-    public static final String MARSHAL_FACTORY_KEY = "marshal.factory";
+    public static final String MARSHAL_IMPLEMENTATION_KEY = "marshal.implementation";
 
     private MarshalFactory () {
         // singleton
     }
+
+    private static class SingletonHolder {
+        private static final MarshalFactory INSTANCE = new MarshalFactory();
+    }
+
 
     /**
      * Get the instance.
@@ -41,17 +49,7 @@ public class MarshalFactory implements Serializable {
      */
     public static MarshalFactory getInstance() {
 
-        if (instance == null) {
-            // Thread Safe. Might be costly operation in some case
-            synchronized (MarshalFactory.class) {
-
-                if (instance == null) {
-                    instance = new MarshalFactory();
-                }
-            }
-        }
-
-        return instance;
+        return SingletonHolder.INSTANCE;
     } // getInstance.
 
     /**
@@ -70,14 +68,14 @@ public class MarshalFactory implements Serializable {
 
                     marshalFactoryClass =
                             Config.getStringProperty
-                                    (MARSHAL_FACTORY_KEY, null);
+                                    (MARSHAL_IMPLEMENTATION_KEY, null);
 
-                    if (null != marshalFactoryClass && !"null".equals(marshalFactoryClass)) {
+                    if (UtilMethods.isSet(marshalFactoryClass)) {
 
-                        if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
+                        if (Logger.isDebugEnabled(MarshalFactory.class)) {
 
-                            Logger.debug(JsonWebTokenService.class,
-                                    "Using the singning key factory class: " + marshalFactoryClass);
+                            Logger.debug(MarshalFactory.class,
+                                    "Using the marshall class: " + marshalFactoryClass);
                         }
 
                         this.marshalUtils =
@@ -85,11 +83,11 @@ public class MarshalFactory implements Serializable {
 
                         if (null == this.marshalUtils) {
 
-                            if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
+                            if (Logger.isDebugEnabled(MarshalFactory.class)) {
 
-                                Logger.debug(JsonWebTokenService.class,
+                                Logger.debug(MarshalFactory.class,
                                         "Could not used this class: " + marshalFactoryClass +
-                                        ", using the default implementations");
+                                        ", using the default Gson implementation");
                             }
 
                             this.marshalUtils =
@@ -113,7 +111,6 @@ public class MarshalFactory implements Serializable {
     private class GsonMarshalUtils implements MarshalUtils {
 
         private final Gson gson;
-
 
         GsonMarshalUtils () {
 
@@ -167,6 +164,65 @@ public class MarshalFactory implements Serializable {
             // do not want escaping??? gsonBuilder.disableHtmlEscaping();
             // wants nulls? gsonBuilder.serializeNulls();
 
+            // java.sql.Timestamp
+            this.addTimeStampAdapter(gsonBuilder);
+
+            // java.util.Date
+            this.addDateAdapter(gsonBuilder);
+
+            // java.sql.Date
+            this.addSqlDateAdapter(gsonBuilder);
+
+            // java.sql.Time
+            this.addTimeAdapter(gsonBuilder);
+        }
+
+        private void addTimeAdapter(final GsonBuilder gsonBuilder) {
+
+            gsonBuilder.registerTypeAdapter(java.sql.Time.class, new JsonDeserializer<Time>() {
+
+
+                @Override
+                public Time deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                    return new Time(jsonElement.getAsLong());
+                }
+            });
+
+            gsonBuilder.registerTypeAdapter(Time.class, new JsonSerializer<Time>() {
+
+
+                @Override
+                public JsonElement serialize(Time date, Type type, JsonSerializationContext jsonSerializationContext) {
+
+                    return new JsonPrimitive(date.getTime());
+                }
+            });
+        }
+
+        private void addSqlDateAdapter(final GsonBuilder gsonBuilder) {
+
+            gsonBuilder.registerTypeAdapter(java.sql.Date.class, new JsonDeserializer<java.sql.Date>() {
+
+
+                @Override
+                public java.sql.Date deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                    return new java.sql.Date(jsonElement.getAsLong());
+                }
+            });
+
+            gsonBuilder.registerTypeAdapter(java.sql.Date.class, new JsonSerializer<java.sql.Date>() {
+
+
+                @Override
+                public JsonElement serialize(java.sql.Date date, Type type, JsonSerializationContext jsonSerializationContext) {
+
+                    return new JsonPrimitive(date.getTime());
+                }
+            });
+        }
+
+        private void addDateAdapter(final GsonBuilder gsonBuilder) {
+
             gsonBuilder.registerTypeAdapter(Date.class, new JsonDeserializer<Date>() {
 
 
@@ -181,6 +237,28 @@ public class MarshalFactory implements Serializable {
 
                 @Override
                 public JsonElement serialize(Date date, Type type, JsonSerializationContext jsonSerializationContext) {
+
+                    return new JsonPrimitive(date.getTime());
+                }
+            });
+        }
+
+        private void addTimeStampAdapter(final GsonBuilder gsonBuilder) {
+
+            gsonBuilder.registerTypeAdapter(java.sql.Timestamp.class, new JsonDeserializer<Timestamp>() {
+
+
+                @Override
+                public Timestamp deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                    return new Timestamp(jsonElement.getAsLong());
+                }
+            });
+
+            gsonBuilder.registerTypeAdapter(Timestamp.class, new JsonSerializer<Timestamp>() {
+
+
+                @Override
+                public JsonElement serialize(Timestamp date, Type type, JsonSerializationContext jsonSerializationContext) {
 
                     return new JsonPrimitive(date.getTime());
                 }

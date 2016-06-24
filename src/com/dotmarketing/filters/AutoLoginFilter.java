@@ -1,15 +1,8 @@
-/*
- * WebSessionFilter
- *
- * A filter that recognizes return users who have
- * chosen to have their login information remembered.
- * Creates a valid WebSession object and
- * passes it a contact to use to fill its information
- *
- */
 package com.dotmarketing.filters;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -23,24 +16,54 @@ import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.filters.interceptor.WebInterceptor;
+import com.dotmarketing.filters.interceptor.WebInterceptorAware;
+import com.dotmarketing.filters.interceptor.jwt.JsonWebTokenInterceptor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
-public class AutoLoginFilter implements Filter {
+/**
+ * This filter determines whether it is necessary to perform the common
+ * authentication process (i.e, sending the user to the Login page) or if the
+ * user can be authenticated through other mechanisms, such as Cookie
+ * Authentication, JWT, etc.
+ * 
+ * @author root
+ * @version 2.x, 3.7
+ * @since Mar 22, 2012
+ *
+ */
+@SuppressWarnings("serial")
+public class AutoLoginFilter implements Filter, WebInterceptorAware {
 
+	private boolean alreadyStarted = false;
+
+    private final List<WebInterceptor> interceptors =
+            new CopyOnWriteArrayList<>();
+
+    @Override
     public void destroy() {
 
+        if (!this.interceptors.isEmpty()) {
+
+            this.interceptors.forEach(interceptor -> interceptor.destroy());
+        }
     }
 
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException,
+    @Override
+    public void doFilter(final ServletRequest req,
+                         final ServletResponse res,
+                         final FilterChain chain) throws IOException,
             ServletException {
+
         HttpServletResponse response = (HttpServletResponse) res;
         HttpServletRequest request = (HttpServletRequest) req;
 		HttpSession session = request.getSession(false);
+        boolean shouldContinue = true;
 		
-		boolean useCasFilter = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON");
+		boolean useCasFilter = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
 		
         if (useCasFilter){
         	String userID = (String)session.getAttribute("edu.yale.its.tp.cas.client.filter.user");
@@ -49,17 +72,59 @@ public class AutoLoginFilter implements Filter {
             	LoginFactory.doCookieLogin(PublicEncryptionFactory.encryptString(userID), request, response);      	
             }
         }
-        else{
+        else{ // todo: should we remove this functionality???
 	        String encryptedId = UtilMethods.getCookieValue(request.getCookies(), WebKeys.CMS_USER_ID_COOKIE);
 	 
 	        if (((session != null && session.getAttribute(WebKeys.CMS_USER) == null) || session == null)&& 
 	        		UtilMethods.isSet(encryptedId)) {
 	            Logger.debug(AutoLoginFilter.class, "Doing AutoLogin for " + encryptedId);
 	            LoginFactory.doCookieLogin(encryptedId, request, response);
-	        }
+	        } else {
+
+                //List<WebInterceptor> interceptors = APILocator.getPorongaIntercetorFacadeAPI().getInterceptors(AutoLoginFilter.class);
+                if (!this.interceptors.isEmpty()) {
+
+                    for (WebInterceptor webInterceptor : this.interceptors) {
+
+                        shouldContinue &= webInterceptor.intercept(request, response);
+
+                        if (!shouldContinue) {
+                            // if just one interceptor failed; we stopped the loop and do not continue the chain call
+                            return;
+                        }
+                    }
+                }
+            }
 	    }
+
         chain.doFilter(req, response);
     }
-    public void init(FilterConfig config) throws ServletException {
+
+    @Override
+    public void init(final FilterConfig config) throws ServletException {
+
+    	this.interceptors.add(new JsonWebTokenInterceptor());
+
+        if (!this.interceptors.isEmpty()) {
+
+            this.interceptors.forEach(interceptor -> interceptor.init());
+        }
+
+        this.alreadyStarted = true;
     }
+
+    @Override
+    public void add(final WebInterceptor webInterceptor) {
+
+        if (null != webInterceptor) {
+
+            if (this.alreadyStarted) {
+
+                webInterceptor.init();
+            }
+
+            this.interceptors.add(webInterceptor);
+        }
+    }
+
 }

@@ -6,10 +6,12 @@ import java.util.List;
 
 /**
  * Adds the mod_date column to the User_ table.
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jun 14, 2016
  */
 public class Task03550ModificationDateColumnAddedToUserTable extends AbstractJDBCStartupTask {
-
 
 	@Override
 	public boolean forceRun() {
@@ -65,7 +67,6 @@ public class Task03550ModificationDateColumnAddedToUserTable extends AbstractJDB
 	public String getH2Script () {
 		return "ALTER TABLE User_ ADD COLUMN mod_date timestamp null;";
 	}
-
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {

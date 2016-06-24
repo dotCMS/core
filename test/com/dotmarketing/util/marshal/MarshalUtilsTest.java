@@ -1,88 +1,246 @@
 package com.dotmarketing.util.marshal;
 
 
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.ReflectionTestBean;
-import com.dotmarketing.util.ReflectionUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.dotmarketing.util.jwt.DotCMSSubjectBean;
+import com.dotmarketing.util.jwt.JWTBean;
+import com.dotmarketing.util.jwt.JsonWebTokenFactory;
+import com.dotmarketing.util.jwt.JsonWebTokenService;
 import org.junit.Test;
 
-import static  org.junit.Assert.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * ReflectionUtils Test
+ * MarshalUtils
+ * Test
  * @author jsanca
  */
 
 public class MarshalUtilsTest {
 
-
-
     /**
-     * Testing the new Instance
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
-     * @throws InterruptedException
+     * Testing the marshall
      */
     @Test
-    public void newInstanceTest()  {
-
-        final Object o1 =
-                ReflectionUtils.newInstance
-                        ((String)null);
-
-        assertNull(o1);
-
-        final Object o2 =
-                ReflectionUtils.newInstance
-                        ("com.doesnotexists.NoExistingClass");
-
-        assertNull(o2);
-
-        final Object o3 =
-                ReflectionUtils.newInstance
-                        ("com.dotmarketing.util.ReflectionUtilsTest");
-
-        assertNotNull(o3);
-
-        assertTrue(o3 instanceof MarshalUtilsTest);
-
-        final Object o4 =
-                ReflectionUtils.newInstance((Class)null);
-
-        assertNull(o4);
-
-        final MarshalUtilsTest reflectionUtilsTest =
-                ReflectionUtils.newInstance(MarshalUtilsTest.class);
-
-        assertNotNull(reflectionUtilsTest);
+    public void marshalTest() throws ParseException, JSONException {
 
 
-        final ReflectionTestBean bean =
-                ReflectionUtils.newInstance
-                        (ReflectionTestBean.class, "Test Name");
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
-        assertNotNull(bean);
-        assertEquals("Test Name", bean.toString());
+        assertNotNull(marshalFactory);
 
-        final ReflectionTestBean bean2 =
-                ReflectionUtils.newInstance
-                        (ReflectionTestBean.class, "Test Name", "Wrong Parameter");
+        final MarshalUtils marshalUtils =
+                marshalFactory.getMarshalUtils();
 
-        assertNull(bean2);
+        assertNotNull(marshalUtils);
 
-        Class<?> [] types = ReflectionUtils.getTypes(new Integer(2), "Hello", Float.MAX_VALUE);
+        final SimpleDateFormat dateFormat =
+                new SimpleDateFormat("dd/MM/yyyy");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
+        dateFormat.setLenient(true);
 
-        assertNotNull(types);
-        assertTrue(types.length == 3);
-        assertEquals(Integer.class, types[0]);
-        assertEquals(String.class, types[1]);
-        assertEquals(Float.class, types[2]);
+        final DotCMSSubjectBean subjectBean =
+                new DotCMSSubjectBean(dateFormat.parse("04/10/1981"), "jsanca", "myCompany");
 
+        final String json = marshalUtils.marshal(subjectBean);
+
+        assertNotNull(json);
+        System.out.println(json);
+
+        assertTrue(
+                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
+                        (new JSONObject(json).toString())
+        );
+
+
+        final DotCMSSubjectBean dotCMSSubjectBean2 =
+                marshalUtils.unmarshal(json, DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean2);
+        assertEquals(subjectBean, dotCMSSubjectBean2);
+
+        final DotCMSSubjectBean dotCMSSubjectBean3 =
+                marshalUtils.unmarshal(new StringReader(json), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean3);
+        assertEquals(subjectBean, dotCMSSubjectBean3);
+
+        final DotCMSSubjectBean dotCMSSubjectBean4 =
+                marshalUtils.unmarshal(new ByteArrayInputStream(json.getBytes()), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean4);
+        assertEquals(subjectBean, dotCMSSubjectBean4);
+    }
+
+    @Test
+    public void marshalSQLDateTest() throws ParseException, JSONException {
+
+
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
+
+        assertNotNull(marshalFactory);
+
+        final MarshalUtils marshalUtils =
+                marshalFactory.getMarshalUtils();
+
+        assertNotNull(marshalUtils);
+
+        final SimpleDateFormat dateFormat =
+                new SimpleDateFormat("dd/MM/yyyy");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
+        dateFormat.setLenient(true);
+
+        final DotCMSSubjectBean subjectBean =
+                new DotCMSSubjectBean(new java.sql.Date(dateFormat.parse("04/10/1981").getTime()), "jsanca", "myCompany");
+
+        final String json = marshalUtils.marshal(subjectBean);
+
+        assertNotNull(json);
+        System.out.println(json);
+
+        assertTrue(
+                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
+                        (new JSONObject(json).toString())
+        );
+
+
+        final DotCMSSubjectBean dotCMSSubjectBean2 =
+                marshalUtils.unmarshal(json, DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean2);
+        assertEquals(subjectBean, dotCMSSubjectBean2);
+
+        final DotCMSSubjectBean dotCMSSubjectBean3 =
+                marshalUtils.unmarshal(new StringReader(json), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean3);
+        assertEquals(subjectBean, dotCMSSubjectBean3);
+
+        final DotCMSSubjectBean dotCMSSubjectBean4 =
+                marshalUtils.unmarshal(new ByteArrayInputStream(json.getBytes()), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean4);
+        assertEquals(subjectBean, dotCMSSubjectBean4);
+    }
+
+    @Test
+    public void marshalSqlTimeTest() throws ParseException, JSONException {
+
+
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
+
+        assertNotNull(marshalFactory);
+
+        final MarshalUtils marshalUtils =
+                marshalFactory.getMarshalUtils();
+
+        assertNotNull(marshalUtils);
+
+        final SimpleDateFormat dateFormat =
+                new SimpleDateFormat("dd/MM/yyyy");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
+        dateFormat.setLenient(true);
+
+        final DotCMSSubjectBean subjectBean =
+                new DotCMSSubjectBean(new java.sql.Time(dateFormat.parse("04/10/1981").getTime()), "jsanca", "myCompany");
+
+        final String json = marshalUtils.marshal(subjectBean);
+
+        assertNotNull(json);
+        System.out.println(json);
+
+        assertTrue(
+                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
+                        (new JSONObject(json).toString())
+        );
+
+
+        final DotCMSSubjectBean dotCMSSubjectBean2 =
+                marshalUtils.unmarshal(json, DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean2);
+        assertEquals(subjectBean, dotCMSSubjectBean2);
+
+        final DotCMSSubjectBean dotCMSSubjectBean3 =
+                marshalUtils.unmarshal(new StringReader(json), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean3);
+        assertEquals(subjectBean, dotCMSSubjectBean3);
+
+        final DotCMSSubjectBean dotCMSSubjectBean4 =
+                marshalUtils.unmarshal(new ByteArrayInputStream(json.getBytes()), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean4);
+        assertEquals(subjectBean, dotCMSSubjectBean4);
+    }
+
+
+    @Test
+    public void marshalTimeStampTest() throws ParseException, JSONException {
+
+
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
+
+        assertNotNull(marshalFactory);
+
+        final MarshalUtils marshalUtils =
+                marshalFactory.getMarshalUtils();
+
+        assertNotNull(marshalUtils);
+
+        final SimpleDateFormat dateFormat =
+                new SimpleDateFormat("dd/MM/yyyy");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
+        dateFormat.setLenient(true);
+
+        final DotCMSSubjectBean subjectBean =
+                new DotCMSSubjectBean(new java.sql.Timestamp(dateFormat.parse("04/10/1981").getTime()), "jsanca", "myCompany");
+
+        final String json = marshalUtils.marshal(subjectBean);
+
+        assertNotNull(json);
+        System.out.println(json);
+
+        assertTrue(
+                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
+                        (new JSONObject(json).toString())
+        );
+
+
+        final DotCMSSubjectBean dotCMSSubjectBean2 =
+                marshalUtils.unmarshal(json, DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean2);
+        assertEquals(subjectBean, dotCMSSubjectBean2);
+
+        final DotCMSSubjectBean dotCMSSubjectBean3 =
+                marshalUtils.unmarshal(new StringReader(json), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean3);
+        assertEquals(subjectBean, dotCMSSubjectBean3);
+
+        final DotCMSSubjectBean dotCMSSubjectBean4 =
+                marshalUtils.unmarshal(new ByteArrayInputStream(json.getBytes()), DotCMSSubjectBean.class);
+
+        assertNotNull(dotCMSSubjectBean4);
+        assertEquals(subjectBean, dotCMSSubjectBean4);
     }
 
 }

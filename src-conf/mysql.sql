@@ -835,6 +835,7 @@ create table User_ (
 	userId varchar(100) not null primary key,
 	companyId varchar(100) not null,
 	createDate datetime null,
+	mod_date   datetime null,
 	password_ longtext null,
 	passwordEncrypted tinyint,
 	passwordExpirationDate datetime null,

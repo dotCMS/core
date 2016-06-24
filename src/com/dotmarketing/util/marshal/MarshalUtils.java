@@ -6,9 +6,11 @@ import java.io.Serializable;
 import java.io.Writer;
 
 /**
- * Encapsulates the logic to marshal an object to json and viceversa.
+ * Encapsulates the logic to marshal an object to JSON and viceversa.
  *
  * @author jsanca
+ * @version 3.7
+ * @since Jun 14, 2016
  */
 public interface MarshalUtils extends Serializable {
 

@@ -4,8 +4,11 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Util class to convertion operations
+ * Utility class for conversion operations.
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jun 8, 2016
  */
 public class ConversionUtils implements Serializable {
 
@@ -14,14 +17,17 @@ public class ConversionUtils implements Serializable {
 
     private ConversionUtils() {}
 
-    /**
-     * Converts from the Original to Destiny bean using a converter.
-     * @param origin O
-     * @param converter {@link Converter}
-     * @param <O>
-     * @param <D>
-     * @return D
-     */
+	/**
+	 * Converts from the Original to Destiny bean using a converter.
+	 * 
+	 * @param origin
+	 *            - origin
+	 * @param converter
+	 *            - {@link Converter}
+	 * @param <O>
+	 * @param <D>
+	 * @return D
+	 */
     public <O, D> D convert (final O origin,
                              final Converter<O, D> converter) {
 
@@ -35,6 +41,14 @@ public class ConversionUtils implements Serializable {
         return d;
     } // convert
 
+	/**
+	 * Converts from the list of Original objects to Destiny beans using a
+	 * converter.
+	 * 
+	 * @param originList - 
+	 * @param converter - 
+	 * @return
+	 */
     public <O, D> List<D> convert (final List<O> originList,
                                    final Converter<O, D> converter) {
 
@@ -52,6 +66,5 @@ public class ConversionUtils implements Serializable {
 
         return destinyList;
     } // convert
-
 
 } // E:O:F:ConversionUtils.

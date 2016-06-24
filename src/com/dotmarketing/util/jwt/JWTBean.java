@@ -3,8 +3,12 @@ package com.dotmarketing.util.jwt;
 import java.io.Serializable;
 
 /**
- * Encapsulates the Json Web Token data
+ * Encapsulates all the different pieces of information that make up the JSON
+ * Web Token (JWT).
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jun 14, 2016
  */
 public class JWTBean implements Serializable {
 
@@ -13,6 +17,18 @@ public class JWTBean implements Serializable {
     private final String issuer;
     private final long ttlMillis;
 
+	/**
+	 * Creates a JWT with its required information.
+	 * 
+	 * @param id
+	 *            - The ID of the token.
+	 * @param subject
+	 *            - The subject of the token
+	 * @param issuer
+	 *            - The user issuing the token
+	 * @param ttlMillis
+	 *            - The expiration date of the token.
+	 */
     public JWTBean(String id, String subject, String issuer, long ttlMillis) {
         this.id = id;
         this.subject = subject;
@@ -20,18 +36,38 @@ public class JWTBean implements Serializable {
         this.ttlMillis = ttlMillis;
     }
 
+    /**
+     * Returns the ID of this token.
+     * 
+     * @return The token ID.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns the subject of this token.
+     * 
+     * @return The token subject.
+     */
     public String getSubject() {
         return subject;
     }
 
+    /**
+     * Returns the issuer of this token.
+     * 
+     * @return The token issuer.
+     */
     public String getIssuer() {
         return issuer;
     }
 
+    /**
+     * Returns the time-to-live date of this token.
+     * 
+     * @return The token time-to-live date.
+     */
     public long getTtlMillis() {
         return ttlMillis;
     }
@@ -68,4 +104,5 @@ public class JWTBean implements Serializable {
                 ", ttlMillis=" + ttlMillis +
                 '}';
     }
+
 } // E:O:F:JWTBean.

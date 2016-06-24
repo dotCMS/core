@@ -1,15 +1,17 @@
 package com.dotmarketing.util.marshal;
 
-import com.dotcms.repackage.com.google.gson.GsonBuilder;
-import com.dotmarketing.util.jwt.SigningKeyFactory;
-
 import java.io.Serializable;
 
+import com.dotcms.repackage.com.google.gson.GsonBuilder;
+
 /**
- * Contract to configure a marshal util object
- * In case you want an specific configuration you can use implement your and overrides it on the
+ * Contract to configure a marshal util object In case you want an specific
+ * configuration you can use implement your and overrides it on the
  * "gson.configurator" on dotmarketing-config.properties
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jun 14, 2016
  */
 public interface GsonConfigurator extends Serializable {
 
@@ -24,4 +26,5 @@ public interface GsonConfigurator extends Serializable {
      * @return boolean
      */
     boolean excludeDefaultConfiguration();
+
 } // E:O:F:MarshalConfigurator.

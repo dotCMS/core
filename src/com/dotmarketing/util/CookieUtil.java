@@ -13,7 +13,14 @@ import static com.liferay.util.CookieUtil.COOKIES_SECURE_FLAG;
 
 import static com.liferay.util.CookieUtil.containsCookie;
 
-
+/**
+ * Provides utility methods to interact with HTTP Cookies.
+ * 
+ * @author root
+ * @version 2.x, 3.7
+ * @since Mar 22, 2012
+ *
+ */
 public class CookieUtil {
 
     private static final String ALWAYS = "always";
@@ -21,6 +28,10 @@ public class CookieUtil {
     private static final String URI = "/";
     private static final int MAX_AGE_DAY_MILLIS = 60 * 60 * 24;
 
+    /**
+     * 
+     * @return
+     */
     public static Cookie createCookie() {
 		// set id cookie
 		String _dotCMSID = UUIDGenerator.generateUuid();
@@ -34,6 +45,10 @@ public class CookieUtil {
 
 	}
 
+    /**
+     * 
+     * @return
+     */
     public static Cookie createOncePerVisitCookie() {
         // set id cookie
         Cookie idCookie = new Cookie(
@@ -45,7 +60,11 @@ public class CookieUtil {
         return idCookie;
 
     }
-    
+
+    /**
+     * 
+     * @return
+     */
     public static Cookie createSiteVisitsCookie(){
     	Cookie idCookie = new Cookie(com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE, "1");
     	idCookie.setPath(URI);
@@ -54,12 +73,18 @@ public class CookieUtil {
     }
 
 	/**
-	 * Creates the Json Web Token, if it hasn't been already created
-	 * @param request {@link HttpServletRequest}
-	 * @param response {@link HttpServletResponse}
-	 * @param accessToken {@link String}
-     * @param daysMaxAge {@link Optional} max days you want to keep alive the cookie, by default 1 day
-     */
+	 * Creates the JSON Web Token (JWT) if it hasn't been created.
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @param response
+	 *            - The {@link HttpServletResponse} object.
+	 * @param accessToken
+	 *            - The {@link String} representation of the JWT.
+	 * @param daysMaxAge
+	 *            - {@link Optional} The maximum number of days you want to keep
+	 *            the cookie. Defaults to 14 days.
+	 */
 	public static void createJsonWebTokenCookie(final HttpServletRequest request,
                                                 final HttpServletResponse response,
                                                 final String accessToken,
@@ -79,7 +104,6 @@ public class CookieUtil {
 				cookie.setHttpOnly(true);
 			}
 
-
 			if ( ALWAYS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
 					|| HTTPS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
                     && request.isSecure())  {
@@ -87,9 +111,12 @@ public class CookieUtil {
 				cookie.setSecure(true);
 			}
 
-            cookie.setMaxAge(MAX_AGE_DAY_MILLIS * daysMaxAge.orElse(2));
+			if (daysMaxAge.orElse(14) > 0) {
+				cookie.setMaxAge(MAX_AGE_DAY_MILLIS * daysMaxAge.orElse(14));
+			}
 			cookie.setPath(URI);
 			response.addCookie(cookie);
 		}
 	} // createJsonWebTokenCookie.
+
 }

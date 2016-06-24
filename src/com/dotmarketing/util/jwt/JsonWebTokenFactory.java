@@ -1,61 +1,68 @@
 package com.dotmarketing.util.jwt;
 
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ReflectionUtils;
-import com.dotmarketing.util.UtilMethods;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.impl.crypto.MacProvider;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 
 import java.io.Serializable;
 import java.security.Key;
 import java.util.Date;
 
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ReflectionUtils;
+import com.dotmarketing.util.UtilMethods;
+
 /**
- * This class in is charge of create the Token Factory.
- * It use the "json.web.token.signing.key.factory" on dotmarketing-config.properties ({@link SigningKeyFactory}
- * in order to get a custom implementation
+ * This class in is charge of create the Token Factory. It use the
+ * "json.web.token.signing.key.factory" on dotmarketing-config.properties (
+ * {@link SigningKeyFactory} in order to get a custom implementation
+ * 
+ * @author jsanca
+ * @version 3.7
+ * @since June 14, 2016
  */
 public class JsonWebTokenFactory implements Serializable {
 
-    private static JsonWebTokenFactory instance = null;
-
-    private JsonWebTokenService jsonWebTokenService = null;
+    /**
+     * Used to keep the instance of the JWT Service.
+     * Should be volatile to avoid thread-caching
+     */
+    private volatile JsonWebTokenService jsonWebTokenService = null;
+    /**
+     * Get the signing key factory implementation from the dotmarketing-config.properties
+     */
+    public static final String JSON_WEB_TOKEN_SIGNING_KEY_FACTORY =
+            "json.web.token.signing.key.factory";
+    /**
+     * The default Signing Key class
+     */
+    public static final String DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS =
+            "com.dotmarketing.util.jwt.HashSigningKeyFactoryImpl";
 
     private JsonWebTokenFactory () {
         // singleton
     }
 
+    private static class SingletonHolder {
+        private static final JsonWebTokenFactory INSTANCE = new JsonWebTokenFactory();
+    }
     /**
      * Get the instance.
      * @return JsonWebTokenFactory
      */
     public static JsonWebTokenFactory getInstance() {
 
-        if (instance == null) {
-            // Thread Safe. Might be costly operation in some case
-            synchronized (JsonWebTokenFactory.class) {
-
-                if (instance == null) {
-                    instance = new JsonWebTokenFactory();
-                }
-            }
-        }
-
-        return instance;
+        return JsonWebTokenFactory.SingletonHolder.INSTANCE;
     } // getInstance.
-
-    /**
-     * Get the signing key factory implementation from the dotmarketing-config.properties
-     */
-    public static final String JSON_WEB_TOKEN_SIGNING_KEY_FACTORY =
-            "json.web.token.signing.key.factory";
 
     /**
      * Creates the Json Web Token Service based on the configuration on dotmarketing-config.properties
      * @return JsonWebTokenService
      */
-    public  JsonWebTokenService getJsonWebTokenService () {
+    public JsonWebTokenService getJsonWebTokenService () {
 
         Key key = null;
         SigningKeyFactory signingKeyFactory = null;
@@ -66,19 +73,18 @@ public class JsonWebTokenFactory implements Serializable {
             synchronized (JsonWebTokenFactory.class) {
 
                 try {
-                    // Thread Safe. Might be costly operation in some case
 
                     if (null == this.jsonWebTokenService) {
 
-                        signingKeyFactoryClass =
-                                Config.getStringProperty(JSON_WEB_TOKEN_SIGNING_KEY_FACTORY, null);
+						signingKeyFactoryClass = Config.getStringProperty(JSON_WEB_TOKEN_SIGNING_KEY_FACTORY,
+								DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS);
 
-                        if (null != signingKeyFactoryClass  && !"null".equals(signingKeyFactoryClass)) {
+                        if (UtilMethods.isSet(signingKeyFactoryClass)) {
 
                             if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
 
                                 Logger.debug(JsonWebTokenService.class,
-                                        "Using the singning key factory class: " + signingKeyFactoryClass);
+                                        "Using the signing key factory class: " + signingKeyFactoryClass);
                             }
 
                             signingKeyFactory =
@@ -105,9 +111,6 @@ public class JsonWebTokenFactory implements Serializable {
                         Logger.debug(JsonWebTokenService.class,
                                 "There is an error trying to create the Json Web Token Service, going with the default implementation...");
                     }
-
-                    this.jsonWebTokenService =
-                            new JsonWebTokenServiceImpl();
                 }
             }
         }
@@ -123,19 +126,20 @@ public class JsonWebTokenFactory implements Serializable {
 
         private final Key signingKey;
 
-        JsonWebTokenServiceImpl() {
-
-            signingKey = MacProvider.generateKey();
-        }
-
-
+		/**
+		 * Instantiates the JWT Service using a valid signing key.
+		 * 
+		 * @param signingKey
+		 *            - A secure signing key.
+		 * @throws IllegalArgumentException
+		 *             The provided key is null.
+		 */
         JsonWebTokenServiceImpl(final Key signingKey) {
-
-            this.signingKey = (null != signingKey)?
-                    signingKey:
-                    MacProvider.generateKey();
+        	if (null == signingKey) {
+        		throw new IllegalArgumentException("Signing key cannot be null");
+        	}
+            this.signingKey = signingKey;
         }
-
 
         @Override
         public String generateToken(final JWTBean jwtBean) {
@@ -157,6 +161,7 @@ public class JsonWebTokenFactory implements Serializable {
 
             //if it has been specified, let's add the expiration
             if ( jwtBean.getTtlMillis() >= 0 ) {
+
                 final long expMillis = nowMillis + jwtBean.getTtlMillis();
                 final Date exp = new Date(expMillis);
                 builder.setExpiration(exp);
