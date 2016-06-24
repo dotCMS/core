@@ -608,39 +608,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @param actionlet
      */
     @SuppressWarnings ("unchecked")
-    protected ServiceRegistration<?> registerService (final BundleContext context, final Object service,
-                                                   final Hashtable<String, ?> properties) {
-
-        ServiceRegistration<?> serviceRegistration = null;
-
-        if (null == this.context) {
-
-            this.context = context;
-        }
-
-        if (null != service) {
-
-            serviceRegistration =
-                    this.context.registerService(service.getClass().getName(), service,
-                        properties);
-
-
-            if (Logger.isInfoEnabled(GenericBundleActivator.class)) {
-
-                Logger.info(this, "Added Service: " + service.getClass().getName());
-            }
-        }
-
-        return serviceRegistration;
-    }
-
-    /**
-     * Register a WorkFlowActionlet service
-     *
-     * @param context
-     * @param actionlet
-     */
-    @SuppressWarnings ("unchecked")
     protected void registerActionlet ( BundleContext context, WorkFlowActionlet actionlet ) {
 
         //Getting the service to register our Actionlet
