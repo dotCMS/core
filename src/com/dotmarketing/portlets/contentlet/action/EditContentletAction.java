@@ -893,13 +893,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/**
+	 * Displays the "Add New Content" page where users can add content based on
+	 * a specific Content Type.
 	 * 
 	 * @param req
+	 *            - The HTTP Request wrapper.
 	 * @param res
+	 *            - The HTTP Response wrapper.
 	 * @param config
+	 *            - The configuration parameters for the Content Search portlet.
 	 * @param form
+	 *            - The form containing the information selected by the user,
+	 *            e.g., the selected Content Type.
 	 * @param user
+	 *            - The {@link User} who wants to create a new content.
 	 * @throws Exception
+	 *             An error occurred when generating the content edit page.
 	 */
 	private void _newContent(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
@@ -916,20 +925,20 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		String inodeStr = (InodeUtils.isSet(inode) ? inode : "");
 		Contentlet contentlet = new Contentlet();
 
-		if(InodeUtils.isSet(inodeStr))
+		if(InodeUtils.isSet(inodeStr)) {
 			contentlet = conAPI.find(inodeStr, user, false);
-
+		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
-		Structure structure = contentlet.getStructure();
+		Structure contentType = contentlet.getStructure();
 
-		String selectedStructure = "";
+		String selectedContentType = "";
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
-			selectedStructure = req.getParameter("selectedStructure");
-			structure = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
-			contentlet.setStructureInode(structure.getInode());
+			selectedContentType = req.getParameter("selectedStructure");
+			contentType = (Structure) InodeFactory.getInode(selectedContentType, Structure.class);
+			contentlet.setStructureInode(contentType.getInode());
 		} else if (cmd.equals("newedit")) {
-			structure = StructureFactory.getDefaultStructure();
-			contentlet.setStructureInode(structure.getInode());
+			contentType = StructureFactory.getDefaultStructure();
+			contentlet.setStructureInode(contentType.getInode());
 		}
 
 		String langId = req.getParameter("lang");
@@ -942,23 +951,24 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}else{
 			contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
+		// Add information regarding the last content search in the session
+		if (httpReq.getSession().getAttribute(WebKeys.CONTENTLET_LAST_SEARCH) == null) {
+			Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+			lastSearchMap.put("structure", contentType);
+			lastSearchMap.put("fieldsSearch", new HashMap<String, String>());
+			lastSearchMap.put("categories", new ArrayList<String>());
+			lastSearchMap.put("showDeleted", false);
+			lastSearchMap.put("filterSystemHost", false);
+			lastSearchMap.put("filterLocked", false);
+			lastSearchMap.put("page", 1);
+			lastSearchMap.put("orderBy", "modDate desc");
+			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+		}
 
-		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
-		lastSearchMap.put("structure", structure);
-		lastSearchMap.put("fieldsSearch",new HashMap<String,String>());
-		lastSearchMap.put("categories",new ArrayList<String>());
-		lastSearchMap.put("showDeleted",false);
-		lastSearchMap.put("filterSystemHost",false);
-		lastSearchMap.put("filterLocked",false);
-		lastSearchMap.put("page",1);
-		lastSearchMap.put("orderBy","modDate desc");
-		httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+		// Checking permissions to add new content of selected content type
+		_checkWritePermissions(contentType, user, httpReq);
 
-
-		// Checking permissions to add new of structure selected
-		_checkWritePermissions(structure, user, httpReq);
-
-		List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(structure.getInode());
+		List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(contentType.getInode());
 		for (Field field : list) {
 			String defaultValue = field.getDefaultValue();
 			if (UtilMethods.isSet(defaultValue)) {
@@ -999,7 +1009,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
  				if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
 						|| field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 					try {
-						//Identifier id = (Identifier) InodeFactory.getInode((String) value, Identifier.class);
 					    String value=contentlet.getStringProperty(field.getVelocityVarName());
 						Identifier id = APILocator.getIdentifierAPI().find((String) value);
 						if (InodeUtils.isSet(id.getInode())) {
@@ -1021,8 +1030,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		//Setting review intervals form properties
-		if (structure.getReviewInterval() != null) {
-			String interval = structure.getReviewInterval();
+		if (contentType.getReviewInterval() != null) {
+			String interval = contentType.getReviewInterval();
 			Pattern p = Pattern.compile("(\\d+)([dmy])");
 			Matcher m = p.matcher(interval);
 			boolean b = m.matches();
@@ -1034,7 +1043,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				cf.setReviewIntervalSelect(g2);
 			}
 		}
-
 	}
 
 	/**
@@ -1108,6 +1116,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
     		    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
     		}
 		}
+
+		//Return the tags related to this Contentlet in order to show them in the edit window
+		contentlet.setTags();
 
 		GregorianCalendar cal = new GregorianCalendar();
 		if (contentlet.getModDate() == null) {

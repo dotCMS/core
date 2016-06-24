@@ -550,7 +550,7 @@
 			roleId = norm(currentRoleId);
 
 		if(confirm(confirmRemoveRoleMsg))
-			RoleAjax.deleteRole(roleId, deleteRoleCallback);			
+			RoleAjax.deleteRole(roleId, deleteRoleCallback);
 	}
 
 	//Callback from the server to confirm a user deletion
@@ -561,13 +561,13 @@
 		lastSelectedNode = null;
 		currentRoleId=null;
 		currentRole=null;
-		buildRolesTree();	
+		buildRolesTree();
 		if(isDeleted){
 			showDotCMSSystemMessage(roleRemovedMsg);
 		}else{
 			showDotCMSSystemMessage(roleNotRemovedMsg);
 		}
-		
+
 	}
 
 	function lockRole(roleId) {
@@ -763,7 +763,7 @@
 	function renderRoleUsers (role) {
 		currentBranchOfRoles = getRoleFlatUpBranch(role);
 		var roleIds = [];
-		currentBranchOfRoles.each((function (role) {
+		currentBranchOfRoles.forEach((function(role) {
 			roleIds.push(role.id + "");
 		}).bind(this));
 		RoleAjax.getUsersByRole(roleIds, getUsersByRoleCallback)
@@ -777,9 +777,9 @@
 			items: [  ]
 		};
 		var found = 0;
-		currentBranchOfRoles.each((function (role) {
+		currentBranchOfRoles.forEach((function (role) {
 			var userMapList = userRolesMap[role.id];
-			userMapList.each((function (user) {
+			userMapList.forEach((function (user) {
 				if(user.userId == 'system') return;
 				user.grantedFrom = norm(role.name);
 				user.grantedFromRoleId = norm(role.id);
@@ -855,7 +855,7 @@
 			return;
 		}
 		var userIdsSelected = [];
-		usersData.items.each((function (user) {
+		usersData.items.forEach((function (user) {
 			var checkbox = dojo.byId('userChk' + norm(user.id));
 			if(checkbox && checkbox.checked) {
 				userIdsSelected.push(norm(user.id));
@@ -900,12 +900,12 @@
 	}
 
 	function addUserToRoleCallback (result) {
-		
+
 		if(result['error'] != ''){
 			showDotCMSErrorMessage(result['error']);
 			return;
 		}
-		
+
 		var user = result['user'];
 
 		showDotCMSSystemMessage(userGrantedRoleMsg);
@@ -1061,7 +1061,7 @@
 		if(item) {
 			var titles = "";
 			var first = true;
-			item.portletTitles.each((function (title) {
+			item.portletTitles.forEach((function (title) {
 				if(!first) {
 					titles += ", "
 				}
@@ -1117,7 +1117,7 @@
 	}
 
 	function getPortletItemHTML (portletId, portletTitle) {
-		
+
 		portletId = norm(portletId);
 		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId })
 		return html;
@@ -1145,7 +1145,7 @@
 			dojo.style("portletsListWrapper", "overflow", "auto");
 		} else{
 			dojo.style("portletsListWrapper", "overflow", "");
-		}	
+		}
 	}
 
 	function editLayout(layoutId) {
@@ -1176,7 +1176,7 @@
 				var id = currentLayout.portletIds[i];
 				registerPortletItemButton(id, title);
 			}
-			
+
 			setOverflow();
 
 			newLayout = false;
@@ -1339,7 +1339,7 @@
 
 	function saveRoleLayouts() {
 		var checkedLayouts = [];
-		allLayoutsList.each((function(layout) {
+		allLayoutsList.forEach((function(layout) {
 			var checkbox = dojo.byId('layout_chk_' + norm(layout.id));
 			if(checkbox && checkbox.checked) {
 				checkedLayouts.push(norm(layout.id));
@@ -1483,4 +1483,3 @@
 
 	}
 </script>
-

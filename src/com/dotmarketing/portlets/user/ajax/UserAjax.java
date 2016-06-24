@@ -334,6 +334,58 @@ public class UserAjax {
 		return true;
 	}
 
+	/**
+	 * Delete the specified user on the permission, users_cms_roles, cms_role, user_ tables and change the user references in the db with another replacement user
+     * on the contentlet, file_asset, containers, template, links, htmlpage, workflow_task, workflow_comment 
+     * inode and version info tables.
+	 * @param userId UserId of the user to delete
+	 * @param replacingUserId UserId to replace the db reference of the user to delete
+	 * @return true if the user was deleted or false if there was an error
+	 * @throws DotHibernateException There is a database transaction error
+	 * @throws DotDataException The User to replace or the replacement are not set
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException The user requesting the delete doesn't have permission edit permission
+	 */
+	public boolean deleteUser (String userId, String replacingUserId) throws DotHibernateException, DotDataException, DotStateException, DotSecurityException {
+		
+		String date = DateUtil.getCurrentDate();
+
+		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + userId+"; Replacing entries with User:"+replacingUserId);
+		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + userId+"; Replacing entries with User:"+replacingUserId);
+
+		try {
+
+			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+			WebContext ctx = WebContextFactory.get();
+			HttpServletRequest request = ctx.getHttpServletRequest();
+			UserAPI uAPI = APILocator.getUserAPI();
+
+			User user;
+			try {
+				HibernateUtil.startTransaction();
+				User userToDelete = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+				User replacementUser = uAPI.loadUserById(replacingUserId,uWebAPI.getLoggedInUser(request),false);
+				
+				uAPI.delete(userToDelete, replacementUser,  uWebAPI.getLoggedInUser(request),!uWebAPI.isLoggedToBackend(request));
+				HibernateUtil.commitTransaction();
+			} catch (Exception e) {
+				HibernateUtil.rollbackTransaction();
+				Logger.error(this, e.getMessage(), e);
+				return false;
+			}
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + userId);
+			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + userId);
+			throw e;
+		}
+
+		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + userId+"; Replaced entries with User:"+replacingUserId);
+		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + userId+"; Replaced entries with User:"+replacingUserId);
+
+		return true;
+	}
+
 	public List<Map<String, Object>> getUserRoles (String userId) throws Exception {
 		//auth
 		User modUser = getAdminUser();
@@ -1113,7 +1165,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 				@Override
 				public int getUserCount() {
 					try {
-						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter)).intValue();
+						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter,false)).intValue();
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;
@@ -1125,7 +1177,7 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 					try {
 						int page = (start/limit)+1;
 						int pageSize = limit;
-						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize,false);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return new ArrayList<User>();
@@ -1654,8 +1706,13 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
         }
         return loggedInUser;
 	}
-	
-	
-	
-	
+
+	/** UserAPI getAnonymousUser() wrapper use to validate anonymous on the UI
+	 * @return Anonymous user
+	 * @throws DotDataException
+	 */
+	public String getAnonymousUserId() throws DotDataException{
+		return APILocator.getUserAPI().getAnonymousUser().getUserId();
+	}
+
 }

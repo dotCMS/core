@@ -21,6 +21,8 @@ import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
+import com.dotmarketing.util.WebKeys;
+
 /**
  * 
  * This utility class let you schedule and check scheduled task through the two configured dotCMS schedulers: 
@@ -770,10 +772,12 @@ public class QuartzUtils {
 	 * @throws SchedulerException 
 	 */
 	public static void startSchedulers () throws SchedulerException {
+		long start = System.currentTimeMillis();
 		Scheduler sched = DotSchedulerFactory.getInstance().getScheduler();
 		sched.start();
 		sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
 		sched.start();
+		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_QUARTZ, String.valueOf(System.currentTimeMillis() - start));
 	}
 	
 	/**

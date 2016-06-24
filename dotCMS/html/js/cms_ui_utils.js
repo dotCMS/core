@@ -1,3 +1,12 @@
+Element.prototype.show = function(element) {
+  this.style.display = '';
+  return element;
+};
+
+Element.prototype.hide = function(element) {
+  this.style.display = 'none';
+  return element;
+};
 
 function makeTaller(x){
 
@@ -68,8 +77,8 @@ function replaceSelection (input, replaceString) {
 		var selectionStart = input.selectionStart;
 		var selectionEnd = input.selectionEnd;
 		input.value = input.value.substring(0, selectionStart)+ replaceString + input.value.substring(selectionEnd);
-    
-		if (selectionStart != selectionEnd){ 
+
+		if (selectionStart != selectionEnd){
 			setSelectionRange(input, selectionStart, selectionStart + 	replaceString.length);
 		}else{
 			setSelectionRange(input, selectionStart + replaceString.length, selectionStart + replaceString.length);
@@ -100,10 +109,10 @@ function catchTab(item,e){
 	}
 	if(c==9){
 		replaceSelection(item,String.fromCharCode(9));
-		setTimeout("document.getElementById('"+item.id+"').focus();",0);	
+		setTimeout("document.getElementById('"+item.id+"').focus();",0);
 		return false;
 	}
-		    
+
 }
 
 function showElement(domNode /* either domObject or id */) {
@@ -123,4 +132,3 @@ function removeElement(domNode /* either domObject or id */) {
 		domNode.remove();
 	}
 }
-

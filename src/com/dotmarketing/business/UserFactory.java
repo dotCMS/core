@@ -187,7 +187,7 @@ public abstract class UserFactory {
 	
 	/**
 	 * This Method return the number of user that have a firstname, lastname or email like the filter string.
-	 * For example all amount of user with lastName "Andrews"
+	 * For example all amount of user with lastName "Andrews", includes anonymous user
 	 * @param filter Compare string
 	 * @return long
 	 * @version 1.9
@@ -195,9 +195,20 @@ public abstract class UserFactory {
 	 */
 	protected abstract long getCountUsersByNameOrEmailOrUserID(String filter)
 			throws DotDataException;
+
+	/**
+	 * This Method return the number of user that have a firstname, lastname or email like the filter string.
+	 * For example all amount of user with lastName "Andrews", this might exclude anonymous
+	 * @param filter Compare string
+	 * @return long
+	 * @throws DotDataException
+	 */
+	protected abstract long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous)
+			throws DotDataException;
+
 	/**
      * This method return a a paginated list of user that have a firstname, lastname or email like
-     * the compare string passed
+     * the compare string passed, includes anonymous user
 	 * This method will ALWAYS hit DB
      * @param filter compare string
      * @param page page to display
@@ -207,8 +218,18 @@ public abstract class UserFactory {
      */
 	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
 			int pageSize) throws DotDataException;
-	
-	
-	
-    
+
+	/**
+     * This method return a a paginated list of user that have a firstname, lastname or email like
+     * the compare string passed, this might exclude anonymous from the list
+	 * This method will ALWAYS hit DB
+     * @param filter compare string
+     * @param page page to display
+     * @param pageSize number of element to show in the page
+     * @return List<User>
+     */
+	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+			int pageSize, boolean includeAnonymous) throws DotDataException;
+
+
 }

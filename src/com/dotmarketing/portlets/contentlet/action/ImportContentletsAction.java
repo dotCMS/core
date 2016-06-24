@@ -8,21 +8,22 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.mozilla.universalchardet.UniversalDetector;
-import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
@@ -272,6 +273,14 @@ public class ImportContentletsAction extends DotPortletAction {
 							}else{
 								ImportAuditUtil.cancelledImports.remove(importId);
 							}
+							
+							try {
+	                            HibernateUtil.closeSession();
+	                        } catch (DotHibernateException e) {
+	                            Logger.warn(this, e.getMessage(), e);
+	                        }finally {
+	                            DbConnectionFactory.closeConnection();
+	                        }
 						}
 					}
 				};
@@ -328,19 +337,21 @@ public class ImportContentletsAction extends DotPortletAction {
 			Field field = fields.get(i);
 			if (ImportUtil.isImportableField(field)) {
 				if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-					out.print("MM/dd/yyyy");
+					out.print("\"MM/dd/yyyy\"");
 				}        	
 				else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-					out.print("MM/dd/yyyy hh:mm aa");
+					out.print("\"MM/dd/yyyy hh:mm aa\"");
 				}         	
 				else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-					out.print("hh:mm aa");
+					out.print("\"hh:mm aa\"");
 				}else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-						out.print("Host/Folder Identifier");
+						out.print("\"Host/Folder Identifier\"");
 				}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-					out.print("Category Unique Key");
-				} else {
-					out.print("XXX");
+					out.print("\"Category Unique Key\"");
+				}else if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+				    out.print("\"{'key1':'value','key2':'value2'}\"");
+				}    else {
+					out.print("\"XXX\"");
 				}
 				if(i < fields.size() - 1) 
 					out.print(",");

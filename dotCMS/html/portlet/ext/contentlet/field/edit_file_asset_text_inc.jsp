@@ -20,6 +20,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
+<script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
 
 
 <script language="JavaScript">

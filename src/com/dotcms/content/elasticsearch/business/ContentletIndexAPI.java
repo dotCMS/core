@@ -7,8 +7,11 @@ import java.util.List;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
+import com.dotcms.content.business.DotMappingException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public interface ContentletIndexAPI {
@@ -94,5 +97,7 @@ public interface ContentletIndexAPI {
 	public List<String> listDotCMSClosedIndices();
 
 	public String getActiveIndexName(String type) throws DotDataException;
+
+	void indexContentList(List<Contentlet> contentToIndex) throws DotDataException;
 
 }

@@ -38,7 +38,7 @@ import com.liferay.portal.model.User;
  * information related to contents ({@link Contentlet} objects) in dotCMS. You
  * can perform CRUD operations, re-index operations, locking and unlocking,
  * among others.
- * 
+ *
  * @author Jason Tesser
  * @version 1.0
  * @since Mar 22, 2012
@@ -64,7 +64,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
 	/**
 	 * Returns a live Contentlet Object for a given language 
 	 * @param languageId
@@ -487,13 +487,13 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
+	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Destroys the specified {@link Contentlet}. This method will automatically
 	 * un-publish, archive, and delete ALL the information related to this
 	 * contentlet in all of its languages.
-	 * 
+	 *
 	 * @param contentlet
 	 *            - The contentlet that will be completely destroyed.
 	 * @param user
@@ -516,7 +516,7 @@ public interface ContentletAPI {
 	 * Destroys the specified list of {@link Contentlet} objects . This method
 	 * will automatically un-publish, archive, and delete ALL the information
 	 * related to these contentlets in all of their languages.
-	 * 
+	 *
 	 * @param contentlets
 	 *            - The list of contentlets that will be completely destroyed.
 	 * @param user
@@ -534,7 +534,7 @@ public interface ContentletAPI {
 	 */
 	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException;
-	
+
 	/**
 	 * Publishes a piece of content. 
 	 * @param contentlet
@@ -624,7 +624,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
-	
+
 	/**
 	 * This method completely deletes the given contentlet from the system
 	 * @param contentlets
@@ -797,7 +797,7 @@ public interface ContentletAPI {
 	 * @deprecated @see refresh
 	 */
 	public void reindex(Contentlet contentlet)throws DotReindexStateException, DotDataException;
-	
+
 	/**
 	 * Reindexes all content + clear the content caches
 	 * @throws DotReindexStateException
@@ -1311,7 +1311,7 @@ public interface ContentletAPI {
 	public long contentletIdentifierCount() throws DotDataException;
 
 	/**
-	 * 
+	 *
 	 * @param identifier
 	 * @return
 	 * @throws DotDataException
@@ -1368,6 +1368,16 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException 
 	 */	
 	public void removeUserReferences(String userId)throws DotDataException, DotSecurityException;
+
+	/**
+	 * Method will remove User References of the given userId in Contentlets
+	 * with the specified user id  
+	 * @param userId User Id to replace
+	 * @param replacementUserId Replacement User Id
+	 * @exception DotDataException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */	
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.

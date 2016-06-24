@@ -631,24 +631,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	/**
-	 * Validates the new/modified page taken into account the following
-	 * criteria:
-	 * <ol>
-	 * <li>The URL does not exist for another page.</li>
-	 * <li>The URL does not match an existing folder.</li>
-	 * <li>The URL does not match an asset file.</li>
-	 * </ol>
-	 * 
-	 * @param contentPage
-	 *            - The content page as a {@link Contentlet} object.
-	 * @return If the page is valid, returns <code>null</code>. Otherwise,
-	 *         returns the message key containing the description of the error.
-	 * @throws DotRuntimeException
-	 *             If the user does not have permissions to perform the required
-	 *             action, or if a problem occurred when interacting with the
-	 *             database.
+     * {@inheritDoc}
 	 */
-	private String validateNewContentPage(Contentlet contentPage) {
+
+    @Override
+	public String validateNewContentPage(Contentlet contentPage) {
 		String parentFolderId = contentPage.getFolder();
 		String pageUrl = contentPage.getMap().get("url").toString();
 		String status = null;

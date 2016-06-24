@@ -19,21 +19,21 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This class will remove from the cluster_table and cluster_server_uptime
- * the servers that are not working 
- * @author oswaldogallango
+ * This job will clean up the DB tables(cluster_table, cluster_server_uptime) after a server reach
+ * REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD.
  *
+ * @author Oswaldo Gallango.
  */
 public class DeleteInactiveClusterServersJob implements StatefulJob {
 	private final String DEFAULT_TIME="2W";
+
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
-			
-			int amount =2;
-			String unit ="W";
+			int amount;
+			String unit;
 			String amountUnit = Config.getStringProperty("REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD",DEFAULT_TIME);
 			if(UtilMethods.isSet(amountUnit)){
-				try{
+				try {
 					amount= Integer.parseInt(amountUnit.substring(0,amountUnit.length()-1));
 					unit= amountUnit.substring(amountUnit.length()-1).toUpperCase();
 					if(!validUnit(unit)){
@@ -41,17 +41,19 @@ public class DeleteInactiveClusterServersJob implements StatefulJob {
 						amount=2;
 						unit="W";
 					}
-				}catch(Exception e){
+				} catch(Exception e) {
 					Logger.error(DeleteInactiveClusterServersJob.class, "The REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD variable is not set properly. Error: "+e.getMessage()+". Default value will be used.", e);
 					amount=2;
 					unit="W";
 				}
-			}else{
+			} else {
 				Logger.error(DeleteInactiveClusterServersJob.class, "The REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD variable is not set. Default value will be used.");
 				amount=2;
 				unit="W";
 			}
-			long maxAmountOfTime=0;
+
+            long maxAmountOfTime;
+
 			if(unit.equals("M")){
 				maxAmountOfTime = amount * 1000 * 60;
 			}else if(unit.equals("H")){
@@ -70,7 +72,7 @@ public class DeleteInactiveClusterServersJob implements StatefulJob {
 				if(UtilMethods.isSet(lastBeat)){
 					long timeOff = currentDate.getTime() - lastBeat.getTime();
 					if(timeOff >= maxAmountOfTime){
-						APILocator.getServerAPI().removeServerFromCluster(server.getServerId());
+						APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId());
 					}
 				}
 			}

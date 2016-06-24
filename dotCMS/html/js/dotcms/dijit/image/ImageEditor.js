@@ -37,21 +37,17 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
  * document.getElementsByTagName("head")[0].appendChild(e); },
  */
     _initBaseFilterUrl: function() {
-        var byIdentifier = this.identifier != '' && this.identifier != '0';
-
-        if(byIdentifier) {
-            this.baseFilterUrl+= "/" + this.identifier;
-        } else {
-            this.baseFilterUrl+= "/" + this.inode;
-        }
-
-        if(this.fieldName != undefined){
-            this.baseFilterUrl+= "/" + this.fieldName;
-        }
-
-        if(!byIdentifier){
-            this.baseFilterUrl+= "/byInode/1";
-        }
+    	if(this.inode != '0'){
+    		this.baseFilterUrl+= "/" + this.inode;
+    	}else{
+    		this.baseFilterUrl+= "/" + this.identifier;
+    	}
+    	if(this.fieldName != undefined){
+    		this.baseFilterUrl+= "/" + this.fieldName;
+    	}
+    	if(this.inode != '0'){
+    		 this.baseFilterUrl+= "/byInode/1";
+    	 }
 
         this.currentUrl = this.baseFilterUrl;
     },
@@ -133,10 +129,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             thumbUrl = beforeFilter + "filter/" + filter + ",Thumbnail/" + afterFilter +"/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/" + this.thumbnailHeight;
         }
         else{
-            if(thumbUrl.indexOf("?") <0){
-                //thumbUrl+="?";
+            if(!this.saveAsFileName.toLowerCase().endsWith('.svg')) {
+                thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
+            }else{
+                console.log("RETURN");
+                return thumbUrl;
             }
-            thumbUrl+= "/filter/Thumbnail/thumbnail_w/" + this.thumbnailWidth+ "/thumbnail_h/"+ this.thumbnailHeight;
         }
 
 

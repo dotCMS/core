@@ -784,18 +784,22 @@ public class DependencyManager {
 				
 				//Adding theme
 				if(UtilMethods.isSet(wkT.getTheme())){
-					Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
-					if(themeFolder != null &&  InodeUtils.isSet(themeFolder.getInode())){
-						Folder parent = APILocator.getFolderAPI().findParentFolder(themeFolder, user, false);
-						if(UtilMethods.isSet(parent)) {
-							folders.addOrClean( parent.getInode(), parent.getModDate());
-							foldersSet.add(parent.getInode());
+					try{
+						Folder themeFolder = folderAPI.find(wkT.getTheme(), user, false);
+						if(themeFolder != null &&  InodeUtils.isSet(themeFolder.getInode())){
+							Folder parent = APILocator.getFolderAPI().findParentFolder(themeFolder, user, false);
+							if(UtilMethods.isSet(parent)) {
+								folders.addOrClean( parent.getInode(), parent.getModDate());
+								foldersSet.add(parent.getInode());
+							}
+							List<Folder> folderList = new ArrayList<Folder>();
+							folderList.add(themeFolder);
+							setFolderListDependencies(folderList);
 						}
-						List<Folder> folderList = new ArrayList<Folder>();
-						folderList.add(themeFolder);
-						setFolderListDependencies(folderList);
+					}catch(DotDataException e1){
+						Logger.error(DependencyManager.class, "Error trying to add theme folder for template Id: "+id+". Theme folder ignored because: "+e1.getMessage(),e1);
 					}
-				}
+				}				
 			}
 
 		} catch (DotSecurityException e) {

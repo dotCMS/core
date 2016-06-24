@@ -897,7 +897,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotWorkflowException(e.getMessage());
+			throw new DotWorkflowException(e.getMessage(), e);
 
 		}
 	}
@@ -1006,5 +1006,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	}
 
+	/**
+	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
+	 * with the replacement user id 
+	 * @param userId User Identifier
+	 * @param userRoleId The role id of the user
+	 * @param replacementUserId The user id of the replacement user
+	 * @param replacementUserRoleId The role Id of the replacemente user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException{
+		wfac.updateUserReferences(userId, userRoleId, replacementUserId,replacementUserRoleId);
+	}
 
 }

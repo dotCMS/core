@@ -432,7 +432,7 @@ var deleteLabel = "";
 			<% } %>&nbsp;
 		</div>
 		<div class="yui-u">
-			<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> - <% if (maxIndex > structuresSize) { %> <%= structuresSize %> <%}else{%>  <%= maxIndex %> <% } %> <%= LanguageUtil.get(pageContext, "of1") %> <% if (maxIndex > structuresSize) { %> <%= structuresSize %> <%}else{%> <%= structuresSize %> <%}%>
+			<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> - <% if (maxIndex > structuresSize) { %> <%= structuresSize %> <%}else{%>  <%= maxIndex %> <% } %> <%= LanguageUtil.get(pageContext, "of1") %> <%= structuresSize %>
 		</div>
 		<div class="yui-u" style="text-align:right;">
 			<% if (maxIndex < structuresSize) { %>
