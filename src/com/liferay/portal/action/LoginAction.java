@@ -39,7 +39,6 @@ import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-
 import com.dotmarketing.util.jwt.DotCMSSubjectBean;
 import com.dotmarketing.util.jwt.JWTBean;
 import com.dotmarketing.util.jwt.JsonWebTokenFactory;
@@ -47,7 +46,6 @@ import com.dotmarketing.util.jwt.JsonWebTokenService;
 import com.dotmarketing.util.marshal.MarshalFactory;
 import com.dotmarketing.util.marshal.MarshalUtils;
 import com.liferay.portal.*;
-
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -357,7 +355,7 @@ public class LoginAction extends Action {
 
             //JWT
             this.processJsonWebToken(req, res, user, maxAge);
-            
+
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
 			
