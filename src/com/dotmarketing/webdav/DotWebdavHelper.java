@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Timer;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
@@ -388,7 +389,7 @@ public class DotWebdavHelper {
      * @return
      * @throws IOException
      */
-    public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub ) throws IOException {
+    public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub, long lang ) throws IOException {
 
         String prePath = "/webdav/";
         if(legacyPath){
@@ -403,6 +404,7 @@ public class DotWebdavHelper {
         	} else {
             	prePath += "working/";
         	}
+        	defaultLang = lang;
         	prePath += defaultLang;
         	prePath += "/";
         }
@@ -518,7 +520,7 @@ public class DotWebdavHelper {
 		return f;
 	}
 
-	public void copyFolderToTemp(Folder folder, java.io.File tempFolder, User user, String name,boolean isAutoPub) throws IOException{
+	public void copyFolderToTemp(Folder folder, java.io.File tempFolder, User user, String name,boolean isAutoPub, long lang) throws IOException{
 		String p = "";
 		try {
 			p = idapi.find(folder).getPath();
@@ -531,11 +533,11 @@ public class DotWebdavHelper {
 		String path = p.replace("/", java.io.File.separator);
 		path = tempFolder.getPath() + java.io.File.separator + name;
 		java.io.File tf = createTempFolder(path);
-		List<Resource> children = getChildrenOfFolder(folder, user, isAutoPub);
+		List<Resource> children = getChildrenOfFolder(folder, user, isAutoPub, lang);
 		for (Resource resource : children) {
 			if(resource instanceof CollectionResource){
 				FolderResourceImpl fr = (FolderResourceImpl)resource;
-				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub);
+				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub, lang);
 			}else{
 				FileResourceImpl fr = (FileResourceImpl)resource;
 				copyFileToTemp(fr.getFile(), tf);
@@ -914,6 +916,7 @@ public class DotWebdavHelper {
 				fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
+				fileAsset.setLanguageId(defaultLang);
 				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -983,6 +986,7 @@ public class DotWebdavHelper {
 					fileAssetCont.setInode(null);
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
+					fileAssetCont.setLanguageId(defaultLang);
 					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
@@ -1154,6 +1158,7 @@ public class DotWebdavHelper {
 					    FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
 
 					    newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+					    newversion.setLanguageId(defaultLang);
 					    newversion = APILocator.getContentletAPI().checkin(newversion, user, false);
 					    if(autoPublish) {
 					        APILocator.getContentletAPI().publish(newversion, user, false);
@@ -1526,12 +1531,14 @@ public class DotWebdavHelper {
 			if (r.startsWith("/live")) {
 				r = r.substring(5, r.length());
 			}
+			if(StringUtils.isNumeric(r.substring(1, 2))){
 			defaultLang = Long.parseLong(r.substring(1, 2));
-			if(!APILocator.getLanguageAPI().getLanguages().contains(APILocator.getLanguageAPI().getLanguage(defaultLang))){
-				Logger.error( this, "The language id specified in the path does not exists");
-				throw new IOException("The language id specified in the path does not exists");
+				if(!APILocator.getLanguageAPI().getLanguages().contains(APILocator.getLanguageAPI().getLanguage(defaultLang))){
+					Logger.error( this, "The language id specified in the path does not exists");
+					throw new IOException("The language id specified in the path does not exists");
+				}
+				r = r.substring(2);
 			}
-			r = r.substring(2);
 		}
 		return r;
 	}
