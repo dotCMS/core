@@ -44,6 +44,7 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
@@ -98,7 +99,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
                 SetValueActionlet.class,
-                PushNowActionlet.class
+                PushNowActionlet.class,
+				TranslationActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();

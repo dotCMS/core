@@ -19,7 +19,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.liferay.portal.model.User;
 
-import org.junit.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,9 +48,14 @@ public class TranslationActionletTest {
 
     private Contentlet spanishTranslatedContent = mock(Contentlet.class);
     private Contentlet frenchTranslatedContent = mock(Contentlet.class);
-    private User testUser = new User();
 
-    @Test(expected = WorkflowActionFailureException.class)
+    @BeforeMethod
+    public void mockContents() {
+        spanishTranslatedContent = mock(Contentlet.class);
+        frenchTranslatedContent = mock(Contentlet.class);
+    }
+
+    @Test(expectedExceptions = WorkflowActionFailureException.class)
     public void testExecuteAction_UnpersistedContent() throws Exception {
         User systemUser = new User("systemUser");
         Contentlet unpersisted = new Contentlet();

@@ -2,6 +2,7 @@ package com.dotcms.translate;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
@@ -31,7 +32,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
     }
 
     public GoogleTranslationService(String apiKey, JSONTool jsonTool, ApiProvider apiProvider) {
-        Preconditions.checkNotNull(apiKey, new DotStateException("No API Key Found."));
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(apiKey), new DotStateException("No API Key Found."));
         this.apiKey = apiKey;
         this.jsonTool = jsonTool;
         this.apiProvider = apiProvider;

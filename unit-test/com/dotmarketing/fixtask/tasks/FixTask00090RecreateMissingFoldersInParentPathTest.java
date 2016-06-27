@@ -3,8 +3,9 @@ package com.dotmarketing.fixtask.tasks;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath.LiteFolder;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -16,14 +17,14 @@ import static org.mockito.Mockito.*;
 public class FixTask00090RecreateMissingFoldersInParentPathTest {
 
     private FixTask00090RecreateMissingFoldersInParentPath fixTask;
-    private static final String aHostId = null;
+    private static final String aHostId = "host-id";
 
-    @Before
+    @BeforeMethod
     public void setUp() {
         fixTask = new FixTask00090RecreateMissingFoldersInParentPath();
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void getFoldersFromParentPath_ShouldThrowNPE_WhenNullParentPath() {
         fixTask.getFoldersFromParentPath(null, aHostId);
     }
@@ -58,7 +59,7 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest {
         assertEquals(folder2.name, "level2");
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void recreateMissingFoldersInParentPath_ShouldThrowNPE_WhenNullParentPath() {
         fixTask.getFoldersFromParentPath(null, aHostId);
     }
@@ -66,8 +67,8 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest {
     @Test
     public void recreateMissingFoldersInParentPath_ShouldDoNothing_WhenSystemHost() throws DotSecurityException, SQLException, DotDataException {
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
-        doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath("/", aHostId);
-        fixTaskSpy.recreateMissingFoldersInParentPath("/", aHostId);
+        doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath("/", "host-id");
+        fixTaskSpy.recreateMissingFoldersInParentPath("/", "host-id");
         verify(fixTaskSpy, never()).recreateMissingFolders(anyList());
     }
 
