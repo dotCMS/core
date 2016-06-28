@@ -163,6 +163,23 @@ public class GoogleTranslationServiceTest {
     }
 
     @Test
+    public void testTranslateStrings_NullItems() throws Exception {
+        String jsonStr = read(getClass().getResourceAsStream("/spanishMultiTranslation.json"));
+        JSONObject jsonObject = new JSONObject(jsonStr);
+
+        JSONTool jsonTool = Mockito.mock(JSONTool.class);
+        when(jsonTool.fetch(Mockito.anyString())).thenReturn(jsonObject);
+
+        TranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
+        List<String> toTranslate = Arrays.asList("This is a test in English", null,
+            null);
+
+        List<String> translated = service.translateStrings(toTranslate, english, spanish);
+
+        assertEquals(translated.get(0), "Esta es una prueba en Inglés");
+    }
+
+    @Test
     public void testTranslateString() throws Exception {
         String jsonStr = read(getClass().getResourceAsStream("/spanishSingleTranslation.json"));
         JSONObject jsonObject = new JSONObject(jsonStr);
@@ -191,16 +208,6 @@ public class GoogleTranslationServiceTest {
     public void testTranslateString_SameLanguage() throws Exception {
         GoogleTranslationService service = new GoogleTranslationService("", null, null);
         service.translateString("whatever", english, english);
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testTranslateStrings_NullApiKey() {
-        new GoogleTranslationService(null, new JSONTool(), new ApiProvider());
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testTranslateStrings_EmptyApiKey() {
-        new GoogleTranslationService("", new JSONTool(), new ApiProvider());
     }
 
     private static String read(InputStream input) throws IOException {

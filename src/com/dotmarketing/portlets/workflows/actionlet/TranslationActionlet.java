@@ -26,7 +26,10 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -65,19 +68,35 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
         params.add(new WorkflowActionletParameter("translateTo", "Translate to", TRANSLATE_TO_DEFAULT, true));
         params.add(new WorkflowActionletParameter("fieldTypes", "Translate Field Types", FIELD_TYPES_DEFAULT, true));
-        params.add(new WorkflowActionletParameter("ignoreFields", "Ignore Fields (velocity var name)", IGNORE_FIELDS_DEFAULT, false));
+        params.add(new WorkflowActionletParameter("ignoreFields", "Ignore Fields (velocity var name)",
+            IGNORE_FIELDS_DEFAULT, false));
         return params;
     }
 
     @Override
     public String getName() {
-        return "Translate Content";
+        String name = null;
+        try {
+            name = LanguageUtil
+                .get((User) null, "com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet.name");
+        } catch(LanguageException e) {
+            Logger.error(this, "Unable to get actionlet name.", e);
+        }
+
+        return name;
     }
 
     @Override
     public String getHowTo() {
-        return "This actionlet will translate content from the default language to the language or languages specified "
-            + "by the translateTo param";
+        String desc = null;
+        try {
+            desc = LanguageUtil
+                .get((User) null, "com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet.desc");
+        } catch(LanguageException e) {
+            Logger.error(this, "Unable to get actionlet name.", e);
+        }
+
+        return desc;
     }
 
     @Override
@@ -123,7 +142,8 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
         List<Field> translateFields = translationUtil.getFieldsOfContentlet(sourceContentlet, fieldTypes, ignoreFields);
 
-        Preconditions.checkArgument(!translateFields.isEmpty(), "No Fields no translate");
+        Preconditions.checkArgument(!translateFields.isEmpty(),
+            "No Fields no translate. Please check the 'Translate Field Types' parameter in the actionlet config.");
 
         List<Language> translateLanguages = translationUtil.getLanguagesByLanguageCodes(translateTo);
 
@@ -141,7 +161,8 @@ public class TranslationActionlet extends WorkFlowActionlet {
             for (Contentlet translatedContent : translatedContents) {
                 translatedContent.setProperty("__disable_workflow__", true);
 
-                copyBinaries(user, sourceContentlet, translatedContent);
+                sourceContentlet.setTags();
+                copyBinariesAndTags(user, sourceContentlet, translatedContent);
                 List<Category> cats = catAPI.getParents(sourceContentlet, user, true);
                 ContentletRelationships rels = contentAPI.getAllRelationships(sourceContentlet);
                 List<Permission> perms = permAPI.getPermissions(sourceContentlet, false, true);
@@ -162,8 +183,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
         }
     }
 
-    @VisibleForTesting
-    protected void copyBinaries(User user, Contentlet sourceContentlet, Contentlet translatedContent)
+    void copyBinariesAndTags(User user, Contentlet sourceContentlet, Contentlet translatedContent)
         throws DotDataException, DotSecurityException, TranslationException {
         Structure structure = translatedContent.getStructure();
         List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());
@@ -195,6 +215,9 @@ public class TranslationActionlet extends WorkFlowActionlet {
                         throw new TranslationException(e);
                     }
                 }
+            } else if ( field.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
+                translatedContent.setStringProperty(field.getVelocityVarName(),
+                    sourceContentlet.getStringProperty(field.getVelocityVarName()));
             }
         }
     }

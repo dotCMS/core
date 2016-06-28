@@ -104,7 +104,7 @@ public class TranslationActionletTest {
 
         TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService));
 
-        doNothing().when(actionlet).copyBinaries(any(User.class), any(Contentlet.class), any(Contentlet.class));
+        doNothing().when(actionlet).copyBinariesAndTags(any(User.class), any(Contentlet.class), any(Contentlet.class));
 
         actionlet.executeAction(processor, getParams());
 
@@ -151,7 +151,7 @@ public class TranslationActionletTest {
 
         TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService));
 
-        doNothing().when(actionlet).copyBinaries(any(User.class), any(Contentlet.class), any(Contentlet.class));
+        doNothing().when(actionlet).copyBinariesAndTags(any(User.class), any(Contentlet.class), any(Contentlet.class));
 
         actionlet.executeAction(processor, getParams());
 

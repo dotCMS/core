@@ -96,18 +96,18 @@ public class TranslationUtil {
         boolean filterByType = typesFilter != null && !typesFilter.isEmpty();
         boolean ignoreFields = fieldsToExclude != null && !fieldsToExclude.isEmpty();
 
+        if(!filterByType) return fields;
+
         for (Field f : fieldsToFilter) {
             boolean addField = false;
 
-            if(filterByType && typesFilter.contains(f.getFieldType())) {
+            if(typesFilter.contains(f.getFieldType())) {
                 if(f.getFieldType().equals(Field.FieldType.TEXT.toString())
                     && f.getDataType().equals(Field.DataType.TEXT.toString())) {
                     addField = true;
                 } else if (!f.getFieldType().equals(Field.FieldType.TEXT.toString())) {
                     addField = true;
                 }
-            } else if(!filterByType) {
-                addField = true;
             }
 
             boolean exclude = ignoreFields && fieldsToExclude.contains(f.getVelocityVarName());

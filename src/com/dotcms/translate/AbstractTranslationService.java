@@ -12,6 +12,9 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractTranslationService implements TranslationService {
@@ -61,7 +64,12 @@ public abstract class AbstractTranslationService implements TranslationService {
         try {
             List<String> valuesToTranslate =
                 fieldsToTranslate.stream().map(f -> src.getStringProperty(f.getVelocityVarName()))
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+
+            List<Field> nonNullFields = fieldsToTranslate.stream()
+                .filter(f -> src.getStringProperty(f.getVelocityVarName())!=null)
+                .collect(Collectors.toList());
 
             Language translateFrom = apiProvider.languageAPI().getLanguage(src.getLanguageId());
             List<String> translatedValues = translateStrings(valuesToTranslate, translateFrom, translateTo);
@@ -73,7 +81,7 @@ public abstract class AbstractTranslationService implements TranslationService {
             translated.setLanguageId(translateTo.getId());
 
             int i = 0;
-            for (Field field : fieldsToTranslate) {
+            for (Field field : nonNullFields) {
                 translated.setStringProperty(field.getVelocityVarName(), translatedValues.get(i));
                 i++;
             }

@@ -32,7 +32,6 @@ public class GoogleTranslationService extends AbstractTranslationService {
     }
 
     public GoogleTranslationService(String apiKey, JSONTool jsonTool, ApiProvider apiProvider) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(apiKey), new DotStateException("No API Key Found."));
         this.apiKey = apiKey;
         this.jsonTool = jsonTool;
         this.apiProvider = apiProvider;
@@ -65,6 +64,8 @@ public class GoogleTranslationService extends AbstractTranslationService {
     public List<String> translateStrings(List<String> toTranslate, Language from, Language to)
         throws TranslationException {
 
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(apiKey), new DotStateException("No API Key Found."));
+
         Preconditions.checkNotNull(from, "'From' Language can't be null.");
         Preconditions.checkNotNull(to, "'To' Language can't be null.");
         Preconditions.checkArgument(from.getId() != to.getId(), "'From' and 'To' Languages must be different.");
@@ -74,6 +75,9 @@ public class GoogleTranslationService extends AbstractTranslationService {
         StringBuilder restURL = new StringBuilder().append(serviceUrl).append("?key=").append(apiKey);
 
         for (String trans : toTranslate) {
+
+            if(trans==null) continue;
+
             restURL.append("&q=");
             try {
                 restURL.append(URLEncoder.encode(trans, "UTF-8"));
