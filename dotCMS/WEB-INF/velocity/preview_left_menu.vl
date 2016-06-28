@@ -292,16 +292,16 @@
         <div class="pageTools">
 
         	#if($PUBLISH_HTMLPAGE_PERMISSION)
-                <a href="javascript: publishAll();"  >
+                <a href="javascript: publishAll();">
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </a>
                 #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
                     #if($REMOTE_PUBLISH_END_POINTS)
-                        <a href="javascript: remotePublishCall();"  >
+                        <a href="javascript: remotePublishCall();">
                             <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
                         </a>
 	                #end
-	                 <a href="javascript: addToBundleCall();"  >
+	                 <a href="javascript: addToBundleCall();">
 	                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
 	                </a>
                 #end
@@ -311,15 +311,15 @@
                	</span>
             #end
 
-            <a href="javascript: editPage();"  >
+            <a href="javascript: editPage();">
             	<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
             </a>
-            <a href="javascript: viewStatistics();"  >
+            <a href="javascript: viewStatistics();">
             	<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
             </a>
 
             #if($EDIT_TEMPLATE_PERMISSION)
-                <a href="javascript: editTemplate();"  >
+                <a href="javascript: editTemplate();">
                 	<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
                 </a>
             #else
@@ -330,13 +330,13 @@
 
             <hr/>
 
-            <a href="javascript: addPage();"  >
+            <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
 			
 			#if((! $HTMLPAGE_IS_CONTENT ) && ($cmsuser.isCMSAdmin($cmsuser.getLoggedInUser($request))))
 			
-			<a href="javascript: migrate();"  >
+			<a href="javascript: migrate();">
                 <span class="repeatIcon"></span> $languagewebapi.getFromUserLanguage("modes.Migrate-To-Content")
             </a>
             
@@ -352,11 +352,11 @@
         <div class="pageTools">
 
         	#if($PUBLISH_HTMLPAGE_PERMISSION)
-                <a href="javascript: publishAll();"  >
+                <a href="javascript: publishAll();">
                 	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
                 </a>
                 #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION && $REMOTE_PUBLISH_END_POINTS)
-	                <a href="javascript: remotePublishCall();"  >
+	                <a href="javascript: remotePublishCall();">
 	                	<span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
 	                </a>
                 #end
@@ -381,14 +381,14 @@
             #if($canViewDiff)
             	<hr/>
             	
-                <a href="javascript: viewDiff();"  >
+                <a href="javascript: viewDiff();">
                 	<span class="redlineIcon"></span> $languagewebapi.getFromUserLanguage("modes.Whats-Changed")
                 </a>
             #end
 
             <hr/>
 
-            <a href="javascript: addPage();"  >
+            <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
 
@@ -420,7 +420,7 @@
 
             <hr/>
 
-            <a href="javascript: addPage();"  >
+            <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
 
@@ -523,7 +523,7 @@
 </div>
 
 <div style="display:none">
-<form action="${directorURL}" id="submitParent" method="post" target="_top">
+<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="${angularFrame}" #else target="_top" #end >
     <input type="hidden" name="referer" id="referer" value="$referer"><BR>
     <input type="hidden" name="taskInode" id="taskInode" value=""><BR>
     <input type="hidden" name="cmd" id="cmd" value="addChild"><BR>
