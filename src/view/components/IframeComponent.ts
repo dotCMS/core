@@ -1,11 +1,13 @@
 import { Component, Inject } from "@angular/core";
+import { SafeResourceUrl, DomSanitizationService } from '@angular/platform-browser';
+
 import { RouteParams } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx'
 
 @Component({
     selector: "iframe-component",
     template: ` 
-        <iframe id="detailFrame" name="detailFrame" class="iframe-style" src="{{ iframe | async }}" frameborder="0"></iframe>
+        <iframe id="detailFrame" name="detailFrame" class="iframe-style" [src]="iframe | async" frameborder="0"></iframe>
     `,
     providers: [],
     styles: [
@@ -19,12 +21,12 @@ import { Observable } from 'rxjs/Rx'
 })
 
 export class IframeComponent {
-    iframe: Observable<string>;
-    constructor(params$: RouteParams, @Inject('menuItems') private menuItems:any[]) {
+    iframe: Observable<SafeResourceUrl>;
+    constructor(params$: RouteParams, @Inject('menuItems') private menuItems:any[], sanitizer: DomSanitizationService) {
         this.iframe = params$.pluck<string>('id')
             .distinctUntilChanged()
             .map(id => {
-                return menuItems.mapPaths[id];
+                return sanitizer.bypassSecurityTrustResourceUrl(menuItems.mapPaths[id]);
             });
     }
 }
