@@ -1407,10 +1407,15 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
    //---------------------------------------------------------------------------------------------------------
    //Asset Actions
-
+   var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"))?true:false%>;
 	//Host Actions
 	function editHost(id, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + id + '&referer=' + escape(referer);
+		var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + id + '&referer=' + escape(referer);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function setAsDefaultHost(objId,referer) {
@@ -1425,7 +1430,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	function deleteHost(objId, referer) {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-the-selected-host-and-ALL-its-contents")) %>')) {
-			top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_host" /></portlet:actionURL>&cmd=delete&inode=' + objId + '&referer=' + escape(referer);
+			var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_host" /></portlet:actionURL>&cmd=delete&inode=' + objId + '&referer=' + escape(referer);
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 			actionLoading = true;
 			return true;
 		}
@@ -1433,21 +1443,41 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function addHost(referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_host" /></portlet:actionURL>&referer=' + escape(referer);
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_host" /></portlet:actionURL>&referer=' + escape(referer);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 
 	//folder actions
 	function addTopFolder(parentHostId, referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>&phostId=' + parentHostId + '&referer=' + escape(referer);
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>&phostId=' + parentHostId + '&referer=' + escape(referer);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function addFolder(parentId, referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>&pfolderId=' + parentId + '&referer=' + escape(referer);
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>&pfolderId=' + parentId + '&referer=' + escape(referer);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function editFolder(objId, referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>&inode=' + objId + '&referer=' + escape(referer);
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /></portlet:actionURL>&inode=' + objId + '&referer=' + escape(referer);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function deleteFolder(objId, referer) {
@@ -1455,12 +1485,22 @@ dojo.require("dotcms.dojo.push.PushHandler");
 			actionLoading = true;
 			cleanContentSide();
 			Element.show('loadingContentListing');
-			top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /><portlet:param name="cmd" value="<%=Constants.DELETE%>" /></portlet:actionURL>&inode=' + objId + '&referer=' + escape(referer);
+			var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/edit_folder" /><portlet:param name="cmd" value="<%=Constants.DELETE%>" /></portlet:actionURL>&inode=' + objId + '&referer=' + escape(referer);
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		}
 	}
 
 	function publishFolder (objId, referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/publish_folder" /></portlet:actionURL>&cmd=prepublish&inode=' + objId + '&referer=' + referer;
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/folders/publish_folder" /></portlet:actionURL>&cmd=prepublish&inode=' + objId + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function copyFolder (objId, parentId, referer) {
@@ -1538,20 +1578,36 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	function previewHTMLPage (objId, referer) {
 		var y = Math.floor(Math.random()*1123213213);
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + '&random=' + y;
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer + '&random=' + y;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function editHTMLPage (objId, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	var publishHTMLPageInode;
 	var publishHTMLPageReferer;
 	function publishHTMLPageExceptionHandler(msg) {
-		if (msg == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>')
-  			top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/publish_htmlpages" /><portlet:param name="cmd" value="prepublish" /></portlet:actionURL>&publishInode=' + publishHTMLPageInode + '&referer=' + publishHTMLPageReferer;
-  		else
+		if (msg == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>'){
+  			var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/publish_htmlpages" /><portlet:param name="cmd" value="prepublish" /></portlet:actionURL>&publishInode=' + publishHTMLPageInode + '&referer=' + publishHTMLPageReferer;
+  			if(inFrame){
+  				window.location = loc;
+  			}else{
+  				top.location = loc;
+  			}
+		}else{
   			alert(msg);
+		}
 	}
 
 	function publishHTMLPage (objId, referer) {
@@ -1650,7 +1706,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	function viewHTMLPageStatistics (objId, referer) {
 		var userId = '<%=user.getUserId()%>';
-		top.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpageviews/view_htmlpage_views" /></portlet:renderURL>&htmlpage=' + objId  + '&userId=' + userId + '&referer=' + referer;
+		var loc='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpageviews/view_htmlpage_views" /></portlet:renderURL>&htmlpage=' + objId  + '&userId=' + userId + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function unlockHTMLPage (objId, referer) {
@@ -1669,7 +1730,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 	
 	function migratePage(objId, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/director/direct" /><portlet:param name="cmd" value="migrate" /></portlet:actionURL>&htmlPage=' + objId + '&referer=' + referer;
+		var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/director/direct" /><portlet:param name="cmd" value="migrate" /></portlet:actionURL>&htmlPage=' + objId + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function copyHTMLPage (objId, parentId, referer) {
@@ -1805,7 +1871,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
         }
 		
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 
@@ -1823,7 +1894,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 
 	function createFileAsset(stInode, folderInode){
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + stInode +'&folder='+folderInode+'&referer=' + escape(refererVar);
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + stInode +'&folder='+folderInode+'&referer=' + escape(refererVar);
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function addMultipleFile(parentId, selectedStructure, referer) {
@@ -1843,15 +1919,30 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function editFile (objId, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function editFileAsset (contInode,structureInode){
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
    	}
 	
 	function editHTMLPageAsset (contInode,structureInode){
-        top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
+        var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
+        if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
     }
 	function previewHTMLPageAsset(id,referer) {
 		
@@ -1977,14 +2068,24 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	//Container actions
 	function addContainer(referer) {
 
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>'+ '&referer=' + referer;
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>'+ '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 
 	//Template actions
 	function addTemplate(referer) {
 
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>'+ '&referer=' + referer;
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>'+ '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 //### DELETE METHODS ###
@@ -2075,11 +2176,21 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 	//link action
 	function addLink(parentId,referer) {
-		top.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=edit&parent=' + parentId + '&inode=\'\'&referer=' + referer;
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=edit&parent=' + parentId + '&inode=\'\'&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function editLink (objId, referer) {
-		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+		var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function publishLink (objId, referer) {
