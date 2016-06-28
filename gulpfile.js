@@ -152,7 +152,7 @@ var project = {
   },
 
   compile: function(cb) {
-    var done = project.callbackOnCount(5, cb, 'compile')
+    var done = project.callbackOnCount(7, cb, 'compile')
     project.compileJavascript(done)
     project.compileTypescript(done)
     project.compileStyles(done)
