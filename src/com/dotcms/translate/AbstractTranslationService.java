@@ -8,13 +8,11 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractTranslationService implements TranslationService {
@@ -62,14 +60,18 @@ public abstract class AbstractTranslationService implements TranslationService {
         Preconditions.checkArgument(!fieldsToTranslate.isEmpty(), "List of fields to translate can't be empty");
 
         try {
-            List<String> valuesToTranslate =
-                fieldsToTranslate.stream().map(f -> src.getStringProperty(f.getVelocityVarName()))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            Structure srcSt = src.getStructure();
 
-            List<Field> nonNullFields = fieldsToTranslate.stream()
+            List<Field> filteredFields = fieldsToTranslate.stream()
+                // exclude fileAsset name from translation
+                .filter( f-> ! (srcSt.isFileAsset() && f.getVelocityVarName().equals("fileName")))
+                // exclude null field values from translation
                 .filter(f -> src.getStringProperty(f.getVelocityVarName())!=null)
                 .collect(Collectors.toList());
+
+            List<String> valuesToTranslate = filteredFields.stream()
+                    .map(f -> src.getStringProperty(f.getVelocityVarName()))
+                    .collect(Collectors.toList());
 
             Language translateFrom = apiProvider.languageAPI().getLanguage(src.getLanguageId());
             List<String> translatedValues = translateStrings(valuesToTranslate, translateFrom, translateTo);
@@ -81,7 +83,7 @@ public abstract class AbstractTranslationService implements TranslationService {
             translated.setLanguageId(translateTo.getId());
 
             int i = 0;
-            for (Field field : nonNullFields) {
+            for (Field field : filteredFields) {
                 translated.setStringProperty(field.getVelocityVarName(), translatedValues.get(i));
                 i++;
             }
