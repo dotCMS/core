@@ -39,6 +39,10 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return metaData;
 
 	}
+	
+	public long getLanguageId(){
+		return super.getLanguageId();
+	}
 
 
 

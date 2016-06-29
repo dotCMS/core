@@ -106,7 +106,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Resource> children;
 		try {
-			children = dotDavHelper.getChildrenOfFolder(folder, user, isAutoPub);
+			children = dotDavHelper.getChildrenOfFolder(folder, user, isAutoPub, lang);
 		} catch (IOException e) {
 			Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -144,7 +144,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Resource> children;
 		try {
-            children = dotDavHelper.getChildrenOfFolder( folder, user, isAutoPub );
+            children = dotDavHelper.getChildrenOfFolder( folder, user, isAutoPub, lang );
         } catch (IOException e) {
 			Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -258,7 +258,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
         if(collRes instanceof TempFolderResourceImpl){
             TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
             try {
-                dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub);
+                dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub, lang);
             } catch (Exception e) {
                 Logger.error(this, e.getMessage(), e);
                 return;
@@ -295,7 +295,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			Logger.debug(this, "Webdav clients wants to move a file from dotcms to a tempory storage but we don't allow this in fear that the tranaction may break and delete a file from dotcms");
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
-				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub);
+				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub, lang);
 			} catch (IOException e) {
 				Logger.error(this, e.getMessage(), e);
 				return;
