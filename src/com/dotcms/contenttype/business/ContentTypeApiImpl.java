@@ -2,8 +2,8 @@ package com.dotcms.contenttype.business;
 
 import java.util.List;
 
-import com.dotcms.contenttype.model.type.Content;
-import com.dotcms.contenttype.model.types.ImmutableContent;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -55,7 +55,7 @@ public class ContentTypeApiImpl implements ContentTypeApi, StructureAPI{
 		return 0;
 	}
 
-	public Content getContentType(){
+	public ContentType getContentType(){
 		String user = "test";
 		try {
 			user=APILocator.getUserAPI().getSystemUser().getUserId();
@@ -64,7 +64,7 @@ public class ContentTypeApiImpl implements ContentTypeApi, StructureAPI{
 			e.printStackTrace();
 		}
 		
-		Content c = ImmutableContent.builder()
+		ContentType c = ImmutableSimpleContentType.builder()
 				.name("My Content")
 				.velocityVarName("test")
 				.owner(user).build();
@@ -72,6 +72,6 @@ public class ContentTypeApiImpl implements ContentTypeApi, StructureAPI{
 		
 	}
 	public void saveContentType(){
-		Content c = ImmutableContent.builder().name("My Content").velocityVarName("test").build();
+		
 	}
 }

@@ -1,7 +1,14 @@
 package com.dotcms.contenttype.model.type;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.elasticsearch.common.Nullable;
+import org.immutables.value.Value;
+
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.exolab.castor.xml.schema.Structure;
 import com.dotmarketing.business.APILocator;
@@ -16,27 +23,103 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-public class PermissionableWrapper implements Permissionable {
+
+public abstract class ContentType implements Serializable, Permissionable {
 
 	static final long serialVersionUID = 1L;
 
-	final ContentType contentType;
+	public abstract String name();
 
+	@Nullable
+	public abstract String inode();
 
-	public PermissionableWrapper(ContentType contentType) {
-		super();
-		this.contentType = contentType;
+	@Nullable
+	public abstract String description();
+
+	final public String type() {
+		return "structure";
+	}
+
+	@Value.Default
+	public boolean defaultStructure() {
+		return false;
+	}
+
+	@Nullable
+	public abstract String pagedetail();
+
+	@Value.Default
+	public boolean fixed() {
+		return false;
+	}
+
+	@Value.Default
+	public Date iDate() {
+		return new Date();
+	}
+
+	@Value.Default
+	public boolean system() {
+		return false;
 	}
 	
+	
+	@Value.Default
+	public boolean versionable(){
+		return true;
+	}
+	
+	@Value.Default
+	public boolean multilingualable(){
+		return false;
+	}
+	
+	
+	public abstract String velocityVarName();
+
+	@Nullable
+	public abstract String urlMapPattern();
+
+	@Nullable
+	public abstract String publishDateVar();
+
+	@Nullable
+	public abstract String expireDateVar();
+	
+	@Nullable
+	public abstract String owner();
+
+	@Value.Default
+	public Date modDate() {
+		return new Date();
+	}
+
+	public abstract BaseContentTypes baseType();
+
+	@Value.Default
+	public String host() {
+		return "SYSTEM_HOST";
+	}
+
+	@Value.Default
+	public String folder() {
+		return "SYSTEM_FOLDER";
+	}
+
+	public Permissionable permissionable() {
+		return new PermissionableWrapper(this);
+	}
+
 	@Override
 	public String getPermissionId() {
-		return contentType.inode();
+		return inode();
 	}
 
 	@Override
 	public String getOwner() {
-		return contentType.owner();
+		return owner();
 	}
+
 	@Override
 	public void setOwner(String x) {
 		throw new DotStateException("Cannot change the owner for an immutable value");
@@ -55,14 +138,14 @@ public class PermissionableWrapper implements Permissionable {
 	public Permissionable getParentPermissionable() throws DotDataException {
 		try {
 
-			if (UtilMethods.isSet(contentType.folder()) && !contentType.folder().equals("SYSTEM_FOLDER")) {
+			if (UtilMethods.isSet(folder()) && !folder().equals("SYSTEM_FOLDER")) {
 
-				return APILocator.getFolderAPI().find(contentType.folder(), APILocator.getUserAPI().getSystemUser(), false);
+				return APILocator.getFolderAPI().find(folder(), APILocator.getUserAPI().getSystemUser(), false);
 
-			} else if (UtilMethods.isSet(contentType.host()) && !contentType.host().equals("SYSTEM_HOST")) {
+			} else if (UtilMethods.isSet(host()) && !host().equals("SYSTEM_HOST")) {
 
 				try {
-					return APILocator.getHostAPI().find(contentType.host(), APILocator.getUserAPI().getSystemUser(), false);
+					return APILocator.getHostAPI().find(host(), APILocator.getUserAPI().getSystemUser(), false);
 				} catch (DotSecurityException e) {
 					Logger.debug(getClass(), e.getMessage(), e);
 				}
@@ -86,6 +169,10 @@ public class PermissionableWrapper implements Permissionable {
 	@Override
 	public String getPermissionType() {
 		return Structure.class.getCanonicalName();
+	}
+
+	public  List<Field> requiredFields(){
+		return new ArrayList<Field>();
 	}
 
 }
