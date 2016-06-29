@@ -53,6 +53,7 @@ task copyToLib {
         into configurations.testLibsFolder
 
         include '**/junit-*.jar'
+        include '**/testng-*.jar'
     }
 
     copy {
