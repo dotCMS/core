@@ -2152,9 +2152,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
 
-        try(Connection conn = DbConnectionFactory.getConnection();
-            PreparedStatement ps = conn.prepareStatement(queries.getSelect()))
-        {
+        Connection conn = DbConnectionFactory.getConnection();
+
+        try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
