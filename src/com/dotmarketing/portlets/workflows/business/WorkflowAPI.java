@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -267,4 +268,16 @@ public interface WorkflowAPI {
 
     public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException;
 
+    /**
+	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
+	 * with the replacement user id 
+	 * @param userId User Identifier
+	 * @param userRoleId The role id of the user
+	 * @param replacementUserId The user id of the replacement user
+	 * @param replacementUserRoleId The role Id of the replacemente user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException;
 }

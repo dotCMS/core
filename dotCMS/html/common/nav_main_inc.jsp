@@ -9,7 +9,7 @@
 var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refreshing to retrieve the proper tabId based on the portletId
 
 </script>
-<div id="menu">
+<div id="menu" class="navbar">
         <ul class="level1 horizontal" id="root">
 
         <%for(int l=0;l< layouts.length ;l++){
@@ -25,27 +25,26 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
                 }
                 // fill
                	%><script>portletTabMap['<%=portletIDs.get(0)%>'] = <%=l%></script><%
-                
+
                 boolean isSelectedTab = (layout != null && layouts !=null && layout.getId().equals(layouts[l].getId()));
                 PortletURLImpl portletURLImpl = new PortletURLImpl(request, portletIDs.get(0), layouts[l].getId(), false);
                 String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
-                
+
                 Portlet portlet = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(0));
                 Object object = Class.forName(portlet.getPortletClass()).newInstance();
                 if(object instanceof BaseRestPortlet){
                     tabHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(0) + "/', '" + l + "');";
             	}
-                
-                %> 
+
+                %>
 
 
 
-                        <li class="dotAjaxNav<%=l %> level1 <%=(isSelectedTab) ? "Active" : ""%>">
+                        <li class="dotAjaxNav<%=l %> level1 <%=(isSelectedTab) ? "active" : ""%>">
                                 <a href="<%=tabHREF %>">
                                         <div class="tabLeft">
                                                 <div class="navMenu-title"><%=tabName %></div>
                                                 <div class="navMenu-subtitle"><%=tabDescription %></div>
-                                                <div class="navMenu-arrow">&nbsp;</div>
                                         </div>
                                 </a>
                                 <%if( portletIDs.size()>1){%>
@@ -75,7 +74,7 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
                                                         catch(Exception e){
                                                         	//Logger.error(this.getClass(),"error in portlet nav:" + e.getMessage());
                                                         }
-                                                        
+
                                                         %>
 
 
@@ -114,7 +113,7 @@ dojo.require("dojo.hash");
                 constructor : function() {},
 
                 show : function(href, tabId) {
-                	
+
                         var r = Math.floor(Math.random() * 1000000000);
                         if (href.indexOf("?") > -1) {
                                 href = href + "&r=" + r;
@@ -125,12 +124,12 @@ dojo.require("dojo.hash");
 
                         // if we need to update the tabs
                         if(tabId && tabId != undefined){
-                                dojo.query(".level1 .Active").forEach(function(node){
-                                        dojo.removeClass(node, "Active");
+                                dojo.query(".level1 .active").forEach(function(node){
+                                        dojo.removeClass(node, "active");
                                   });
 
                                 dojo.query(".dotAjaxNav" + tabId).forEach(function(node){
-                                        dojo.addClass(node, "Active");
+                                        dojo.addClass(node, "active");
                                   });
                         }
 
@@ -186,7 +185,7 @@ dojo.require("dojo.hash");
                         dojo.parser.parse(this.hangerDiv);
                 },
 
-                
+
                 refreshHTML : function(html) {
 
 
@@ -210,7 +209,7 @@ dojo.require("dojo.hash");
 
                     dojo.parser.parse(this.hangerDiv);
             },
-            
+
                 addCrumbtrail : function (title, urlx){
                         var entry = {title:title, url:urlx};
                         this.wfCrumbTrail[this.wfCrumbTrail.length] = entry;

@@ -4,7 +4,9 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
+
 import org.apache.lucene.search.BooleanQuery;
+
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
@@ -46,8 +48,10 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.*;
 import java.net.URLEncoder;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -303,11 +307,20 @@ public class InitServlet extends HttpServlet {
 			//Just get the Engine to make sure it gets inited on time before the first request
 			VelocityUtil.getEngine();
 
-			// Tell the world we are started up?
+			// Tell the world we are started up
 			System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
+			
+			// Record how long it took to start us up.
+			try{
 
+				long startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
 
+				System.setProperty(WebKeys.DOTCMS_STARTUP_TIME, String.valueOf(startupTime));
 
+			}
+			catch(Exception e){
+				Logger.warn(this.getClass(), "Unable to record startup time :" + e);
+			}
 
     }
 
@@ -334,11 +347,11 @@ public class InitServlet extends HttpServlet {
  *
  */
 
-    public class InitThread extends Thread {
+    private class InitThread extends Thread {
 
         public void run() {
         	try {
-        		long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 600000);
+        		long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 6000);
         		if(runInitThread<1){return;}
         		
                 Thread.sleep(runInitThread);
@@ -404,9 +417,13 @@ public class InitServlet extends HttpServlet {
                 data.append("&");
                 data.append(URLEncoder.encode("build", "UTF-8"));
                 data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(ReleaseInfo.getVersion()), "UTF-8"));
+                if(UtilMethods.isSet(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME))){
+                	data.append("&");
+                	data.append(URLEncoder.encode("startupTime", "UTF-8"));
+                	data.append("=");
+                	data.append(URLEncoder.encode(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME), "UTF-8"));
+                }
                 data.append("&");
-                
                 data.append(URLEncoder.encode("serverId", "UTF-8"));
                 data.append("=");
                 data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getDisplayServerId()), "UTF-8"));

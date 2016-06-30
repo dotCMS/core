@@ -225,7 +225,13 @@ public class GuavaCache extends CacheProvider {
                 cache = groups.get(cacheName);
                 if ( cache == null ) {
 
-                    boolean separateCache = (availableCaches.contains(cacheName) || DEFAULT_CACHE.equals(cacheName) || cacheName.startsWith(LIVE_CACHE_PREFIX) || cacheName.startsWith(WORKING_CACHE_PREFIX));
+                    boolean separateCache = (
+                    		Config.getBooleanProperty("cache.separate.caches.for.non.defined.regions", true) 
+                    		|| availableCaches.contains(cacheName) 
+                    		|| DEFAULT_CACHE.equals(cacheName) 
+                    		|| cacheName.startsWith(LIVE_CACHE_PREFIX) 
+                    		|| cacheName.startsWith(WORKING_CACHE_PREFIX)
+                    	);
 
                     if ( separateCache ) {
                         int size;

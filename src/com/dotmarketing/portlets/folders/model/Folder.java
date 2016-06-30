@@ -31,6 +31,8 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
 	private static final long serialVersionUID = 1L;
 
+	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+
     /** nullable persistent field */
     private String name;
 

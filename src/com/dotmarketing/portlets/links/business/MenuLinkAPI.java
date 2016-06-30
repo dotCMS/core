@@ -146,4 +146,16 @@ public interface MenuLinkAPI {
      * @return if the link were moved. mostly if didn't existing in the target folder
      */
     public boolean move(Link link, Folder folder, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
+    
+    /**
+	 * Method will replace user references of the given userId in MenuLinks 
+	 * with the replacement user id 
+	 * @param userId User Identifier
+	 * @param replacementUserId The user id of the replacement user
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+
 }

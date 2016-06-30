@@ -13,6 +13,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.liferay.portal.model.User;
+
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.SearchHits;
 
 import java.io.Serializable;
@@ -20,6 +22,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Provides utility methods to interact with {@link Contentlet} objects in
+ * dotCMS. This class works closely with the Elastic index in order to minimize 
+ * databse calls and maximize the use of the index to search for data.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public abstract class ContentletFactory {
 
 	/**
@@ -185,6 +197,23 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract void delete(List<Contentlet> contentlets)throws DotDataException;
+	
+	/**
+	 * Deletes all the specified in contentlets. This method allows users to
+	 * delete only a version of a contentlet, i.e., the Identifier remains.
+	 * 
+	 * @param contentlets
+	 *            - The contentlet that will be deleted.
+	 * @param deleteIdentifier
+	 *            - If the contentlet identifier must be deleted, set to
+	 *            {@code true}. Otherwise, set to {@code false}. -
+	 * @return If the contentlet was successfully destroyed, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the information from the
+	 *             database.
+	 */
+	protected abstract void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException;
 
 	/**
 	 * Retrieves all contentlets from the database based on its identifier (including multilingual versions)
@@ -297,11 +326,22 @@ public abstract class ContentletFactory {
 	
 	protected abstract void UpdateContentWithSystemHost(String hostIdentifier) throws DotDataException, DotSecurityException;
 	/**
-	 * Method will remove User References of the given userId in Contentlet  
-	 * @param userId
+	 * Method will remove User References of the given userId in Contentlet 
+	 * with the system user id
+	 * @param userId User Id to change
 	 * @throws DotSecurityException 
 	 */	
 	protected abstract void removeUserReferences(String userId)throws DotDataException, DotSecurityException;
+	
+	/**
+	 * Method will replace user references of the given userId in Contentlets
+	 * with the replacement user id  
+	 * @param userId User Id to replace
+	 * @param replacementUserId Replacement User Id
+	 * @exception DotDataException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */	
+	protected abstract void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException;
 	
 	protected abstract void deleteVersion(Contentlet contentlet)throws DotDataException;
 	

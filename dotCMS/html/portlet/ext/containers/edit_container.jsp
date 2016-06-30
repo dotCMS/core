@@ -16,26 +16,26 @@
 <%@ include file="/html/portlet/ext/containers/init.jsp" %>
 
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
-<script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
+<script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <style type="text/css">
-    #aceEditor, #preLoopAceEditor, #postLoopAceEditor { 
-        position: relative;
-    }
-    .show{
-    	width: 650px;
-        height: 350px;
-        border:1px solid #C0C0C0;
-    }
-     .pShow{
-    	width: 650px;
-        height: 150px;
-        border:1px solid #C0C0C0;
-    }
-    .hidden{
+	#aceEditor, #preLoopAceEditor, #postLoopAceEditor {
+		position: relative;
+	}
+	.show{
+		width: 650px;
+		height: 350px;
+		border:1px solid #C0C0C0;
+	}
+	 .pShow{
+		width: 650px;
+		height: 150px;
+		border:1px solid #C0C0C0;
+	}
+	.hidden{
 		display: none;
 	}
 	.ace_scrollbar {
-    	overflow: auto;
+		overflow: auto;
 	}
 </style>
 <%
@@ -55,7 +55,7 @@
 	boolean canUserWriteToContainer = hasOwnerRole || hasAdminRole || perAPI.doesUserHavePermission(contentContainer,PermissionAPI.PERMISSION_WRITE,user);
 	boolean canUserPublishContainer = hasOwnerRole || hasAdminRole || perAPI.doesUserHavePermission(contentContainer,PermissionAPI.PERMISSION_PUBLISH,user);
 //http://jira.dotmarketing.net/browse/DOTCMS-1473 basically if teh user has portlet permissions they can add new templates and containers
-    Identifier id=null;
+	Identifier id=null;
 	if(!InodeUtils.isSet(contentContainer.getInode())){
 		canUserWriteToContainer = true;
 		canUserPublishContainer = true;
@@ -203,7 +203,11 @@
 						</div>
 
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="aceToggler('preLoopAceEditor', 'preLoopMask');"  checked="checked"  />
-	        	        <label for="toggleEditorPreLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<label for="toggleEditorPreLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<div id="toggleWrapEditor" style="display: inline-block">
+							<input id="preloopWrapEditor" name="preloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+							<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+						</div>
 					</dd>
 				</dl>
 			</div>
@@ -232,19 +236,19 @@
 										break;
 									}
 								}
-         %>
-                                <option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
-		<%                  }
+		 %>
+								<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
+		<%				  }
 		%>
 							</select>
 							<button dojoType="dijit.form.Button"  onClick="addCodeTab()" iconClass="plusIcon" type="button">
-						        	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-content-type")) %>
-						    </button>
-					    </div>
+									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-content-type")) %>
+							</button>
+						</div>
 					</dd>
-					<dd>					
-						<div style="width:650px;height:410px">
-							<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;height:420px;overflow-y: hidden; " dolayout="false">					
+					<dd>
+						<div style="width:650px">
+							<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;overflow-y: hidden; " dolayout="false">
 							<style>
 							.dijitTabCloseButton {
 								width: 15px;
@@ -268,11 +272,11 @@
 								</div>
 								<script>
 									addStructureToList('<%=st.getInode()%>');
-									
+
 									var tab = dojo.byId('tab_<%=st.getInode()%>');
 									require(["dojo/on"], function(on){
 										  on(tab, "close", function(e){
-										    removeStructure(structureInode);
+											removeStructure(structureInode);
 										  });
 									});
 								</script>
@@ -282,13 +286,17 @@
 							</div>
 						</div>
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
-	        	        <label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<div id="toggleWrapEditor" style="display: inline-block">
+							<input id="multiWrapEditor" name="multiWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+							<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+						</div>
 
 					</dd>
 					<dd class="buttonCaption">
 						<button dojoType="dijit.form.Button"  onClick="addVariable()" iconClass="plusIcon" type="button">
-				        	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-variable")) %>
-				    	</button>
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-variable")) %>
+						</button>
 
 					</dd>
 				</dl>
@@ -310,7 +318,7 @@
 							<input type="hidden" name="code" id="code" value=""/>
 						</div>
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="aceToggler('aceEditor', 'codeMask');"  checked="checked"  />
-	        	        <label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 					</dd>
 				</dl>
 			</div>
@@ -326,7 +334,11 @@
 							<input type="hidden" name="postLoop" id="postLoop" value="" />
 						</div>
 						<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="aceToggler('postLoopAceEditor', 'postLoopMask');"  checked="checked"  />
-	        	    	<label for="toggleEditorPostLoop"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<label for="toggleEditorPostLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						<div id="toggleWrapEditor" style="display: inline-block">
+							<input id="postloopWrapEditor" name="postloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+							<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+						</div>
 					</dd>
 				</dl>
 			</div>

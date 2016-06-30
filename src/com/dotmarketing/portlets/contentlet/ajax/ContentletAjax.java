@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -65,7 +47,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -88,6 +69,24 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -449,22 +448,8 @@ public class ContentletAjax {
 	 * if the widget doesn't exist then is created and also checks the user
 	 * permissions to see the content
 	 *
-	 * @param structureInode
+	 * @param formStructureInode
 	 *            Inode of the structure content to be listed
-	 * @param fields
-	 *            Fields to filters, where the position i (where i is odd)
-	 *            represent the field name and the position i + 1 represent the
-	 *            field value to filter
-	 * @param categories
-	 *            The categories inodes to filter
-	 * @param showDeleted
-	 *            If true show the deleted elements only
-	 * @param page
-	 *            The page number to show (starting with 1)
-	 *            If page is 0, this will return all possible contentlets
-	 * @param perPage
-	 * @param orderBy
-	 *            The field name to be used to sort the content
 	 * @return The list of contents that match the parameters at the position 0
 	 *         the result included a hashmap with some useful information like
 	 *         the total number of results, ...
@@ -984,8 +969,10 @@ public class ContentletAjax {
 			searchResult.put("working", working.toString());
 			Boolean live=con.isLive();
 			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+			searchResult.put("hasLiveVersion", "false");
 			if(!con.isLive() && con.isWorking() && !con.isArchived()){
 				if(APILocator.getVersionableAPI().hasLiveVersion(con)){
+					searchResult.put("hasLiveVersion", "true");
 					searchResult.put("allowUnpublishOfLiveVersion", "true");
 					searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
 				}
@@ -1299,7 +1286,9 @@ public class ContentletAjax {
 					Contentlet binaryContentlet =  new Contentlet();
 					try{
 						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-					}catch(Exception e){}
+					}catch(Exception e){
+						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
+					}
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
 							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
@@ -1328,9 +1317,12 @@ public class ContentletAjax {
 	                            FileUtil.copyFile(binaryFile, acopy);
 	                            elementValue = acopy;
 	                        } catch (Exception e) {
-	                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-	                            throw new SystemException(e);
-	                        }
+                                Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
+                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                                saveContentErrors.add(errorString);
+                                callbackData.put("saveContentErrors", saveContentErrors);
+                                return callbackData;
+                            }
 						}
 					}
 				}else{

@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -24,6 +26,11 @@ public class UsersBrowserLanguageConditionletTest {
     private UsersBrowserLanguageConditionlet conditionlet = new UsersBrowserLanguageConditionlet();
     private Collection<Locale> localeEnCollection;//English
     private Collection<Locale> localeEsCollection;//Spanish
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void before () {

@@ -4,26 +4,34 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+
 import org.elasticsearch.indices.IndexMissingException;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
+
 import com.dotcms.elasticsearch.script.RelationshipSortOrderScriptFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.liferay.util.FileUtil;
@@ -43,7 +51,7 @@ public class ESClient {
 
 		return _nodeInstance.client();
 	}
-	
+
 	public Client getClientInCluster(){
 		if ( _nodeInstance == null || _nodeInstance.isClosed()) {
 			return null;
@@ -53,8 +61,9 @@ public class ESClient {
 	}
 
     private void initNode () {
-
+    	
         if ( _nodeInstance == null || _nodeInstance.isClosed()) {
+        	long start = System.currentTimeMillis();
             synchronized (syncMe) {
                 if ( _nodeInstance == null || _nodeInstance.isClosed()) {
 
@@ -73,11 +82,13 @@ public class ESClient {
                     try {
 
                         //Build the replicas config settings for the indices client
-                        UpdateSettingsRequest settingsRequest = getReplicasSettings();
+                        Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
 
-                        UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
-                                settingsRequest
-                        ).actionGet();
+                        if(settingsRequest.isPresent()) {
+                            _nodeInstance.client().admin().indices().updateSettings(
+                                settingsRequest.get()
+                            ).actionGet();
+                        }
                     } catch ( IndexMissingException e ) {
                         /*
                         Updating settings without Indices will throw this exception but should be only visible on start when the
@@ -96,7 +107,9 @@ public class ESClient {
                     }
                 }
             }
+            System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
         }
+        
     }
 
     public void shutDownNode () {
@@ -109,17 +122,16 @@ public class ESClient {
      * This method will update the replicas settings for the IndicesAdminClient
      */
     public void setReplicasSettings () {
-
         if ( _nodeInstance != null && !_nodeInstance.isClosed() ) {
-
             try {
-
                 //Build the replicas config settings for the indices client
-                UpdateSettingsRequest settingsRequest = getReplicasSettings();
+                Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
 
-                UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
-                        settingsRequest
-                ).actionGet();
+                if(settingsRequest.isPresent()) {
+                    _nodeInstance.client().admin().indices().updateSettings(
+                        settingsRequest.get()
+                    ).actionGet();
+                }
             } catch ( Exception e ) {
                 Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
             }
@@ -128,48 +140,47 @@ public class ESClient {
 
     /**
      * Returns the settings of the replicas configuration for the indices client, this configuration depends on the
-     * <strong>CLUSTER_AUTOWIRE</strong> and <strong>es.index.auto_expand_replicas</strong> properties.
+     * <strong>CLUSTER_AUTOWIRE</strong> and <strong>AUTOWIRE_MANAGE_ES_REPLICAS</strong> properties.
      * <br>
      * <br>
      *
-     * If <strong>CLUSTER_AUTOWIRE == false and es.index.auto_expand_replicas == false</strong> the <strong>auto_expand_replicas</strong> will be disabled
-     * and the number of replicas will be set (<strong>es.index.number_of_replicas</strong>).
+     * If <strong>CLUSTER_AUTOWIRE == true and AUTOWIRE_MANAGE_ES_REPLICAS == true</strong> the number of replicas will
+     * be handled by the AUTOWIRE.
      *
      * @return The replicas settings
      * @throws IOException
      */
-    private UpdateSettingsRequest getReplicasSettings () throws IOException {
+    private Optional<UpdateSettingsRequest> getReplicasSettings () throws IOException {
 
-        UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+		Optional<UpdateSettingsRequest> updateSettingsRequest = Optional.empty();
 
-        /*
-         If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
-         */
-        if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-                !Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
+        if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
+            && Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+            int serverCount;
 
-            //Getting the number of replicas
-            int replicas = Config.getIntProperty("es.index.number_of_replicas", 0);
+            try {
+                serverCount = APILocator.getServerAPI().getAliveServersIds().length;
+            } catch (DotDataException e) {
+                Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+                serverCount = 1;
+            }
+            // formula is (live server count (including the ones that are down but not yet timed out) - 1)
 
-            settingsRequest = settingsRequest.settings(
-                    jsonBuilder().startObject()
-                            .startObject("index")
-                            .field("auto_expand_replicas", "false")
-                            .field("number_of_replicas", replicas)
-                            .endObject()
-                            .endObject().string()
-            );
-        } else {
-            settingsRequest = settingsRequest.settings(
-                    jsonBuilder().startObject()
-                            .startObject("index")
-                            .field("auto_expand_replicas", "0-all")
-                            .endObject()
-                            .endObject().string()
-            );
+            if(serverCount>0) {
+                UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+                settingsRequest.settings(jsonBuilder().startObject()
+                    .startObject("index")
+                    .field("auto_expand_replicas", false)
+                    .field("number_of_replicas", serverCount - 1)
+                    .endObject()
+                    .endObject().string()
+                );
+
+                return Optional.of(settingsRequest);
+            }
         }
 
-        return settingsRequest;
+        return updateSettingsRequest;
     }
 
 	private  void loadConfig(){
@@ -200,11 +211,11 @@ public class ESClient {
 		}
 	}
 
-	public void setClusterNode(Map<String, String> properties) throws Exception {
+	public void setClusterNode() throws Exception {
 	    String httpPort=null, transportTCPPort, bindAddr, initData;
 	    ServerAPI serverAPI = APILocator.getServerAPI();
 	    Server currentServer=null;
-	    
+
         if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 
 			String serverId = ConfigUtils.getServerId();
@@ -212,29 +223,39 @@ public class ESClient {
 			shutDownNode();
 			currentServer = serverAPI.getServer(serverId);
 
-			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
-					?currentServer.getHost():currentServer.getIpAddress();
+            String bindAddressFromProperty = Config.getStringProperty("es.network.host", null, false);
 
-			bindAddr = properties!=null && UtilMethods.isSet(properties.get("BIND_ADDRESS")) ? properties.get("BIND_ADDRESS")
-					:Config.getStringProperty("es.network.host", storedBindAddr);
+            if(UtilMethods.isSet(bindAddressFromProperty)) {
+                try {
+                    InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
+                    if(ClusterFactory.isValidIP(bindAddressFromProperty)){
+                        bindAddressFromProperty = addr.getHostAddress();
+                    }else{
+                        Logger.info(ClusterFactory.class, "Address provided in es.network.host property is not "
+                            + "valid: " + bindAddressFromProperty);
+                        bindAddressFromProperty = null;
+                    }
+                } catch(UnknownHostException e) {
+                    Logger.info(ClusterFactory.class, "Address provided in es.network.host property is not "
+                        + " valid: " + bindAddressFromProperty);
+                    bindAddressFromProperty = null;
+                }
+            }
 
-			currentServer.setHost(Config.getStringProperty("es.network.host", null));
+            bindAddr = bindAddressFromProperty!=null ? bindAddressFromProperty : currentServer.getIpAddress();
 
-			if(properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT"))){
-				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,properties.get("ES_TRANSPORT_TCP_PORT"));
-			} else if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
-				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString()); 
-			}else{ 
+			if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
+				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString());
+			}else{
 				transportTCPPort = getNextAvailableESPort(serverId, bindAddr, null);
 			}
 
 			if(Config.getBooleanProperty("es.http.enabled", false)) {
-				httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
-						:UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
+				httpPort = UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
 						:ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_HTTP_PORT);
 
 				currentServer.setEsHttpPort(Integer.parseInt(httpPort));
-			}			
+			}
 
 			List<String> myself = new ArrayList<String>();
 			myself.add(currentServer.getServerId());
@@ -271,7 +292,7 @@ public class ESClient {
 			}
 
 			initData=initialHosts.toString();
-			
+
 			try {
                 serverAPI.updateServer(currentServer);
             } catch (DotDataException e) {
@@ -284,24 +305,24 @@ public class ESClient {
             bindAddr = Config.getStringProperty("es.network.host", null);
             initData = Config.getStringProperty("es.discovery.zen.ping.unicast.hosts", null);
         }
-        
+
         if(transportTCPPort!=null)
             System.setProperty("es.transport.tcp.port",  transportTCPPort);
-        
+
         if(bindAddr!=null)
             System.setProperty("es.network.host", bindAddr );
-        
+
         if(Config.getBooleanProperty("es.http.enabled", false)) {
             System.setProperty("es.http.port",  httpPort);
             System.setProperty("es.http.enabled", "true");
         }
-        
+
         System.setProperty("es.discovery.zen.ping.multicast.enabled",
                 Config.getStringProperty("es.discovery.zen.ping.multicast.enabled", "false") );
 
         System.setProperty("es.discovery.zen.ping.timeout",
                 Config.getStringProperty("es.discovery.zen.ping.timeout", "5s") );
-        
+
         if(initData!=null) {
     		System.setProperty("es.discovery.zen.ping.unicast.hosts",initData);
     		Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
@@ -317,9 +338,9 @@ public class ESClient {
     	    shutDownNode();
 	    }
 	}
-	
+
 	/**
-	 * Validate if the base port is available in the specified bindAddress. 
+	 * Validate if the base port is available in the specified bindAddress.
 	 * If not the it will try to get the next port available
 	 * @param serverId Server identification
 	 * @param bindAddr Address where the port should be running
@@ -327,7 +348,7 @@ public class ESClient {
 	 * @return port
 	 */
 	public String getNextAvailableESPort(String serverId, String bindAddr, String basePort) {
-        
+
         String freePort = Config.getStringProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue());
         try {
         	if(UtilMethods.isSet(basePort)){
@@ -342,7 +363,7 @@ public class ESClient {
             while(!UtilMethods.isESPortFree(bindAddr,pp) && count <= 10) {
             	pp = pp + 1;
                	count++;
-            }   
+            }
             freePort=Integer.toString(pp);
         } catch (DotDataException e) {
             Logger.error(ESClient.class, "Could not get an Available server port", e);

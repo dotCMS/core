@@ -98,6 +98,7 @@ public class URLMapFilter implements Filter {
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
 
+		String previewPage = request.getParameter("previewPage");
 		/*
 		 * Getting host object form the session
 		 */
@@ -175,7 +176,7 @@ public class URLMapFilter implements Filter {
 					structure = CacheLocator.getContentTypeCache().getStructureByInode(pc.getStructureInode());
 					List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 					query.append("+structureName:").append(structure.getVelocityVarName()).append(" +deleted:false ");
-					if (EDIT_MODE || ADMIN_MODE) {
+					if ((EDIT_MODE || ADMIN_MODE) && UtilMethods.isSet(previewPage)) {
 						query.append("+working:true ");
 					} else {
 						query.append("+live:true ");

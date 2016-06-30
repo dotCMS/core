@@ -524,12 +524,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     	String myTag = t.getTagName().trim();
                         tagg.append(myTag).append(tagDelimit);
                         if ( t.isPersona() ) {
-                            personaTags.append(myTag).append(tagDelimit);
+                            personaTags.append(myTag).append(' ');
                         }
                     }
                     if(tagg.length() >tagDelimit.length()){
                     	String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr);
+                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr.replaceAll(",,", " "));
                         m.put("tags", taggStr);
                     }
 

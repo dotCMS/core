@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpSession;
@@ -20,6 +22,11 @@ import static org.junit.Assert.assertNull;
 public class NumberOfTimesPreviouslyVisitedConditionletFTest extends ConditionletFTest{
 
     private UsersSiteVisitsUtilTest usersSiteVisitsUtilTest;
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void innerInit () {

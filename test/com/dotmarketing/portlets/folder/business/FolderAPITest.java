@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.folder.business;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.channels.FileChannel;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -28,7 +20,23 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.liferay.portal.model.User;
 
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.List;
+
 public class FolderAPITest {
+
+	private final String LOGO_GIF_1 = "logo.gif";
+	private final String LOGO_GIF_2 = "logo2.gif";
+
+	@Rule
+	public TemporaryFolder testFolder = new TemporaryFolder();
 
 	@Test
 	public void renameFolder() throws Exception {
@@ -165,20 +173,19 @@ public class FolderAPITest {
 		APILocator.getVersionableAPI().setLive(link2);
 		
 		/*Adding file asset to folder */
-		String fileTitle="logo.gif";
-		String portal=APILocator.getFileAssetAPI().getRealAssetsRootPath().substring(0, APILocator.getFileAssetAPI().getRealAssetsRootPath().indexOf("assets"))+"portal/images/logo.gif";
-		File file = new File(portal);
-		File destFile = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()+"/tmp_upload/"+fileTitle);
-		FileChannel inputChannel = null;
-		FileChannel outputChannel = null;
-		try {
-			inputChannel = new FileInputStream(file).getChannel();
-			outputChannel = new FileOutputStream(destFile).getChannel();
-			outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
-		} finally {
-			inputChannel.close();
-			outputChannel.close();
-		}
+        String fileTitle = "testMove.txt";
+        File destFile = testFolder.newFile(fileTitle);
+
+        String text = "Hello world";
+        BufferedWriter output = null;
+        try {
+            output = new BufferedWriter(new FileWriter(destFile));
+            output.write(text);
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
 
 		Contentlet contentAsset3=new Contentlet();
 		Structure st = StructureFactory.getStructureByVelocityVarName("FileAsset");
@@ -368,29 +375,16 @@ public class FolderAPITest {
 		MultiTreeFactory.saveMultiTree(m);
 
 		/*Adding file asset to folder fcopy1*/
-		String fileTitle="logo.gif";
-		String portal=APILocator.getFileAssetAPI().getRealAssetsRootPath().substring(0, APILocator.getFileAssetAPI().getRealAssetsRootPath().indexOf("assets"))+"portal/images/logo.gif";
-		File file = new File(portal);
-		File destFile = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()+"/tmp_upload/"+fileTitle);
-		FileChannel inputChannel = null;
-		FileChannel outputChannel = null;
-		try {
-			inputChannel = new FileInputStream(file).getChannel();
-			outputChannel = new FileOutputStream(destFile).getChannel();
-			outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
-		} finally {
-			inputChannel.close();
-			outputChannel.close();
-		}
+		File destFile = testFolder.newFile(LOGO_GIF_1);
 
 		Contentlet contentAsset3=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("FileAsset");
 		contentAsset3.setStructureInode(st.getInode());
 		contentAsset3.setHost(demo.getIdentifier());
-		contentAsset3.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileTitle);
+		contentAsset3.setProperty(FileAssetAPI.FILE_NAME_FIELD, LOGO_GIF_1);
 		contentAsset3.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
 		contentAsset3.setLanguageId(langId);
-		contentAsset3.setProperty(FileAssetAPI.TITLE_FIELD, fileTitle);
+		contentAsset3.setProperty(FileAssetAPI.TITLE_FIELD, LOGO_GIF_1);
 		contentAsset3.setFolder(ftest1.getInode());
 		contentAsset3=APILocator.getContentletAPI().checkin(contentAsset3, user, false);
 		APILocator.getContentletAPI().publish(contentAsset3, user, false);
@@ -420,26 +414,16 @@ public class FolderAPITest {
 		APILocator.getVersionableAPI().setLive(link);
 		 
 		/*Adding page and file asset to folder fcopy2*/
-		String fileTitle2="logo.gif";
-		File file2 = new File(portal);
-		File destFile2 = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()+"/tmp_upload/"+fileTitle);
-		try {
-			inputChannel = new FileInputStream(file2).getChannel();
-			outputChannel = new FileOutputStream(destFile2).getChannel();
-			outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
-		} finally {
-			inputChannel.close();
-			outputChannel.close();
-		}
+		destFile = testFolder.newFile(LOGO_GIF_2);
 
 		Contentlet contentAsset4=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("FileAsset");
 		contentAsset4.setStructureInode(st.getInode());
 		contentAsset4.setHost(demo.getIdentifier());
-		contentAsset4.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileTitle);
+		contentAsset4.setProperty(FileAssetAPI.FILE_NAME_FIELD, LOGO_GIF_2);
 		contentAsset4.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
 		contentAsset4.setLanguageId(langId);
-		contentAsset4.setProperty(FileAssetAPI.TITLE_FIELD, fileTitle);
+		contentAsset4.setProperty(FileAssetAPI.TITLE_FIELD, LOGO_GIF_2);
 		contentAsset4.setFolder(ftest2.getInode());
 		contentAsset4=APILocator.getContentletAPI().checkin(contentAsset4, user, false);
 		APILocator.getContentletAPI().publish(contentAsset4, user, false);
@@ -529,7 +513,7 @@ public class FolderAPITest {
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
 		Thread.sleep(3000);
 		List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(newftest1, user, false);
-		Assert.assertTrue(files.size()==1 && files.get(0).getTitle().equals(fileTitle));
+		Assert.assertTrue(files.size()==1 && files.get(0).getTitle().equals(LOGO_GIF_1));
 		
 		List<Link> links = APILocator.getMenuLinkAPI().findFolderMenuLinks(newftest1);
 		Assert.assertTrue(links.size()==1 && links.get(0).getTitle().equals(linkStr));
@@ -539,7 +523,7 @@ public class FolderAPITest {
 		
 		/*validate page and file asset in folder fcopy2*/
 		files = APILocator.getFileAssetAPI().findFileAssetsByFolder(newftest2, user, false);
-		Assert.assertTrue(files.size()==1 && files.get(0).getTitle().equals(fileTitle2));
+		Assert.assertTrue(files.size()==1 && files.get(0).getTitle().equals(LOGO_GIF_2));
 		
 		page = APILocator.getHTMLPageAssetAPI().getPageByPath(newftest2.getPath()+pageStr2, demo, langId, false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr2));		

@@ -25,24 +25,18 @@ import com.liferay.util.StringUtil;
 
 public class SQLUtil {
 
+	private static final Set<String> EVIL_SQL_WORDS = ImmutableSet.of( "select ", "insert ", "delete ", "update ",
+			"replace ", "create ", " distinct ", " like ", " and ", " or ", " limit ", " group ", " order ", " as ",
+			" count ", "drop ", "alter ", "truncate ", "declare ", " where ", "exec ", "--", " procedure ", "pg_",
+			"lock ", "unlock ", "write ", " engine ", "null", "not ", " mode ", "set ", ";" );
 
-	private static final Set<String>  EVIL_SQL_WORDS = ImmutableSet.of( "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
-			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
-			"unlock","write", "engine", "null","not ","mode", "set ",";");
-	
-
-	
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
-			"title","filename", "moddate", "tagname","pageUrl", 
-			"category_name","category_velocity_var_name", 
+			"title","filename", "moddate", "tagname","pageUrl",
+			"category_name","category_velocity_var_name",
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
-			"description","category_","sort_order","hostName", "keywords"
-			
-			
-			
-			);
-	
+			"description","category_","sort_order","hostName", "keywords",
+			"mod_date,upper(name)");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();

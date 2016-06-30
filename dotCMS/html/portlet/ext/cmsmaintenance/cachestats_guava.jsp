@@ -56,21 +56,18 @@ MemoryMeter meter = new MemoryMeter();
 	</div>
 
 <table class="listingTable ">
-        <thead>
-                <th><%= LanguageUtil.get(pageContext,"Cache-Region") %></th>
-				<th><%= LanguageUtil.get(pageContext,"Cache-Provider-Name") %></th>
-				<th><%= LanguageUtil.get(pageContext,"Configured") %></th>
-                <th><%= LanguageUtil.get(pageContext,"In-Memory") %></th>
-                <th><%= LanguageUtil.get(pageContext,"On-Disk") %></th>
-                <th><%= LanguageUtil.get(pageContext,"Load") %></th>
-                <th><%= LanguageUtil.get(pageContext,"Hit-Rate") %></th>
-                <th><%= LanguageUtil.get(pageContext,"Avg-Load-Time") %></th>
-                
-                <th><%= LanguageUtil.get(pageContext,"Evictions") %></th>
-                <%if(showSize){ %>
-                	<th><%= LanguageUtil.get(pageContext,"Size") %> / <%= LanguageUtil.get(pageContext,"Avg") %></th>
-                <%} %>
-        </thead>
+	<thead>
+		<th><%= LanguageUtil.get(pageContext,"Cache-Region") %></th>
+		<th><%= LanguageUtil.get(pageContext,"Cache-Provider-Name") %></th>
+		<th><%= LanguageUtil.get(pageContext,"Configured") %></th>
+		<th><%= LanguageUtil.get(pageContext,"In-Memory") %></th>
+		<th><%= LanguageUtil.get(pageContext,"On-Disk") %></th>
+		<th><%= LanguageUtil.get(pageContext,"Load") %></th>
+		<th><%= LanguageUtil.get(pageContext,"Hit-Rate") %></th>
+		<th><%= LanguageUtil.get(pageContext,"Avg-Load-Time") %></th>	
+		<th><%= LanguageUtil.get(pageContext,"Evictions") %></th>
+		<th><%= LanguageUtil.get(pageContext,"Size") %> / <%= LanguageUtil.get(pageContext,"Avg") %></th>
+	</thead>
         <%
 
 			List<Map<String, Object>> stats = CacheLocator.getCacheAdministrator().getCacheStatsList();
@@ -105,7 +102,7 @@ MemoryMeter meter = new MemoryMeter();
 				boolean isDefault = (Boolean) s.get("isDefault");
 				String region = ((String) s.get("region")).toLowerCase();
 				int configuredSize = (Integer) s.get("configuredSize");
-
+				String configuredSizeStr =(configuredSize<1) ? "-" : String.valueOf(configuredSize);
 				String memory = "-";
 				if ( s.get("memory") != null && !toDisk ) {
 					memory = s.get("memory").toString();
@@ -118,8 +115,9 @@ MemoryMeter meter = new MemoryMeter();
 
 				long memoryUsed;
 				String myMemoryUsed = "-";
-				String avgMemoryUsed = "-";
+				String avgMemoryUsed = s.get( "entrySize")!=null ? UtilMethods.prettyMemory((Long)s.get("entrySize")) : "-";
 				String sizeHighlightColor = "#aaaaaa";
+				String memoryMessage = "-";
 				if ( !isDefault ) {
 
 					if ( configuredSize > 0 ) {
@@ -144,11 +142,13 @@ MemoryMeter meter = new MemoryMeter();
 					} catch ( Exception e ) {
 					}
 
-					if ( showSize ) {
+					
+					if ( showSize && !toDisk) {
 						try {
 							memoryUsed = meter.measureDeep(cache);
 							myMemoryUsed = UtilMethods.prettyMemory(memoryUsed);
 							avgMemoryUsed = myMemoryUsed;
+							memoryMessage = myMemoryUsed + " / " +  avgMemoryUsed;
 							try {
 								avgMemoryUsed = UtilMethods.prettyMemory(memoryUsed / new Integer(s.get("memory").toString()));
 							} catch ( Exception e ) {
@@ -162,33 +162,33 @@ MemoryMeter meter = new MemoryMeter();
 							}
 						} catch ( Exception e ) {
 							sizeHighlightColor = "silver";
-							myMemoryUsed = "Jamm not set as -javaagent";
+							memoryMessage = "requires -javaagent";
 
 						}
 					}
+
 				}
 
         	%>
 
-		        <tr>
+		        <tr <%if(toDisk){ %>style="background:#eeeeee"<%} %>>
 		                <td align="left">
 						<%=!isDefault ? "<b>":"" %>
 						<%= region %>
 						<%=!isDefault ? "</b>":"" %>
 						<%=isDefault ? "(default)":"" %></td>
 						<td <%=isDefault ? "style='color:silver;'":"" %>><%=name%></td>
-						<td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSize%></td>
+						<td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSizeStr%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=memory%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=disk%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.loadCount()) %><%}else{%>-<%}%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.hitRate() * 100) %>%<%}else{%>-<%}%>  </td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.averageLoadPenalty()/1000000) %> ms<%}else{%>-<%}%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= cacheStats.evictionCount() %><%}else{%>-<%}%></td>
-		                <%if(showSize){ %>
-		                	<td style="color:<%=sizeHighlightColor%>">
-		                		<%= myMemoryUsed %>  / <%=avgMemoryUsed %>
-		                	</td>
-		                <%} %>
+	                	<td style="color:<%=sizeHighlightColor%>">
+	                		<%= memoryMessage %> <%=avgMemoryUsed %>
+	                	</td>
+
 		                
 		        </tr>
         		
@@ -206,16 +206,19 @@ MemoryMeter meter = new MemoryMeter();
             <td style="border:1px solid white"><%= nf.format(metaStats.averageLoadPenalty()/1000000) %> ms</td>
             <td style="border:1px solid white"><%= metaStats.evictionCount() %></td>
 		    
-                <%if(showSize){ %>
+                
 	                <td style="border:1px solid white;">
-	                	<%try{ %>
-	          				<%= UtilMethods.prettyMemory( meter.measureDeep(stats)) %> 
-	         
-	                	<%}catch(Exception e){ %>
-	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm-0.2.5_2.jar
-	                	<%} %>
+	                
+	                <%if(showSize){ %>
+		                	<%try{ %>
+		          				<%= UtilMethods.prettyMemory( meter.measureDeep(stats)) %> 
+		         
+		                	<%}catch(Exception e){ %>
+		                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm-0.2.5_2.jar
+		                	<%} %>
+	                	<%} %> 
                 	 </td>
-                <%} %>       
+                      
            
             
 

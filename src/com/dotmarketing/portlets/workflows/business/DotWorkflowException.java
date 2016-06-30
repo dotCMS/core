@@ -14,4 +14,9 @@ public class DotWorkflowException extends DotStateException {
 
 	}
 
+	public DotWorkflowException(String x, Exception cause) {
+		super(x, cause);
+
+	}
+
 }

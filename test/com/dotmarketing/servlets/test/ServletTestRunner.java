@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets.test;
 
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.listeners.TestTextRingingListener;
 import com.dotmarketing.listeners.TestXmlRingingListener;
 import com.dotmarketing.util.Config;
@@ -10,6 +11,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.runner.JUnitCore;
+import org.junit.runner.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -55,6 +57,7 @@ public class ServletTestRunner extends HttpServlet {
         
         //Getting the junit test class to run
         String className = request.getParameter( "class" );
+        String methodName = request.getParameter( "method" );
         String resultType = request.getParameter( "resultType" ); //plain/file
 
         //If nothing was sent lets run all the tests
@@ -66,13 +69,13 @@ public class ServletTestRunner extends HttpServlet {
 
         //If nothing is present the default is to create an xml report
         if ( resultType == null || resultType.isEmpty() ) {
-            xmlReport( response, className );
+            xmlReport( response, className, methodName );
         } else {
 
             if ( resultType.equals( RESULT_TYPE_PLAIN ) ) {
-                plainTextReport( response, className );
+                plainTextReport( response, className, methodName );
             } else {
-                xmlReport( response, className );
+                xmlReport( response, className, methodName );
             }
         }
     }
@@ -102,7 +105,7 @@ public class ServletTestRunner extends HttpServlet {
      * @throws ServletException
      * @throws IOException
      */
-    private void xmlReport ( HttpServletResponse response, String className ) throws ServletException, IOException {
+    private void xmlReport ( HttpServletResponse response, String className, String methodName ) throws ServletException, IOException {
 
         //Running the given junit test class
         JUnitCore jUnitCore = new JUnitCore();
@@ -122,7 +125,13 @@ public class ServletTestRunner extends HttpServlet {
         try {
             Class clazz = Class.forName( className );
             testXmlRingingListener.startFile( clazz );
-            jUnitCore.run( clazz );
+
+            if(!Strings.isNullOrEmpty(methodName)) {
+                jUnitCore.run(Request.method(clazz, methodName));
+            } else {
+                jUnitCore.run( clazz );
+            }
+
             testXmlRingingListener.closeFile();
         } catch ( ClassNotFoundException e ) {
             throw new ServletException( e );
@@ -141,7 +150,7 @@ public class ServletTestRunner extends HttpServlet {
      * @throws ServletException
      * @throws IOException
      */
-    private void plainTextReport ( HttpServletResponse response, String className ) throws ServletException, IOException {
+    private void plainTextReport ( HttpServletResponse response, String className, String methodName ) throws ServletException, IOException {
 
         response.setContentType( "text/plain" );
 
@@ -151,7 +160,13 @@ public class ServletTestRunner extends HttpServlet {
         TestTextRingingListener testRingingListener = new TestTextRingingListener();
         jUnitCore.addListener( testRingingListener );
         try {
-            jUnitCore.run( Class.forName( className ) );
+            Class clazz = Class.forName( className );
+
+            if(!Strings.isNullOrEmpty(methodName)) {
+                jUnitCore.run(Request.method(clazz, methodName));
+            } else {
+                jUnitCore.run( clazz );
+            }
         } catch ( ClassNotFoundException e ) {
             throw new ServletException( e );
         }

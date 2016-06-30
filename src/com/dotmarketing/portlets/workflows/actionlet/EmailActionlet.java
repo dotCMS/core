@@ -1,22 +1,20 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import java.io.File;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.mail.internet.InternetAddress;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cmis.proxy.DotInvocationHandler;
-import com.dotmarketing.cmis.proxy.DotRequestProxy;
-import com.dotmarketing.cmis.proxy.DotResponseProxy;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -107,14 +105,8 @@ public class EmailActionlet extends WorkFlowActionlet {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
 
-            InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
-
-            DotRequestProxy requestProxy = (DotRequestProxy) Proxy.newProxyInstance(DotRequestProxy.class.getClassLoader(),new Class[] { DotRequestProxy.class }, dotInvocationHandler);
-            requestProxy.put("host", host);
-            requestProxy.put("host_id", host.getIdentifier());
-            requestProxy.put("user", processor.getUser());
-            DotResponseProxy responseProxy = (DotResponseProxy) Proxy.newProxyInstance(DotResponseProxy.class.getClassLoader(), new Class[] { DotResponseProxy.class }, dotInvocationHandler);
-
+            HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+            HttpServletResponse responseProxy = new BaseResponse().response();
             org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
             ctx.put("host", host);
             ctx.put("host_id", host.getIdentifier());

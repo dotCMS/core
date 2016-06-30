@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ThrowErrorConditionlet;
@@ -19,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.TestBase;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -47,6 +49,11 @@ public class RulesAPIFTest extends TestBase {
 		robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
 		indexUrl = String.format("http://%s:%s/", serverName, serverPort);
         ruleId = "";
+	}
+
+	@BeforeClass
+	public static void prepare () throws Exception {
+		LicenseTestUtil.getLicense();
 	}
 
 

@@ -233,7 +233,8 @@ public class UtilMethods {
         if (x == null)
             return false;
         return (x.toLowerCase().endsWith(".gif") || x.toLowerCase().endsWith(".jpg") || x.toLowerCase().endsWith(".jpe")
-                || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".jpeg"));
+                || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".jpeg"))
+                || x.toLowerCase().endsWith(".svg");
     }
 
     public static final String getMonthFromNow() {

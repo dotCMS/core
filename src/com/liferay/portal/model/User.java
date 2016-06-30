@@ -72,6 +72,11 @@ public class User extends UserModel implements Recipient {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return this.getFullName();
+	}
+
 	public User() {
 		super();
 	}

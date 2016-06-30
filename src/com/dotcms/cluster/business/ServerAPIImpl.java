@@ -1,5 +1,14 @@
 package com.dotcms.cluster.business;
 
+import com.dotcms.cluster.bean.Server;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,18 +18,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.dotcms.cluster.bean.Server;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 public class ServerAPIImpl implements ServerAPI {
 
@@ -143,39 +141,30 @@ public class ServerAPIImpl implements ServerAPI {
 	public void updateServerName(String serverId, String name) throws DotDataException {
 		serverFactory.updateServerName(serverId, name);
 	}
-	/**
-	 * Remove the specified server from the cluster_server_uptime and cluster_server tables
-	 * @param serverId Server identifier
-	 * @throws DotDataException
-	 * @throws IOException 
-	 */
-	public void removeServerFromCluster(String serverId) throws DotDataException, IOException{
-		for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
-			
-			if( serverId.equals((String)lic.get("serverid"))) {
-				LicenseUtil.freeLicenseOnRepo((String)lic.get("serial"), serverId);
-				break;
-			}
-		}
-		serverFactory.removeServer(serverId);
+
+	@Override
+	public void removeServerFromClusterTable(String serverId) throws DotDataException, IOException{
+		serverFactory.removeServerFromClusterTable(serverId);
 	}
-	/**
-	 * Get the list of inactive servers
-	 * @return List<Server>
-	 * @throws DotDataException
-	 */
+
+	@Override
 	public List<Server> getInactiveServers() throws DotDataException{
-		List<Server> inactiveServers = new CopyOnWriteArrayList<Server>(); 
-		inactiveServers.addAll(getAllServers());
+		List<Server> inactiveServers = new CopyOnWriteArrayList<>(getAllServers());
 		List<Server> aliveServers = getAliveServers();
-		for(Server serv: aliveServers){
-			for(Server serv1 : inactiveServers){
-				if(serv1.getServerId().equals(serv.getServerId())){
-					inactiveServers.remove(serv1);
+
+		for(Server aliveServer: aliveServers){
+			for(Server inactiveServer : inactiveServers){
+				if(inactiveServer.getServerId().equals(aliveServer.getServerId())){
+					inactiveServers.remove(inactiveServer);
 				}
 			}
 		}
 		
 		return inactiveServers;
+	}
+
+	@Override
+	public Server getCurrentServer() {
+		return getServer(readServerId());
 	}
 }

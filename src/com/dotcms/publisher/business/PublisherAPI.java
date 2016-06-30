@@ -28,6 +28,12 @@ public abstract class PublisherAPI {
 	protected static final String CATEGORY="CAT";
 
 	private static PublisherAPI pubAPI = null;
+
+	/**
+	 * Returns a single instance of this API.
+	 * 
+	 * @return A single PublisherAPI instance.
+	 */
 	public static PublisherAPI getInstance(){
 		if(pubAPI == null){
 			pubAPI = PublisherAPIImpl.getInstance();
@@ -65,7 +71,6 @@ public abstract class PublisherAPI {
 	 */
 	public abstract void publishAndExpireBundleAssets(String bundleId, Date publishDate, Date expireDate, User user) throws DotPublisherException;
 
-
 	/**
 	 * Get tree data of a content
 	 * @param id
@@ -94,14 +99,12 @@ public abstract class PublisherAPI {
 	 */
 	public abstract List<PublishQueueElement> getQueueElements() throws DotPublisherException;
 
-
 	/**
 	 * count queue elements
 	 * @return List<Map<String,Object>>
 	 * @throws DotPublisherException
 	 */
 	public abstract Integer countQueueElements() throws DotPublisherException;
-
 
 	/**
 	 * Get queue elements group by bundle_id
@@ -115,9 +118,7 @@ public abstract class PublisherAPI {
 	 * @return
 	 * @throws DotPublisherException
 	 */
-
 	public abstract Integer countQueueBundleIds() throws DotPublisherException;
-
 
 	/**
 	 * get bundle_ids available
@@ -190,6 +191,19 @@ public abstract class PublisherAPI {
 	public abstract void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException;
 
 	/**
+	 * Deletes a record from the {@code publishing_queue} table based on its
+	 * Identifier and language ID.
+	 * 
+	 * @param identifier
+	 *            - The Identifier of the record to delete.
+	 * @param languageId
+	 *            - The language ID of the record to delete.
+	 * @throws DotPublisherException
+	 *             An error occurred when deleting the entry.
+	 */
+	public abstract void deleteElementFromPublishQueueTable(String identifier, long languageId) throws DotPublisherException;
+
+	/**
 	 * Delete element(s) from publishing_queue table by bundleid
 	 * @param id ID of the element in the table
 	 * @return boolean
@@ -201,4 +215,5 @@ public abstract class PublisherAPI {
 	 * @return boolean
 	 */
 	public abstract void deleteAllElementsFromPublishQueueTable() throws DotPublisherException;
+
 }

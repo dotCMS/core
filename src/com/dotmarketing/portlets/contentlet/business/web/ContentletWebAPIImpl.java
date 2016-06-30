@@ -631,24 +631,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	/**
-	 * Validates the new/modified page taken into account the following
-	 * criteria:
-	 * <ol>
-	 * <li>The URL does not exist for another page.</li>
-	 * <li>The URL does not match an existing folder.</li>
-	 * <li>The URL does not match an asset file.</li>
-	 * </ol>
-	 * 
-	 * @param contentPage
-	 *            - The content page as a {@link Contentlet} object.
-	 * @return If the page is valid, returns <code>null</code>. Otherwise,
-	 *         returns the message key containing the description of the error.
-	 * @throws DotRuntimeException
-	 *             If the user does not have permissions to perform the required
-	 *             action, or if a problem occurred when interacting with the
-	 *             database.
+     * {@inheritDoc}
 	 */
-	private String validateNewContentPage(Contentlet contentPage) {
+
+    @Override
+	public String validateNewContentPage(Contentlet contentPage) {
 		String parentFolderId = contentPage.getFolder();
 		String pageUrl = contentPage.getMap().get("url").toString();
 		String status = null;
@@ -804,8 +791,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	}
 
-	private boolean _populateContent(Map<String, Object> contentletFormData,
-			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception, DotContentletValidationException {
+	private void _populateContent(Map<String, Object> contentletFormData,
+			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
 		handleEventRecurrence(contentletFormData, contentlet);
 
@@ -909,18 +896,18 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						}
 					}
 				}
-				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString())) && APILocator.getFieldAPI().valueSettable(field) && !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
-					try{
-						conAPI.setContentletProperty(contentlet, field, value);
-					}catch (Exception e) {
-						Logger.info(this, "Unable to set field " + field.getFieldName() + " to value " + value);
-						Logger.debug(this, "Unable to set field " + field.getFieldName() + " to value " + value, e);
-					}
+				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString()))
+						&& APILocator.getFieldAPI().valueSettable(field)
+						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+					conAPI.setContentletProperty(contentlet, field, value);
+				}
 			}
 
-			return true;
-		} catch (Exception ex) {
-			return false;
+		} catch (DotContentletStateException e) {
+			throw e;
+		} catch (Exception e) {
+			Logger.error(this, "Unable to populate content. ", e);
+			throw new Exception("Unable to populate content");
 		}
 	}
 

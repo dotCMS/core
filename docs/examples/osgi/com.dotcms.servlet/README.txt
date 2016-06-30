@@ -8,7 +8,15 @@ This bundle plugin is an example of how to use services provide by other bundles
 How to build this example
 -------------------------
 
-To install all you need to do is build the JAR. to do this run
+Note: As you can see, this plugin depends on com.dotcms.service example.
+It will use com.dotmarketing.osgi.service.HelloWorld.
+
+In order to compile this plugin without error you need to run first under com.dotcms.service example:
+./gradlew jar
+
+As you can see the build.gradle will use the jar compiled under that example.
+
+Then to compile this plugin all you need to do is to do:
 ./gradlew jar
 This will build a jar in the build/libs directory
 

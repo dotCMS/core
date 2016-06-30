@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -7,6 +8,7 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.WebKeys;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +31,11 @@ public abstract class  ConditionletFTest {
 
     protected ConditionDataGen conditionDataGen = new ConditionDataGen();
     protected ConditionletTestUtil conditionletTestUtil = new ConditionletTestUtil();
+
+    @BeforeClass
+    public static void prepare () throws Exception {
+        LicenseTestUtil.getLicense();
+    }
 
     @Before
     public void init () {
