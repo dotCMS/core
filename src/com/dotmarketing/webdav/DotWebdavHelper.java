@@ -374,6 +374,7 @@ public class DotWebdavHelper {
 		try {
 			url = stripMapping(url);
 		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + url + "]", e);
 		}
 		Logger.debug(this, "Getting temp file from path " + url);
 		java.io.File f = new java.io.File(tempHolderDir.getPath() + url);
@@ -493,6 +494,7 @@ public class DotWebdavHelper {
 		try {
 			return getHostname(stripMapping(uri));
 		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + uri + "]", e);
 			return null;
 		}
 	}
@@ -508,6 +510,7 @@ public class DotWebdavHelper {
 		try {
 			path = stripMapping(path);
 		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e);
 		}
 		if(path.startsWith(tempHolderDir.getPath()))
 			path = path.substring(tempHolderDir.getPath().length(), path.length());
@@ -1505,14 +1508,18 @@ public class DotWebdavHelper {
 		return defaultLang;
 	}
 	
-	public void setLanguage(String uri){
-		try {
-			stripMapping(uri);
-		} catch (IOException e) {
-		}
-	}
-
-	private String stripMapping(String uri) throws IOException {
+	/**
+	 * This method takes the path and strips all strings that are related to the endpoint. 
+	 * Also, if the new pathing is used when it's stripping it, set it as defaultLang, so it can be used by the other methods.
+	 * 
+	 * e.g: uri = /webdav/live/2/demo.dotcms.com/home -> defaultLang set to 2 and returns /demo.dotcms.com/home (after stripping)
+	 * 
+	 * @param uri Full URL of the connection
+	 * @return the URL without the endpoint
+	 * @throws IOException when the language passed in the path doesn't exist the IOException will be thrown.
+	 * 
+	 */
+	public String stripMapping(String uri) throws IOException {
 		String r = uri;
 		if (r.startsWith("/webdav")) {
 			r = r.substring(7, r.length());
@@ -1534,7 +1541,6 @@ public class DotWebdavHelper {
 			if(StringUtils.isNumeric(r.substring(1, 2))){
 			defaultLang = Long.parseLong(r.substring(1, 2));
 				if(!APILocator.getLanguageAPI().getLanguages().contains(APILocator.getLanguageAPI().getLanguage(defaultLang))){
-					Logger.error( this, "The language id specified in the path does not exists");
 					throw new IOException("The language id specified in the path does not exists");
 				}
 				r = r.substring(2);
