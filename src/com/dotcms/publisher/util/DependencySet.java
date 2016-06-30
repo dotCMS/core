@@ -141,8 +141,6 @@ public class DependencySet extends HashSet<String> {
 					try {
                         asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
                         APILocator.getPushedAssetsAPI().savePushedAsset(asset);
-                        //If the asset has been modified for at least 1 environment, let's add it to the bundle
-                        break;
 					} catch (DotDataException e) {
 						Logger.error(getClass(), "Could not save PushedAsset. "
 								+ "AssetId: " + assetId + ". AssetType: " + assetType + ". Env Id: " + env.getId(), e);
