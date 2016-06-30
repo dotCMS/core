@@ -1508,7 +1508,12 @@ public class DotWebdavHelper {
 		return defaultLang;
 	}
 	
-	/*
+	/**
+	 * 
+	 * @param uri
+	 * @return the uri without the endpoint
+	 * @throws IOException
+	 * 
 	 * This method takes the path and strips all strings that are related to the endpoint. 
 	 * Also, if the new pathing is used when it's stripping it, set it as defaultLang, so it can be used by the other methods.
 	 * Whenever the language passed in the path doesn't exist the IOException will be thrown.
