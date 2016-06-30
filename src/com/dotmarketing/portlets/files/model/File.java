@@ -467,6 +467,10 @@ public class File extends WebAsset implements Serializable,IFileAsset {
 	public void setMenuOrder(int sortOrder) {
 		setSortOrder(sortOrder);
 		
+	}
+
+	public long getLanguageId() {
+		return APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	}	
 	
 	
