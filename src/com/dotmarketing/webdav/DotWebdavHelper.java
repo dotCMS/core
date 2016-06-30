@@ -1509,16 +1509,15 @@ public class DotWebdavHelper {
 	}
 	
 	/**
-	 * 
-	 * @param uri
-	 * @return the uri without the endpoint
-	 * @throws IOException
-	 * 
 	 * This method takes the path and strips all strings that are related to the endpoint. 
 	 * Also, if the new pathing is used when it's stripping it, set it as defaultLang, so it can be used by the other methods.
-	 * Whenever the language passed in the path doesn't exist the IOException will be thrown.
 	 * 
 	 * e.g: uri = /webdav/live/2/demo.dotcms.com/home -> defaultLang set to 2 and returns /demo.dotcms.com/home (after stripping)
+	 * 
+	 * @param uri Full URL of the connection
+	 * @return the URL without the endpoint
+	 * @throws IOException when the language passed in the path doesn't exist the IOException will be thrown.
+	 * 
 	 */
 	public String stripMapping(String uri) throws IOException {
 		String r = uri;
