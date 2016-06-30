@@ -21,6 +21,23 @@ import com.dotmarketing.business.APILocator;
  */
 public class ConfigUtils {
 
+
+    /*
+     * This property determine if the app is running on dev mode.
+     */
+    public static final String DEV_MODE_KEY = "dotcms.dev.mode";
+
+	/**
+	 * Returns true if app is running on dev mode.
+	 * @return boolean
+     */
+	public static boolean isDevMode () {
+
+        // by default if the vars does not exists, we assume is not
+        // running on dev mode, so it is false.
+        return Config.getBooleanProperty(DEV_MODE_KEY, false);
+	}
+
 	public static String getDynamicContentPath() {
 		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
 		if (UtilMethods.isSet(realPath)) {

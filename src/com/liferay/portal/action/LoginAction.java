@@ -22,16 +22,6 @@
 
 package com.liferay.portal.action;
 
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.Action;
@@ -49,13 +39,13 @@ import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.RequiredLayoutException;
-import com.liferay.portal.SendPasswordException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.UserEmailAddressException;
-import com.liferay.portal.UserIdException;
-import com.liferay.portal.UserPasswordException;
+import com.dotmarketing.util.jwt.DotCMSSubjectBean;
+import com.dotmarketing.util.jwt.JWTBean;
+import com.dotmarketing.util.jwt.JsonWebTokenFactory;
+import com.dotmarketing.util.jwt.JsonWebTokenService;
+import com.dotmarketing.util.marshal.MarshalFactory;
+import com.dotmarketing.util.marshal.MarshalUtils;
+import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -65,17 +55,23 @@ import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.Constants;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.util.*;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
  * <a href="LoginAction.java.html"><b><i>View Source</i></b></a>
@@ -86,7 +82,24 @@ import com.liferay.util.servlet.SessionMessages;
  */
 public class LoginAction extends Action {
 
-	public ActionForward execute(
+    public static final String JSON_WEB_TOKEN_DAYS_MAX_AGE = "json.web.token.days.max.age";
+
+	// Default max days for the JWT
+	public static final int JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT = 14;
+
+	/**
+	 * Determines the action to execute based on the command issued by the user.
+	 * 
+	 * @param mapping
+	 *            - The mapping definitions for this Struts action.
+	 * @param form
+	 *            - The HTML form with the information sent by the user.
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 */
+    public ActionForward execute(
 			ActionMapping mapping, ActionForm form, HttpServletRequest req,
 			HttpServletResponse res)
 		throws Exception {
@@ -190,7 +203,12 @@ public class LoginAction extends Action {
 		
 		return mapping.findForward("portal.login");
 	}
-	
+
+    /**
+     * 
+     * @param req
+     * @throws Exception
+     */
 	private void _resetPassword(HttpServletRequest req) throws Exception {
 	    String userId = ParamUtil.getString(req, "my_user_id");
 	    String token = ParamUtil.getString(req, "token");
@@ -247,20 +265,26 @@ public class LoginAction extends Action {
 	    
 	}
 
+	/**
+	 * Performs the authentication process carried out through the Login page.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 * @throws Exception
+	 *             An error occurred during the authentication process.
+	 */
 	private void _login(HttpServletRequest req, HttpServletResponse res)
 		throws Exception {
 
 		HttpSession ses = req.getSession();
 
 		String login = ParamUtil.getString(req, "my_account_login").toLowerCase();
-		
-
-
 		String password = ParamUtil.getString(req, "password");
 		if (Validator.isNull(password)) {
 			password = ParamUtil.getString(req, "password");
 		}
-
 		
 		boolean rememberMe = ParamUtil.get(req, "my_account_r_m", false);
 
@@ -345,29 +369,91 @@ public class LoginAction extends Action {
 			
 			String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
 			
-			String maxAge = rememberMe?"31536000":"0";
+			String maxAge = rememberMe?"31536000":"0"; // todo: by default this should be two weeks, but it might be configuration using the CONFIG.
 				
 			StringBuilder headerStr = new StringBuilder();
 			headerStr.append(CookieKeys.ID).append("=\"").append(UserManagerUtil.encryptUserId(userId)).append("\";")
 				.append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
 			res.addHeader("SET-COOKIE", headerStr.toString());
 
+            //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
+			int jwtMaxAge = rememberMe ? Config.getIntProperty(
+	                JSON_WEB_TOKEN_DAYS_MAX_AGE,
+	                JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) : -1;
+			
+            this.processJsonWebToken(req, res, user, jwtMaxAge);
+
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
-			
 		}
-
 		if (authResult != Authenticator.SUCCESS) {
-			//Logger.info(this, "An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
 			SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
 			throw new AuthException();
 		}
-		
-		//Logger.info(this, "User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
 		SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
 	}
 
-	private void _sendPassword(HttpServletRequest req) throws Exception {
+	/**
+	 * Generates the JWT and its respective cookie based on the following
+	 * criteria:
+	 * <ul>
+	 * <li>Information from the user: ID, associated company.</li>
+	 * <li>The "Remember Me" option being checked or not.</li>
+	 * </ul>
+	 * The JWT will allow the user to access the dotCMS back-end even though
+	 * their session has expired. This way, they won't need to re-authenticate.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 * @param user
+	 *            - The {@link User} trying to log into the system.
+	 * @param maxAge
+	 *            - The maximum days (in milliseconds) that the JWT will live.
+	 *            If the "Remember Me" option is checked, the token will live
+	 *            for many days (check its default value). Otherwise, it will
+	 *            only live during the current session.
+	 * @throws PortalException
+	 *             The specified user could not be found.
+	 * @throws SystemException
+	 *             An error occurred during the user ID encryption.
+	 */
+    private void processJsonWebToken(final HttpServletRequest req,
+                                     final HttpServletResponse res,
+                                     final User user,
+                                     final int maxAge) throws PortalException, SystemException {
+
+		final MarshalFactory marshalFactory =
+				MarshalFactory.getInstance();
+		final MarshalUtils marshalUtils =
+				marshalFactory.getMarshalUtils();
+		final JsonWebTokenService jsonWebTokenService =	
+				JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+
+        // create the cookie with the token using the new classes
+		final String encryptUserId = UserManagerUtil.encryptUserId(user.getUserId());
+
+        final String jwtAccessToken =
+                jsonWebTokenService.generateToken(
+                        new JWTBean(encryptUserId,
+								marshalUtils.marshal(
+										new DotCMSSubjectBean(user.getModificationDate(),
+												encryptUserId,
+												user.getCompanyId())),
+										encryptUserId,
+										maxAge)
+				);
+
+        createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
+    }
+
+    /**
+     * 
+     * @param req
+     * @throws Exception
+     */
+    private void _sendPassword(HttpServletRequest req) throws Exception {
 		String emailAddress = ParamUtil.getString(
 			req, "my_account_email_address");
 		String userId = emailAddress;

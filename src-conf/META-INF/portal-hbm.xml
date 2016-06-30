@@ -136,6 +136,7 @@
 		<property name="refreshRate" />
 		<property name="comments" />
 		<property name="createDate" />
+		<property name="modDate" column="mod_date" />
 		<property name="loginDate" />
 		<property name="loginIP" />
 		<property name="lastLoginDate" />

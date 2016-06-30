@@ -162,6 +162,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03535RemoveTagsWithoutATagname.class);
 		ret.add(Task03540UpdateTagInodesReferences.class);
 		ret.add(Task03545FixVarcharSizeInFolderOperations.class);
+		ret.add(Task03550ModificationDateColumnAddedToUserTable.class);
         return ret;
     }
 

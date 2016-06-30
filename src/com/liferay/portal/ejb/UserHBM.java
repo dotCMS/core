@@ -464,6 +464,14 @@ public class UserHBM {
 		_projTasks = projTasks;
 	}
 
+	public Date getModDate() {
+		return _modDate;
+	}
+
+	public void setModDate(Date _modDate) {
+		this._modDate = _modDate;
+	}
+
 	private String _userId;
 	private String _companyId;
 	private String _password;
@@ -498,6 +506,7 @@ public class UserHBM {
 	private String _layoutIds;
 	private String _comments;
 	private Date _createDate;
+	private Date _modDate;
 	private Date _loginDate;
 	private String _loginIP;
 	private Date _lastLoginDate;
