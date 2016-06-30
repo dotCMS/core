@@ -44,7 +44,11 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        dotDavHelper.setLanguage(path);
+        try {
+			dotDavHelper.stripMapping(path);
+		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e);
+		}
         this.lang = dotDavHelper.getLanguage();
         this.isAutoPub=dotDavHelper.isAutoPub(path);
     }
