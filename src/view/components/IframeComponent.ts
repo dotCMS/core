@@ -7,17 +7,9 @@ import { Observable } from 'rxjs/Rx'
 @Component({
     selector: "iframe-component",
     template: ` 
-        <iframe id="detailFrame" name="detailFrame" class="iframe-style" [src]="iframe | async" frameborder="0"></iframe>
+        <iframe width="100%" height="100%" id="detailFrame" [src]="iframe | async" frameborder="0"></iframe>
     `,
-    providers: [],
-    styles: [
-        `
-        .iframe-style {
-            width: 100%;
-            height: 600px;
-        }
-        `
-    ]
+    providers: []
 })
 
 export class IframeComponent {

@@ -30,7 +30,11 @@
         'isarray': 'n:isarray',
         'query-string': 'n:query-string',
         'strict-uri-encode': 'n:strict-uri-encode',
-        'object-assign': 'n:object-assign'
+        'object-assign': 'n:object-assign',
+
+        // angular-material
+        '@angular2-material': 'n:@angular2-material'
+
     };
 
     // packages tells the System loader how to load when no filename and/or no extension
@@ -96,13 +100,25 @@
         '@angular/platform-browser',
         '@angular/platform-browser-dynamic',
         '@angular/router',
-        '@angular/testing',
+        '@angular/testing'
     ];
 
     // add package entries for angular packages in the form '@angular/common': { main: 'index.js', defaultExtension: 'js' }
     packageNames.forEach(function(pkgName) {
         packages[pkgName] = { main: 'index.js', defaultExtension: 'js' };
     });
+
+    const angularMaterialPackages = [
+        'core',
+        'button',
+        'sidenav',
+        'list',
+        'toolbar'
+    ];
+
+    angularMaterialPackages.forEach(function(pkg) {
+        packages[`@angular2-material/${pkg}`] = {main: `${pkg}.js`};
+    })
 
     var config = {
         map: map,
