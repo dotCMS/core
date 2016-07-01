@@ -37,9 +37,7 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
                 </md-nav-list>
             </md-sidenav>
         </md-sidenav>
-        <div>
-            <route-view></route-view>
-        </div>
+        <route-view></route-view>
     </md-sidenav-layout>
     `,
     providers: [],
