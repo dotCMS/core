@@ -6,8 +6,14 @@ import {MD_SIDENAV_DIRECTIVES} from '@angular2-material/sidenav/sidenav';
 import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
 
 @Component({
-    selector: "app",
+    selector: 'app',
+    styles: ['md-sidenav-layout[fullscreen] {top: 64px}'],
     template: `
+    <md-toolbar color="primary">
+        <div class="main-toolbar">
+            <h1>DotCMS</h1>
+        </div>
+    </md-toolbar>
     <md-sidenav-layout fullscreen>
         <md-sidenav #start mode="side" opened="true">
             <md-sidenav #start mode="side" opened="true">
@@ -31,11 +37,6 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
             </md-sidenav>
         </md-sidenav>
         <div>
-            <md-toolbar color="primary">
-                <div class="main-toolbar">
-                    <h1>DotCMS</h1>
-                </div>
-            </md-toolbar>
             <route-view></route-view>
         </div>
     </md-sidenav-layout>
