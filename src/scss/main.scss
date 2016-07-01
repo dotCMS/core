@@ -9,7 +9,11 @@ md-toolbar {
         display: flex;
         justify-content: space-around;
         width: 100%;
-        align-items: baseline;
+        align-items: center;
+    }
+
+    .user {
+        font-size: 14px;
     }
 
     h1 {

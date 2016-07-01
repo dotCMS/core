@@ -12,6 +12,7 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
     <md-toolbar color="primary">
         <div class="main-toolbar">
             <h1>DotCMS</h1>
+            <div class="user">freddy@dotcms.com</div>
         </div>
     </md-toolbar>
     <md-sidenav-layout fullscreen>
