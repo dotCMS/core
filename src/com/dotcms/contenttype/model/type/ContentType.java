@@ -44,7 +44,12 @@ public abstract class ContentType implements Serializable, Permissionable {
 	public boolean defaultStructure() {
 		return false;
 	}
-
+	
+	@Value.Default
+	public StorageType storageType(){
+		return  new DbStorageType().instance();
+	}
+	
 	@Nullable
 	public abstract String pagedetail();
 
@@ -107,7 +112,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 	}
 
 	public Permissionable permissionable() {
-		return new PermissionableWrapper(this);
+		return this;
 	}
 
 	@Override

@@ -10,12 +10,17 @@ import org.immutables.value.Value;
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
+@Value.Immutable
 public abstract class Field implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	protected abstract String type();
-
+	@Value.Derived
+	public  String type() {
+		return  fieldType().toString();
+	}
+	
+	@Nullable
 	public abstract String owner();
 
 	@Nullable
@@ -39,7 +44,6 @@ public abstract class Field implements Serializable {
 
 	@Value.Default
 	public int sortOrder() {
-
 		return (int) (System.currentTimeMillis() / 1000);
 	}
 
@@ -84,17 +88,27 @@ public abstract class Field implements Serializable {
 	public boolean unique() {
 		return false;
 	}
+
 	@Value.Default
 	public List<FieldDecorator> fieldDecorators() {
 		return ImmutableList.of();
 	}
-	
-	
-	@Value.Default
-	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of();
-	}
+
+
+	public abstract List<DataTypes> acceptedDataTypes() ;
 
 	public abstract DataTypes dataType();
+
+	public abstract String contentTypeId();
+	
+
+	public abstract FieldTypes fieldType();
+	
+	@Nullable
+	public abstract String dbColumn();
+
+	public Date iDate() {
+		return new Date();
+	}
 
 }

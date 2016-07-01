@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.common.Nullable;
+
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -34,6 +36,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.ImmutableTimeField;
 import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
 
 public class DbFieldTransformer {
@@ -41,8 +44,13 @@ public class DbFieldTransformer {
 	public static Field transform(final Map<String, Object> map) throws DotDataException {
 
 		String fieldType = (String) map.get("field_type");
-		final FieldTypes TYPE = FieldTypes.valueOf(fieldType);
+		final FieldTypes TYPE = FieldTypes.getFieldType(fieldType);
 		final Field field = new Field() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
 			/**
 			 * structure_inode field_type field_relation_type field_contentlet
 			 * required indexed listed sort_order default_value fixed read_only
@@ -50,65 +58,88 @@ public class DbFieldTransformer {
 			 */
 			@Override
 			public String variable() {
-				return map.get("velocity_var_name").toString();
+				return (String) map.get("velocity_var_name");
 			}
 
 			@Override
 			public String values() {
-				return map.get("field_values").toString();
+				return (String) map.get("field_values");
 			}
 
 			@Override
-			protected String type() {
-				return "field";
+			public String type() {
+				return (String) map.get("field_type");
+			}
+			
+			@Override
+			public FieldTypes fieldType() {
+				return TYPE;
 			}
 
 			@Override
+			@Nullable
 			public String relationType() {
-				return map.get("field_relation_type").toString();
+				return (String) map.get("field_relation_type");
+			}
+
+			
+			
+			
+			@Override
+			public String contentTypeId() {
+				return (String) map.get("structure_inode");
 			}
 
 			@Override
 			public String regexCheck() {
-				return map.get("regex_check").toString();
+				return (String) map.get("regex_check");
 			}
 
 			@Override
 			public String owner() {
-				return map.get("owner").toString();
+				return (String) map.get("owner");
 			}
 
 			@Override
 			public String name() {
-				return map.get("field_name").toString();
+				return (String) map.get("field_name");
 			}
 
 			@Override
 			public String inode() {
-				return map.get("inode").toString();
+				return (String) map.get("inode");
 			}
 
 			@Override
 			public String hint() {
-				return map.get("hint").toString();
+				return (String) map.get("hint");
 			}
 
 			@Override
 			public String defaultValue() {
-				return map.get("default_value").toString();
+				return (String) map.get("default_value");
 			}
 
 			@Override
 			public DataTypes dataType() {
 				String dbType = map.get("field_contentlet").toString().replaceAll("[0-9]", "");
-				return DataTypes.valueOf(dbType);
+				return DataTypes.getDataType(dbType);
+			}
+
+			@Override
+			public String dbColumn() {
+				return (String) map.get("field_contentlet");
+
 			}
 
 			@Override
 			public Date modDate() {
 				return (Date) map.get("mod_date");
 			}
-
+			@Override
+			public Date iDate() {
+				return (Date) map.get("idate");
+			}
 			@Override
 			public boolean required() {
 				return Boolean.getBoolean(String.valueOf(map.get("required")));
@@ -116,49 +147,49 @@ public class DbFieldTransformer {
 
 			@Override
 			public int sortOrder() {
-				return Integer.getInteger(String.valueOf(map.get("sort_order")));
+				return (Integer) map.get("sort_order");
+
 			}
 
 			@Override
 			public boolean indexed() {
-				return Boolean.getBoolean(String.valueOf(map.get("indexed")));
+				return Boolean.parseBoolean(String.valueOf(map.get("indexed")));
 			}
 
 			@Override
 			public boolean listed() {
-				return Boolean.getBoolean(String.valueOf(map.get("listed")));
+				return Boolean.parseBoolean(String.valueOf(map.get("listed")));
 			}
 
 			@Override
 			public boolean fixed() {
-				return Boolean.getBoolean(String.valueOf(map.get("fixed")));
+				return Boolean.parseBoolean(String.valueOf(map.get("fixed")));
 			}
 
 			@Override
 			public boolean readOnly() {
-				return Boolean.getBoolean(String.valueOf(map.get("read_only")));
+				return Boolean.parseBoolean(String.valueOf(map.get("read_only")));
 			}
 
 			@Override
 			public boolean searchable() {
-				return Boolean.getBoolean(String.valueOf(map.get("searchable")));
+				return Boolean.parseBoolean(String.valueOf(map.get("searchable")));
 			}
 
 			@Override
 			public boolean unique() {
-				return Boolean.getBoolean(String.valueOf(map.get("unique_")));
+				return Boolean.parseBoolean(String.valueOf(map.get("unique_")));
 			}
 
 			@Override
 			public List<FieldDecorator> fieldDecorators() {
-				// TODO Auto-generated method stub
+
 				return super.fieldDecorators();
 			}
 
 			@Override
 			public List<DataTypes> acceptedDataTypes() {
-				// TODO Auto-generated method stub
-				return super.acceptedDataTypes();
+				return ImmutableList.of();
 			}
 
 		};
@@ -221,10 +252,20 @@ public class DbFieldTransformer {
 
 		throw new DotDataException("invalid content type");
 	}
-}
 
-/**
- * Fields in the db inode owner idate type inode name description
- * default_structure page_detail structuretype system fixed velocity_var_name
- * url_map_pattern host folder expire_date_var publish_date_var mod_date
- **/
+	/**
+	 * Fields in the db: inode owner idate type inode name description
+	 * default_structure page_detail structuretype system fixed
+	 * velocity_var_name url_map_pattern host folder expire_date_var
+	 * publish_date_var mod_date
+	 **/
+
+	public static List<Field> transform(final List<Map<String, Object>> list) throws DotDataException {
+
+		ImmutableList.Builder<Field> builder = ImmutableList.builder();
+		for (Map<String, Object> map : list) {
+			builder.add(transform(map));
+		}
+		return builder.build();
+	}
+}

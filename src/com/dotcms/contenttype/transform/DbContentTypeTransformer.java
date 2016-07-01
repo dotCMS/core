@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
 
 public class DbContentTypeTransformer {
@@ -128,9 +129,22 @@ public class DbContentTypeTransformer {
 				return ImmutablePageContentType.builder().from(type).build();
 			case PERSONA:
 				return ImmutablePersonaContentType.builder().from(type).build();
+			default:
+				throw new DotDataException("invalid content type");
 		}
 
-		throw new DotDataException("invalid content type");
+		
+	}
+	
+	
+	
+	public static List<ContentType> transform(final List<Map<String, Object>> list) throws DotDataException {
+
+		ImmutableList.Builder<ContentType> builder = ImmutableList.builder();
+		for (Map<String, Object> map : list) {
+			builder.add(transform(map));
+		}
+		return builder.build();
 	}
 }
 
