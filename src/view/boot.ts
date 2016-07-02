@@ -13,6 +13,8 @@ import {provideRouter} from '@ngrx/router';
 import {AppComponent} from './components/app';
 import {RoutingService} from '../api/services/routing-service';
 import {provide} from '@angular/core';
+import { disableDeprecatedForms, provideForms } from '@angular/forms';
+
 
 
 new RoutingService().getRoutes().subscribe(menu => {
@@ -28,6 +30,11 @@ new RoutingService().getRoutes().subscribe(menu => {
     ConditionService,
     HTTP_PROVIDERS,
     provide('menuItems', {useValue: menu.menuItems}),
-    provideRouter(menu.routes)
+    provideRouter(menu.routes),
+    // Form controls use the new @angular/forms package. To make migration easier, you can alternatively install
+    // alpha.5-3, which is the same as alpha.6 without the new forms package.
+    // Please see: https://angular.io/docs/ts/latest/guide/forms.html
+    disableDeprecatedForms(),
+    provideForms()
   ]);
 });

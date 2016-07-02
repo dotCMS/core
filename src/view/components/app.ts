@@ -1,9 +1,11 @@
 import {Component, Inject} from "@angular/core";
+import {FORM_DIRECTIVES} from '@angular/common';
 
 // Angular Material
 import {MdToolbar} from '@angular2-material/toolbar/toolbar';
 import {MD_SIDENAV_DIRECTIVES} from '@angular2-material/sidenav/sidenav';
 import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
+import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 
 @Component({
     selector: 'app',
@@ -12,6 +14,9 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
     <md-toolbar color="primary">
         <div class="main-toolbar">
             <h1>DotCMS</h1>
+            <form action="">
+                <md-input placeholder="Search for anything"></md-input>
+            </form>
             <div class="user">freddy@dotcms.com</div>
         </div>
     </md-toolbar>
@@ -41,7 +46,7 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
     </md-sidenav-layout>
     `,
     providers: [],
-    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_LIST_DIRECTIVES]
+    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_LIST_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES]
 })
 export class AppComponent {
     constructor(@Inject('menuItems') private menuItems:any[]) {}

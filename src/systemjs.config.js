@@ -97,6 +97,7 @@
         '@angular/compiler',
         '@angular/core',
         '@angular/http',
+        '@angular/forms',
         '@angular/platform-browser',
         '@angular/platform-browser-dynamic',
         '@angular/router',
@@ -113,7 +114,8 @@
         'button',
         'sidenav',
         'list',
-        'toolbar'
+        'toolbar',
+        'input'
     ];
 
     angularMaterialPackages.forEach(function(pkg) {
