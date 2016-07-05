@@ -48,7 +48,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			HibernateUtil.startTransaction();
 			boolean isFolder = false;
 			boolean isResource = false;
-			dotDavHelper.setLanguage(url);
+			dotDavHelper.stripMapping(url);
 			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage()) 
 					|| url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/") || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage() + "/") || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage() + "/") ;
 			boolean live = url.startsWith(AUTOPUB_PATH) || url.startsWith(LIVE_PATH);

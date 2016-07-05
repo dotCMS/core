@@ -2,6 +2,7 @@ package com.dotmarketing.webdav;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -73,6 +74,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			}
 
 		} catch (DotDataException e) {
+			Logger.error(this,"The endpoint you are trying to use could not be valid, please check.");
 			Logger.error(HostResourceImpl.class, e.getMessage(),
 					e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -143,7 +145,11 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
 		List<Resource> frs = new ArrayList<Resource>();
-		dotDavHelper.setLanguage(path);
+		try {
+			dotDavHelper.stripMapping(path);
+		} catch (IOException e1) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e1);
+		}
 		for (Folder folder : folders) {
 			String p = path;
 			if(p.endsWith("/"))
