@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.viewtools.JSONTool;
 import com.liferay.portal.model.User;
@@ -48,6 +49,10 @@ public class GoogleTranslationServiceTest {
     public void translateContent() throws TranslationException, DotDataException, DotSecurityException {
 
         Contentlet toTranslate = getEnglishContent();
+        toTranslate = Mockito.spy(toTranslate);
+        Structure st = new Structure();
+        Mockito.doReturn(st).when(toTranslate).getStructure();
+
         // mock language api to return language id
         LanguageAPI languageAPI = Mockito.mock(LanguageAPI.class);
         when(languageAPI.getLanguage(english.getId())).thenReturn(english);
@@ -84,6 +89,9 @@ public class GoogleTranslationServiceTest {
     public void translateContent_multiLanguages() throws TranslationException, DotDataException, DotSecurityException {
 
         Contentlet toTranslate = getEnglishContent();
+        toTranslate = Mockito.spy(toTranslate);
+        Structure st = new Structure();
+        Mockito.doReturn(st).when(toTranslate).getStructure();
         // mock language api to return language id
         LanguageAPI languageAPI = Mockito.mock(LanguageAPI.class);
         when(languageAPI.getLanguage(english.getId())).thenReturn(english);
