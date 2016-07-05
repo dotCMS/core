@@ -1,5 +1,10 @@
 package com;
 
+import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceTest;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
@@ -7,6 +12,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
+import com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptorTest;
 import com.dotcms.notification.business.NotificationAPITest;
 import com.dotcms.publisher.ajax.RemotePublishAjaxActionTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
@@ -17,6 +23,9 @@ import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotcms.util.CollectionsUtilsTest;
+import com.dotcms.util.ReflectionUtilsTest;
+import com.dotcms.util.marshal.MarshalUtilsTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -24,7 +33,6 @@ import com.dotmarketing.business.RoleAPITest;
 import com.dotmarketing.business.UserAPITest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
-import com.dotmarketing.filters.interceptor.jwt.JsonWebTokenInterceptorTest;
 import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
@@ -64,15 +72,9 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.tag.business.TagAPITest;
-import com.dotmarketing.util.*;
-import com.dotmarketing.util.jwt.JsonWebTokenServiceTest;
-import com.dotmarketing.util.marshal.MarshalUtilsTest;
+import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
-
-import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 /**
  * @author Jonathan Gamba.

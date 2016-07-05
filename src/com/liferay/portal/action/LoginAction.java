@@ -22,12 +22,18 @@
 
 package com.liferay.portal.action;
 
+import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
@@ -39,12 +45,6 @@ import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.jwt.DotCMSSubjectBean;
-import com.dotmarketing.util.jwt.JWTBean;
-import com.dotmarketing.util.jwt.JsonWebTokenFactory;
-import com.dotmarketing.util.jwt.JsonWebTokenService;
-import com.dotmarketing.util.marshal.MarshalFactory;
-import com.dotmarketing.util.marshal.MarshalUtils;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
@@ -67,10 +67,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
+
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
