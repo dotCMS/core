@@ -18,6 +18,9 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class GoogleTranslationService extends AbstractTranslationService {
 
@@ -26,6 +29,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
     private String serviceUrl = Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_BASE_URL",
         BASE_URL);
     private String apiKey;
+    private List<ServiceParameter> params;
 
     public GoogleTranslationService() {
         this(Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", ""), new JSONTool(), new ApiProvider());
@@ -35,6 +39,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
         this.apiKey = apiKey;
         this.jsonTool = jsonTool;
         this.apiProvider = apiProvider;
+        this.params = Collections.singletonList(new ServiceParameter("apiKey", "Service API Key", apiKey));
     }
 
     @VisibleForTesting
@@ -105,6 +110,19 @@ public class GoogleTranslationService extends AbstractTranslationService {
         } catch (Exception e) {
             throw new TranslationException(e);
         }
+    }
+
+    @Override
+    public List<ServiceParameter> getServiceParameters() {
+        return Collections.unmodifiableList(params);
+    }
+
+    @Override
+    public void setServiceParameters(List<ServiceParameter> params) {
+        this.params = params;
+        Map<String, ServiceParameter> paramsMap = params.stream().collect(
+            Collectors.toMap(ServiceParameter::getKey, Function.identity()));
+        this.apiKey = paramsMap.get("apiKey").getValue();
     }
 
 }
