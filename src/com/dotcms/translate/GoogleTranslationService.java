@@ -122,7 +122,11 @@ public class GoogleTranslationService extends AbstractTranslationService {
         this.params = params;
         Map<String, ServiceParameter> paramsMap = params.stream().collect(
             Collectors.toMap(ServiceParameter::getKey, Function.identity()));
-        this.apiKey = paramsMap.get("apiKey").getValue();
+        String apiKeyValue = paramsMap.get("apiKey").getValue();
+
+        this.apiKey = !Strings.isNullOrEmpty(apiKeyValue)
+            ?apiKeyValue
+            :Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", "");
     }
 
 }
