@@ -1,13 +1,14 @@
-package com.dotmarketing.cms.login;
+package com.dotcms.cms.login;
+
+import java.io.Serializable;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
 
 /**
  * Encapsulates the login services This class is just a wrapper to encapsulate

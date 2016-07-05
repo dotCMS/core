@@ -1,9 +1,11 @@
 package com.dotmarketing.util;
 
 
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.sun.org.apache.regexp.internal.RE;
+
 import org.junit.Test;
 
 import static  org.junit.Assert.*;

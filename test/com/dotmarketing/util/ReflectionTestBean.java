@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotcms.util.ReflectionUtils;
+
 /**
  * Just a testing bean for the {@link ReflectionUtils}
  * @author jsanca

@@ -1,7 +1,9 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * Encapsulates util methods to perform reflection, such as create a new

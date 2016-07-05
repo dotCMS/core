@@ -1,4 +1,4 @@
-package com.dotmarketing.filters.interceptor;
+package com.dotcms.filters.interceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

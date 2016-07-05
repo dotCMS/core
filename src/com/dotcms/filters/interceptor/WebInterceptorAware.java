@@ -1,4 +1,4 @@
-package com.dotmarketing.filters.interceptor;
+package com.dotcms.filters.interceptor;
 
 import java.io.Serializable;
 

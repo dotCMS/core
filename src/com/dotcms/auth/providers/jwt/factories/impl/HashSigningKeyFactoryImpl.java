@@ -1,9 +1,10 @@
-package com.dotmarketing.util.jwt;
-
-import com.dotmarketing.util.Config;
-import com.liferay.util.Base64;
+package com.dotcms.auth.providers.jwt.factories.impl;
 
 import java.security.Key;
+
+import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
+import com.dotmarketing.util.Config;
+import com.liferay.util.Base64;
 
 /**
  * Default implementation of the {@link SigningKeyFactory}. This class provides

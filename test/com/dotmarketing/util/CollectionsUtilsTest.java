@@ -4,9 +4,9 @@ import org.junit.Test;
 
 import java.util.*;
 
-import static com.dotmarketing.util.CollectionsUtils.list;
-import static com.dotmarketing.util.CollectionsUtils.map;
-import static com.dotmarketing.util.CollectionsUtils.set;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

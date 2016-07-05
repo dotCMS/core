@@ -1,12 +1,12 @@
-package com.dotmarketing.util.security;
+package com.dotcms.util.security;
 
 import java.io.Serializable;
 import java.security.Key;
 import java.security.Provider;
 
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ReflectionUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.EncryptorException;
 

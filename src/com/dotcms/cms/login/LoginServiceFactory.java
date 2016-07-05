@@ -1,21 +1,21 @@
-package com.dotmarketing.cms.login;
+package com.dotcms.cms.login;
 
-import com.dotmarketing.cms.login.struts.LoginForm;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ReflectionUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.security.Encryptor;
-import com.dotmarketing.util.security.EncryptorFactory;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.model.User;
+import java.io.Serializable;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
+
+import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.security.EncryptorFactory;
+import com.dotmarketing.cms.login.struts.LoginForm;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.model.User;
 
 /**
- * Login Service Factory
+ * Login Service Factory that allows developers to inject custom login services.
  * 
  * @author jsanca
  * @version 3.7

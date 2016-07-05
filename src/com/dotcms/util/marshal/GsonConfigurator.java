@@ -1,4 +1,4 @@
-package com.dotmarketing.util.marshal;
+package com.dotcms.util.marshal;
 
 import java.io.Serializable;
 

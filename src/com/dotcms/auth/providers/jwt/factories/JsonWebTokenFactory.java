@@ -1,4 +1,4 @@
-package com.dotmarketing.util.jwt;
+package com.dotcms.auth.providers.jwt.factories;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -10,9 +10,11 @@ import java.io.Serializable;
 import java.security.Key;
 import java.util.Date;
 
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ReflectionUtils;
 import com.dotmarketing.util.UtilMethods;
 
 /**

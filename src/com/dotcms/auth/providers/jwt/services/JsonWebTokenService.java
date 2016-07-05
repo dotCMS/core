@@ -1,6 +1,8 @@
-package com.dotmarketing.util.jwt;
+package com.dotcms.auth.providers.jwt.services;
 
 import java.io.Serializable;
+
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
 
 /**
  * Encapsulates the logic that generates and reads the JSON Web Token (JWT).

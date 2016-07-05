@@ -1,13 +1,29 @@
-package com.dotmarketing.util.marshal;
+package com.dotcms.util.marshal;
 
-import com.dotcms.repackage.com.google.gson.*;
-import com.dotmarketing.util.*;
-
-import java.io.*;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
+
+import com.dotcms.repackage.com.google.gson.Gson;
+import com.dotcms.repackage.com.google.gson.GsonBuilder;
+import com.dotcms.repackage.com.google.gson.JsonDeserializationContext;
+import com.dotcms.repackage.com.google.gson.JsonDeserializer;
+import com.dotcms.repackage.com.google.gson.JsonElement;
+import com.dotcms.repackage.com.google.gson.JsonParseException;
+import com.dotcms.repackage.com.google.gson.JsonPrimitive;
+import com.dotcms.repackage.com.google.gson.JsonSerializationContext;
+import com.dotcms.repackage.com.google.gson.JsonSerializer;
+import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Marshal Factory, provides the default implementation for the MarhalUtils

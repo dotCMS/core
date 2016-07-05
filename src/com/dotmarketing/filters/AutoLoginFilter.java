@@ -14,11 +14,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.filters.interceptor.WebInterceptorAware;
+import com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptor;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.filters.interceptor.WebInterceptor;
-import com.dotmarketing.filters.interceptor.WebInterceptorAware;
-import com.dotmarketing.filters.interceptor.jwt.JsonWebTokenInterceptor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;

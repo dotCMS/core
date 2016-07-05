@@ -1,9 +1,9 @@
-package com.dotmarketing.portlets.contentlet.business;
+package com.dotcms.api.web;
 
 import java.util.List;
 
-import com.dotmarketing.filters.interceptor.WebInterceptor;
-import com.dotmarketing.filters.interceptor.WebInterceptorAware;
+import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.filters.interceptor.WebInterceptorAware;
 
 /**
  * Provides a way for developers to add functionality or more features to

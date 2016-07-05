@@ -1,4 +1,4 @@
-package com.dotmarketing.util.jwt;
+package com.dotcms.auth.providers.jwt.factories;
 
 import java.io.Serializable;
 import java.security.Key;

@@ -1,4 +1,4 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import java.io.Serializable;
 

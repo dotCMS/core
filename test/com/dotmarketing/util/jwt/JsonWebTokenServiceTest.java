@@ -1,10 +1,15 @@
 package com.dotmarketing.util.jwt;
 
 
+import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.util.marshal.MarshalFactory;
-import com.dotmarketing.util.marshal.MarshalUtils;
+
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
