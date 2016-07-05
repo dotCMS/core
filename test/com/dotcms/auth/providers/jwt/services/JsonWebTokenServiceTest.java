@@ -1,25 +1,23 @@
-package com.dotmarketing.util.jwt;
+package com.dotcms.auth.providers.jwt.services;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
-
-import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
+
+import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 
 /**
  * JsonWebTokenService

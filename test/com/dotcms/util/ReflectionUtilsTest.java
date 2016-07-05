@@ -1,16 +1,11 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
-
-import com.dotcms.util.ReflectionUtils;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.sun.org.apache.regexp.internal.RE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-
-import static  org.junit.Assert.*;
-
-import java.io.IOException;
 
 /**
  * ReflectionUtils Test

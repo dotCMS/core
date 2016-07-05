@@ -1,4 +1,4 @@
-package com.dotmarketing.filters.interceptor.jwt;
+package com.dotcms.filters.interceptor.jwt;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
