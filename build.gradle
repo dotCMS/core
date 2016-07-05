@@ -4,7 +4,7 @@ configurations {
     coreWeb
     provided
     ext.dotcmsFolder = "dotCMS"
-    ext.rulesEngineFolder ="dotCMS/html/js/_rulesengine"
+    ext.rulesEngineFolder ="dotCMS/html/ng"
     ext.libsFolder = "dotCMS/WEB-INF/lib"
     ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
     ext.testLibsFolder = "libs/test"
