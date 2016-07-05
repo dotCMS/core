@@ -2,6 +2,8 @@ package com.dotcms.contenttype.model.type;
 
 public interface StorageType {
 
-	StorageType instance();
+	default StorageType instance(){
+		return new LegacyDBStorageType();
+	}
 
 }

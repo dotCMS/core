@@ -28,6 +28,7 @@ public class FieldFactoryTest {
 
 
 		DotConnect db = new DotConnect();
+		/**
 		db.setSQL("select inode from field");
 		List<Map<String, Object>> results = db.loadObjectResults();
 
@@ -42,21 +43,28 @@ public class FieldFactoryTest {
 		for(int i=0;i<fields1.size();i++){
 			Field field1 = fields1.get(i);
 			Field field2 = fields2.get(i);
-			System.out.println(field1);
-			System.out.println(field2);
+
 			assertThat("Field1 == Field2", field1.equals(field2));
 		}
-
+	**/
 		TextField textField = ImmutableTextField.builder()
 				.name("test field")
 				.variable("testField")
 				.contentTypeId(Constants.NEWS)
 				.hint("my hint")
 				.dataType(DataTypes.TEXT)
+				.inode("fieldtesting")
 				.build();	
-		Field f = factory.save(textField);
-		System.out.println(f.inode());
-		
+	
+		Field savedField = factory.save(textField);
+		String inode = savedField.inode();
+		Field field2 = factory.byId(inode);
+		System.out.println(savedField);
+		System.out.println(field2);
+		System.out.println(savedField.modDate().getTime());
+		System.out.println(field2.modDate().getTime());
+
+		assertThat("savedField == field2", savedField.equals(field2));
 		
 	}
 }

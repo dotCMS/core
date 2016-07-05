@@ -47,7 +47,6 @@ public abstract class FieldSql {
 			+ "searchable=?, "
 			+ "unique_=?, "
 			+ "mod_date=? "
-			+ "inode=? "
 			+ "where inode =?";
 	
 	public String updateFieldInode = "update inode set inode=?, idate=?, owner = ? , type='field' where inode = ?";

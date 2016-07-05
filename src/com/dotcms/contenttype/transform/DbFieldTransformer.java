@@ -134,7 +134,7 @@ public class DbFieldTransformer {
 
 			@Override
 			public Date modDate() {
-				return (Date) map.get("mod_date");
+				return new Date(((Date) map.get("mod_date")).getTime());
 			}
 			@Override
 			public Date iDate() {
@@ -193,64 +193,74 @@ public class DbFieldTransformer {
 			}
 
 		};
+		
+		
+		return transformToSubclass(field);
+		
+		
+	}
+		
+		
+	public static Field transformToSubclass(Field field) throws DotDataException{
+		FieldTypes TYPE = field.fieldType();
 
 		switch (TYPE) {
-		case BINARY:
-			return ImmutableBinaryField.builder().from(field).build();
-		case BUTTON:
-			return ImmutableButtonField.builder().from(field).build();
-		case CATEGORIES_TAB:
-			return ImmutableCategoriesTabField.builder().from(field).build();
-		case CATEGORY:
-			return ImmutableCategoryField.builder().from(field).build();
-		case CHECKBOX:
-			return ImmutableCheckboxField.builder().from(field).build();
-		case CONSTANT:
-			return ImmutableConstantField.builder().from(field).build();
-		case CUSTOM_FIELD:
-			return ImmutableCustomField.builder().from(field).build();
-		case DATE:
-			return ImmutableDateField.builder().from(field).build();
-		case DATE_TIME:
-			return ImmutableDateTimeField.builder().from(field).build();
-		case FILE:
-			return ImmutableFileField.builder().from(field).build();
-		case HIDDEN:
-			return ImmutableHiddenField.builder().from(field).build();
-		case HOST_OR_FOLDER:
-			return ImmutableHostFolderField.builder().from(field).build();
-		case IMAGE:
-			return ImmutableImageField.builder().from(field).build();
-		case KEY_VALUE:
-			return ImmutableKeyValueField.builder().from(field).build();
-		case LINE_DIVIDER:
-			return ImmutableLineDividerField.builder().from(field).build();
-		case MULTI_SELECT:
-			return ImmutableMultiSelectField.builder().from(field).build();
-		case PERMISSIONS_TAB:
-			return ImmutablePermissionTabField.builder().from(field).build();
-		case RADIO:
-			return ImmutableRadioField.builder().from(field).build();
-		case RELATIONSHIPS_TAB:
-			return ImmutableRelationshipsTabField.builder().from(field).build();
-		case SELECT:
-			return ImmutableSelectField.builder().from(field).build();
-		case TAB_DIVIDER:
-			return ImmutableTabDividerField.builder().from(field).build();
-		case TAG:
-			return ImmutableTagField.builder().from(field).build();
-		case TEXT:
-			return ImmutableTextField.builder().from(field).build();
-		case TEXT_AREA:
-			return ImmutableTextAreaField.builder().from(field).build();
-		case TIME:
-			return ImmutableTimeField.builder().from(field).build();
-		case WYSIWYG:
-			return ImmutableWysiwygField.builder().from(field).build();
+			case BINARY:
+				return ImmutableBinaryField.builder().from(field).build();
+			case BUTTON:
+				return ImmutableButtonField.builder().from(field).build();
+			case CATEGORIES_TAB:
+				return ImmutableCategoriesTabField.builder().from(field).build();
+			case CATEGORY:
+				return ImmutableCategoryField.builder().from(field).build();
+			case CHECKBOX:
+				return ImmutableCheckboxField.builder().from(field).build();
+			case CONSTANT:
+				return ImmutableConstantField.builder().from(field).build();
+			case CUSTOM_FIELD:
+				return ImmutableCustomField.builder().from(field).build();
+			case DATE:
+				return ImmutableDateField.builder().from(field).build();
+			case DATE_TIME:
+				return ImmutableDateTimeField.builder().from(field).build();
+			case FILE:
+				return ImmutableFileField.builder().from(field).build();
+			case HIDDEN:
+				return ImmutableHiddenField.builder().from(field).build();
+			case HOST_OR_FOLDER:
+				return ImmutableHostFolderField.builder().from(field).build();
+			case IMAGE:
+				return ImmutableImageField.builder().from(field).build();
+			case KEY_VALUE:
+				return ImmutableKeyValueField.builder().from(field).build();
+			case LINE_DIVIDER:
+				return ImmutableLineDividerField.builder().from(field).build();
+			case MULTI_SELECT:
+				return ImmutableMultiSelectField.builder().from(field).build();
+			case PERMISSIONS_TAB:
+				return ImmutablePermissionTabField.builder().from(field).build();
+			case RADIO:
+				return ImmutableRadioField.builder().from(field).build();
+			case RELATIONSHIPS_TAB:
+				return ImmutableRelationshipsTabField.builder().from(field).build();
+			case SELECT:
+				return ImmutableSelectField.builder().from(field).build();
+			case TAB_DIVIDER:
+				return ImmutableTabDividerField.builder().from(field).build();
+			case TAG:
+				return ImmutableTagField.builder().from(field).build();
+			case TEXT:
+				return ImmutableTextField.builder().from(field).build();
+			case TEXT_AREA:
+				return ImmutableTextAreaField.builder().from(field).build();
+			case TIME:
+				return ImmutableTimeField.builder().from(field).build();
+			case WYSIWYG:
+				return ImmutableWysiwygField.builder().from(field).build();
 
 		}
 
-		throw new DotDataException("invalid content type");
+		return field;
 	}
 
 	/**
