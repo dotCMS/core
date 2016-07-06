@@ -15,7 +15,7 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
     `,
     providers: [],
     directives: [MD_INPUT_DIRECTIVES, FORM_DIRECTIVES],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.Emulated
 })
 export class GlobalSearch {
     constructor() {
