@@ -115,7 +115,8 @@
         'sidenav',
         'list',
         'toolbar',
-        'input'
+        'input',
+        'icon'
     ];
 
     angularMaterialPackages.forEach(function(pkg) {
