@@ -10,6 +10,7 @@ import java.util.Map;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.TemplateContainers;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.WebAsset;
@@ -173,9 +174,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		String temp = new String(containerTitle);
 		String result = "";
 		HibernateUtil dh = new HibernateUtil(Container.class);
-		String sql = "SELECT {containers.*} from containers, inode containers_1_, identifier ident, container_version_info vv "+
-					 "where vv.identifier=ident.id and vv.working_inode=containers.inode and containers.inode = containers_1_.inode and " +
-					 "containers.identifier = ident.id and host_inode = ? order by title ";
+		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode containers_1_, identifier ident, container_version_info vv "+
+					 "where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = containers_1_.inode and " +
+			          Inode.Type.CONTAINERS.getTableName() + ".identifier = ident.id and host_inode = ? order by title ";
 		dh.setSQLQuery(sql);
 		dh.setParam(destination.getIdentifier());
 
@@ -214,8 +215,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			//Get container from DB.
 			HibernateUtil dh = new HibernateUtil(Container.class);
 			
-			dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
-					"where containers.inode = containers_1_.inode and vv.working_inode=containers.inode and " +
+			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode containers_1_, container_version_info vv " +
+					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = containers_1_.inode and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
 					"vv.identifier = ?");
 			
 			dh.setParam(id);
@@ -248,15 +249,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		
 		//Trying to get the container from Live cache.
 		Container container = CacheLocator.getContainerCache().getLive(id);
-		
+
 		//If it is not in cache.
 		if(container == null){
 			
 			//Get container from DB.
 			HibernateUtil dh = new HibernateUtil(Container.class);
 			
-			dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
-					"where containers.inode = containers_1_.inode and vv.live_inode=containers.inode and " +
+			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode containers_1_, container_version_info vv " +
+					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = containers_1_.inode and vv.live_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
 					"vv.identifier = ?");
 			
 			dh.setParam(id);
@@ -532,7 +533,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
-        return deleteOldVersions(assetsOlderThan,"containers");
+        return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getTableName());
     }
 
 	@Override

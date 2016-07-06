@@ -6,7 +6,8 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.UtilMethods;
 
 public class AssetUtil {
-    public static void assertDeleted(String inode, String identifier, String type) throws Exception {
+
+    public static void assertDeleted(String inode, String identifier, String tableName) throws Exception {
         DotConnect dc=new DotConnect();
         dc.setSQL("select * from identifier where id=?");
         dc.addParam(identifier);
@@ -16,14 +17,14 @@ public class AssetUtil {
         dc.addParam(inode);
         assertEquals(0, dc.loadObjectResults().size());
         
-        String vinfo=UtilMethods.getVersionInfoTableName(type);
+        String vinfo=UtilMethods.getVersionInfoTableName(tableName);
         dc.setSQL("select * from "+vinfo+" where identifier=? or working_inode=? or live_inode=?");
         dc.addParam(identifier);
         dc.addParam(inode);
         dc.addParam(inode);
         assertEquals(0, dc.loadObjectResults().size());
         
-        dc.setSQL("select * from "+type+" where inode=? or identifier=?");
+        dc.setSQL("select * from "+tableName+" where inode=? or identifier=?");
         dc.addParam(inode);
         dc.addParam(identifier);
         assertEquals(0, dc.loadObjectResults().size());

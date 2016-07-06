@@ -4,6 +4,6 @@
    "http://hibernate.sourceforge.net/hibernate-configuration-2.0.dtd">
 <hibernate-configuration>
 	<session-factory>
-		<property name="show_sql">false</property>
+		<property name="show_sql">true</property>
 	</session-factory>
 </hibernate-configuration>

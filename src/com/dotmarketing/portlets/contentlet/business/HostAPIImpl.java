@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -651,7 +652,7 @@ public class HostAPIImpl implements HostAPI {
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
 
-				String[] assets = {"containers","template","htmlpage","links"};
+				String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","htmlpage","links"};
 				for(String asset : assets) {
 				    dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
 	                dc.addParam(host.getIdentifier());
