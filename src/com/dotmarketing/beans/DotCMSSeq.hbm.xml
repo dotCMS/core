@@ -15,9 +15,9 @@
 
 		<property name="owner" type="string" />
 		<property name="iDate" type="java.util.Date" />
-		<!--<property name="type" type="string" not-null="true">
+		<property name="type" type="string" not-null="true">
 			<column name="type" length="64" index="idx_index_1" />
-		</property>-->
+		</property>
 
 		<joined-subclass name="com.dotmarketing.portlets.categories.model.Category" table="category">
 			<key column="inode" />

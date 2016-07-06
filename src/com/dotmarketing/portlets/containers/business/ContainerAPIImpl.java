@@ -174,8 +174,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		String temp = new String(containerTitle);
 		String result = "";
 		HibernateUtil dh = new HibernateUtil(Container.class);
-		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode containers_1_, identifier ident, container_version_info vv "+
-					 "where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = containers_1_.inode and " +
+		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv "+
+					 "where vv.identifier=ident.id and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
 			          Inode.Type.CONTAINERS.getTableName() + ".identifier = ident.id and host_inode = ? order by title ";
 		dh.setSQLQuery(sql);
 		dh.setParam(destination.getIdentifier());
@@ -215,8 +215,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			//Get container from DB.
 			HibernateUtil dh = new HibernateUtil(Container.class);
 			
-			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode containers_1_, container_version_info vv " +
-					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = containers_1_.inode and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
+			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
+					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
 					"vv.identifier = ?");
 			
 			dh.setParam(id);
@@ -256,8 +256,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			//Get container from DB.
 			HibernateUtil dh = new HibernateUtil(Container.class);
 			
-			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode containers_1_, container_version_info vv " +
-					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = containers_1_.inode and vv.live_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
+			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
+					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and vv.live_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
 					"vv.identifier = ?");
 			
 			dh.setParam(id);
