@@ -11,8 +11,9 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 
 @Component({
+    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     selector: 'app',
-    styles: ['md-sidenav-layout[fullscreen] {top: 64px}', `dot-global-search {flex: 5; margin: 0 50px;}`],
+    styleUrls: ['app.css'],
     template: `
     <md-toolbar color="primary">
         <div class="main-toolbar">

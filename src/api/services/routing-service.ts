@@ -2,7 +2,7 @@ import { Routes } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx'
 
 import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
-import {IframeComponent} from '../../view/components/IframeComponent';
+import {IframeLegacyComponent} from '../../view/components/common/iframe-legacy/IframeLegacyComponent';
 
 export class RoutingService {
 
@@ -36,6 +36,7 @@ export class RoutingService {
         return Observable.create(observer => {
             this.getMenus().subscribe((navigationItems) => {
                 // TODO: do this more elegant
+                // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
                 let routes : Routes = [];
                 let mapPaths = {};
                 navigationItems.forEach((item) => {
@@ -52,7 +53,7 @@ export class RoutingService {
                 });
                 routes.push({
                     path: '/portlet/:id',
-                    component: IframeComponent,
+                    component: IframeLegacyComponent,
                 });
                 observer.next({
                     menuItems: {
