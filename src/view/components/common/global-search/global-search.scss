@@ -1,0 +1,24 @@
+.dot-global-search {
+    md-input {
+        width: 100%;
+
+        .md-input-placeholder {
+            color: rgba(#FFF, 0.5);
+            height: 100%;
+            line-height: 1;
+        }
+
+        .md-input-table {
+            background-color: rgba(#FFF, 0.2);
+            border-radius: 3px;
+            padding: 5px 10px;
+        }
+        
+        .md-input-underline {
+            display: none;
+        }
+    }
+
+
+}
+

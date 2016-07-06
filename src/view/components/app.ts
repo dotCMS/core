@@ -1,5 +1,8 @@
-import {Component, Inject} from "@angular/core";
+import {Component, Inject, ViewEncapsulation} from "@angular/core";
 import {FORM_DIRECTIVES} from '@angular/common';
+
+// Custom Components
+import {GlobalSearch} from './common/global-search/global-search';
 
 // Angular Material
 import {MdToolbar} from '@angular2-material/toolbar/toolbar';
@@ -9,14 +12,12 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 
 @Component({
     selector: 'app',
-    styles: ['md-sidenav-layout[fullscreen] {top: 64px}'],
+    styles: ['md-sidenav-layout[fullscreen] {top: 64px}', `dot-global-search {flex: 5; margin: 0 50px;}`],
     template: `
     <md-toolbar color="primary">
         <div class="main-toolbar">
             <h1>DotCMS</h1>
-            <form action="">
-                <md-input placeholder="Search for anything"></md-input>
-            </form>
+            <dot-global-search></dot-global-search>
             <div class="user">freddy@dotcms.com</div>
         </div>
     </md-toolbar>
@@ -46,7 +47,8 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
     </md-sidenav-layout>
     `,
     providers: [],
-    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_LIST_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES]
+    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_LIST_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, GlobalSearch],
+    encapsulation: ViewEncapsulation.Emulated
 })
 export class AppComponent {
     constructor(@Inject('menuItems') private menuItems:any[]) {}
