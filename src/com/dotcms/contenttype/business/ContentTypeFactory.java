@@ -25,5 +25,35 @@ public interface ContentTypeFactory {
 	List<ContentType> findByBaseType(BaseContentTypes type) throws DotDataException;
 
 	List<ContentType> findByBaseType(int type) throws DotDataException;
+
+
+	ContentType save(ContentType type) throws DotDataException;
+
+
+	List<ContentType> search(String search, String orderBy) throws DotDataException;
+
+
+	List<ContentType> search(String search, String orderBy, int limit) throws DotDataException;
+	
+	List<ContentType> search(String search, String orderBy, int offset,int limit) throws DotDataException;
+
+
+	List<ContentType> search(String search) throws DotDataException;
+
+
+	int searchCount(String search) throws DotDataException;
+
+
+	int searchCount(String search, int baseType) throws DotDataException;
+
+
+	List<ContentType> search(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException;
+	
+	List<ContentType> search(String search, BaseContentTypes type, String orderBy, int offset, int limit) throws DotDataException;
+
+
+	int searchCount(String search, BaseContentTypes baseType) throws DotDataException;
+	
+	
 	
 }

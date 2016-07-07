@@ -15,16 +15,14 @@ public abstract class ConstantField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.CONSTANT.name();
+	public  Class type() {
+		return  ConstantField.class;
 	}
-	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.CONSTANT);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

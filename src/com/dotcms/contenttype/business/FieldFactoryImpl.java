@@ -10,8 +10,9 @@ import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.transform.DbFieldTransformer;
+import com.dotcms.contenttype.util.FieldBuilderUtil;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -44,7 +45,7 @@ public class FieldFactoryImpl implements FieldFactory {
 	@Override
 	public void delete(String id) throws DotDataException {
 		try {
-			LocalTransaction.closeIfNeeded(() -> {
+			LocalTransaction.wrap(() -> {
 				return deleteInDb(id);
 			});
 		} catch (Exception e) {
@@ -53,23 +54,24 @@ public class FieldFactoryImpl implements FieldFactory {
 	}
 
 	@Override
-	public Field save(final Field field) throws DotDataException {
+	public Field save(final Field throwAwayField) throws DotDataException {
 		boolean inserting = false;
 		Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-		Field retField = ImmutableField.copyOf(field).withModDate(modDate);
-		
-		
+		Field retField = FieldBuilderUtil.resolveBuilder(throwAwayField).from(throwAwayField).modDate(modDate).build();
 		// assign a db column if we need to
-		if (field.dbColumn() == null) {
-			retField = ImmutableField.copyOf(retField).withDbColumn(assignAvailableColumn(field));
+		if (retField.dbColumn() == null) {
+			retField = FieldBuilderUtil.resolveBuilder(retField).from(retField).dbColumn(assignAvailableColumn(retField)).build();
 		}
 		// assign an inode if needed
-		if (field.inode() == null) {
-			retField = ImmutableField.copyOf(retField).withInode(UUID.randomUUID().toString());
+		if (retField.inode() == null) {
+			retField = FieldBuilderUtil.resolveBuilder(retField).from(retField).inode(UUID.randomUUID().toString()).build();
 			inserting = true;
 		}
 
-
+		if(!retField.acceptedDataTypes().contains(retField.dataType())){
+			throw new DotDataException("Field Type:" + retField.type() + " does not accept datatype " + retField.dataType());
+		}
+		
 		// if we don't think we are inserting, test
 		if (!inserting) {
 			if (inodeCount(retField) == 0) {
@@ -85,7 +87,7 @@ public class FieldFactoryImpl implements FieldFactory {
 			updateFieldInDb(retField);
 		}
 
-		return DbFieldTransformer.transformToSubclass(retField);
+		return retField;
 	}
 
 	private List<Field> findByContentTypeInDb(String id) throws DotDataException {
@@ -226,6 +228,9 @@ public class FieldFactoryImpl implements FieldFactory {
 	}
 
 	private String assignAvailableColumn(Field field) throws DotDataException {
+		if(field instanceof ImmutableConstantField){
+			return "constant";
+		}
 		DotConnect dc = new DotConnect();
 		String dataType = field.dataType().toString();
 		dc.setSQL(sql.selectFieldOfDbType);

@@ -49,7 +49,7 @@ public abstract class FieldSql {
 			+ "mod_date=? "
 			+ "where inode =?";
 	
-	public String updateFieldInode = "update inode set inode=?, idate=?, owner = ? , type='field' where inode = ?";
+	public String updateFieldInode = "update inode set inode=?, idate=?, owner = ? where inode = ? and type='field'";
 	
 	public String insertFieldInode = "insert into inode (inode, idate, owner, type) values (?,?,?,'field')";
 	

@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-
-
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -15,17 +13,22 @@ public abstract class BinaryField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+
+
 	@Value.Derived
 	@Override
-	public  FieldTypes fieldType() {
-		return  FieldTypes.BINARY;
-	}
-	
-	
-	
-	@Value.Derived
-	@Override
-	public List<DataTypes> acceptedDataTypes(){
+	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.BINARY);
 	}
+	
+	@Override
+	public Class<BinaryField> type() {
+		return BinaryField.class;
+	}
+
+	public String typeName(){
+		return "binary";
+	}
+	
+	public abstract static class Builder implements FieldBuilder {}
 }

@@ -15,15 +15,18 @@ public abstract class HiddenField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+
+	
 	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.HIDDEN.name();
+	public  Class<HiddenField> type() {
+		return  HiddenField.class;
 	}
+	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.SYSTEM);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

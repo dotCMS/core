@@ -15,15 +15,14 @@ public abstract class CheckboxField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.CHECKBOX.name();
+	public  Class type() {
+		return  CheckboxField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.TEXT);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

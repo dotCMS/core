@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.transform;
 
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -7,9 +8,10 @@ import java.util.Map;
 import org.elasticsearch.common.Nullable;
 
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldTypes;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableButtonField;
 import com.dotcms.contenttype.model.field.ImmutableCategoriesTabField;
@@ -36,6 +38,8 @@ import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.ImmutableTimeField;
 import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.util.FieldBuilderUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
 
@@ -44,7 +48,7 @@ public class DbFieldTransformer {
 	public static Field transform(final Map<String, Object> map) throws DotDataException {
 
 		String fieldType = (String) map.get("field_type");
-		final FieldTypes TYPE = FieldTypes.getFieldType(fieldType);
+
 		final Field field = new Field() {
 			/**
 			 * 
@@ -67,24 +71,11 @@ public class DbFieldTransformer {
 			}
 
 			@Override
-			public String type() {
-				return (String) map.get("field_type");
-			}
-			
-			@Override
-			public FieldTypes fieldType() {
-				return TYPE;
-			}
-
-			@Override
 			@Nullable
 			public String relationType() {
-				return (String) map.get("field_relation_type");
+				return null;
 			}
 
-			
-			
-			
 			@Override
 			public String contentTypeId() {
 				return (String) map.get("structure_inode");
@@ -136,10 +127,12 @@ public class DbFieldTransformer {
 			public Date modDate() {
 				return new Date(((Date) map.get("mod_date")).getTime());
 			}
+
 			@Override
 			public Date iDate() {
 				return (Date) map.get("idate");
 			}
+
 			@Override
 			public boolean required() {
 				return Boolean.getBoolean(String.valueOf(map.get("required")));
@@ -192,75 +185,34 @@ public class DbFieldTransformer {
 				return ImmutableList.of();
 			}
 
+			@Override
+			public Class<? extends Field> type() {
+				String typeName = (String) map.get("field_type");
+				return LegacyFieldTypes.getImplClass(typeName);
+
+			}
+
+			@Override
+			public String typeName() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
 		};
-		
-		
-		return transformToSubclass(field);
-		
-		
+
+		return transformToImplclass(field);
+
 	}
-		
-		
-	public static Field transformToSubclass(Field field) throws DotDataException{
-		FieldTypes TYPE = field.fieldType();
 
-		switch (TYPE) {
-			case BINARY:
-				return ImmutableBinaryField.builder().from(field).build();
-			case BUTTON:
-				return ImmutableButtonField.builder().from(field).build();
-			case CATEGORIES_TAB:
-				return ImmutableCategoriesTabField.builder().from(field).build();
-			case CATEGORY:
-				return ImmutableCategoryField.builder().from(field).build();
-			case CHECKBOX:
-				return ImmutableCheckboxField.builder().from(field).build();
-			case CONSTANT:
-				return ImmutableConstantField.builder().from(field).build();
-			case CUSTOM_FIELD:
-				return ImmutableCustomField.builder().from(field).build();
-			case DATE:
-				return ImmutableDateField.builder().from(field).build();
-			case DATE_TIME:
-				return ImmutableDateTimeField.builder().from(field).build();
-			case FILE:
-				return ImmutableFileField.builder().from(field).build();
-			case HIDDEN:
-				return ImmutableHiddenField.builder().from(field).build();
-			case HOST_OR_FOLDER:
-				return ImmutableHostFolderField.builder().from(field).build();
-			case IMAGE:
-				return ImmutableImageField.builder().from(field).build();
-			case KEY_VALUE:
-				return ImmutableKeyValueField.builder().from(field).build();
-			case LINE_DIVIDER:
-				return ImmutableLineDividerField.builder().from(field).build();
-			case MULTI_SELECT:
-				return ImmutableMultiSelectField.builder().from(field).build();
-			case PERMISSIONS_TAB:
-				return ImmutablePermissionTabField.builder().from(field).build();
-			case RADIO:
-				return ImmutableRadioField.builder().from(field).build();
-			case RELATIONSHIPS_TAB:
-				return ImmutableRelationshipsTabField.builder().from(field).build();
-			case SELECT:
-				return ImmutableSelectField.builder().from(field).build();
-			case TAB_DIVIDER:
-				return ImmutableTabDividerField.builder().from(field).build();
-			case TAG:
-				return ImmutableTagField.builder().from(field).build();
-			case TEXT:
-				return ImmutableTextField.builder().from(field).build();
-			case TEXT_AREA:
-				return ImmutableTextAreaField.builder().from(field).build();
-			case TIME:
-				return ImmutableTimeField.builder().from(field).build();
-			case WYSIWYG:
-				return ImmutableWysiwygField.builder().from(field).build();
+	public static Field transformToImplclass(Field field) throws DotDataException {
 
+		try {
+			FieldBuilder builder = FieldBuilderUtil.resolveBuilder(field);
+			return builder.from(field).build();
+		} catch (Exception e) {
+			throw new DotDataException(e.getMessage(), e);
 		}
 
-		return field;
 	}
 
 	/**

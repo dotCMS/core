@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
+
 public enum BaseContentTypes {
 	NONE(0),
 	CONTENT(1),
@@ -23,5 +24,15 @@ public enum BaseContentTypes {
      */
 	public int getType() {
 		return type;
+	}
+	
+	public static BaseContentTypes getBaseContentType (int value) {
+		BaseContentTypes[] types = BaseContentTypes.values();
+		for (BaseContentTypes type : types) {
+			if (type.type==value){
+				return type;
+			}
+		}
+		return NONE;
 	}
 }

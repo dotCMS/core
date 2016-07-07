@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
@@ -20,8 +19,6 @@ public class DbContentTypeTransformer {
 
 	public static ContentType transform(final Map<String, Object> map) throws DotDataException {
 
-		int dbType = (int) map.get("structuretype");
-		final BaseContentTypes TYPE = BaseContentTypes.values()[dbType];
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
 			@Override
@@ -105,18 +102,21 @@ public class DbContentTypeTransformer {
 			}
 			@Override
 			public BaseContentTypes baseType() {
-				return BaseContentTypes.NONE;
+				return BaseContentTypes.getBaseContentType((Integer) map.get("structuretype"));
 			}
 
 
 		};
 		
-		List<Field> l = type.requiredFields();
-		
 
+		return transformToSubclass(type);
+		
+	}
+	
+	
+	public static ContentType transformToSubclass(ContentType type) throws DotDataException{
+		final BaseContentTypes TYPE = type.baseType();
 		switch (TYPE) {
-			case NONE:
-				throw new DotDataException("invalid content type - base type=none");
 			case CONTENT:
 				return ImmutableSimpleContentType.builder().from(type).build();
 			case WIDGET:
@@ -132,14 +132,10 @@ public class DbContentTypeTransformer {
 			default:
 				throw new DotDataException("invalid content type");
 		}
-
-		
 	}
 	
 	
-	
 	public static List<ContentType> transform(final List<Map<String, Object>> list) throws DotDataException {
-
 		ImmutableList.Builder<ContentType> builder = ImmutableList.builder();
 		for (Map<String, Object> map : list) {
 			builder.add(transform(map));

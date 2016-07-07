@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-
-
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -15,15 +13,17 @@ public abstract class CategoriesTabField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
+
 	@Override
-	public  String type() {
-		return  FieldTypes.CATEGORIES_TAB.name();
+	public Class type() {
+		return CategoriesTabField.class;
 	}
+
 	@Value.Derived
 	@Override
-	public List<DataTypes> acceptedDataTypes(){
+	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SECTION_DIVIDER);
 	}
-	
+
+	public abstract static class Builder implements FieldBuilder {}
 }

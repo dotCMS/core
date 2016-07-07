@@ -15,15 +15,14 @@ public abstract class ButtonField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.BUTTON.name();
+	public  Class<ButtonField> type() {
+		return  ButtonField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of();
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

@@ -15,15 +15,14 @@ public abstract class TimeField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.TIME.name();
+	public  Class type() {
+		return  TimeField.class;
 	}
-	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.DATE);
 	}
+	public abstract static class Builder implements FieldBuilder {}
 }

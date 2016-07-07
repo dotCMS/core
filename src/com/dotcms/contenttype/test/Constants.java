@@ -8,5 +8,8 @@ public class Constants {
 	final static String FORM = "cb1f21c7-7d98-4ea3-903f-c5de10e41700";
 	final static String PERSONA = "c938b15f-bcb6-49ef-8651-14d455a97045";
 	final static String HTMLPAGE = "c541abb1-69b3-4bc5-8430-5e09e5239cc8";
+	
+	final static String SYSTEM_HOST="48190c8c-42c4-46af-8d1a-0cd5db894797";
+	
 
 }

@@ -15,15 +15,14 @@ public abstract class PermissionTabField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.PERMISSIONS_TAB.name();
+	public  Class type() {
+		return  PermissionTabField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.SECTION_DIVIDER);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

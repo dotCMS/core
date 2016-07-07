@@ -15,10 +15,9 @@ public abstract class DateTimeField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.DATE_TIME.name();
+	public  Class type() {
+		return  DateTimeField.class;
 	}
 	
 	@Value.Derived
@@ -26,4 +25,5 @@ public abstract class DateTimeField extends Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.DATE);
 	}
+	public abstract static class Builder implements FieldBuilder {}
 }

@@ -15,15 +15,14 @@ public abstract class RelationshipsTabField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.RELATIONSHIPS_TAB.name();
+	public  Class type() {
+		return  RelationshipsTabField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.SECTION_DIVIDER);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-
-
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -15,15 +13,16 @@ public abstract class CategoryField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
+
 	@Override
-	public  String type() {
-		return  FieldTypes.CATEGORY.name();
+	public Class type() {
+		return CategoryField.class;
 	}
-	
+
 	@Value.Derived
 	@Override
-	public List<DataTypes> acceptedDataTypes(){
+	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SYSTEM);
 	}
+	public abstract static class Builder implements FieldBuilder {}
 }

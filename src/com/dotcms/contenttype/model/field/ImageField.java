@@ -17,13 +17,13 @@ public abstract class ImageField extends Field {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public  String type() {
-		return  FieldTypes.IMAGE.name();
+	public  Class type(){
+		return  ImageField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.TEXT);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

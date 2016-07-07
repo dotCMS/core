@@ -1,12 +1,12 @@
 package com.dotcms.contenttype.model.type;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -176,8 +176,9 @@ public abstract class ContentType implements Serializable, Permissionable {
 		return Structure.class.getCanonicalName();
 	}
 
+	@Default
 	public  List<Field> requiredFields(){
-		return new ArrayList<Field>();
+		return ImmutableList.of();
 	}
 
 }

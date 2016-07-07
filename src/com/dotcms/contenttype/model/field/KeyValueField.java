@@ -15,15 +15,14 @@ public abstract class KeyValueField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.KEY_VALUE.name();
+	public  Class type() {
+		return  KeyValueField.class;
 	}
-	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.LONG_TEXT);
 	}
+	public abstract static class Builder implements FieldBuilder {}
 }

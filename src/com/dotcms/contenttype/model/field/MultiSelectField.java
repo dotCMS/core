@@ -15,15 +15,14 @@ public abstract class MultiSelectField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.MULTI_SELECT.name();
+	public  Class type() {
+		return  MultiSelectField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.LONG_TEXT);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

@@ -18,5 +18,14 @@ public abstract class PersonaContentType extends ContentType{
 	public boolean versionable(){
 		return true;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 }

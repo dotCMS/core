@@ -17,13 +17,13 @@ public abstract class HostFolderField extends Field {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public  String type() {
-		return  FieldTypes.HOST_OR_FOLDER.name();
+	public  Class type() {
+		return  HostFolderField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.SYSTEM);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

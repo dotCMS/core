@@ -15,15 +15,14 @@ public abstract class FileField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.FILE.name();
+	public  Class<FileField> type() {
+		return  FileField.class;
 	}
-	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.TEXT);
 	}
+	public abstract static class Builder implements FieldBuilder {}
 }

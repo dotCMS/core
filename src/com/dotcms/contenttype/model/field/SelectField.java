@@ -15,15 +15,14 @@ public abstract class SelectField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.SELECT.name();
+	public  Class type() {
+		return  SelectField.class;
 	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.TEXT, DataTypes.BOOL, DataTypes.FLOAT,DataTypes.INTEGER);
 	}
-	
+	public abstract static class Builder implements FieldBuilder {}
 }

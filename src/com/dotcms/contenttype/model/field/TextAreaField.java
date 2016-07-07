@@ -16,10 +16,9 @@ public abstract class TextAreaField extends Field {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	@Value.Derived
 	@Override
-	public  String type() {
-		return  FieldTypes.TEXT_AREA.name();
+	public  Class type() {
+		return  TextAreaField.class;
 	}
 	
 	@Value.Derived
@@ -27,4 +26,5 @@ public abstract class TextAreaField extends Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.LONG_TEXT);
 	}
+	public abstract static class Builder implements FieldBuilder {}
 }

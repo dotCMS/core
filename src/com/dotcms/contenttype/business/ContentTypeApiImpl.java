@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 
 import java.util.List;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotmarketing.business.APILocator;
@@ -71,7 +72,7 @@ public class ContentTypeApiImpl implements ContentTypeApi, StructureAPI{
 		return c;
 		
 	}
-	public void saveContentType(){
+	public void saveContentType(ContentType type, List<Field> fields){
 		
 	}
 }
