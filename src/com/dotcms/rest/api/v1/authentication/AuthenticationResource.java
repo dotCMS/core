@@ -25,16 +25,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * This resource does the authentication, if the authentication is successfully returns the User Object as a Json,
- * If there is a known error returns 200 and the error messages related.
+ * If there is a known error returns 500 and the error messages related.
  * Otherwise returns 500 and the exception as Json.
  * @author jsanca
  */
@@ -64,44 +66,47 @@ public class AuthenticationResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response authentication(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @PathParam("userId") final String userId,
-                                   @PathParam("password") final String password,
-                                   @PathParam("rememberMe") final boolean rememberMe) {
+                                   final AuthenticationForm authenticationForm) {
 
         Response res = null;
         boolean authenticated = false;
+        String userId = authenticationForm.getUserId();
+        final Locale locale = LocaleUtil.getLocale(request,
+                authenticationForm.getCountry(), authenticationForm.getLanguage());
 
         try {
 
             authenticated =
-                    this.loginService.doActionLogin(userId, password, rememberMe, request, response);
+                    this.loginService.doActionLogin(userId,
+                            authenticationForm.getPassword(),
+                            authenticationForm.isRememberMe(), request, response);
 
             if (authenticated) {
 
                 final HttpSession ses = request.getSession();
                 final User user = UserLocalManagerUtil.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
-                res = Response.ok(new ResponseEntityView(user)).build(); // 200
+                res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
                 SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             }
         } catch (NoSuchUserException | UserEmailAddressException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, userId, "please-enter-a-valid-login");
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "please-enter-a-valid-login");
         } catch (AuthException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, userId, "authentication-failed");
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
         }  catch (UserPasswordException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, userId, "please-enter-a-valid-password");
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "please-enter-a-valid-password");
         } catch (RequiredLayoutException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, userId, "user-without-portlet");
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 
             try {
 
                 res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
                         (Arrays.asList(new ErrorEntity("your-account-is-not-active",
-                                LanguageUtil.format(request.getLocale(),
+                                LanguageUtil.format(locale,
                                         "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", userId, "</i></b>")}, false)
                         )))).build();
                 SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
