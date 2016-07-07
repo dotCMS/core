@@ -1,4 +1,4 @@
-package com.dotcms.contenttype.test;
+package com.dotmarketing.db.test;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -14,13 +14,10 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.viewtools.XmlTool;
 import com.liferay.util.FileUtil;
 
-public class TestDataSource {
+public class DataSourceForTesting {
 
 
-	
-	
-	
-	DataSource getDataSource() throws FileNotFoundException, Exception{
+	public DataSource getDataSource() throws FileNotFoundException, Exception{
 		XmlTool xml = new XmlTool().parse(getContextAsString());
 		xml = xml.children().find("Resource");
 		Iterator<XmlTool> it = xml.iterator();
@@ -36,13 +33,18 @@ public class TestDataSource {
 		String url = source.attr("url");
 		String username = source.attr("username");
 		String password = source.attr("password");
+		
+
+		System.out.println("Building test datasource : " +url );
+		
+		
 		return getDataSource(driver, url, username, password);
 		
 	}
 	
 
 	
-	DataSource getDataSource(String driver, String url, String username, String password) throws Exception {
+	private DataSource getDataSource(String driver, String url, String username, String password) throws Exception {
 		BasicDataSource dataSource = new BasicDataSource();
         dataSource.setDriverClassName(driver);
         dataSource.setUrl(url);

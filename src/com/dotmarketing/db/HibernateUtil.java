@@ -828,7 +828,7 @@ public class HibernateUtil {
 				HibernateUtil.startTransaction();
 			}
 		} catch (SQLException e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			Logger.error(HibernateUtil.class,e.getMessage(),e);
 			throw new DotDataException(e.getMessage());
 		}
 		return startTransaction;
