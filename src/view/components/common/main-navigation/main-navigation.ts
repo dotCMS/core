@@ -1,4 +1,5 @@
 import {Component, Inject} from '@angular/core';
+import {Accordion, AccordionGroup} from '../accordion/accordion'
 
 // Angular Material
 import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
@@ -9,25 +10,31 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
     styleUrls: ['main-navigation.css'],
     template: `
     <md-nav-list>
-        <template ngFor let-menu [ngForOf]="menuItems.navigationItems">
-            <h3>{{menu.tabName}}</h3>
-            <template ngFor let-menuItem [ngForOf]="menu.menuItems">
-                <a md-list-item linkTo="/portlet/{{menuItem.id}}" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
-                    {{menuItem.name}}
-                </a>
-                <a md-list-item linkTo="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
-                    {{menuItem.name}}
-                </a>
-                <a md-list-item linkTo="{{menuItem.url}}"  *ngIf="menuItem.ajax">
-                    {{menuItem.name}}
-                </a>
-            </template>
-            <hr />
-        </template>
+        <accordion>
+            <nav>
+                <template ngFor let-menu [ngForOf]="menuItems.navigationItems">
+                    <accordion-group [heading]="menu.tabName">
+                        <div class="md-nav-list__submenu">
+                            <template ngFor let-menuItem [ngForOf]="menu.menuItems">
+                                <a linkTo="/portlet/{{menuItem.id}}" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
+                                    {{menuItem.name}}
+                                </a>
+                                <a linkTo="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
+                                    {{menuItem.name}}
+                                </a>
+                                <a linkTo="{{menuItem.url}}"  *ngIf="menuItem.ajax">
+                                    {{menuItem.name}}
+                                </a>
+                            </template>
+                        </div>
+                    </accordion-group>
+                </template>
+            </nav>
+        </accordion>
     </md-nav-list>
     `,
     providers: [],
-    directives: [MD_LIST_DIRECTIVES],
+    directives: [MD_LIST_DIRECTIVES, Accordion, AccordionGroup],
 })
 export class MainNavigation {
     constructor(@Inject('menuItems') private menuItems:any[]) {
