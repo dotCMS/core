@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.contenttype.util.FieldBuilderUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
 
@@ -158,7 +157,7 @@ public class DbFieldTransformer {
 			}
 
 			@Override
-			public Class<? extends Field> type() {
+			public Class type() {
 				String typeName = (String) map.get("field_type");
 				return LegacyFieldTypes.getImplClass(typeName);
 
@@ -179,7 +178,7 @@ public class DbFieldTransformer {
 	public static Field transformToImplclass(Field field) throws DotDataException {
 
 		try {
-			FieldBuilder builder = FieldBuilderUtil.resolveBuilder(field);
+			FieldBuilder builder = FieldBuilder.builder(field);
 			return builder.from(field).build();
 		} catch (Exception e) {
 			throw new DotDataException(e.getMessage(), e);

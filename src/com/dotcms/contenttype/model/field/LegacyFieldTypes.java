@@ -42,14 +42,22 @@ public enum LegacyFieldTypes {
 		}
 
 	public String toString () {
-		return legacyValue;
+		return this.legacyValue;
+	}
+	
+	public String legacyValue () {
+		return this.legacyValue;
+	}
+	public Class implClass (){
+		return this.implClass;
 	}
 
 
-
 	public static Class getImplClass (String legacyValue) {
+		String className = legacyValue.replace("Immutable", "");
+		
 		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
-			if(fieldType.legacyValue.equals(legacyValue)){
+			if(fieldType.legacyValue.equals(legacyValue) || fieldType.implClass.getCanonicalName().equals(className)){
 				return fieldType.implClass;
 			}
 		}
@@ -61,17 +69,24 @@ public enum LegacyFieldTypes {
 	}
 	
 	public static String getLegacyName (Class clazz) {
+		String className = clazz.getCanonicalName().replace("Immutable", "");
 		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
-			String className = fieldType.implClass.getCanonicalName().replace("Immutable", "");
-			
-			
-			if(className.equals(clazz.getCanonicalName())){
-				return fieldType.name();
+			if(className.equals(fieldType.implClass.getCanonicalName())){
+				return className;
 			}
 		}
 		return clazz.getCanonicalName();
 	}
-
+	
+	public static String getLegacyName (String clazz) {
+		clazz=clazz.replace(".Immutable", ".");
+		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
+			if(fieldType.implClass.getCanonicalName().equals(clazz)){
+				return fieldType.name();
+			}
+		}
+		return clazz;
+	}
 }
 
 

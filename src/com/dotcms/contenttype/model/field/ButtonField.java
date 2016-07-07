@@ -15,10 +15,7 @@ public abstract class ButtonField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Override
-	public  Class<ButtonField> type() {
-		return  ButtonField.class;
-	}
+
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

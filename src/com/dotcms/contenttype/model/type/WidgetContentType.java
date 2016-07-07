@@ -21,7 +21,7 @@ public abstract class WidgetContentType extends ContentType {
 	private final String WIDGET_TITLE_FIELD_VAR = "widgetTitle";
 	private final String WIDGET_PRE_EXECUTE_FIELD_NAME = "Widget Pre-Execute";
 	private final String WIDGET_PRE_EXECUTE_FIELD_VAR = "widgetPreexecute";
-	
+	public abstract static class Builder implements ContentTypeBuilder {}
 	private static final long serialVersionUID = 1L;
 
 	@Override

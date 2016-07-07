@@ -68,6 +68,7 @@ public class FieldFactoryTest {
 		List<Field> fields1 = factory.byContentTypeId(Constants.NEWS);
 		List<Field> fields2 = factory.byContentTypeVar("news");
 		for(int i=0;i<fields1.size();i++){
+			System.out.println(fields1.get(i));
 			Field field1 = fields1.get(i);
 			Field field2 = fields2.get(i);
 

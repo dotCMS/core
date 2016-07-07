@@ -23,7 +23,7 @@ public abstract class HostFolderField extends Field {
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.SYSTEM);
+		return ImmutableList.of(DataTypes.SYSTEM, DataTypes.TEXT);
 	}
 	public abstract static class Builder implements FieldBuilder {}
 }

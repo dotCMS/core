@@ -13,6 +13,6 @@ public abstract class PageContentType extends ContentType{
 	public  BaseContentTypes baseType() {
 		return  BaseContentTypes.HTMLPAGE;
 	}
-
+	public abstract static class Builder implements ContentTypeBuilder {}
 
 }

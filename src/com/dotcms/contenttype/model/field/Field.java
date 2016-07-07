@@ -11,11 +11,10 @@ import org.immutables.value.Value.Derived;
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
-public abstract class Field implements Serializable,FieldType {
-	public abstract static class Builder implements FieldBuilder {}
+public abstract class Field implements Serializable, FieldType {
 
+	
 	private static final long serialVersionUID = 1L;
-
 
 	@Nullable
 	public abstract String owner();
@@ -28,12 +27,19 @@ public abstract class Field implements Serializable,FieldType {
 		return new Date();
 	}
 
+	
 	public abstract String name();
 
 	@Derived
-	public String typeName(){
-		return LegacyFieldTypes.getLegacyName(this.getClass());
+	public String typeName() {
+		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName()).getCanonicalName();
 	}
+
+	@Derived
+	public Class<Field> type() {
+		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName());
+	}
+
 	@Nullable
 	public abstract String relationType();
 
@@ -110,6 +116,4 @@ public abstract class Field implements Serializable,FieldType {
 		return new Date();
 	}
 
-	
-	
 }

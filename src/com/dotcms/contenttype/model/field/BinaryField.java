@@ -15,16 +15,12 @@ public abstract class BinaryField extends Field {
 	private static final long serialVersionUID = 1L;
 
 
-	@Value.Derived
+
 	@Override
 	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.BINARY);
 	}
 	
-	@Override
-	public Class<BinaryField> type() {
-		return BinaryField.class;
-	}
 
 	
 	public abstract static class Builder implements FieldBuilder {}

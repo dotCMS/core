@@ -15,10 +15,7 @@ public abstract class FileField extends Field {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	@Override
-	public  Class<FileField> type() {
-		return  FileField.class;
-	}
+
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

@@ -10,9 +10,9 @@ import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.transform.DbFieldTransformer;
-import com.dotcms.contenttype.util.FieldBuilderUtil;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -57,19 +57,22 @@ public class FieldFactoryImpl implements FieldFactory {
 	public Field save(final Field throwAwayField) throws DotDataException {
 		boolean inserting = false;
 		Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-		Field retField = FieldBuilderUtil.resolveBuilder(throwAwayField).from(throwAwayField).modDate(modDate).build();
+		Field retField = FieldBuilder.builder(throwAwayField).modDate(modDate).build();
 		// assign a db column if we need to
 		if (retField.dbColumn() == null) {
-			retField = FieldBuilderUtil.resolveBuilder(retField).from(retField).dbColumn(assignAvailableColumn(retField)).build();
+			retField = FieldBuilder.builder(retField).dbColumn(assignAvailableColumn(retField)).build();
 		}
 		// assign an inode if needed
 		if (retField.inode() == null) {
-			retField = FieldBuilderUtil.resolveBuilder(retField).from(retField).inode(UUID.randomUUID().toString()).build();
+			retField = FieldBuilder.builder(retField).inode(UUID.randomUUID().toString()).build();
 			inserting = true;
 		}
 
 		if(!retField.acceptedDataTypes().contains(retField.dataType())){
 			throw new DotDataException("Field Type:" + retField.type() + " does not accept datatype " + retField.dataType());
+		}
+		if(retField.contentTypeId()==null){
+			throw new DotDataException("Field Type:" + retField.type() + " does not have a contenttype.inode set");
 		}
 		
 		// if we don't think we are inserting, test

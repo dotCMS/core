@@ -2,20 +2,20 @@ package com.dotcms.contenttype.model.type;
 
 
 public enum BaseContentTypes {
-	NONE(0),
-	CONTENT(1),
-	WIDGET(2),
-	FORM(3),
-	FILEASSET(4),
-	HTMLPAGE(5),
-	PERSONA(6),
-	HOST(7),
-	EVENT(8);
+	NONE(0, null),
+	CONTENT(1, SimpleContentType.class),
+	WIDGET(2, WidgetContentType.class),
+	FORM(3,FormContentType.class),
+	FILEASSET(4, FileAssetContentType.class),
+	HTMLPAGE(5, PageContentType.class),
+	PERSONA(6,PersonaContentType.class);
 
-	private int type;
-
-	BaseContentTypes(int type) {
+	int type;
+	Class implClass;
+	
+	BaseContentTypes(int type, Class clazz) {
 		this.type = type;
+		this.implClass=clazz;
 	}
 
 	/**
@@ -25,7 +25,9 @@ public enum BaseContentTypes {
 	public int getType() {
 		return type;
 	}
-	
+	public Class implClass() {
+		return implClass;
+	}
 	public static BaseContentTypes getBaseContentType (int value) {
 		BaseContentTypes[] types = BaseContentTypes.values();
 		for (BaseContentTypes type : types) {
@@ -34,5 +36,15 @@ public enum BaseContentTypes {
 			}
 		}
 		return NONE;
+	}
+	
+	public static Class getContentTypeClass (int value) {
+		BaseContentTypes[] types = BaseContentTypes.values();
+		for (BaseContentTypes type : types) {
+			if (type.type==value){
+				return type.implClass;
+			}
+		}
+		return NONE.implClass;
 	}
 }

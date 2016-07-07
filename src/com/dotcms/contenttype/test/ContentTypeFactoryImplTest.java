@@ -15,7 +15,7 @@ import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ImmutableContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
 import com.dotcms.contenttype.model.type.ImmutablePageContentType;
@@ -111,6 +111,7 @@ public class ContentTypeFactoryImplTest {
 	}
 	
 	
+	
 	@Test
 	public void testAddingContentTypes() throws Exception{
 		int count = factory.searchCount(null);
@@ -118,10 +119,9 @@ public class ContentTypeFactoryImplTest {
 		
 		for(int i=0;i<runs;i++){
 			long time = System.currentTimeMillis();
-			int base=(i % 6)+1;
+			int base=(i % 5)+1;
 			Thread.sleep(1);
-			ContentType type = ImmutableContentType.builder()
-				.baseType(BaseContentTypes.getBaseContentType(base))
+			ContentType type = ContentTypeBuilder.builder(BaseContentTypes.getContentTypeClass(base))
 				.description("description" + time)
 				.folder(FolderAPI.SYSTEM_FOLDER)
 				.host(Constants.SYSTEM_HOST)
@@ -140,12 +140,10 @@ public class ContentTypeFactoryImplTest {
 	
 	@Test
 	public void testAddingWidgets() throws Exception{
-
+		cleanDb();
 		int countAll = factory.searchCount(null);
 		int runs = 20;
 		int countWidgets = factory.searchCount(null, BaseContentTypes.WIDGET);
-		
-		
 		
 		for(int i=0;i<runs;i++){
 			testAddingAWidget();
@@ -162,20 +160,35 @@ public class ContentTypeFactoryImplTest {
 	}
 	
 	
+	@Test
+	public void testAddingForms() throws Exception{
+		cleanDb();
+		int countAll = factory.searchCount(null);
+		int runs = 20;
+		int countForms = factory.searchCount(null, BaseContentTypes.FORM);
+		
+		for(int i=0;i<runs;i++){
+			testAddingAForm();
+			Thread.sleep(1);
+		}
+		
+		
+		int countAll2 = factory.searchCount(null);
+		int countForms2 = factory.searchCount(null, BaseContentTypes.FORM);
+		assertThat("counts are working", countAll == countAll2-runs);
+		assertThat("counts are working", countAll2 >countForms2);
+		assertThat("counts are working", countForms == countForms2-runs);
+
+	}
 	public void testAddingAWidget() throws DotDataException{
 
 		long i = System.currentTimeMillis();
 
-		ContentType type = ImmutableContentType.builder()
-			.baseType(BaseContentTypes.WIDGET)
-			.defaultStructure(false)
+		ContentType type = ImmutableWidgetContentType.builder()
 			.description("description" + i)
 			.expireDateVar(null)
-			.fixed(false)
 			.folder(FolderAPI.SYSTEM_FOLDER)
-			.system(false)
 			.host(Constants.SYSTEM_HOST)
-			.multilingualable(false)
 			.name("ContentTypeTesting" + i)
 			.owner("owner")
 			.pagedetail("/page/inode"+ i)
@@ -197,10 +210,39 @@ public class ContentTypeFactoryImplTest {
 			assertThat("fields are correct:", field.name().equals(baseField.name()));
 			assertThat("fields are correct:", field.sortOrder()==baseField.sortOrder());
 		}
-		
-
 	}
 	
+	public void testAddingAForm() throws DotDataException{
+
+		long i = System.currentTimeMillis();
+
+		ContentType type = ImmutableFormContentType.builder()
+			.description("description" + i)
+			.expireDateVar(null)
+			.folder(FolderAPI.SYSTEM_FOLDER)
+			.host(Constants.SYSTEM_HOST)
+			.name("ContentTypeTesting" + i)
+			.owner("owner")
+			.pagedetail("/page/inode"+ i)
+			.urlMapPattern("/asdsadasdasd" + i)
+			.velocityVarName("velocityVarNameTesting" + i)
+			.build();
+		type = factory.save(type);
+
+		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
+		List<Field> baseTypeFields = ImmutableFormContentType.builder().name("test").velocityVarName("rewarwa").build().requiredFields();
+		assertThat("fields are all added", fields.size() == baseTypeFields.size());
+		
+		for(int j=0;j<fields.size();j++){
+			Field field = fields.get(j);
+			Field baseField = baseTypeFields.get(j);
+			assertThat("fields are correct:", field.dataType().equals(baseField.dataType()));
+			assertThat("fields are correct:", field.variable().equals(baseField.variable()));
+			assertThat("fields are correct:", field.getClass().equals(baseField.getClass()));
+			assertThat("fields are correct:", field.name().equals(baseField.name()));
+			assertThat("fields are correct:", field.sortOrder()==baseField.sortOrder());
+		}
+	}
 	
 	
 }

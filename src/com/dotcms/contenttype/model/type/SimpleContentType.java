@@ -13,6 +13,6 @@ public abstract class SimpleContentType extends ContentType{
 	public  BaseContentTypes baseType() {
 		return  BaseContentTypes.CONTENT;
 	}
-
+	public abstract static class Builder implements ContentTypeBuilder {}
 
 }

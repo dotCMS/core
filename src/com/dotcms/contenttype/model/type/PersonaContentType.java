@@ -21,7 +21,7 @@ public abstract class PersonaContentType extends ContentType{
 	
 	
 	
-	
+	public abstract static class Builder implements ContentTypeBuilder {}
 	
 	
 	

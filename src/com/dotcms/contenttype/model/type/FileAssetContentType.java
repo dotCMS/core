@@ -27,6 +27,6 @@ public abstract class FileAssetContentType extends ContentType{
 		return ImmutableList.copyOf(fields);
 	}
 	
-	
+	public abstract static class Builder implements ContentTypeBuilder {}
 
 }

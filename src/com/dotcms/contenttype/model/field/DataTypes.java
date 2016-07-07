@@ -3,7 +3,7 @@ package com.dotcms.contenttype.model.field;
 
 
 public enum DataTypes {
-
+	NONE("none"),
 	BOOL("bool"),
 	DATE("date"),
 	FLOAT("float"),

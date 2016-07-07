@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -8,13 +7,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
-import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ImmutableContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.DbContentTypeTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
@@ -173,15 +170,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		}
 	}
 
-	Class noparams[] = {};
 	private ContentType dbSaveUpdate(final ContentType throwawayType) throws DotDataException{
 
 		Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-		ContentType retType = ImmutableContentType.copyOf(throwawayType).withModDate(modDate);
+		ContentType retType = ContentTypeBuilder.builder(throwawayType).from(throwawayType).modDate(modDate).build();
 
 		// assign an inode if needed
 		if (retType.inode() == null) {
-			retType = ImmutableContentType.copyOf(retType).withInode(UUID.randomUUID().toString());
+			retType = ContentTypeBuilder.builder(retType).from(retType).inode(UUID.randomUUID().toString()).build();
 			insertInodeInDb(retType);
 			insertInDb(retType);
 			retType = DbContentTypeTransformer.transformToSubclass(retType);
@@ -190,8 +186,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			List<Field> fields = retType.requiredFields();
 			FieldApi fapi = new FieldApiImpl().instance();
 			for(Field f : fields){
-
-				//fapi.save(field);
+				f = FieldBuilder.builder(f).from(f).contentTypeId(retType.inode()).build();
+				fapi.save(f);
 			}
 			return retType;
 			
