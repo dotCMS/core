@@ -533,7 +533,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
-        return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getTableName());
+        return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getValue());
     }
 
 	@Override

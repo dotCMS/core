@@ -2,12 +2,17 @@ package com.dotmarketing.portlets;
 
 import static org.junit.Assert.assertEquals;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.UtilMethods;
 
 public class AssetUtil {
 
-    public static void assertDeleted(String inode, String identifier, String tableName) throws Exception {
+    public static void assertDeleted(String inode, String identifier, String type) throws Exception {
+
+        String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+        String vinfo=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
+
         DotConnect dc=new DotConnect();
         dc.setSQL("select * from identifier where id=?");
         dc.addParam(identifier);
@@ -16,8 +21,7 @@ public class AssetUtil {
         dc.setSQL("select * from inode where inode=?");
         dc.addParam(inode);
         assertEquals(0, dc.loadObjectResults().size());
-        
-        String vinfo=UtilMethods.getVersionInfoTableName(tableName);
+
         dc.setSQL("select * from "+vinfo+" where identifier=? or working_inode=? or live_inode=?");
         dc.addParam(identifier);
         dc.addParam(inode);

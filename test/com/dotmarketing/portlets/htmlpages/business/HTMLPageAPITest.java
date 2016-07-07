@@ -182,7 +182,7 @@ public class HTMLPageAPITest extends TestBase {
 
         AssetUtil.assertDeleted(pageInode, pageIdent, "htmlpage");
         AssetUtil.assertDeleted(templateInode, templateIdent, "template");
-        AssetUtil.assertDeleted(containerInode, containerIdent, Inode.Type.CONTAINERS.getTableName());
+        AssetUtil.assertDeleted(containerInode, containerIdent, Inode.Type.CONTAINERS.getValue());
     }
 
     @Test

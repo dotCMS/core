@@ -61,7 +61,7 @@ public class Container extends WebAsset implements Serializable {
 
 	/** default constructor */
 	public Container() {
-		super.setType(Inode.Type.CONTAINERS.getTableName());
+		super.setType(Inode.Type.CONTAINERS.getValue());
 	}
 
 	public String getInode() {

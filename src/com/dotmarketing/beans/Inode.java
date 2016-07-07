@@ -53,10 +53,11 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
         FOLDER("folder", null),
         STRUCTURE("structure", null),
         RELATIONSHIP("relationship", null),
-        LINKS("links", null),
+        LINKS("links", "link_version_info"),
         CATEGORY("category", null),
         MAILING_LIST("mailing_list", null),
-        FIELD("field", null);
+        FIELD("field", null),
+		FILE_ASSET("file_asset", "fileasset_version_info");
 
         private String tableName;
 

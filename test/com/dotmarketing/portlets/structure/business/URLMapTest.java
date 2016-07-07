@@ -89,7 +89,7 @@ public class URLMapTest extends TestBase  {
 			container.setSortOrder(2);
 			container.setStaticify(true);
 			container.setTitle("News Test Container");
-			container.setType(Inode.Type.CONTAINERS.getTableName());
+			container.setType(Inode.Type.CONTAINERS.getValue());
 			container.setUseDiv( true );
 
 			List<ContainerStructure> csList = new ArrayList<ContainerStructure>();

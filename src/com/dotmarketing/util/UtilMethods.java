@@ -3400,22 +3400,6 @@ public class UtilMethods {
     	return sb.toString();
     }
 
-    public static String getVersionInfoTableName(String tableName) {
-        if(tableName.equals("links"))
-            return "link_version_info";
-        else if(tableName.equals("contentlet"))
-            return "contentlet_version_info";
-        else if(tableName.equals(Inode.Type.CONTAINERS.getTableName()))
-            return "container_version_info";
-        else if(tableName.equals("template"))
-            return "template_version_info";
-        else if(tableName.equals("file_asset"))
-            return "fileasset_version_info";
-        else if(tableName.equals("htmlpage"))
-            return "htmlpage_version_info";
-        else return null;
-    }
-
     public static Class getVersionInfoType(String type) {
         if(type.equals("links"))
             return LinkVersionInfo.class;

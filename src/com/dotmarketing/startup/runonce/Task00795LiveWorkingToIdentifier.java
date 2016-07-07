@@ -309,13 +309,14 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
           "alter table link_version_info       add constraint FK_link_ver_info_lockedby     foreign key (locked_by) references user_(userid)");
     }
 
-    protected void associateWorking(String table) throws DotDataException, SQLException {
+    protected void associateWorking(String type) throws DotDataException, SQLException {
         Connection con = DbConnectionFactory.getConnection();
-        String versionTable=UtilMethods.getVersionInfoTableName(table);
+        String table = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+        String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
         PreparedStatement selectContentlets = null;
         final int limit=1000;
 
-        Logger.info(this, "creating (working) version info records for "+table+" on "+versionTable);
+        Logger.info(this, "creating (working) version info records for "+type+" on "+versionTable);
 
         if(DbConnectionFactory.isOracle()){
         	  selectContentlets = con.prepareStatement(
@@ -394,12 +395,13 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         insertVersionInfo.close();
     }
 
-    protected void associateLiveNotWorking(String table) throws DotDataException {
+    protected void associateLiveNotWorking(String type) throws DotDataException {
         DotConnect dc = new DotConnect();
-        String versionTable=UtilMethods.getVersionInfoTableName(table);
+        String table = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+        String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
         String lastId="";
 
-        Logger.info(this, "creating (live not working) version info records for "+table+" on "+versionTable);
+        Logger.info(this, "creating (live not working) version info records for "+type+" on "+versionTable);
 
         String contentlets=
             "select identifier,inode, mod_date from " + table +
@@ -654,8 +656,8 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             	createNewTables();
             }
             addNewForeignKeys();
-            String[] tables=new String[] {Inode.Type.CONTAINERS.getTableName(),"links","template","file_asset","htmlpage"};
-            for(String tt : tables) {
+            String[] types=new String[] {Inode.Type.CONTAINERS.getValue(),"links","template","file_asset","htmlpage"};
+            for(String tt : types) {
                 associateWorking(tt);
                 associateLiveNotWorking(tt);
             }

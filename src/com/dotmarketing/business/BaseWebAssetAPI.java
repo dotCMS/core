@@ -468,7 +468,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
 	}
 
-	public int deleteOldVersions(final Date olderThan, final String tableName) throws DotDataException {
+	public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
         DotConnect dc = new DotConnect();
 
         //Setting the date to olderThan 00:00:00.
@@ -480,14 +480,15 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
 
+		String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+		String versionInfoTable = Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
+
         //Get the count of the tableName before deleting.
         String countSQL = "select count(*) as count from " + tableName;
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         int before = Integer.parseInt(result.get(0).get("count"));
         int after = before;
-
-        String versionInfoTable = UtilMethods.getVersionInfoTableName(tableName);
 
         String condition =  " mod_date < ? " +
                             " and not exists (select 1 from " + versionInfoTable +
@@ -547,7 +548,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
                     "and idate < ? " +
                     "and inode not in (select inode from " + tableName + ")";
             dc.setSQL(deleteInodesSQL);
-            dc.addParam(tableName);
+            dc.addParam(type);
             dc.addParam(date);
             dc.loadResult();
 

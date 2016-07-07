@@ -114,7 +114,7 @@ public class TemplateAPITest extends TestBase {
 
         APILocator.getContainerAPI().delete(container, user, false);
 
-        AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(), Inode.Type.CONTAINERS.getTableName());
+        AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
     }
 
     @Test

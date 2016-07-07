@@ -158,7 +158,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
 
-        AssetUtil.assertDeleted(inode, identifier, Inode.Type.CONTAINERS.getTableName());
+        AssetUtil.assertDeleted(inode, identifier, Inode.Type.CONTAINERS.getValue());
         HibernateUtil.commitTransaction();
     }
 }

@@ -38,7 +38,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
                         "file_asset","htmlpage",
                         "template", Inode.Type.CONTAINERS.getTableName(),"links"};
                 for(String table : versionables) {
-                    String vitable=UtilMethods.getVersionInfoTableName(table);
+                    String vitable=Inode.Type.valueOf(table.toUpperCase()).getVersionTableName();
                     String sql = " select distinct id from "+table+" join identifier on (id=identifier) " +
                     		     " left outer join " + vitable +
                     		     " on("+table+".identifier="+vitable+".identifier) " +
