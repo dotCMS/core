@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Timer;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
@@ -70,6 +71,7 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -105,6 +107,8 @@ public class DotWebdavHelper {
 	private FolderCache fc = CacheLocator.getFolderCache();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
 	private static FileResourceCache fileResourceCache = new FileResourceCache();
+	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+	private boolean legacyPath = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false);
 
 	/**
 	 * MD5 message digest provider.
@@ -147,11 +151,19 @@ public class DotWebdavHelper {
 
 	}
 
+	//Check if the contentlets to upload are going to be live or working
 	public boolean isAutoPub(String path){
-		if(path.startsWith("/webdav/autopub")){
-			return true;
+		if(legacyPath){
+			if(path.startsWith("/webdav/autopub")){
+				return true;
+			}
+				return false;
+		}else{
+			if(path.startsWith("/webdav/live")){
+				return true;
+			}
+				return false;
 		}
-		return false;
 	}
 
 	public User authorizePrincipal(String username, String passwd)	throws DotSecurityException, NoSuchUserException, DotDataException {
@@ -322,7 +334,7 @@ public class DotWebdavHelper {
     		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
     		if(id!=null && InodeUtils.isSet(id.getId())) {
     		    if(id.getAssetType().equals("contentlet")){
-    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
     	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
     	            }
@@ -359,7 +371,11 @@ public class DotWebdavHelper {
 	}
 
 	public java.io.File loadTempFile(String url){
-		url = stripMapping(url);
+		try {
+			url = stripMapping(url);
+		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + url + "]", e);
+		}
 		Logger.debug(this, "Getting temp file from path " + url);
 		java.io.File f = new java.io.File(tempHolderDir.getPath() + url);
 		return f;
@@ -374,13 +390,24 @@ public class DotWebdavHelper {
      * @return
      * @throws IOException
      */
-    public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub ) throws IOException {
+    public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub, long lang ) throws IOException {
 
-        String prePath;
-        if ( isAutoPub ) {
-            prePath = "/webdav/autopub/";
-        } else {
-            prePath = "/webdav/nonpub/";
+        String prePath = "/webdav/";
+        if(legacyPath){
+        	if ( isAutoPub ) {
+            	prePath += "autopub/";
+        	} else {
+            	prePath += "nonpub/";
+        	}
+        }else{
+        	if ( isAutoPub ) {
+            	prePath += "live/";
+        	} else {
+            	prePath += "working/";
+        	}
+        	defaultLang = lang;
+        	prePath += defaultLang;
+        	prePath += "/";
         }
 
         Host folderHost;
@@ -411,8 +438,10 @@ public class DotWebdavHelper {
             for ( Versionable file : filesListSubChildren ) {
                 if ( !file.isArchived() ) {
                     IFileAsset fileAsset = (IFileAsset) file;
-                    FileResourceImpl resource = new FileResourceImpl( fileAsset, prePath + folderHost.getHostname() + "/" + fileAsset.getPath() );
-                    result.add( resource );
+                    if(fileAsset.getLanguageId()==defaultLang){
+                    	FileResourceImpl resource = new FileResourceImpl( fileAsset, prePath + folderHost.getHostname() + "/" + fileAsset.getPath() );
+                    	result.add( resource );
+                    }
                 }
             }
             for ( Folder folder : folderListSubChildren ) {
@@ -462,7 +491,12 @@ public class DotWebdavHelper {
     }
 
     public String getHostName ( String uri ) {
-		return getHostname(stripMapping(uri));
+		try {
+			return getHostname(stripMapping(uri));
+		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + uri + "]", e);
+			return null;
+		}
 	}
 
 	public boolean isTempResource(String path){
@@ -473,7 +507,11 @@ public class DotWebdavHelper {
 	}
 
 	public java.io.File createTempFolder(String path){
-		path = stripMapping(path);
+		try {
+			path = stripMapping(path);
+		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e);
+		}
 		if(path.startsWith(tempHolderDir.getPath()))
 			path = path.substring(tempHolderDir.getPath().length(), path.length());
 		if(path.startsWith("/") || path.startsWith("\\")){
@@ -485,7 +523,7 @@ public class DotWebdavHelper {
 		return f;
 	}
 
-	public void copyFolderToTemp(Folder folder, java.io.File tempFolder, User user, String name,boolean isAutoPub) throws IOException{
+	public void copyFolderToTemp(Folder folder, java.io.File tempFolder, User user, String name,boolean isAutoPub, long lang) throws IOException{
 		String p = "";
 		try {
 			p = idapi.find(folder).getPath();
@@ -498,11 +536,11 @@ public class DotWebdavHelper {
 		String path = p.replace("/", java.io.File.separator);
 		path = tempFolder.getPath() + java.io.File.separator + name;
 		java.io.File tf = createTempFolder(path);
-		List<Resource> children = getChildrenOfFolder(folder, user, isAutoPub);
+		List<Resource> children = getChildrenOfFolder(folder, user, isAutoPub, lang);
 		for (Resource resource : children) {
 			if(resource instanceof CollectionResource){
 				FolderResourceImpl fr = (FolderResourceImpl)resource;
-				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub);
+				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub, lang);
 			}else{
 				FileResourceImpl fr = (FileResourceImpl)resource;
 				copyFileToTemp(fr.getFile(), tf);
@@ -588,7 +626,7 @@ public class DotWebdavHelper {
 				Identifier identifier  = APILocator.getIdentifierAPI().find(children[i].getHost(), destinationPath + "/" + children[i].getName());
 				Permissionable destinationFile = null;
  				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
- 					destinationFile = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+ 					destinationFile = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), live, defaultLang, user, false);
 				}else{
 					destinationFile = fileAPI.getFileByURI(destinationPath + "/" + children[i].getName(), children[i].getHost(), live, user, false);
 				}
@@ -831,7 +869,8 @@ public class DotWebdavHelper {
 			Contentlet fileAssetCont = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+				long langContentlet = APILocator.getContentletAPI().searchByIdentifier("+identifier:" + identifier.getId(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), false, PermissionAPI.PERMISSION_READ, true).get(0).getLanguageId();
+				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, langContentlet, user, false);				
 				workingFile = fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD);
 				destinationFile = APILocator.getFileAssetAPI().fromContentlet(fileAssetCont);
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
@@ -881,6 +920,7 @@ public class DotWebdavHelper {
 				fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
+				fileAsset.setLanguageId(defaultLang);
 				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -950,6 +990,7 @@ public class DotWebdavHelper {
 					fileAssetCont.setInode(null);
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
+					fileAssetCont.setLanguageId(defaultLang);
 					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
@@ -1096,7 +1137,7 @@ public class DotWebdavHelper {
 				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
 
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 					if(!destinationExists) {
     					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
     						String fileName = getFileName(toPath);
@@ -1110,8 +1151,8 @@ public class DotWebdavHelper {
 					}
 					else {
 					    // if the destination exists lets just create a new version and delete the original file
-					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
 					    Contentlet newversion = APILocator.getContentletAPI().checkout(toContentlet.getInode(), user, false);
 
 					    // get a copy in a tmp folder to avoid filename change
@@ -1121,6 +1162,7 @@ public class DotWebdavHelper {
 					    FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
 
 					    newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+					    newversion.setLanguageId(defaultLang);
 					    newversion = APILocator.getContentletAPI().checkin(newversion, user, false);
 					    if(autoPublish) {
 					        APILocator.getContentletAPI().publish(newversion, user, false);
@@ -1287,7 +1329,7 @@ public class DotWebdavHelper {
 
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI()
-			    		.findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+			    		.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 
 			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
 			    //No need to wait 10 seconds with files with 0 length.
@@ -1462,17 +1504,48 @@ public class DotWebdavHelper {
 		uri = uri.substring(begin, end);
 		return uri;
 	}
-
-	private String stripMapping(String uri) {
+	
+	public long getLanguage(){
+		return defaultLang;
+	}
+	
+	/**
+	 * This method takes the path and strips all strings that are related to the endpoint. 
+	 * Also, if the new pathing is used when it's stripping it, set it as defaultLang, so it can be used by the other methods.
+	 * 
+	 * e.g: uri = /webdav/live/2/demo.dotcms.com/home -> defaultLang set to 2 and returns /demo.dotcms.com/home (after stripping)
+	 * 
+	 * @param uri Full URL of the connection
+	 * @return the URL without the endpoint
+	 * @throws IOException when the language passed in the path doesn't exist the IOException will be thrown.
+	 * 
+	 */
+	public String stripMapping(String uri) throws IOException {
 		String r = uri;
 		if (r.startsWith("/webdav")) {
 			r = r.substring(7, r.length());
 		}
-		if (r.startsWith("/nonpub")) {
-			r = r.substring(7, r.length());
-		}
-		if (r.startsWith("/autopub")) {
-			r = r.substring(8, r.length());
+		if(legacyPath){
+			if (r.startsWith("/nonpub")) {
+				r = r.substring(7, r.length());
+			}
+			if (r.startsWith("/autopub")) {
+				r = r.substring(8, r.length());
+			}
+		}else{
+			if (r.startsWith("/working")) {
+				r = r.substring(8, r.length());
+			}
+			if (r.startsWith("/live")) {
+				r = r.substring(5, r.length());
+			}
+			if(StringUtils.isNumeric(r.substring(1, 2))){
+			defaultLang = Long.parseLong(r.substring(1, 2));
+				if(!APILocator.getLanguageAPI().getLanguages().contains(APILocator.getLanguageAPI().getLanguage(defaultLang))){
+					throw new IOException("The language id specified in the path does not exists");
+				}
+				r = r.substring(2);
+			}
 		}
 		return r;
 	}
@@ -1489,7 +1562,7 @@ public class DotWebdavHelper {
 			fileName = fileName.replace("|", "");
 			if (!UtilMethods.isSet(fileName)) {
 				throw new IOException(
-						"Please specify a name wothout special characters \\/:*?\"<>|");
+						"Please specify a name without special characters \\/:*?\"<>|");
 			}
 		}
 		return fileName;
@@ -1670,7 +1743,7 @@ public class DotWebdavHelper {
 			java.io.File workingFile  = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-                Contentlet cont  = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+                Contentlet cont  = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 			    workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
 			}else{
 				File file = fileAPI.getFileByURI(path, host, false, user, false);

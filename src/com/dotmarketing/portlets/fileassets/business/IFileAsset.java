@@ -96,5 +96,7 @@ public interface IFileAsset extends Permissionable {
 	public int getHeight();
 
 	public int getWidth();
+	
+	public long getLanguageId();
 
 }

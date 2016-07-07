@@ -30,6 +30,8 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	private DotWebdavHelper dotDavHelper;
 	private static final String AUTOPUB_PATH = "/webdav/autopub";
 	private static final String NONPUB_PATH = "/webdav/nonpub";
+	private static final String LIVE_PATH = "/webdav/live";
+	private static final String WORKING_PATH = "/webdav/working";
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	
 	public ResourceFactorytImpl() {
@@ -46,11 +48,13 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			HibernateUtil.startTransaction();
 			boolean isFolder = false;
 			boolean isResource = false;
-			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/");
-			boolean autoPub = url.startsWith(AUTOPUB_PATH);
-			boolean nonPub = url.startsWith(NONPUB_PATH);
+			dotDavHelper.stripMapping(url);
+			boolean isWebDavRoot = url.equals(AUTOPUB_PATH) || url.equals(NONPUB_PATH) || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage()) || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage()) 
+					|| url.equals(AUTOPUB_PATH + "/") || url.equals(NONPUB_PATH + "/") || url.equals(LIVE_PATH + "/" +dotDavHelper.getLanguage() + "/") || url.equals(WORKING_PATH + "/" +dotDavHelper.getLanguage() + "/") ;
+			boolean live = url.startsWith(AUTOPUB_PATH) || url.startsWith(LIVE_PATH);
+			boolean working = url.startsWith(NONPUB_PATH) || url.startsWith(WORKING_PATH);
 			Host host =null;
-			String actualPath = ""; 
+			String actualPath = url; 
 			
 			// DAV ROOT
 			if(isWebDavRoot){
@@ -60,18 +64,24 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			
 			
 			//SETUP
-			if(autoPub){
-				actualPath = url.replaceAll(AUTOPUB_PATH, "");
+			if(live){
+				actualPath = actualPath.replaceAll(AUTOPUB_PATH, "");
+				actualPath = actualPath.replaceAll(LIVE_PATH, "");
 				if(actualPath.startsWith("/")){
 					actualPath = actualPath.substring(1);
 				}
-			}else if(nonPub){
-				actualPath = url.replaceAll(NONPUB_PATH, "");
+			}else if(working){
+				actualPath = actualPath.replaceAll(NONPUB_PATH, "");
+				actualPath = actualPath.replaceAll(WORKING_PATH, "");
 				if(actualPath.startsWith("/")){
 					actualPath = actualPath.substring(1);
 				}
 			}else{
 				return null;
+			}
+			
+			if(!Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
+				actualPath = actualPath.substring(2);
 			}
 			
 			String[] splitPath = actualPath.split("/");

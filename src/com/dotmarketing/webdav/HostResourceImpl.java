@@ -2,6 +2,7 @@ package com.dotmarketing.webdav;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -36,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -72,6 +74,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			}
 
 		} catch (DotDataException e) {
+			Logger.error(this,"The endpoint you are trying to use could not be valid, please check.");
 			Logger.error(HostResourceImpl.class, e.getMessage(),
 					e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -142,6 +145,11 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
 		List<Resource> frs = new ArrayList<Resource>();
+		try {
+			dotDavHelper.stripMapping(path);
+		} catch (IOException e1) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e1);
+		}
 		for (Folder folder : folders) {
 			String p = path;
 			if(p.endsWith("/"))
@@ -160,8 +168,10 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			List<FileAsset> fas = APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, false);
 			for(FileAsset fa:fas){
 			    if(!fa.isArchived()) {
-			        FileResourceImpl fr = new FileResourceImpl(fa, path + fa.getFileName());
-				    frs.add(fr);
+			    	if(fa.getLanguageId()==dotDavHelper.getLanguage()){
+			    		FileResourceImpl fr = new FileResourceImpl(fa, path + fa.getFileName());
+			    		frs.add(fr);
+			    	}
 			    }
 			}
 		} catch (Exception e) {
@@ -173,12 +183,22 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		**/
 		
 		
-		String prePath;
-		if(isAutoPub){
-			prePath = "/webdav/autopub/";
-		}else{
-			prePath = "/webdav/nonpub/";
-		}
+        String prePath = "/webdav/";
+        if(Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
+        	if ( isAutoPub ) {
+            	prePath += "autopub/";
+        	} else {
+            	prePath += "nonpub/";
+        	}
+        }else{
+        	if ( isAutoPub ) {
+            	prePath += "live/";
+        	} else {
+            	prePath += "working/";
+        	}
+        	prePath += dotDavHelper.getLanguage();
+        	prePath += "/";
+        }
 		java.io.File tempDir = new java.io.File(dotDavHelper.getTempDir().getPath() + java.io.File.separator + host.getHostname());
 		if(tempDir.exists() && tempDir.isDirectory()){
 			java.io.File[] files = tempDir.listFiles();
