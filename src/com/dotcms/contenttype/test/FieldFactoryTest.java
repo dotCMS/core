@@ -9,7 +9,9 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import sun.reflect.misc.FieldUtil;
 
@@ -25,7 +27,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourceForTesting;
-
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FieldFactoryTest {
 
 	FieldFactory factory = new FieldFactoryImpl();

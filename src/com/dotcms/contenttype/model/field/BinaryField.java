@@ -26,9 +26,6 @@ public abstract class BinaryField extends Field {
 		return BinaryField.class;
 	}
 
-	public String typeName(){
-		return "binary";
-	}
 	
 	public abstract static class Builder implements FieldBuilder {}
 }

@@ -59,6 +59,18 @@ public enum LegacyFieldTypes {
 			return null;
 		}
 	}
+	
+	public static String getLegacyName (Class clazz) {
+		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
+			String className = fieldType.implClass.getCanonicalName().replace("Immutable", "");
+			
+			
+			if(className.equals(clazz.getCanonicalName())){
+				return fieldType.name();
+			}
+		}
+		return clazz.getCanonicalName();
+	}
 
 }
 

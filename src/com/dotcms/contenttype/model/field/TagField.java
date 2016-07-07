@@ -21,6 +21,10 @@ public abstract class TagField extends Field {
 		return  TagField.class;
 	}
 	
+	public String typeName(){
+		return LegacyFieldTypes.getLegacyName(TagField.class);
+	}
+	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

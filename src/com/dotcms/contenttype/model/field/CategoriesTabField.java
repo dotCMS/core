@@ -24,6 +24,8 @@ public abstract class CategoriesTabField extends Field {
 	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SECTION_DIVIDER);
 	}
-
+	public String typeName(){
+		return LegacyFieldTypes.getLegacyName(ButtonField.class);
+	}
 	public abstract static class Builder implements FieldBuilder {}
 }

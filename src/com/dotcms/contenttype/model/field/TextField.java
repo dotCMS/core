@@ -17,6 +17,11 @@ public abstract class TextField extends Field {
 	private static final long serialVersionUID = 1L;
 
 
+	@Override
+	public Class<TextField> type() {
+		return TextField.class;
+	}
+
 	
 	@Value.Derived
 	@Override

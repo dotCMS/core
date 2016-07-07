@@ -169,7 +169,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.setSQL(sql.updateField);
 		dc.addParam(field.contentTypeId());
 		dc.addParam(field.name());
-		dc.addParam(field.type());
+		dc.addParam(field.type().getCanonicalName());
 		dc.addParam(field.relationType());
 		dc.addParam(field.dbColumn());
 		dc.addParam(field.required());
@@ -197,7 +197,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.addParam(field.inode());
 		dc.addParam(field.contentTypeId());
 		dc.addParam(field.name());
-		dc.addParam(field.type());
+		dc.addParam(field.type().getCanonicalName());
 		dc.addParam(field.relationType());
 		dc.addParam(field.dbColumn());
 		dc.addParam(field.required());

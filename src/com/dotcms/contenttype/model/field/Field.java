@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Derived;
 
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -29,6 +30,10 @@ public abstract class Field implements Serializable,FieldType {
 
 	public abstract String name();
 
+	@Derived
+	public String typeName(){
+		return LegacyFieldTypes.getLegacyName(this.getClass());
+	}
 	@Nullable
 	public abstract String relationType();
 

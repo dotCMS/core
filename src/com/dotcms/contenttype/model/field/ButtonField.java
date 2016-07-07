@@ -24,5 +24,6 @@ public abstract class ButtonField extends Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of();
 	}
+
 	public abstract static class Builder implements FieldBuilder {}
 }
