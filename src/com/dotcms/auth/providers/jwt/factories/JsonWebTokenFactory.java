@@ -42,7 +42,7 @@ public class JsonWebTokenFactory implements Serializable {
      * The default Signing Key class
      */
     public static final String DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS =
-            "com.dotmarketing.util.jwt.HashSigningKeyFactoryImpl";
+            "com.dotcms.auth.providers.jwt.factories.impl.HashSigningKeyFactoryImpl";
 
     private JsonWebTokenFactory () {
         // singleton
