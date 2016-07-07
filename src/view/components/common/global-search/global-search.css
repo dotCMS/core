@@ -1,0 +1,24 @@
+:host {
+  flex: 5;
+  margin: 0 50px;
+}
+
+:host .dot-global-search md-input {
+  width: 100%;
+}
+
+:host .dot-global-search md-input .md-input-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  height: 100%;
+  line-height: 1;
+}
+
+:host .dot-global-search md-input .md-input-table {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  padding: 5px 10px;
+}
+
+:host .dot-global-search md-input .md-input-underline {
+  display: none;
+}

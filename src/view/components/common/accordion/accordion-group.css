@@ -1,0 +1,23 @@
+:host {
+  margin: 10px 0;
+}
+
+:host .accordion-group__title {
+  padding: 5px 10px;
+}
+
+:host .accordion-group__title.is-active {
+  background-color: rgba(211, 211, 211, 0.5);
+  font-weight: bold;
+}
+
+:host .accordion-group__content {
+  transition: max-height 0.15s ease-in;
+  padding: 0 10px;
+  max-height: 0;
+  overflow: hidden;
+}
+
+:host .accordion-group__content.is-open {
+  max-height: 200px;
+}
