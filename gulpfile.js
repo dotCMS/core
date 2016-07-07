@@ -92,7 +92,7 @@ var project = {
           'semantic-ui/dist/themes/default/assets/fonts/**'
         ], {cwd: 'node_modules/**'}) /* Glob required here. */
         .pipe(flatten())
-        .pipe(gulp.dest('build/styles/themes/default/assets/fonts')).on('finish', cb);
+        .pipe(gulp.dest('build/view/components/rule-engine/themes/default/assets/fonts')).on('finish', cb);
   },
 
   deployResources: function(cb) {
@@ -478,6 +478,10 @@ gulp.task('compile-styles', function(done) {
   project.compileStyles(done)
 });
 
+gulp.task('copy-font-icons', function(done) {
+  project.copyFontFiles(done);
+})
+
 gulp.task('compile-js', function(done) {
   project.compileJavascript(done)
 })
@@ -490,7 +494,7 @@ gulp.task('compile', [], function(done) {
   project.compile(done)
 })
 
-gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates', 'copy-node-files'], function() {
+gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates', 'copy-node-files', 'copy-font-icons'], function() {
   return project.watch()
 });
 

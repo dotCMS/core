@@ -49,8 +49,10 @@ export interface ConditionActionEvent extends RuleActionEvent {
  *
  */
 @Component({
+  moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
   selector: 'cw-rule-engine-container',
   directives: [CORE_DIRECTIVES, RuleEngineComponent],
+  styleUrls: ['styles/rule-engine.css', 'styles/angular-material.layouts.css', 'styles/semantic.ui.css'],
   template: `
     <cw-rule-engine
       [environmentStores]="environments"

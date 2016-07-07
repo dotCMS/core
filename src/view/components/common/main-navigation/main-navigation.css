@@ -1,0 +1,8 @@
+:host md-nav-list a {
+  display: block;
+  padding: 5px 0;
+}
+
+:host .md-nav-list__submenu {
+  padding: 5px 0 10px 0;
+}
