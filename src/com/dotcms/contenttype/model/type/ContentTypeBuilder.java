@@ -87,6 +87,7 @@ public interface ContentTypeBuilder {
 		builder.name("INSTANCETYPE");
 		builder.velocityVarName("INSTANCETYPE");
 		builder.modDate(new Date(0));
+		builder.iDate(new Date(0));
 		return builder.build();
 	}
 

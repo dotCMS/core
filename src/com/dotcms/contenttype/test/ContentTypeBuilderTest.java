@@ -9,14 +9,19 @@ import org.junit.Test;
 
 import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourceForTesting;
 
-public class ContentTypeBuilderUtilTest {
+public class ContentTypeBuilderTest {
 
 	FieldFactory factory = new FieldFactoryImpl();
 	
@@ -36,12 +41,28 @@ public class ContentTypeBuilderUtilTest {
 	
 	@Test
 	public void testAllContentTypeBuilders() throws Exception {
-		for(BaseContentTypes  types : BaseContentTypes.values()){
-			ContentTypeBuilder.instanceOf(types.implClass());
-			ContentTypeBuilder.builder(types.implClass()).inode("asd");
+		for(BaseContentTypes  type : BaseContentTypes.values()){
+			if(type==BaseContentTypes.NONE)continue;
+			ContentTypeBuilder.instanceOf(type.implClass());
+			ContentTypeBuilder.builder(type.implClass()).inode("asd");
 			
 		}
 	}
 	
-	
+	@Test
+	public void testCopy() throws Exception {
+		
+		ContentType test = ImmutableWidgetContentType.builder()
+				.name("TEST Title")
+				.velocityVarName("formTitle")
+
+				.fixed(true)
+
+				.build();
+		
+		
+		ContentType test2 = ContentTypeBuilder.builder(test).build();
+		assertThat("ContentTypeBuilder works ",test.equals(test2));
+		
+	}
 }
