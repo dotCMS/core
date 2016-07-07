@@ -83,6 +83,7 @@ public class TranslationActionletTest {
         User systemUser = new User("systemUser");
         Contentlet englishContent = spy(getEnglishContent());
         doReturn(true).when(englishContent).isLive();
+        doNothing().when(englishContent).setTags();
 
         // Mock TranslationUtil
         TranslationUtil translationUtil = getMockedTranslationUtil(englishContent);
@@ -130,6 +131,7 @@ public class TranslationActionletTest {
         User systemUser = new User("systemUser");
         Contentlet englishContent = spy(getEnglishContent());
         doReturn(false).when(englishContent).isLive();
+        doNothing().when(englishContent).setTags();
 
         // Mock TranslationUtil
         TranslationUtil translationUtil = getMockedTranslationUtil(englishContent);
