@@ -15,7 +15,7 @@ public class DotDataException extends Exception {
 	public DotDataException(String message) {
 		this.message = message;
 	}
-	public DotDataException(String message, Exception e) {
+	public DotDataException(String message, Throwable e) {
         super(message, e);
 		this.message = message;
 	}
