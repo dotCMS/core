@@ -63,6 +63,7 @@ public class LocaleUtil {
 		return locale;
 	}
 
+	// todo: unit test me
 	/**
 	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
 	 * if the LOCALE_KEY is also null, will get the request default one.
@@ -76,31 +77,39 @@ public class LocaleUtil {
 	public static Locale getLocale (final HttpServletRequest request, final String country, final String language) {
 
 		final HttpSession session = request.getSession();
-		Locale locale = Locale.getDefault();
+		Locale locale = null;
 
-		if (null == country && null == language) {
+		try {
 
-			if (null != session.getAttribute(Globals.LOCALE_KEY)) {
+			if (null == country && null == language) {
 
-				return (Locale)session.getAttribute(Globals.LOCALE_KEY);
+				if (null != session.getAttribute(Globals.LOCALE_KEY)) {
+
+					return (Locale) session.getAttribute(Globals.LOCALE_KEY);
+				} else {
+
+					locale = request.getLocale();
+				}
 			} else {
 
-				locale = request.getLocale();
+				final Locale.Builder builder =
+						new Locale.Builder();
+
+				if (null != language) {
+
+					builder.setLanguage(language);
+				}
+
+				if (null != country) {
+
+					builder.setRegion(country);
+				}
+
+				locale = builder.build();
 			}
-		} else {
+		} catch (Exception e) {
 
-			final Locale.Builder builder =
-					new Locale.Builder();
-
-			if (null != language) {
-
-				builder.setLanguage(language);
-			} else if (null != country) {
-
-				builder.setRegion(country);
-			}
-
-			locale = builder.build();
+			locale = Locale.getDefault();
 		}
 
 		if (null != locale) {
