@@ -3,3 +3,16 @@ html, body {
     padding: 0;
     font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
+
+
+// This is legacy code, needs to once we refactor rule-engine component and remove semantic-ui
+@font-face {
+    font-family: 'Icons';
+    src: url("../view/components/rule-engine/fonts/icons.eot");
+    src: url("../view/components/rule-engine/fonts/icons.eot?#iefix") format('embedded-opentype'), url("../view/components/rule-engine/fonts/icons.woff2") format('woff2'), url("../view/components/rule-engine/fonts/icons.woff") format('woff'), url("../view/components/rule-engine/fonts/icons.ttf") format('truetype'), url("../view/components/rule-engine/fonts/icons.svg#icons") format('svg');
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-decoration: inherit;
+    text-transform: none;
+}

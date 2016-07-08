@@ -92,7 +92,7 @@ var project = {
           'semantic-ui/dist/themes/default/assets/fonts/**'
         ], {cwd: 'node_modules/**'}) /* Glob required here. */
         .pipe(flatten())
-        .pipe(gulp.dest('build/view/components/rule-engine/themes/default/assets/fonts')).on('finish', cb);
+        .pipe(gulp.dest('build/view/components/rule-engine/fonts')).on('finish', cb);
   },
 
   deployResources: function(cb) {
