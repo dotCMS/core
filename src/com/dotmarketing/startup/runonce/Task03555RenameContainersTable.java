@@ -37,7 +37,7 @@ public class Task03555RenameContainersTable extends AbstractJDBCStartupTask {
 
     @Override
     public String getH2Script() {
-        return "ALTER TABLE containers RENAME containers TO dot_containers";
+        return "ALTER TABLE containers RENAME TO dot_containers";
     }
 
     @Override
