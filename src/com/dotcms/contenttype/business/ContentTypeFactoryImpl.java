@@ -103,13 +103,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	
 	@Override
 	public ContentType save(ContentType type) throws DotDataException {
-		
-
 		return LocalTransaction.wrapReturn(() ->{
 			return dbSaveUpdate(type);
 		}); 
-
-
 	}
 	
 	
@@ -117,11 +113,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		DotConnect dc = new DotConnect();
 		String sql = contentTypeSql.findAll;
 		dc.setSQL(String.format(sql, "mod_date desc"));
-		try {
-			return DbContentTypeTransformer.transform(dc.loadObjectResults());
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
-		}
+
+		return DbContentTypeTransformer.transform(dc.loadObjectResults());
+
 	}
 	private List<ContentType> dbAll(String orderBy) throws DotDataException {
 		DotConnect dc = new DotConnect();
@@ -129,13 +123,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		dc.setSQL(String.format(sql, orderBy));
 
-		List<Map<String, Object>> results;
-		try {
-			results = dc.loadObjectResults();
-			return DbContentTypeTransformer.transform(results);
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
-		}
+		List<Map<String, Object>> results = dc.loadObjectResults();
+		return DbContentTypeTransformer.transform(results);
+
 	}
 
 	private ContentType dbById(String id) throws DotDataException {
@@ -143,15 +133,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.setSQL(contentTypeSql.findById);
 		dc.addParam(id);
 		List<Map<String, Object>> results;
-		try {
-			results = dc.loadObjectResults();
-			if (results.size() == 0) {
-				throw new DotDataException("Content Type with id:" + id + " not found");
-			}
-			return DbContentTypeTransformer.transform(results.get(0));
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
+
+		results = dc.loadObjectResults();
+		if (results.size() == 0) {
+			throw new DotDataException("Content Type with id:" + id + " not found");
 		}
+		return DbContentTypeTransformer.transform(results.get(0));
+
 	}
 
 	private ContentType dbByVar(String var) throws DotDataException {
@@ -159,15 +147,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.setSQL(contentTypeSql.findByVar);
 		dc.addParam(var);
 		List<Map<String, Object>> results;
-		try {
-			results = dc.loadObjectResults();
-			if (results.size() == 0) {
-				throw new DotDataException("Content Type with var:" + var + " not found");
-			}
-			return DbContentTypeTransformer.transform(results.get(0));
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
+	
+		results = dc.loadObjectResults();
+		if (results.size() == 0) {
+			throw new DotDataException("Content Type with var:" + var + " not found");
 		}
+		return DbContentTypeTransformer.transform(results.get(0));
+
 	}
 
 	private ContentType dbSaveUpdate(final ContentType throwawayType) throws DotDataException{

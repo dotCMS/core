@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.sync.Exportable;
@@ -204,6 +205,10 @@ public class Field extends Inode implements Exportable, Importable
 		this.fieldRelationType = fieldRelationType;
 	}
 	public String getFieldType() {
+		if(fieldType.contains(".")){
+			String x = LegacyFieldTypes.getLegacyName(fieldType);
+			return LegacyFieldTypes.getLegacyName(fieldType);
+		}
 		return fieldType;
 	}
 	public void setFieldType(String fieldType) {

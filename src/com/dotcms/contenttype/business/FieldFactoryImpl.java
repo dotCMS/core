@@ -12,7 +12,6 @@ import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.transform.DbFieldTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
@@ -45,13 +44,9 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	@Override
 	public void delete(String id) throws DotDataException {
-		try {
-			LocalTransaction.wrap(() -> {
-				return deleteInDb(id);
-			});
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
-		}
+		LocalTransaction.wrap(() -> {
+			return deleteInDb(id);
+		});
 	}
 	
 	@Override
@@ -106,13 +101,9 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.setSQL(sql.findByContentType);
 		dc.addParam(id);
 		List<Map<String, Object>> results;
-		try {
-			results = dc.loadObjectResults();
+		results = dc.loadObjectResults();
+		return DbFieldTransformer.transform(results);
 
-			return DbFieldTransformer.transform(results);
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
-		}
 	}
 
 	private List<Field> findByContentTypeVarInDb(String var) throws DotDataException {
@@ -120,13 +111,9 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.setSQL(sql.findByContentTypeVar);
 		dc.addParam(var);
 		List<Map<String, Object>> results;
-		try {
-			results = dc.loadObjectResults();
+		results = dc.loadObjectResults();
+		return DbFieldTransformer.transform(results);
 
-			return DbFieldTransformer.transform(results);
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
-		}
 	}
 
 	private Field findInDb(String id) throws DotDataException {
@@ -134,15 +121,13 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.setSQL(sql.findById);
 		dc.addParam(id);
 		List<Map<String, Object>> results;
-		try {
-			results = dc.loadObjectResults();
-			if (results.size() == 0) {
-				throw new DotDataException("Content Type with id:" + id + " not found");
-			}
-			return DbFieldTransformer.transform(results.get(0));
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
+
+		results = dc.loadObjectResults();
+		if (results.size() == 0) {
+			throw new DotDataException("Content Type with id:" + id + " not found");
 		}
+		return DbFieldTransformer.transform(results.get(0));
+
 	}
 
 	private boolean deleteInDb(String id) throws DotDataException {

@@ -27,8 +27,16 @@ public abstract class FormContentType extends ContentType{
 	public boolean multilingualable(){
 		return false;
 	}
-
-
+	@Override
+	@Value.Default
+	public String pagedetail(){
+		return null;
+	}
+	@Override
+	@Value.Default
+	public String urlMapPattern(){
+		return null;
+	}
 	public  List<Field> requiredFields(){
 		
 

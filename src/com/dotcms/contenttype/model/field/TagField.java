@@ -11,9 +11,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 @Value.Immutable
 public abstract class TagField extends Field {
 
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
 	@Override

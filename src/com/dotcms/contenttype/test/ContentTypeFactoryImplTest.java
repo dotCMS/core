@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,7 +36,7 @@ public class ContentTypeFactoryImplTest {
 	public static void initDb() throws FileNotFoundException, Exception{
 		DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
 	}
-	@Before
+	//@Before
 	public void cleanDb() throws DotDataException{
 		DotConnect dc = new DotConnect();
 		

@@ -6,7 +6,6 @@ package com.dotcms.contenttype.model.field;
 
 public enum LegacyFieldTypes {
 
-	BUTTON("button",com.dotcms.contenttype.model.field.ButtonField.class),
 	CHECKBOX("checkbox",com.dotcms.contenttype.model.field.CheckboxField.class),
 	DATE("date",com.dotcms.contenttype.model.field.DateField.class),
 	TIME("time",com.dotcms.contenttype.model.field.TimeField.class),
@@ -24,7 +23,6 @@ public enum LegacyFieldTypes {
 	CATEGORY("category",com.dotcms.contenttype.model.field.CategoryField.class),
 	LINE_DIVIDER("line_divider",com.dotcms.contenttype.model.field.LineDividerField.class),
 	TAB_DIVIDER("tab_divider",com.dotcms.contenttype.model.field.TabDividerField.class),
-	CATEGORIES_TAB("categories_tab",com.dotcms.contenttype.model.field.CategoriesTabField.class),
 	PERMISSIONS_TAB("permissions_tab",com.dotcms.contenttype.model.field.PermissionTabField.class),
 	RELATIONSHIPS_TAB("relationships_tab",com.dotcms.contenttype.model.field.RelationshipsTabField.class),
 	HIDDEN("hidden",com.dotcms.contenttype.model.field.HiddenField.class),
@@ -69,20 +67,14 @@ public enum LegacyFieldTypes {
 	}
 	
 	public static String getLegacyName (Class clazz) {
-		String className = clazz.getCanonicalName().replace("Immutable", "");
-		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
-			if(className.equals(fieldType.implClass.getCanonicalName())){
-				return className;
-			}
-		}
-		return clazz.getCanonicalName();
+		return getLegacyName(clazz.getCanonicalName());
 	}
 	
 	public static String getLegacyName (String clazz) {
 		clazz=clazz.replace(".Immutable", ".");
 		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
 			if(fieldType.implClass.getCanonicalName().equals(clazz)){
-				return fieldType.name();
+				return fieldType.legacyValue();
 			}
 		}
 		return clazz;

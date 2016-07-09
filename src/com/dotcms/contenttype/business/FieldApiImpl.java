@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 
 public class FieldApiImpl implements FieldApi {
 
-	private List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, ButtonField.class, CategoriesTabField.class,
+	private List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class,
 			CategoryField.class, ConstantField.class, CheckboxField.class, CustomField.class, DateField.class, DateTimeField.class,
 			FileField.class, HiddenField.class, HostFolderField.class, ImageField.class, KeyValueField.class, LineDividerField.class,
 			MultiSelectField.class, PermissionTabField.class, RadioField.class, RelationshipsTabField.class, SelectField.class,
