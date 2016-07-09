@@ -17,8 +17,6 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder inode(String inode);
 
-	ContentTypeBuilder dbColumn(String dbColumn);
-
 	ContentTypeBuilder modDate(Date date);
 
 	ContentTypeBuilder name(String name);
@@ -55,6 +53,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder folder(String variable);
 
+	
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);
 	}

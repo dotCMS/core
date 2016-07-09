@@ -16,9 +16,9 @@ public abstract class ButtonField extends Field {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	@Value.Derived
+
 	@Override
-	public List<DataTypes> acceptedDataTypes(){
+	public final List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of();
 	}
 

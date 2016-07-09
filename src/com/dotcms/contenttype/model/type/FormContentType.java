@@ -68,7 +68,7 @@ public abstract class FormContentType extends ContentType{
 		
 		Field usageField = ImmutableHostFolderField.builder()
 				.name("Form Host")
-				.dataType(DataTypes.TEXT)
+				.dataType(DataTypes.SYSTEM)
 				.variable("formHost")
 				.sortOrder(4)
 				.fixed(true)

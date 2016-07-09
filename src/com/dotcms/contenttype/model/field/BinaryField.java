@@ -17,7 +17,7 @@ public abstract class BinaryField extends Field {
 
 
 	@Override
-	public List<DataTypes> acceptedDataTypes() {
+	public final List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.BINARY);
 	}
 	

@@ -25,7 +25,7 @@ public abstract class TagField extends Field {
 		return LegacyFieldTypes.getLegacyName(TagField.class);
 	}
 	
-	@Value.Derived
+
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.SYSTEM);

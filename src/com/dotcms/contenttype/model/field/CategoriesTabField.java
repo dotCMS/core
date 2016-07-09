@@ -19,7 +19,7 @@ public abstract class CategoriesTabField extends Field {
 		return CategoriesTabField.class;
 	}
 
-	@Value.Derived
+
 	@Override
 	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SECTION_DIVIDER);

@@ -20,10 +20,10 @@ public abstract class HostFolderField extends Field {
 	public  Class type() {
 		return  HostFolderField.class;
 	}
-	@Value.Derived
+
 	@Override
-	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.SYSTEM, DataTypes.TEXT);
+	public final List<DataTypes> acceptedDataTypes() {
+		return ImmutableList.of(DataTypes.SYSTEM);
 	}
 	public abstract static class Builder implements FieldBuilder {}
 }

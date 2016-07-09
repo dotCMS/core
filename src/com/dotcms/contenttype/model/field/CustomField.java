@@ -22,7 +22,7 @@ public abstract class CustomField extends Field {
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes() {
-		return ImmutableList.of(DataTypes.LONG_TEXT);
+		return ImmutableList.of(DataTypes.LONG_TEXT,DataTypes.TEXT);
 	}
 
 	public abstract static class Builder implements FieldBuilder {

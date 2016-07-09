@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.FieldSql;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
@@ -52,9 +53,16 @@ public class FieldFactoryImpl implements FieldFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
-
+	
 	@Override
 	public Field save(final Field throwAwayField) throws DotDataException {
+		return LocalTransaction.wrapReturn(() ->{
+			return dbSaveUpdate(throwAwayField);
+		});
+	}
+	
+	
+	private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 		boolean inserting = false;
 		Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
 		Field retField = FieldBuilder.builder(throwAwayField).modDate(modDate).build();
@@ -231,9 +239,12 @@ public class FieldFactoryImpl implements FieldFactory {
 	}
 
 	private String assignAvailableColumn(Field field) throws DotDataException {
-		if(field instanceof ImmutableConstantField){
-			return "constant";
+		
+		if(field.dataType() == DataTypes.CONSTANT || field.dataType() == DataTypes.SYSTEM || field.dataType() == DataTypes.SECTION_DIVIDER ){
+			return field.dataType().toString();
 		}
+
+
 		DotConnect dc = new DotConnect();
 		String dataType = field.dataType().toString();
 		dc.setSQL(sql.selectFieldOfDbType);

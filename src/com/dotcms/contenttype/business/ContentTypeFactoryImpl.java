@@ -186,7 +186,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			List<Field> fields = retType.requiredFields();
 			FieldApi fapi = new FieldApiImpl().instance();
 			for(Field f : fields){
-				f = FieldBuilder.builder(f).from(f).contentTypeId(retType.inode()).build();
+				f = FieldBuilder.builder(f).contentTypeId(retType.inode()).build();
 				fapi.save(f);
 			}
 			return retType;

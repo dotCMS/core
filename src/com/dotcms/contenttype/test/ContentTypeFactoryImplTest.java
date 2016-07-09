@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,11 +37,11 @@ public class ContentTypeFactoryImplTest {
 	public static void initDb() throws FileNotFoundException, Exception{
 		DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
 	}
-	@After
+	@Before
 	public void cleanDb() throws DotDataException{
 		DotConnect dc = new DotConnect();
 		
-		dc.setSQL("delete from field where structure_inode not in (select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%')");
+		dc.setSQL("delete from field where structure_inode in (select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%')");
 		dc.loadResult();		
 		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
 		dc.loadResult();
@@ -140,13 +141,13 @@ public class ContentTypeFactoryImplTest {
 	
 	@Test
 	public void testAddingWidgets() throws Exception{
-		cleanDb();
+
 		int countAll = factory.searchCount(null);
 		int runs = 20;
 		int countWidgets = factory.searchCount(null, BaseContentTypes.WIDGET);
 		
 		for(int i=0;i<runs;i++){
-			testAddingAWidget();
+			addWidget();
 			Thread.sleep(1);
 		}
 		
@@ -159,16 +160,36 @@ public class ContentTypeFactoryImplTest {
 
 	}
 	
+	@Test
+	public void testAddingPersonas() throws Exception{
+
+		int countAll = factory.searchCount(null);
+		int runs = 20;
+		int countPersonas = factory.searchCount(null, BaseContentTypes.PERSONA);
+		
+		for(int i=0;i<runs;i++){
+			addPersona();
+			Thread.sleep(1);
+		}
+		
+		
+		int countAll2 = factory.searchCount(null);
+		int countPersonas2 = factory.searchCount(null, BaseContentTypes.PERSONA);
+		assertThat("counts are working", countAll == countAll2-runs);
+		assertThat("counts are working", countAll2 >countPersonas2);
+		assertThat("counts are working", countPersonas == countPersonas2-runs);
+
+	}
 	
 	@Test
 	public void testAddingForms() throws Exception{
-		cleanDb();
+
 		int countAll = factory.searchCount(null);
 		int runs = 20;
 		int countForms = factory.searchCount(null, BaseContentTypes.FORM);
 		
 		for(int i=0;i<runs;i++){
-			testAddingAForm();
+			addForm();
 			Thread.sleep(1);
 		}
 		
@@ -180,7 +201,7 @@ public class ContentTypeFactoryImplTest {
 		assertThat("counts are working", countForms == countForms2-runs);
 
 	}
-	public void testAddingAWidget() throws DotDataException{
+	public void addWidget() throws DotDataException{
 
 		long i = System.currentTimeMillis();
 
@@ -189,7 +210,7 @@ public class ContentTypeFactoryImplTest {
 			.expireDateVar(null)
 			.folder(FolderAPI.SYSTEM_FOLDER)
 			.host(Constants.SYSTEM_HOST)
-			.name("ContentTypeTesting" + i)
+			.name("widgetTesting" + i)
 			.owner("owner")
 			.pagedetail("/page/inode"+ i)
 			.urlMapPattern("/asdsadasdasd" + i)
@@ -212,7 +233,7 @@ public class ContentTypeFactoryImplTest {
 		}
 	}
 	
-	public void testAddingAForm() throws DotDataException{
+	public void addForm() throws DotDataException{
 
 		long i = System.currentTimeMillis();
 
@@ -221,7 +242,7 @@ public class ContentTypeFactoryImplTest {
 			.expireDateVar(null)
 			.folder(FolderAPI.SYSTEM_FOLDER)
 			.host(Constants.SYSTEM_HOST)
-			.name("ContentTypeTesting" + i)
+			.name("FormTesting" + i)
 			.owner("owner")
 			.pagedetail("/page/inode"+ i)
 			.urlMapPattern("/asdsadasdasd" + i)
@@ -241,6 +262,38 @@ public class ContentTypeFactoryImplTest {
 			assertThat("fields are correct:", field.getClass().equals(baseField.getClass()));
 			assertThat("fields are correct:", field.name().equals(baseField.name()));
 			assertThat("fields are correct:", field.sortOrder()==baseField.sortOrder());
+		}
+	}
+		
+	public void addPersona() throws DotDataException{
+
+		long i = System.currentTimeMillis();
+
+		ContentType type = ImmutablePersonaContentType.builder()
+			.description("description" + i)
+			.expireDateVar(null)
+			.folder(FolderAPI.SYSTEM_FOLDER)
+			.host(Constants.SYSTEM_HOST)
+			.name("PersonaTesting" + i)
+			.owner("owner")
+			.pagedetail("/page/inode"+ i)
+			.urlMapPattern("/asdsadasdasd" + i)
+			.velocityVarName("velocityVarNameTesting" + i)
+			.build();
+		type = factory.save(type);
+
+		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
+		List<Field> baseTypeFields = ContentTypeBuilder.builder(type).build().requiredFields();
+		assertThat("fields are all added", fields.size() == baseTypeFields.size());
+		
+		for(int j=0;j<fields.size();j++){
+			Field field = fields.get(j);
+			Field baseField = baseTypeFields.get(j);
+			assertThat("fields dataType correct:", field.dataType().equals(baseField.dataType()));
+			assertThat("fields variable correct:", field.variable().equals(baseField.variable()));
+			assertThat("fields getClass correct:", field.getClass().equals(baseField.getClass()));
+			assertThat("fields name are correct:", field.name().equals(baseField.name()));
+			assertThat("fields sortOrder are correct:", field.sortOrder()==baseField.sortOrder());
 		}
 	}
 	
