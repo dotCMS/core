@@ -36,7 +36,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 
 		String orderBy = req.getParameter("orderBy");
 		User user = _getUser(req);
-		orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "name");
+		orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc");
 		_loadStructures(req, user, WebKeys.STRUCTURES_VIEW_COUNT, WebKeys.Structure.STRUCTURES, WebKeys.STRUCTURE_QUERY);
 		if (req.getWindowState().equals(WindowState.NORMAL)) {
 			return mapping.findForward("portlet.ext.formhandler.view");
@@ -69,11 +69,11 @@ public class ViewFormHandlerAction extends DotPortletAction {
 		try {
 			String orderby = req.getParameter("orderBy");
 			if (!UtilMethods.isSet(orderby)) {
-				orderby = "upper(name)";
+				orderby = "mod_date";
 			}
 			String direction = req.getParameter("direction");
 			if (!UtilMethods.isSet(direction)) {
-				direction = "asc";
+				direction = "desc";
 			}
 
 			int pageNumber = 1;

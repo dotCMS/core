@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 
 
 @Value.Immutable
@@ -27,16 +28,17 @@ public abstract class FormContentType extends ContentType{
 	public boolean multilingualable(){
 		return false;
 	}
-	@Override
-	@Value.Default
-	public String pagedetail(){
-		return null;
+	
+	@Value.Check
+	protected void check() {
+		Preconditions.checkArgument(pagedetail()==null,"Detail Page cannot be set for forms");
+		Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for forms");
+		Preconditions.checkArgument(expireDateVar()==null,"expireDate cannot be set for forms");
+		Preconditions.checkArgument(publishDateVar()==null,"expireDate cannot be set for forms");
 	}
-	@Override
-	@Value.Default
-	public String urlMapPattern(){
-		return null;
-	}
+	
+	
+	
 	public  List<Field> requiredFields(){
 		
 
@@ -45,8 +47,6 @@ public abstract class FormContentType extends ContentType{
 				.name("Form Title")
 				.dataType(DataTypes.CONSTANT)
 				.variable("formTitle")
-				.required(true)
-				.listed(true)
 				.indexed(true)
 				.sortOrder(1)
 				.fixed(true)

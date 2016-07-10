@@ -32,9 +32,6 @@ public interface FieldBuilder {
 	
 	
 	public static FieldBuilder builder(Field field) throws DotStateException{
-		if(field instanceof HostFolderField){
-			System.out.println(field);
-		}
 		return builder(field.type()).from(field);
 	}
 	

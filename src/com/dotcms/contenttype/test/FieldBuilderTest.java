@@ -31,8 +31,6 @@ public class FieldBuilderTest {
 	public void testEquals() throws Exception {
 		Field f1 = FieldBuilder.instanceOf(TextField.class);
 		Field f2 = FieldBuilder.instanceOf(TextField.class);
-		System.out.println(f1.typeName());
-		System.out.println(f2.typeName());
 		assertThat("fieldbuilder works ",f1.equals(f2));
 	}
 	

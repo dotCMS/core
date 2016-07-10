@@ -34,16 +34,19 @@ public class ContentTypeFactoryImplTest {
 
 	@BeforeClass
 	public static void initDb() throws FileNotFoundException, Exception{
-		DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
+		//DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
 	}
-	//@Before
-	public void cleanDb() throws DotDataException{
+	@BeforeClass
+	public static void cleanDb() throws DotDataException, Exception{
+		DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
 		DotConnect dc = new DotConnect();
-		
 		dc.setSQL("delete from field where structure_inode in (select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%')");
 		dc.loadResult();		
+
 		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
 		dc.loadResult();
+		
+
 		dc.setSQL("delete from structure where structure.velocity_var_name like 'velocityVarNameTesting%' ");
 		dc.loadResult();
 		dc.setSQL("delete from inode where type='structure' and inode not in  (select inode from structure)");
@@ -52,9 +55,8 @@ public class ContentTypeFactoryImplTest {
 		dc.loadResult();		
 		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
 		dc.loadResult();
-		
-		
-		
+		dc.setSQL("update structure set structure.url_map_pattern =null, structure.page_detail=null where structuretype =3" );
+		dc.loadResult();
 	}
 
 	@Test
@@ -96,9 +98,7 @@ public class ContentTypeFactoryImplTest {
 			try {
 				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
-				System.out.println("Equals failed");
-				System.out.println(contentType);
-				System.out.println(contentType2);
+
 				throw t;
 			}
 		}
@@ -127,8 +127,6 @@ public class ContentTypeFactoryImplTest {
 				.host(Constants.SYSTEM_HOST)
 				.name("ContentTypeTesting" + time)
 				.owner("owner")
-				.pagedetail("/page/inode"+ time)
-				.urlMapPattern("/asdsadasdasd" + time)
 				.velocityVarName("velocityVarNameTesting" + time)
 				.build();
 			type = factory.save(type);
@@ -211,8 +209,7 @@ public class ContentTypeFactoryImplTest {
 			.host(Constants.SYSTEM_HOST)
 			.name("widgetTesting" + i)
 			.owner("owner")
-			.pagedetail("/page/inode"+ i)
-			.urlMapPattern("/asdsadasdasd" + i)
+
 			.velocityVarName("velocityVarNameTesting" + i)
 			.build();
 		type = factory.save(type);
@@ -243,8 +240,6 @@ public class ContentTypeFactoryImplTest {
 			.host(Constants.SYSTEM_HOST)
 			.name("FormTesting" + i)
 			.owner("owner")
-			.pagedetail("/page/inode"+ i)
-			.urlMapPattern("/asdsadasdasd" + i)
 			.velocityVarName("velocityVarNameTesting" + i)
 			.build();
 		type = factory.save(type);

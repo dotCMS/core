@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 
 public class DbContentTypeTransformer {
 
@@ -23,73 +24,73 @@ public class DbContentTypeTransformer {
 			static final long serialVersionUID = 1L;
 			@Override
 			public String velocityVarName() {
-				return String.valueOf(map.get("velocity_var_name"));
+				return (String) map.get("velocity_var_name");
 			}
 
 			@Override
 			public String urlMapPattern() {
-				return String.valueOf(map.get("url_map_pattern"));
+				return !UtilMethods.isSet((String) map.get("url_map_pattern")) ? null : (String) map.get("url_map_pattern");
 			}
 
 
 			@Override
 			public String publishDateVar() {
-				return String.valueOf(map.get("publish_date_var"));
+				return (String) map.get("publish_date_var");
 			}
 
 			@Override
 			public String pagedetail() {
-				return String.valueOf(map.get("page_detail"));
+				return !UtilMethods.isSet((String) map.get("page_detail")) ? null : (String) map.get("page_detail");
 			}
 
 			@Override
 			public String owner() {
-				return String.valueOf(map.get("owner"));
+				return (String) map.get("owner");
 			}
 
 			@Override
 			public String name() {
-				return String.valueOf(map.get("name"));
+				return (String) map.get("name");
 			}
 
 			@Override
 			public String inode() {
-				return String.valueOf(map.get("inode"));
+				return (String) map.get("inode");
 			}
 
 			@Override
 			public String host() {
-				return String.valueOf(map.get("host"));
+				return (String) map.get("host");
 			}
 
 			@Override
 			public String folder() {
-				return String.valueOf(map.get("folder"));
+				return (String) map.get("folder");
 			}
 
 			@Override
 			public String expireDateVar() {
-				return String.valueOf(map.get("expire_date_var"));
+				return (String) map.get("expire_date_var");
 			}
 
 			@Override
 			public String description() {
-				return String.valueOf(map.get("description"));
+				return (String) map.get("description");
 			}
 
 			@Override
 			public boolean fixed() {
-				return Boolean.getBoolean(String.valueOf(map.get("fixed")));
+				return (Boolean) map.get("fixed");
 			}
 
 			@Override
 			public boolean system() {
-				return Boolean.getBoolean(String.valueOf(map.get("system")));
+				return (Boolean) map.get("system");
 			}
 
 			@Override
 			public boolean defaultStructure() {
-				return Boolean.getBoolean(String.valueOf(map.get("default_structure")));
+				return (Boolean) map.get("default_structure");
 			}
 
 			@Override
@@ -138,7 +139,16 @@ public class DbContentTypeTransformer {
 	public static List<ContentType> transform(final List<Map<String, Object>> list) throws DotDataException {
 		ImmutableList.Builder<ContentType> builder = ImmutableList.builder();
 		for (Map<String, Object> map : list) {
-			builder.add(transform(map));
+			
+			try{
+				builder.add(transform(map));
+			}	
+			catch(Exception e){
+				System.out.println(map);
+				throw e;
+			}
+			
+
 		}
 		return builder.build();
 	}

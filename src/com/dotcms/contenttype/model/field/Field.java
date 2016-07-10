@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
 import java.io.Serializable;
+
 import java.util.Date;
 import java.util.List;
 
@@ -10,7 +11,7 @@ import org.immutables.value.Value.Derived;
 
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-
+@Value.Immutable
 public abstract class Field implements Serializable, FieldType {
 
 	

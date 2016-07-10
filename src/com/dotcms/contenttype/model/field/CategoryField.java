@@ -6,6 +6,7 @@ import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
+
 @Value.Immutable
 public abstract class CategoryField extends Field {
 
@@ -15,7 +16,6 @@ public abstract class CategoryField extends Field {
 	public Class type() {
 		return CategoryField.class;
 	}
-
 
 	@Override
 	public final List<DataTypes> acceptedDataTypes() {

@@ -34,8 +34,6 @@ public class ContentTypeBuilderTest {
 	public void testEquals() throws Exception {
 		ContentType f1 = ContentTypeBuilder.instanceOf(SimpleContentType.class);
 		ContentType f2 = ContentTypeBuilder.instanceOf(SimpleContentType.class);
-		System.out.println(f1.name());
-		System.out.println(f2.name());
 		assertThat("ContentTypeBuilderUtilTest works ",f1.equals(f2));
 	}
 	
