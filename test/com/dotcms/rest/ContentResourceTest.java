@@ -58,6 +58,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 
 public class ContentResourceTest extends TestBase {
@@ -498,7 +499,9 @@ public class ContentResourceTest extends TestBase {
         Folder ff=APILocator.getFolderAPI().createFolders("/rest/"+salt, demo, sysuser, false);
         
         java.io.File filefile = java.io.File.createTempFile("filefile", ".txt");
+        FileUtil.write(filefile, "helloworld");
         java.io.File imgimg = java.io.File.createTempFile("imgimg", ".jpg");
+        FileUtil.write(imgimg, "helloworld");
         
         Contentlet filea=new Contentlet();
         filea.setFolder(ff.getInode());

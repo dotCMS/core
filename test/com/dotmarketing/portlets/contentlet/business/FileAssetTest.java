@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
+import com.liferay.util.FileUtil;
 
 public class FileAssetTest extends ContentletBaseTest {
 	
@@ -44,6 +45,7 @@ public class FileAssetTest extends ContentletBaseTest {
   	  	int spanish = 2;
   	  	Folder folder = APILocator.getFolderAPI().findSystemFolder();
   	  	java.io.File file = java.io.File.createTempFile("texto", ".txt");
+		FileUtil.write(file, "helloworld");
         
   	  	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
   	  	Contentlet fileInSpanish = fileAssetDataGen.languageId(spanish).nextPersisted();
@@ -68,6 +70,7 @@ public class FileAssetTest extends ContentletBaseTest {
   	  	int spanish = 2;
   	  	Folder folder = APILocator.getFolderAPI().findSystemFolder();
   	  	java.io.File file = java.io.File.createTempFile("texto", ".txt");
+		FileUtil.write(file, "helloworld");
         
   	  	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
   	  	Contentlet fileInEnglish = fileAssetDataGen.languageId(english).nextPersisted();
@@ -93,6 +96,7 @@ public class FileAssetTest extends ContentletBaseTest {
   	  	int spanish = 2;
   	  	Folder folder = APILocator.getFolderAPI().findSystemFolder();
   	  	java.io.File file = java.io.File.createTempFile("texto", ".txt");
+		FileUtil.write(file, "helloworld");
         
   	  	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
   	  	Contentlet fileInEnglish = fileAssetDataGen.languageId(english).nextPersisted();
