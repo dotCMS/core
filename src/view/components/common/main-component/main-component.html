@@ -1,14 +1,15 @@
+<!--TODO: make this md-toolbar a dot-component-->
 <md-toolbar color="primary">
-    <div class="main-toolbar">
-        <div class="host-selector">
-            <button md-icon-button (click)="sideNav.toggle()">
-                <md-icon class="md-24">menu</md-icon>
-            </button>
-            <h1>DotCMS</h1>
-        </div>
-        <dot-global-search></dot-global-search>
-        <div class="user">freddy@dotcms.com</div>
-        <div class='user'><a class='pointer' (click)='logout()'>{{logoutLabel}}</a></div>
+    <div class="toolbar__host">
+        <button md-icon-button (click)="sideNav.toggle()">
+            <md-icon class="md-24">menu</md-icon>
+        </button>
+        <h1 class="toolbar__title">DotCMS</h1>
+    </div>
+    <dot-global-search></dot-global-search>
+    <div class="toolbar__actions">
+        <dot-toolbar-notifications></dot-toolbar-notifications>
+        <a href="#" (click)='logout()' class="toolbar__logout">{{logoutLabel}}</a>
     </div>
 </md-toolbar>
 <md-sidenav-layout fullscreen>

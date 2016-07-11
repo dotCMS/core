@@ -1,0 +1,7 @@
+<button md-icon-button (click)="toggleNotifications()" [disabled]="!notifications.length">
+    <md-icon class="md-24">notifications</md-icon>
+</button>
+<div class="toolbar-notifications" *ngIf="showNotifications">
+    <h3 class="toolbar-notifications__title">Notifications</h3>
+    <dot-notifications-list [notifications]="notifications"></dot-notifications-list>
+</div>

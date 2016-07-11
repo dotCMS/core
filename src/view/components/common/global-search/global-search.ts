@@ -8,11 +8,7 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     selector: 'dot-global-search',
     styleUrls: ['global-search.css'],
-    template: `
-    <div class="dot-global-search">
-        <md-input placeholder="Search for anything" floatingPlaceholder="false"></md-input>
-    </div>
-    `,
+    templateUrl: ['global-search.html'],
     providers: [],
     directives: [MD_INPUT_DIRECTIVES, FORM_DIRECTIVES],
     encapsulation: ViewEncapsulation.Emulated

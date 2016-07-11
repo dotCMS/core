@@ -1,0 +1,36 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+    position: relative;
+
+    dot-notifications-list {
+        font-size: rem-cal(14px);
+    }
+
+    .toolbar-notifications {
+        @include box_shadow(2);
+        background-color: $white;
+        padding: 20px;
+        color: $black;
+        position: absolute;
+        right: 0;
+        top: 45px;
+        width: 350px;
+
+        &:before {
+            background: $white;
+            content: "";
+            height: 10px;
+            position: absolute;
+            right: 15px;
+            top: -5px;
+            transform: rotate(45deg);
+            width: 10px;
+        }
+    }
+
+    .toolbar-notifications__title {
+        margin-top: 0;
+    }
+}

@@ -1,6 +1,5 @@
 import {Component, Inject, ViewEncapsulation} from '@angular/core';
 
-
 // Custom Components
 import {LoginComponent} from './common/login-component/login-component';
 import {MainComponent} from './common/main-component/main-component';
@@ -12,7 +11,7 @@ import {MainComponent} from './common/main-component/main-component';
     providers: [],
     selector: 'app',
     styleUrls: ['app.css'],
-    templateUrl: ['app.html'],
+    templateUrl: ['app.html']
 })
 
 /**
