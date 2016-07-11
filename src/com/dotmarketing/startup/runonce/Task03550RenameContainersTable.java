@@ -8,7 +8,7 @@ import java.util.List;
  * @author Nollymar Longa
  * @since 07/08/2016
  */
-public class Task03555RenameContainersTable extends AbstractJDBCStartupTask {
+public class Task03550RenameContainersTable extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
