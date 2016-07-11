@@ -10,6 +10,7 @@ import com.dotcms.TestBase;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.AssetUtil;
@@ -113,7 +114,7 @@ public class TemplateAPITest extends TestBase {
 
         APILocator.getContainerAPI().delete(container, user, false);
 
-        AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(),"containers");
+        AssetUtil.assertDeleted(container.getInode(),container.getIdentifier(), Inode.Type.CONTAINERS.getValue());
     }
 
     @Test

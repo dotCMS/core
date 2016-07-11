@@ -9,6 +9,7 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -267,7 +268,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         dc.executeStatement(
           "alter table link_version_info       add constraint fk_link_ver_info_ident        foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_contain_ver_info_working   foreign key (working_inode) references containers(inode)");
+          "alter table container_version_info  add constraint fk_contain_ver_info_working   foreign key (working_inode) references " + Inode.Type.CONTAINERS.getTableName() + "(inode)");
         dc.executeStatement(
           "alter table template_version_info   add constraint fk_temp_ver_info_working      foreign key (working_inode) references template(inode)");
         dc.executeStatement(
@@ -279,7 +280,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         dc.executeStatement(
           "alter table contentlet_version_info add constraint fk_cont_version_info_working  foreign key (working_inode) references contentlet(inode)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_container_ver_info_live    foreign key (live_inode) references containers(inode)");
+          "alter table container_version_info  add constraint fk_container_ver_info_live    foreign key (live_inode) references " + Inode.Type.CONTAINERS.getTableName() + "(inode)");
         dc.executeStatement(
           "alter table template_version_info   add constraint fk_template_ver_info_live     foreign key (live_inode) references template(inode)");
         dc.executeStatement(
@@ -308,13 +309,14 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
           "alter table link_version_info       add constraint FK_link_ver_info_lockedby     foreign key (locked_by) references user_(userid)");
     }
 
-    protected void associateWorking(String table) throws DotDataException, SQLException {
+    protected void associateWorking(String type) throws DotDataException, SQLException {
         Connection con = DbConnectionFactory.getConnection();
-        String versionTable=UtilMethods.getVersionInfoTableName(table);
+        String table = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+        String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
         PreparedStatement selectContentlets = null;
         final int limit=1000;
 
-        Logger.info(this, "creating (working) version info records for "+table+" on "+versionTable);
+        Logger.info(this, "creating (working) version info records for "+type+" on "+versionTable);
 
         if(DbConnectionFactory.isOracle()){
         	  selectContentlets = con.prepareStatement(
@@ -393,12 +395,13 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         insertVersionInfo.close();
     }
 
-    protected void associateLiveNotWorking(String table) throws DotDataException {
+    protected void associateLiveNotWorking(String type) throws DotDataException {
         DotConnect dc = new DotConnect();
-        String versionTable=UtilMethods.getVersionInfoTableName(table);
+        String table = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+        String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
         String lastId="";
 
-        Logger.info(this, "creating (live not working) version info records for "+table+" on "+versionTable);
+        Logger.info(this, "creating (live not working) version info records for "+type+" on "+versionTable);
 
         String contentlets=
             "select identifier,inode, mod_date from " + table +
@@ -437,13 +440,13 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             "alter table contentlet drop column locked");
 
         dc.executeStatement(
-            "alter table containers drop column live");
+            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column live");
         dc.executeStatement(
-            "alter table containers drop column working");
+            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column working");
         dc.executeStatement(
-            "alter table containers drop column deleted");
+            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column deleted");
         dc.executeStatement(
-            "alter table containers drop column locked");
+            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column locked");
 
         dc.executeStatement(
             "alter table template drop column live");
@@ -653,8 +656,8 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             	createNewTables();
             }
             addNewForeignKeys();
-            String[] tables=new String[] {"containers","links","template","file_asset","htmlpage"};
-            for(String tt : tables) {
+            String[] types=new String[] {Inode.Type.CONTAINERS.getValue(),"links","template","file_asset","htmlpage"};
+            for(String tt : types) {
                 associateWorking(tt);
                 associateLiveNotWorking(tt);
             }

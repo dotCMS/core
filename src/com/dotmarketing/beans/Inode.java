@@ -5,16 +5,6 @@
  */
 package com.dotmarketing.beans;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -32,6 +22,16 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 
 /**
  * 
@@ -43,25 +43,43 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	private static final long serialVersionUID = -152856052702254985L;
 
-	public enum Type {
-		CONTENTLET,
-		HTMLPAGE,
-		TEMPLATE,
-		VIRTUAL_LINK,
-		CONTAINERS,
-		USER_PROXY,
-		FOLDER,
-		STRUCTURE,
-		RELATIONSHIP,
-		LINKS,
-		CATEGORY,
-		MAILING_LIST,
-		FIELD;
+    public enum Type {
+        CONTENTLET("contentlet", "contentlet_version_info"),
+        HTMLPAGE("htmlpage", "htmlpage_version_info"),
+        TEMPLATE("template", "template_version_info"),
+        VIRTUAL_LINK("virtual_link", null),
+        CONTAINERS("dot_containers", "container_version_info"),
+        USER_PROXY("user_proxy", null),
+        FOLDER("folder", null),
+        STRUCTURE("structure", null),
+        RELATIONSHIP("relationship", null),
+        LINKS("links", "link_version_info"),
+        CATEGORY("category", null),
+        MAILING_LIST("mailing_list", null),
+        FIELD("field", null),
+		FILE_ASSET("file_asset", "fileasset_version_info");
 
-		public String getValue() {
-			return name().toLowerCase();
-		}
-	}
+        private String tableName;
+
+        private String versionTableName;
+
+        Type(String tableName, String versionTableName) {
+            this.tableName = tableName;
+            this.versionTableName = versionTableName;
+        }
+
+        public String getValue() {
+            return name().toLowerCase();
+        }
+
+        public String getTableName() {
+            return this.tableName;
+        }
+
+        public String getVersionTableName() {
+            return this.versionTableName;
+        }
+    }
 
 	private java.util.Date iDate;
 

@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -34,7 +33,6 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -470,7 +468,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
 	}
 
-	public int deleteOldVersions(final Date olderThan, final String assetType) throws DotDataException {
+	public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
         DotConnect dc = new DotConnect();
 
         //Setting the date to olderThan 00:00:00.
@@ -482,21 +480,22 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
 
-        //Get the count of the assetType before deleting.
-        String countSQL = "select count(*) as count from " + assetType;
+		String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+		String versionInfoTable = Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
+
+        //Get the count of the tableName before deleting.
+        String countSQL = "select count(*) as count from " + tableName;
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         int before = Integer.parseInt(result.get(0).get("count"));
         int after = before;
 
-        String versionInfoTable = UtilMethods.getVersionInfoTableName(assetType);
-
         String condition =  " mod_date < ? " +
                             " and not exists (select 1 from " + versionInfoTable +
-                                                " where working_inode = " + assetType + ".inode" +
-                                                " or live_inode = " + assetType + ".inode)";
+                                                " where working_inode = " + tableName + ".inode" +
+                                                " or live_inode = " + tableName + ".inode)";
 
-        String inodesToDeleteSQL = "select inode from " + assetType + " where " + condition;
+        String inodesToDeleteSQL = "select inode from " + tableName + " where " + condition;
 
         //Get the list of inodes to delete.
         dc.setSQL(inodesToDeleteSQL);
@@ -525,7 +524,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
             List<String> queries = Lists.newArrayList("delete from tree where child in (?)",
                     "delete from tree where parent in (?)",
                     "delete from container_structures where container_inode in (?)",
-                    "delete from " + assetType + " where inode in (?)");
+                    "delete from " + tableName + " where inode in (?)");
 
             //For each query we will run sets of 100 inodes at a time.
             for (String query : queries) {
@@ -547,13 +546,13 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
             String deleteInodesSQL = "delete from inode " +
                     "where type = ? " +
                     "and idate < ? " +
-                    "and inode not in (select inode from " + assetType + ")";
+                    "and inode not in (select inode from " + tableName + ")";
             dc.setSQL(deleteInodesSQL);
-            dc.addParam(assetType);
+            dc.addParam(type);
             dc.addParam(date);
             dc.loadResult();
 
-            //Get the count of the assetType after deleting.
+            //Get the count of the tableName after deleting.
             dc.setSQL(countSQL);
             result = dc.loadResults();
             after = Integer.parseInt(result.get(0).get("count"));
