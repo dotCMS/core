@@ -74,7 +74,7 @@ public class AuthenticationResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response authentication(@Context final HttpServletRequest request,
+    public final Response authentication(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    final AuthenticationForm authenticationForm) {
 

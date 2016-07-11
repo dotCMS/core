@@ -1,9 +1,9 @@
 package com.dotcms.cms.login;
 
 import java.io.Serializable;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -32,6 +32,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.action.LogoutAction;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -40,12 +41,15 @@ import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.servlet.PortletSessionPool;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.InstancePool;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
@@ -147,6 +151,60 @@ public class LoginServiceFactory implements Serializable {
      */
     private final class LoginServiceImpl implements LoginService {
 
+        private final Log log = LogFactory.getLog(LoginService.class);
+
+        @Override
+        public void doActionLogout(final HttpServletRequest req,
+                                      final HttpServletResponse res) throws Exception {
+
+            final HttpSession session = req.getSession(false);
+
+            if (null != session) {
+
+                log.debug("Logout - Events Processor Pre Logout events.");
+
+                EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
+
+                log.debug("Logout - Set expire cookies");
+                com.dotmarketing.util.CookieUtil.setExpireCookies(req, res);
+
+                final Map sessions = PortletSessionPool.remove(session.getId());
+
+                if (null != sessions) {
+
+                    log.debug("Logout - Invalidating portlet sessions...");
+
+                    final Iterator itr = sessions.values().iterator();
+
+                    while (itr.hasNext()) {
+
+                        final HttpSession portletSession = (HttpSession) itr.next();
+
+                        if (null != portletSession) {
+
+                            portletSession.invalidate();
+                        }
+                    }
+                }
+
+                log.debug("Logout - Invalidating http session...");
+
+                session.invalidate();
+
+                log.debug("Logout - Events Processor Post Logout events.");
+
+                EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_POST), req, res);
+            } else {
+
+                log.debug("Not action needed, since the session is already ended.");
+            }
+        } // doActionLogout.
+
+        @Override
+        public boolean isLoggedIn(final HttpServletRequest req) {
+
+            return LoginService.super.isLoggedIn(req);
+        }
 
         @Override
         public boolean doActionLogin(String userId,

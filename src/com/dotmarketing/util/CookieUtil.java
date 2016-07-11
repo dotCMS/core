@@ -119,4 +119,25 @@ public class CookieUtil {
 		}
 	} // createJsonWebTokenCookie.
 
+	/**
+	 * Set to expire all cookies
+	 * @param request HttpServletRequest
+	 * @param response HttpServletResponse
+     */
+	public static void setExpireCookies (final HttpServletRequest request,
+										 final HttpServletResponse response) {
+
+		final Cookie[] cookies =
+				request.getCookies();
+
+		if (null != cookies) {
+
+			for (Cookie cookie : cookies) {
+
+				cookie.setMaxAge(0);
+				cookie.setPath("/");
+				response.addCookie(cookie);
+			}
+		}
+	} // setExpireCookies.
 }

@@ -1,30 +1,15 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.TestBase;
 import com.dotcms.cms.login.LoginService;
-import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.validator.ValidatorException;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.FunctionalTestConfig;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.User;
-import org.junit.After;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -33,14 +18,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

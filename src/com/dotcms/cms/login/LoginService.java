@@ -53,6 +53,22 @@ public interface LoginService extends Serializable {
     // Default max days for the JWT
     public static final int JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT = 14;
 
+    void doActionLogout(final HttpServletRequest req, final HttpServletResponse res) throws Exception;
+
+    /**
+     * Checks whether the current request belongs to a user that has already
+     * been authenticated.
+     *
+     * @param req
+     *            - The {@link HttpServletRequest} object.
+     * @return If the request belongs to an authenticated user, returns
+     *         {@code true}. Otherwise, returns {@code false}.
+     */
+    default boolean isLoggedIn (final HttpServletRequest req) {
+
+        return null != PortalUtil.getUserId(req);
+    }
+
     /**
      * Do the action login based on an userId, pass and rememberMe
      * This is basically a refactor from {@link com.liferay.portal.action.LoginAction} to encapsulate the login action into a
