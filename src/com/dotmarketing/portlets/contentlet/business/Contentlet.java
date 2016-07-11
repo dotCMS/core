@@ -1652,6 +1652,9 @@ public class Contentlet extends WebAsset implements Serializable {
 			if (Field.FieldType.HOST_OR_FOLDER.toString().equals(f.getFieldType())) {
 				continue;
 			}
+			if (Field.FieldType.TAG.toString().equals(f.getFieldType())) {
+				continue;
+			}
 			// http://jira.dotmarketing.net/browse/DOTCMS-1073
 			// skip binary
 			/*if(f.getFieldContentlet().startsWith("binary")){

@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 
@@ -28,7 +29,13 @@ public abstract class PersonaContentType extends ContentType{
 		return  BaseContentTypes.PERSONA;
 	}
 
-
+	@Value.Check
+	protected void check() {
+		Preconditions.checkArgument(pagedetail()==null,"Detail Page cannot be set for forms");
+		Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for forms");
+		Preconditions.checkArgument(expireDateVar()==null,"expireDate cannot be set for forms");
+		Preconditions.checkArgument(publishDateVar()==null,"expireDate cannot be set for forms");
+	}
 
 	
 	
@@ -75,7 +82,7 @@ public abstract class PersonaContentType extends ContentType{
 				.required(true)
 				.indexed(true)
 				.listed(true)
-				.defaultValue("$velutil.mergeTemplate('/static/personas/keytag_custom_field.vtl')")
+				.values("$velutil.mergeTemplate('/static/personas/keytag_custom_field.vtl')")
 				.regexCheck("[a-zA-Z0-9]+")
 				.sortOrder(3)
 				.fixed(true)

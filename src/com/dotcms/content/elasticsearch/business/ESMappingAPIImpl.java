@@ -417,7 +417,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	    Structure st=con.getStructure();
         for (Field f : fields) {
             if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
-                    || f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field")) {
+                    || f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith("system_field") && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
                 continue;
             }
             if(!f.isIndexed()){

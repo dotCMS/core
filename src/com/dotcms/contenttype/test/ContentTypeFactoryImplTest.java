@@ -270,8 +270,6 @@ public class ContentTypeFactoryImplTest {
 			.host(Constants.SYSTEM_HOST)
 			.name("PersonaTesting" + i)
 			.owner("owner")
-			.pagedetail("/page/inode"+ i)
-			.urlMapPattern("/asdsadasdasd" + i)
 			.velocityVarName("velocityVarNameTesting" + i)
 			.build();
 		type = factory.save(type);
