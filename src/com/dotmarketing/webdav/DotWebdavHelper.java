@@ -28,6 +28,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
 import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
@@ -921,6 +922,9 @@ public class DotWebdavHelper {
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
+				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+					fileAsset.getMap().put("_validateEmptyFile_", false);
+				}
 				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -991,6 +995,9 @@ public class DotWebdavHelper {
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAssetCont.setLanguageId(defaultLang);
+					if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+						fileAssetCont.getMap().put("_validateEmptyFile_", false);
+					}
 					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);

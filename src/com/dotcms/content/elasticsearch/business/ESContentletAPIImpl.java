@@ -2513,6 +2513,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles, boolean createNewVersion) throws DotDataException, DotSecurityException, DotContentletStateException,
             DotContentletValidationException {
 
+    	boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null ? true : false;
+    	
     	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
  		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
  		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
@@ -2921,7 +2923,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
 				                	//FileUtil.deltree(binaryFieldFolder);
 
-			                		FileUtil.move(incomingFile, newFile);
+			                		FileUtil.move(incomingFile, newFile, validateEmptyFile);
 
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
