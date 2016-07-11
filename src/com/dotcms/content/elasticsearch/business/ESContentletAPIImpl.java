@@ -3191,8 +3191,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				if(e instanceof DotWorkflowException)
 					throw (DotWorkflowException)e;
 				if(e instanceof Exception)
-					Logger.error(this, e.toString(), e);
-					throw new DotRuntimeException(e.getMessage());
+					throw new DotRuntimeException(e.getMessage(),e);
 			}
 
 
