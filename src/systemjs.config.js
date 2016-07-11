@@ -116,7 +116,9 @@
         'list',
         'toolbar',
         'input',
-        'icon'
+        'icon',
+        'checkbox',
+        'card'
     ];
 
     angularMaterialPackages.forEach(function(pkg) {

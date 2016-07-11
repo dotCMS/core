@@ -22,7 +22,11 @@ export class RoutingService {
             let oReq = new XMLHttpRequest();
 
             oReq.onreadystatechange = function() {
-                if (oReq.readyState === XMLHttpRequest.DONE) {
+                if(oReq.status == 500){
+                    //if the user is not loggedIn will be here ;
+                    observer.next(JSON.parse("[]"));
+                    observer.complete();
+                }else if (oReq.readyState === XMLHttpRequest.DONE) {
                     observer.next(JSON.parse(oReq.response));
                     observer.complete();
                 }
