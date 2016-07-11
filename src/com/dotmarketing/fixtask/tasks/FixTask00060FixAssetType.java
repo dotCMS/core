@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -75,7 +76,7 @@ public class FixTask00060FixAssetType implements FixTask {
                 }
                 
                 // containers
-                dc.setSQL("select identifier.* from containers join identifier on (identifier=id) where asset_type<>'containers'");
+                dc.setSQL("select identifier.* from " + Inode.Type.CONTAINERS.getTableName() + " join identifier on (identifier=id) where asset_type<>'containers'");
                 results = dc.getResults();
                 total+=results.size();
                 for(Map<String,String> rr : results) {
