@@ -1,16 +1,12 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-import org.mockito.cglib.core.Local;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -43,8 +39,6 @@ public class AuthenticationHelper {
 
         try {
 
-            SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
-
             return Response.status(status).entity
                 (new ResponseEntityView
                     (Arrays.asList(new ErrorEntity(messageKey,
@@ -58,4 +52,5 @@ public class AuthenticationHelper {
 
         return null;
     }
+
 }

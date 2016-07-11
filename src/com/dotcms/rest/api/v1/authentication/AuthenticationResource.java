@@ -19,6 +19,8 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
+import com.liferay.portal.ejb.UserLocalManager;
+import com.liferay.portal.ejb.UserLocalManagerFactory;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -43,23 +45,31 @@ import java.util.Locale;
 @Path("/v1/authentication")
 public class AuthenticationResource implements Serializable {
 
+    private final UserLocalManager userLocalManager;
     private final LoginService loginService;
     private final WebResource webResource;
-    private final AuthenticationHelper  authenticationHelper =
-            AuthenticationHelper.INSTANCE;
+    private final AuthenticationHelper  authenticationHelper;
 
     @SuppressWarnings("unused")
     public AuthenticationResource() {
-        this(LoginServiceFactory.getInstance().getLoginService(), new WebResource(new ApiProvider()));
+        this(LoginServiceFactory.getInstance().getLoginService(),
+                UserLocalManagerFactory.getManager(),
+                AuthenticationHelper.INSTANCE,
+                new WebResource(new ApiProvider()));
     }
 
     @VisibleForTesting
     protected AuthenticationResource(final LoginService loginService,
+                                     final UserLocalManager userLocalManager,
+                                     final AuthenticationHelper  authenticationHelper,
                                      final WebResource webResource) {
         this.loginService = loginService;
+        this.userLocalManager = userLocalManager;
+        this.authenticationHelper = authenticationHelper;
         this.webResource = webResource;
     }
 
+    // todo: add the https annotation
     @POST
     @JSONP
     @NoCache
@@ -84,7 +94,7 @@ public class AuthenticationResource implements Serializable {
             if (authenticated) {
 
                 final HttpSession ses = request.getSession();
-                final User user = UserLocalManagerUtil.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
+                final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
                 res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
                 SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             }
@@ -109,7 +119,6 @@ public class AuthenticationResource implements Serializable {
                                 LanguageUtil.format(locale,
                                         "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", userId, "</i></b>")}, false)
                         )))).build();
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             } catch (LanguageException e1) {
                 // Quiet
             }
