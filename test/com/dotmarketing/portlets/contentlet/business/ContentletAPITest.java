@@ -79,6 +79,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 /**
  * Created by Jonathan Gamba.
@@ -2203,19 +2204,22 @@ public class ContentletAPITest extends ContentletBaseTest {
 
 
     }
-    
+
     @Test
-    public void newFileAssetLanguageDifferentThanDefault() throws DotSecurityException, DotDataException, IOException{
-    	  int spanish = 2;
-    	  Folder folder = APILocator.getFolderAPI().findSystemFolder();
-    	  java.io.File file = java.io.File.createTempFile("texto", ".txt");
-          
-    	  FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
-    	  Contentlet fileInSpanish = fileAssetDataGen.languageId(spanish).nextPersisted();
-    	  Contentlet result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, user, false);
-    	  assertEquals(fileInSpanish.getInode(), result.getInode());
-    	  
-    	  fileAssetDataGen.remove(fileInSpanish);
+    public void newFileAssetLanguageDifferentThanDefault() throws DotSecurityException, DotDataException, IOException {
+        int spanish = 2;
+        Folder folder = APILocator.getFolderAPI().findSystemFolder();
+        java.io.File file = java.io.File.createTempFile("texto", ".txt");
+        FileUtil.write(file, "helloworld");
+
+        FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder, file);
+        Contentlet fileInSpanish = fileAssetDataGen.languageId(spanish).nextPersisted();
+        Contentlet
+            result =
+            contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, user, false);
+        assertEquals(fileInSpanish.getInode(), result.getInode());
+
+        fileAssetDataGen.remove(fileInSpanish);
     }
     
     @Test
@@ -2225,6 +2229,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     	
     	Folder folder = APILocator.getFolderAPI().findSystemFolder();
     	java.io.File file = java.io.File.createTempFile("file", ".txt");
+        FileUtil.write(file, "helloworld");
         
     	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
     	Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
