@@ -18,10 +18,10 @@ public class LoginFormResultView implements Serializable {
     private final String version;
     private final String buildDateString;
     private final List<LanguageView> languages;
-    private final String color; // todo check this with Jhon
     private final String backgroundColor;
     private final String backgroundPicture;
     private final String logo;
+    private final String authorizationType;
 
     private LoginFormResultView(LoginFormResultView.Builder builder) {
         serverId = builder.serverId;
@@ -29,10 +29,10 @@ public class LoginFormResultView implements Serializable {
         version = builder.version;
         buildDateString = builder.buildDateString;
         languages  = builder.languages;
-        color  = builder.color;
         backgroundColor  = builder.backgroundColor;
         backgroundPicture  = builder.backgroundPicture;
         logo  = builder.logo;
+        authorizationType = builder.authorizationType;
     }
 
     public String getServerId() {
@@ -55,10 +55,6 @@ public class LoginFormResultView implements Serializable {
         return languages;
     }
 
-    public String getColor() {
-        return color;
-    }
-
     public String getBackgroundColor() {
         return backgroundColor;
     }
@@ -78,53 +74,53 @@ public class LoginFormResultView implements Serializable {
         private String version;
         private String buildDateString;
         private List<LanguageView> languages;
-        private String color; // todo check this with Jhon
         private String backgroundColor;
         private String backgroundPicture;
         private String logo;
+        private String authorizationType;
 
-        public Builder setLogo(String logo) {
+        public Builder logo(String logo) {
             this.logo = logo;
             return this;
         }
 
-        public Builder setServerId(String serverId) {
+        public Builder serverId(String serverId) {
             this.serverId = serverId;
             return this;
         }
 
-        public Builder setLevelName(String levelName) {
+        public Builder levelName(String levelName) {
             this.levelName = levelName;
             return this;
         }
 
-        public Builder setVersion(String version) {
+        public Builder version(String version) {
             this.version = version;
             return this;
         }
 
-        public Builder setBuildDateString(String buildDateString) {
+        public Builder buildDateString(String buildDateString) {
             this.buildDateString = buildDateString;
             return this;
         }
 
-        public Builder setLanguages(List<LanguageView> languages) {
+        public Builder languages(List<LanguageView> languages) {
             this.languages = languages;
             return this;
         }
 
-        public Builder setColor(String color) {
-            this.color = color;
-            return this;
-        }
-
-        public Builder setBackgroundColor(String backgroundColor) {
+        public Builder backgroundColor(String backgroundColor) {
             this.backgroundColor = backgroundColor;
             return this;
         }
 
-        public Builder setBackgroundPicture(String backgroundPicture) {
+        public Builder backgroundPicture(String backgroundPicture) {
             this.backgroundPicture = backgroundPicture;
+            return this;
+        }
+
+        public Builder authorizationType(String authorizationType) {
+            this.authorizationType = authorizationType;
             return this;
         }
 

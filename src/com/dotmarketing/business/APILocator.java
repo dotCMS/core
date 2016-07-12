@@ -3,6 +3,8 @@ package com.dotmarketing.business;
 
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -122,6 +124,10 @@ public class APILocator extends Locator<APIIndex>{
 		if(instance != null)
 			return;
 		instance = new APILocator();
+	}
+
+	public static CompanyAPI getCompanyAPI() {
+		return (CompanyAPI)getInstance(APIIndex.COMPANY_API);
 	}
 
 	public static PermissionAPI getPermissionAPI() {
@@ -458,7 +464,8 @@ enum APIIndex
 	SERVER_ACTION_API,
 	ES_SEARCH_API,
     RULES_API,
-    VISITOR_API;
+    VISITOR_API,
+	COMPANY_API;
 
 
 	Object create() {
@@ -523,6 +530,7 @@ enum APIIndex
 		case ES_SEARCH_API: return new ESSearchProxy();
 		case RULES_API: return new RulesAPIProxy();
 		case VISITOR_API: return new VisitorAPIImpl();
+		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
 
 		
 		}
