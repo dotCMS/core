@@ -3,9 +3,9 @@
  */
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
-import {ApiRoot} from "../persistence/ApiRoot";
-import {Http, RequestMethod} from "@angular/http";
-import {CoreWebService} from "../services/core-web-service";
+import {ApiRoot} from '../persistence/ApiRoot';
+import {Http, RequestMethod} from '@angular/http';
+import {CoreWebService} from '../services/core-web-service';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -14,31 +14,37 @@ import {CoreWebService} from "../services/core-web-service";
 @Injectable()
 export class LoginService extends CoreWebService {
 
-    private serverInfo:any[];
-    private userAuthURL:string;
-    private serverInfoURL:string;
-    private recoverPasswordURL:string;
+    private serverInfo: Array<any>;
+    private userAuthURL: string;
+    private serverInfoURL: string;
+    private recoverPasswordURL: string;
+    private logoutURL: string;
 
-    private lang:string ='en';
-    private country:string ='US';
+    private lang: string = 'en';
+    private country: string = 'US';
 
-    constructor(_apiRoot:ApiRoot, _http:Http) {
+    constructor(_apiRoot: ApiRoot, _http: Http) {
         super(_apiRoot, _http);
 
-        this.userAuthURL=`${_apiRoot.baseUrl}api/v1/authentication`;
-        this.serverInfoURL=`${_apiRoot.baseUrl}api/v1/serverinfo`;
-        this.recoverPasswordURL=`${_apiRoot.baseUrl}api/v1/recoverpassword`;
+        this.userAuthURL = `${_apiRoot.baseUrl}api/v1/authentication`;
+        this.serverInfoURL = `${_apiRoot.baseUrl}api/v1/loginform`;
+        this.recoverPasswordURL = `${_apiRoot.baseUrl}api/v1/recoverpassword`;
+        this.logoutURL = `${_apiRoot.baseUrl}api/v1/logout`;
     }
 
     /**
      * Get the server information to configure the login component
-     * @returns an array the server info and login page configuration
+     * @param language language and country to get the internationalized messages
+     * @param i18nKeys array of message key to internationalize
+     * @returns {Observable<any>} Observable with an array of internationalized messages and server configuration info
      */
-    public getServerInfo():Observable<any> {
-        //let body = JSON.stringify({'userId':login,'password':password,'rememberMe':rememberMe, 'language':this.lang,'country':this.country});
+    public getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<any> {
+        this.getLanguage(language);
+
+        let body = JSON.stringify({'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country});
 
         return this.request({
-            //body: body,
+            body: body,
             method: RequestMethod.Post,
             url: this.serverInfoURL
         });
@@ -52,14 +58,10 @@ export class LoginService extends CoreWebService {
      * @param language string with the language and country code, ex: en_US
      * @returns an array with the user if the user loggedIn successfully or the error message
      */
-    public logInUser(login:string, password:string, rememberMe:boolean, language:string):Observable<{errors:string[],entity: Object,messages:string[],i18nMessagesMap:Object}> {
-        if(language != undefined && language != ''){
-            var languageDesc = language.split('_');
-            this.lang=languageDesc[0];
-            this.country=languageDesc[1];
-        }
+    public logInUser(login: string, password: string, rememberMe: boolean, language: string): Observable<{errors: string[], entity: Object, messages: string[], i18nMessagesMap: Object}> {
+        this.getLanguage(language);
 
-        let body = JSON.stringify({'userId':login,'password':password,'rememberMe':rememberMe, 'language':this.lang,'country':this.country});
+        let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
         return this.request({
             body: body,
@@ -68,6 +70,18 @@ export class LoginService extends CoreWebService {
         });
     }
 
+    /**
+     * Call the logout rest api
+     * @returns {Observable<any>}
+     */
+    public logOutUser(): Observable<any> {
+
+        return this.request({
+            method: RequestMethod.Post,
+            url: this.logoutURL
+        });
+
+    }
 
     /**
      * Executes the call to the recover passwrod rest api
@@ -75,13 +89,25 @@ export class LoginService extends CoreWebService {
      * @returns an array with message indicating if the recover password was successfull
      * or if there is an error
      */
-    public recoverPassword(email:string):Observable<any> {
-        let body = JSON.stringify({'email':email});
+    public recoverPassword(email: string): Observable<any> {
+        let body = JSON.stringify({'email': email});
 
         return this.request({
             body: body,
             method: RequestMethod.Post,
             url: this.recoverPasswordURL
         });
+    }
+
+    /**
+     * update the language and country variables from the string
+     * @param language string containing the languag and country
+     */
+    private getLanguage(language: string): void {
+        if (language !== undefined && language !== '') {
+            let languageDesc = language.split('_');
+            this.lang = languageDesc[0];
+            this.country = languageDesc[1];
+        }
     }
 }
