@@ -473,42 +473,7 @@ public class FileUtil {
 	}
 
 	public static boolean move(File source, File destination) throws IOException {
-		if (!source.exists()) {
-			return false;
-		}
-		
-		validateEmptyFile(source);
-		
-		//If both files exists and are equals no need to move it.
-		try {
-			//Confirms that destination exists. 
-			if(destination.exists()) {
-				//Creates FileInputStream for both files.  
-				FileInputStream inputSource = new FileInputStream(source);
-				FileInputStream inputDestination = new FileInputStream(destination);
-				
-				//Both files checked. 
-				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
-					Logger.info(FileUtil.class, "Move method: Source equal to Destination, no need to move.");
-					return true;
-				}
-			}
-		} catch (Exception e) {
-			//In case of error, no worries. Continued with the same logic of move. 
-			Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
-		}
-
-		destination.delete();
-
-		boolean success = source.renameTo(destination);
-		
-		// if the rename fails, copy
-
-		if (!success) {
-			copyFile(source, destination);
-			success = source.delete();
-		}
-		return success;
+		return move(source, destination, true);
 	}
 	/**
 	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334

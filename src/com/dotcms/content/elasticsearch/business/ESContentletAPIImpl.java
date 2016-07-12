@@ -2513,7 +2513,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles, boolean createNewVersion) throws DotDataException, DotSecurityException, DotContentletStateException,
             DotContentletValidationException {
 
-    	boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null ? true : false;
+    	boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
     	
     	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
  		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
