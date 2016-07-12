@@ -13,17 +13,16 @@ import com.dotmarketing.util.WebKeys;
 
 public class OsgiFelixListener implements ServletContextListener {
 
+	// delay init 30 sec
+	private final int delay = Config.getIntProperty("felix.osgi.init.delay", 0);
+
+	private final boolean waitForDotCMS = Config.getBooleanProperty("felix.osgi.wait.for.dotcms", true);
+
 	/**
 	 * @see ServletContextListener#contextInitialized(ServletContextEvent)
 	 */
 	public void contextInitialized(ServletContextEvent context) {
 
-		// delay init 30 sec
-		final int delay = Config.getIntProperty("felix.osgi.init.delay", 0);
-		
-		final boolean waitForDotCMS = Config.getBooleanProperty("felix.osgi.wait.for.dotcms", true);
-
-		
 		if (Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
 			
 			if (delay > 0 || waitForDotCMS) { // if we spin up a new thread to init OSGI
@@ -82,13 +81,13 @@ public class OsgiFelixListener implements ServletContextListener {
 	}
 
 	private void initializeOsgi(ServletContextEvent context) {
-		if (!Config.getBooleanProperty("felix.osgi.enable", true)) {
+		if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
 			System.clearProperty(WebKeys.OSGI_ENABLED);
 			return;
 		}
 		OSGIUtil.getInstance().initializeFramework(context);
 
-		if (OSGIProxyServlet.bundleContext == null) {
+		if (OSGIProxyServlet.bundleContext == null && (delay > 0 || waitForDotCMS)) {
 			Object bundleContext = context.getServletContext().getAttribute(BundleContext.class.getName());
 			if (bundleContext instanceof BundleContext) {
 				OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
@@ -97,6 +96,7 @@ public class OsgiFelixListener implements ServletContextListener {
 						new DispatcherTracker(OSGIProxyServlet.bundleContext, null, OSGIProxyServlet.servletConfig);
 				} catch (Exception e) {
 					Logger.error( this, "Error loading HttpService.", e );
+					return;
 				}
 				OSGIProxyServlet.tracker.open();
 			}
