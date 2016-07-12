@@ -473,12 +473,25 @@ public class FileUtil {
 	}
 
 	public static boolean move(File source, File destination) throws IOException {
+		return move(source, destination, true);
+	}
+	/**
+	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
+	 * 
+	 * @param source
+	 * @param destination
+	 * @param validateEmptyFile if is false it won't check if the file is empty
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean move(File source, File destination, boolean validateEmptyFile) throws IOException {
 		if (!source.exists()) {
 			return false;
 		}
 		
-		validateEmptyFile(source);
-		
+		if(validateEmptyFile){
+			validateEmptyFile(source);
+		}
 		//If both files exists and are equals no need to move it.
 		try {
 			//Confirms that destination exists. 
