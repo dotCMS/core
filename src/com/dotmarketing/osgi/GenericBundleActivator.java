@@ -35,6 +35,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.ejb.PortletManager;
 import com.liferay.portal.ejb.PortletManagerFactory;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -311,7 +312,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         try {
             //Working with the http bridge
-            if ( OSGIProxyServlet.servletConfig != null ) {//If it is null probably the servlet wasn't even been loaded...
+            if ( System.getProperty(WebKeys.OSGI_ENABLED)!=null ) {//If it is null probably the servlet wasn't even been loaded...
 
                 try {
                     OSGIProxyServlet.bundleContext.getBundle();

@@ -25,27 +25,25 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
-    	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-	        super.init( config );
-	
-	        try {
-	            doInit();
-	        } catch ( ServletException e ) {
-	            throw e;
-	        } catch ( Exception e ) {
-	            throw new ServletException( e );
-	        }
-    	}
+        super.init( config );
+
+        try {
+            doInit();
+        } catch ( ServletException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new ServletException( e );
+        }
     }
 
     private void doInit () throws Exception {
-    	
+
+        servletConfig = getServletConfig();
     	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-	        tracker = new DispatcherTracker( getBundleContext(), null, getServletConfig() );
+            bundleContext = getBundleContext();
+	        tracker = new DispatcherTracker( bundleContext, null, servletConfig);
 	        tracker.open();
-	
-	        servletConfig = getServletConfig();
-	        bundleContext = getBundleContext();
+
     	}
     }
 
