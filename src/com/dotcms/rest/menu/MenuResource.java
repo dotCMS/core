@@ -52,7 +52,7 @@ public class MenuResource {
 	 */
 	@GET
 	@Produces({MediaType.APPLICATION_JSON})
-	public Collection<Menu> getMenus(@Context HttpServletResponse response, @PathParam("from") String from, @Context HttpServletRequest httpServletRequest) throws NoSuchUserException, DotDataException, DotSecurityException, LanguageException, ClassNotFoundException 
+	public Collection<Menu> getMenus(@Context HttpServletResponse response, @PathParam("from") String from, @Context HttpServletRequest httpServletRequest) throws DotSecurityException, LanguageException, ClassNotFoundException 
 	{
 
 		//TODO include user validation
@@ -63,31 +63,38 @@ public class MenuResource {
 
 		HttpSession session = httpServletRequest.getSession();
 		LayoutAPI api= APILocator.getLayoutAPI();
-		User user = APILocator.getUserAPI().loadUserById((String) session.getAttribute(WebKeys.USER_ID));
 
-		List<Layout> layouts = api.loadLayoutsForUser(user);
+		try {
 
-		MenuContext menuContext = new MenuContext(httpServletRequest, user, appFrom);
+			User user = APILocator.getUserAPI().loadUserById((String) session.getAttribute(WebKeys.USER_ID));
 
-		for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
-			Layout layout = layouts.get( layoutIndex );
-			String tabName = LanguageUtil.get(user, layout.getName());
-			String tabDescription = LanguageUtil.get(user, layout.getDescription());
-			List<String> portletIds = layout.getPortletIds();
+			List<Layout> layouts = api.loadLayoutsForUser(user);
 
-			menuContext.setLayout(layout);
-			menuContext.setPortletId(portletIds.get(0));
-			menuContext.setLayoutIndex(layoutIndex);
+			MenuContext menuContext = new MenuContext(httpServletRequest, user, appFrom);
 
-			String url = getUrl(menuContext);
-			Menu menu = new Menu( tabName, tabDescription, url );
+			for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
+				Layout layout = layouts.get( layoutIndex );
+				String tabName = LanguageUtil.get(user, layout.getName());
+				String tabDescription = LanguageUtil.get(user, layout.getDescription());
+				List<String> portletIds = layout.getPortletIds();
 
-			List<MenuItem> menuItems = getMenuItems(menuContext);
+				menuContext.setLayout(layout);
+				menuContext.setPortletId(portletIds.get(0));
+				menuContext.setLayoutIndex(layoutIndex);
 
-			menu.setMenuItems( menuItems );
-			menus.add( menu  );
+				String url = getUrl(menuContext);
+				Menu menu = new Menu( tabName, tabDescription, url );
+
+				List<MenuItem> menuItems = getMenuItems(menuContext);
+
+				menu.setMenuItems( menuItems );
+				menus.add( menu  );
+			}
+		}catch(DotDataException e){
+			//If the user is not loggedIn, should return a empty menu collection
+		}catch(NoSuchUserException e){
+			//If the user doesn't exist, should return a empty menu collection
 		}
-
 		return menus;
 	}
 
