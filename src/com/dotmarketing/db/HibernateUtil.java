@@ -63,6 +63,10 @@ public class HibernateUtil {
 
 	private static final boolean useCache = true;
 	
+	public HibernateUtil(SessionFactory sessionFac){
+		this.sessionFactory = sessionFac;
+	}
+	
 	public static final String addToIndex="-add-to-index";
 	public static final String removeFromIndex="-remove-from-index";
 
@@ -573,6 +577,7 @@ public class HibernateUtil {
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());
 
 			mappings = cfg.createMappings();
+			
 			sessionFactory = cfg.buildSessionFactory();
 			dialect = cfg.getProperty("hibernate.dialect");
 			System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB, String.valueOf(System.currentTimeMillis() - start));
