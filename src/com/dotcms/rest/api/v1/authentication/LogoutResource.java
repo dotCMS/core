@@ -23,6 +23,7 @@ import java.io.Serializable;
 
 /**
  * Implements the logout endpoint, 200 if logout is successfully, 500 otherwise
+ *
  * @author jsanca
  */
 @Path("/v1/logout")

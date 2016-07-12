@@ -4,6 +4,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeatur
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
+import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
@@ -77,6 +78,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(AuthenticationResource.class);
 					REST_CLASSES.add(LogoutResource.class);
+					REST_CLASSES.add(LoginFormResource.class);
 
 				}
 			}

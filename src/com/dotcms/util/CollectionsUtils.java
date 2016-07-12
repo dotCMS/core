@@ -255,7 +255,26 @@ public class CollectionsUtils implements Serializable {
      */
     public static <K,V> Map<K,V> mapEntries(final Map.Entry<K, V>... entries) {
 
-        final HashMap hashMap = new HashMap<K, V>();
+        final Map<K,V> hashMap = map();
+
+        for (Map.Entry<K, V> entry : entries) {
+
+            hashMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return hashMap;
+    } // map.
+
+    /**
+     * Get a new map based on a collections of entries
+     * @param entries Collection
+     * @param <K>
+     * @param <V>
+     * @return Map
+     */
+    public static <K,V> Map<K,V> mapEntries(final Collection<Map.Entry<K, V>> entries) {
+
+        final Map<K,V> hashMap = map();
 
         for (Map.Entry<K, V> entry : entries) {
 

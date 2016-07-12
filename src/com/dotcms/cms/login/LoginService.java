@@ -53,6 +53,12 @@ public interface LoginService extends Serializable {
     // Default max days for the JWT
     public static final int JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT = 14;
 
+    /**
+     * Calls the event processor, kill cookies, portlets session and the http session.
+     * @param req
+     * @param res
+     * @throws Exception
+     */
     void doActionLogout(final HttpServletRequest req, final HttpServletResponse res) throws Exception;
 
     /**
