@@ -1,8 +1,5 @@
 package com.dotmarketing.listeners;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
 import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.OSGIProxyServlet;
@@ -10,6 +7,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.WebKeys;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
 public class OsgiFelixListener implements ServletContextListener {
 
@@ -80,30 +80,29 @@ public class OsgiFelixListener implements ServletContextListener {
 		}
 	}
 
-	private void initializeOsgi(ServletContextEvent context) {
-		if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
-			System.clearProperty(WebKeys.OSGI_ENABLED);
-			return;
-		}
-		OSGIUtil.getInstance().initializeFramework(context);
+    private void initializeOsgi(ServletContextEvent context) {
+        if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
+            System.clearProperty(WebKeys.OSGI_ENABLED);
+            return;
+        }
+        OSGIUtil.getInstance().initializeFramework(context);
 
-		if (OSGIProxyServlet.bundleContext == null && (delay > 0 || waitForDotCMS)) {
-			Object bundleContext = context.getServletContext().getAttribute(BundleContext.class.getName());
-			if (bundleContext instanceof BundleContext) {
-				OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
-				try {
-					OSGIProxyServlet.tracker =
-						new DispatcherTracker(OSGIProxyServlet.bundleContext, null, OSGIProxyServlet.servletConfig);
-				} catch (Exception e) {
-					Logger.error( this, "Error loading HttpService.", e );
-					return;
-				}
-				OSGIProxyServlet.tracker.open();
-			}
-		}
+        if (OSGIProxyServlet.bundleContext == null && (delay > 0 || waitForDotCMS)) {
+            Object bundleContext = context.getServletContext().getAttribute(BundleContext.class.getName());
+            if (bundleContext instanceof BundleContext) {
+                OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
+                try {
+                    OSGIProxyServlet.tracker =
+                        new DispatcherTracker(OSGIProxyServlet.bundleContext, null, OSGIProxyServlet.servletConfig);
+                } catch (Exception e) {
+                    Logger.error(this, "Error loading HttpService.", e);
+                    return;
+                }
+                OSGIProxyServlet.tracker.open();
+            }
+        }
 
-
-		System.setProperty(WebKeys.OSGI_ENABLED, "true");
-	}
+        System.setProperty(WebKeys.OSGI_ENABLED, "true");
+    }
 
 }
