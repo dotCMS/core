@@ -151,9 +151,15 @@ public class ContentTypeFactoryImplTest {
 		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
 		
 		for(int i=0;i<types.size();i++){
-			
-			assertThat("Old and New Contentyypes are the same", types.get(i).equals(oldTypes.get(i)));
-			
+			try{
+				assertThat("Old and New Contentyypes are the same", types.get(i).equals(oldTypes.get(i)));
+			}
+			catch(Throwable t){
+				System.out.println("Old and New Contentyypes are NOT the same");
+				System.out.println(types.get(i));
+				System.out.println(oldTypes.get(i));
+				throw t;
+			}
 		}
 		
 		

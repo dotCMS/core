@@ -20,18 +20,18 @@ public class LegacyFieldTransformer implements ToFieldTransformer {
 	final List<com.dotmarketing.portlets.structure.model.Field> oldFields;
 
 	public LegacyFieldTransformer(com.dotmarketing.portlets.structure.model.Field oldField) {
-		oldFields = ImmutableList.of(oldField);
+		this.oldFields = ImmutableList.of(oldField);
 	}
 
 	public LegacyFieldTransformer(List<com.dotmarketing.portlets.structure.model.Field> oldField) {
-		oldFields = oldField;
+		this.oldFields = oldField;
 	}
 
 	public Field from() throws DotStateException {
-		if (oldFields.size() == 0)
+		if (this.oldFields.size() == 0)
 			throw new DotStateException("0 results");
 
-		return fromLegacy(oldFields.get(0));
+		return fromLegacy(this.oldFields.get(0));
 
 	}
 
@@ -39,7 +39,7 @@ public class LegacyFieldTransformer implements ToFieldTransformer {
 	public List<Field> asList() throws DotStateException {
 
 		List<Field> list = new ArrayList<Field>();
-		for (com.dotmarketing.portlets.structure.model.Field old : oldFields) {
+		for (com.dotmarketing.portlets.structure.model.Field old : this.oldFields) {
 			list.add(fromLegacy(old));
 		}
 
@@ -47,7 +47,7 @@ public class LegacyFieldTransformer implements ToFieldTransformer {
 
 	}
 
-	private Field fromLegacy(com.dotmarketing.portlets.structure.model.Field oldField) {
+	private static Field fromLegacy(com.dotmarketing.portlets.structure.model.Field oldField) {
 		final String fieldType = oldField.getFieldType();
 
 		@SuppressWarnings("serial")
@@ -180,6 +180,7 @@ public class LegacyFieldTransformer implements ToFieldTransformer {
 				return ImmutableList.of();
 			}
 
+			@SuppressWarnings({ "rawtypes", "unchecked" })
 			@Override
 			public Class type() {
 				return LegacyFieldTypes.getImplClass(fieldType);

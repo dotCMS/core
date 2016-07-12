@@ -7,23 +7,16 @@ import java.util.Map;
 
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableFormContentType;
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.UtilMethods;
 
 public class DbContentTypeTransformer implements ToContentTypeTransformer{
 	final List<ContentType> list;
 	
 	
 	public DbContentTypeTransformer(Map<String, Object> map){
-		list = ImmutableList.of(transform(map));
+		this.list = ImmutableList.of(transform(map));
 	}
 	
 	public DbContentTypeTransformer(List<Map<String, Object>> initList){
@@ -31,12 +24,12 @@ public class DbContentTypeTransformer implements ToContentTypeTransformer{
 		for(Map<String, Object> map : initList){
 			newList.add(transform(map));
 		}
-		list= ImmutableList.copyOf(newList);
+		this.list= ImmutableList.copyOf(newList);
 	}
 	
 	
-	private ContentType transform(final Map<String, Object> map) throws DotStateException {
-
+	private static ContentType transform(final Map<String, Object> map) throws DotStateException {
+		BaseContentTypes base =  BaseContentTypes.getBaseContentType((Integer) map.get("structuretype"));
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
 			@Override
@@ -46,7 +39,8 @@ public class DbContentTypeTransformer implements ToContentTypeTransformer{
 
 			@Override
 			public String urlMapPattern() {
-				return !UtilMethods.isSet((String) map.get("url_map_pattern")) ? null : (String) map.get("url_map_pattern");
+				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? (String) map.get("url_map_pattern") : null;
+				
 			}
 
 
@@ -57,7 +51,7 @@ public class DbContentTypeTransformer implements ToContentTypeTransformer{
 
 			@Override
 			public String pagedetail() {
-				return !UtilMethods.isSet((String) map.get("page_detail")) ? null : (String) map.get("page_detail");
+				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? (String) map.get("page_detail") : null;
 			}
 
 			@Override
@@ -120,7 +114,7 @@ public class DbContentTypeTransformer implements ToContentTypeTransformer{
 			}
 			@Override
 			public BaseContentTypes baseType() {
-				return BaseContentTypes.getBaseContentType((Integer) map.get("structuretype"));
+				return base;
 			}
 
 

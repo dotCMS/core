@@ -9,7 +9,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class FileAssetContentType extends ContentType{
+public abstract class FileAssetContentType extends ContentType implements UrlMapable{
 
 
 

@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -14,7 +15,7 @@ public class LegacyStructureTransformer implements ToContentTypeTransformer {
 	final List<ContentType> list;
 
 	public LegacyStructureTransformer(Structure struct) {
-		list = ImmutableList.of(transform(struct));
+		this.list = ImmutableList.of(transform(struct));
 	}
 
 	public LegacyStructureTransformer(List<Structure> initList) {
@@ -23,11 +24,14 @@ public class LegacyStructureTransformer implements ToContentTypeTransformer {
 		for (Structure struct : initList) {
 			newList.add(transform(struct));
 		}
-		list = ImmutableList.copyOf(newList);
+		this.list = ImmutableList.copyOf(newList);
 	}
 
 	@SuppressWarnings("static-method")
 	private ContentType transform(final Structure struct) throws DotStateException {
+
+		
+		BaseContentTypes base =  BaseContentTypes.getBaseContentType(struct.getStructureType());
 
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
@@ -39,7 +43,8 @@ public class LegacyStructureTransformer implements ToContentTypeTransformer {
 
 			@Override
 			public String urlMapPattern() {
-				return struct.getUrlMapPattern();
+				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? struct.getUrlMapPattern() : null;
+	
 			}
 
 			@Override
@@ -49,7 +54,7 @@ public class LegacyStructureTransformer implements ToContentTypeTransformer {
 
 			@Override
 			public String pagedetail() {
-				return struct.getPagedetail();
+				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? struct.getPagedetail() : null;
 			}
 
 			@Override

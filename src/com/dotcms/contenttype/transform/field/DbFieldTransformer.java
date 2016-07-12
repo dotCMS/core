@@ -30,12 +30,12 @@ public class DbFieldTransformer implements ToFieldTransformer {
 
 	@Override
 	public Field from() throws DotStateException {
-		if(results.size()==0) throw new DotStateException("0 results");
+		if(this.results.size()==0) throw new DotStateException("0 results");
 		return fromMap(results.get(0));
 
 	}
 
-	private Field fromMap(Map<String, Object> map) {
+	private static Field fromMap(Map<String, Object> map) {
 		final String fieldType = (String) map.get("field_type");
 
 		@SuppressWarnings("serial")

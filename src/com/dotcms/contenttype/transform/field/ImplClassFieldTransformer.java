@@ -28,7 +28,7 @@ public class ImplClassFieldTransformer implements ToFieldTransformer{
 
 	}
 	
-	private Field impleClass(final Field genericField){
+	private static Field impleClass(final Field genericField){
 		try {
 			FieldBuilder builder = FieldBuilder.builder(genericField);
 			return builder.from(genericField).build();
