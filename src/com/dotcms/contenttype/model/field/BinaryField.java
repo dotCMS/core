@@ -6,15 +6,15 @@ import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
-
-public abstract class BinaryField extends Field {
+@Value.Immutable
+public abstract class BinaryField implements Field {
 
 
 	private static final long serialVersionUID = 1L;
 
 
 	@Override
-	public final List<DataTypes> acceptedDataTypes() {
+	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.BINARY);
 	}
 	

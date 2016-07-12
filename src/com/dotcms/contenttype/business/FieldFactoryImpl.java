@@ -9,10 +9,15 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.FieldSql;
+import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.transform.DbFieldTransformer;
+import com.dotcms.contenttype.model.field.FieldType;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -84,6 +89,13 @@ public class FieldFactoryImpl implements FieldFactory {
 				inserting = true;
 			}
 		}
+		
+		//make sure we are properly indexed
+		if((retField.searchable() || retField.listed()) || retField instanceof HostFolderField){
+			if(!retField.indexed()){
+				retField = FieldBuilder.builder(retField).indexed(true).build();
+			}
+		}
 
 		if (inserting) {
 			insertInodeInDb(retField);
@@ -102,7 +114,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.addParam(id);
 		List<Map<String, Object>> results;
 		results = dc.loadObjectResults();
-		return DbFieldTransformer.transform(results);
+		return new DbFieldTransformer(results).asList();
 
 	}
 
@@ -112,7 +124,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.addParam(var);
 		List<Map<String, Object>> results;
 		results = dc.loadObjectResults();
-		return DbFieldTransformer.transform(results);
+		return new DbFieldTransformer(results).asList();
 
 	}
 
@@ -126,7 +138,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		if (results.size() == 0) {
 			throw new DotDataException("Content Type with id:" + id + " not found");
 		}
-		return DbFieldTransformer.transform(results.get(0));
+		return new DbFieldTransformer(results.get(0)).from();
 
 	}
 
@@ -225,12 +237,28 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	private String assignAvailableColumn(Field field) throws DotDataException {
 		
-		if(field.dataType() == DataTypes.CONSTANT || field.dataType() == DataTypes.SYSTEM || field.dataType() == DataTypes.SECTION_DIVIDER ){
+
+		
+		DotConnect dc = new DotConnect();
+		
+		if(field instanceof HostFolderField || field instanceof TagField){
+			dc.setSQL(sql.selectCountOfType);
+			dc.addParam(field.contentTypeId());
+			dc.addParam(LegacyFieldTypes.getLegacyName(field.type() + "%"));
+			dc.addParam(LegacyFieldTypes.getImplClass(field.type() + "%"));
+			int x =dc.getInt("test");
+			if(x>0){
+				throw new OverFieldLimitException("Only one " + field.type() + " per ContentType");
+			}
+		}
+		
+		if(field.dataType() == DataTypes.CONSTANT 
+				|| field.dataType() == DataTypes.SECTION_DIVIDER  
+				|| field.dataType() == DataTypes.SYSTEM ){
 			return field.dataType().toString();
 		}
 
-
-		DotConnect dc = new DotConnect();
+		
 		String dataType = field.dataType().toString();
 		dc.setSQL(sql.selectFieldOfDbType);
 		dc.addParam(field.contentTypeId());
@@ -240,17 +268,16 @@ public class FieldFactoryImpl implements FieldFactory {
 		for (int i = 0; i < rows.size(); i++) {
 			columns.add((String) rows.get(i).get("field_contentlet"));
 		}
-		String column = null;
+
 		for (int i = 0; i < Config.getIntProperty("db.number.of.contentlet.columns.per.datatype", 25); i++) {
 			if (!columns.contains(dataType + (i + 1))) {
-				column = dataType + (i + 1);
-				break;
+				return dataType + (i + 1);
+
 			}
 		}
-		if (column == null) {
-			throw new DotDataException("No more columns for datatype:" + dataType);
-		}
-		return column;
+		
+		throw new OverFieldLimitException("No more columns for datatype:" + dataType);
+		
 
 	}
 

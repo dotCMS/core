@@ -1,5 +1,6 @@
-package com.dotcms.contenttype.transform;
+package com.dotcms.contenttype.transform.contenttype;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -13,12 +14,28 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
-public class DbContentTypeTransformer {
-
-	public static ContentType transform(final Map<String, Object> map) throws DotDataException {
+public class DbContentTypeTransformer implements ToContentTypeTransformer{
+	final List<ContentType> list;
+	
+	
+	public DbContentTypeTransformer(Map<String, Object> map){
+		list = ImmutableList.of(transform(map));
+	}
+	
+	public DbContentTypeTransformer(List<Map<String, Object>> initList){
+		List<ContentType> newList = new ArrayList<ContentType>();
+		for(Map<String, Object> map : initList){
+			newList.add(transform(map));
+		}
+		list= ImmutableList.copyOf(newList);
+	}
+	
+	
+	private ContentType transform(final Map<String, Object> map) throws DotStateException {
 
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
@@ -110,47 +127,26 @@ public class DbContentTypeTransformer {
 		};
 		
 
-		return transformToSubclass(type);
+		return new ImplClassContentTypeTransformer(type).from();
 		
 	}
 	
 	
-	public static ContentType transformToSubclass(ContentType type) throws DotDataException{
-		final BaseContentTypes TYPE = type.baseType();
-		switch (TYPE) {
-			case CONTENT:
-				return ImmutableSimpleContentType.builder().from(type).build();
-			case WIDGET:
-				return ImmutableWidgetContentType.builder().from(type).build();
-			case FORM:
-				return ImmutableFormContentType.builder().from(type).build();
-			case FILEASSET:
-				return ImmutableFileAssetContentType.builder().from(type).build();
-			case HTMLPAGE:
-				return ImmutablePageContentType.builder().from(type).build();
-			case PERSONA:
-				return ImmutablePersonaContentType.builder().from(type).build();
-			default:
-				throw new DotDataException("invalid content type");
-		}
-	}
-	
-	
-	public static List<ContentType> transform(final List<Map<String, Object>> list) throws DotDataException {
-		ImmutableList.Builder<ContentType> builder = ImmutableList.builder();
-		for (Map<String, Object> map : list) {
-			
-			try{
-				builder.add(transform(map));
-			}	
-			catch(Exception e){
-				System.out.println(map);
-				throw e;
-			}
-			
 
-		}
-		return builder.build();
+	
+	
+
+
+
+	@Override
+	public ContentType from() throws DotStateException {
+		return this.list.get(0);
+	}
+
+
+	@Override
+	public List<ContentType> asList() throws DotStateException {
+		return this.list;
 	}
 }
 

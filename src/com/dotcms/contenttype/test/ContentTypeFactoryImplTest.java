@@ -3,11 +3,16 @@ package com.dotcms.contenttype.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.FileNotFoundException;
+import java.sql.Connection;
 import java.util.List;
+
+import javax.servlet.ServletContext;
+import javax.sql.DataSource;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
@@ -22,41 +27,67 @@ import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
+import com.dotcms.contenttype.transform.contenttype.LegacyStructureTransformer;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourceForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 
 public class ContentTypeFactoryImplTest {
 
 	ContentTypeFactory factory = new ContentTypeFactoryImpl();
 
+
 	@BeforeClass
-	public static void initDb() throws FileNotFoundException, Exception{
-		//DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
-	}
-	@BeforeClass
-	public static void cleanDb() throws DotDataException, Exception{
-		DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
+	public static void initDb() throws DotDataException, Exception{
+		DataSource ds  =new DataSourceForTesting().getDataSource();
+		Connection c = ds.getConnection();
+		DbConnectionFactory.overrideDefaultDatasource(ds);
+		ServletContext context =  Mockito.mock(ServletContext.class);
+		Config.CONTEXT = context;
 		DotConnect dc = new DotConnect();
-		dc.setSQL("delete from field where structure_inode in (select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%')");
+		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
+		
+		dc.setSQL("delete from field where structure_inode in " +  structsToDelete);
 		dc.loadResult();		
 
 		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
 		dc.loadResult();
 		
+		
+		dc.setSQL("delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in " + structsToDelete + ")");
+		dc.loadResult();
+		
+		dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
+		dc.loadResult();
+		
+		dc.setSQL("delete from inode where type='contentlet' and inode not in  (select inode from contentlet)");
+		dc.loadResult();
 
-		dc.setSQL("delete from structure where structure.velocity_var_name like 'velocityVarNameTesting%' ");
+
+		dc.setSQL("delete from structure where  structure.velocity_var_name like 'velocityVarNameTesting%' ");
+		dc.loadResult();
+		
+		
+		
 		dc.loadResult();
 		dc.setSQL("delete from inode where type='structure' and inode not in  (select inode from structure)");
 		dc.loadResult();
+		
 		dc.setSQL("delete from field where structure_inode not in (select inode from structure)");
 		dc.loadResult();		
+		
+		
 		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
 		dc.loadResult();
+		
 		dc.setSQL("update structure set structure.url_map_pattern =null, structure.page_detail=null where structuretype =3" );
 		dc.loadResult();
+
 	}
 
 	@Test
@@ -110,6 +141,26 @@ public class ContentTypeFactoryImplTest {
 		assertThat("findAll sort by Name has same size as find all", factory.findAll("name").size() == types.size());
 	}
 	
+
+	
+	@Test
+	public void testLegacyTransform() throws Exception {
+		List<ContentType> types = factory.findAll("name");
+		List<ContentType> oldTypes = new LegacyStructureTransformer(StructureFactory.getStructures()).asList();
+		
+		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
+		
+		for(int i=0;i<types.size();i++){
+			
+			assertThat("Old and New Contentyypes are the same", types.get(i).equals(oldTypes.get(i)));
+			
+		}
+		
+		
+		
+		assertThat("findAll sort by Name has same size as find all", factory.findAll("name").size() == types.size());
+	}
+	
 	
 	
 	@Test
@@ -118,7 +169,7 @@ public class ContentTypeFactoryImplTest {
 		int runs = 20;
 		
 		for(int i=0;i<runs;i++){
-			long time = System.currentTimeMillis();
+			long time = System.currentTimeMillis()+i;
 			int base=(i % 5)+1;
 			Thread.sleep(1);
 			ContentType type = ContentTypeBuilder.builder(BaseContentTypes.getContentTypeClass(base))

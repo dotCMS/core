@@ -1,7 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
-import java.io.Serializable;
-
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -11,20 +10,44 @@ import org.immutables.value.Value.Derived;
 
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-@Value.Immutable
-public abstract class Field implements Serializable, FieldType {
+import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 
-	
-	private static final long serialVersionUID = 1L;
 
-	@Nullable
-	public abstract String owner();
-
-	@Nullable
-	abstract public String inode();
+public interface Field extends FieldType {
 
 	@Value.Default
-	public Date modDate() {
+	default boolean searchable() {
+		return false;
+	}
+
+	@Value.Default
+	default boolean unique() {
+		return false;
+	}
+	
+	@Value.Default
+	default boolean indexed() {
+		return false;
+	}
+
+	@Value.Default
+	default boolean listed() {
+		return false;
+	}
+
+	@Value.Default
+	default boolean readOnly() {
+		return false;
+	}
+	
+	@Nullable
+	public  String owner();
+
+	@Nullable
+	public  String inode();
+
+	@Value.Default
+	default Date modDate() {
 		return new Date();
 	}
 
@@ -32,12 +55,12 @@ public abstract class Field implements Serializable, FieldType {
 	public abstract String name();
 
 	@Derived
-	public String typeName() {
+	default String typeName() {
 		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName()).getCanonicalName();
 	}
 
 	@Derived
-	public Class<Field> type() {
+	default Class<Field> type() {
 		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName());
 	}
 
@@ -45,14 +68,14 @@ public abstract class Field implements Serializable, FieldType {
 	public abstract String relationType();
 
 	@Value.Default
-	public boolean required() {
+	default boolean required() {
 		return false;
 	}
 
 	public abstract String variable();
 
 	@Value.Default
-	public int sortOrder() {
+	default int sortOrder() {
 		return (int) (System.currentTimeMillis() / 1000);
 	}
 
@@ -68,53 +91,33 @@ public abstract class Field implements Serializable, FieldType {
 	@Nullable
 	public abstract String defaultValue();
 
+
 	@Value.Default
-	public boolean indexed() {
+	default boolean fixed() {
 		return false;
 	}
 
-	@Value.Default
-	public boolean listed() {
-		return false;
-	}
+
 
 	@Value.Default
-	public boolean fixed() {
-		return false;
-	}
-
-	@Value.Default
-	public boolean readOnly() {
-		return false;
-	}
-
-	@Value.Default
-	public boolean searchable() {
-		return false;
-	}
-
-	@Value.Default
-	public boolean unique() {
-		return false;
-	}
-
-	@Value.Default
-	public List<FieldDecorator> fieldDecorators() {
+	default List<FieldDecorator> fieldDecorators() {
 		return ImmutableList.of();
 	}
 
-	public abstract List<DataTypes> acceptedDataTypes();
+	public List<DataTypes> acceptedDataTypes();
 
-	public abstract DataTypes dataType();
+	public DataTypes dataType();
 
 	@Nullable
-	public abstract String contentTypeId();
+	public String contentTypeId();
 
 	@Nullable
 	public abstract String dbColumn();
+	
+	@Value.Default
+	default Date iDate() {
+		return DateUtils.round(new Date(), Calendar.SECOND);
 
-	public Date iDate() {
-		return new Date();
 	}
 
 }

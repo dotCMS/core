@@ -12,7 +12,8 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.transform.DbContentTypeTransformer;
+import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
+import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -114,7 +115,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		String sql = contentTypeSql.findAll;
 		dc.setSQL(String.format(sql, "mod_date desc"));
 
-		return DbContentTypeTransformer.transform(dc.loadObjectResults());
+		return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
 
 	}
 	private List<ContentType> dbAll(String orderBy) throws DotDataException {
@@ -123,8 +124,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		dc.setSQL(String.format(sql, orderBy));
 
-		List<Map<String, Object>> results = dc.loadObjectResults();
-		return DbContentTypeTransformer.transform(results);
+		return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
 
 	}
 
@@ -138,7 +138,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		if (results.size() == 0) {
 			throw new DotDataException("Content Type with id:" + id + " not found");
 		}
-		return DbContentTypeTransformer.transform(results.get(0));
+		return new DbContentTypeTransformer(results.get(0)).from();
+
 
 	}
 
@@ -152,7 +153,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		if (results.size() == 0) {
 			throw new DotDataException("Content Type with var:" + var + " not found");
 		}
-		return DbContentTypeTransformer.transform(results.get(0));
+		return new DbContentTypeTransformer(results.get(0)).from();
 
 	}
 
@@ -166,7 +167,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			retType = ContentTypeBuilder.builder(retType).from(retType).inode(UUID.randomUUID().toString()).build();
 			insertInodeInDb(retType);
 			insertInDb(retType);
-			retType = DbContentTypeTransformer.transformToSubclass(retType);
+			retType = new ImplClassContentTypeTransformer(retType).from();
 			
 			// set up default fields;
 			List<Field> fields = retType.requiredFields();
@@ -182,7 +183,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		else{
 			updateInodeInDb(retType);
 			updateInDb(retType);
-			return DbContentTypeTransformer.transformToSubclass(retType);
+			return new ImplClassContentTypeTransformer(retType).from();
 		}
 
 		
@@ -267,7 +268,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.addParam(search);
 		dc.addParam(bottom);
 		dc.addParam(top);
-		return 	 DbContentTypeTransformer.transform(dc.loadObjectResults());
+		return 	new ImplClassContentTypeTransformer(dc.loadResults()).asList();
 	}
 	
 	private int dbCount(String search,  int baseType) throws DotDataException{

@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class RadioField extends Field {
+public abstract class RadioField implements Field {
 
 	/**
 	 * 

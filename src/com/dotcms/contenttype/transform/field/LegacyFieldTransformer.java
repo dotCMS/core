@@ -1,5 +1,7 @@
-package com.dotcms.contenttype.transform;
+package com.dotcms.contenttype.transform.field;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -8,146 +10,169 @@ import org.elasticsearch.common.Nullable;
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotmarketing.exception.DotDataException;
+import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.business.DotStateException;
+import com.google.common.collect.ImmutableList;
 
-public class LegacyFieldTransformer {
+public class LegacyFieldTransformer implements ToFieldTransformer {
 
-	public static Field transform(final com.dotmarketing.portlets.structure.model.Field legacy) throws DotDataException {
+	final List<com.dotmarketing.portlets.structure.model.Field> oldFields;
 
-		String fieldType = legacy.getType();
+	public LegacyFieldTransformer(com.dotmarketing.portlets.structure.model.Field oldField) {
+		oldFields = ImmutableList.of(oldField);
+	}
 
+	public LegacyFieldTransformer(List<com.dotmarketing.portlets.structure.model.Field> oldField) {
+		oldFields = oldField;
+	}
+
+	public Field from() throws DotStateException {
+		if (oldFields.size() == 0)
+			throw new DotStateException("0 results");
+
+		return fromLegacy(oldFields.get(0));
+
+	}
+
+	@Override
+	public List<Field> asList() throws DotStateException {
+
+		List<Field> list = new ArrayList<Field>();
+		for (com.dotmarketing.portlets.structure.model.Field old : oldFields) {
+			list.add(fromLegacy(old));
+		}
+
+		return ImmutableList.copyOf(list);
+
+	}
+
+	private Field fromLegacy(com.dotmarketing.portlets.structure.model.Field oldField) {
+		final String fieldType = oldField.getFieldType();
+
+		@SuppressWarnings("serial")
 		final Field field = new Field() {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
 
-			/**
-			 * structure_inode field_type field_relation_type field_contentlet
-			 * required indexed listed sort_order default_value fixed read_only
-			 * searchable unique_ inode idate type
-			 */
 			@Override
 			public String variable() {
-				return legacy.getVelocityVarName();
+				return oldField.getVelocityVarName();
 			}
 
 			@Override
 			public String values() {
-				return legacy.getValues();
+				return oldField.getValues();
 			}
 
 			@Override
 			@Nullable
 			public String relationType() {
-				return legacy.getFieldRelationType();
+				return null;
 			}
 
 			@Override
 			public String contentTypeId() {
-				return legacy.getStructureInode();
+				return oldField.getStructureInode();
 			}
 
 			@Override
 			public String regexCheck() {
-				return legacy.getRegexCheck();
+				return oldField.getRegexCheck();
 			}
 
 			@Override
 			public String owner() {
-				return legacy.getOwner();
+				return oldField.getOwner();
 			}
 
 			@Override
 			public String name() {
-				return legacy.getFieldName();
+				return oldField.getFieldName();
 			}
 
 			@Override
 			public String inode() {
-				return legacy.getInode();
+				return oldField.getInode();
 			}
 
 			@Override
 			public String hint() {
-				return legacy.getHint();
+				return oldField.getHint();
 			}
 
 			@Override
 			public String defaultValue() {
-				return legacy.getDefaultValue();
+				return oldField.getDefaultValue();
 			}
 
 			@Override
 			public DataTypes dataType() {
-				String dbType = legacy.getFieldContentlet().replaceAll("[0-9]", "");
+				String dbType = oldField.getFieldContentlet().replaceAll("[0-9]", "");
 				return DataTypes.getDataType(dbType);
 			}
 
 			@Override
 			public String dbColumn() {
-				return (String) legacy.getFieldContentlet();
+				return oldField.getFieldContentlet();
 
 			}
 
 			@Override
 			public Date modDate() {
-				return legacy.getModDate();
+				return DateUtils.round(new Date(oldField.getModDate().getTime()), Calendar.SECOND);
 			}
 
 			@Override
 			public Date iDate() {
-				return legacy.getIDate();
+				if(oldField.getiDate()==null)return null;
+				return DateUtils.round(new Date(oldField.getiDate().getTime()), Calendar.SECOND);
+				
 			}
 
 			@Override
 			public boolean required() {
-				return legacy.isRequired();
+				return oldField.isRequired();
 			}
 
 			@Override
 			public int sortOrder() {
-				return legacy.getSortOrder();
+				return oldField.getSortOrder();
 
 			}
 
 			@Override
 			public boolean indexed() {
-				return legacy.isIndexed();
+				return oldField.isIndexed();
 			}
 
 			@Override
 			public boolean listed() {
-				return legacy.isListed();
+				return oldField.isListed();
 			}
 
 			@Override
 			public boolean fixed() {
-				return legacy.isFixed();
+				return oldField.isFixed();
 			}
 
 			@Override
 			public boolean readOnly() {
-				return legacy.isReadOnly();
+				return oldField.isReadOnly();
 			}
 
 			@Override
 			public boolean searchable() {
-				return legacy.isSearchable();
+				return oldField.isSearchable();
 			}
 
 			@Override
 			public boolean unique() {
-				return legacy.isUnique();
+				return oldField.isUnique();
 			}
 
 			@Override
 			public List<FieldDecorator> fieldDecorators() {
 
-				return super.fieldDecorators();
+				return ImmutableList.of();
 			}
 
 			@Override
@@ -157,8 +182,7 @@ public class LegacyFieldTransformer {
 
 			@Override
 			public Class type() {
-				String typeName = fieldType;
-				return LegacyFieldTypes.getImplClass(typeName);
+				return LegacyFieldTypes.getImplClass(fieldType);
 
 			}
 
@@ -170,34 +194,7 @@ public class LegacyFieldTransformer {
 
 		};
 
-		return transformToImplclass(field);
+		return new ImplClassFieldTransformer(field).from();
 
-	}
-
-	public static Field transformToImplclass(Field field) throws DotDataException {
-
-		try {
-			FieldBuilder builder = FieldBuilder.builder(field);
-			return builder.from(field).build();
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
-		}
-
-	}
-
-	/**
-	 * Fields in the db: inode owner idate type inode name description
-	 * default_structure page_detail structuretype system fixed
-	 * velocity_var_name url_map_pattern host folder expire_date_var
-	 * publish_date_var mod_date
-	 **/
-
-	public static List<Field> transform(final List<com.dotmarketing.portlets.structure.model.Field> list) throws DotDataException {
-
-		ImmutableList.Builder<Field> builder = ImmutableList.builder();
-		for (com.dotmarketing.portlets.structure.model.Field oldField : list) {
-			builder.add(transform(oldField));
-		}
-		return builder.build();
 	}
 }

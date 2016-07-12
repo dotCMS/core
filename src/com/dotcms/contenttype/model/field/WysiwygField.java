@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class WysiwygField extends Field {
+public abstract class WysiwygField implements Field {
 
 	/**
 	 * 

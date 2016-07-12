@@ -1,5 +1,7 @@
-package com.dotcms.contenttype.transform;
+package com.dotcms.contenttype.transform.field;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -9,28 +11,36 @@ import org.elasticsearch.common.Nullable;
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotmarketing.exception.DotDataException;
+import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.business.DotStateException;
 
-public class DbFieldTransformer {
+public class DbFieldTransformer implements ToFieldTransformer {
 
-	public static Field transform(final Map<String, Object> map) throws DotDataException {
+	final List<Map<String, Object>> results;
 
-		String fieldType = (String) map.get("field_type");
+	public DbFieldTransformer(Map<String, Object> map) {
+		this.results = ImmutableList.of(map);
+	}
 
+	public DbFieldTransformer(List<Map<String, Object>> results) {
+		this.results = results;
+	}
+
+	@Override
+	public Field from() throws DotStateException {
+		if(results.size()==0) throw new DotStateException("0 results");
+		return fromMap(results.get(0));
+
+	}
+
+	private Field fromMap(Map<String, Object> map) {
+		final String fieldType = (String) map.get("field_type");
+
+		@SuppressWarnings("serial")
 		final Field field = new Field() {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
 
-			/**
-			 * structure_inode field_type field_relation_type field_contentlet
-			 * required indexed listed sort_order default_value fixed read_only
-			 * searchable unique_ inode idate type
-			 */
 			@Override
 			public String variable() {
 				return (String) map.get("velocity_var_name");
@@ -101,12 +111,19 @@ public class DbFieldTransformer {
 
 			@Override
 			public Date iDate() {
-				return (Date) map.get("idate");
+
+				Date idate = (Date) map.get("idate");
+				if (idate != null) {
+					return DateUtils.round(new Date(idate.getTime()), Calendar.SECOND);
+
+				}
+				return null;
 			}
 
 			@Override
 			public boolean required() {
-				return Boolean.getBoolean(String.valueOf(map.get("required")));
+				Object x  =map.get("required");
+				return (Boolean) map.get("required");
 			}
 
 			@Override
@@ -117,38 +134,41 @@ public class DbFieldTransformer {
 
 			@Override
 			public boolean indexed() {
-				return Boolean.parseBoolean(String.valueOf(map.get("indexed")));
+				return (Boolean) map.get("indexed");
 			}
 
 			@Override
 			public boolean listed() {
-				return Boolean.parseBoolean(String.valueOf(map.get("listed")));
+				return (Boolean) map.get("listed");
 			}
 
 			@Override
 			public boolean fixed() {
-				return Boolean.parseBoolean(String.valueOf(map.get("fixed")));
+				return (Boolean) map.get("fixed");
 			}
 
 			@Override
 			public boolean readOnly() {
-				return Boolean.parseBoolean(String.valueOf(map.get("read_only")));
+				return (Boolean) map.get("read_only");
+
 			}
 
 			@Override
 			public boolean searchable() {
-				return Boolean.parseBoolean(String.valueOf(map.get("searchable")));
+				return (Boolean) map.get("searchable");
+
 			}
 
 			@Override
 			public boolean unique() {
-				return Boolean.parseBoolean(String.valueOf(map.get("unique_")));
+				return (Boolean) map.get("unique_");
+
 			}
 
 			@Override
 			public List<FieldDecorator> fieldDecorators() {
 
-				return super.fieldDecorators();
+				return ImmutableList.of();
 			}
 
 			@Override
@@ -158,8 +178,7 @@ public class DbFieldTransformer {
 
 			@Override
 			public Class type() {
-				String typeName = (String) map.get("field_type");
-				return LegacyFieldTypes.getImplClass(typeName);
+				return LegacyFieldTypes.getImplClass(fieldType);
 
 			}
 
@@ -171,34 +190,21 @@ public class DbFieldTransformer {
 
 		};
 
-		return transformToImplclass(field);
+		return new ImplClassFieldTransformer(field).from();
 
 	}
 
-	public static Field transformToImplclass(Field field) throws DotDataException {
-
-		try {
-			FieldBuilder builder = FieldBuilder.builder(field);
-			return builder.from(field).build();
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(), e);
+	@Override
+	public List<Field> asList() throws DotStateException {
+		List<Field> list = new ArrayList<Field>();
+		for (Map<String, Object> map : results) {
+			list.add(fromMap(map));
 		}
 
+		return ImmutableList.copyOf(list);
 	}
+	
+	
+	
 
-	/**
-	 * Fields in the db: inode owner idate type inode name description
-	 * default_structure page_detail structuretype system fixed
-	 * velocity_var_name url_map_pattern host folder expire_date_var
-	 * publish_date_var mod_date
-	 **/
-
-	public static List<Field> transform(final List<Map<String, Object>> list) throws DotDataException {
-
-		ImmutableList.Builder<Field> builder = ImmutableList.builder();
-		for (Map<String, Object> map : list) {
-			builder.add(transform(map));
-		}
-		return builder.build();
-	}
 }

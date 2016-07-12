@@ -7,11 +7,20 @@ import java.util.List;
 import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 
 @Value.Immutable
-public abstract class HostFolderField extends Field {
+public abstract class HostFolderField implements Field {
 
-
+	@Value.Check
+	protected void check() {
+		//Preconditions.checkArgument(indexed(),"Host Folder Fields must be indexed");
+	}
+	@Value.Default
+	@Override
+	public boolean indexed() {
+		return true;
+	};
 	private static final long serialVersionUID = 1L;
 
 	@Override

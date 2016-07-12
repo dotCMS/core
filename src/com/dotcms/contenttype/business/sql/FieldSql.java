@@ -84,4 +84,10 @@ public abstract class FieldSql {
 	
 	
 	public String selectFieldOfDbType = "select field_contentlet from field where structure_inode = ? and field_contentlet like ? order by field_contentlet";
+	
+	
+	public String selectCountOfType= "select count(*) as test from field where structure_inode = ? and field_type like ? or field_type like ?";
+	
+	
+	
 }

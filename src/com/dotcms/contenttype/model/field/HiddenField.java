@@ -10,7 +10,8 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 
 @Value.Immutable
-public abstract class HiddenField extends Field {
+
+public abstract class HiddenField implements Field {
 
 	private static final long serialVersionUID = 1L;
 

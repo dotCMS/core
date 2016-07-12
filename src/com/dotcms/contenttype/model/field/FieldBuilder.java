@@ -23,14 +23,13 @@ public interface FieldBuilder {
 	FieldBuilder hint(String hint);
 	FieldBuilder dataType(DataTypes types);
 	FieldBuilder required(boolean val);
-	FieldBuilder listed(boolean val);
-	FieldBuilder indexed(boolean val);
+	FieldBuilder unique(boolean val);
+	FieldBuilder searchable(boolean val);
 	FieldBuilder sortOrder(int val);
 	FieldBuilder fixed(boolean val);
-	FieldBuilder searchable(boolean val);
 	FieldBuilder readOnly(boolean val);
-	
-	
+	FieldBuilder indexed(boolean val);
+
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);
 	}
