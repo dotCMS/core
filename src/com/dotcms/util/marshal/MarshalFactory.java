@@ -164,6 +164,7 @@ public class MarshalFactory implements Serializable {
                     this.customConfiguration(gsonBuilder);
                 }
 
+                // todo: add the custom app types gson configurator
             } else {
 
                 throw new IllegalArgumentException("GsonBuilder can not be null");
