@@ -67,6 +67,11 @@ public class LoginFormResultView implements Serializable {
         return logo;
     }
 
+
+    public String getAuthorizationType() {
+        return authorizationType;
+    }
+
     public static final class Builder {
 
         private String serverId;
