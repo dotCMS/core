@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.actionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.translate.ServiceParameter;
 import com.dotcms.translate.TranslationException;
 import com.dotcms.translate.TranslationService;
 import com.dotcms.translate.TranslationUtil;
@@ -70,6 +71,12 @@ public class TranslationActionlet extends WorkFlowActionlet {
         params.add(new WorkflowActionletParameter("fieldTypes", "Translate Field Types", FIELD_TYPES_DEFAULT, true));
         params.add(new WorkflowActionletParameter("ignoreFields", "Ignore Fields (velocity var name)",
             IGNORE_FIELDS_DEFAULT, false));
+
+        List<ServiceParameter> serviceParams = translationService.getServiceParameters();
+        for (ServiceParameter param : serviceParams) {
+            params.add(new WorkflowActionletParameter(param.getKey(), param.getName(), param.getValue(), true));
+        }
+
         return params;
     }
 
@@ -124,6 +131,9 @@ public class TranslationActionlet extends WorkFlowActionlet {
         List<String> ignoreFields = !Strings.isNullOrEmpty(ignoreFieldsStr)
             ? Arrays.asList(ignoreFieldsStr.split("\\s*(,|\\s)\\s*"))
             : new ArrayList<>();
+
+        setServiceParameters(params);
+
         User user = processor.getUser();
 
         Contentlet sourceContentlet = processor.getContentlet();
@@ -180,6 +190,24 @@ public class TranslationActionlet extends WorkFlowActionlet {
             throw new WorkflowActionFailureException("Error executing Translation Actionlet", e);
         } catch (DotDataException | DotSecurityException e) {
             throw new WorkflowActionFailureException("Error saving translated content", e);
+        }
+    }
+
+    private void setServiceParameters(Map<String, WorkflowActionClassParameter> actionParams) {
+        if(translationService!=null) {
+            List<ServiceParameter> serviceParams = translationService.getServiceParameters();
+
+            if(serviceParams!=null) {
+                for (ServiceParameter serviceParam : serviceParams) {
+                    WorkflowActionClassParameter actionParam = actionParams.get(serviceParam.getKey());
+
+                    if (actionParam != null && !Strings.isNullOrEmpty(actionParam.getValue())) {
+                        serviceParam.setValue(actionParam.getValue());
+                    }
+                }
+
+                translationService.setServiceParameters(serviceParams);
+            }
         }
     }
 

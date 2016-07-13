@@ -23,7 +23,9 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 import java.io.IOException;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
@@ -49,13 +51,20 @@ public class WorkflowResource {
 			DotContentletStateException, DotDataException, DotSecurityException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonParams = mapper.readTree(json);
-		String callback = null, 
-				language = null, 
-				id = null, 
-				inode = null, 
-				wfAction = null, 
-				wfAssign = null, 
-				wfComments = null;
+        String callback = null, 
+                language = null, 
+                id = null, 
+                inode = null, 
+                wfAction = null, 
+                wfAssign = null, 
+                wfComments = null,
+                wfPublishDate = null, 
+                wfPublishTime = null, 
+                wfExpireDate = null,
+                wfExpireTime = null,
+                wfNeverExpire=null,
+                whereToSend = null,
+                forcePush = null;
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
 
@@ -80,6 +89,28 @@ public class WorkflowResource {
 		if (jsonParams.has("wfComments")) {
 			wfComments = jsonParams.get("wfComments").asText();
 		}
+		if (jsonParams.has("wfPublishDate")) {
+		    wfPublishDate = jsonParams.get("wfPublishDate").asText();
+		}
+		if (jsonParams.has("wfPublishTime")) {
+		    wfPublishTime = jsonParams.get("wfPublishTime").asText();
+		}
+		if (jsonParams.has("wfExpireDate")) {
+		    wfExpireDate = jsonParams.get("wfExpireDate").asText();
+		}
+		if (jsonParams.has("wfExpireTime")) {
+		    wfExpireTime = jsonParams.get("wfExpireTime").asText();
+		}
+		if (jsonParams.has("wfNeverExpire")) {
+		    wfNeverExpire = jsonParams.get("wfNeverExpire").asText();
+		}
+		if (jsonParams.has("whereToSend")) {
+		    whereToSend = jsonParams.get("whereToSend").asText();
+		}
+		if (jsonParams.has("forcePush")) {
+		    forcePush = jsonParams.get("forcePush").asText();
+		}
+	        
 		ObjectNode jsonResponse = JsonNodeFactory.instance.objectNode();
 		User user = initData.getUser();
 
@@ -134,6 +165,16 @@ public class WorkflowResource {
 				contentlet.setStringProperty("wfActionId", action.getId());
 				contentlet.setStringProperty("wfActionComments", wfComments);
 				contentlet.setStringProperty("wfActionAssign", wfAssign);
+                /**
+                 * Push Publishing Actionlet
+                 */
+                contentlet.setStringProperty("wfPublishDate", wfPublishDate);
+                contentlet.setStringProperty("wfPublishTime", wfPublishTime);
+                contentlet.setStringProperty("wfExpireDate", wfExpireDate);
+                contentlet.setStringProperty("wfExpireTime", wfExpireTime);
+                contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
+                contentlet.setStringProperty("whereToSend", whereToSend);
+                contentlet.setStringProperty("forcePush", forcePush);
 				wapi.fireWorkflowNoCheckin(contentlet, user);
 			}
 			if (UtilMethods.isSet(callback)) {

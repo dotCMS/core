@@ -20,6 +20,7 @@ import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -88,7 +89,7 @@ public class URLMapTest extends TestBase  {
 			container.setSortOrder(2);
 			container.setStaticify(true);
 			container.setTitle("News Test Container");
-			container.setType("containers");
+			container.setType(Inode.Type.CONTAINERS.getValue());
 			container.setUseDiv( true );
 
 			List<ContainerStructure> csList = new ArrayList<ContainerStructure>();

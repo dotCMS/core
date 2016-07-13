@@ -17,7 +17,7 @@ tomcat/temp
 
 
 #Temporary Build Migration Ignores
-dotCMS/html/js/_rulesengine
+dotCMS/html/ng
 
 
 

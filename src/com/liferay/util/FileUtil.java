@@ -139,15 +139,11 @@ public class FileUtil {
 	public static void copyFile(File source, File destination) throws IOException {
 		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
-
-	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
-
-        final String metaDataPath = "metaData" + File.separator + "content";
+	
+	private static void validateEmptyFile(File source) throws IOException{
+		final String metaDataPath = "metaData" + File.separator + "content";
         final String languagePropertyPath = "messages" + File.separator + "cms_language";
-        if (!source.exists()) {
-            throw new IOException("Source file does not exist" + source);
-        }
-
+        
         if (source.length() == 0) {
             Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
             if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
@@ -155,6 +151,16 @@ public class FileUtil {
                 throw new IOException("Source file is 0 length, failing " + source);
             }
         }
+	}
+
+	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+		
+        
+        if (!source.exists()) {
+            throw new IOException("Source file does not exist" + source);
+        }
+        
+        validateEmptyFile(source);
 
         if (hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)) {
             hardLinks = false;
@@ -467,10 +473,25 @@ public class FileUtil {
 	}
 
 	public static boolean move(File source, File destination) throws IOException {
+		return move(source, destination, true);
+	}
+	/**
+	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
+	 * 
+	 * @param source
+	 * @param destination
+	 * @param validateEmptyFile if is false it won't check if the file is empty
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean move(File source, File destination, boolean validateEmptyFile) throws IOException {
 		if (!source.exists()) {
 			return false;
 		}
 		
+		if(validateEmptyFile){
+			validateEmptyFile(source);
+		}
 		//If both files exists and are equals no need to move it.
 		try {
 			//Confirms that destination exists. 

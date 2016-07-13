@@ -10,6 +10,7 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -157,7 +158,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
 
-        AssetUtil.assertDeleted(inode, identifier, "containers");
+        AssetUtil.assertDeleted(inode, identifier, Inode.Type.CONTAINERS.getValue());
         HibernateUtil.commitTransaction();
     }
 }

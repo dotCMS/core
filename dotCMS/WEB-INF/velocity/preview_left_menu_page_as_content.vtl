@@ -791,7 +791,7 @@
 					#set($actionlets = $workflowtool.findActionClasses($a))
 					#set($hasPushPublishActionlet = false)
 					#foreach($actionlet in $actionlets)
-						#if($actionlet.actionlet && $actionlet.getActionlet().getClass().contains("PushPublishActionlet"))
+						#if($UtilMethods.isSet($actionlet.getActionlet()) && $actionlet.getActionlet().getClass().getName().contains("PushPublishActionlet"))
 							#set($hasPushPublishActionlet = true)
 						#end
 						
@@ -847,7 +847,7 @@
 					#set($actionlets = $workflowtool.findActionClasses($a))
 					#set($hasPushPublishActionlet = false)
 					#foreach($actionlet in $actionlets)
-						#if($actionlet.actionlet && $actionlet.getActionlet().getClass().contains("PushPublishActionlet"))
+						#if($UtilMethods.isSet($actionlet.getActionlet()) && $actionlet.getActionlet().getClass().getName().contains("PushPublishActionlet"))
 							#set($hasPushPublishActionlet = true)
 						#end
 						

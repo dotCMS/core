@@ -8,6 +8,7 @@ import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -60,7 +61,7 @@ public class Container extends WebAsset implements Serializable {
 
 	/** default constructor */
 	public Container() {
-		super.setType("containers");
+		super.setType(Inode.Type.CONTAINERS.getValue());
 	}
 
 	public String getInode() {

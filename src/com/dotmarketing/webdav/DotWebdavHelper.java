@@ -28,6 +28,7 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
 import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
@@ -869,7 +870,8 @@ public class DotWebdavHelper {
 			Contentlet fileAssetCont = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+				long langContentlet = APILocator.getContentletAPI().searchByIdentifier("+identifier:" + identifier.getId(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), false, PermissionAPI.PERMISSION_READ, true).get(0).getLanguageId();
+				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, langContentlet, user, false);				
 				workingFile = fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD);
 				destinationFile = APILocator.getFileAssetAPI().fromContentlet(fileAssetCont);
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
@@ -920,6 +922,9 @@ public class DotWebdavHelper {
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
+				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+					fileAsset.getMap().put("_validateEmptyFile_", false);
+				}
 				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -990,6 +995,9 @@ public class DotWebdavHelper {
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAssetCont.setLanguageId(defaultLang);
+					if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+						fileAssetCont.getMap().put("_validateEmptyFile_", false);
+					}
 					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
