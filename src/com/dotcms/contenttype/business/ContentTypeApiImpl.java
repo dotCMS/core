@@ -4,8 +4,6 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -56,22 +54,7 @@ public class ContentTypeApiImpl implements ContentTypeApi, StructureAPI{
 		return 0;
 	}
 
-	public ContentType getContentType(){
-		String user = "test";
-		try {
-			user=APILocator.getUserAPI().getSystemUser().getUserId();
-		} catch (DotDataException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		ContentType c = ImmutableSimpleContentType.builder()
-				.name("My Content")
-				.velocityVarName("test")
-				.owner(user).build();
-		return c;
-		
-	}
+
 	public void saveContentType(ContentType type, List<Field> fields){
 		
 	}

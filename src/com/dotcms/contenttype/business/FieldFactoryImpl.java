@@ -13,7 +13,6 @@ import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldType;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.TagField;
@@ -29,7 +28,7 @@ public class FieldFactoryImpl implements FieldFactory {
 	final FieldSql sql;
 
 	public FieldFactoryImpl() {
-		sql = FieldSql.instance;
+		sql = FieldSql.getInstance();
 	}
 
 	@Override
@@ -108,6 +107,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		return retField;
 	}
 
+	
 	private List<Field> findByContentTypeInDb(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.findByContentType);
@@ -242,7 +242,7 @@ public class FieldFactoryImpl implements FieldFactory {
 		DotConnect dc = new DotConnect();
 		
 		if(field instanceof HostFolderField || field instanceof TagField){
-			dc.setSQL(sql.selectCountOfType);
+			dc.setSQL(this.sql.selectCountOfType);
 			dc.addParam(field.contentTypeId());
 			dc.addParam(LegacyFieldTypes.getLegacyName(field.type() + "%"));
 			dc.addParam(LegacyFieldTypes.getImplClass(field.type() + "%"));
@@ -260,7 +260,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 		
 		String dataType = field.dataType().toString();
-		dc.setSQL(sql.selectFieldOfDbType);
+		dc.setSQL(this.sql.selectFieldOfDbType);
 		dc.addParam(field.contentTypeId());
 		dc.addParam(dataType + "%");
 		List<Map<String, Object>> rows = dc.loadObjectResults();
