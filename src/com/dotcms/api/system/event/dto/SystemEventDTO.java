@@ -1,5 +1,7 @@
 package com.dotcms.api.system.event.dto;
 
+import java.io.Serializable;
+
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -12,7 +14,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since Jul 11, 2016
  *
  */
-public class SystemEventDTO {
+public class SystemEventDTO implements Serializable {
 
 	private final String id;
 	private final String eventType;

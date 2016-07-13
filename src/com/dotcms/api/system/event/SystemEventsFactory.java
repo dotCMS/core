@@ -14,55 +14,67 @@ import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- *   
+ * This singleton class provides access to the {@link SystemEventsAPI} class.
+ * 
  * @author Jose Castro
  * @version 3.7
  * @since Jul 11, 2016
  *
  */
+@SuppressWarnings("serial")
 public class SystemEventsFactory implements Serializable {
 
 	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
 	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
 
+	/**
+	 * Private constructor for singleton creation.
+	 */
 	private SystemEventsFactory() {
-		// singleton
+
 	}
 
+	/**
+	 * Singleton holder using initialization on demand
+	 */
 	private static class SingletonHolder {
 		private static final SystemEventsFactory INSTANCE = new SystemEventsFactory();
 	}
 
 	/**
-	 * Get the instance.
+	 * Returns a single instance of this factory.
 	 * 
-	 * @return SystemEventsFactory
+	 * @return A unique {@link SystemEventsFactory} instance.
 	 */
 	public static SystemEventsFactory getInstance() {
-
 		return SystemEventsFactory.SingletonHolder.INSTANCE;
 	}
 
 	/**
+	 * Returns the data access object that will interact with information in the
+	 * database.
 	 * 
-	 * @return
+	 * @return The {@link SystemEventsDAO} instance.
 	 */
-	public SystemEventsDAO getSystemEventsDAO() {
+	private SystemEventsDAO getSystemEventsDAO() {
 		return this.systemEventsDAO;
 	}
 
 	/**
+	 * Returns a singleton instance of the System Events API.
 	 * 
-	 * @return
+	 * @return The {@link SystemEventsAPI} instance.
 	 */
 	public SystemEventsAPI getSystemEventsAPI() {
 		return this.systemEventsAPI;
 	}
 
 	/**
+	 * The concrete implementation of the {@link SystemEventsDAO} class.
 	 * 
 	 * @author Jose Castro
 	 * @version 3.7
@@ -77,7 +89,8 @@ public class SystemEventsFactory implements Serializable {
 		public void add(SystemEventDTO systemEvent) throws DotDataException {
 			DotConnect dc = new DotConnect();
 			dc.setSQL("INSERT INTO system_event (identifier, event_type, payload, created) VALUES (?, ?, ?, ?)");
-			dc.addParam(systemEvent.getId());
+			String id = (!UtilMethods.isSet(systemEvent.getId())) ? UUIDGenerator.generateUuid() : systemEvent.getId();
+			dc.addParam(id);
 			dc.addParam(systemEvent.getEventType());
 			dc.addParam(systemEvent.getPayload());
 			dc.addParam(systemEvent.getCreationDate());
@@ -149,6 +162,7 @@ public class SystemEventsFactory implements Serializable {
 	}
 
 	/**
+	 * The concrete implementation of the {@link SystemEventsAPI} class.
 	 * 
 	 * @author Jose Castro
 	 * @version 3.7
