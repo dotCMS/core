@@ -43,7 +43,7 @@
                                     <select id='language' [(ngModel)]='language' (change)='changeLanguage($event.target.value)'>
                                         <template ngFor let-lan [ngForOf]='languages'>
                                             <option  value='{{lan}}'>
-                                                <img title='' id='myLanguageImage' alt='' src='/html/images/languages/{{lan}}.gif' align='left' style='width:16px;height:11px;padding:1px;border:1px solid #ffffff'>
+                                                <img title='' id='myLanguageImage' alt='' src='/html/images/languages/{{lan}}.gif' align='left' style='padding:1px;border:1px solid #ffffff'>
                                             </option>
                                         </template>
                                     </select>

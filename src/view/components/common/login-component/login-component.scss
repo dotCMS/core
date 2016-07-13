@@ -9,11 +9,14 @@
     display: flex;
     -ms-flex-flow: column nowrap;
     flex-flow: column nowrap;
+    margin-top: 10%;
 
-    //background-color:#004a99;
-    //background-image:url("/html/images/backgrounds/bg-1.jpg");
-    //background-repeat:no-repeat;
-    //background-position:top center;
+    .flags {
+      padding:2px;
+      border:1px solid #dddddd;
+      cursor: pointer;
+      align-content: left;
+    }
 
     md-input {
       width: 100%;
