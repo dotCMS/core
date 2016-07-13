@@ -1,7 +1,27 @@
 package com.dotmarketing.init;
 
+import java.lang.management.ManagementFactory;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+
+import org.quartz.CronTrigger;
+import org.quartz.Job;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
+import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
@@ -28,32 +48,25 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import org.quartz.CronTrigger;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-
-import java.lang.management.ManagementFactory;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
 /**
- *
- * Initializes all dotCMS startup jobs
+ * Initializes all dotCMS startup jobs.
+ * 
  * @author David H Torres
+ * @version 1.0
+ * @since Feb 22, 2012
  *
  */
 public class DotInitScheduler {
 
+	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
+
+	/**
+	 * Configures and initializes every system Job to run on dotCMS.
+	 * 
+	 * @throws SchedulerException
+	 *             An error occurred when trying to schedule one of our system
+	 *             jobs.
+	 */
 	public static void start() throws SchedulerException {
 		try {
 
@@ -848,16 +861,75 @@ public class DotInitScheduler {
 					sched.deleteJob(FSCjobName, FSCobGroup);
 				}
 			}
-            
+			
+			// Enabling the System Events Job
+			if (Config.getBooleanProperty("ENABLE_SYSTEM_EVENTS", true)) {
+				scheduleJob(SystemEventsJob.class, "SystemEventsJob", "trigger26", "group26",
+						"SYSTEM_EVENTS_CRON_EXPRESSION", "0/5 * * * * ?");
+			}
+			
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
-
 		} catch (SchedulerException e) {
 			Logger.fatal(DotInitScheduler.class, "An error as ocurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
 			throw e;
 		}
 	}
 
-
+	/**
+	 * Creates a Quartz Job and schedules it for execution. If the Job has
+	 * already been registered, it will be re-scheduled to run again.
+	 * 
+	 * @param jobClass
+	 *            - The class representing the Quartz Job to execute.
+	 * @param jobName
+	 *            - The name of the Job.
+	 * @param triggerName
+	 *            - The name of the trigger for the specified Job.
+	 * @param triggerGroup
+	 *            - The name of the trigger group for the specified Job.
+	 * @param cronExpressionProp
+	 *            - The property name in the
+	 *            {@code dotmarketing-config.properties} file that contains the
+	 *            user-defined cron expression which defines the execution times
+	 *            of the Job.
+	 * @param cronExpressionPropDefault
+	 *            - The default value of the Job cron expression in case it's
+	 *            not defined in the aforementioned configuration file.
+	 */
+	private static void scheduleJob(final Class<? extends Job> jobClass, final String jobName, final String triggerName,
+			final String triggerGroup, final String cronExpressionProp, final String cronExpressionPropDefault) {
+		try {
+			Scheduler sched = QuartzUtils.getStandardScheduler();
+			Calendar calendar;
+			JobDetail job;
+			CronTrigger trigger;
+			boolean isNew = false;
+			try {
+				if ((job = sched.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) == null) {
+					job = new JobDetail(jobName, DOTCMS_JOB_GROUP_NAME, jobClass);
+					isNew = true;
+				}
+			} catch (SchedulerException e) {
+				// Try to re-create the job once more
+				sched.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				job = new JobDetail(jobName, DOTCMS_JOB_GROUP_NAME, SystemEventsJob.class);
+				isNew = true;
+			}
+			calendar = GregorianCalendar.getInstance();
+			trigger = new CronTrigger(triggerName, triggerGroup, jobName, DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,
+					Config.getStringProperty(cronExpressionProp, cronExpressionPropDefault));
+			trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+			sched.addJob(job, true);
+			if (isNew) {
+				sched.scheduleJob(trigger);
+			} else {
+				sched.rescheduleJob(triggerName, triggerGroup, trigger);
+			}
+		} catch (Exception e) {
+			Logger.error(DotInitScheduler.class,
+					"An error occurred when initializing the '" + jobName + "': " + e.getMessage(), e);
+		}
+	}
 
 }
