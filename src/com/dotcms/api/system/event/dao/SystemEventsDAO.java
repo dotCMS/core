@@ -24,6 +24,9 @@ public interface SystemEventsDAO {
 	 * @param event
 	 *            - The system event reported by a component running in the
 	 *            application.
+	 * @throws DotDataException
+	 *             An error occurred when executing the SQL query. Please check
+	 *             your database and/or query syntax.
 	 */
 	public void add(SystemEventDTO systemEvent) throws DotDataException;
 
@@ -35,6 +38,9 @@ public interface SystemEventsDAO {
 	 *            - The date (in milliseconds) from which system events will be
 	 *            selected.
 	 * @return The collection of {@link SystemEventDTO} objects.
+	 * @throws DotDataException
+	 *             An error occurred when executing the SQL query. Please check
+	 *             your database and/or query syntax.
 	 */
 	public Collection<SystemEventDTO> getEventsSince(long fromDate) throws DotDataException;
 
@@ -42,6 +48,9 @@ public interface SystemEventsDAO {
 	 * Returns the list of all {@link SystemEventDTO} objects in the database.
 	 * 
 	 * @return The complete collection of {@link SystemEventDTO} objects.
+	 * @throws DotDataException
+	 *             An error occurred when executing the SQL query. Please check
+	 *             your database and/or query syntax.
 	 */
 	public Collection<SystemEventDTO> getAll() throws DotDataException;
 
@@ -51,6 +60,9 @@ public interface SystemEventsDAO {
 	 * @param toDate
 	 *            - The date (in milliseconds) up to which all system events
 	 *            will be deleted.
+	 * @throws DotDataException
+	 *             An error occurred when executing the SQL query. Please check
+	 *             your database and/or query syntax.
 	 */
 	public void deleteEvents(long toDate) throws DotDataException;
 
@@ -62,11 +74,18 @@ public interface SystemEventsDAO {
 	 *            - The lower boundary of the date range (in milliseconds).
 	 * @param toDate
 	 *            - The upper boundary of the date range (in milliseconds).
+	 * @throws DotDataException
+	 *             An error occurred when executing the SQL query. Please check
+	 *             your database and/or query syntax.
 	 */
 	public void deleteEvents(long fromDate, long toDate) throws DotDataException;
 
 	/**
 	 * Deletes all the {@link SystemEventDTO} objects from the database.
+	 * 
+	 * @throws DotDataException
+	 *             An error occurred when executing the SQL query. Please check
+	 *             your database and/or query syntax.
 	 */
 	public void deleteAll() throws DotDataException;
 
