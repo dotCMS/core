@@ -28,6 +28,12 @@ public abstract class KeyValueField implements Field {
 	public  Class type() {
 		return  KeyValueField.class;
 	}
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.LONG_TEXT;
+	};
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

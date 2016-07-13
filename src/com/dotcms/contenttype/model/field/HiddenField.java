@@ -15,6 +15,17 @@ public abstract class HiddenField implements Field {
 
 	private static final long serialVersionUID = 1L;
 
+	@Override
+	public Class type() {
+		return HiddenField.class;
+	}
+	
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.SYSTEM;
+	};
 	
 	@Value.Derived
 	@Override

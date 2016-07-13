@@ -17,6 +17,12 @@ public abstract class ConstantField implements Field {
 	public  Class type() {
 		return  ConstantField.class;
 	}
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.CONSTANT;
+	};
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

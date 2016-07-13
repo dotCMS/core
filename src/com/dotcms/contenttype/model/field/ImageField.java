@@ -20,6 +20,13 @@ public abstract class ImageField implements Field {
 	public  Class type(){
 		return  ImageField.class;
 	}
+	
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.TEXT;
+	};
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

@@ -9,14 +9,19 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.FieldSql;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
+import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -37,21 +42,34 @@ public class FieldFactoryImpl implements FieldFactory {
 	}
 
 	@Override
+	public List<Field> byContentType(ContentType type) throws DotDataException {
+		return byContentTypeId(type.inode());
+	}
+	@Override
 	public List<Field> byContentTypeId(String id) throws DotDataException {
 		return findByContentTypeInDb(id);
 	}
-
 	@Override
 	public List<Field> byContentTypeVar(String var) throws DotDataException {
 		return findByContentTypeVarInDb(var);
 	}
 
 	@Override
-	public void delete(String id) throws DotDataException {
+	public void delete(Field field) throws DotDataException {
 		LocalTransaction.wrap(() -> {
-			return deleteInDb(id);
+			 return deleteFieldInDb(field);
 		});
 	}
+	
+
+	
+
+	@Override
+	public List<FieldVariable> loadVariables(Field field) throws DotDataException {
+		return selectFieldVarsInDb(field);
+	}
+	
+	
 	
 	@Override
 	public Field save(final Field throwAwayField) throws DotDataException {
@@ -136,19 +154,20 @@ public class FieldFactoryImpl implements FieldFactory {
 
 		results = dc.loadObjectResults();
 		if (results.size() == 0) {
-			throw new DotDataException("Content Type with id:" + id + " not found");
+			throw new NotFoundInDbException("Field with id:" + id + " not found");
 		}
 		return new DbFieldTransformer(results.get(0)).from();
 
 	}
 
-	private boolean deleteInDb(String id) throws DotDataException {
+	private boolean deleteFieldInDb(Field field) throws DotDataException {
 		DotConnect dc = new DotConnect();
+		deleteFieldVarsInDb(field);
 		dc.setSQL(sql.deleteById);
-		dc.addParam(id);
+		dc.addParam(field.inode());
 		dc.loadResult();
 		dc.setSQL(sql.deleteInodeById);
-		dc.addParam(id);
+		dc.addParam(field.inode());
 		dc.loadResult();
 		return true;
 	}
@@ -169,6 +188,60 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.addParam(field.inode());
 		dc.addParam(field.iDate());
 		dc.addParam(field.owner());
+		dc.loadResult();
+	}
+	
+	private List<FieldVariable> selectFieldVarsInDb(Field field) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(sql.selectFieldVars);
+		dc.addParam(field.inode());
+		return new DbFieldVariableTransformer(dc.loadObjectResults()).asList();
+	}
+	
+	private FieldVariable selectFieldVarInDb(String id) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(sql.selectFieldVar);
+		dc.addParam(id);
+		return new DbFieldVariableTransformer(dc.loadObjectResults()).from();
+	}
+	
+	private FieldVariable upsertFieldVariable(FieldVariable var) throws DotDataException {
+		
+		var = ImmutableFieldVariable.builder()
+				.from(var)
+				.modDate(DateUtils.round(new Date(), Calendar.SECOND)).build();
+		DotConnect dc = new DotConnect();
+		//delete first
+		if(var.id()!=null){
+			deleteFieldVarInDb(var);
+		}
+		else{
+			var = ImmutableFieldVariable.builder().from(var).id(UUID.randomUUID().toString()).build();
+		}
+		
+		dc.setSQL(sql.insertFieldVar);
+		dc.addParam(var.id());
+		dc.addParam(var.fieldId());
+		dc.addParam(var.name());
+		dc.addParam(var.key());
+		dc.addParam(var.value());
+		dc.addParam(var.userId());
+		dc.addParam(var.modDate());
+		dc.loadResult();
+		return var;
+	}
+	
+	private void deleteFieldVarInDb(FieldVariable var) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(sql.deleteFieldVar);
+		dc.addParam(var.id());
+		dc.loadResult();
+	}
+	
+	private void deleteFieldVarsInDb(Field field) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(sql.deleteFieldVarsForField);
+		dc.addParam(field.inode());
 		dc.loadResult();
 	}
 

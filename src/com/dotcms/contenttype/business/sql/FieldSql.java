@@ -97,6 +97,13 @@ public abstract class FieldSql {
 	
 	public String selectCountOfType= "select count(*) as test from field where structure_inode = ? and field_type like ? or field_type like ?";
 	
+	public String selectFieldVars= 	"select id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date from field_variable where field_id = ? order by variable_name";
+	public String selectFieldVar= 	"select id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date from field_variable where id = ? ";
+	
+	public String deleteFieldVar= 	"delete from field_variable where id = ?";
+	public String deleteFieldVarsForField= "delete from field_variable where field_id = ?";
+	public String insertFieldVar= 	"insert into field_variable( id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date) values (?,?,?,?,?,?,?)";
+	
 	
 	
 }

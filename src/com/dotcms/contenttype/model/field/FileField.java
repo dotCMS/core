@@ -11,11 +11,17 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 @Value.Immutable
 public abstract class FileField implements Field {
 
-	/**
-	 * 
-	 */
+	@Override
+	public Class type() {
+		return FileField.class;
+	}
 	private static final long serialVersionUID = 1L;
 
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.TEXT;
+	};
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

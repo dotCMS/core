@@ -11,15 +11,18 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 @Value.Immutable
 public abstract class DateField implements Field {
 
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
 	@Override
 	public  Class type() {
 		return  DateField.class;
 	}
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.DATE;
+	};
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

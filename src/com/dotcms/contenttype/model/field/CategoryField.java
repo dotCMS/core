@@ -27,6 +27,11 @@ public abstract class CategoryField implements Field {
 	public boolean indexed() {
 		return true;
 	};
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.SYSTEM;
+	}
 	@Override
 	public final List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SYSTEM);

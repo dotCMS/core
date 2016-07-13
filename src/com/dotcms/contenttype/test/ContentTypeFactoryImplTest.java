@@ -45,7 +45,6 @@ public class ContentTypeFactoryImplTest {
 	@BeforeClass
 	public static void initDb() throws DotDataException, Exception{
 		DataSource ds  =new DataSourceForTesting().getDataSource();
-		Connection c = ds.getConnection();
 		DbConnectionFactory.overrideDefaultDatasource(ds);
 		ServletContext context =  Mockito.mock(ServletContext.class);
 		Config.CONTEXT = context;
@@ -205,7 +204,6 @@ public class ContentTypeFactoryImplTest {
 			Thread.sleep(1);
 		}
 		
-		
 		int countAll2 = factory.searchCount(null);
 		int countWidgets2 = factory.searchCount(null, BaseContentTypes.WIDGET);
 		assertThat("counts are working", countAll == countAll2-runs);
@@ -226,7 +224,6 @@ public class ContentTypeFactoryImplTest {
 			Thread.sleep(1);
 		}
 		
-		
 		int countAll2 = factory.searchCount(null);
 		int countPersonas2 = factory.searchCount(null, BaseContentTypes.PERSONA);
 		assertThat("counts are working", countAll == countAll2-runs);
@@ -235,6 +232,25 @@ public class ContentTypeFactoryImplTest {
 
 	}
 	
+	@Test
+	public void testAddingFileAssets() throws Exception{
+
+		int countAll = factory.searchCount(null);
+		int runs = 20;
+		int countFiles = factory.searchCount(null, BaseContentTypes.FILEASSET);
+		
+		for(int i=0;i<runs;i++){
+			addFileAsset();
+			Thread.sleep(1);
+		}
+		
+		int countAll2 = factory.searchCount(null);
+		int countPersonas2 = factory.searchCount(null, BaseContentTypes.FILEASSET);
+		assertThat("counts are working", countAll == countAll2-runs);
+		assertThat("counts are working", countAll2 >countPersonas2);
+		assertThat("counts are working", countFiles == countPersonas2-runs);
+
+	}
 	@Test
 	public void testAddingForms() throws Exception{
 
@@ -346,5 +362,34 @@ public class ContentTypeFactoryImplTest {
 		}
 	}
 	
+	public void addFileAsset() throws DotDataException{
+
+		long i = System.currentTimeMillis();
+
+		ContentType type = ImmutableFileAssetContentType.builder()
+			.description("description" + i)
+			.expireDateVar(null)
+			.folder(FolderAPI.SYSTEM_FOLDER)
+			.host(Constants.SYSTEM_HOST)
+			.name("FileAssetTesting" + i)
+			.owner("owner")
+			.velocityVarName("velocityVarNameTesting" + i)
+			.build();
+		type = factory.save(type);
+
+		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
+		List<Field> baseTypeFields = ContentTypeBuilder.builder(type).build().requiredFields();
+		assertThat("fields are all added", fields.size() == baseTypeFields.size());
+		
+		for(int j=0;j<fields.size();j++){
+			Field field = fields.get(j);
+			Field baseField = baseTypeFields.get(j);
+			assertThat("fields dataType correct:", field.dataType().equals(baseField.dataType()));
+			assertThat("fields variable correct:", field.variable().equals(baseField.variable()));
+			assertThat("fields getClass correct:", field.getClass().equals(baseField.getClass()));
+			assertThat("fields name are correct:", field.name().equals(baseField.name()));
+			assertThat("fields sortOrder are correct:", field.sortOrder()==baseField.sortOrder());
+		}
+	}
 	
 }

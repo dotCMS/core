@@ -24,5 +24,10 @@ public abstract class TextAreaField implements Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.LONG_TEXT);
 	}
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.LONG_TEXT;
+	};
 	public abstract static class Builder implements FieldBuilder {}
 }

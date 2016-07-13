@@ -24,5 +24,11 @@ public abstract class RelationshipsTabField implements Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.SECTION_DIVIDER);
 	}
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.SECTION_DIVIDER;
+	};
 	public abstract static class Builder implements FieldBuilder {}
 }

@@ -4,6 +4,11 @@ import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
+import com.dotcms.contenttype.business.ContentTypeApiImpl;
+import com.dotcms.contenttype.business.ContentTypeFactory;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
@@ -76,7 +81,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
 	private static FactoryLocator instance;
 
-	private FactoryLocator() {
+	FactoryLocator() {
 		super();
 	}
 
@@ -231,8 +236,12 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static PersonaFactory getPersonaFactory(){
         return (PersonaFactory) getInstance(FactoryIndex.PERSONA_FACTORY);
     }
-    
-
+    public static ContentTypeFactory getContentTypeFactory2(){
+        return (ContentTypeFactory)  new ContentTypeFactoryImpl();
+    }
+    public static FieldFactory getFieldFactory2(){
+        return (FieldFactory)  new FieldFactoryImpl();
+    }
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -303,7 +312,9 @@ enum FactoryIndex
 	SERVER_ACTION_FACTORY,
 	RULES_FACTORY,
 	TAG_FACTORY,
-	PERSONA_FACTORY;
+	PERSONA_FACTORY,
+	CONTENTTYPE_FACTORY_2,
+	FIELD_FACTORY_2;
 
 	Object create() {
 		switch(this) {

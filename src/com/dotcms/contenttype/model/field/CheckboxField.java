@@ -19,6 +19,13 @@ public abstract class CheckboxField implements Field {
 	public  Class type() {
 		return  CheckboxField.class;
 	}
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.TEXT;
+	};
+	
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

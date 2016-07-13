@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.field;
 
 import java.lang.reflect.Method;
 import java.util.Date;
-
+import java.util.List;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
@@ -29,7 +29,8 @@ public interface FieldBuilder {
 	FieldBuilder fixed(boolean val);
 	FieldBuilder readOnly(boolean val);
 	FieldBuilder indexed(boolean val);
-
+	FieldBuilder fieldVariables(Iterable<? extends FieldVariable> vars);
+	
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);
 	}

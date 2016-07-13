@@ -9,6 +9,10 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeApiImpl;
+import com.dotcms.contenttype.business.FieldApi;
+import com.dotcms.contenttype.business.FieldApiImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.priv.ESSearchProxy;
@@ -112,16 +116,24 @@ import com.dotmarketing.util.Logger;
 
 public class APILocator extends Locator<APIIndex>{
 
+
 	protected static APILocator instance;
 
-	private APILocator() {
+	APILocator() {
+		super();
+		init();
+	}
+	private APILocator(boolean doInit) {
 		super();
 	}
 
-	public synchronized static void init(){
+	public static void init(){
 		if(instance != null)
 			return;
-		instance = new APILocator();
+		synchronized (APILocator.class) {
+			instance = new APILocator(false);
+		}
+		
 	}
 
 	public static PermissionAPI getPermissionAPI() {
@@ -364,7 +376,13 @@ public class APILocator extends Locator<APIIndex>{
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
 
-
+    // die static methods
+    public static ContentTypeApi getContentTypeAPI2() {
+    	return new ContentTypeApiImpl();
+	}
+    public static FieldApi getFieldAPI2() {
+    	return new FieldApiImpl();
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -458,6 +476,8 @@ enum APIIndex
 	SERVER_ACTION_API,
 	ES_SEARCH_API,
     RULES_API,
+    CONTENTTYPE_API_2,
+    FIELD_API_2,
     VISITOR_API;
 
 
@@ -518,11 +538,9 @@ enum APIIndex
 		case HTMLPAGE_ASSET_API: return new HTMLPageAssetAPIImpl();
 		case PERSONA_API: return new PersonaAPIImpl();
 
-		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
 		case ES_SEARCH_API: return new ESSearchProxy();
 		case RULES_API: return new RulesAPIProxy();
-		case VISITOR_API: return new VisitorAPIImpl();
 
 		
 		}

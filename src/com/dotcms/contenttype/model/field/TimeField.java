@@ -24,5 +24,10 @@ public abstract class TimeField implements Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.DATE);
 	}
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.DATE;
+	};
 	public abstract static class Builder implements FieldBuilder {}
 }

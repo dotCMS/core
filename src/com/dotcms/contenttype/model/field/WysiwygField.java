@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-
-
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -17,13 +15,22 @@ public abstract class WysiwygField implements Field {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public  Class type() {
-		return  WysiwygField.class;
+	public Class type() {
+		return WysiwygField.class;
 	}
+
 	@Value.Derived
 	@Override
-	public List<DataTypes> acceptedDataTypes(){
+	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.LONG_TEXT);
 	}
-	public abstract static class Builder implements FieldBuilder {}
+
+	@Value.Default
+	@Override
+	public DataTypes dataType() {
+		return DataTypes.LONG_TEXT;
+	};
+
+	public abstract static class Builder implements FieldBuilder {
+	}
 }

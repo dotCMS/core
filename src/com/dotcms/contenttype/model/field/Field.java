@@ -96,8 +96,11 @@ public interface Field extends FieldType {
 	default boolean fixed() {
 		return false;
 	}
-
-
+	
+	@Value.Default
+	default List<FieldVariable> fieldVariables(){
+		return ImmutableList.of();
+	}
 
 	@Value.Default
 	default List<FieldDecorator> fieldDecorators() {

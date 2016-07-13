@@ -24,5 +24,11 @@ public abstract class SelectField implements Field {
 	public List<DataTypes> acceptedDataTypes(){
 		return ImmutableList.of(DataTypes.TEXT, DataTypes.BOOL, DataTypes.FLOAT,DataTypes.INTEGER);
 	}
+	
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.TEXT;
+	};
 	public abstract static class Builder implements FieldBuilder {}
 }

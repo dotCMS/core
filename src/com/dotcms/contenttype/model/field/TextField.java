@@ -13,11 +13,19 @@ public abstract class TextField implements Field {
 
 	private static final long serialVersionUID = 1L;
 
-
+	@Override
+	public  Class type() {
+		return  TextField.class;
+	}
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.TEXT, DataTypes.FLOAT, DataTypes.INTEGER);
+		return ImmutableList.of(DataTypes.LONG_TEXT,DataTypes.TEXT, DataTypes.FLOAT, DataTypes.INTEGER);
 	}
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.TEXT;
+	};
 	public abstract static class Builder implements FieldBuilder {}
 }

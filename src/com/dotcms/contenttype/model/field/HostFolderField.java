@@ -27,7 +27,11 @@ public abstract class HostFolderField implements Field {
 	public  Class type() {
 		return  HostFolderField.class;
 	}
-
+	@Value.Default
+	@Override
+	public DataTypes dataType(){
+		return DataTypes.SYSTEM;
+	};
 	@Override
 	public final List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SYSTEM);
