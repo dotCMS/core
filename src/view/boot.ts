@@ -28,6 +28,7 @@ new RoutingService().getRoutes().subscribe(menu => {
     ActionService,
     ConditionGroupService,
     ConditionService,
+    RoutingService,
     HTTP_PROVIDERS,
     provide('menuItems', {useValue: menu.menuItems}),
     provideRouter(menu.routes),

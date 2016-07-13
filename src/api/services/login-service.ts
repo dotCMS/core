@@ -46,7 +46,7 @@ export class LoginService extends CoreWebService {
         return this.request({
             body: body,
             method: RequestMethod.Post,
-            url: this.serverInfoURL
+            url: this.serverInfoURL,
         });
     }
 
@@ -66,7 +66,7 @@ export class LoginService extends CoreWebService {
         return this.request({
             body: body,
             method: RequestMethod.Post,
-            url: this.userAuthURL
+            url: this.userAuthURL,
         });
     }
 
@@ -78,7 +78,7 @@ export class LoginService extends CoreWebService {
 
         return this.request({
             method: RequestMethod.Get,
-            url: this.logoutURL
+            url: this.logoutURL,
         });
 
     }
@@ -95,7 +95,7 @@ export class LoginService extends CoreWebService {
         return this.request({
             body: body,
             method: RequestMethod.Post,
-            url: this.recoverPasswordURL
+            url: this.recoverPasswordURL,
         });
     }
 

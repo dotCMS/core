@@ -1,4 +1,4 @@
-import {Component, Inject, ViewEncapsulation} from '@angular/core';
+import {Component, Inject, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
 import {FORM_DIRECTIVES} from '@angular/common';
 import {LoginService} from '../../../../api/services/login-service';
 
@@ -24,6 +24,7 @@ import {MdIcon, MdIconRegistry} from '@angular2-material/icon/icon';
 })
 export class MainComponent {
 
+    @Output() toggleMain = new EventEmitter<boolean>();
     _loginService: LoginService;
     logoutLabel: string;
 
@@ -37,10 +38,12 @@ export class MainComponent {
      */
     logout(): void {
         this._loginService.logOutUser().subscribe( data => {
-            top.location = '/html/ng/index.html';
+            // top.location = '/html/ng/index.html';
+            this.toggleMain.emit(true);
         }, (error) => {
             console.log(error);
         });
 
     }
+
 }

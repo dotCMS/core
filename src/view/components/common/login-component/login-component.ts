@@ -1,20 +1,19 @@
-import {Component, Input, Inject, ViewEncapsulation} from '@angular/core';
+import {Component, Input, Inject, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MdButton} from '@angular2-material/button';
 import {MdToolbar} from '@angular2-material/toolbar';
 import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
 import {MD_CARD_DIRECTIVES} from '@angular2-material/card';
 import {LoginService} from '../../../../api/services/login-service';
-import {assetUrl} from '@angular/compiler/src/util';
 
 @Component({
-    directives:[MdToolbar, MD_INPUT_DIRECTIVES, MdButton, MdCheckbox, MD_CARD_DIRECTIVES],
+    directives: [MdToolbar, MD_INPUT_DIRECTIVES, MdButton, MdCheckbox, MD_CARD_DIRECTIVES],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [LoginService],
     selector: 'dot-login-component',
     styleUrls: ['login-component.css'],
-    templateUrl: ['login-component.html']
+    templateUrl: ['login-component.html'],
 })
 
 /**
@@ -26,7 +25,7 @@ export class LoginComponent {
     @Input() password: string;
     @Input() my_account_r_m: boolean= false;
     @Input() forgotPasswordEmail: string;
-
+    @Output() toggleMain = new EventEmitter<boolean>();
     languages: Array<string> = [];
     @Input() language: string= 'en_US';
     message: string= '';
@@ -52,7 +51,7 @@ export class LoginComponent {
 
     private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent','Server'];
 
-    constructor(@Inject('menuItems') private menuItems: any[], private _service: LoginService) {
+    constructor( @Inject('menuItems') private menuItems: any[], private _service: LoginService) {
         this._loginService = _service;
         this.updateScreenBackground();
     }
@@ -67,14 +66,14 @@ export class LoginComponent {
                 this.message = result.errors[0].message;
             } else {
                 this.message = '';
-                window.location.reload();
+                this.toggleMain.emit(false);
+                // window.location.reload();
             }
         }, (error) => {
             if (error.response.status === 400 || error.response.status === 401) {
                 this.message = this.getErrorMessage(error);
             } else {
                 console.log(error);
-                // this.message = getErrorMessage(error);
             }
         });
 
@@ -116,23 +115,21 @@ export class LoginComponent {
             let dataI18n = data.i18nMessagesMap;
             let entity = data.entity;
 
-            this.loginLabel = dataI18n['Login'];
+            this.loginLabel = dataI18n.Login;
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
             } else {
                 this.userIdOrEmailLabel = dataI18n['user-id'];
                 this.my_account_login = '';
             }
-            this.passwordLabel = dataI18n['password'];
+            this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
             this.loginButton = dataI18n['sign-in'];
             this.forgotPasswordLabel = dataI18n['forgot-password'];
             this.forgotPasswordButton = dataI18n['get-new-password'];
-            this.cancelButton = dataI18n['cancel'];
+            this.cancelButton = dataI18n.cancel;
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
-            this.serverLabel = dataI18n['Server'];
-
-
+            this.serverLabel = dataI18n.Server;
 
             // Set background colors and images
             document.body.style.backgroundRepeat = 'no-repeat';
