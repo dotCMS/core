@@ -77,7 +77,7 @@ export class LoginService extends CoreWebService {
     public logOutUser(): Observable<any> {
 
         return this.request({
-            method: RequestMethod.Post,
+            method: RequestMethod.Get,
             url: this.logoutURL
         });
 

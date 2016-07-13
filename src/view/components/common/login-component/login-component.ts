@@ -5,6 +5,7 @@ import {MdToolbar} from '@angular2-material/toolbar';
 import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
 import {MD_CARD_DIRECTIVES} from '@angular2-material/card';
 import {LoginService} from '../../../../api/services/login-service';
+import {assetUrl} from '@angular/compiler/src/util';
 
 @Component({
     directives:[MdToolbar, MD_INPUT_DIRECTIVES, MdButton, MdCheckbox, MD_CARD_DIRECTIVES],
@@ -32,8 +33,7 @@ export class LoginComponent {
 
     // labels
     loginLabel: string= '';
-    emailAddressLabel: string= '';
-    userIdLabel: string= '';
+    userIdOrEmailLabel: string= '';
     passwordLabel: string= '';
     rememberMeLabel: string= '';
     forgotPasswordLabel: string= '';
@@ -41,6 +41,7 @@ export class LoginComponent {
     forgotPasswordButton: string= '';
     forgotPasswordConfirmationMessage: string= '';
     cancelButton: string= '';
+    serverLabel: string = '';
 
     _loginService: LoginService;
     dotcmscompanyLogo: string= '';
@@ -49,7 +50,7 @@ export class LoginComponent {
     dotcmsVersion: string= '';
     dotcmsBuildDateString: string= '';
 
-    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent'];
+    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent','Server'];
 
     constructor(@Inject('menuItems') private menuItems: any[], private _service: LoginService) {
         this._loginService = _service;
@@ -113,10 +114,15 @@ export class LoginComponent {
 
             // Translate labels and messages
             let dataI18n = data.i18nMessagesMap;
+            let entity = data.entity;
 
             this.loginLabel = dataI18n['Login'];
-            this.emailAddressLabel = dataI18n['email-address'];
-            this.userIdLabel = dataI18n['user-id'];
+            if ('emailAddress' === entity.authorizationType) {
+                this.userIdOrEmailLabel = dataI18n['email-address'];
+            } else {
+                this.userIdOrEmailLabel = dataI18n['user-id'];
+                this.my_account_login = '';
+            }
             this.passwordLabel = dataI18n['password'];
             this.rememberMeLabel = dataI18n['remember-me'];
             this.loginButton = dataI18n['sign-in'];
@@ -124,8 +130,9 @@ export class LoginComponent {
             this.forgotPasswordButton = dataI18n['get-new-password'];
             this.cancelButton = dataI18n['cancel'];
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
+            this.serverLabel = dataI18n['Server'];
 
-            let entity = data.entity;
+
 
             // Set background colors and images
             document.body.style.backgroundRepeat = 'no-repeat';
@@ -135,7 +142,7 @@ export class LoginComponent {
                 document.body.style.backgroundColor = entity.backgroundColor;
             }
             if (entity.backgroundPicture !== 'undefined' && entity.backgroundPicture !== '') {
-                document.body.style.backgroundImage = entity.backgroundPicture;
+                document.body.style.backgroundImage = 'url(' + entity.backgroundPicture + ')';
             }
 
             // Set dotCMS Info

@@ -1,5 +1,6 @@
 import {Component, Inject, ViewEncapsulation} from '@angular/core';
 import {FORM_DIRECTIVES} from '@angular/common';
+import {LoginService} from '../../../../api/services/login-service';
 
 // Custom Components
 import {GlobalSearch} from '../global-search/global-search';
@@ -13,35 +14,33 @@ import {MdButton, MdAnchor} from '@angular2-material/button/button';
 import {MdIcon, MdIconRegistry} from '@angular2-material/icon/icon';
 
 @Component({
+    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdAnchor, MdButton, MdIcon, GlobalSearch, MainNavigation],
+    encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+    providers: [MdIconRegistry, LoginService],
     selector: 'dot-main-component',
     styleUrls: ['main-component.css'],
-    template: `
-    <md-toolbar color="primary">
-        <div class="main-toolbar">
-            <div class="host-selector">
-                <button md-icon-button (click)="sideNav.toggle()">
-                    <md-icon class="md-24">menu</md-icon>
-                </button>
-                <h1>DotCMS</h1>
-            </div>
-            <dot-global-search></dot-global-search>
-            <div class="user">freddy@dotcms.com</div>
-        </div>
-    </md-toolbar>
-    <md-sidenav-layout fullscreen>
-        <md-sidenav #sideNav mode="side" opened="true">  
-            <dot-main-nav></dot-main-nav>
-        </md-sidenav>
-        <route-view></route-view>
-    </md-sidenav-layout>
-    `,
-    providers: [MdIconRegistry],
-    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdAnchor, MdButton, MdIcon, GlobalSearch, MainNavigation],
-    encapsulation: ViewEncapsulation.Emulated
+    templateUrl: ['main-component.html']
 })
 export class MainComponent {
-    constructor(@Inject('menuItems') private menuItems:any[]) {
+
+    _loginService: LoginService;
+    logoutLabel: string;
+
+    constructor( @Inject('menuItems') private menuItems: Array<any>, private _service: LoginService) {
+        this._loginService = _service;
+        this.logoutLabel = 'Logout'; // need to use internationalization
+    }
+
+    /**
+     * Call the logout service
+     */
+    logout(): void {
+        this._loginService.logOutUser().subscribe( data => {
+            top.location = '/html/ng/index.html';
+        }, (error) => {
+            console.log(error);
+        });
 
     }
 }

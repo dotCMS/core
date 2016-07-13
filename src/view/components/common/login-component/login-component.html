@@ -9,7 +9,7 @@
                     <td class='serverBox'>
                         <div>
                             <p><img src='{{dotcmscompanyLogo}}' id='company_logo'></p>
-                            <p>{{dotcmsServerId}}</p>
+                            <p>{{serverLabel}}: {{dotcmsServerId}}</p>
                             <p>{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
                             <p>( {{dotcmsBuildDateString}} )</p>
                         </div>
@@ -21,10 +21,10 @@
                         <table>
                             <tr>
                                 <td class='td30'>
-                                    <label>{{emailAddressLabel}}:</label>
+                                    <label>{{userIdOrEmailLabel}}:</label>
                                 </td>
                                 <td>
-                                    <md-input (keyup.enter)="logInUser()" placeholder='{{emailAddressLabel}}' [(ngModel)]='my_account_login' id='my_account_login' floatingPlaceholder='false'></md-input>
+                                    <md-input (keyup.enter)="logInUser()" placeholder='{{userIdOrEmailLabel}}' [(ngModel)]='my_account_login' id='my_account_login' floatingPlaceholder='false'></md-input>
                                 </td>
                             </tr>
                             <tr>
@@ -43,7 +43,7 @@
                                     <select id='language' [(ngModel)]='language' (change)='changeLanguage($event.target.value)'>
                                         <template ngFor let-lan [ngForOf]='languages'>
                                             <option  value='{{lan}}'>
-                                                <img title='' id='myLanguageImage' alt='' src='/html/images/languages/{{lan}}.gif' align='left'>
+                                                <img title='' id='myLanguageImage' alt='' src='/html/images/languages/{{lan}}.gif' align='left' style='width:16px;height:11px;padding:1px;border:1px solid #ffffff'>
                                             </option>
                                         </template>
                                     </select>
