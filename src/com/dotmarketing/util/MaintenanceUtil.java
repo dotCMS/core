@@ -273,7 +273,7 @@ public class MaintenanceUtil {
 	 * Delete from db all content with no identifier.  It will try to update identifiers from tree table first though
 	 */
 	public static int deleteContainersWithNoIdentifier(){
-		return deleteAssetsWithNoIdentifier("containers");
+		return deleteAssetsWithNoIdentifier(Inode.Type.CONTAINERS.getTableName());
 	}
 
 	/**
@@ -522,11 +522,11 @@ public class MaintenanceUtil {
 			hasErros = true;
 			Logger.error(MaintenanceUtil.class,"Problem updating contentlet table : " + e.getMessage(),e);
 		}
-		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE COLUMNS code, pre_loop, and post_loop ON THE containers TABLE");
+		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE COLUMNS code, pre_loop, and post_loop ON THE " + Inode.Type.CONTAINERS.getTableName() + " TABLE");
 		if(DbConnectionFactory.isMsSql()){
-			dc.setSQL("UPDATE containers SET code=replace(cast(code as varchar(max)),?,?),pre_loop=replace(cast(pre_loop as varchar(max)),?,?),post_loop=replace(cast(post_loop as varchar(max)),?,?) WHERE containers.inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = containers.inode OR cvi.live_inode =containers.inode)) ");
+			dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " SET code=replace(cast(code as varchar(max)),?,?),pre_loop=replace(cast(pre_loop as varchar(max)),?,?),post_loop=replace(cast(post_loop as varchar(max)),?,?) WHERE " + Inode.Type.CONTAINERS.getTableName() + ".inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode OR cvi.live_inode =" + Inode.Type.CONTAINERS.getTableName() + ".inode)) ");
 		}else{
-			dc.setSQL("UPDATE containers SET code=replace(code,?,?),pre_loop=replace(pre_loop,?,?),post_loop=replace(post_loop,?,?) WHERE containers.inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = containers.inode OR cvi.live_inode =containers.inode)) ");
+			dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " SET code=replace(code,?,?),pre_loop=replace(pre_loop,?,?),post_loop=replace(post_loop,?,?) WHERE " + Inode.Type.CONTAINERS.getTableName() + ".inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode OR cvi.live_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode)) ");
 		}
 		dc.addParam(textToSearchFor);
 		dc.addParam(textToReplaceWith);
@@ -538,7 +538,7 @@ public class MaintenanceUtil {
 			dc.loadResult();
 		} catch (DotDataException e) {
 			hasErros = true;
-			Logger.error(MaintenanceUtil.class,"Problem updating containers table : " + e.getMessage(),e);
+			Logger.error(MaintenanceUtil.class,"Problem updating " + Inode.Type.CONTAINERS.getTableName() + " table : " + e.getMessage(),e);
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE body COLUMN ON THE template TABLE");
 		if(DbConnectionFactory.isMsSql()){

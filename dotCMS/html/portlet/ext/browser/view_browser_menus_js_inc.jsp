@@ -413,7 +413,7 @@
 		contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(ident,objId,contentletLanguageId);
 
 	  	if (read && !archived) {
-			strHTML += '<a href="javascript: viewFile(\'' + ident + '\', \'' + ext + '\');" class="contextPopupMenu" <%=frametarget%>>';
+			strHTML += '<a href="javascript: viewFile(\'' + objId + '\', \'' + ext + '\');" class="contextPopupMenu" <%=frametarget%>>';
 		    	strHTML += '<span class="previewIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';

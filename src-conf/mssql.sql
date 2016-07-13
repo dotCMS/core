@@ -1476,7 +1476,7 @@ create table analytic_summary_referer (
    uri varchar(255) null,
    primary key (id)
 );
-create table containers (
+create table dot_containers (
    inode varchar(36) not null,
    code text null,
    pre_loop text null,
@@ -1864,7 +1864,7 @@ create index idx_campaign_2 on campaign (start_date);
 create index idx_campaign_1 on campaign (user_id);
 alter table campaign add constraint fkf7a901105fb51eb foreign key (inode) references inode;
 alter table analytic_summary_referer add constraint fk5bc0f3e2ed30e054 foreign key (summary_id) references analytic_summary;
-alter table containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
+alter table dot_containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
 alter table communication add constraint fkc24acfd65fb51eb foreign key (inode) references inode;
 alter table links add constraint fk6234fb95fb51eb foreign key (inode) references inode;
 alter table user_proxy add constraint fk7327d4fa5fb51eb foreign key (inode) references inode;
@@ -2032,7 +2032,7 @@ ALTER TABLE layouts_cms_roles ADD CONSTRAINT IX_layouts_cms_roles UNIQUE NONCLUS
 alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (role_id) references cms_role;
 alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (layout_id) references cms_layout;
 
-ALTER TABLE containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
+ALTER TABLE dot_containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE htmlpage add constraint htmlpage_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier) references identifier(id);
@@ -2179,7 +2179,7 @@ fetch next from link_cur_Deleted into @identifier
 END;
 
 CREATE Trigger check_container_versions
-ON containers
+ON dot_containers
 FOR DELETE AS
  DECLARE @totalCount int
  DECLARE @identifier varchar(100)
@@ -2191,7 +2191,7 @@ FOR DELETE AS
  fetch next from container_cur_Deleted into @identifier
  while @@FETCH_STATUS <> -1
  BEGIN
- select @totalCount = count(*) from containers where identifier = @identifier
+ select @totalCount = count(*) from dot_containers where identifier = @identifier
  IF (@totalCount = 0)
   BEGIN
    DELETE from identifier where id = @identifier
@@ -2279,7 +2279,7 @@ CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
 CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
 
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
---ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
+--ALTER TABLE dot_containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
 ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
 
 CREATE Trigger check_template_identifier
@@ -2327,7 +2327,7 @@ END;
 
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);
 alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid);
-alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
+alter table dot_containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
 alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid);
 alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid);
 alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid);
@@ -2449,14 +2449,14 @@ alter table fileasset_version_info  add constraint fk_fileasset_version_info_ide
 alter table link_version_info       add constraint fk_link_version_info_identifier       foreign key (identifier) references identifier(id);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_working foreign key (working_inode) references contentlet(inode);
-alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references containers(inode);
+alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_working   foreign key (working_inode) references template(inode);
 alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_working   foreign key (working_inode) references htmlpage(inode);
 alter table fileasset_version_info  add constraint fk_fileasset_version_info_working  foreign key (working_inode) references file_asset(inode);
 alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_live foreign key (live_inode) references contentlet(inode);
-alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references containers(inode);
+alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_live   foreign key (live_inode) references template(inode);
 alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_live   foreign key (live_inode) references htmlpage(inode);
 alter table fileasset_version_info  add constraint fk_fileasset_version_info_live  foreign key (live_inode) references file_asset(inode);

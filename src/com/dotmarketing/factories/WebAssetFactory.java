@@ -901,8 +901,9 @@ public class WebAssetFactory {
 
 			if(offset < 0) offset = 0;
 
-			String tableName = ((Inode) c.newInstance()).getType();
-			String versionTable=UtilMethods.getVersionInfoTableName(tableName);
+			String type = ((Inode) c.newInstance()).getType();
+			String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+			String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
 			sb.append("select {").append(tableName).append(".*} from ").append(tableName).append(", inode ")
 			  .append(tableName).append("_1_,identifier identifier, ").append(versionTable).append(" vi ")

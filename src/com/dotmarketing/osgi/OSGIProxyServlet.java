@@ -2,16 +2,15 @@ package com.dotmarketing.osgi;
 
 import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
+
+import java.io.IOException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
 
 /**
  * Created by Jonathan Gamba
@@ -25,28 +24,26 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void init ( ServletConfig config ) throws ServletException {
-    	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-	        super.init( config );
-	
-	        try {
-	            doInit();
-	        } catch ( ServletException e ) {
-	            throw e;
-	        } catch ( Exception e ) {
-	            throw new ServletException( e );
-	        }
-    	}
+        super.init( config );
+
+        try {
+            doInit();
+        } catch ( ServletException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new ServletException( e );
+        }
     }
 
     private void doInit () throws Exception {
-    	
-    	if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
-	        tracker = new DispatcherTracker( getBundleContext(), null, getServletConfig() );
-	        tracker.open();
-	
-	        servletConfig = getServletConfig();
-	        bundleContext = getBundleContext();
-    	}
+
+        servletConfig = getServletConfig();
+        if (System.getProperty(WebKeys.OSGI_ENABLED) != null) {
+            bundleContext = getBundleContext();
+            tracker = new DispatcherTracker(bundleContext, null, servletConfig);
+            tracker.open();
+
+        }
     }
 
     @Override
@@ -64,9 +61,9 @@ public class OSGIProxyServlet extends HttpServlet {
 
     @Override
     public void destroy () {
-    	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
-    		return;
-    	}
+        if (System.getProperty(WebKeys.OSGI_ENABLED) == null) {
+            return;
+        }
         if ( tracker != null ) {
             tracker.close();
             tracker = null;
@@ -75,9 +72,9 @@ public class OSGIProxyServlet extends HttpServlet {
     }
 
     private BundleContext getBundleContext () throws ServletException {
-    	if(System.getProperty(WebKeys.OSGI_ENABLED)==null){
-    		return null;
-    	}
+        if (System.getProperty(WebKeys.OSGI_ENABLED) == null) {
+            return null;
+        }
         Object context = getServletContext().getAttribute( BundleContext.class.getName() );
         if ( context instanceof BundleContext ) {
             return (BundleContext) context;

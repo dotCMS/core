@@ -1,6 +1,7 @@
 package com.dotmarketing.osgi;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
@@ -20,7 +21,6 @@ import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -32,6 +32,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.ejb.PortletManager;
 import com.liferay.portal.ejb.PortletManagerFactory;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -47,11 +48,29 @@ import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 import org.quartz.SchedulerException;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
-import static com.dotmarketing.osgi.ActivatorUtil.*;
+import static com.dotmarketing.osgi.ActivatorUtil.PATH_SEPARATOR;
+import static com.dotmarketing.osgi.ActivatorUtil.cleanResources;
+import static com.dotmarketing.osgi.ActivatorUtil.findCustomURLLoader;
+import static com.dotmarketing.osgi.ActivatorUtil.getBundleFolder;
+import static com.dotmarketing.osgi.ActivatorUtil.getManifestHeaderValue;
+import static com.dotmarketing.osgi.ActivatorUtil.getModuleConfig;
+import static com.dotmarketing.osgi.ActivatorUtil.moveResources;
+import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
+import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
+import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
 /**
  * Created by Jonathan Gamba
@@ -308,7 +327,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         try {
             //Working with the http bridge
-            if ( OSGIProxyServlet.servletConfig != null ) {//If it is null probably the servlet wasn't even been loaded...
+            if ( System.getProperty(WebKeys.OSGI_ENABLED)!=null ) {//If it is null probably the servlet wasn't even been loaded...
 
                 try {
                     OSGIProxyServlet.bundleContext.getBundle();

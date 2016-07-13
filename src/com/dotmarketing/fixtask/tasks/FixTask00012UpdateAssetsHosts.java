@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -39,7 +40,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 	
 	private final static String selectTemplateInodeByIdentifierSQL = "select template.inode from template, inode template_1_ where template.identifier = ? and template.inode = template_1_.inode and template.working = " + DbConnectionFactory.getDBTrue();
 	
-	private final static String selectContainerInodeByIdentifierSQL = "select containers.inode from containers, inode containers_1_ where containers.inode = containers_1_.inode and containers.identifier = ? and working = " + DbConnectionFactory.getDBTrue();
+	private final static String selectContainerInodeByIdentifierSQL = "select " + Inode.Type.CONTAINERS.getTableName() + ".inode from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_ where " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " + Inode.Type.CONTAINERS.getTableName() + ".identifier = ? and working = " + DbConnectionFactory.getDBTrue();
 	
 	private final static String selectLinkInodeByIdentifierSQL = "select links.inode from links, inode links_1_ where links.identifier = ? and links_1_.inode = links.inode and links.working = " + DbConnectionFactory.getDBTrue();
 	

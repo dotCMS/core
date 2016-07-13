@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -434,7 +435,7 @@ public class ContentletBaseTest extends TestBase {
         container.setSortOrder( 2 );
         container.setStaticify( true );
         container.setTitle( "JUnit Test Container 1" );
-        container.setType( "containers" );
+        container.setType(Inode.Type.CONTAINERS.getValue());
         container.setUseDiv( true );
 
         //Saving the new container
