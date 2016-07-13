@@ -1,10 +1,11 @@
 package com.dotcms.web.websocket;
 
 import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
 
-import javax.websocket.*;
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.Serializable;
 import java.util.ArrayList;

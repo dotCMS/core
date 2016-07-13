@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
+import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -177,7 +178,14 @@ public class SystemEventsFactory implements Serializable {
 		private MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 
 		@Override
-		public void push(SystemEvent systemEvent) throws DotDataException {
+		public void pushNotification(final Notification notification) throws DotDataException {
+
+			this.push(new SystemEvent(SystemEventType.NOTIFICATION, notification));
+		}
+
+		@Override
+		public void push(final SystemEvent systemEvent) throws DotDataException {
+
 			if (!UtilMethods.isSet(systemEvent) || !UtilMethods.isSet(systemEvent.getId())) {
 				String msg = "System Event object cannot be null.";
 				Logger.error(this, msg);

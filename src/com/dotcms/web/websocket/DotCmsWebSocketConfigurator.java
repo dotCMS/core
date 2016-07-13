@@ -26,7 +26,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
         return this.webSocketContainerAPI.getEndpointInstance(endpointClass);
     } // E:O:F:getEndpointInstance.
 
-    private final static List<Class> WEB_SOCKET_CLASSES = list(
+    /*private final static List<Class> WEB_SOCKET_CLASSES = list(
             SystemEventsWebSocketEndPoint.class
     );
 
@@ -40,5 +40,5 @@ public class DotCmsWebSocketConfigurator extends Configurator {
                 // todo: log an error
             }
         }
-    }
+    }*/
 } // E:O:F:DotCmsWebSocketConfigurator.

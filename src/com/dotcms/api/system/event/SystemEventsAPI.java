@@ -3,6 +3,7 @@ package com.dotcms.api.system.event;
 import java.util.Collection;
 
 import com.dotcms.api.system.event.dto.SystemEventDTO;
+import com.dotcms.notifications.bean.Notification;
 import com.dotmarketing.exception.DotDataException;
 
 /**
@@ -37,8 +38,18 @@ public interface SystemEventsAPI {
 	/**
 	 * Pushes a new System Event to the message queue. The {@link SystemEvent}
 	 * is supposed to contain all the information it needs.
+	 *
+	 * @param notification
+	 *            - The {@link SystemEvent} object.
+	 */
+	public void pushNotification(Notification notification) throws DotDataException;
+
+
+	/**
+	 * Pushes a new System Event to the message queue. The {@link SystemEvent}
+	 * is supposed to contain all the information it needs.
 	 * 
-	 * @param event
+	 * @param systemEvent
 	 *            - The {@link SystemEvent} object.
 	 */
 	public void push(SystemEvent systemEvent) throws DotDataException;
