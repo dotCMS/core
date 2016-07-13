@@ -51,6 +51,8 @@ public interface SystemEventsAPI {
 	 * 
 	 * @param systemEvent
 	 *            - The {@link SystemEvent} object.
+	 * @throws DotDataException
+	 *             An error occurred when saving the event.
 	 */
 	public void push(SystemEvent systemEvent) throws DotDataException;
 
@@ -61,6 +63,8 @@ public interface SystemEventsAPI {
 	 * @param fromDate
 	 *            - The date from which system events will be selected.
 	 * @return The collection of {@link SystemEvent} objects.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the list of events.
 	 */
 	public Collection<SystemEvent> getEventsSince(long fromDate) throws DotDataException;
 
@@ -68,6 +72,8 @@ public interface SystemEventsAPI {
 	 * Returns the list of all {@link SystemEvent} objects in the database.
 	 * 
 	 * @return The complete collection of {@link SystemEvent} objects.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the events.
 	 */
 	public Collection<SystemEvent> getAll() throws DotDataException;
 
@@ -76,6 +82,8 @@ public interface SystemEventsAPI {
 	 * 
 	 * @param toDate
 	 *            - The date up to which all system events will be deleted.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the events.
 	 */
 	public void deleteEvents(long toDate) throws DotDataException;
 
@@ -87,11 +95,16 @@ public interface SystemEventsAPI {
 	 *            - The lower boundary of the date range.
 	 * @param toDate
 	 *            - The upper boundary of the date range.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the events.
 	 */
 	public void deleteEvents(long fromDate, long toDate) throws DotDataException;
 
 	/**
 	 * Deletes all the {@link SystemEventDTO} objects from the database.
+	 * 
+	 * @throws DotDataException
+	 *             An error occurred when deleting the events.
 	 */
 	public void deleteAll() throws DotDataException;
 

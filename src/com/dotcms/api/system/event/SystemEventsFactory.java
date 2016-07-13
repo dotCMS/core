@@ -85,12 +85,12 @@ public class SystemEventsFactory implements Serializable {
 	private final class SystemEventsDAOImpl implements SystemEventsDAO {
 
 		private final ConversionUtils conversionUtils = ConversionUtils.INSTANCE;
-		
+
 		@Override
-		public void add(SystemEventDTO systemEvent) throws DotDataException {
-			DotConnect dc = new DotConnect();
+		public void add(final SystemEventDTO systemEvent) throws DotDataException {
+			final DotConnect dc = new DotConnect();
 			dc.setSQL("INSERT INTO system_event (identifier, event_type, payload, created) VALUES (?, ?, ?, ?)");
-			String id = (!UtilMethods.isSet(systemEvent.getId())) ? UUIDGenerator.generateUuid() : systemEvent.getId();
+			final String id = (!UtilMethods.isSet(systemEvent.getId())) ? UUIDGenerator.generateUuid() : systemEvent.getId();
 			dc.addParam(id);
 			dc.addParam(systemEvent.getEventType());
 			dc.addParam(systemEvent.getPayload());
@@ -99,46 +99,49 @@ public class SystemEventsFactory implements Serializable {
 		}
 
 		@Override
-		public Collection<SystemEventDTO> getEventsSince(long fromDate) throws DotDataException {
-			DotConnect dc = new DotConnect();
+		public Collection<SystemEventDTO> getEventsSince(final long fromDate) throws DotDataException {
+			final DotConnect dc = new DotConnect();
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ?");
 			dc.addParam(fromDate);
-			List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			/*return ConversionUtils.INSTANCE.convert(result, new Converter<Map<String, Object>, SystemEventDTO>() {
-
-				@Override
-				public SystemEventDTO convert(Map<String, Object> original) {
-					return new SystemEventDTO((String) original.get("identifier"), (String) original.get("event"), (String) original
-							.get("payload"), (Long) original.get("created"));
-				}
-				
-			});*/
+			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
+			/*
+			 * return ConversionUtils.INSTANCE.convert(result, new
+			 * Converter<Map<String, Object>, SystemEventDTO>() {
+			 * 
+			 * @Override public SystemEventDTO convert(Map<String, Object>
+			 * original) { return new SystemEventDTO((String)
+			 * original.get("identifier"), (String) original.get("event"),
+			 * (String) original .get("payload"), (Long)
+			 * original.get("created")); }
+			 * 
+			 * });
+			 */
 			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				String id = (String) record.get("identifier");
-				String eventType = (String) record.get("event_type");
-				String payload = (String) record.get("payload");
-				Long created = (Long) record.get("created");
+				final String id = (String) record.get("identifier");
+				final String eventType = (String) record.get("event_type");
+				final String payload = (String) record.get("payload");
+				final Long created = (Long) record.get("created");
 				return new SystemEventDTO(id, eventType, payload, created);
 			});
 		}
 
 		@Override
 		public Collection<SystemEventDTO> getAll() throws DotDataException {
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
-			List<Map<String, Object>> systemEvents = dc.loadObjectResults();
+			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
 			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				String id = (String) record.get("identifier");
-				String eventType = (String) record.get("event_type");
-				String payload = (String) record.get("payload");
-				Long created = (Long) record.get("created");
+				final String id = (String) record.get("identifier");
+				final String eventType = (String) record.get("event_type");
+				final String payload = (String) record.get("payload");
+				final Long created = (Long) record.get("created");
 				return new SystemEventDTO(id, eventType, payload, created);
 			});
 		}
 
 		@Override
-		public void deleteEvents(long toDate) throws DotDataException {
-			DotConnect dc = new DotConnect();
+		public void deleteEvents(final long toDate) throws DotDataException {
+			final DotConnect dc = new DotConnect();
 			dc.setSQL("DELETE FROM system_event WHERE created <= ?");
 			dc.addParam(toDate);
 			dc.loadResult();
@@ -146,7 +149,7 @@ public class SystemEventsFactory implements Serializable {
 
 		@Override
 		public void deleteEvents(long fromDate, long toDate) throws DotDataException {
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			dc.setSQL("DELETE FROM system_event WHERE created >= ? AND created <= ?");
 			dc.addParam(fromDate);
 			dc.addParam(toDate);
@@ -155,7 +158,7 @@ public class SystemEventsFactory implements Serializable {
 
 		@Override
 		public void deleteAll() throws DotDataException {
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			dc.setSQL("DELETE FROM system_event");
 			dc.loadResult();
 		}
@@ -177,17 +180,14 @@ public class SystemEventsFactory implements Serializable {
 		private SystemEventsDAO systemEventsDAO = getSystemEventsDAO();
 		private MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 
-		@Override
 		public void pushNotification(final Notification notification) throws DotDataException {
 
 			this.push(new SystemEvent(SystemEventType.NOTIFICATION, notification));
 		}
 
-		@Override
 		public void push(final SystemEvent systemEvent) throws DotDataException {
-
 			if (!UtilMethods.isSet(systemEvent) || !UtilMethods.isSet(systemEvent.getId())) {
-				String msg = "System Event object cannot be null.";
+				final String msg = "System Event object cannot be null.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
@@ -195,31 +195,31 @@ public class SystemEventsFactory implements Serializable {
 				this.systemEventsDAO.add(new SystemEventDTO(systemEvent.getId(), systemEvent.getEventType().name(),
 						this.marshalUtils.marshal(systemEvent.getPayload()), systemEvent.getCreationDate().getTime()));
 			} catch (DotDataException e) {
-				String msg = "An error occurred when saving a system event with ID: [" + systemEvent.getId() + "]";
+				final String msg = "An error occurred when saving a system event with ID: [" + systemEvent.getId() + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
 		}
 
 		@Override
-		public Collection<SystemEvent> getEventsSince(long createdDate) throws DotDataException {
+		public Collection<SystemEvent> getEventsSince(final long createdDate) throws DotDataException {
 			if (createdDate <= 0) {
-				String msg = "System Event creation date must be greater than zero.";
+				final String msg = "System Event creation date must be greater than zero.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
 			try {
-				List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
+				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
 				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					String id = record.getId();
-					SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-					String payload = record.getPayload();
-					Date created = new Date(record.getCreationDate());
+					final String id = record.getId();
+					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
+					final String payload = record.getPayload();
+					final Date created = new Date(record.getCreationDate());
 					return new SystemEvent(id, eventType, payload, created);
 				});
 			} catch (DotDataException e) {
-				String msg = "An error occurred when retreiving system events created since: [" + new Date(createdDate)
-						+ "]";
+				final String msg = "An error occurred when retreiving system events created since: ["
+						+ new Date(createdDate) + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
@@ -228,58 +228,58 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public Collection<SystemEvent> getAll() throws DotDataException {
 			try {
-				List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getAll();
+				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getAll();
 				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					String id = record.getId();
-					SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-					String payload = record.getPayload();
-					Date created = new Date(record.getCreationDate());
+					final String id = record.getId();
+					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
+					final String payload = record.getPayload();
+					final Date created = new Date(record.getCreationDate());
 					return new SystemEvent(id, eventType, payload, created);
 				});
 			} catch (DotDataException e) {
-				String msg = "An error occurred when retreiving all system events.";
+				final String msg = "An error occurred when retreiving all system events.";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
 		}
 
 		@Override
-		public void deleteEvents(long toDate) throws DotDataException {
+		public void deleteEvents(final long toDate) throws DotDataException {
 			if (toDate <= 0) {
-				String msg = "System Event creation date must be greater than zero.";
+				final String msg = "System Event creation date must be greater than zero.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
 			try {
 				this.systemEventsDAO.deleteEvents(toDate);
 			} catch (DotDataException e) {
-				String msg = "An error occurred when deleting system events created up to: [" + new Date(toDate) + "]";
+				final String msg = "An error occurred when deleting system events created up to: [" + new Date(toDate) + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
 		}
 
 		@Override
-		public void deleteEvents(long fromDate, long toDate) throws DotDataException {
+		public void deleteEvents(final long fromDate, final long toDate) throws DotDataException {
 			if (fromDate <= 0) {
-				String msg = "System Event 'from' date must be greater than zero.";
+				final String msg = "System Event 'from' date must be greater than zero.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
 			if (toDate <= 0) {
-				String msg = "System Event 'to' date must be greater than zero.";
+				final String msg = "System Event 'to' date must be greater than zero.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
 			if (fromDate > toDate) {
-				String msg = "System Event 'from' date cannot be greater than 'to' date.";
+				final String msg = "System Event 'from' date cannot be greater than 'to' date.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
 			}
 			try {
 				this.systemEventsDAO.deleteEvents(fromDate, toDate);
 			} catch (DotDataException e) {
-				String msg = "An error occurred when deleting system events created from: [" + new Date(fromDate)
+				final String msg = "An error occurred when deleting system events created from: [" + new Date(fromDate)
 						+ "] to: [" + new Date(toDate) + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
@@ -291,7 +291,7 @@ public class SystemEventsFactory implements Serializable {
 			try {
 				this.systemEventsDAO.deleteAll();
 			} catch (DotDataException e) {
-				String msg = "An error occurred when deleting all system events.";
+				final String msg = "An error occurred when deleting all system events.";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
