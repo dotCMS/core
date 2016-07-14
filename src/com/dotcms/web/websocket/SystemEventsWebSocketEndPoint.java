@@ -32,19 +32,19 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
     public void open(Session session) {
 
         this.queue.add(session);
-        Logger.error(this, "New session opened: " + session.getId());
+        Logger.debug(this, "New session opened: " + session.getId());
     }
 
     @OnError
     public void error(Session session, Throwable t) {
         this.queue.remove(session);
-        Logger.error(this, "Error on session " + session.getId());
+        Logger.debug(this, "Error on session " + session.getId());
     }
 
     @OnClose
     public void closedConnection(Session session) {
         this.queue.remove(session);
-        Logger.error(this, "session closed: " + session.getId());
+        Logger.debug(this, "session closed: " + session.getId());
     }
 
     public void sendSystemEvent(final SystemEvent event) {
@@ -54,7 +54,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
             final ArrayList<Session> closedSessions = new ArrayList<>();
             for (Session session : queue) {
                 if (!session.isOpen()) {
-                    // todo log me System.err.println("Closed session: " + session.getId());
+                    Logger.debug(this, "Closed session: " + session.getId());
 
                     closedSessions.add(session);
                 } else {
@@ -64,10 +64,10 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
             }
 
             queue.removeAll(closedSessions);
-            // log me System.out.println("Sending " + msg + " to " + queue.size() + " clients");
+            Logger.debug(this, "Sending " + event + " to " + queue.size() + " clients");
         } catch (Throwable e) {
 
-            // todo log an error
+            Logger.error(this, e.getMessage(), e);
         }
     }
 

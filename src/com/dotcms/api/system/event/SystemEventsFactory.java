@@ -9,6 +9,7 @@ import java.util.Map;
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -240,8 +241,10 @@ public class SystemEventsFactory implements Serializable {
 			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
 			final String payload = record.getPayload();
 			final Date created = new Date(record.getCreationDate());
+
 			return new SystemEvent(id, eventType,
-                    this.marshalUtils.unmarshal(payload, Payload.class), created);
+						this.marshalUtils.unmarshal(payload, Payload.class), created);
+
 		}
 
 		@Override
