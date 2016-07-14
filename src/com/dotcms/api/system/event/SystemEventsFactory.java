@@ -211,11 +211,7 @@ public class SystemEventsFactory implements Serializable {
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
 				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					final String id = record.getId();
-					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-					final String payload = record.getPayload();
-					final Date created = new Date(record.getCreationDate());
-					return new SystemEvent(id, eventType, new Payload(payload), created);
+					return convertSystemEvent(record);
 				});
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving system events created since: ["
@@ -230,17 +226,22 @@ public class SystemEventsFactory implements Serializable {
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getAll();
 				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					final String id = record.getId();
-					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-					final String payload = record.getPayload();
-					final Date created = new Date(record.getCreationDate());
-					return new SystemEvent(id, eventType, new Payload(payload), created);
+					return convertSystemEvent(record);
 				});
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving all system events.";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
+		}
+
+		private SystemEvent convertSystemEvent(final SystemEventDTO record) {
+			final String id = record.getId();
+			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
+			final String payload = record.getPayload();
+			final Date created = new Date(record.getCreationDate());
+			return new SystemEvent(id, eventType,
+                    this.marshalUtils.unmarshal(payload, Payload.class), created);
 		}
 
 		@Override
