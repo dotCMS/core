@@ -61,6 +61,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 		final Notification notification = new Notification(message, level, userId);
 		// Adding notification to System Events table
 		this.systemEventsAPI.pushNotification(notification);
+		this.notificationFactory.saveNotification(notification);
 	}
 
 	@Override

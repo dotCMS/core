@@ -182,7 +182,7 @@ public class SystemEventsFactory implements Serializable {
 
 		public void pushNotification(final Notification notification) throws DotDataException {
 
-			this.push(new SystemEvent(SystemEventType.NOTIFICATION, notification));
+			this.push(new SystemEvent(SystemEventType.NOTIFICATION, new Payload(notification)));
 		}
 
 		public void push(final SystemEvent systemEvent) throws DotDataException {
@@ -215,7 +215,7 @@ public class SystemEventsFactory implements Serializable {
 					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
 					final String payload = record.getPayload();
 					final Date created = new Date(record.getCreationDate());
-					return new SystemEvent(id, eventType, payload, created);
+					return new SystemEvent(id, eventType, new Payload(payload), created);
 				});
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving system events created since: ["
@@ -234,7 +234,7 @@ public class SystemEventsFactory implements Serializable {
 					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
 					final String payload = record.getPayload();
 					final Date created = new Date(record.getCreationDate());
-					return new SystemEvent(id, eventType, payload, created);
+					return new SystemEvent(id, eventType, new Payload(payload), created);
 				});
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving all system events.";

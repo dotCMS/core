@@ -127,6 +127,8 @@ public class MarshalFactory implements Serializable {
     private class GsonMarshalUtils implements MarshalUtils {
 
         private final Gson gson;
+        private final GsonConfigurator customDotCmsTypeGsonConfigurator =
+                new CustomDotCmsTypeGsonConfigurator();
 
         GsonMarshalUtils () {
 
@@ -164,7 +166,8 @@ public class MarshalFactory implements Serializable {
                     this.customConfiguration(gsonBuilder);
                 }
 
-                // todo: add the custom app types gson configurator
+                // add the custom app types gson configurator
+                this.customDotCmsTypeGsonConfigurator.configure(gsonBuilder);
             } else {
 
                 throw new IllegalArgumentException("GsonBuilder can not be null");
