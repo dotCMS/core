@@ -26,6 +26,8 @@ import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.Action;
@@ -84,10 +86,8 @@ import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
  */
 public class LoginAction extends Action {
 
-    public static final String JSON_WEB_TOKEN_DAYS_MAX_AGE = "json.web.token.days.max.age";
-
-	// Default max days for the JWT
-	public static final int JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT = 14;
+	private final LoginService loginService =
+			LoginServiceFactory.getInstance().getLoginService();
 
 	/**
 	 * Determines the action to execute based on the command issued by the user.
@@ -280,8 +280,6 @@ public class LoginAction extends Action {
 	private void _login(HttpServletRequest req, HttpServletResponse res)
 		throws Exception {
 
-		HttpSession ses = req.getSession();
-
 		String login = ParamUtil.getString(req, "my_account_login").toLowerCase();
 		String password = ParamUtil.getString(req, "password");
 		if (Validator.isNull(password)) {
@@ -292,163 +290,8 @@ public class LoginAction extends Action {
 
 		String userId = login;
 
-		int authResult = Authenticator.FAILURE;
-
-		Company company = PortalUtil.getCompany(req);
-
-        //Search for the system user
-        User systemUser = APILocator.getUserAPI().getSystemUser();
-
-        if ( company.getAuthType().equals( Company.AUTH_TYPE_EA ) ) {
-
-            //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getEmailAddress().equalsIgnoreCase( login ) ) {
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-            }
-
-            authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), login, password );
-            userId = UserManagerUtil.getUserId( company.getCompanyId(), login );
-
-        } else {
-
-            //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getUserId().equalsIgnoreCase( login ) ) {
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-            }
-
-            authResult = UserManagerUtil.authenticateByUserId( company.getCompanyId(), login, password );
-        }
-
-		try {
-			PrincipalFinder principalFinder =
-				(PrincipalFinder)InstancePool.get(
-					PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
-
-			userId = principalFinder.fromLiferay(userId);
-		}
-		catch (Exception e) {
-		}
-
-		if (authResult == Authenticator.SUCCESS) {
-			User user = UserLocalManagerUtil.getUserById(userId);
-			
-			//DOTCMS-4943
-			UserAPI userAPI = APILocator.getUserAPI();			
-			boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);			
-			Locale userSelectedLocale = (Locale)req.getSession().getAttribute(Globals.LOCALE_KEY);			
-			user.setLanguageId(userSelectedLocale.toString());
-			userAPI.save(user, userAPI.getSystemUser(), respectFrontend);
-
-			ses.setAttribute(WebKeys.USER_ID, userId);
-			
-			//DOTCMS-6392
-			PreviewFactory.setVelocityURLS(req);
-			
-			//set the host to the domain of the URL if possible if not use the default host
-			//http://jira.dotmarketing.net/browse/DOTCMS-4475
-			try{
-				String domainName = req.getServerName();
-				Host h = null;
-				h = APILocator.getHostAPI().findByName(domainName, user, false);
-				if(h == null || !UtilMethods.isSet(h.getInode())){
-					h = APILocator.getHostAPI().findByAlias(domainName, user, false);
-				}
-				if(h != null && UtilMethods.isSet(h.getInode())){
-					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, h.getIdentifier());
-				}else{
-					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
-				}
-			}catch (DotSecurityException se) {
-				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
-			}
-						
-			ses.removeAttribute("_failedLoginName");
-
-			String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
-			
-			String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
-			
-			String maxAge = rememberMe?"31536000":"0"; // todo: by default this should be two weeks, but it might be configuration using the CONFIG.
-				
-			StringBuilder headerStr = new StringBuilder();
-			headerStr.append(CookieKeys.ID).append("=\"").append(UserManagerUtil.encryptUserId(userId)).append("\";")
-				.append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
-			res.addHeader("SET-COOKIE", headerStr.toString());
-
-            //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
-			int jwtMaxAge = rememberMe ? Config.getIntProperty(
-	                JSON_WEB_TOKEN_DAYS_MAX_AGE,
-	                JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) : -1;
-			
-            this.processJsonWebToken(req, res, user, jwtMaxAge);
-
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
-		}
-		if (authResult != Authenticator.SUCCESS) {
-			SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
-			throw new AuthException();
-		}
-		SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
+		this.loginService.doActionLogin(userId, password, rememberMe, req, res);
 	}
-
-	/**
-	 * Generates the JWT and its respective cookie based on the following
-	 * criteria:
-	 * <ul>
-	 * <li>Information from the user: ID, associated company.</li>
-	 * <li>The "Remember Me" option being checked or not.</li>
-	 * </ul>
-	 * The JWT will allow the user to access the dotCMS back-end even though
-	 * their session has expired. This way, they won't need to re-authenticate.
-	 * 
-	 * @param req
-	 *            - The {@link HttpServletRequest} object.
-	 * @param res
-	 *            - The {@link HttpServletResponse} object.
-	 * @param user
-	 *            - The {@link User} trying to log into the system.
-	 * @param maxAge
-	 *            - The maximum days (in milliseconds) that the JWT will live.
-	 *            If the "Remember Me" option is checked, the token will live
-	 *            for many days (check its default value). Otherwise, it will
-	 *            only live during the current session.
-	 * @throws PortalException
-	 *             The specified user could not be found.
-	 * @throws SystemException
-	 *             An error occurred during the user ID encryption.
-	 */
-    private void processJsonWebToken(final HttpServletRequest req,
-                                     final HttpServletResponse res,
-                                     final User user,
-                                     final int maxAge) throws PortalException, SystemException {
-
-		final MarshalFactory marshalFactory =
-				MarshalFactory.getInstance();
-		final MarshalUtils marshalUtils =
-				marshalFactory.getMarshalUtils();
-		final JsonWebTokenService jsonWebTokenService =	
-				JsonWebTokenFactory.getInstance().getJsonWebTokenService();
-
-        // create the cookie with the token using the new classes
-		final String encryptUserId = UserManagerUtil.encryptUserId(user.getUserId());
-
-        final String jwtAccessToken =
-                jsonWebTokenService.generateToken(
-                        new JWTBean(encryptUserId,
-								marshalUtils.marshal(
-										new DotCMSSubjectBean(user.getModificationDate(),
-												encryptUserId,
-												user.getCompanyId())),
-										encryptUserId,
-										maxAge)
-				);
-
-        createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
-    }
 
     /**
      * 
