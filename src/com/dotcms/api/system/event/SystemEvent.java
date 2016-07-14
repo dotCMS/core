@@ -25,7 +25,7 @@ public class SystemEvent implements Serializable {
 
 	private final String id;
 	private final SystemEventType event;
-	private final Object payload;
+	private final Payload payload;
 	private final Date creationDate;
 
 	/**
@@ -37,7 +37,7 @@ public class SystemEvent implements Serializable {
 	 * @param payload
 	 *            - The information containing the details of this event.
 	 */
-	public SystemEvent(SystemEventType event, Object payload) {
+	public SystemEvent(SystemEventType event, Payload payload) {
 		this(event, payload, null);
 	}
 
@@ -51,7 +51,7 @@ public class SystemEvent implements Serializable {
 	 * @param creationDate
 	 *            - The creation date for this event.
 	 */
-	public SystemEvent(SystemEventType eventType, Object payload, Date creationDate) {
+	public SystemEvent(SystemEventType eventType, Payload payload, Date creationDate) {
 		this(null, eventType, payload, creationDate);
 	}
 
@@ -72,7 +72,7 @@ public class SystemEvent implements Serializable {
 	 *             If the system event type or the payload object are not
 	 *             specified.
 	 */
-	public SystemEvent(String id, SystemEventType eventType, Object payload, Date creationDate) {
+	public SystemEvent(String id, SystemEventType eventType, Payload payload, Date creationDate) {
 		if (!UtilMethods.isSet(eventType)) {
 			throw new IllegalArgumentException("System Event type must be specified.");
 		}
@@ -99,7 +99,7 @@ public class SystemEvent implements Serializable {
 	 * 
 	 * @return The payload object.
 	 */
-	public Object getPayload() {
+	public Payload getPayload() {
 		return payload;
 	}
 
