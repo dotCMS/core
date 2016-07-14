@@ -116,24 +116,16 @@ import com.dotmarketing.util.Logger;
 
 public class APILocator extends Locator<APIIndex>{
 
-
 	protected static APILocator instance;
 
-	APILocator() {
-		super();
-		init();
-	}
-	private APILocator(boolean doInit) {
+	private APILocator() {
 		super();
 	}
 
-	public static void init(){
+	public synchronized static void init(){
 		if(instance != null)
 			return;
-		synchronized (APILocator.class) {
-			instance = new APILocator(false);
-		}
-		
+		instance = new APILocator();
 	}
 
 	public static PermissionAPI getPermissionAPI() {
@@ -375,14 +367,14 @@ public class APILocator extends Locator<APIIndex>{
     public static VisitorAPI getVisitorAPI () {
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
+    public static ContentTypeApi getContentTypeAPI2 () {
+		return new ContentTypeApiImpl();
+	}
 
-    // die static methods
-    public static ContentTypeApi getContentTypeAPI2() {
-    	return new ContentTypeApiImpl();
-	}
     public static FieldApi getFieldAPI2() {
-    	return new FieldApiImpl();
+		return new FieldApiImpl();
 	}
+
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){
@@ -476,8 +468,6 @@ enum APIIndex
 	SERVER_ACTION_API,
 	ES_SEARCH_API,
     RULES_API,
-    CONTENTTYPE_API_2,
-    FIELD_API_2,
     VISITOR_API;
 
 
@@ -538,9 +528,11 @@ enum APIIndex
 		case HTMLPAGE_ASSET_API: return new HTMLPageAssetAPIImpl();
 		case PERSONA_API: return new PersonaAPIImpl();
 
+		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
 		case ES_SEARCH_API: return new ESSearchProxy();
 		case RULES_API: return new RulesAPIProxy();
+		case VISITOR_API: return new VisitorAPIImpl();
 
 		
 		}
