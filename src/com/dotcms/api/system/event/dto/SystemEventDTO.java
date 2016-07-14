@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since Jul 11, 2016
  *
  */
+@SuppressWarnings("serial")
 public class SystemEventDTO implements Serializable {
 
 	private final String id;

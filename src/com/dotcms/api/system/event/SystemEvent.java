@@ -3,7 +3,6 @@ package com.dotcms.api.system.event;
 import java.io.Serializable;
 import java.util.Date;
 
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -21,6 +20,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since Jul 11, 2016
  *
  */
+@SuppressWarnings("serial")
 public class SystemEvent implements Serializable {
 
 	private final String id;
