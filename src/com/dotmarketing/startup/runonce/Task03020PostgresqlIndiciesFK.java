@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -51,7 +52,7 @@ public class Task03020PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
                 "create index contentlet_ident on contentlet (identifier);\n"+
                 "create index links_ident on links (identifier);\n"+
                 "create index htmlpage_ident on htmlpage (identifier);\n"+
-                "create index containers_ident on containers (identifier);\n"+
+                "create index containers_ident on " + Inode.Type.CONTAINERS.getTableName() + " (identifier);\n"+
                 "create index template_ident on template (identifier);\n"+
                 "create index contentlet_moduser on contentlet (mod_user);\n"+
                 "create index contentlet_lang on contentlet (language_id);\n";

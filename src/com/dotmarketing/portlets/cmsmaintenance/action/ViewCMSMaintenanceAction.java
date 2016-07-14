@@ -614,7 +614,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
                     //This line was previously like;
                     //_dh.setQuery("from " + clazz.getName() + " order by 1,2");
                     //This caused a problem when the database is Oracle because Oracle causes problems when the results are ordered
-                    //by an NCLOB field. In the case of containers table, the second field, CODE, is an NCLOB field. Because of this,
+                    //by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
                     //ordering is done only on the first field for the tables, which is INODE
                     if(com.dotmarketing.beans.Tree.class.equals(clazz)){
                     	_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");

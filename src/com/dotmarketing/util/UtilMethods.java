@@ -39,9 +39,10 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.velocity.VelocityServlet;
-import org.apache.commons.logging.LogFactory;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -1811,7 +1812,7 @@ public class UtilMethods {
      * @version 1.0
      */
     public static String getCharsetConfiguration() {
-    	// CHARSET key in properties file specifies both content type and charset
+    	// CHARSET key in properties file specifies both content tableName and charset
     	String charsetWithContentType = Config.getStringProperty("CHARSET");
 
     	if (isSet(charsetWithContentType)) {
@@ -3214,7 +3215,7 @@ public class UtilMethods {
 
     /**
      * Multiplies two numbers of types double, float, long or integer (the
-     * number objects do not have to be of the same type)
+     * number objects do not have to be of the same tableName)
      */
     public static Number multiply(Number num1, Number num2) {
         Number product = null;
@@ -3399,22 +3400,6 @@ public class UtilMethods {
     	return sb.toString();
     }
 
-    public static String getVersionInfoTableName(String asset_type) {
-        if(asset_type.equals("links"))
-            return "link_version_info";
-        else if(asset_type.equals("contentlet"))
-            return "contentlet_version_info";
-        else if(asset_type.equals("containers"))
-            return "container_version_info";
-        else if(asset_type.equals("template"))
-            return "template_version_info";
-        else if(asset_type.equals("file_asset"))
-            return "fileasset_version_info";
-        else if(asset_type.equals("htmlpage"))
-            return "htmlpage_version_info";
-        else return null;
-    }
-
     public static Class getVersionInfoType(String type) {
         if(type.equals("links"))
             return LinkVersionInfo.class;
@@ -3431,18 +3416,18 @@ public class UtilMethods {
         else return null;
     }
     
-    public static Class getVersionableClass(String type) {
-        if(type.equals("links"))
+    public static Class getVersionableClass(String tableName) {
+        if(tableName.equals("links"))
             return Link.class;
-        else if(type.equals("contentlet"))
+        else if(tableName.equals("contentlet"))
             return Contentlet.class;
-        else if(type.equals("containers"))
+        else if(tableName.equals(Inode.Type.CONTAINERS.getTableName()))
             return Container.class;
-        else if(type.equals("template"))
+        else if(tableName.equals("template"))
             return com.dotmarketing.portlets.templates.model.Template.class;
-        else if(type.equals("file_asset"))
+        else if(tableName.equals("file_asset"))
             return com.dotmarketing.portlets.files.model.File.class;
-        else if(type.equals("htmlpage"))
+        else if(tableName.equals("htmlpage"))
             return HTMLPage.class;
         else return null;
     }

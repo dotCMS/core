@@ -899,6 +899,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
+			/* Show a more descriptive error of what caused an issue here */
+			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
 
 		}
