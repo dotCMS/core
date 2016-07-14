@@ -38,7 +38,6 @@ export class MainComponent {
      */
     logout(): void {
         this._loginService.logOutUser().subscribe( data => {
-            // top.location = '/html/ng/index.html';
             this.toggleMain.emit(true);
         }, (error) => {
             console.log(error);

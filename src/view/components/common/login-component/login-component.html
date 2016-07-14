@@ -1,6 +1,5 @@
 <div class='login-component-container'>
     <md-card id='loginBox' class='loginBox'>
-        <!-- md-toolbar color='primary'>{{loginLabel}}</md-toolbar -->
         <md-card-title>{{loginLabel}}</md-card-title>
         <div class='error-message' id='dotLoginMessagesDiv'>{{message}}</div>
         <md-content>
@@ -67,7 +66,6 @@
     </md-card>
     <md-card id='forgotPassword' class='forgotPasswordBox hideBox'>
         <md-card-title>{{forgotPasswordLabel}}</md-card-title>
-        <!-- md-toolbar color='primary'>Forgot Password</md-toolbar -->
         <md-card-content>
             <md-input (keyup.enter)="recoverPassword()" placeholder='{{emailAddressLabel}}' [(ngModel)]='forgotPasswordEmail' id='forgotPasswordEmail' floatingPlaceholder='false'></md-input>
         </md-card-content>

@@ -32,6 +32,7 @@ export class LoginComponent {
 
     // labels
     loginLabel: string= '';
+    emailAddressLabel: string = ''
     userIdOrEmailLabel: string= '';
     passwordLabel: string= '';
     rememberMeLabel: string= '';
@@ -67,7 +68,6 @@ export class LoginComponent {
             } else {
                 this.message = '';
                 this.toggleMain.emit(false);
-                // window.location.reload();
             }
         }, (error) => {
             if (error.response.status === 400 || error.response.status === 401) {
@@ -116,6 +116,7 @@ export class LoginComponent {
             let entity = data.entity;
 
             this.loginLabel = dataI18n.Login;
+            this.emailAddressLabel = dataI18n['email-address'];
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
             } else {
