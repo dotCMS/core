@@ -1,10 +1,12 @@
 package com.dotcms.web.websocket;
 
 import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
+import com.dotmarketing.util.Logger;
 
-import javax.websocket.*;
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,20 +31,20 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
     @OnOpen
     public void open(Session session) {
 
-        queue.add(session);
-        //todo: log me System.out.println("New session opened: " + session.getId());
+        this.queue.add(session);
+        Logger.error(this, "New session opened: " + session.getId());
     }
 
     @OnError
     public void error(Session session, Throwable t) {
-        queue.remove(session);
-        //todo: log me System.err.println("Error on session " + session.getId());
+        this.queue.remove(session);
+        Logger.error(this, "Error on session " + session.getId());
     }
 
     @OnClose
     public void closedConnection(Session session) {
-        queue.remove(session);
-        // todo log me System.out.println("session closed: " + session.getId());
+        this.queue.remove(session);
+        Logger.error(this, "session closed: " + session.getId());
     }
 
     public void sendSystemEvent(final SystemEvent event) {

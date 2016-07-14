@@ -28,7 +28,6 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 	private final NotificationFactory notificationFactory;
 	private final SystemEventsAPI systemEventsAPI;
-	private final MarshalUtils marshalUtils;
 
 	/**
 	 * Retrieve the factory class that interacts with the database.
@@ -36,7 +35,6 @@ public class NotificationAPIImpl implements NotificationAPI {
 	public NotificationAPIImpl() {
 		this.notificationFactory = FactoryLocator.getNotificationFactory();
 		this.systemEventsAPI = APILocator.getSystemEventsAPI();
-		this.marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 	}
 
 	@Override
@@ -59,11 +57,11 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 	@Override
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
-		Notification n = new Notification(message, level, userId);
-		notificationFactory.saveNotification(n);
+
+		final Notification notification = new Notification(message, level, userId);
 		// Adding notification to System Events table
-		SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, this.marshalUtils.marshal(n));
-		this.systemEventsAPI.push(systemEvent);
+		this.systemEventsAPI.pushNotification(notification);
+		this.notificationFactory.saveNotification(notification);
 	}
 
 	@Override

@@ -1,11 +1,10 @@
 package com.dotcms.web.websocket;
 
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import static com.dotcms.util.ReflectionUtils.*;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.dotcms.util.ReflectionUtils.newInstance;
 
 /**
  * Factory for the {@link WebSocketContainerAPI}, please use the {@link com.dotmarketing.business.APILocator}
