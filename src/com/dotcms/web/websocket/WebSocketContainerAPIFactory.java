@@ -1,70 +1,86 @@
 package com.dotcms.web.websocket;
 
+import static com.dotcms.util.ReflectionUtils.newInstance;
+
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.dotcms.util.ReflectionUtils.newInstance;
+import com.dotmarketing.util.Logger;
 
 /**
- * Factory for the {@link WebSocketContainerAPI}, please use the {@link com.dotmarketing.business.APILocator}
- * in order to get the {@link WebSocketContainerAPI} instance, instead of calling this one
+ * This singleton class provides access to the {@link WebSocketContainerAPI}
+ * class.
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jul 12, 2016
  */
+@SuppressWarnings("serial")
 public class WebSocketContainerAPIFactory implements Serializable {
 
-    private final WebSocketContainerAPI webSocketContainerAPI = new WebSocketContainerAPIImpl();
+	private final WebSocketContainerAPI webSocketContainerAPI = new WebSocketContainerAPIImpl();
 
-    private WebSocketContainerAPIFactory () {
-        // singleton
-    }
+	/**
+	 * Singleton constructor
+	 */
+	private WebSocketContainerAPIFactory() {
+		// singleton
+	}
 
-    private static class SingletonHolder {
-        private static final WebSocketContainerAPIFactory INSTANCE = new WebSocketContainerAPIFactory();
-    }
-    /**
-     * Get the instance.
-     * @return WebSocketContainerAPIFactory
-     */
-    public static WebSocketContainerAPIFactory getInstance() {
+	/**
+	 * Singleton holder using initialization on demand.
+	 */
+	private static class SingletonHolder {
+		private static final WebSocketContainerAPIFactory INSTANCE = new WebSocketContainerAPIFactory();
+	}
 
-        return WebSocketContainerAPIFactory.SingletonHolder.INSTANCE;
-    } // getInstance.
+	/**
+	 * Returns a unique instance of this class.
+	 * 
+	 * @return A singleton {@code WebSocketContainerAPIFactory}.
+	 */
+	public static WebSocketContainerAPIFactory getInstance() {
+		return WebSocketContainerAPIFactory.SingletonHolder.INSTANCE;
+	} // getInstance.
 
-    public WebSocketContainerAPI getWebSocketContainerAPI() {
+	/**
+	 * Returns an instance of the {@link WebSocketContainerAPI} class.
+	 * 
+	 * @return An instance of the {@code WebSocketContainerAPI} class.
+	 */
+	public WebSocketContainerAPI getWebSocketContainerAPI() {
+		return this.webSocketContainerAPI;
+	}
 
-        return webSocketContainerAPI;
-    }
+	/**
+	 * The concrete implementation of the {@link WebSocketContainerAPI} class.
+	 * 
+	 * @author jsanca
+	 * @version 3.7
+	 * @since Jul 12, 2016
+	 *
+	 */
+	private class WebSocketContainerAPIImpl implements WebSocketContainerAPI {
 
-    private class WebSocketContainerAPIImpl implements WebSocketContainerAPI {
+		private final Map<Class<?>, Object> instanceCache = new ConcurrentHashMap<>();
 
-        private final Map<Class<?>, Object> instanceCache =
-                new ConcurrentHashMap<>();
+		@Override
+		public <T> T getEndpointInstance(final Class<T> endpointClass) {
+			if (this.instanceCache.containsKey(endpointClass)) {
+				return (T) this.instanceCache.get(endpointClass);
+			}
+			T websocket = null;
+			synchronized (WebSocketContainerAPIImpl.class) {
+				websocket = newInstance(endpointClass);
+				if (null == websocket) {
+					Logger.error(this, "An instance of the '" + endpointClass + "' class could not be created.");
+					return null;
+				}
+			}
+			this.instanceCache.put(endpointClass, websocket);
+			return websocket;
+		}
+	}
 
-        @Override
-        public <T> T getEndpointInstance(final Class<T> endpointClass) {
-
-            if (this.instanceCache.containsKey(endpointClass)) {
-
-                return (T)this.instanceCache.get(endpointClass);
-            }
-
-            T websocket = null;
-
-            synchronized (WebSocketContainerAPIImpl.class) {
-
-                websocket = newInstance(endpointClass);
-
-                if (null == websocket) {
-
-                    // todo: report an several error
-                    return null;
-                }
-            }
-
-            this.instanceCache.put(endpointClass, websocket);
-
-            return websocket;
-        }
-    }
 } // E:O:F:WebSocketContainerAPIFactory.

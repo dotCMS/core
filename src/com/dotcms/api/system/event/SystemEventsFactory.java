@@ -9,7 +9,6 @@ import java.util.Map;
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
 import com.dotcms.notifications.bean.Notification;
-import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -41,7 +40,7 @@ public class SystemEventsFactory implements Serializable {
 	}
 
 	/**
-	 * Singleton holder using initialization on demand
+	 * Singleton holder using initialization on demand.
 	 */
 	private static class SingletonHolder {
 		private static final SystemEventsFactory INSTANCE = new SystemEventsFactory();
@@ -76,97 +75,6 @@ public class SystemEventsFactory implements Serializable {
 	}
 
 	/**
-	 * The concrete implementation of the {@link SystemEventsDAO} class.
-	 * 
-	 * @author Jose Castro
-	 * @version 3.7
-	 * @since Jul 11, 2016
-	 *
-	 */
-	private final class SystemEventsDAOImpl implements SystemEventsDAO {
-
-		private final ConversionUtils conversionUtils = ConversionUtils.INSTANCE;
-
-		@Override
-		public void add(final SystemEventDTO systemEvent) throws DotDataException {
-			final DotConnect dc = new DotConnect();
-			dc.setSQL("INSERT INTO system_event (identifier, event_type, payload, created) VALUES (?, ?, ?, ?)");
-			final String id = (!UtilMethods.isSet(systemEvent.getId())) ? UUIDGenerator.generateUuid() : systemEvent.getId();
-			dc.addParam(id);
-			dc.addParam(systemEvent.getEventType());
-			dc.addParam(systemEvent.getPayload());
-			dc.addParam(systemEvent.getCreationDate());
-			dc.loadResult();
-		}
-
-		@Override
-		public Collection<SystemEventDTO> getEventsSince(final long fromDate) throws DotDataException {
-			final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ?");
-			dc.addParam(fromDate);
-			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			/*
-			 * return ConversionUtils.INSTANCE.convert(result, new
-			 * Converter<Map<String, Object>, SystemEventDTO>() {
-			 * 
-			 * @Override public SystemEventDTO convert(Map<String, Object>
-			 * original) { return new SystemEventDTO((String)
-			 * original.get("identifier"), (String) original.get("event"),
-			 * (String) original .get("payload"), (Long)
-			 * original.get("created")); }
-			 * 
-			 * });
-			 */
-			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				final String id = (String) record.get("identifier");
-				final String eventType = (String) record.get("event_type");
-				final String payload = (String) record.get("payload");
-				final Long created = (Long) record.get("created");
-				return new SystemEventDTO(id, eventType, payload, created);
-			});
-		}
-
-		@Override
-		public Collection<SystemEventDTO> getAll() throws DotDataException {
-			final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
-			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				final String id = (String) record.get("identifier");
-				final String eventType = (String) record.get("event_type");
-				final String payload = (String) record.get("payload");
-				final Long created = (Long) record.get("created");
-				return new SystemEventDTO(id, eventType, payload, created);
-			});
-		}
-
-		@Override
-		public void deleteEvents(final long toDate) throws DotDataException {
-			final DotConnect dc = new DotConnect();
-			dc.setSQL("DELETE FROM system_event WHERE created <= ?");
-			dc.addParam(toDate);
-			dc.loadResult();
-		}
-
-		@Override
-		public void deleteEvents(long fromDate, long toDate) throws DotDataException {
-			final DotConnect dc = new DotConnect();
-			dc.setSQL("DELETE FROM system_event WHERE created >= ? AND created <= ?");
-			dc.addParam(fromDate);
-			dc.addParam(toDate);
-			dc.loadResult();
-		}
-
-		@Override
-		public void deleteAll() throws DotDataException {
-			final DotConnect dc = new DotConnect();
-			dc.setSQL("DELETE FROM system_event");
-			dc.loadResult();
-		}
-
-	}
-
-	/**
 	 * The concrete implementation of the {@link SystemEventsAPI} class.
 	 * 
 	 * @author Jose Castro
@@ -177,17 +85,17 @@ public class SystemEventsFactory implements Serializable {
 	private final class SystemEventsAPIImpl implements SystemEventsAPI {
 
 		private final ConversionUtils conversionUtils = ConversionUtils.INSTANCE;
-
 		private SystemEventsDAO systemEventsDAO = getSystemEventsDAO();
 		private MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 
+		@Override
 		public void pushNotification(final Notification notification) throws DotDataException {
-
 			this.push(new SystemEvent(SystemEventType.NOTIFICATION, new Payload(notification)));
 		}
 
+		@Override
 		public void push(final SystemEvent systemEvent) throws DotDataException {
-			if (!UtilMethods.isSet(systemEvent) || !UtilMethods.isSet(systemEvent.getId())) {
+			if (!UtilMethods.isSet(systemEvent)) {
 				final String msg = "System Event object cannot be null.";
 				Logger.error(this, msg);
 				throw new IllegalArgumentException(msg);
@@ -234,17 +142,6 @@ public class SystemEventsFactory implements Serializable {
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
-		}
-
-		private SystemEvent convertSystemEvent(final SystemEventDTO record) {
-			final String id = record.getId();
-			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-			final String payload = record.getPayload();
-			final Date created = new Date(record.getCreationDate());
-
-			return new SystemEvent(id, eventType,
-						this.marshalUtils.unmarshal(payload, Payload.class), created);
-
 		}
 
 		@Override
@@ -299,6 +196,102 @@ public class SystemEventsFactory implements Serializable {
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
+		}
+
+		/**
+		 * Utility method to convert the physical representation of a System
+		 * Event ({@link SystemEventDTO}) to its logical representation (
+		 * {@link SystemEvent}).
+		 * 
+		 * @param record
+		 *            - The System Event data coming from the database.
+		 * @return The logical representation of the System Event.
+		 */
+		private SystemEvent convertSystemEvent(final SystemEventDTO record) {
+			final String id = record.getId();
+			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
+			final String payload = record.getPayload();
+			final Date created = new Date(record.getCreationDate());
+			return new SystemEvent(id, eventType, this.marshalUtils.unmarshal(payload, Payload.class), created);
+		}
+
+	}
+
+	/**
+	 * The concrete implementation of the {@link SystemEventsDAO} class.
+	 * 
+	 * @author Jose Castro
+	 * @version 3.7
+	 * @since Jul 11, 2016
+	 *
+	 */
+	private final class SystemEventsDAOImpl implements SystemEventsDAO {
+
+		private final ConversionUtils conversionUtils = ConversionUtils.INSTANCE;
+
+		@Override
+		public void add(final SystemEventDTO systemEvent) throws DotDataException {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("INSERT INTO system_event (identifier, event_type, payload, created) VALUES (?, ?, ?, ?)");
+			final String id = (!UtilMethods.isSet(systemEvent.getId())) ? UUIDGenerator.generateUuid() : systemEvent.getId();
+			dc.addParam(id);
+			dc.addParam(systemEvent.getEventType());
+			dc.addParam(systemEvent.getPayload());
+			dc.addParam(systemEvent.getCreationDate());
+			dc.loadResult();
+		}
+
+		@Override
+		public Collection<SystemEventDTO> getEventsSince(final long fromDate) throws DotDataException {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ?");
+			dc.addParam(fromDate);
+			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
+			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
+				final String id = (String) record.get("identifier");
+				final String eventType = (String) record.get("event_type");
+				final String payload = (String) record.get("payload");
+				final Long created = (Long) record.get("created");
+				return new SystemEventDTO(id, eventType, payload, created);
+			});
+		}
+
+		@Override
+		public Collection<SystemEventDTO> getAll() throws DotDataException {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
+			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
+			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
+				final String id = (String) record.get("identifier");
+				final String eventType = (String) record.get("event_type");
+				final String payload = (String) record.get("payload");
+				final Long created = (Long) record.get("created");
+				return new SystemEventDTO(id, eventType, payload, created);
+			});
+		}
+
+		@Override
+		public void deleteEvents(final long toDate) throws DotDataException {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("DELETE FROM system_event WHERE created <= ?");
+			dc.addParam(toDate);
+			dc.loadResult();
+		}
+
+		@Override
+		public void deleteEvents(final long fromDate, final long toDate) throws DotDataException {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("DELETE FROM system_event WHERE created >= ? AND created <= ?");
+			dc.addParam(fromDate);
+			dc.addParam(toDate);
+			dc.loadResult();
+		}
+
+		@Override
+		public void deleteAll() throws DotDataException {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("DELETE FROM system_event");
+			dc.loadResult();
 		}
 
 	}

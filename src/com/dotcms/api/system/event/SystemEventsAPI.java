@@ -36,14 +36,13 @@ import com.dotmarketing.exception.DotDataException;
 public interface SystemEventsAPI {
 
 	/**
-	 * Pushes a new System Event to the message queue. The {@link SystemEvent}
+	 * Pushes a new Notification to the message queue. The {@link Notification}
 	 * is supposed to contain all the information it needs.
 	 *
 	 * @param notification
-	 *            - The {@link SystemEvent} object.
+	 *            - The {@link Notification} object.
 	 */
 	public void pushNotification(Notification notification) throws DotDataException;
-
 
 	/**
 	 * Pushes a new System Event to the message queue. The {@link SystemEvent}
