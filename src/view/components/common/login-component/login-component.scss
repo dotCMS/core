@@ -39,7 +39,7 @@
       }
 
       .md-input-underline {
-        display: "";
+        display: '';
       }
     }
 
@@ -92,6 +92,11 @@
     .error-message {
       color: maroon;
       text-align: center;
+    }
+
+    .companyLogo {
+      border: 0;
+      max-width: 300px;
     }
 
   }
