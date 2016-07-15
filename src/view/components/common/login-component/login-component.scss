@@ -1,0 +1,112 @@
+:host {
+  flex: 5;
+  margin: 0 50px;
+
+  .login-component-container {
+    width: 100%;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-flow: column nowrap;
+    flex-flow: column nowrap;
+    margin-top: 10%;
+
+    .flags {
+      padding:2px;
+      border:1px solid #dddddd;
+      cursor: pointer;
+      align-content: left;
+    }
+
+    md-input {
+      width: 100%;
+
+      .md-input-placeholder {
+        //color: rgba(#FFF, 0.5);
+        height: 100%;
+        line-height: 1;
+      }
+
+      .md-imput-element{
+        border: thin;
+        outline: thin;
+      }
+
+      .md-input-table {
+        //background-color: rgba(#FFF, 0.2);
+        border-radius: 3px;
+        padding: 5px 10px;
+      }
+
+      .md-input-underline {
+        display: block;
+      }
+    }
+
+
+
+    md-card {
+      //margin: 16px 16px 16px 16px;
+      margin-right: auto;
+      margin-left: auto;
+      width: 60%;
+    }
+
+
+    md-card-actions {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+      flex-direction: column;
+    }
+    table{
+      width: 100%;
+    }
+
+    section {
+      display: flex;
+      align-items: center;
+      margin: 8px;
+    }
+
+    .hideBox {
+      display: none;
+    }
+
+    .showBox {
+      display: block;
+    }
+
+    .td30 {
+      width: 30%;
+    }
+
+    .serverBox {
+      width: 45%;
+      border-right: thin solid #000000;
+    }
+    .middleBox {
+      width:5%;
+      padding-right: 10px;
+    }
+
+    .error-message {
+      color: maroon;
+      text-align: center;
+    }
+
+    .companyLogo {
+      border: 0;
+      max-width: 300px;
+    }
+
+  }
+}
+
+body {
+  background-repeat: no-repeat;
+  background-position: top center;
+}

@@ -1,0 +1,79 @@
+<div class='login-component-container'>
+    <md-card id='loginBox' class='loginBox' [class.hideBox]='isLoginCardHidden'>
+        <md-card-title>{{loginLabel}}</md-card-title>
+        <div class='error-message' id='dotLoginMessagesDiv'>{{message}}</div>
+        <md-content>
+            <table>
+                <tr>
+                    <td class='serverBox'>
+                        <div>
+                            <p><img src='{{dotcmscompanyLogo}}' class='companyLogo' id='company_logo'></p>
+                            <p>{{serverLabel}}: {{dotcmsServerId}}</p>
+                            <p>{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
+                            <p>( {{dotcmsBuildDateString}} )</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class='middleBox'></div>
+                    </td>
+                    <td>
+                        <table>
+                            <tr>
+                                <td class='td30'>
+                                    <label>{{userIdOrEmailLabel}}:</label>
+                                </td>
+                                <td>
+                                    <md-input (keyup.enter)="logInUser()" placeholder='{{userIdOrEmailLabel}}' [(ngModel)]='myAccountLogin' id='myAccountLogin' floatingPlaceholder='false'></md-input>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="td30">
+                                    <label>{{passwordLabel}}:</label>
+                                </td>
+                                <td>
+                                    <md-input (keyup.enter)="logInUser()" placeholder='{{passwordLabel}}' [(ngModel)]='password' id='password' type='password' floatingPlaceholder='false'></md-input>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan='2'>
+                                    <md-checkbox [(ngModel)]='myAccountRememberMe' id='myAccountRememberMe'>{{rememberMeLabel}}</md-checkbox>
+                                </td>
+                                <td>
+                                    <select id='language' [(ngModel)]='language' (change)='changeLanguage($event.target.value)'>
+                                        <template ngFor let-lan [ngForOf]='languages'>
+                                            <option  value='{{lan}}'>
+                                                <img title='' id='myLanguageImage' alt='' src='/html/images/languages/{{lan}}.gif' align='left' style='padding:1px;border:1px solid #ffffff'>
+                                            </option>
+                                        </template>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan='2'>
+                                    <md-card-actions>
+                                        <section>
+                                            <md-button md-raised-button color='warn' (click)='logInUser()'>{{loginButton}}</md-button>
+                                            <md-button md-raised-button (click)='showForgotPassword()'>{{forgotPasswordButton}}</md-button>
+                                        </section>
+                                    </md-card-actions>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </md-content>
+    </md-card>
+    <md-card id='forgotPassword' class='forgotPasswordBox' [class.hideBox]='isForgotPasswordCardHidden'>
+        <md-card-title>{{forgotPasswordLabel}}</md-card-title>
+        <md-card-content>
+            <md-input (keyup.enter)="recoverPassword()" placeholder='{{emailAddressLabel}}' [(ngModel)]='forgotPasswordEmail' id='forgotPasswordEmail' floatingPlaceholder='false'></md-input>
+        </md-card-content>
+        <md-card-actions>
+            <section>
+                <md-button md-raised-button color='warn' (click)='recoverPassword()'>{{forgotPasswordButton}}</md-button>
+                <md-button md-raised-button color='warn' (click)='cancelRecoverPassword()'>{{cancelButton}}</md-button>
+            </section>
+        </md-card-actions>
+    </md-card>
+</div>
