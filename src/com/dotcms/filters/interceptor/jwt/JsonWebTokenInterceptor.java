@@ -159,7 +159,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 */
     protected boolean isLoggedIn (final HttpServletRequest req) {
 
-        return null != PortalUtil.getUserId(req);
+        return this.loginService.isLoggedIn(req);
     }
 
 	/**

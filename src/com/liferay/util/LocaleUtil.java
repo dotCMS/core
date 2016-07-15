@@ -24,8 +24,12 @@ package com.liferay.util;
 
 import java.util.Locale;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * <a href="LocaleUtil.java.html"><b><i>View Source</i></b></a>
@@ -59,6 +63,62 @@ public class LocaleUtil {
 		return locale;
 	}
 
+	// todo: unit test me
+	/**
+	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
+	 * if the LOCALE_KEY is also null, will get the request default one.
+	 *
+	 * If country or language are not null (one of them could be null), will build a new locale and set to the session under {@link Globals} LOCALE_KEY
+	 * @param request
+	 * @param country
+	 * @param language
+     * @return
+     */
+	public static Locale getLocale (final HttpServletRequest request, final String country, final String language) {
+
+		final HttpSession session = request.getSession();
+		Locale locale = null;
+
+		try {
+
+			if (null == country && null == language) {
+
+				if (null != session.getAttribute(Globals.LOCALE_KEY)) {
+
+					return (Locale) session.getAttribute(Globals.LOCALE_KEY);
+				} else {
+
+					locale = request.getLocale();
+				}
+			} else {
+
+				final Locale.Builder builder =
+						new Locale.Builder();
+
+				if (null != language) {
+
+					builder.setLanguage(language);
+				}
+
+				if (null != country) {
+
+					builder.setRegion(country);
+				}
+
+				locale = builder.build();
+			}
+		} catch (Exception e) {
+
+			locale = Locale.getDefault();
+		}
+
+		if (null != locale) {
+
+			session.setAttribute(Globals.LOCALE_KEY, locale);
+		}
+
+		return locale;
+	}
 	private static final Log _log = LogFactory.getLog(LocaleUtil.class);
 
 }

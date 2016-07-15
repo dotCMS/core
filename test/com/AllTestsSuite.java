@@ -1,5 +1,7 @@
 package com;
 
+import com.dotcms.rest.api.v1.authentication.AuthenticationResourceTest;
+import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -139,6 +141,10 @@ import com.liferay.portal.ejb.UserLocalManagerTest;
     RulesAPIFTest.class, //Needs Enterprise License.
     RulesCacheFTest.class, //Needs Enterprise License.
     RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
+
+        // Authentication
+        AuthenticationResourceTest.class,
+        LogoutResource.class,
 
     //Rules:Actionlets.
     ActionletResourceFTest.class, //Needs Enterprise License.
