@@ -1,7 +1,6 @@
 package com.dotcms.notifications.bean;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -12,7 +11,7 @@ import java.util.List;
  * starts, finishes, or if an error occurred.
  * 
  * @author Daniel Silva
- * @version 3.0
+ * @version 3.0, 3.7
  * @since Feb 3, 2014
  *
  */
@@ -20,14 +19,12 @@ import java.util.List;
 public class Notification implements Serializable {
 
 	private String id;
-	private String title;
-	private String message;
+	private NotificationData notificationData;
 	private NotificationType type;
 	private NotificationLevel level;
 	private String userId;
 	private Date timeSent;
 	private Boolean wasRead;
-	private List<NotificationAction> actions;
 
 	/**
 	 * Default constructor.
@@ -39,65 +36,94 @@ public class Notification implements Serializable {
 	/**
 	 * Creates a Notification object.
 	 * 
-	 * @param message
-	 *            - The piece of information that will be displayed to the user.
 	 * @param level
 	 *            - The urgency level or category according to the
 	 *            {@link NotificationLevel} class.
 	 * @param userId
 	 *            - The ID of the user that this notification is going to be
 	 *            sent to.
+	 * @param notificationData
+	 *            - The additional information that make up this notification.
 	 */
-	public Notification(String message, NotificationLevel level, String userId) {
-		this("", message, level, userId);
+	public Notification(NotificationLevel level, String userId, NotificationData notificationData) {
+		this(null, level, userId, notificationData);
 	}
 
 	/**
 	 * Creates a Notification object.
 	 * 
-	 * @param title
-	 *            - The title of the notification. Usually a small introduction
-	 *            for the main message.
-	 * @param message
-	 *            - The piece of information that will be displayed to the user.
+	 * @param type
+	 *            - The type or notification according to the
+	 *            {@link NotificationType} class.
 	 * @param level
 	 *            - The urgency level or category according to the
 	 *            {@link NotificationLevel} class.
 	 * @param userId
 	 *            - The ID of the user that this notification is going to be
 	 *            sent to.
+	 * @param notificationData
+	 *            - The additional information that make up this notification.
 	 */
-	public Notification(String title, String message, NotificationLevel level, String userId) {
-		this(title, message, level, userId, null);
+	public Notification(NotificationType type, NotificationLevel level, String userId, NotificationData notificationData) {
+		this(type, level, userId, false, notificationData);
 	}
 
 	/**
 	 * Creates a Notification object.
 	 * 
-	 * @param title
-	 *            - The title of the notification. Usually a small introduction
-	 *            for the main message.
-	 * @param message
-	 *            - The piece of information that will be displayed to the user.
+	 * @param type
+	 *            - The type or notification according to the
+	 *            {@link NotificationType} class.
 	 * @param level
 	 *            - The urgency level or category according to the
 	 *            {@link NotificationLevel} class.
 	 * @param userId
 	 *            - The ID of the user that this notification is going to be
 	 *            sent to.
-	 * @param actions
-	 *            - A list of {@link NotificationAction} objects that can be
-	 *            used to extend the functionality of a notification item. For
-	 *            example, adding a link, a button that calls a function, an
-	 *            image, etc.
+	 * @param wasRead
+	 *            - If set to {@code true}, this notification will be marked as
+	 *            "read" by the user. Otherwise, set to {@code false}.
+	 * @param notificationData
+	 *            - The additional information that make up this notification.
 	 */
-	public Notification(String title, String message, NotificationLevel level, String userId,
-			List<NotificationAction> actions) {
-		this.title = title;
-		this.message = message;
-		this.level = level;
+	public Notification(NotificationType type, NotificationLevel level, String userId, Boolean wasRead,
+			NotificationData notificationData) {
+		this("", type, level, userId, null, false, notificationData);
+	}
+
+	/**
+	 * Creates a Notification object.
+	 * 
+	 * @param id
+	 *            - The ID of this notification. If a new object is being
+	 *            created, leave this parameter as {@code null} so the system
+	 *            generates an appropriate ID.
+	 * @param type
+	 *            - The type or notification according to the
+	 *            {@link NotificationType} class.
+	 * @param level
+	 *            - The urgency level or category according to the
+	 *            {@link NotificationLevel} class.
+	 * @param userId
+	 *            - The ID of the user that this notification is going to be
+	 *            sent to.
+	 * @param timeSent
+	 *            - The creation date of this notification.
+	 * @param wasRead
+	 *            - If set to {@code true}, this notification will be marked as
+	 *            "read" by the user. Otherwise, set to {@code false}.
+	 * @param notificationData
+	 *            - The additional information that make up this notification.
+	 */
+	public Notification(String id, NotificationType type, NotificationLevel level, String userId, Date timeSent,
+			Boolean wasRead, NotificationData notificationData) {
+		this.id = id;
 		this.userId = userId;
-		this.actions = actions;
+		this.notificationData = notificationData;
+		this.type = type;
+		this.level = level;
+		this.timeSent = timeSent;
+		this.wasRead = wasRead;
 	}
 
 	/**
@@ -125,7 +151,7 @@ public class Notification implements Serializable {
 	 * @return The notification title.
 	 */
 	public String getTitle() {
-		return this.title;
+		return this.notificationData.getTitle();
 	}
 
 	/**
@@ -135,7 +161,7 @@ public class Notification implements Serializable {
 	 *            - The notification title.
 	 */
 	public void setTitle(String title) {
-		this.title = title;
+		this.notificationData.setTitle(title);
 	}
 
 	/**
@@ -144,7 +170,7 @@ public class Notification implements Serializable {
 	 * @return The message title.
 	 */
 	public String getMessage() {
-		return message;
+		return this.notificationData.getMessage();
 	}
 
 	/**
@@ -154,7 +180,7 @@ public class Notification implements Serializable {
 	 *            - The notification message.
 	 */
 	public void setMessage(String message) {
-		this.message = message;
+		this.notificationData.setMessage(message);
 	}
 
 	/**
@@ -263,7 +289,7 @@ public class Notification implements Serializable {
 	 * @return The notification action list.
 	 */
 	public List<NotificationAction> getActions() {
-		return this.actions;
+		return this.notificationData.getActions();
 	}
 
 	/**
@@ -274,43 +300,37 @@ public class Notification implements Serializable {
 	 *            - The notification action list.
 	 */
 	public void setActions(List<NotificationAction> actions) {
-		this.actions = actions;
+		this.notificationData.setActions(actions);
 	}
 
 	/**
-	 * Adds a new {@link NotificationAction} object to the list of actions for
-	 * this notification.
+	 * Returns the {@link NotificationData} object of this notification.
 	 * 
-	 * @param action
-	 *            - The notification action.
+	 * @return The NotificationData object.
 	 */
-	public void addAction(NotificationAction action) {
-		if (this.actions == null) {
-			this.actions = new ArrayList<>();
-		}
-		this.actions.add(action);
+	public NotificationData getNotificationData() {
+		return this.notificationData;
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 
 		Notification that = (Notification) o;
 
-		if (id != null ? !id.equals(that.id) : that.id != null) return false;
-		if (title != null ? !title.equals(that.title) : that.title != null) return false;
-		if (message != null ? !message.equals(that.message) : that.message != null) return false;
-		if (type != that.type) return false;
-		if (level != that.level) return false;
-		if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-		if (timeSent != null ? !timeSent.equals(that.timeSent) : that.timeSent != null) return false;
-		return wasRead != null ? wasRead.equals(that.wasRead) : that.wasRead == null;
-
+		if (id != null ? !id.equals(that.id) : that.id != null) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
 	public int hashCode() {
+		String title = this.notificationData.getTitle();
+		String message = this.notificationData.getMessage();
 		int result = id != null ? id.hashCode() : 0;
 		result = 31 * result + (title != null ? title.hashCode() : 0);
 		result = 31 * result + (message != null ? message.hashCode() : 0);
@@ -324,9 +344,9 @@ public class Notification implements Serializable {
 
 	@Override
 	public String toString() {
-		return "Notification [id=" + id + ", title=" + title + ", message=" + message + ", type=" + type + ", level="
-				+ level + ", userId=" + userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead + ", actions=" + actions
-				+ "]";
+		return "Notification [id=" + id + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
+				+ ", level=" + level + ", userId=" + userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead
+				+ ", actions=" + this.getActions() + "]";
 	}
 
 }

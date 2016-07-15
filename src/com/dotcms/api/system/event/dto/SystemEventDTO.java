@@ -112,8 +112,8 @@ public class SystemEventDTO implements Serializable {
 
 	@Override
 	public String toString() {
-		return "SystemEventDTO [id=" + id + ", eventType=" + eventType + ", payload=" + payload + ", creationDate=" + creationDate
-				+ "]";
+		return "SystemEventDTO [id=" + id + ", eventType=" + eventType + ", payload=" + payload + ", creationDate="
+				+ creationDate + "]";
 	}
 
 }
