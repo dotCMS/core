@@ -1,5 +1,5 @@
 <div class='login-component-container'>
-    <md-card id='loginBox' class='loginBox'>
+    <md-card id='loginBox' class='loginBox' [class.hideBox]='isLoginCardHidden'>
         <md-card-title>{{loginLabel}}</md-card-title>
         <div class='error-message' id='dotLoginMessagesDiv'>{{message}}</div>
         <md-content>
@@ -23,7 +23,7 @@
                                     <label>{{userIdOrEmailLabel}}:</label>
                                 </td>
                                 <td>
-                                    <md-input (keyup.enter)="logInUser()" placeholder='{{userIdOrEmailLabel}}' [(ngModel)]='my_account_login' id='my_account_login' floatingPlaceholder='false'></md-input>
+                                    <md-input (keyup.enter)="logInUser()" placeholder='{{userIdOrEmailLabel}}' [(ngModel)]='myAccountLogin' id='myAccountLogin' floatingPlaceholder='false'></md-input>
                                 </td>
                             </tr>
                             <tr>
@@ -36,7 +36,7 @@
                             </tr>
                             <tr>
                                 <td colspan='2'>
-                                    <md-checkbox [(ngModel)]='my_account_r_m' id='my_account_r_m'>{{rememberMeLabel}}</md-checkbox>
+                                    <md-checkbox [(ngModel)]='myAccountRememberMe' id='myAccountRememberMe'>{{rememberMeLabel}}</md-checkbox>
                                 </td>
                                 <td>
                                     <select id='language' [(ngModel)]='language' (change)='changeLanguage($event.target.value)'>
@@ -64,7 +64,7 @@
             </table>
         </md-content>
     </md-card>
-    <md-card id='forgotPassword' class='forgotPasswordBox hideBox'>
+    <md-card id='forgotPassword' class='forgotPasswordBox' [class.hideBox]='isForgotPasswordCardHidden'>
         <md-card-title>{{forgotPasswordLabel}}</md-card-title>
         <md-card-content>
             <md-input (keyup.enter)="recoverPassword()" placeholder='{{emailAddressLabel}}' [(ngModel)]='forgotPasswordEmail' id='forgotPasswordEmail' floatingPlaceholder='false'></md-input>

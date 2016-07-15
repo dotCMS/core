@@ -25,12 +25,10 @@ import {MdIcon, MdIconRegistry} from '@angular2-material/icon/icon';
 export class MainComponent {
 
     @Output() toggleMain = new EventEmitter<boolean>();
-    _loginService: LoginService;
     logoutLabel: string;
 
-    constructor( @Inject('menuItems') private menuItems: Array<any>, private _service: LoginService) {
-        this._loginService = _service;
-        this.logoutLabel = 'Logout'; // need to use internationalization
+    constructor(@Inject('menuItems') private menuItems: Array<any>, private _loginService: LoginService) {
+        this.logoutLabel = 'Logout'; // TODO need to use internationalization
     }
 
     /**

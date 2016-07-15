@@ -1,13 +1,15 @@
-import {Component, Input, Inject, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
-import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {MdButton} from '@angular2-material/button';
-import {MdToolbar} from '@angular2-material/toolbar';
-import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
-import {MD_CARD_DIRECTIVES} from '@angular2-material/card';
+import {Component, EventEmitter, Inject, Input, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
 
+// angular material imports
+import {MdButton} from '@angular2-material/button';
+import {MD_CARD_DIRECTIVES} from '@angular2-material/card';
+import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
+import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
+import {MdToolbar} from '@angular2-material/toolbar';
+
 @Component({
-    directives: [MdToolbar, MD_INPUT_DIRECTIVES, MdButton, MdCheckbox, MD_CARD_DIRECTIVES],
+    directives: [MdButton, MD_CARD_DIRECTIVES, MdCheckbox, MD_INPUT_DIRECTIVES, MdToolbar],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [LoginService],
@@ -21,13 +23,14 @@ import {LoginService} from '../../../../api/services/login-service';
  * the info required to log in the dotCMS angular backend
  */
 export class LoginComponent {
-    @Input() my_account_login: string= '@dotcms.com';
+    @Input() myAccountLogin: string= '@dotcms.com';
     @Input() password: string;
-    @Input() my_account_r_m: boolean= false;
+    @Input() myAccountRememberMe: boolean= false;
     @Input() forgotPasswordEmail: string;
-    @Output() toggleMain = new EventEmitter<boolean>();
-    languages: Array<string> = [];
     @Input() language: string= 'en_US';
+    @Output() toggleMain = new EventEmitter<boolean>();
+
+    languages: Array<string> = [];
     message: string= '';
 
     // labels
@@ -42,19 +45,20 @@ export class LoginComponent {
     forgotPasswordConfirmationMessage: string= '';
     cancelButton: string= '';
     serverLabel: string = '';
-
-    _loginService: LoginService;
     dotcmscompanyLogo: string= '';
     dotcmsServerId: string= '';
     dotcmslicenceLevel: string= '';
     dotcmsVersion: string= '';
     dotcmsBuildDateString: string= '';
 
+    isForgotPasswordCardHidden: boolean = true;
+    isLoginCardHidden: boolean = false;
+
     private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent','Server'];
 
-    constructor( @Inject('menuItems') private menuItems: any[], private _service: LoginService) {
-        this._loginService = _service;
+    constructor(@Inject('menuItems') private menuItems: any[], private _loginService: LoginService) {
         this.updateScreenBackground();
+
     }
 
     /**
@@ -62,7 +66,7 @@ export class LoginComponent {
      */
     logInUser(): void {
 
-        this._loginService.logInUser(this.my_account_login, this.password, this.my_account_r_m, this.language).subscribe((result: any) => {
+        this._loginService.logInUser(this.myAccountLogin, this.password, this.myAccountRememberMe, this.language).subscribe((result: any) => {
             if (result.errors.length > 0) {
                 this.message = result.errors[0].message;
             } else {
@@ -86,8 +90,8 @@ export class LoginComponent {
      */
     recoverPassword(): void {
         if (confirm(this.forgotPasswordConfirmationMessage)) {
-            document.getElementById('forgotPassword').className = 'forgotPasswordBox hideBox';
-            document.getElementById('loginBox').style.display = '';
+            this.isForgotPasswordCardHidden = true;
+            this.isLoginCardHidden = false;
 
             this._loginService.recoverPassword(this.forgotPasswordEmail).subscribe((result: any) => {
 
@@ -111,7 +115,7 @@ export class LoginComponent {
      */
     private updateScreenBackground(): void {
 
-        this._loginService.getLoginFormInfo( this.language, this.i18nMessages).subscribe((data) => {
+        this._loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
 
             // Translate labels and messages
             let dataI18n = data.i18nMessagesMap;
@@ -123,7 +127,7 @@ export class LoginComponent {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
             } else {
                 this.userIdOrEmailLabel = dataI18n['user-id'];
-                this.my_account_login = '';
+                this.myAccountLogin = '';
             }
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
@@ -134,10 +138,7 @@ export class LoginComponent {
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
             this.serverLabel = dataI18n.Server;
 
-            // Set background colors and images
-            document.body.style.backgroundRepeat = 'no-repeat';
-            document.body.style.backgroundPosition = 'top center';
-
+            // Set background color and image with the values provided by the service
             if (entity.backgroundColor !== 'undefined' && entity.backgroundColor !== '') {
                 document.body.style.backgroundColor = entity.backgroundColor;
             }
@@ -168,16 +169,16 @@ export class LoginComponent {
      * Display the login form instad of the forgot password form
      */
     cancelRecoverPassword(): void {
-        document.getElementById('forgotPassword').className = 'forgotPasswordBox hideBox';
-        document.getElementById('loginBox').style.display = '';
+        this.isForgotPasswordCardHidden = true;
+        this.isLoginCardHidden = false;
     }
 
     /**
      * Display the forgot password card
      */
     showForgotPassword(): void {
-        document.getElementById('forgotPassword').className = 'forgotPasswordBox';
-        document.getElementById('loginBox').style.display = 'none';
+        this.isForgotPasswordCardHidden = false;
+        this.isLoginCardHidden = true;
     }
 
     /**

@@ -39,7 +39,7 @@ export class LoginService extends CoreWebService {
      * @returns {Observable<any>} Observable with an array of internationalized messages and server configuration info
      */
     public getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<any> {
-        this.getLanguage(language);
+        this.setLanguage(language);
 
         let body = JSON.stringify({'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country});
 
@@ -59,7 +59,7 @@ export class LoginService extends CoreWebService {
      * @returns an array with the user if the user loggedIn successfully or the error message
      */
     public logInUser(login: string, password: string, rememberMe: boolean, language: string): Observable<{errors: string[], entity: Object, messages: string[], i18nMessagesMap: Object}> {
-        this.getLanguage(language);
+        this.setLanguage(language);
 
         let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
@@ -103,7 +103,7 @@ export class LoginService extends CoreWebService {
      * update the language and country variables from the string
      * @param language string containing the languag and country
      */
-    private getLanguage(language: string): void {
+    private setLanguage(language: string): void {
         if (language !== undefined && language !== '') {
             let languageDesc = language.split('_');
             this.lang = languageDesc[0];

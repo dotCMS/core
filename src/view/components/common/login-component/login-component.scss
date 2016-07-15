@@ -39,7 +39,7 @@
       }
 
       .md-input-underline {
-        display: '';
+        display: block;
       }
     }
 
@@ -72,19 +72,23 @@
       margin: 8px;
     }
 
-    .hideBox{
-      display:none;
+    .hideBox {
+      display: none;
     }
 
-    .td30{
-      width:30%;
+    .showBox {
+      display: block;
     }
 
-    .serverBox{
+    .td30 {
+      width: 30%;
+    }
+
+    .serverBox {
       width: 45%;
       border-right: thin solid #000000;
     }
-    .middleBox{
+    .middleBox {
       width:5%;
       padding-right: 10px;
     }
@@ -100,4 +104,9 @@
     }
 
   }
+}
+
+body {
+  background-repeat: no-repeat;
+  background-position: top center;
 }

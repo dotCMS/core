@@ -17,14 +17,18 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
 })
 
 export class MainNavigation {
-    _routingService: RoutingService;
 
-    constructor( @Inject('menuItems') private menuItems: Array<any>, private _routingserv: RoutingService) {
-        this._routingService = _routingserv;
+    constructor(@Inject('menuItems') private menuItems: Array<any>, private _routingService: RoutingService) {
+        // TODO update dinamically menuItems and routes calling
         // this.updateRoutes();
 
     }
 
+    /**
+     * This method should allow to update the menuItems and routes dinamically
+     * TODO the menu is displayed but the changes in the route and menuItem
+     * are not visible in the other component
+     */
     public updateRoutes(): void {
         this._routingService.getRoutes().subscribe(menu => {
             this.menuItems = menu.menuItems;
