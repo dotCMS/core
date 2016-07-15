@@ -11,6 +11,9 @@ import org.immutables.value.Value.Derived;
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.exception.DotDataException;
 
 
 public interface Field extends FieldType {
@@ -37,6 +40,11 @@ public interface Field extends FieldType {
 
 	@Value.Default
 	default boolean readOnly() {
+		return false;
+	}
+	
+	@Value.Default
+	default boolean onePerContentType() {
 		return false;
 	}
 	
@@ -97,9 +105,13 @@ public interface Field extends FieldType {
 		return false;
 	}
 	
-	@Value.Default
+	@Value.Lazy
 	default List<FieldVariable> fieldVariables(){
-		return ImmutableList.of();
+		try {
+			return FactoryLocator.getFieldFactory2().loadVariables(this);
+		} catch (DotDataException e) {
+			throw new DotStateException("unable to load field variables:"  +e.getMessage(), e);
+		}
 	}
 
 	@Value.Default

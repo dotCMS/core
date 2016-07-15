@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
@@ -115,6 +116,11 @@ public class DbContentTypeTransformer implements ToContentTypeTransformer{
 			@Override
 			public BaseContentTypes baseType() {
 				return base;
+			}
+
+			@Override
+			public List<Field> fields() {
+				return ImmutableList.of();
 			}
 
 

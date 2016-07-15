@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
@@ -11,14 +12,14 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.structure.model.Structure;
 
-public class LegacyStructureTransformer implements ToContentTypeTransformer {
+public class FromStructureTransformer implements ToContentTypeTransformer {
 	final List<ContentType> list;
 
-	public LegacyStructureTransformer(Structure struct) {
+	public FromStructureTransformer(Structure struct) {
 		this.list = ImmutableList.of(transform(struct));
 	}
 
-	public LegacyStructureTransformer(List<Structure> initList) {
+	public FromStructureTransformer(List<Structure> initList) {
 		
 		List<ContentType> newList = new ArrayList<ContentType>();
 		for (Structure struct : initList) {
@@ -120,6 +121,10 @@ public class LegacyStructureTransformer implements ToContentTypeTransformer {
 			@Override
 			public BaseContentTypes baseType() {
 				return BaseContentTypes.getBaseContentType(struct.getStructureType());
+			}
+			@Override
+			public List<Field> fields() {
+				return ImmutableList.of();
 			}
 
 		};

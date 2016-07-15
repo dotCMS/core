@@ -21,6 +21,10 @@ public abstract class HostFolderField implements Field {
 	public boolean indexed() {
 		return true;
 	};
+	@Override
+	public boolean onePerContentType() {
+		return true;
+	};
 	private static final long serialVersionUID = 1L;
 
 	@Override

@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.model.type;
 
+import java.io.Serializable;
+
 import org.immutables.value.Value;
 
 @Value.Immutable
-public abstract class SimpleContentType extends ContentType implements UrlMapable{
+public abstract class SimpleContentType extends ContentType implements UrlMapable, Serializable{
 
 
 

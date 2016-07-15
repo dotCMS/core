@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 
 public interface FieldApi {
@@ -21,5 +22,11 @@ public interface FieldApi {
 	void registerFieldType(FieldType type);
 
 	void deRegisterFieldType(FieldType type);
+
+	void delete(Field field) throws DotDataException;
+
+	void deleteFieldsByContentType(ContentType type) throws DotDataException;
+
+	List<Field> byContentType(ContentType type) throws DotDataException;
 
 }

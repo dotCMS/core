@@ -31,7 +31,6 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotmarketing.business.API;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -203,7 +202,7 @@ public class FieldFactoryImplTest {
 	}
 	@Test
 	public void testDeleteingFields() throws Exception {
-		for(ContentType type : API.getContentTypeAPI2().findAll(API.systemUser(), true)){
+		for(ContentType type : APILocator.getContentTypeAPI2().findAll(APILocator.getUserAPI().getSystemUser(), true)){
 			for(Field field : factory.byContentType(type)){
 				if(field.variable().startsWith(TEST_VAR_PREFIX)){
 					deleteFields(ImmutableList.of(field));

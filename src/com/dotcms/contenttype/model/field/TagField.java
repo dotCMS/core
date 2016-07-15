@@ -23,7 +23,11 @@ public abstract class TagField implements Field  {
 	public String typeName(){
 		return LegacyFieldTypes.getLegacyName(TagField.class);
 	}
-	
+
+	@Override
+	public boolean onePerContentType() {
+		return true;
+	};
 	@Value.Check
 	protected void check() {
 		Preconditions.checkArgument(indexed(),"Tag Fields must be indexed");

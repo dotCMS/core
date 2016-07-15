@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import java.util.List;
+import java.util.Observer;
 
 import com.dotcms.contenttype.model.type.BaseContentTypes;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -53,6 +54,12 @@ public interface ContentTypeFactory {
 
 
 	int searchCount(String search, BaseContentTypes baseType) throws DotDataException;
+
+
+	void delete(ContentType type) throws DotDataException;
+
+
+	void delete(ContentType type, List<Observer> observers) throws DotDataException;
 	
 	
 	

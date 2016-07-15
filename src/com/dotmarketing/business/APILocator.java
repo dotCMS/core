@@ -44,6 +44,7 @@ import com.dotmarketing.cms.polls.business.PollsAPI;
 import com.dotmarketing.cms.polls.business.PollsAPILiferayImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
@@ -103,6 +104,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAuditAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 
 /**
@@ -374,7 +376,9 @@ public class APILocator extends Locator<APIIndex>{
     public static FieldApi getFieldAPI2() {
 		return new FieldApiImpl();
 	}
-
+    public static User systemUser() throws DotDataException {
+		return getUserAPI().getSystemUser();
+	}
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){

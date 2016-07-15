@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -56,7 +57,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	@Override
 	public void delete(Field field) throws DotDataException {
-		LocalTransaction.wrap(() -> {
+		LocalTransaction.wrapReturn(() -> {
 			 return deleteFieldInDb(field);
 		});
 	}
@@ -93,6 +94,9 @@ public class FieldFactoryImpl implements FieldFactory {
 			inserting = true;
 		}
 
+
+		
+		
 		if(!retField.acceptedDataTypes().contains(retField.dataType())){
 			throw new DotDataException("Field Type:" + retField.type() + " does not accept datatype " + retField.dataType());
 		}
@@ -113,7 +117,23 @@ public class FieldFactoryImpl implements FieldFactory {
 				retField = FieldBuilder.builder(retField).indexed(true).build();
 			}
 		}
-
+		
+		if(retField.onePerContentType()){
+			List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
+			for(Field f : fieldsAlreadyAdded){
+				if(f.inode().equals(throwAwayField.inode())){
+					continue;
+				}
+				if(f.type().equals(throwAwayField.type())){
+					throw new DotDataException("A content type cannot have two:" + retField.type() + " fields");
+				}
+			}
+		}
+		
+		
+		
+		
+		
 		if (inserting) {
 			insertInodeInDb(retField);
 			insertFieldInDb(retField);
@@ -157,12 +177,11 @@ public class FieldFactoryImpl implements FieldFactory {
 			throw new NotFoundInDbException("Field with id:" + id + " not found");
 		}
 		return new DbFieldTransformer(results.get(0)).from();
-
 	}
 
 	private boolean deleteFieldInDb(Field field) throws DotDataException {
-		DotConnect dc = new DotConnect();
 		deleteFieldVarsInDb(field);
+		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.deleteById);
 		dc.addParam(field.inode());
 		dc.loadResult();
@@ -252,7 +271,6 @@ public class FieldFactoryImpl implements FieldFactory {
 		dc.addParam(field.name());
 		dc.addParam(field.type().getCanonicalName());
 		dc.addParam(field.relationType());
-		dc.addParam(field.dbColumn());
 		dc.addParam(field.required());
 		dc.addParam(field.indexed());
 		dc.addParam(field.listed());
@@ -352,6 +370,14 @@ public class FieldFactoryImpl implements FieldFactory {
 		throw new OverFieldLimitException("No more columns for datatype:" + dataType);
 		
 
+	}
+
+	@Override
+	public void deleteByContentType(ContentType type) throws DotDataException {
+		List<Field> fields = byContentType(type);
+		for(Field field : fields){
+			deleteFieldInDb(field);
+		}
 	}
 
 }

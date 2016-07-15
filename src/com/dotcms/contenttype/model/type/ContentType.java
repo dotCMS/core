@@ -9,10 +9,11 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.exolab.castor.xml.schema.Structure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -20,6 +21,7 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -47,7 +49,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 	
 	@Value.Default
 	public StorageType storageType(){
-		return  new DbStorageType().instance();
+		return  ImmutableDbStorageType.of();
 	}
 	
 	@Nullable
@@ -105,7 +107,16 @@ public abstract class ContentType implements Serializable, Permissionable {
 	public String host() {
 		return "SYSTEM_HOST";
 	}
-
+	
+	@Value.Lazy
+	public  List<Field> fields(){
+		try {
+			return FactoryLocator.getFieldFactory2().byContentType(this);
+		} catch (DotDataException e) {
+			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);
+		}
+	}
+	
 	@Value.Default
 	public String folder() {
 		return "SYSTEM_FOLDER";
@@ -138,9 +149,10 @@ public abstract class ContentType implements Serializable, Permissionable {
 						"edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 
 	}
-
+	@Value.Lazy
 	@Override
-	public Permissionable getParentPermissionable() throws DotDataException {
+	@JsonIgnore
+	public Permissionable getParentPermissionable()  {
 		try {
 
 			if (UtilMethods.isSet(folder()) && !folder().equals("SYSTEM_FOLDER")) {

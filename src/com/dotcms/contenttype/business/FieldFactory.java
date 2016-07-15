@@ -32,6 +32,9 @@ public interface FieldFactory {
 	List<Field> byContentTypeId(String id) throws DotDataException;
 
 
+	void deleteByContentType(ContentType type) throws DotDataException;
+
+
 
 
 

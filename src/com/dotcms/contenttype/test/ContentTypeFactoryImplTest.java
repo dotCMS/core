@@ -2,14 +2,16 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.FileNotFoundException;
-import java.sql.Connection;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -27,15 +29,19 @@ import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.contenttype.transform.contenttype.LegacyStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.google.gson.Gson;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourceForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 public class ContentTypeFactoryImplTest {
 
@@ -140,12 +146,78 @@ public class ContentTypeFactoryImplTest {
 		assertThat("findAll sort by Name has same size as find all", factory.findAll("name").size() == types.size());
 	}
 	
+	@Test
+	public void testFieldsMethod() throws Exception {
+		
+		Cache<String, ContentType> cacheTest  = CacheBuilder.newBuilder()
+                .maximumSize(100)
+               .build();
 
+		
+		
+		ContentType type = factory.find(Constants.NEWS);
+		cacheTest.put(type.inode(), type);
+		System.out.println(type);
+		
+		ContentType otherType = cacheTest.getIfPresent(type.inode());
+		
+		List<Field> fields = otherType.fields();
+		System.out.println(type);
+		List<Field> fields2 = APILocator.getFieldAPI2().byContentType(type);
+		assertThat("We have fields!", fields.size()>0 && fields.size()==fields2.size());
+		for(int j=0;j<fields.size();j++){
+			Field field = fields.get(j);
+			Field testField = fields2.get(j);
+			assertThat("fields are correct:", field.equals(testField));
+		}
+		
+	}
+	
+	@Test
+	public void testSerialization() throws Exception {
+		
+
+		
+		File temp = File.createTempFile("test1", "obj");
+		File temp2 = File.createTempFile("test2", "obj");
+		ContentType origType = factory.find(Constants.NEWS);
+
+	    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(temp));
+	    oos.writeObject( origType );
+		oos.close();
+		temp.renameTo(temp2);
+		ObjectInputStream ois= new ObjectInputStream(new FileInputStream(temp2));
+		ContentType fromDisk = (ContentType) ois.readObject();
+		ois.close();
+		try{
+			assertThat("fields are correct:", origType.equals(fromDisk));
+		}catch(Throwable e){
+			System.out.println("origType" + origType);
+			System.out.println("fromDisk" + fromDisk);
+			throw e;
+		}
+
+		
+		
+		List<Field> fields = origType.fields();
+		List<Field> fields2 = fromDisk.fields();
+		
+
+		assertThat("We have fields!", fields.size()>0 && fields.size()==fields2.size());
+		for(int j=0;j<fields.size();j++){
+			Field field = fields.get(j);
+			Field testField = fields2.get(j);
+			assertThat("fields are correct:", field.equals(testField));
+		}
+		
+	}
+	
+	
 	
 	@Test
 	public void testLegacyTransform() throws Exception {
 		List<ContentType> types = factory.findAll("name");
-		List<ContentType> oldTypes = new LegacyStructureTransformer(StructureFactory.getStructures()).asList();
+		List<ContentType> oldTypes = new FromStructureTransformer(StructureFactory.getStructures()).asList();
 		
 		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
 		
