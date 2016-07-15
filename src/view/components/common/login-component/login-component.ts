@@ -68,6 +68,8 @@ export class LoginComponent {
             } else {
                 this.message = '';
                 this.toggleMain.emit(false);
+                // this window.location.reload should be removed once the menu and router injection update issue is fixed
+                window.location.reload();
             }
         }, (error) => {
             if (error.response.status === 400 || error.response.status === 401) {

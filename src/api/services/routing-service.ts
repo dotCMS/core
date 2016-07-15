@@ -1,4 +1,4 @@
-import { Routes } from '@ngrx/router';
+import {Routes} from '@ngrx/router';
 import { Observable } from 'rxjs/Rx';
 
 import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
