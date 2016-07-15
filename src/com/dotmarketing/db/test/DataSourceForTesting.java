@@ -11,17 +11,24 @@ import javax.sql.DataSource;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.viewtools.XmlTool;
 import com.liferay.util.FileUtil;
 
 public class DataSourceForTesting {
 
 
-	public DataSource getDataSource() throws FileNotFoundException, Exception{
+	public void setup() throws FileNotFoundException, Exception{
+		
+		if(DbConnectionFactory.ready()){
+			return ;
+		}
+
+		
 		XmlTool xml = new XmlTool().parse(getContextAsString());
 		xml = xml.children().find("Resource");
 		Iterator<XmlTool> it = xml.iterator();
-		XmlTool source = null;
+		XmlTool source = new XmlTool();
 		while (it.hasNext()) {
 			XmlTool tool = it.next();
 			if (tool.attr("name").equals("jdbc/dotCMSPool")) {
@@ -38,13 +45,14 @@ public class DataSourceForTesting {
 		System.out.println("Building test datasource : " +url );
 		
 		
-		return getDataSource(driver, url, username, password);
+
+		DbConnectionFactory.overrideDefaultDatasource(getDataSource(driver, url, username, password));
 		
 	}
 	
 
 	
-	private DataSource getDataSource(String driver, String url, String username, String password) throws Exception {
+	private static DataSource getDataSource(String driver, String url, String username, String password) throws Exception {
 		BasicDataSource dataSource = new BasicDataSource();
         dataSource.setDriverClassName(driver);
         dataSource.setUrl(url);
@@ -75,13 +83,10 @@ public class DataSourceForTesting {
 			throw new DotStateException("Unable to find the context.xml");
 		}
 		System.out.println("Using context file:" + context.getAbsolutePath());
-		Scanner scan = new Scanner(context);
-		try{
+		try (Scanner scan = new Scanner(context)){
 			return scan.useDelimiter("\\Z").next();
 		}
-		finally{
-			scan.close();
-		}
+
 		
 	}
 	

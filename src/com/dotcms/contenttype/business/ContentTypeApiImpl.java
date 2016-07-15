@@ -97,8 +97,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 	}
 
 	@Override
-	public List<ContentType> find(User user, boolean respectFrontendRoles, String condition, String orderBy, int limit, int offset,
-			String direction) throws DotDataException {
+	public List<ContentType> find(String condition, String orderBy, int limit, int offset,
+			String direction,User user, boolean respectFrontendRoles) throws DotDataException {
 		try {
 			return APILocator.getPermissionAPI().filterCollection(this.fac.search(condition, orderBy, offset, limit),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);

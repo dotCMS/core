@@ -48,9 +48,9 @@ public class FieldFactoryImplTest {
 	final static String TEST_VAR_PREFIX = "testField";
 	@BeforeClass
 	public static void initDb() throws DotDataException, Exception {
-		DataSource ds = new DataSourceForTesting().getDataSource();
-		Connection c = ds.getConnection();
-		DbConnectionFactory.overrideDefaultDatasource(ds);
+		new DataSourceForTesting().setup();
+		Connection c = DbConnectionFactory.getConnection();
+
 		ServletContext context = Mockito.mock(ServletContext.class);
 		Config.CONTEXT = context;
 		DotConnect dc = new DotConnect();

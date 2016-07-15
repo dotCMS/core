@@ -23,6 +23,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 
 /**
  * Description of the Class
@@ -73,7 +75,7 @@ public class DotConnect {
             return Integer.parseInt((String) ((HashMap) results.get(cursor)).get(x));
         } catch (Exception e) {
             Logger.debug(this, "getInt: " + e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
     }
 
@@ -85,7 +87,7 @@ public class DotConnect {
         try {
             setMaxRows(Integer.parseInt(x));
         } catch (Exception e) {
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
     }
 
@@ -106,7 +108,7 @@ public class DotConnect {
             return obj;
         } catch (Exception e) {
             Logger.error(this, "Create class Exception" + e, e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
     }
 
@@ -147,7 +149,7 @@ public class DotConnect {
                 x.getClass().getMethod(setter.toString(), params).invoke(x, paramsObj);
             } catch (Exception ex) {
                 Logger.error(this, "db.getObject: " + ex, ex);
-                throw new DotRuntimeException(e.toString());
+                throw new DotRuntimeException(ex.toString(),ex);
             }
         }
 
@@ -177,7 +179,7 @@ public class DotConnect {
 	    	executeQuery(dataSource);
 	    } catch (Exception e) {
 	    	Logger.error(this, "getResult(): unable to execute query.  Bad SQL? : " + (SQL != null ? SQL + " " : "") + (paramList != null ? paramList.toString() + " " : "") + e.getMessage(), e);
-	        throw new DotRuntimeException(e.toString());
+	        throw new DotRuntimeException(e.toString(),e);
 	    }
 	
 	}
@@ -190,7 +192,7 @@ public class DotConnect {
 	    	executeQuery(conn);
 	    } catch (Exception e) {
 	    	Logger.error(this, "getResult(): unable to execute query.  Bad SQL? : " + (SQL != null ? SQL + " " : "") + (paramList != null ? paramList.toString() + " " : "") + e.getMessage(), e);
-	        throw new DotRuntimeException(e.toString());
+	        throw new DotRuntimeException(e.toString(),e);
 	    }
 	
 	}
@@ -231,7 +233,7 @@ public class DotConnect {
         try {
 			executeQuery();
 		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(),e);
+			throw new DotDataException(e.getMessage() + toString(),e);
 		}
     }
     
@@ -248,7 +250,7 @@ public class DotConnect {
         	executeQuery();
         } catch (Exception e) {
             Logger.error(this, "getResult(): unable to execute query.  Bad SQL? : " + (SQL != null ? SQL + " " : "") + (paramList != null ? paramList.toString() + " " : "") + e.getMessage(), e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
         
 
@@ -306,7 +308,7 @@ public class DotConnect {
 
             return (String) ((HashMap) results.get(cursor)).get(x);
         } catch (Exception e) {
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
     }
 
@@ -330,7 +332,7 @@ public class DotConnect {
             return Integer.parseInt(Integer.toString(x) + "9");
         } catch (Exception e) {
             Logger.error(DotConnect.class, "ERROR: GET NOAH/WEB AUTONUMBER FAILED:" + e, e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
     }
 
@@ -393,7 +395,7 @@ public class DotConnect {
         try {
             setStartRow(Integer.parseInt(x));
         } catch (Exception e) {
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(),e);
         }
     }
 
@@ -945,5 +947,32 @@ public class DotConnect {
         }
         return parameterPlaceholders;
     }
+
+	@Override
+	public String toString() {
+		try{
+			return asJson().toString(2);
+		} catch (JSONException e) {
+			return super.toString();
+		}
+	}
+    
+    private JSONObject asJson() throws JSONException{
+		JSONObject json = new JSONObject();
+
+			json.append("SQL", getSQL());
+
+			if(paramList!=null){
+				for(int i=0;i<paramList.size();i++){
+					json.accumulate("params", paramList.get(i));
+				}
+			}
+			json.append("maxRows", getMaxRows());
+			json.append("offest", getStartRow());
+			
+			return json;
+
+    }
+    
 
 }

@@ -24,7 +24,7 @@ public class DeleteFieldJobTest {
 	
 	@BeforeClass
 	public static void initDb() throws FileNotFoundException, Exception{
-		DbConnectionFactory.overrideDefaultDatasource(new DataSourceForTesting().getDataSource());
+		new DataSourceForTesting().setup();
 	}
 	
 	@Test

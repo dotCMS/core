@@ -46,8 +46,8 @@ public class StructureAPIImpl implements StructureAPI {
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly, String condition, String orderBy,
 			int limit, int offset, String direction) throws DotDataException {
 
-		return new ToStructureTransformer(APILocator.getContentTypeAPI2().find(user, respectFrontendRoles, condition, orderBy, limit,
-				offset, direction)).asList();
+		return new ToStructureTransformer(APILocator.getContentTypeAPI2().find(condition, orderBy, limit,
+				offset, direction,user, respectFrontendRoles)).asList();
 
 	}
 

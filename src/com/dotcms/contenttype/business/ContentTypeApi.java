@@ -17,8 +17,8 @@ public interface ContentTypeApi {
 
 	List<ContentType> findAll(User user, boolean respectFrontendRoles) throws DotDataException;
 
-	List<ContentType> find(User user, boolean respectFrontendRoles, String condition, String orderBy,
-			int limit, int offset, String direction) throws DotDataException;
+	List<ContentType> find(String condition, String orderBy,
+			int limit, int offset, String direction,User user, boolean respectFrontendRoles) throws DotDataException;
 
 	ContentType findByVarName(String varName, User user) throws DotSecurityException, DotDataException;
 

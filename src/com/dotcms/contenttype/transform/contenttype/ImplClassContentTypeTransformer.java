@@ -22,14 +22,7 @@ public class ImplClassContentTypeTransformer implements ToContentTypeTransformer
 		this.list = ImmutableList.of(transformToSubclass(ct));
 	}
 	
-	public ImplClassContentTypeTransformer(List<ContentType> initList){
-		List<ContentType> newList = new ArrayList<ContentType>();
-		for(ContentType ct : initList){
-			newList.add(transformToSubclass(ct));
-		}
-		this.list= ImmutableList.copyOf(newList);
-	}
-	
+
 
 	private static ContentType transformToSubclass(ContentType type) throws DotStateException{
 		final BaseContentTypes TYPE = type.baseType();

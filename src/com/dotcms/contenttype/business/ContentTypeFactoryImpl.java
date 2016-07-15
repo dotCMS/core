@@ -2,7 +2,6 @@ package com.dotcms.contenttype.business;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observer;
@@ -19,33 +18,18 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
-import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 
@@ -54,7 +38,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	final ContentTypeSql contentTypeSql;
 
 	public ContentTypeFactoryImpl() {
-		contentTypeSql = ContentTypeSql.getInstance();
+		this.contentTypeSql = ContentTypeSql.getInstance();
 	}
 
 	@Override
@@ -78,13 +62,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			return dbDelete(type);
 		});
 	}
-	
+
 	@Override
 	public void delete(ContentType type, List<Observer> observers) throws DotDataException {
-		 LocalTransaction.wrapReturn(() -> {
+		LocalTransaction.wrapReturn(() -> {
 			return dbDelete(type);
 		});
 	}
+
 	@Override
 	public List<ContentType> findAll(String orderBy) throws DotDataException {
 		return dbAll(orderBy);
@@ -155,7 +140,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private List<ContentType> dbByType(int type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		String sql = contentTypeSql.findAll;
+		String sql = this.contentTypeSql.findAll;
 		dc.setSQL(String.format(sql, "mod_date desc"));
 
 		return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
@@ -164,7 +149,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private List<ContentType> dbAll(String orderBy) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		String sql = contentTypeSql.findAll;
+		String sql = this.contentTypeSql.findAll;
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		dc.setSQL(String.format(sql, orderBy));
 
@@ -174,7 +159,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private ContentType dbById(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.findById);
+		dc.setSQL(this.contentTypeSql.findById);
 		dc.addParam(id);
 		List<Map<String, Object>> results;
 
@@ -188,7 +173,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private ContentType dbByVar(String var) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.findByVar);
+		dc.setSQL(this.contentTypeSql.findByVar);
 		dc.addParam(var);
 		List<Map<String, Object>> results;
 
@@ -230,7 +215,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInodeUpdate(final ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.updateContentTypeInode);
+		dc.setSQL(this.contentTypeSql.updateContentTypeInode);
 		dc.addParam(type.inode());
 		dc.addParam(type.iDate());
 		dc.addParam(type.owner());
@@ -240,7 +225,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInodeInsert(final ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.insertContentTypeInode);
+		dc.setSQL(this.contentTypeSql.insertContentTypeInode);
 		dc.addParam(type.inode());
 		dc.addParam(type.iDate());
 		dc.addParam(type.owner());
@@ -249,7 +234,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbUpdate(ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.updateContentType);
+		dc.setSQL(this.contentTypeSql.updateContentType);
 		dc.addParam(type.name());
 		dc.addParam(type.description());
 		dc.addParam(type.defaultStructure());
@@ -270,7 +255,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInsert(ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.insertContentType);
+		dc.setSQL(this.contentTypeSql.insertContentType);
 		dc.addParam(type.inode());
 		dc.addParam(type.name());
 		dc.addParam(type.description());
@@ -310,7 +295,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			updateFolderFileAssetReferences((FileAssetContentType) type);
 		}
 
-		
 		deleteContentByType(type);
 		// remove structure permissions
 		APILocator.getPermissionAPI().removePermissions(type);
@@ -322,31 +306,36 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private List<ContentType> dbSearch(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException {
 		int bottom = (baseType == 0) ? 0 : baseType;
-		int top = (baseType == 0) ? baseType : 100000;
-		search = "%" + search + "%";
+		int top = (baseType == 0) ? 100000 : baseType;
+
+		// our legacy code passes in raw sql conditions and so we need to detect
+		// and handle those
+		SearchCondition searchCondition = new SearchCondition(search);
 		DotConnect dc = new DotConnect();
+		dc.setSQL(String.format(this.contentTypeSql.searchStructures, searchCondition.condition, SQLUtil.sanitizeSortBy(orderBy)));
 		dc.setMaxRows(limit);
 		dc.setStartRow(offset);
-		dc.setSQL(String.format(contentTypeSql.SEARCH_ALL_STRUCTURE_FIELDS, SQLUtil.sanitizeSortBy(orderBy)));
-		dc.addParam(search);
-		dc.addParam(search);
-		dc.addParam(search);
+		dc.addParam(searchCondition.search);
+		dc.addParam(searchCondition.search);
+		dc.addParam(searchCondition.search);
 		dc.addParam(bottom);
 		dc.addParam(top);
-		return new ImplClassContentTypeTransformer(dc.loadResults()).asList();
+		
+		return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
+
 	}
 
 	private int dbCount(String search, int baseType) throws DotDataException {
 		int bottom = (baseType == 0) ? 0 : baseType;
 		int top = (baseType == 0) ? 100000 : baseType;
 
-		search = search == null ? "%" : "%" + search + "%";
+		SearchCondition searchCondition = new SearchCondition(search);
 
 		DotConnect dc = new DotConnect();
-		dc.setSQL(contentTypeSql.COUNT_SEARCH_ALL_STRUCTURE_FIELDS);
-		dc.addParam(search);
-		dc.addParam(search);
-		dc.addParam(search);
+		dc.setSQL(String.format(this.contentTypeSql.countStructures, searchCondition.condition));
+		dc.addParam(searchCondition.search);
+		dc.addParam(searchCondition.search);
+		dc.addParam(searchCondition.search);
 		dc.addParam(bottom);
 		dc.addParam(top);
 		return dc.getInt("test");
@@ -363,39 +352,64 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void deleteFormEntries(FormContentType form) throws DotDataException {
 		ContentType forms = findByVar(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
-
 		try {
 			APILocator.getContentletAPI().delete(
 					APILocator.getContentletAPI().search("+structureInode:" + form.inode() + " +structureInode:" + form.inode(), 0, 0, "",
 							APILocator.systemUser(), false), APILocator.systemUser(), false);
 		} catch (Exception e) {
 			throw new DotDataException("cannot delete form entries", e);
-		} 
-
+		}
 	}
-	
-	
-	private void deleteContentByType(ContentType type) throws DotDataException{
- 	    // permissions have already been checked at this point
- 	    int limit = 200;
- 	    int offset = 0;
- 	    ContentletAPI conAPI=APILocator.getContentletAPI();
- 	    List<Contentlet> contentlets=null;
- 	    do {
- 	        try {
+
+	private static void deleteContentByType(ContentType type) throws DotDataException {
+		// permissions have already been checked at this point
+		int limit = 200;
+		int offset = 0;
+		ContentletAPI conAPI = APILocator.getContentletAPI();
+		List<Contentlet> contentlets = null;
+		do {
+			try {
 				contentlets = conAPI.search("+contenttype:" + type.inode(), limit, offset, "mod_date", APILocator.systemUser(), false);
-	 	        for(Contentlet contentlet : contentlets){
-	 	        	conAPI.destroy(contentlets, APILocator.systemUser(), false);
-	 	        }
+				conAPI.destroy(contentlets, APILocator.systemUser(), false);
 			} catch (DotDataException | DotSecurityException e) {
 				throw new DotDataException("cannot delete deleteContentByType", e);
 			}
- 	    } while(contentlets.size()>0);
+		} while (contentlets.size() > 0);
 	}
+
 	/**
-	 * Fields in the db inode owner idate type inode name description
-	 * default_structure page_detail structuretype system fixed
-	 * velocity_var_name url_map_pattern host folder expire_date_var
-	 * publish_date_var mod_date
+	 * parses legacy conditions passed in as raw sql
+	 * @author root
+	 *
 	 */
+	 class SearchCondition {
+		final String search;
+		final String condition;
+
+		 SearchCondition(final String searchOrCondition) {
+			if (!UtilMethods.isSet(searchOrCondition) || searchOrCondition.equals("%")) {
+				this.condition = "";
+				this.search = "%";
+			}
+			else if (searchOrCondition.contains("<") || searchOrCondition.contains("=") || searchOrCondition.contains("<")
+					|| searchOrCondition.contains(" like ")) {
+				this.search = "%";
+				this.condition = (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " +searchOrCondition;
+
+			} else {
+				this.condition = "";
+				this.search = "%" + searchOrCondition + "%";
+
+			}
+		}
+
+		@Override
+		public String toString() {
+			return "SearchCondition [search=" + search + ", condition=" + condition + "]";
+		}
+		
+		
+		
+		
+	}
 }

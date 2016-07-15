@@ -10,19 +10,16 @@ import java.io.PrintWriter;
 public class DotRuntimeException extends RuntimeException {
 	
 	private static final long serialVersionUID = 1L;
-	private String message;
+
 	
 	public DotRuntimeException(String x){
-		
-		this.message = x;
+		super(x);
+
 		
 	}
 
-	public DotRuntimeException(String x, Exception e){
-		
-		this.message = x;
-		super.initCause(e);
-		
+	public DotRuntimeException(String x, Throwable e){
+		super(x, e);
 	}
 	
 	/* (non-Javadoc)
@@ -46,13 +43,7 @@ public class DotRuntimeException extends RuntimeException {
 		
 		return super.getLocalizedMessage();
 	}
-	/* (non-Javadoc)
-	 * @see java.lang.Throwable#getMessage()
-	 */
-	public String getMessage() {
-		
-		return message;
-	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Throwable#getStackTrace()
 	 */

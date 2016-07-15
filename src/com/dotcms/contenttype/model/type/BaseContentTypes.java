@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 
 public enum BaseContentTypes {
-	NONE(0, null),
+	ANY(0, ContentType.class),
 	CONTENT(1, SimpleContentType.class),
 	WIDGET(2, WidgetContentType.class),
 	FORM(3,FormContentType.class),
@@ -35,7 +35,7 @@ public enum BaseContentTypes {
 				return type;
 			}
 		}
-		return NONE;
+		return ANY;
 	}
 	
 	public static Class getContentTypeClass (int value) {
@@ -45,6 +45,6 @@ public enum BaseContentTypes {
 				return type.implClass;
 			}
 		}
-		return NONE.implClass;
+		return ANY.implClass;
 	}
 }
