@@ -78,7 +78,15 @@ public class DotConnect {
             throw new DotRuntimeException(e.toString(),e);
         }
     }
-
+    public int loadInt(String x) throws DotDataException{
+    	x = x.toLowerCase(); 
+        try {
+            return (Integer) loadObjectResults().get(0).get(x);
+        } catch (Exception e) {
+            Logger.debug(this, "loadInt: " + e);
+            throw new DotDataException(e.toString(),e);
+        }
+    }
     public void setMaxRows(int x) {
         maxRows = x;
     }
