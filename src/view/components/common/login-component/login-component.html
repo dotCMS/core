@@ -1,79 +1,60 @@
-<div class='login-component-container'>
-    <md-card id='loginBox' class='loginBox' [class.hideBox]='isLoginCardHidden'>
-        <md-card-title>{{loginLabel}}</md-card-title>
-        <div class='error-message' id='dotLoginMessagesDiv'>{{message}}</div>
-        <md-content>
-            <table>
-                <tr>
-                    <td class='serverBox'>
-                        <div>
-                            <p><img src='{{dotcmscompanyLogo}}' class='companyLogo' id='company_logo'></p>
-                            <p>{{serverLabel}}: {{dotcmsServerId}}</p>
-                            <p>{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
-                            <p>( {{dotcmsBuildDateString}} )</p>
+<div class="login">
+    <div class="container">
+        <div class="row">
+
+            <!--LOGIN FORM-->
+            <div class="login__container" *ngIf="!isLoginCardHidden">
+                <div class="col-sm-5 cms-info">
+                    <div class="cms-info__inner">
+                        <img src="{{dotcmscompanyLogo}}" class="cms-info__logo" />
+                        <p class="cms-info__message">You are currently using the free Community Editon of dotCMS Content Management Platform. If you would like to <b>upgrade to the Enterprise Edition</b> please
+                            <a href="#">contact us</a>.</p>
+                        <!--<p>{{serverLabel}}: {{dotcmsServerId}}</p>-->
+                        <!--<p>{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>-->
+                        <!--<p>( {{dotcmsBuildDateString}} )</p>-->
+                    </div>
+                </div>
+                <div class="col-sm-7">
+                    <div class="signin">
+                        <h2 class="login__title">{{loginLabel}}</h2>
+                        <div class="error-message">{{message}}</div>
+                        <md-input (keyup.enter)="logInUser()" placeholder="{{userIdOrEmailLabel}}" [(ngModel)]="myAccountLogin" floatingPlaceholder="false" ></md-input>
+                        <md-input (keyup.enter)="logInUser()" placeholder="{{passwordLabel}}" [(ngModel)]="password" type="password" floatingPlaceholder="false"></md-input>
+                        <div class="row login__form-line">
+                            <div class="col-sm-6">
+                                <md-checkbox [(ngModel)]="myAccountRememberMe" id="myAccountRememberMe">{{rememberMeLabel}}</md-checkbox>
+                            </div>
+                            <div class="col-sm-6">
+                                <select class="singin__language" id="language" [(ngModel)]="language" (change)="changeLanguage($event.target.value)">
+                                    <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label}}</option>
+                                </select>
+                            </div>
                         </div>
-                    </td>
-                    <td>
-                        <div class='middleBox'></div>
-                    </td>
-                    <td>
-                        <table>
-                            <tr>
-                                <td class='td30'>
-                                    <label>{{userIdOrEmailLabel}}:</label>
-                                </td>
-                                <td>
-                                    <md-input (keyup.enter)="logInUser()" placeholder='{{userIdOrEmailLabel}}' [(ngModel)]='myAccountLogin' id='myAccountLogin' floatingPlaceholder='false'></md-input>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="td30">
-                                    <label>{{passwordLabel}}:</label>
-                                </td>
-                                <td>
-                                    <md-input (keyup.enter)="logInUser()" placeholder='{{passwordLabel}}' [(ngModel)]='password' id='password' type='password' floatingPlaceholder='false'></md-input>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan='2'>
-                                    <md-checkbox [(ngModel)]='myAccountRememberMe' id='myAccountRememberMe'>{{rememberMeLabel}}</md-checkbox>
-                                </td>
-                                <td>
-                                    <select id='language' [(ngModel)]='language' (change)='changeLanguage($event.target.value)'>
-                                        <template ngFor let-lan [ngForOf]='languages'>
-                                            <option  value='{{lan}}'>
-                                                <img title='' id='myLanguageImage' alt='' src='/html/images/languages/{{lan}}.gif' align='left' style='padding:1px;border:1px solid #ffffff'>
-                                            </option>
-                                        </template>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan='2'>
-                                    <md-card-actions>
-                                        <section>
-                                            <md-button md-raised-button color='warn' (click)='logInUser()'>{{loginButton}}</md-button>
-                                            <md-button md-raised-button (click)='showForgotPassword()'>{{forgotPasswordButton}}</md-button>
-                                        </section>
-                                    </md-card-actions>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </md-content>
-    </md-card>
-    <md-card id='forgotPassword' class='forgotPasswordBox' [class.hideBox]='isForgotPasswordCardHidden'>
-        <md-card-title>{{forgotPasswordLabel}}</md-card-title>
-        <md-card-content>
-            <md-input (keyup.enter)="recoverPassword()" placeholder='{{emailAddressLabel}}' [(ngModel)]='forgotPasswordEmail' id='forgotPasswordEmail' floatingPlaceholder='false'></md-input>
-        </md-card-content>
-        <md-card-actions>
-            <section>
-                <md-button md-raised-button color='warn' (click)='recoverPassword()'>{{forgotPasswordButton}}</md-button>
-                <md-button md-raised-button color='warn' (click)='cancelRecoverPassword()'>{{cancelButton}}</md-button>
-            </section>
-        </md-card-actions>
-    </md-card>
+                        <div class="row login__form-line">
+                            <div class="col-sm-12">
+                                <button md-button md-raised-button (click)="logInUser()">{{loginButton}}</button>
+                                <button md-button md-flat-button (click)="showForgotPassword()">{{forgotPasswordButton}}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!--FORGOT PASSWORD FORM-->
+            <div class="login__container forgot-password__container" *ngIf="!isForgotPasswordCardHidden">
+                <div class="col-sm-12">
+                    <h2 class="login__title">{{forgotPasswordLabel}}</h2>
+                    <md-input (keyup.enter)="recoverPassword()" placeholder="{{emailAddressLabel}}" [(ngModel)]="forgotPasswordEmail" id="forgotPasswordEmail" floatingPlaceholder="false"></md-input>
+                    <div class="row login__form-line">
+                        <div class="col-sm-12">
+                            <button md-button md-raised-button (click)="recoverPassword()">{{forgotPasswordButton}}</button>
+                            <button md-button md-flat-button (click)="cancelRecoverPassword()">{{cancelButton}}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>

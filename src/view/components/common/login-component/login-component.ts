@@ -23,33 +23,33 @@ import {MdToolbar} from '@angular2-material/toolbar';
  * the info required to log in the dotCMS angular backend
  */
 export class LoginComponent {
-    @Input() myAccountLogin: string= '@dotcms.com';
+    @Input() myAccountLogin: string;
     @Input() password: string;
-    @Input() myAccountRememberMe: boolean= false;
+    @Input() myAccountRememberMe: boolean = false;
     @Input() forgotPasswordEmail: string;
-    @Input() language: string= '';
+    @Input() language: string = 'en_US';
     @Output() toggleMain = new EventEmitter<boolean>();
 
     languages: Array<string> = [];
-    message: string= '';
+    message: string = '';
 
     // labels
-    loginLabel: string= '';
+    loginLabel: string = '';
     emailAddressLabel: string = ''
-    userIdOrEmailLabel: string= '';
-    passwordLabel: string= '';
-    rememberMeLabel: string= '';
-    forgotPasswordLabel: string= '';
-    loginButton: string= '';
-    forgotPasswordButton: string= '';
-    forgotPasswordConfirmationMessage: string= '';
-    cancelButton: string= '';
+    userIdOrEmailLabel: string = '';
+    passwordLabel: string = '';
+    rememberMeLabel: string = '';
+    forgotPasswordLabel: string = '';
+    loginButton: string = '';
+    forgotPasswordButton: string = '';
+    forgotPasswordConfirmationMessage: string = '';
+    cancelButton: string = '';
     serverLabel: string = '';
-    dotcmscompanyLogo: string= '';
-    dotcmsServerId: string= '';
-    dotcmslicenceLevel: string= '';
-    dotcmsVersion: string= '';
-    dotcmsBuildDateString: string= '';
+    dotcmscompanyLogo: string = '';
+    dotcmsServerId: string = '';
+    dotcmslicenceLevel: string = '';
+    dotcmsVersion: string = '';
+    dotcmsBuildDateString: string = '';
 
     isForgotPasswordCardHidden: boolean = true;
     isLoginCardHidden: boolean = false;
@@ -58,7 +58,6 @@ export class LoginComponent {
 
     constructor(@Inject('menuItems') private menuItems: any[], private _loginService: LoginService) {
         this.updateScreenBackground();
-
     }
 
     /**
@@ -131,7 +130,7 @@ export class LoginComponent {
             }
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
-            this.loginButton = dataI18n['sign-in'];
+            this.loginButton = dataI18n['sign-in'].toUpperCase();
             this.forgotPasswordLabel = dataI18n['forgot-password'];
             this.forgotPasswordButton = dataI18n['get-new-password'];
             this.cancelButton = dataI18n.cancel;
@@ -156,10 +155,12 @@ export class LoginComponent {
             // Configure languages
             if (this.languages.length === 0) {
                 entity.languages.forEach(lang => {
-                    this.languages.push(lang.language + '_' + lang.country);
+                    this.languages.push({
+                        label: lang.country,
+                        value: lang.language + '_' + lang.country
+                    });
                 });
             }
-
         }, (error) => {
              console.log(error);
         });

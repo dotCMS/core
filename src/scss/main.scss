@@ -1,9 +1,24 @@
-html, body {
-    margin: 0;
-    padding: 0;
-    font-family: Roboto, 'Helvetica Neue', sans-serif;
+@import "variables";
+@import "mixins";
+@import "grids";
+
+*, *:before, *:after {
+    box-sizing: border-box;
 }
 
+html, body {
+    color: $black;
+    font-family: $base-font-family;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+// For the login component user photo background
+body {
+    background-repeat: no-repeat;
+    background-position: top center;
+}
 
 // This is legacy code, needs to once we refactor rule-engine component and remove semantic-ui
 @font-face {
@@ -15,4 +30,19 @@ html, body {
     font-variant: normal;
     text-decoration: inherit;
     text-transform: none;
+}
+
+
+// TODO: this have to gon once we have our select component
+select {
+    -webkit-appearance: none;
+    outline: none;
+    background-color: $white;
+    border: none;
+    border-bottom: solid 1px $gray-light;
+    border-radius: 0;
+    font-family: $base-font-family;
+    font-size: $body-font-size-base;
+    padding: rem-cal(5px) rem-cal(50px) rem-cal(5px) 0;
+    position: relative;
 }

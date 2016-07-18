@@ -1,112 +1,81 @@
+@import "../../../../scss/variables";
+@import "../../../../scss/mixins";
+
 :host {
-  flex: 5;
-  margin: 0 50px;
-
-  .login-component-container {
+  md-input {
+    overflow: inherit;
     width: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
+  }
+
+  .cms-info {
     display: flex;
-    -ms-flex-flow: column nowrap;
-    flex-flow: column nowrap;
-    margin-top: 10%;
+    flex-direction: column;
+    justify-content: center;
+  }
 
-    .flags {
-      padding:2px;
-      border:1px solid #dddddd;
-      cursor: pointer;
-      align-content: left;
+  .cms-info__message {
+    color: $gray-dark;
+    font-size: rem-cal(12px);
+  }
+
+  .cms-info__logo {
+    width: 200px;
+  }
+
+  .login {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+  }
+
+  .login__container {
+    @include box_shadow(5);
+    background-color: $white;
+    display: flex;
+    padding: 30px 60px;
+
+    &.forgot-password__container {
+      margin: 0 auto;
+      padding: 30px;
+      width: 500px;
     }
+  }
 
-    md-input {
-      width: 100%;
+  .login__form-line {
+    padding: 8px 0;
+  }
 
-      .md-input-placeholder {
-        //color: rgba(#FFF, 0.5);
-        height: 100%;
-        line-height: 1;
-      }
+  .login__title {
+    color: $primary;
+    font-size: rem-cal(48px);
+    font-weight: normal;
+    margin: 0;
+  }
 
-      .md-imput-element{
-        border: thin;
-        outline: thin;
-      }
+  .signin {
+    border-left: solid 1px $gray-light;
+    padding-left: 60px;
+    position: relative;
 
-      .md-input-table {
-        //background-color: rgba(#FFF, 0.2);
-        border-radius: 3px;
-        padding: 5px 10px;
-      }
-
-      .md-input-underline {
-        display: block;
-      }
-    }
-
-
-
-    md-card {
-      //margin: 16px 16px 16px 16px;
-      margin-right: auto;
-      margin-left: auto;
-      width: 60%;
-    }
-
-
-    md-card-actions {
-      display: -webkit-box;
-      display: -ms-flexbox;
-      display: flex;
-      -webkit-box-orient: vertical;
-      -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-      flex-direction: column;
-    }
-    table{
-      width: 100%;
-    }
-
-    section {
-      display: flex;
-      align-items: center;
-      margin: 8px;
-    }
-
-    .hideBox {
-      display: none;
-    }
-
-    .showBox {
-      display: block;
-    }
-
-    .td30 {
-      width: 30%;
-    }
-
-    .serverBox {
-      width: 45%;
-      border-right: thin solid #000000;
-    }
-    .middleBox {
-      width:5%;
-      padding-right: 10px;
-    }
-
-    .error-message {
-      color: maroon;
-      text-align: center;
-    }
-
-    .companyLogo {
-      border: 0;
-      max-width: 300px;
+    &:before {
+      background-color: $white;
+      border: solid $gray-light;
+      border-width: 1px 1px 0 0;
+      content: '';
+      height: 14px;
+      left: -7px;
+      margin-top: -7px;
+      position: absolute;
+      top: 50%;
+      transform: rotate(45deg);
+      width: 14px;
     }
 
   }
-}
 
-body {
-  background-repeat: no-repeat;
-  background-position: top center;
+  .singin__language {
+    float: right;
+  }
+
 }
