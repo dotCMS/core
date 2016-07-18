@@ -303,7 +303,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 			}
         }
 
-	    ReindexRunnable indexAction=new ReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING) {
+	    ReindexRunnable indexAction=new ReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING, bulk) {
 
         };
 
@@ -318,15 +318,15 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	@Override
-	public void indexContentList(List<Contentlet> contentToIndex) throws  DotDataException{
+	public void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk) throws  DotDataException{
     	if(contentToIndex==null || contentToIndex.size()==0){
     		return;
     	}
         Client client=new ESClient().getClient();
-        BulkRequestBuilder req = client.prepareBulk() ;
+        BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
         try {
 			indexContentletList(req, contentToIndex, false);
-			if(req.numberOfActions()>0){
+			if(bulk==null && req.numberOfActions()>0){
 				req.execute().actionGet();
 			}
 		} catch (DotStateException | DotSecurityException | DotMappingException e) {
@@ -414,7 +414,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	private void removeContentFromIndex(final Contentlet content, final boolean onlyLive, final List<Relationship> relationships) throws DotHibernateException {
-		ReindexRunnable indexRunner = new ReindexRunnable(content, ReindexRunnable.Action.REMOVING) {
+		ReindexRunnable indexRunner = new ReindexRunnable(content, ReindexRunnable.Action.REMOVING, null) {
 	            public void run() {
 	        	    try {
 	            	    String id=content.getIdentifier()+"_"+content.getLanguageId();
