@@ -69,9 +69,7 @@ public class DotInitScheduler {
 	 */
 	public static void start() throws SchedulerException {
 		try {
-
 			Scheduler sched = QuartzUtils.getStandardScheduler();
-
 			JobDetail job;
 			CronTrigger trigger;
 			Calendar calendar;
@@ -864,8 +862,15 @@ public class DotInitScheduler {
 			
 			// Enabling the System Events Job
 			if (Config.getBooleanProperty("ENABLE_SYSTEM_EVENTS", true)) {
-				scheduleJob(SystemEventsJob.class, "SystemEventsJob", "trigger26", "group26",
-						"SYSTEM_EVENTS_CRON_EXPRESSION", "0/5 * * * * ?");
+				JobBuilder systemEventsJob = new JobBuilder().setJobClass(SystemEventsJob.class)
+						.setJobName("SystemEventsJob")
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName("trigger26")
+						.setTriggerGroup("group26")
+						.setCronExpressionProp("SYSTEM_EVENTS_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0/5 * * * * ?")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(systemEventsJob);
 			}
 			
             //Starting the sequential and standard Schedulers
@@ -880,25 +885,11 @@ public class DotInitScheduler {
 	 * Creates a Quartz Job and schedules it for execution. If the Job has
 	 * already been registered, it will be re-scheduled to run again.
 	 * 
-	 * @param jobClass
-	 *            - The class representing the Quartz Job to execute.
-	 * @param jobName
-	 *            - The name of the Job.
-	 * @param triggerName
-	 *            - The name of the trigger for the specified Job.
-	 * @param triggerGroup
-	 *            - The name of the trigger group for the specified Job.
-	 * @param cronExpressionProp
-	 *            - The property name in the
-	 *            {@code dotmarketing-config.properties} file that contains the
-	 *            user-defined cron expression which defines the execution times
-	 *            of the Job.
-	 * @param cronExpressionPropDefault
-	 *            - The default value of the Job cron expression in case it's
-	 *            not defined in the aforementioned configuration file.
+	 * @param jobBuilder
+	 *            - Class containing all the information that the Quartz Job
+	 *            needs to execute.
 	 */
-	private static void scheduleJob(final Class<? extends Job> jobClass, final String jobName, final String triggerName,
-			final String triggerGroup, final String cronExpressionProp, final String cronExpressionPropDefault) {
+	private static void scheduleJob(final JobBuilder jobBuilder) {
 		try {
 			Scheduler sched = QuartzUtils.getStandardScheduler();
 			Calendar calendar;
@@ -906,30 +897,146 @@ public class DotInitScheduler {
 			CronTrigger trigger;
 			boolean isNew = false;
 			try {
-				if ((job = sched.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) == null) {
-					job = new JobDetail(jobName, DOTCMS_JOB_GROUP_NAME, jobClass);
+				if ((job = sched.getJobDetail(jobBuilder.jobName, jobBuilder.jobGroup)) == null) {
+					job = new JobDetail(jobBuilder.jobName, jobBuilder.jobGroup, jobBuilder.jobClass);
 					isNew = true;
 				}
 			} catch (SchedulerException e) {
 				// Try to re-create the job once more
-				sched.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
-				job = new JobDetail(jobName, DOTCMS_JOB_GROUP_NAME, SystemEventsJob.class);
+				sched.deleteJob(jobBuilder.jobName, jobBuilder.jobGroup);
+				job = new JobDetail(jobBuilder.jobName, jobBuilder.jobGroup, jobBuilder.jobClass);
 				isNew = true;
 			}
 			calendar = GregorianCalendar.getInstance();
-			trigger = new CronTrigger(triggerName, triggerGroup, jobName, DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,
-					Config.getStringProperty(cronExpressionProp, cronExpressionPropDefault));
-			trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+			trigger = new CronTrigger(jobBuilder.triggerName, jobBuilder.triggerGroup, jobBuilder.jobName,
+					jobBuilder.jobGroup, calendar.getTime(), null, Config.getStringProperty(jobBuilder.cronExpressionProp,
+							jobBuilder.cronExpressionPropDefault));
+			trigger.setMisfireInstruction(jobBuilder.cronMissfireInstruction);
 			sched.addJob(job, true);
 			if (isNew) {
 				sched.scheduleJob(trigger);
 			} else {
-				sched.rescheduleJob(triggerName, triggerGroup, trigger);
+				sched.rescheduleJob(jobBuilder.triggerName, jobBuilder.triggerGroup, trigger);
 			}
 		} catch (Exception e) {
-			Logger.error(DotInitScheduler.class,
-					"An error occurred when initializing the '" + jobName + "': " + e.getMessage(), e);
+			Logger.error(DotInitScheduler.class, "An error occurred when initializing the '" + jobBuilder.jobName + "': "
+					+ e.getMessage(), e);
 		}
+	}
+
+	/**
+	 * Utility builder class for creating and scheduling Quartz Jobs.
+	 * 
+	 * @author Jose Castro
+	 * @version 3.7
+	 * @since Jul 15, 2016
+	 *
+	 */
+	private static final class JobBuilder {
+
+		private Class<? extends Job> jobClass;
+		private String jobName = "";
+		private String jobGroup = DOTCMS_JOB_GROUP_NAME;
+		private String triggerName = "";
+		private String triggerGroup = "";
+		private String cronExpressionProp = "";
+		private String cronExpressionPropDefault = "";
+		private int cronMissfireInstruction = CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING;
+
+		/**
+		 * Sets the class representing the Quartz Job to execute.
+		 * 
+		 * @param jobClass
+		 *            - The Quartz job.
+		 */
+		public JobBuilder setJobClass(Class<? extends Job> jobClass) {
+			this.jobClass = jobClass;
+			return this;
+		}
+
+		/**
+		 * Sets the name of the Job.
+		 * 
+		 * @param jobName
+		 *            - The job name.
+		 */
+		public JobBuilder setJobName(String jobName) {
+			this.jobName = jobName;
+			return this;
+		}
+
+		/**
+		 * Sets the name of the Quartz Group the Job will belong to.
+		 * 
+		 * @param jobGroup
+		 *            - The job group name.
+		 */
+		public JobBuilder setJobGroup(String jobGroup) {
+			this.jobGroup = jobGroup;
+			return this;
+		}
+
+		/**
+		 * Sets the name of the trigger for the specified Job.
+		 * 
+		 * @param triggerName
+		 *            - The trigger name.
+		 */
+		public JobBuilder setTriggerName(String triggerName) {
+			this.triggerName = triggerName;
+			return this;
+		}
+
+		/**
+		 * Sets the name of the trigger group for the specified Job.
+		 * 
+		 * @param triggerGroup
+		 *            - The trigger group name.
+		 */
+		public JobBuilder setTriggerGroup(String triggerGroup) {
+			this.triggerGroup = triggerGroup;
+			return this;
+		}
+
+		/**
+		 * Sets the property name in the {@code dotmarketing-config.properties}
+		 * file that contains the user-defined cron expression which defines the
+		 * execution times of the Job.
+		 * 
+		 * @param cronExpressionProp
+		 *            - The cron expression property name.
+		 */
+		public JobBuilder setCronExpressionProp(String cronExpressionProp) {
+			this.cronExpressionProp = cronExpressionProp;
+			return this;
+		}
+
+		/**
+		 * Sets the default value of the Job cron expression in case it's not
+		 * defined in the {@code dotmarketing-config.properties} configuration
+		 * file.
+		 * 
+		 * @param cronExpressionPropDefault
+		 *            - The default cron expression value.
+		 */
+		public JobBuilder setCronExpressionPropDefault(String cronExpressionPropDefault) {
+			this.cronExpressionPropDefault = cronExpressionPropDefault;
+			return this;
+		}
+
+		/**
+		 * Determines what the Quartz handle needs to do if the job scheduler
+		 * discovers a miss-fire situation, i.e., if the application was not
+		 * able to start the job at the specified date/time.
+		 * 
+		 * @param cronMissfireInstruction
+		 *            - The miss-fire instruction.
+		 */
+		public JobBuilder setCronMissfireInstruction(int cronMissfireInstruction) {
+			this.cronMissfireInstruction = cronMissfireInstruction;
+			return this;
+		}
+
 	}
 
 }
