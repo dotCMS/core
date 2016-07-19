@@ -2000,7 +2000,7 @@ create table analytic_summary_referer (
    uri varchar(255),
    primary key (id)
 );
-create table containers (
+create table dot_containers (
    inode varchar(36) not null,
    code text,
    pre_loop text,
@@ -2387,7 +2387,7 @@ create index idx_campaign_2 on campaign (start_date);
 create index idx_campaign_1 on campaign (user_id);
 alter table campaign add constraint fkf7a901105fb51eb foreign key (inode) references inode;
 alter table analytic_summary_referer add constraint fk5bc0f3e2ed30e054 foreign key (summary_id) references analytic_summary;
-alter table containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
+alter table dot_containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
 alter table communication add constraint fkc24acfd65fb51eb foreign key (inode) references inode;
 alter table links add constraint fk6234fb95fb51eb foreign key (inode) references inode;
 alter table user_proxy add constraint fk7327d4fa5fb51eb foreign key (inode) references inode;
@@ -2542,7 +2542,7 @@ alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (r
 alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (layout_id) references cms_layout;
 alter table layouts_cms_roles add CONSTRAINT layouts_cms_roles_parent1 UNIQUE (role_id,layout_id);
 
-ALTER TABLE containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
+ALTER TABLE dot_containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE htmlpage add constraint htmlpage_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier) references identifier(id);
@@ -2774,7 +2774,7 @@ CREATE OR REPLACE FUNCTION container_versions_check() RETURNS trigger AS '
 	versionsCount integer;
   BEGIN
   IF (tg_op = ''DELETE'') THEN
-    select count(*) into versionsCount from containers where identifier = OLD.identifier;
+    select count(*) into versionsCount from dot_containers where identifier = OLD.identifier;
     IF (versionsCount = 0)THEN
 	DELETE from identifier where id = OLD.identifier;
     ELSE
@@ -2786,7 +2786,7 @@ END
 ' LANGUAGE plpgsql;
 
 CREATE TRIGGER container_versions_check_trigger AFTER DELETE
-ON containers FOR EACH ROW
+ON dot_containers FOR EACH ROW
 EXECUTE PROCEDURE container_versions_check();
 
 CREATE OR REPLACE FUNCTION template_versions_check() RETURNS trigger AS '
@@ -2890,13 +2890,13 @@ CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
 
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);
 alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid);
-alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
+alter table dot_containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
 alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid);
 alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid);
 alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid);
 
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
---ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
+--ALTER TABLE dot_containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
 ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
 
 CREATE OR REPLACE FUNCTION check_template_id()RETURNS trigger AS '
@@ -3002,14 +3002,14 @@ alter table fileasset_version_info  add constraint fk_fileasset_version_info_ide
 alter table link_version_info       add constraint fk_link_version_info_identifier       foreign key (identifier) references identifier(id);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_working foreign key (working_inode) references contentlet(inode);
-alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references containers(inode);
+alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_working   foreign key (working_inode) references template(inode);
 alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_working   foreign key (working_inode) references htmlpage(inode);
 alter table fileasset_version_info  add constraint fk_fileasset_version_info_working  foreign key (working_inode) references file_asset(inode);
 alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_live foreign key (live_inode) references contentlet(inode);
-alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references containers(inode);
+alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_live   foreign key (live_inode) references template(inode);
 alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_live   foreign key (live_inode) references htmlpage(inode);
 alter table fileasset_version_info  add constraint fk_fileasset_version_info_live  foreign key (live_inode) references file_asset(inode);
@@ -3286,7 +3286,7 @@ create index folder_ident on folder (identifier);
 create index contentlet_ident on contentlet (identifier);
 create index links_ident on links (identifier);
 create index htmlpage_ident on htmlpage (identifier);
-create index containers_ident on containers (identifier);
+create index containers_ident on dot_containers (identifier);
 create index template_ident on template (identifier);
 create index contentlet_moduser on contentlet (mod_user);
 create index contentlet_lang on contentlet (language_id);

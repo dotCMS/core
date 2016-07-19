@@ -1186,13 +1186,15 @@ public class FolderFactoryImpl extends FolderFactory {
     protected List<Treeable> getChildrenClass ( Identifier identifier, Class clazz, ChildrenCondition cond, String orderBy, int offset, int limit ) throws DotStateException, DotDataException {
 
         String tableName;
+		String type;
 
         try {
             Object obj;
             obj = clazz.newInstance();
 
             if ( obj instanceof Treeable ) {
-                tableName = ((Treeable) obj).getType();
+				type = ((Treeable) obj).getType();
+				tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
             } else {
                 throw new DotStateException( "Unable to getType for child asset" );
             }
@@ -1202,7 +1204,7 @@ public class FolderFactoryImpl extends FolderFactory {
             throw new DotStateException( "Unable to getType for child asset" );
         }
 
-        String versionTable = UtilMethods.getVersionInfoTableName( tableName );
+		String versionTable = Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
         HibernateUtil dh = new HibernateUtil( clazz );
         String sql = "SELECT {" + tableName + ".*} " + " from " + tableName + " " + tableName + ",  inode " + tableName

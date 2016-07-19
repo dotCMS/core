@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -31,7 +32,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
     private static final String ORACLE_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY container_inode varchar2(36) not null";
     private static final String MSSQL_ADD_NOT_NULL = "ALTER TABLE container_structures ALTER COLUMN container_inode varchar(36) NOT NULL";
     private static final String SQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, container_inode) VALUES(?, ?, ?, ?, ?)";
-    private static final String SQL_DELETE_FROM_CONTAINER = "DELETE FROM containers WHERE inode = ?";
+    private static final String SQL_DELETE_FROM_CONTAINER = "DELETE FROM " + Inode.Type.CONTAINERS.getTableName() + " WHERE inode = ?";
     private static final String SQL_DELETE_FROM_CONTAINER_STRUCTURE = "DELETE FROM container_structures WHERE id = ?";
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET container_inode = ? WHERE container_id = ?";
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_ID = "UPDATE container_structures SET container_inode = ? WHERE id = ?";
@@ -39,20 +40,20 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
     private static final String SQL_GET_CONTAINER_STRUCTURE = "SELECT id, container_id, structure_id, code, container_inode FROM container_structures WHERE container_id = ?";
     private static final String SQL_GET_CONTAINER_ID = "select id, container_id, structure_id, container_inode from container_structures order by container_id, structure_id";
 
-    private final String SQL_GET_NON_WORKING_LIVE_INODES = "SELECT containers.inode " +
-            "FROM containers " +
-            "WHERE containers.inode " +
-            "NOT IN(SELECT containers.inode " +
-                "FROM containers, container_version_info " +
-                "WHERE containers.identifier = container_version_info.identifier " +
-                "AND (containers.inode = container_version_info.working_inode " +
-                    "OR containers.inode = container_version_info.live_inode))";
+    private final String SQL_GET_NON_WORKING_LIVE_INODES = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".inode " +
+        "FROM " + Inode.Type.CONTAINERS.getTableName() + " " +
+        "WHERE " + Inode.Type.CONTAINERS.getTableName() + ".inode " +
+        "NOT IN(SELECT " + Inode.Type.CONTAINERS.getTableName() + ".inode " +
+        "FROM " + Inode.Type.CONTAINERS.getTableName() + ", container_version_info " +
+        "WHERE " + Inode.Type.CONTAINERS.getTableName() + ".identifier = container_version_info.identifier " +
+        "AND (" + Inode.Type.CONTAINERS.getTableName() + ".inode = container_version_info.working_inode " +
+        "OR " + Inode.Type.CONTAINERS.getTableName() + ".inode = container_version_info.live_inode))";
 
-    private static final String SQL_GET_CONTAINER_IDENT_INODE = "SELECT containers.identifier, containers.inode " +
-            "FROM containers, container_version_info " +
-            "WHERE containers.identifier = container_version_info.identifier " +
-            "AND (containers.inode = container_version_info.working_inode " +
-                "OR containers.inode = container_version_info.live_inode)";
+        private static final String SQL_GET_CONTAINER_IDENT_INODE = "SELECT " + Inode.Type.CONTAINERS.getTableName() + ".identifier, " + Inode.Type.CONTAINERS.getTableName() + ".inode " +
+        "FROM " + Inode.Type.CONTAINERS.getTableName() + ", container_version_info " +
+        "WHERE " + Inode.Type.CONTAINERS.getTableName() + ".identifier = container_version_info.identifier " +
+        "AND (" + Inode.Type.CONTAINERS.getTableName() + ".inode = container_version_info.working_inode " +
+        "OR " + Inode.Type.CONTAINERS.getTableName() + ".inode = container_version_info.live_inode)";
 
     /**
      * By Default tasks only execute once.  If you have a task that needs to execute more then once use this method.

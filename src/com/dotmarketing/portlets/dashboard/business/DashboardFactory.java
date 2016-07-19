@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -137,8 +138,8 @@ public abstract class DashboardFactory {
 				(DbConnectionFactory.isMySql())?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+
 				" from fileasset_version_info file_info join file_asset on(file_asset.identifier = file_info.identifier) join identifier identifier on identifier.id = file_asset.identifier "+
 				" UNION ALL "+
-				" select containers.inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, con_info.live_inode,con_info.working_inode,con_info.deleted, coalesce(containers.title,containers.identifier) as name "+
-				" from container_version_info con_info join containers on(containers.identifier = con_info.identifier) join identifier identifier on (identifier.id = containers.identifier) "+
+			" select " + Inode.Type.CONTAINERS.getTableName() + ".inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, con_info.live_inode,con_info.working_inode,con_info.deleted, coalesce(" + Inode.Type.CONTAINERS.getTableName() + ".title," + Inode.Type.CONTAINERS.getTableName() + ".identifier) as name "+
+			" from container_version_info con_info join " + Inode.Type.CONTAINERS.getTableName() + " on(" + Inode.Type.CONTAINERS.getTableName() + ".identifier = con_info.identifier) join identifier identifier on (identifier.id = " + Inode.Type.CONTAINERS.getTableName() + ".identifier) "+
 				" UNION ALL "+
 				" select links.inode as inode, 'link' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, links_info.live_inode,links_info.working_inode,links_info.deleted, coalesce(links.title,links.identifier) as name "+
 				" from link_version_info links_info join links on(links_info.identifier= links.identifier) join identifier identifier on (identifier.id = links.identifier) "+

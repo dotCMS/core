@@ -132,6 +132,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03530AlterTagInode.class);
 		ret.add(Task03535RemoveTagsWithoutATagname.class);
 		ret.add(Task03540UpdateTagInodesReferences.class);
+		ret.add(Task03541RenameContainersTable.class);
         return ret;
     }
 

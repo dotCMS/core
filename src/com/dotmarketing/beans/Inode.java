@@ -43,6 +43,44 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	private static final long serialVersionUID = -152856052702254985L;
 
+	public enum Type {
+		CONTENTLET("contentlet", "contentlet_version_info"),
+		HTMLPAGE("htmlpage", "htmlpage_version_info"),
+		TEMPLATE("template", "template_version_info"),
+		VIRTUAL_LINK("virtual_link", null),
+		CONTAINERS("dot_containers", "container_version_info"),
+		USER_PROXY("user_proxy", null),
+		FOLDER("folder", null),
+		STRUCTURE("structure", null),
+		RELATIONSHIP("relationship", null),
+		LINKS("links", "link_version_info"),
+		CATEGORY("category", null),
+		MAILING_LIST("mailing_list", null),
+		FIELD("field", null),
+		FILE_ASSET("file_asset", "fileasset_version_info");
+
+		private String tableName;
+
+		private String versionTableName;
+
+		Type(String tableName, String versionTableName) {
+			this.tableName = tableName;
+			this.versionTableName = versionTableName;
+		}
+
+		public String getValue() {
+			return name().toLowerCase();
+		}
+
+		public String getTableName() {
+			return this.tableName;
+		}
+
+		public String getVersionTableName() {
+			return this.versionTableName;
+		}
+	}
+
 	private java.util.Date iDate;
 
 	private String type = "";

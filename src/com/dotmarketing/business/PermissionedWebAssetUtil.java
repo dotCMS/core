@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -252,19 +253,19 @@ public class PermissionedWebAssetUtil {
 			}
 		}
 		ArrayList<ColumnItem> columnsToOrderBy = new ArrayList<ColumnItem>();
-		ColumnItem templateTitle = new ColumnItem("title", "containers", null,
+		ColumnItem templateTitle = new ColumnItem("title", Inode.Type.CONTAINERS.getTableName(), null,
 				true, OrderDir.ASC);
 		columnsToOrderBy.add(templateTitle);
 		List<String> containerIds = queryForAssetIds(
-				"containers, identifier, inode, container_version_info ",
+			Inode.Type.CONTAINERS.getTableName() + " , identifier, inode, " + Inode.Type.CONTAINERS.getVersionTableName(),
 				new String[] { Container.class.getCanonicalName() },
-				"containers.inode",
+			Inode.Type.CONTAINERS.getTableName() + ".inode",
 				"identifier.id",
-				"containers.identifier = identifier.id and inode.inode = containers.inode and "
-						+ "identifier.id=container_version_info.identifier and container_version_info.working_inode=containers.inode and "
+			Inode.Type.CONTAINERS.getTableName() + ".identifier = identifier.id and inode.inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode and "
+				+ "identifier.id=container_version_info.identifier and container_version_info.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and "
 						+ "container_version_info.deleted="
 						+ DbConnectionFactory.getDBFalse()
-						+ (UtilMethods.isSet(searchString) ? " and (lower(containers.title) LIKE '%"
+						+ (UtilMethods.isSet(searchString) ? " and (lower(" + Inode.Type.CONTAINERS.getTableName() + ".title) LIKE '%"
 								+ searchString.toLowerCase()
 								+ "%'"
 								+ (UtilMethods.isSet(hostQuery) ? " AND ("

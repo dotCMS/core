@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.FixAudit;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -39,7 +40,7 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 		List <Map <String,Object>> returnValue =new ArrayList <Map <String,Object>>();
 		int counter = 0;
 
-		final String fix2ContainerQuery = "select c.* from containers c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
+		final String fix2ContainerQuery = "select c.* from " + Inode.Type.CONTAINERS.getTableName() + " c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
 		final String fix3ContainerQuery = "update container_version_info set working_inode = ? where identifier = ?";
 
 		if (!FixAssetsProcessStatus.getRunning()) {
@@ -50,11 +51,12 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 				DotConnect db = new DotConnect();
 
 				String query = "select distinct ident.* " + "from identifier ident, "
-						+ "inode i, " + "containers c "
+						+ "inode i, " + Inode.Type.CONTAINERS.getTableName() + " c "
 						+ "where ident.id = c.identifier and "
 						+ "ident.id not in (select ident.id "
 						+ "from identifier ident, " + "inode i, "
-						+ "containers c, " + "container_version_info cvi "
+						+ Inode.Type.CONTAINERS.getTableName() + " c, "
+						+ "container_version_info cvi "
 						+ "where c.identifier = ident.id and "
 						+ "i.inode = c.inode and " + "cvi.working_inode = c.inode) and "
 						+ "i.type = 'containers' and " + "i.inode = c.inode";
@@ -124,7 +126,7 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 				}
 				getModifiedData();
 				FixAudit Audit= new FixAudit();
-				Audit.setTableName("containers");
+				Audit.setTableName(Inode.Type.CONTAINERS.getTableName());
 				Audit.setDatetime(new Date());
 				Audit.setRecordsAltered(total);
 				Audit.setAction("Check the working and live versions of containers for inconsistencies and fix them");
@@ -181,10 +183,10 @@ public class FixTask00003CheckContainersInconsistencies  implements FixTask {
 		DotConnect db = new DotConnect();
 
 		String query = "select distinct ident.* " + "from identifier ident, "
-				+ "inode i, " + "containers c "
+				+ "inode i, " + Inode.Type.CONTAINERS.getTableName() + " c "
 				+ "where ident.id = c.identifier and "
 				+ "ident.id not in (select ident.id " + "from identifier ident, "
-				+ "inode i, " + "containers c, " + "container_version_info cvi "
+				+ "inode i, " + Inode.Type.CONTAINERS.getTableName() + " c, " + "container_version_info cvi "
 				+ "where c.identifier = ident.id and "
 				+ "i.inode = c.inode and " + "cvi.working_inode = c.inode) and "
 				+ "i.type = 'containers' and " + "i.inode = c.inode";

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.FixAudit;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -46,40 +47,40 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
                                 "OR (asset_type='htmlpage' and id not in(select identifier from htmlpage)) " +
                                 "OR (asset_type='file_asset' and id not in(select identifier from file_asset)) " +
                                 "OR (asset_type='links' and id not in(select identifier from links)) " +
-                                "OR (asset_type='containers' and id not in(select identifier from containers)) " +
+								"OR (asset_type='containers' and id not in(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
                                 "OR (asset_type='template' and id not in(select identifier from template)) ";
 		
 		String treesToDelete = "SELECT * from tree where child IN (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
         					   "OR child in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
         					   "OR child in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-        					   "OR child in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-        					   "OR child in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from containers)) " +
+        					   "OR child in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " +
+								"OR child in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
         					   "OR child in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) " +                       
         					   "OR parent in (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
         					   "OR parent in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
         					   "OR parent in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-        					   "OR parent in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-        					   "OR parent in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from containers)) " +
+        					   "OR parent in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " +
+								"OR parent in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
         					   "OR parent in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) ";
 		
 		String deleteTreesToDelete = "DELETE from tree where child IN (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
 		   					         "OR child in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
 		   					         "OR child in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-		   					         "OR child in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-		   					         "OR child in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from containers)) " +
+		   					         "OR child in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " +
+								     "OR child in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
 		   					         "OR child in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) " +                       
 		   					         "OR parent in (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
 		   					         "OR parent in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
 		   					         "OR parent in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-		   					         "OR parent in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-		   					         "OR parent in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from containers)) " +
+		   					         "OR parent in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " +
+									 "OR parent in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
 		   					         "OR parent in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) ";
 		
 		String deleteIdentifiersToDelete = "DELETE FROM identifier where (asset_type='contentlet' and id not in(select identifier from contentlet )) " + 
         							       "OR (asset_type='htmlpage' and id not in(select identifier from htmlpage)) " +
         							       "OR (asset_type='file_asset' and id not in(select identifier from file_asset)) " +
         							       "OR (asset_type='links' and id not in(select identifier from links)) " +
-        							       "OR (asset_type='containers' and id not in(select identifier from containers)) " +
+											"OR (asset_type='containers' and id not in(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
         							       "OR (asset_type='template' and id not in(select identifier from template)) ";
      if (!FixAssetsProcessStatus.getRunning()) {
 			FixAssetsProcessStatus.startProgress();
