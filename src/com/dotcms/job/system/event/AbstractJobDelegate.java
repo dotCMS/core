@@ -12,9 +12,15 @@ import com.dotmarketing.util.Logger;
 /**
  * Base class for Quartz Job Delegate classes. This base class is useful
  * specially to abstract aspects of the delegates functionality.
+ * <p>
+ * A Job Delegate is a class that can be registered to one or more Quartz Jobs.
+ * Delegate classes will receive basic information from them that will allow
+ * them to perform any custom action upon its scheduled call. For example, a
+ * delegate can connect to a running service and notify a component that a Job
+ * has been triggered.
  * 
  * @author Jose Castro
- * @version 1.0
+ * @version 3.7
  * @since Jul 14, 2016
  *
  */

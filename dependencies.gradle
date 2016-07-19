@@ -84,7 +84,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version:'2.6.0-rc2_2'
-
     compile group: 'com.dotcms.lib', name: 'dot.jamm', version:'0.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jasperreports', version:'3.5.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.javacsv', version:'ukv_2'
@@ -201,9 +200,6 @@ dependencies {
 	compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
     compile group: 'com.zaxxer', name: 'HikariCP', version:'2.4.6'
-    
-    compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
-    
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
@@ -279,4 +275,5 @@ dependencies {
     provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
+    compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 }
