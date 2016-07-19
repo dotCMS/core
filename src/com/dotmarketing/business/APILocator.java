@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -12,11 +14,14 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
-import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
+import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -31,8 +36,6 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
-import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
-import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.web.websocket.WebSocketContainerAPI;
@@ -85,7 +88,6 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPIImpl;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -132,6 +134,15 @@ public class APILocator extends Locator<APIIndex>{
 		if(instance != null)
 			return;
 		instance = new APILocator();
+	}
+
+	/**
+	 * Creates a single instance of the {@link CompanyAPI} class.
+	 *
+	 * @return The {@link CompanyAPI} class.
+	 */
+	public static CompanyAPI getCompanyAPI() {
+		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
 
 	/**
@@ -801,7 +812,8 @@ enum APIIndex
     RULES_API,
     VISITOR_API,
 	SYSTEM_EVENTS_API,
-	WEB_SOCKET_CONTAINER_API;
+	WEB_SOCKET_CONTAINER_API,
+	COMPANY_API;
 
 	Object create() {
 		switch(this) {
@@ -864,6 +876,7 @@ enum APIIndex
 		case VISITOR_API: return new VisitorAPIImpl();
 		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
 		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
+		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
