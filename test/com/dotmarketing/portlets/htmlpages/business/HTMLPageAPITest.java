@@ -12,6 +12,7 @@ import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -175,7 +176,7 @@ public class HTMLPageAPITest extends TestBase {
 
         AssetUtil.assertDeleted(pageInode, pageIdent, "htmlpage");
         AssetUtil.assertDeleted(templateInode, templateIdent, "template");
-        AssetUtil.assertDeleted(containerInode, containerIdent, "containers");
+		AssetUtil.assertDeleted(containerInode, containerIdent, Inode.Type.CONTAINERS.getValue());
     }
 
     @Test

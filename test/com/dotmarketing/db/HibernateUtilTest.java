@@ -11,6 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -129,7 +130,7 @@ public class HibernateUtilTest {
         
         // lets see if in the db it remains the same
         DotConnect dc = new DotConnect();
-        dc.setSQL("select title from containers where inode=?");
+        dc.setSQL("select title from " + Inode.Type.CONTAINERS.getTableName() + " where inode=?");
         dc.addParam(cInode);
         Assert.assertEquals(title, dc.loadObjectResults().get(0).get("title"));
     }

@@ -1,5 +1,7 @@
 package com.dotcms.h2;
 
+import com.dotmarketing.beans.Inode;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,7 +13,7 @@ public class ContainerVersionCheckTrigger extends TriggerAdapter {
 
     @Override
     public void fire(Connection conn, ResultSet oldCont, ResultSet newCont) throws SQLException {
-        PreparedStatement smt=conn.prepareStatement("select count(*) from containers where identifier = ?");
+        PreparedStatement smt=conn.prepareStatement("select count(*) from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = ?");
         smt.setString(1, oldCont.getString("identifier"));
         ResultSet rs=smt.executeQuery();
         rs.next();

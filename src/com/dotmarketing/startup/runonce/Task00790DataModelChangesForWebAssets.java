@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -46,11 +47,11 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 		
 	private void containerTableChanges() throws DotDataException, SQLException {
 		DotConnect dc = new DotConnect();
-		String addStructure = "ALTER TABLE containers add structure_inode varchar(36)";
+		String addStructure = "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " add structure_inode varchar(36)";
 		if(DbConnectionFactory.isOracle())
 		    addStructure=addStructure.replaceAll("varchar\\(", "varchar2\\(");
-		String addFK = "ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode)";
-		String containerQuery = "Select * from tree where child in(Select inode from inode where type='containers') and " 
+		String addFK = "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " add constraint structure_fk foreign key (structure_inode) references structure(inode)";
+		String containerQuery = "Select * from tree where child in(Select inode from inode where type='containers') and "
 					 + "parent in(select inode from structure)";
 		dc.executeStatement(addStructure);
 		dc.executeStatement(addFK);
@@ -60,7 +61,7 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 		for(Map<String,String> tree : treeResults){
 			String stInode = tree.get("parent");
 			String containerInode = tree.get("child");
-			dc.setSQL("UPDATE containers set structure_inode = ? where inode = ?");
+			dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " set structure_inode = ? where inode = ?");
 			dc.addParam(stInode);
 			dc.addParam(containerInode);
 			dc.loadResult();
@@ -376,8 +377,8 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 			   					   	  "IF(tableName = 'links') THEN\n" +
 			   					   	  	"select count(inode) into versionsCount from links where identifier = ident;\n" +
 			   					   	  "END IF;\n" +
-			   					   	  "IF(tableName = 'containers') THEN\n" +
-			   					   	  	"select count(inode) into versionsCount from containers where identifier = ident;\n" +
+									  "IF(tableName = '" + Inode.Type.CONTAINERS.getTableName() + "') THEN\n" +
+										"select count(inode) into versionsCount from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = ident;\n" +
 			   					   	  "END IF;\n" +
 			   					   	  "IF(tableName = 'template') THEN\n" +
 			   					   	  	"select count(inode) into versionsCount from template where identifier = ident;\n" +

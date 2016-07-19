@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -98,7 +99,7 @@ public class Task00785DataModelChanges implements StartupTask  {
     		    "and (identifier is null OR (identifier not in(select inode from identifier)));"+
     		"delete from file_asset where inode in (select inode from inodeskill);"+
     		"delete from contentlet where inode in (select inode from inodeskill);"+
-    		"delete from containers where inode in (select inode from inodeskill);"+
+				"delete from " + Inode.Type.CONTAINERS.getTableName() + " where inode in (select inode from inodeskill);"+
     		"delete from template where inode in (select inode from inodeskill);"+
     		"delete from htmlpage where inode in (select inode from inodeskill);"+
     		"delete from links where inode in (select inode from inodeskill);"+
@@ -362,7 +363,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			   								     "versionsCount integer;\n" +
 			   								   "BEGIN\n" +
 			   								     "IF (tg_op = ''DELETE'') THEN\n" +
-			   								       "select count(*) into versionsCount from containers where identifier = OLD.identifier;\n" +
+												   "select count(*) into versionsCount from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = OLD.identifier;\n" +
 			   								     "IF (versionsCount = 0)THEN\n" +
 			   								       "DELETE from identifier where id = OLD.identifier;\n" +
 			   								     "ELSE\n" +
@@ -373,7 +374,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			   								   "END\n" +
 			   								   "' LANGUAGE plpgsql;\n" +
 			   								   "CREATE TRIGGER container_versions_check_trigger AFTER DELETE\n" +
-			   								   "ON containers FOR EACH ROW\n" +
+												"ON " + Inode.Type.CONTAINERS.getTableName() + " FOR EACH ROW\n" +
 			   								   "EXECUTE PROCEDURE container_versions_check();\n";
 
 		String templateVersionsCheckTrigger = "CREATE OR REPLACE FUNCTION template_versions_check() RETURNS trigger AS '\n" +
@@ -577,31 +578,31 @@ public class Task00785DataModelChanges implements StartupTask  {
 										  "/\n";
 
 		String containerVersionsCheckTrigger = "CREATE OR REPLACE PACKAGE container_pkg as\n" +
-		 									   	   "type array is table of containers%rowtype index by binary_integer;\n" +
+												"type array is table of " + Inode.Type.CONTAINERS.getTableName() + "%rowtype index by binary_integer;\n" +
 		 									   	   "oldvals array;\n" +
 		 									   	   "empty array;\n" +
 											   "END;\n" +
 											   "/\n" +
 											   "CREATE OR REPLACE TRIGGER container_versions_bd\n" +
-											   "BEFORE DELETE ON containers\n" +
+												"BEFORE DELETE ON " + Inode.Type.CONTAINERS.getTableName() + "\n" +
 											   "BEGIN\n" +
 											   	  "container_pkg.oldvals := container_pkg.empty;\n" +
 											   "END;\n" +
 											   "/\n" +
 											   "CREATE OR REPLACE TRIGGER container_versions_bdfer\n" +
-											   "BEFORE DELETE ON containers\n" +
+												"BEFORE DELETE ON " + Inode.Type.CONTAINERS.getTableName() + "\n" +
 											   "FOR EACH ROW\n" +
 											   "BEGIN\n" +
 											      "container_pkg.oldvals(container_pkg.oldvals.count+1).identifier := :old.identifier;\n" +
 											   "END;\n" +
 											   "/\n" +
 											   "CREATE OR REPLACE TRIGGER container_versions_trigger\n" +
-											   "AFTER DELETE ON containers\n" +
+												"AFTER DELETE ON " + Inode.Type.CONTAINERS.getTableName() + "\n" +
 											   "DECLARE\n" +
 											       "versionsCount integer;\n" +
 											   "BEGIN\n" +
 											       "for i in 1 .. container_pkg.oldvals.count LOOP\n" +
-											        "select count(*) into versionsCount from containers where identifier = container_pkg.oldvals(i).identifier;\n" +
+													"select count(*) into versionsCount from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = container_pkg.oldvals(i).identifier;\n" +
 											         "IF (versionsCount = 0)THEN\n" +
 											           "DELETE from identifier where id = container_pkg.oldvals(i).identifier;\n" +
 											         "END IF;\n" +
@@ -822,7 +823,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 										     "END;\n";
 
 		String containerVersionsCheckTrigger = "CREATE Trigger check_container_versions\n" +
-											   "ON containers\n" +
+												"ON " + Inode.Type.CONTAINERS.getTableName() + "\n" +
 											   "FOR DELETE AS\n" +
 											      "DECLARE @totalCount int\n" +
 											      "DECLARE @identifier varchar(36)\n" +
@@ -834,7 +835,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 											      "fetch next from container_cur_Deleted into @identifier\n" +
 											      "while @@FETCH_STATUS <> -1\n" +
 											      "BEGIN\n" +
-											      	"select @totalCount = count(*) from containers where identifier = @identifier\n" +
+													"select @totalCount = count(*) from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = @identifier\n" +
 											      	"IF (@totalCount = 0)\n" +
 											      	"BEGIN\n" +
 											      		"DELETE from identifier where id = @identifier\n" +
@@ -1007,8 +1008,8 @@ public class Task00785DataModelChanges implements StartupTask  {
 							        "IF(tableName = 'links') THEN\n" +
 							           "select count(inode) into versionsCount from links where identifier = ident;\n" +
 							        "END IF;\n" +
-							        "IF(tableName = 'containers') THEN\n" +
-							           "select count(inode) into versionsCount from containers where identifier = ident;\n" +
+									"IF(tableName = '" + Inode.Type.CONTAINERS.getTableName() + "') THEN\n" +
+										"select count(inode) into versionsCount from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = ident;\n" +
 							        "END IF;\n" +
 							        "IF(tableName = 'template') THEN\n" +
 							           "select count(inode) into versionsCount from template where identifier = ident;\n" +
@@ -1063,12 +1064,12 @@ public class Task00785DataModelChanges implements StartupTask  {
 									"#\n";
 		String containerVersionsCheck = "DROP TRIGGER IF EXISTS check_container_versions;\n" +
 										"CREATE TRIGGER check_container_versions BEFORE DELETE\n" +
-										"on containers\n" +
+										"on " + Inode.Type.CONTAINERS.getTableName() + "\n" +
 										"FOR EACH ROW\n" +
 										"BEGIN\n" +
 										"DECLARE tableName VARCHAR(20);\n" +
 										"DECLARE count INT;\n" +
-										"SET tableName = 'containers';\n" +
+										"SET tableName = '" + Inode.Type.CONTAINERS.getTableName() + "';\n" +
 										"CALL checkVersions(OLD.identifier,tableName,count);\n" +
 										"IF(count = 0)THEN\n" +
 										"delete from identifier where id = OLD.identifier;\n" +
@@ -1275,7 +1276,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		    deleteOrphanedAssets();
 
 		String addConstraint = "";
-		String addIdentifierColumn = "alter table containers add identifier varchar(36);" +
+		String addIdentifierColumn = "alter table " + Inode.Type.CONTAINERS.getTableName() + " add identifier varchar(36);" +
 			             			 "alter table template add identifier varchar(36);" +
 			             		     "alter table htmlpage add identifier varchar(36);"+
 			             		     "alter table file_asset add identifier varchar(36);" +
@@ -1346,8 +1347,8 @@ public class Task00785DataModelChanges implements StartupTask  {
 					     "ALTER TABLE Inode DROP COLUMN identifier;" +
 					     "ALTER TABLE structure add constraint fk_structure_host foreign key (host) references identifier(id);"+
 
-					     "delete from containers where identifier is null or identifier='';"+
-					     "ALTER TABLE containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);" +
+						 "delete from " + Inode.Type.CONTAINERS.getTableName() + " where identifier is null or identifier='';"+
+						 "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " add constraint containers_identifier_fk foreign key (identifier) references identifier(id);" +
 
 					     "delete from template where identifier is null or identifier='';"+
 					     "ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);" +
@@ -1387,7 +1388,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		    inode = container.get("inode");
             identifier = container.get("identifier");
 			try {
-    			dc.setSQL("Update containers set identifier = ? where inode=?");
+				dc.setSQL("Update " + Inode.Type.CONTAINERS.getTableName() + " set identifier = ? where inode=?");
     			dc.addParam(identifier);
     			dc.addParam(inode);
     			dc.loadResult();

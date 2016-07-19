@@ -44,8 +44,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	@SuppressWarnings("unchecked")
 	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Container.class);
-		String sql = "SELECT {containers.*} from containers, inode containers_1_, identifier ident, container_version_info vv " +
-				"where vv.working_inode=containers.inode and containers.inode = containers_1_.inode and " +
+		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, identifier ident, container_version_info vv " +
+			"where vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
 				"vv.identifier = ident.id and host_inode = '" + parentPermissionable.getIdentifier() + "'";
 		hu.setSQLQuery(sql);
 		return hu.list();
@@ -54,9 +54,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	@SuppressWarnings("unchecked")
 	public List<Container> findAllContainers() throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Container.class);
-		String sql = "SELECT {containers.*} from containers, inode containers_1_, container_version_info vv " +
-				"where vv.working_inode= containers.inode and containers.inode = containers_1_.inode and " +
-				"containers_1_.type='containers' order by containers.title";
+		String sql = "SELECT {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
+			"where vv.working_inode= " + Inode.Type.CONTAINERS.getTableName() + ".inode and " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " +
+			"dot_containers_1_.type='containers' order by " + Inode.Type.CONTAINERS.getTableName() + ".title";
 		hu.setSQLQuery(sql);
 		return hu.list();
 	}
