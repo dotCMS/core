@@ -292,6 +292,37 @@ public class Notification implements Serializable {
 	}
 
 	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Notification that = (Notification) o;
+
+		if (id != null ? !id.equals(that.id) : that.id != null) return false;
+		if (title != null ? !title.equals(that.title) : that.title != null) return false;
+		if (message != null ? !message.equals(that.message) : that.message != null) return false;
+		if (type != that.type) return false;
+		if (level != that.level) return false;
+		if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+		if (timeSent != null ? !timeSent.equals(that.timeSent) : that.timeSent != null) return false;
+		return wasRead != null ? wasRead.equals(that.wasRead) : that.wasRead == null;
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = id != null ? id.hashCode() : 0;
+		result = 31 * result + (title != null ? title.hashCode() : 0);
+		result = 31 * result + (message != null ? message.hashCode() : 0);
+		result = 31 * result + (type != null ? type.hashCode() : 0);
+		result = 31 * result + (level != null ? level.hashCode() : 0);
+		result = 31 * result + (userId != null ? userId.hashCode() : 0);
+		result = 31 * result + (timeSent != null ? timeSent.hashCode() : 0);
+		result = 31 * result + (wasRead != null ? wasRead.hashCode() : 0);
+		return result;
+	}
+
+	@Override
 	public String toString() {
 		return "Notification [id=" + id + ", title=" + title + ", message=" + message + ", type=" + type + ", level="
 				+ level + ", userId=" + userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead + ", actions=" + actions
