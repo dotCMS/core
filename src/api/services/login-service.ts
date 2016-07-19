@@ -20,8 +20,8 @@ export class LoginService extends CoreWebService {
     private recoverPasswordURL: string;
     private logoutURL: string;
 
-    private lang: string = 'en';
-    private country: string = 'US';
+    private lang: string = '';
+    private country: string = '';
 
     constructor(_apiRoot: ApiRoot, _http: Http) {
         super(_apiRoot, _http);

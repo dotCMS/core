@@ -27,7 +27,7 @@ export class LoginComponent {
     @Input() password: string;
     @Input() myAccountRememberMe: boolean= false;
     @Input() forgotPasswordEmail: string;
-    @Input() language: string= 'en_US';
+    @Input() language: string= '';
     @Output() toggleMain = new EventEmitter<boolean>();
 
     languages: Array<string> = [];
