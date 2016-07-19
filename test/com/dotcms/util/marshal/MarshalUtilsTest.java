@@ -6,22 +6,23 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
-import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
+import org.junit.Test;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.notifications.bean.NotificationActionType;
+import com.dotcms.notifications.bean.NotificationData;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.CollectionsUtils;
-import org.junit.Test;
-
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
@@ -29,6 +30,7 @@ import com.dotmarketing.util.json.JSONObject;
  * MarshalUtils
  * Test
  * @author jsanca
+ * @version 3.7
  */
 
 public class MarshalUtilsTest {
@@ -258,10 +260,11 @@ public class MarshalUtilsTest {
 
         assertNotNull(marshalUtils);
 
-        final SystemEvent systemEvent = new SystemEvent("123456",SystemEventType.NOTIFICATION,
-                new Payload(new Notification("test", "testmessage", NotificationLevel.INFO, "admin@dotcms.com",
-                        CollectionsUtils.list(new NotificationAction("See More", "#seeMore", NotificationActionType.LINK, null)))),
-                new java.util.Date());
+		final NotificationData notificationData = new NotificationData("Test Title", "Notification message",
+				CollectionsUtils.list(new NotificationAction("See More", "#seeMore", NotificationActionType.LINK, null)));
+		final SystemEvent systemEvent = new SystemEvent("123456", SystemEventType.NOTIFICATION, new Payload(
+				new Notification("78910", NotificationType.GENERIC, NotificationLevel.INFO, "admin@dotcms.com", null,
+						false, notificationData)), new java.util.Date());
 
         String json = marshalUtils.marshal(systemEvent);
 
