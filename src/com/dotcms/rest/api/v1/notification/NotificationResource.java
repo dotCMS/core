@@ -1,4 +1,4 @@
-package com.dotcms.rest;
+package com.dotcms.rest.api.v1.notification;
 
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -9,6 +9,10 @@ import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.ResourceResponse;
+import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -19,7 +23,9 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
