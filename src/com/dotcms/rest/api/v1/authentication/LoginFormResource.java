@@ -22,12 +22,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -88,10 +90,10 @@ public class LoginFormResource implements Serializable {
                 .levelName(LicenseUtil.getLevelName())
                 .version(ReleaseInfo.getVersion())
                 .buildDateString(ReleaseInfo.getBuildDateString())
-                .languages(this.conversionUtils.convert(this.languageAPI.getLanguages(),
-                        (final Language language) -> {
+                .languages(this.conversionUtils.convert(LanguageUtil.getAvailableLocales(),
+                        (final Locale language) -> {
 
-                            return new LanguageView(language.getLanguageCode(), language.getCountryCode());
+                            return new LanguageView(language.getLanguage(), language.getCountry());
                         }))
                 .backgroundColor(defaultCompany.getSize())
                 .backgroundPicture(defaultCompany.getHomeURL())

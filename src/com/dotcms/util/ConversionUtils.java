@@ -49,7 +49,7 @@ public class ConversionUtils implements Serializable {
 	 * @param converter - 
 	 * @return
 	 */
-    public <O, D> List<D> convert (final List<O> originList,
+    public <O, D> List<D> convert (final O [] originList,
                                    final Converter<O, D> converter) {
 
         List<D> destinyList = null;
