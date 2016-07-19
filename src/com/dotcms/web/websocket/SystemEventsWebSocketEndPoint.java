@@ -1,72 +1,74 @@
 package com.dotcms.web.websocket;
 
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
-
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotmarketing.util.Logger;
+
 /**
+ * This Websocket end-point allows other parts of the system (such as the User
+ * Notification component) to register to this service and receive information
+ * regarding new notifications or system events. Other application services can
+ * get an instance of this end-point via the {@link WebSocketContainerAPI} and
+ * send System Events so that other components can read and process them.
  * 
  * @author Jose Castro
  * @version 3.7
  * @since Jul 11, 2016
  *
  */
-@ServerEndpoint(value = "/system/events",
-        encoders = { SystemEventEncoder.class },
-        configurator = DotCmsWebSocketConfigurator.class)
+@SuppressWarnings("serial")
+@ServerEndpoint(value = "/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
-    private final Queue<Session> queue =
-            new ConcurrentLinkedQueue<>();
+	private final Queue<Session> queue = new ConcurrentLinkedQueue<>();
 
-    @OnOpen
-    public void open(Session session) {
+	@OnOpen
+	public void open(Session session) {
+		queue.add(session);
+	}
 
-        queue.add(session);
-        //todo: log me System.out.println("New session opened: " + session.getId());
-    }
+	@OnError
+	public void error(Session session, Throwable t) {
+		queue.remove(session);
+	}
 
-    @OnError
-    public void error(Session session, Throwable t) {
-        queue.remove(session);
-        //todo: log me System.err.println("Error on session " + session.getId());
-    }
+	@OnClose
+	public void closedConnection(Session session) {
+		queue.remove(session);
+	}
 
-    @OnClose
-    public void closedConnection(Session session) {
-        queue.remove(session);
-        // todo log me System.out.println("session closed: " + session.getId());
-    }
+	/**
+	 * Sends the specified {@link SystemEvent} object to all the clients
+	 * (front-end or back-end services) that are registered to this Websocket
+	 * end-point.
+	 * 
+	 * @param event
+	 *            - A new System Event that has been generated.
+	 */
+	public void sendSystemEvent(final SystemEvent event) {
+		try {
+			final ArrayList<Session> closedSessions = new ArrayList<>();
+			for (Session session : queue) {
+				if (!session.isOpen()) {
+					closedSessions.add(session);
+				} else {
+					session.getBasicRemote().sendObject(event);
+				}
+			}
+			queue.removeAll(closedSessions);
+		} catch (Throwable e) {
+			Logger.error(this, "An error occurred when sending a message through the " + this.getClass().getName(), e);
+		}
+	}
 
-    public void sendSystemEvent(final SystemEvent event) {
-
-        try {
-			/* Send the new rate to all open WebSocket sessions */
-            final ArrayList<Session> closedSessions = new ArrayList<>();
-            for (Session session : queue) {
-                if (!session.isOpen()) {
-                    // todo log me System.err.println("Closed session: " + session.getId());
-
-                    closedSessions.add(session);
-                } else {
-
-                    session.getBasicRemote().sendObject(event);
-                }
-            }
-
-            queue.removeAll(closedSessions);
-            // log me System.out.println("Sending " + msg + " to " + queue.size() + " clients");
-        } catch (Throwable e) {
-
-            // todo log an error
-        }
-    }
-
-} // E:O:F:SystemEventsWebSocketEndPoint.
+}

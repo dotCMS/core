@@ -26,7 +26,7 @@ import com.dotmarketing.util.UtilMethods;
  * Concrete implementation of the {@link NotificationAPI} class.
  * 
  * @author Daniel Silva
- * @version 3.0
+ * @version 3.0, 3.7
  * @since Feb 3, 2014
  *
  */

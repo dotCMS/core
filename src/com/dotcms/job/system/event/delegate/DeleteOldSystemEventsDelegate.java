@@ -8,7 +8,6 @@ import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 
 /**
  * This delegate class is registered to the {@link DeleteOldSystemEventsJob},

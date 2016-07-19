@@ -26,7 +26,7 @@ public interface WebSocketContainerAPI extends Serializable {
 	 * Returns an instance of the requested end-point class.
 	 * 
 	 * @param endpointClass
-	 *            The Websocket that will be instantiated.
+	 *            - The Websocket that will be instantiated.
 	 * @return A unique instance of the Websocket.
 	 */
 	public <T> T getEndpointInstance(Class<T> endpointClass);

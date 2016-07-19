@@ -22,7 +22,7 @@ import com.dotmarketing.exception.DotDataException;
  * error.
  * 
  * @author Daniel Silva
- * @version 3.0
+ * @version 3.0, 3.7
  * @since Feb 3, 2014
  *
  */
