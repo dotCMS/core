@@ -25,8 +25,10 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
+import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
@@ -86,6 +88,9 @@ public class LoginFormResource implements Serializable {
             final LoginFormResultView.Builder builder =
                     new LoginFormResultView.Builder();
 
+            final HttpSession session =
+                    request.getSession();
+
             builder.serverId(LicenseUtil.getDisplayServerId())
                 .levelName(LicenseUtil.getLevelName())
                 .version(ReleaseInfo.getVersion())
@@ -100,11 +105,18 @@ public class LoginFormResource implements Serializable {
                 .logo(this.companyAPI.getLogoPath(defaultCompany))
                 .authorizationType(defaultCompany.getAuthType());
 
+            // try to set to the session the locale company settings
+            LocaleUtil.processLocaleCompanySettings(request, session);
+            // or the locale user cookie configuration if exits.
+            LocaleUtil.processLocaleUserCookie(request, session);
+
             res = Response.ok(new ResponseEntityView(
                     builder.build(),
                     this.i18NUtil.getMessagesMap(
+                            // if the user set's a switch, it overrides the session too.
                             loginForm.getCountry(), loginForm.getLanguage(),
-                            loginForm.getMessagesKey(), request)
+                            loginForm.getMessagesKey(), request,
+                            true) // want to create a session to store the locale.
                     )).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 

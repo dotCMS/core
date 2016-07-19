@@ -22,23 +22,21 @@
 
 package com.liferay.util;
 
-import java.util.Locale;
-
-import com.dotcms.repackage.org.apache.hadoop.security.User;
-import com.dotcms.util.security.*;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.security.Encryptor;
+import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import org.apache.commons.logging.Log;
@@ -47,6 +45,7 @@ import org.apache.commons.logging.LogFactory;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Locale;
 
 /**
  * <a href="LocaleUtil.java.html"><b><i>View Source</i></b></a>
@@ -63,6 +62,8 @@ public class LocaleUtil {
 
 	private static UserWebAPI userWebAPI = null;
 
+	private static CompanyAPI companyAPI = null;
+
 	public static void setEncryptor(Encryptor encryptor) {
 		LocaleUtil.encryptor = encryptor;
 	}
@@ -74,6 +75,26 @@ public class LocaleUtil {
 	public static void setUserWebAPI(UserWebAPI userWebAPI) {
 		LocaleUtil.userWebAPI = userWebAPI;
 	}
+
+	public static void setCompanyAPI(CompanyAPI companyAPI) {
+		LocaleUtil.companyAPI = companyAPI;
+	}
+
+	private static CompanyAPI getCompanyAPI() {
+
+		if (null == companyAPI) {
+			synchronized (LocaleUtil.class) {
+
+				if (null == companyAPI) {
+					companyAPI =
+							APILocator.getCompanyAPI();
+				}
+			}
+		}
+
+		return companyAPI;
+	}
+
 
 	private static Encryptor getEncryptor() {
 
@@ -142,7 +163,22 @@ public class LocaleUtil {
 		return locale;
 	}
 
-	// todo: unit test me
+	/**
+	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
+	 * if the LOCALE_KEY is also null, will get the request default one.
+	 *
+	 * If country or language are not null (one of them could be null), will build a new locale.
+	 * Not any session will be created.
+	 * @param request
+	 * @param country
+	 * @param language
+	 * @return Locale
+	 */
+	public static Locale getLocale (final HttpServletRequest request, final String country, final String language) {
+
+		return getLocale (request, country, language, false);
+	}
+
 	/**
 	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
 	 * if the LOCALE_KEY is also null, will get the request default one.
@@ -151,16 +187,15 @@ public class LocaleUtil {
 	 * @param request
 	 * @param country
 	 * @param language
-     * @return
+	 * @param createSession true if you want to create the session in case it is not created, false otherwise. If the session is not created, won't set the locale in the session at the end of the process.
+     * @return Locale
      */
-	public static Locale getLocale (final HttpServletRequest request, final String country, final String language) {
+	public static Locale getLocale (final HttpServletRequest request, final String country, final String language, final boolean createSession) {
 
-		final HttpSession session = request.getSession(false);
+		final HttpSession session = request.getSession(createSession);
 		Locale locale = null;
 
 		try {
-
-			processLocaleUserCookie (request);
 
 			if (!UtilMethods.isSet(country) && !UtilMethods.isSet(language)) {
 
@@ -197,57 +232,89 @@ public class LocaleUtil {
 
 				locale = request.getLocale();
 			} else {
+
 				locale = Locale.getDefault();
 			}
 		}
 
 		if (null != locale) {
 
-			session.setAttribute(Globals.LOCALE_KEY, locale);
+			if (null != session) {
+
+				session.setAttribute(Globals.LOCALE_KEY, locale);
+			}
 		}
 
 		return locale;
 	}
 
 	/**
-	 * This method is called just to set the locale from the user saved on a
-	 * @param request
+	 * Set the locale based on the System configuration to the session, if it is a valid session.
+	 * @param request {@link HttpServletRequest}
+	 * @param session {@link HttpSession}
+     */
+	public static void processLocaleCompanySettings(final HttpServletRequest request,
+													 final HttpSession session) throws SystemException, PortalException {
+
+		if (null != session && !getUserWebAPI().isLoggedToBackend(request)) { // if it is not already logged in.
+
+			final Company company = getCompanyAPI().getCompany(request);
+			final User    user    = (null != company)?company.getDefaultUser():null;
+			Locale locale   = (null != session)?
+					(Locale) session.getAttribute(Globals.LOCALE_KEY) :null;
+
+			if (null == locale && null != user) {
+
+				locale = user.getLocale();
+			}
+
+			if (null != locale) {
+
+				session.setAttribute(Globals.LOCALE_KEY, locale);
+			}
+		}
+	} // processLocaleCompanySettings/
+
+	/**
+	 * Set the locale based on the Cookies under the key {@link CookieKeys}.ID to the session, if it is a valid session.
+	 * @param request {@link HttpServletRequest}
+	 * @param session {@link HttpSession}
 	 * @throws SystemException
 	 * @throws PortalException
 	 * @throws DotDataException
 	 * @throws DotSecurityException
      */
-	private static void processLocaleUserCookie(final HttpServletRequest request) throws SystemException, PortalException, DotDataException, DotSecurityException {
+	public static void processLocaleUserCookie(final HttpServletRequest request, final HttpSession session)
+			throws SystemException, PortalException, DotDataException, DotSecurityException {
 
 		String uId = null;
 
-		final Cookie[] cookies =
-				request.getCookies();
-		final HttpSession session =
-				request.getSession(false);
+		if (null != session) {
 
-		if(cookies != null) {
+			final Cookie[] cookies =
+					request.getCookies();
 
-			uId = CookieUtil.get
-					(request.getCookies(), CookieKeys.ID);
+			if (cookies != null) {
 
-			if(UtilMethods.isSet(uId)) {
+				uId = CookieUtil.get
+						(request.getCookies(), CookieKeys.ID);
 
-				try {
+				if (UtilMethods.isSet(uId)) {
 
-					uId = getEncryptor().decryptString(uId);
-				} catch(Exception e) {
+					try {
 
-					_log.info("An invalid attempt to login as " + uId + " has been made from IP: "
-									+ request.getRemoteAddr());
-					uId = null;
+						uId = getEncryptor().decryptString(uId);
+					} catch (Exception e) {
+
+						_log.info("An invalid attempt to login as " + uId + " has been made from IP: "
+								+ request.getRemoteAddr());
+						uId = null;
+					}
 				}
 			}
-		}
 
-		if(UtilMethods.isSet(uId)) {
+			if (UtilMethods.isSet(uId)) {
 
-			if (null != session) {
 				session.setAttribute(WebKeys.USER_ID, uId);
 
 				//DOTCMS-4943
@@ -259,8 +326,7 @@ public class LocaleUtil {
 						loggedInUser.getLocale());
 			}
 		}
-
-	}
+	} // processLocaleUserCookie.
 
 	private static final Log _log = LogFactory.getLog(LocaleUtil.class);
 
