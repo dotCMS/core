@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
+import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -117,11 +118,7 @@ public class SystemEventsFactory implements Serializable {
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
 				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					final String id = record.getId();
-					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-					final String payload = record.getPayload();
-					final Date created = new Date(record.getCreationDate());
-					return new SystemEvent(id, eventType, payload, created);
+					return convertSystemEventDTO(record);
 				});
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving system events created since: ["
@@ -136,11 +133,7 @@ public class SystemEventsFactory implements Serializable {
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getAll();
 				return this.conversionUtils.convert(result, (SystemEventDTO record) -> {
-					final String id = record.getId();
-					final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-					final String payload = record.getPayload();
-					final Date created = new Date(record.getCreationDate());
-					return new SystemEvent(id, eventType, payload, created);
+					return convertSystemEventDTO(record);
 				});
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving all system events.";
@@ -203,6 +196,23 @@ public class SystemEventsFactory implements Serializable {
 			}
 		}
 
+		/**
+		 * Converts the physical representation of a System Event (i.e., the
+		 * information as stored in the database) to the logical representation.
+		 * 
+		 * @param record
+		 *            - The {@link SystemEventDTO} object.
+		 * @return The {@link Notification} object.
+		 */
+		private SystemEvent convertSystemEventDTO(SystemEventDTO record) {
+			final String id = record.getId();
+			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
+			final String payloadStr = record.getPayload();
+			final Payload payload = marshalUtils.unmarshal(payloadStr, Payload.class);
+			final Date created = new Date(record.getCreationDate());
+			return new SystemEvent(id, eventType, payload, created);
+		}
+
 	}
 
 	/**
@@ -235,30 +245,8 @@ public class SystemEventsFactory implements Serializable {
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ?");
 			dc.addParam(fromDate);
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
-			/*
-			 * return ConversionUtils.INSTANCE.convert(result, new
-			 * Converter<Map<String, Object>, SystemEventDTO>() {
-			 * 
-			 * @Override public SystemEventDTO convert(Map<String, Object>
-			 * original) { return new SystemEventDTO((String)
-			 * original.get("identifier"), (String) original.get("event"),
-			 * (String) original .get("payload"), (Long)
-			 * original.get("created")); }
-			 * 
-			 * });
-			 */
 			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				final String id = (String) record.get("identifier");
-				final String eventType = (String) record.get("event_type");
-				final String payload = (String) record.get("payload");
-				Long created = 0L;
-				if (DbConnectionFactory.isOracle()) {
-					BigDecimal result = (BigDecimal) record.get("created");
-					created = new Long(result.toPlainString());
-				} else {
-					created = (Long) record.get("created");
-				}
-				return new SystemEventDTO(id, eventType, payload, created);
+				return convertSystemEventRecord(record);
 			});
 		}
 
@@ -268,17 +256,7 @@ public class SystemEventsFactory implements Serializable {
 			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event");
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
 			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
-				final String id = (String) record.get("identifier");
-				final String eventType = (String) record.get("event_type");
-				final String payload = (String) record.get("payload");
-				Long created = 0L;
-				if (DbConnectionFactory.isOracle()) {
-					BigDecimal result = (BigDecimal) record.get("created");
-					created = new Long(result.toPlainString());
-				} else {
-					created = (Long) record.get("created");
-				}
-				return new SystemEventDTO(id, eventType, payload, created);
+				return convertSystemEventRecord(record);
 			});
 		}
 
@@ -304,6 +282,28 @@ public class SystemEventsFactory implements Serializable {
 			final DotConnect dc = new DotConnect();
 			dc.setSQL("DELETE FROM system_event");
 			dc.loadResult();
+		}
+
+		/**
+		 * Converts the raw data of the table row into the physical
+		 * representation.
+		 * 
+		 * @param record
+		 *            - The database record.
+		 * @return The {@link SystemEventDTO} object.
+		 */
+		private SystemEventDTO convertSystemEventRecord(Map<String, Object> record) {
+			final String id = (String) record.get("identifier");
+			final String eventType = (String) record.get("event_type");
+			final String payload = (String) record.get("payload");
+			Long created = 0L;
+			if (DbConnectionFactory.isOracle()) {
+				BigDecimal result = (BigDecimal) record.get("created");
+				created = new Long(result.toPlainString());
+			} else {
+				created = (Long) record.get("created");
+			}
+			return new SystemEventDTO(id, eventType, payload, created);
 		}
 
 	}
