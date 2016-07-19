@@ -10,9 +10,11 @@ import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.ImageKey;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -49,6 +51,18 @@ public class CompanyAPIFactory implements Serializable {
     }
 
     private class CompanyAPIImpl implements CompanyAPI {
+
+        @Override
+        public Company getCompany(final HttpServletRequest req) throws SystemException, PortalException {
+
+            return PortalUtil.getCompany(req);
+        }
+
+        @Override
+        public String getCompanyId(final HttpServletRequest req) {
+
+            return PortalUtil.getCompanyId(req);
+        }
 
         @Override
         public Company getDefaultCompany() {

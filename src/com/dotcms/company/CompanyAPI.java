@@ -5,6 +5,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 
 /**
@@ -19,6 +20,21 @@ import java.io.Serializable;
  * @author jsanca
  */
 public interface CompanyAPI extends Serializable {
+
+    /**
+     * Get the company from the {@link HttpServletRequest}, {@link com.liferay.portal.util.WebKeys}.COMPANY
+     * @param req {@link HttpServletRequest}
+     * @return Company
+     */
+    public Company getCompany(HttpServletRequest req) throws SystemException, PortalException;
+
+    /**
+     * Try to get the company id from the from the {@link javax.servlet.http.HttpSession} or {@link HttpServletRequest},
+     * {@link com.liferay.portal.util.WebKeys}.COMPANY_ID.
+     * @param req {@link HttpServletRequest}
+     * @return String
+     */
+    public String getCompanyId(HttpServletRequest req);
 
     /**
      * Get the default company based on the context app config.
