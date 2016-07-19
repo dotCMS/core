@@ -40,7 +40,6 @@ public class DeleteOldSystemEventsDelegate extends AbstractJobDelegate {
 		// Property value represents days, defaults to 31 days
 		int olderThan = Config.getIntProperty(DELETE_EVENTS_OLDER_THAN, 31);
 		long toDate = new Date().getTime() - daysToMillis(olderThan);
-		Logger.info(this, "==== Deleting events older than " + new Date(toDate) + " ====");
 		this.systemEventsAPI.deleteEvents(toDate);
 	}
 
