@@ -1,0 +1,153 @@
+package com.dotcms.rest.annotation;
+
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.inject.Singleton;
+import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
+import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestFilter;
+import com.dotcms.repackage.javax.ws.rs.container.ResourceInfo;
+import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
+import com.dotcms.repackage.org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.portal.util.WebKeys;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Proxy;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
+
+/**
+ * This filter decorates the headers in addition to apply Request Commander associated to the annotations.
+ * The annotations for the resource method involved it collected by {@link RequestFilterAnnotationFeature} and stored on the thread pool: {@link HttpServletRequestThreadLocal}
+ * @author jsanca
+ */
+@Singleton
+@Provider
+public class RequestFilter implements ContainerRequestFilter {
+
+    private final HttpServletRequestThreadLocal requestAnnotationThreadLocal;
+
+    private final Map<Class, RequestFilterCommand> requestCommands =
+            map(
+                    InitRequestRequired.class,
+                    (final Annotation annotation,
+                     final ContainerRequestContext requestContext,
+                     final HttpServletRequest request) -> {
+
+                        final HttpSession session = request.getSession();
+
+                        // CTX
+                        final ServletContext ctx =
+                                Config.CONTEXT;
+                        ServletContext portalCtx =
+                                ctx.getContext(PropsUtil.get(PropsUtil.PORTAL_CTX));
+
+                        if (portalCtx == null) {
+                            portalCtx = ctx;
+                        }
+
+                        request.setAttribute(WebKeys.CTX, portalCtx);
+
+                        // CTX_PATH variable
+                        final String ctxPath =
+                                (String)ctx.getAttribute(WebKeys.CTX_PATH);
+
+                        if (null == portalCtx.getAttribute(WebKeys.CTX_PATH)) {
+                            portalCtx.setAttribute(WebKeys.CTX_PATH, ctxPath);
+                        }
+
+                        if (null == session.getAttribute(WebKeys.CTX_PATH)) {
+                            session.setAttribute(WebKeys.CTX_PATH, ctxPath);
+                        }
+
+                        request.setAttribute(WebKeys.CTX_PATH, ctxPath);
+                    }
+            );
+
+
+    public RequestFilter() {
+        this(HttpServletRequestThreadLocal.INSTANCE);
+    }
+
+    @VisibleForTesting
+    public RequestFilter(final HttpServletRequestThreadLocal requestAnnotationThreadLocal) {
+        this.requestAnnotationThreadLocal = requestAnnotationThreadLocal;
+    }
+
+    @Override
+    public void filter(final ContainerRequestContext containerRequestContext) throws IOException {
+
+        final HttpServletRequest request =
+                this.requestAnnotationThreadLocal.getRequest();
+        Annotation []        annotations = null;
+
+        if (null != request) {
+
+            annotations =
+                    this.getMethodResourceAnnotations(containerRequestContext);
+
+            if (null != annotations) {
+
+                for (Annotation a : annotations) {
+
+                    this.processAnnotation(containerRequestContext, request, a);
+                }
+            }
+        }
+    } // filter.
+
+    private void processAnnotation(final ContainerRequestContext containerRequestContext,
+                                   final HttpServletRequest request,
+                                   final Annotation annotation) {
+
+        final Class [] classes =
+            (annotation instanceof Proxy)? // if it is a proxy should use the interfaces instead since the class is a proxy.
+                    annotation.getClass().getInterfaces():
+                    new Class[] { annotation.getClass() };
+
+        for (Class clazz : classes) {
+
+            if (this.requestCommands.containsKey(clazz)) {
+
+                this.requestCommands.get(clazz).execute
+                        (annotation, containerRequestContext, request);
+            }
+        }
+    }
+
+    private Annotation [] getMethodResourceAnnotations (final ContainerRequestContext containerRequestContext) {
+
+        ContainerRequest  containerRequest  = null;
+        UriRoutingContext uriRoutingContext = null;
+        ResourceInfo      resourceInfo      = null;
+        Annotation []     annotations       = null;
+
+        if (containerRequestContext instanceof ContainerRequest) {
+
+            containerRequest = (ContainerRequest)containerRequestContext;
+
+            if (null != containerRequest.getUriInfo()
+                    && containerRequest.getUriInfo() instanceof UriRoutingContext) {
+
+                uriRoutingContext = (UriRoutingContext)containerRequest.getUriInfo();
+
+                if (null != uriRoutingContext.getEndpoint()
+                        && uriRoutingContext.getEndpoint() instanceof ResourceInfo) {
+
+                    resourceInfo = (ResourceInfo)uriRoutingContext.getEndpoint();
+                    annotations  = resourceInfo.getResourceMethod().getDeclaredAnnotations();
+
+                }
+            }
+        }
+
+        return annotations;
+    } // getMethodResourceAnnotations.
+} // E:O:F:RequestFilter.
