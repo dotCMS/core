@@ -13,19 +13,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 
 /**
- * A Job Delegate is a class that can be registered to the
- * {@link SystemEventsJob}, which is the Job that checks for incoming System
- * Events every specified amount of time. Delegate classes will receive basic
- * information that will allow them to identify new events and perform any
- * custom action.
+ * This delegate class is registered to the {@link SystemEventsJob}, which is
+ * the Job that checks for incoming System Events every specified amount of
+ * time. The data sent over from the Job indicates the last time that the
+ * application checked for new System Events. Based on such a date, this
+ * delegate can query the database for new incoming events <b>ONLY</b>.
  * <p>
- * For example, a delegate can connect to a running service and notify a
- * component that one or more new events have been pushed. This way, other
- * services and even UI components can react to the new information and provide
- * a useful output to the user.
+ * Querying the most recent events that entered the message queue is useful for
+ * displaying notifications to the users in order to get synchronous updates on
+ * new System Events generated either by dotCMS or custom code.
  * 
  * @author Jose Castro
- * @version 1.0
+ * @version 3.7
  * @since Jul 13, 2016
  *
  */

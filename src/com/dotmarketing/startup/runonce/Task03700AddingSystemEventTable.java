@@ -1,8 +1,8 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotmarketing.startup.AbstractJDBCStartupTask;
-
 import java.util.List;
+
+import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 /**
  * Creates the new {@code system_event} table. The main goal of this table is to
@@ -22,7 +22,7 @@ public class Task03700AddingSystemEventTable extends AbstractJDBCStartupTask {
 	}
 
 	/**
-	 * The SQL for Postgres
+	 * The SQL DDL for creating the table and index for PostgreSQL.
 	 *
 	 * @return
 	 */
@@ -31,7 +31,7 @@ public class Task03700AddingSystemEventTable extends AbstractJDBCStartupTask {
 		return "CREATE TABLE system_event (\n" + 
 				"identifier VARCHAR(36) NOT NULL,\n" +
 				"event_type VARCHAR(50) NOT NULL,\n" +
-				"payload LONGTEXT NOT NULL,\n" +
+				"payload TEXT NOT NULL,\n" +
 				"created BIGINT NOT NULL,\n" +
 				"PRIMARY KEY (identifier)\n" +
 			");\n" +
@@ -39,7 +39,7 @@ public class Task03700AddingSystemEventTable extends AbstractJDBCStartupTask {
 	}
 
 	/**
-	 * The SQL for MySQL
+	 * The SQL DDL for creating the table and index for MySQL.
 	 *
 	 * @return
 	 */
@@ -56,33 +56,54 @@ public class Task03700AddingSystemEventTable extends AbstractJDBCStartupTask {
 	}
 
 	/**
-	 * The SQL for Oracle
+	 * The SQL DDL for creating the table and index for Oracle.
 	 *
 	 * @return
 	 */
 	@Override
 	public String getOracleScript () {
-		return "ALTER TABLE User_ ADD mod_date date null;";
+		return "CREATE TABLE system_event (\n" +
+					"identifier VARCHAR(36) NOT NULL,\n" +
+					"event_type VARCHAR(50) NOT NULL,\n" +
+					"payload NCLOB NOT NULL,\n" +
+					"created NUMBER(19, 0) NOT NULL,\n" +
+					"PRIMARY KEY (identifier)\n" +
+				");\n" +
+				"CREATE INDEX idx_system_event ON system_event (created);";
 	}
 
 	/**
-	 * The SQL for MSSQL
+	 * The SQL DDL for creating the table and index for MSSQL.
 	 *
 	 * @return
 	 */
 	@Override
 	public String getMSSQLScript () {
-		return "ALTER TABLE User_ ADD mod_date   datetime null;";
+		return "CREATE TABLE system_event (\n" +
+					"identifier VARCHAR(36) NOT NULL,\n" +
+					"event_type VARCHAR(50) NOT NULL,\n" +
+					"payload TEXT NOT NULL,\n" +
+					"created BIGINT NOT NULL,\n" +
+					"PRIMARY KEY (identifier)\n" +
+				");\n" +
+				"CREATE INDEX idx_system_event ON system_event (created);";
 	}
 
 	/**
-	 * The SQL for H2
+	 * The SQL DDL for creating the table and index for H2.
 	 *
 	 * @return
 	 */
 	@Override
 	public String getH2Script () {
-		return "ALTER TABLE User_ ADD COLUMN mod_date timestamp null;";
+		return "CREATE TABLE system_event (\n" +
+					"identifier VARCHAR(36) NOT NULL,\n" +
+					"event_type VARCHAR(50) NOT NULL,\n" +
+					"payload TEXT NOT NULL,\n" +
+					"created BIGINT NOT NULL,\n" +
+					"PRIMARY KEY (identifier)\n" +
+				")\n" +
+				"CREATE INDEX idx_system_event ON system_event (created);";
 	}
 
 	@Override

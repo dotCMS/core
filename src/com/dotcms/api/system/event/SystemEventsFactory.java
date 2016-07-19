@@ -1,6 +1,7 @@
 package com.dotcms.api.system.event;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -13,6 +14,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -251,7 +253,13 @@ public class SystemEventsFactory implements Serializable {
 				final String id = (String) record.get("identifier");
 				final String eventType = (String) record.get("event_type");
 				final String payload = (String) record.get("payload");
-				final Long created = (Long) record.get("created");
+				Long created = 0L;
+				if (DbConnectionFactory.isOracle()) {
+					BigDecimal result = (BigDecimal) record.get("created");
+					created = new Long(result.toPlainString());
+				} else {
+					created = (Long) record.get("created");
+				}
 				return new SystemEventDTO(id, eventType, payload, created);
 			});
 		}
@@ -265,7 +273,13 @@ public class SystemEventsFactory implements Serializable {
 				final String id = (String) record.get("identifier");
 				final String eventType = (String) record.get("event_type");
 				final String payload = (String) record.get("payload");
-				final Long created = (Long) record.get("created");
+				Long created = 0L;
+				if (DbConnectionFactory.isOracle()) {
+					BigDecimal result = (BigDecimal) record.get("created");
+					created = new Long(result.toPlainString());
+				} else {
+					created = (Long) record.get("created");
+				}
 				return new SystemEventDTO(id, eventType, payload, created);
 			});
 		}
