@@ -17,7 +17,7 @@ import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.user.UserResource;
-import com.dotcms.rest.menu.MenuResource;
+import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 
 import java.util.HashSet;
