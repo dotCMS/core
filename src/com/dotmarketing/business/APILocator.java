@@ -35,6 +35,8 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
+import com.dotcms.web.websocket.WebSocketContainerAPI;
+import com.dotcms.web.websocket.WebSocketContainerAPIFactory;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -130,6 +132,15 @@ public class APILocator extends Locator<APIIndex>{
 		if(instance != null)
 			return;
 		instance = new APILocator();
+	}
+
+	/**
+	 * Creates a single instance of the {@link WebSocketContainerAPI} class.
+	 *
+	 * @return The {@link WebSocketContainerAPI} class.
+	 */
+	public static WebSocketContainerAPI getWebSocketContainerAPI() {
+		return (WebSocketContainerAPI)getInstance(APIIndex.WEB_SOCKET_CONTAINER_API);
 	}
 
 	/**
@@ -789,7 +800,8 @@ enum APIIndex
 	ES_SEARCH_API,
     RULES_API,
     VISITOR_API,
-	SYSTEM_EVENTS_API;
+	SYSTEM_EVENTS_API,
+	WEB_SOCKET_CONTAINER_API;
 
 	Object create() {
 		switch(this) {
@@ -851,6 +863,7 @@ enum APIIndex
 		case RULES_API: return new RulesAPIProxy();
 		case VISITOR_API: return new VisitorAPIImpl();
 		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
+		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
