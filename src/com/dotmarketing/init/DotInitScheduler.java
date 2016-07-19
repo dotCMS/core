@@ -21,6 +21,7 @@ import org.quartz.SchedulerException;
 
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
+import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.workflow.EscalationThread;
@@ -872,6 +873,18 @@ public class DotInitScheduler {
 						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 				scheduleJob(systemEventsJob);
 			}
+			// Enabling the Delete Old System Events Job
+			if (Config.getBooleanProperty("ENABLE_DELETE_OLD_SYSTEM_EVENTS", true)) {
+				JobBuilder deleteOldSystemEventsJob = new JobBuilder().setJobClass(DeleteOldSystemEventsJob.class)
+						.setJobName("DeleteOldSystemEventsJob")
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName("trigger27")
+						.setTriggerGroup("group27")
+						.setCronExpressionProp("DELETE_OLD_SYSTEM_EVENTS_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0 0 0 1/3 * ? *")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(deleteOldSystemEventsJob);
+			}
 			
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -934,7 +947,7 @@ public class DotInitScheduler {
 	 */
 	private static final class JobBuilder {
 
-		private Class<? extends Job> jobClass;
+		private Class<? extends Job> jobClass = null;
 		private String jobName = "";
 		private String jobGroup = DOTCMS_JOB_GROUP_NAME;
 		private String triggerName = "";
