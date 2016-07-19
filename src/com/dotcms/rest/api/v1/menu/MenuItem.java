@@ -1,4 +1,4 @@
-package com.dotcms.rest.menu;
+package com.dotcms.rest.api.v1.menu;
 
 /**
  * Created by freddyrodriguez on 18/5/16.
