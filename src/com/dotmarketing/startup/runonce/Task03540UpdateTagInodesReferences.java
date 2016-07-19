@@ -28,7 +28,8 @@ import java.util.Map;
  */
 public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask {
 
-	private static final String GET_STRUCTURES_WITH_TAGS_FIELDS="SELECT DISTINCT ON (structure_inode) structure_inode, velocity_var_name, field_contentlet FROM field WHERE field_type=?";
+	private static final String GET_STRUCTURES_WITH_TAGS_FIELDS_POSTGRES="SELECT DISTINCT ON (structure_inode) structure_inode, velocity_var_name, field_contentlet FROM field WHERE field_type=?";
+	private static final String GET_STRUCTURES_WITH_TAGS_FIELDS="SELECT structure_inode, velocity_var_name, field_contentlet FROM field WHERE field_type=?";
 	private static final String GET_CONTENT_HOST_ID="SELECT host_inode FROM identifier WHERE id=?";
 	private static final String DELETE_OLD_CONTENT_TAG_INODES="DELETE FROM tag_inode WHERE inode=?";
 
@@ -55,7 +56,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 		dc.setSQL("TRUNCATE TABLE tag_inode");
 		dc.loadResult();
 
-		dc.setSQL(GET_STRUCTURES_WITH_TAGS_FIELDS);
+		dc.setSQL(GET_STRUCTURES_WITH_TAGS_FIELDS_POSTGRES);
 		dc.addParam(Field.FieldType.TAG.toString());
 		List<Map<String, Object>> results = (List<Map<String, Object>>) dc.loadResults();
 
