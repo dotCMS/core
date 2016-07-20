@@ -31,6 +31,7 @@ export class LoginComponent {
     @Output() toggleMain = new EventEmitter<boolean>();
 
     languages: Array<string> = [];
+    currentlang: string = '';
     message: string = '';
 
     // labels
@@ -154,12 +155,16 @@ export class LoginComponent {
 
             // Configure languages
             if (this.languages.length === 0) {
+                let currentLanguage = entity.currentLanguage;
+
                 entity.languages.forEach(lang => {
                     this.languages.push({
-                        label: lang.country,
-                        value: lang.language + '_' + lang.country
+                        label: lang.displayName,
+                        value: lang.language + '_' + lang.country,
                     });
                 });
+
+                this.language = currentLanguage.language + '_' + currentLanguage.country;
             }
         }, (error) => {
              console.log(error);
