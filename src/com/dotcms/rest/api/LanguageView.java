@@ -11,9 +11,18 @@ public class LanguageView implements Serializable {
 
     private final String country;
 
+    private final String displayName;
+
     public LanguageView(String language, String country) {
         this.language = language;
         this.country = country;
+        this.displayName = null;
+    }
+
+    public LanguageView(String language, String country, String displayName) {
+        this.language = language;
+        this.country = country;
+        this.displayName = displayName;
     }
 
     public String getLanguage() {
@@ -24,6 +33,9 @@ public class LanguageView implements Serializable {
         return country;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -49,6 +61,7 @@ public class LanguageView implements Serializable {
         return "LanguageView{" +
                 "language='" + language + '\'' +
                 ", country='" + country + '\'' +
+                ", displayName='" + displayName + '\'' +
                 '}';
     }
 } // E:O:F:LanguageView.

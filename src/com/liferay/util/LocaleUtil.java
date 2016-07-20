@@ -164,6 +164,20 @@ public class LocaleUtil {
 	}
 
 	/**
+	 * Get Locale saved on the {@link HttpSession}  {@link Globals} LOCALE_KEY,
+	 * if the LOCALE_KEY is also null, will get the request default one.
+	 *
+	 * If country or language are not null (one of them could be null), will build a new locale.
+	 * Not any session will be created.
+	 * @param request {@link HttpServletRequest}
+	 * @return Locale
+	 */
+	public static Locale getLocale (final HttpServletRequest request) {
+
+		return getLocale (request, null, null);
+	}
+
+	/**
 	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
 	 * if the LOCALE_KEY is also null, will get the request default one.
 	 *
