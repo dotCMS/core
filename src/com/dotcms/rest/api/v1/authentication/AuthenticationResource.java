@@ -15,6 +15,7 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
@@ -96,7 +97,6 @@ public class AuthenticationResource implements Serializable {
                 final HttpSession ses = request.getSession();
                 final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
                 res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
-                SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             }
         } catch (NoSuchUserException | UserEmailAddressException e) {
 
@@ -125,7 +125,7 @@ public class AuthenticationResource implements Serializable {
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
-            res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;

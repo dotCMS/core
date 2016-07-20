@@ -1,4 +1,4 @@
-package com.dotcms.rest.menu;
+package com.dotcms.rest.api.v1.menu;
 
 import java.util.List;
 

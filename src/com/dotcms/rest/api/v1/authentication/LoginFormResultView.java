@@ -22,17 +22,19 @@ public class LoginFormResultView implements Serializable {
     private final String backgroundPicture;
     private final String logo;
     private final String authorizationType;
+    private final LanguageView currentLanguage;
 
     private LoginFormResultView(LoginFormResultView.Builder builder) {
-        serverId = builder.serverId;
-        levelName = builder.levelName;
-        version = builder.version;
-        buildDateString = builder.buildDateString;
-        languages  = builder.languages;
-        backgroundColor  = builder.backgroundColor;
+        serverId           = builder.serverId;
+        levelName          = builder.levelName;
+        version            = builder.version;
+        buildDateString    = builder.buildDateString;
+        languages          = builder.languages;
+        backgroundColor    = builder.backgroundColor;
         backgroundPicture  = builder.backgroundPicture;
-        logo  = builder.logo;
-        authorizationType = builder.authorizationType;
+        logo               = builder.logo;
+        authorizationType  = builder.authorizationType;
+        currentLanguage    = builder.currentLanguage;
     }
 
     public String getServerId() {
@@ -67,6 +69,9 @@ public class LoginFormResultView implements Serializable {
         return logo;
     }
 
+    public LanguageView getCurrentLanguage() {
+        return currentLanguage;
+    }
 
     public String getAuthorizationType() {
         return authorizationType;
@@ -83,6 +88,12 @@ public class LoginFormResultView implements Serializable {
         private String backgroundPicture;
         private String logo;
         private String authorizationType;
+        private LanguageView currentLanguage;
+
+        public Builder currentLanguage(LanguageView currentLanguage) {
+            this.currentLanguage = currentLanguage;
+            return this;
+        }
 
         public Builder logo(String logo) {
             this.logo = logo;

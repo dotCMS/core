@@ -1,6 +1,5 @@
-package com.dotcms.rest.menu;
+package com.dotcms.rest.api.v1.menu;
 
-import com.dotcms.rest.menu.MenuResource;
 import com.dotmarketing.business.Layout;
 import com.liferay.portal.model.User;
 

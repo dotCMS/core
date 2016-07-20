@@ -137,6 +137,27 @@ public class ReflectionUtils implements Serializable {
         }
 
         return parameterTypes;
+    } // getTypes.
+
+    /**
+     * Get a {@link Class} based on a name, null in case of error.
+     * @param className {@link String}
+     * @return Class
+     */
+    public static final Class<?> getClassFor (final String className) {
+
+        Class<?> clazz = null;
+
+        try {
+
+            clazz =
+                    Class.forName(className);
+        } catch (ClassNotFoundException e) {
+
+            clazz = null;
+        }
+
+        return clazz;
     }
 
 } // E:O:F:ReflectionUtils.

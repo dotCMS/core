@@ -17,7 +17,7 @@ import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.user.UserResource;
-import com.dotcms.rest.menu.MenuResource;
+import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 
 import java.util.HashSet;
@@ -48,7 +48,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.UserResource.class);
 					REST_CLASSES.add(com.dotcms.rest.ClusterResource.class);
 					REST_CLASSES.add(com.dotcms.rest.EnvironmentResource.class);
-					REST_CLASSES.add(com.dotcms.rest.NotificationResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v1.notification.NotificationResource.class);
 					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 					REST_CLASSES.add(com.dotcms.rest.LicenseResource.class);
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
