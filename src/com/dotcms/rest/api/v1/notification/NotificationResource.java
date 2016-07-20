@@ -9,10 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.RESTParams;
-import com.dotcms.rest.ResourceResponse;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -30,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 
-@Path("/notification")
+@Path("/v1/notification")
 public class NotificationResource {
 
     private final WebResource webResource = new WebResource();
@@ -84,8 +81,6 @@ public class NotificationResource {
         limit = UtilMethods.isSet(range)?Long.parseLong(range.split("=")[1].split("-")[1]):limit;
         limit += 1;
 
-        JSONArray notificationsJSON = new JSONArray();
-
         NotificationAPI notificationAPI = APILocator.getNotificationAPI();
 
         // Let's get the total count
@@ -96,18 +91,9 @@ public class NotificationResource {
 
         List<Notification> notifications = allUsers?notificationAPI.getNotifications(offset, limit):notificationAPI.getNotifications(user.getUserId(), offset, limit);
 
-        for (Notification n : notifications) {
-        	JSONObject notificationJSON = new JSONObject();
-        	notificationJSON.put("id", n.getId());
-        	notificationJSON.put("message", n.getMessage());
-        	notificationJSON.put("type", n.getType().name());
-        	notificationJSON.put("level", n.getLevel().name());
-        	notificationJSON.put("time_sent", DateUtil.prettyDateSince(n.getTimeSent()));
-        	notificationsJSON.add(notificationJSON);
-		}
-
-        return Response.ok( notificationsJSON.toString()).header("Content-Range", "items " + offset + "-" + limit + "/" + total).build() ;
-
+        return Response.ok(new ResponseEntityView(notifications))
+                .header("Content-Range", "items " + offset + "-" + limit + "/" + total)
+                .build(); // 200
     }
 
     /**
