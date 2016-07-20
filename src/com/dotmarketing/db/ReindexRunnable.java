@@ -17,16 +17,18 @@ public abstract class ReindexRunnable extends DotRunnable {
 	private final Action action;
 	private final List<Contentlet> contentToIndex;
 	private final BulkRequestBuilder bulk;
+	private boolean reindexOnly;
 
 	public List<Contentlet> getReindexIds() {
 		return contentToIndex;
 	}
 
-	public ReindexRunnable(List<Contentlet> reindexIds, Action action, BulkRequestBuilder bulk) {
+	public ReindexRunnable(List<Contentlet> reindexIds, Action action, BulkRequestBuilder bulk, boolean reindexOnly) {
 		super();
 		this.contentToIndex = reindexIds;
 		this.action = action;
 		this.bulk = bulk;
+		this.reindexOnly = reindexOnly;
 	}
 
 	public ReindexRunnable(Contentlet reindexId, Action action, BulkRequestBuilder bulk) {
@@ -46,7 +48,7 @@ public abstract class ReindexRunnable extends DotRunnable {
 
         try {
         	if(action.equals(Action.ADDING)){
-        		APILocator.getContentletIndexAPI().indexContentList(contentToIndex, bulk);
+        		APILocator.getContentletIndexAPI().indexContentList(contentToIndex, bulk, reindexOnly);
         	}
         	else{
         		throw new DotStateException("REMOVE ACTION NEEDS TO OVERRIDE THE run() method");

@@ -303,7 +303,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 			}
         }
 
-	    ReindexRunnable indexAction=new ReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING, bulk) {
+	    ReindexRunnable indexAction=new ReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING, bulk, reindexOnly) {
 
         };
 
@@ -318,14 +318,14 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	@Override
-	public void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk) throws  DotDataException{
+	public void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws  DotDataException{
     	if(contentToIndex==null || contentToIndex.size()==0){
     		return;
     	}
         Client client=new ESClient().getClient();
         BulkRequestBuilder req = (bulk==null) ? client.prepareBulk() : bulk;
         try {
-			indexContentletList(req, contentToIndex, false);
+			indexContentletList(req, contentToIndex, reindexOnly);
 			if(bulk==null && req.numberOfActions()>0){
 				req.execute().actionGet();
 			}

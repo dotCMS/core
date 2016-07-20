@@ -98,6 +98,6 @@ public interface ContentletIndexAPI {
 
 	public String getActiveIndexName(String type) throws DotDataException;
 
-	void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk) throws DotDataException;
+	void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
 
 }
