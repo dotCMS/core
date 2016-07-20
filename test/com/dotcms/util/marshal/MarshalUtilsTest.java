@@ -12,7 +12,17 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
+import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationAction;
+import com.dotcms.notifications.bean.NotificationActionType;
+import com.dotcms.notifications.bean.NotificationData;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
@@ -20,6 +30,7 @@ import com.dotmarketing.util.json.JSONObject;
  * MarshalUtils
  * Test
  * @author jsanca
+ * @version 3.7
  */
 
 public class MarshalUtilsTest {
@@ -234,6 +245,43 @@ public class MarshalUtilsTest {
 
         assertNotNull(dotCMSSubjectBean4);
         assertEquals(subjectBean, dotCMSSubjectBean4);
+    }
+
+    @Test
+    public void marshalSystemEvent() throws ParseException, JSONException {
+
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
+
+        assertNotNull(marshalFactory);
+
+        final MarshalUtils marshalUtils =
+                marshalFactory.getMarshalUtils();
+
+        assertNotNull(marshalUtils);
+
+		final NotificationData notificationData = new NotificationData("Test Title", "Notification message",
+				CollectionsUtils.list(new NotificationAction("See More", "#seeMore", NotificationActionType.LINK, null)));
+		final SystemEvent systemEvent = new SystemEvent("123456", SystemEventType.NOTIFICATION, new Payload(
+				new Notification("78910", NotificationType.GENERIC, NotificationLevel.INFO, "admin@dotcms.com", null,
+						false, notificationData)), new java.util.Date());
+
+        String json = marshalUtils.marshal(systemEvent);
+
+        System.out.println(json);
+
+        assertNotNull(json);
+
+        final SystemEvent systemEvent1 =
+                marshalUtils.unmarshal(json, SystemEvent.class);
+
+        assertTrue(systemEvent.equals(systemEvent1));
+        assertTrue(systemEvent.getEventType() == systemEvent1.getEventType());
+
+        System.out.println(systemEvent.getPayload().getData());
+        System.out.println(systemEvent1.getPayload().getData());
+
+        assertTrue(systemEvent.getPayload().getData().equals(systemEvent1.getPayload().getData()));
     }
 
 }

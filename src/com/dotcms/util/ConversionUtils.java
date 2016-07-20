@@ -10,6 +10,7 @@ import java.util.List;
  * @version 3.7
  * @since Jun 8, 2016
  */
+@SuppressWarnings("serial")
 public class ConversionUtils implements Serializable {
 
     public static ConversionUtils INSTANCE =
@@ -42,23 +43,23 @@ public class ConversionUtils implements Serializable {
     } // convert
 
 	/**
-	 * Converts from the list of Original objects to Destiny beans using a
+	 * Converts from the array of Original objects to Destiny beans using a
 	 * converter.
 	 * 
-	 * @param originList - 
+	 * @param originArray - 
 	 * @param converter - 
 	 * @return
 	 */
-    public <O, D> List<D> convert (final O [] originList,
+    public <O, D> List<D> convert (final O [] originArray,
                                    final Converter<O, D> converter) {
 
         List<D> destinyList = null;
 
-        if (null != originList && null != converter) {
+        if (null != originArray && null != converter) {
 
             destinyList = CollectionsUtils.getNewList();
 
-            for (O origin : originList) {
+            for (O origin : originArray) {
 
                 destinyList.add(converter.convert(origin));
             }
@@ -67,4 +68,29 @@ public class ConversionUtils implements Serializable {
         return destinyList;
     } // convert
 
+    /**
+	 * Converts from the list of Original objects to Destiny beans using a
+	 * converter.
+	 * 
+	 * @param originList - 
+	 * @param converter - 
+	 * @return
+	 */
+	public <O, D> List<D> convert(final List<O> originList, final Converter<O, D> converter) {
+
+		List<D> destinyList = null;
+
+		if (null != originList && null != converter) {
+
+			destinyList = CollectionsUtils.getNewList();
+
+			for (O origin : originList) {
+
+				destinyList.add(converter.convert(origin));
+			}
+		}
+
+		return destinyList;
+	} // convert
+    
 } // E:O:F:ConversionUtils.
