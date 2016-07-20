@@ -780,7 +780,7 @@ public class HibernateUtil {
 		
 		for(List<Contentlet> batchList : listOfLists){
 			
-			new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING) {}.run();
+			new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING, null, true) {}.run();
 		}
 		
 
