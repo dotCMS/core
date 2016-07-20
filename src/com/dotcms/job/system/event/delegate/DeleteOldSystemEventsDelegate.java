@@ -1,5 +1,7 @@
 package com.dotcms.job.system.event.delegate;
 
+import static com.dotmarketing.util.DateUtil.daysToMillis;
+
 import java.util.Date;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -40,17 +42,6 @@ public class DeleteOldSystemEventsDelegate extends AbstractJobDelegate {
 		int olderThan = Config.getIntProperty(DELETE_EVENTS_OLDER_THAN, 31);
 		long toDate = new Date().getTime() - daysToMillis(olderThan);
 		this.systemEventsAPI.deleteEvents(toDate);
-	}
-
-	/**
-	 * Converts the specified number of days to milliseconds.
-	 * 
-	 * @param days
-	 *            - The number of days.
-	 * @return The number of days transformed to milliseconds.
-	 */
-	protected long daysToMillis(int days) {
-		return days * 24 * 3600 * 1000L;
 	}
 
 }
