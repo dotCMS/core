@@ -14,6 +14,9 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.util.SecurityLogger;
+import com.liferay.portal.util.PortalUtil;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -62,7 +65,12 @@ public class LogoutResource implements Serializable {
         try {
 
             this.log.debug("Doing the logout");
+            String userName = PortalUtil.getUser(request).getFullName();
+            String userId = PortalUtil.getUser(request).getUserId(); 
+            
             this.loginService.doActionLogout(request, response);
+            
+            SecurityLogger.logInfo(this.getClass(), "User " + userName + " (" + userId + ") has logged out from IP: " + request.getRemoteAddr());
             res = Response.ok(new ResponseEntityView("Logout successfully")).build(); // 200
         } catch (Exception e) {
 

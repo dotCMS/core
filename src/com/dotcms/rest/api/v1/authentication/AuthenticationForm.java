@@ -1,10 +1,13 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
+import com.dotmarketing.util.SecurityLogger;
 
 @JsonDeserialize(builder = AuthenticationForm.Builder.class)
 public class AuthenticationForm extends Validated {
@@ -48,7 +51,13 @@ public class AuthenticationForm extends Validated {
         rememberMe = builder.rememberMe;
         language = builder.language;
         country  = builder.country;
-        checkValid();
+        try {
+        	checkValid();
+        }catch(ValidationException ve){
+        	HttpServletRequestThreadLocal threadLocal = HttpServletRequestThreadLocal.INSTANCE;
+        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + (null != userId?userId.toLowerCase():"") + " has been made from IP: " + (null != threadLocal.getRequest()?threadLocal.getRequest().getRemoteAddr():"0.0.0.0"));
+        	throw ve;
+        }
     }
 
     public static final class Builder {
