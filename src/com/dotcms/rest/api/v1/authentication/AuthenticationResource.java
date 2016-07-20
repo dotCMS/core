@@ -99,16 +99,16 @@ public class AuthenticationResource implements Serializable {
                 res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
             }
         } catch (NoSuchUserException | UserEmailAddressException e) {
-
+        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "please-enter-a-valid-login");
         } catch (AuthException e) {
-
+        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
         }  catch (UserPasswordException e) {
-
+        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "please-enter-a-valid-password");
         } catch (RequiredLayoutException e) {
-
+        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 
