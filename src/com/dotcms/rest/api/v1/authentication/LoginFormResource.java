@@ -25,8 +25,10 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
+import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
@@ -86,26 +88,42 @@ public class LoginFormResource implements Serializable {
             final LoginFormResultView.Builder builder =
                     new LoginFormResultView.Builder();
 
+            final HttpSession session =
+                    request.getSession();
+
+            // try to set to the session the locale company settings
+            LocaleUtil.processLocaleCompanySettings(request, session);
+            // or the locale user cookie configuration if exits.
+            LocaleUtil.processLocaleUserCookie(request, session);
+
+            final Map<String, String> messagesMap =
+                    this.i18NUtil.getMessagesMap(
+                            // if the user set's a switch, it overrides the session too.
+                            loginForm.getCountry(), loginForm.getLanguage(),
+                            loginForm.getMessagesKey(), request,
+                            true); // want to create a session to store the locale.
+
+            final Locale userLocale = LocaleUtil.getLocale(request,
+                    loginForm.getCountry(), loginForm.getLanguage());
+
             builder.serverId(LicenseUtil.getDisplayServerId())
                 .levelName(LicenseUtil.getLevelName())
                 .version(ReleaseInfo.getVersion())
                 .buildDateString(ReleaseInfo.getBuildDateString())
                 .languages(this.conversionUtils.convert(LanguageUtil.getAvailableLocales(),
-                        (final Locale language) -> {
+                        (final Locale locale) -> {
 
-                            return new LanguageView(language.getLanguage(), language.getCountry());
+                            return new LanguageView(locale.getLanguage(), locale.getCountry(),
+                                    locale.getDisplayName(locale));
                         }))
                 .backgroundColor(defaultCompany.getSize())
                 .backgroundPicture(defaultCompany.getHomeURL())
                 .logo(this.companyAPI.getLogoPath(defaultCompany))
-                .authorizationType(defaultCompany.getAuthType());
+                .authorizationType(defaultCompany.getAuthType())
+                .currentLanguage(new LanguageView(userLocale.getLanguage(), userLocale.getCountry(),
+                            userLocale.getDisplayName(userLocale)));
 
-            res = Response.ok(new ResponseEntityView(
-                    builder.build(),
-                    this.i18NUtil.getMessagesMap(
-                            loginForm.getCountry(), loginForm.getLanguage(),
-                            loginForm.getMessagesKey(), request)
-                    )).build(); // 200
+            res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
