@@ -1,6 +1,2 @@
-<div *ngIf="login">
-    <dot-login-component (toggleMain)='toggleMain($event)'></dot-login-component>
-</div>
-<div  *ngIf="!login">
-    <dot-main-component (toggleMain)='toggleMain($event)'></dot-main-component>
-</div>
+<dot-login-component (toggleMain)='toggleMain($event)' *ngIf="login"></dot-login-component>
+<dot-main-component (toggleMain)='toggleMain($event)' *ngIf="!login"></dot-main-component>

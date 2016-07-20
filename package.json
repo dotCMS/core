@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "archiver": "^0.21.x",
+    "bootstrap-sass": "^3.3.6",
     "connect": "^3.3.4",
     "connect-livereload": "^0.5.4",
     "connect-modrewrite": "^0.8.1",
