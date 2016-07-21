@@ -1,5 +1,6 @@
 import {Component, EventEmitter, Inject, Input, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
+import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 
 // angular material imports
 import {MdButton} from '@angular2-material/button';
@@ -12,6 +13,7 @@ import {MdToolbar} from '@angular2-material/toolbar';
     directives: [MdButton, MD_CARD_DIRECTIVES, MdCheckbox, MD_INPUT_DIRECTIVES, MdToolbar],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+    pipes: [CapitalizePipe],
     providers: [LoginService],
     selector: 'dot-login-component',
     styleUrls: ['login-component.css'],
@@ -50,11 +52,12 @@ export class LoginComponent {
     dotcmslicenceLevel: string = '';
     dotcmsVersion: string = '';
     dotcmsBuildDateString: string = '';
+    mandatoryFieldError: string = '';
 
     isForgotPasswordCardHidden: boolean = true;
     isLoginCardHidden: boolean = false;
 
-    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent','Server'];
+    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent', 'Server', 'error.form.mandatory'];
 
     constructor(@Inject('menuItems') private menuItems: any[], private _loginService: LoginService) {
         this.updateScreenBackground();
@@ -64,23 +67,40 @@ export class LoginComponent {
      *  Executes the logIn service
      */
     logInUser(): void {
+        let isSetUserId = this.myAccountLogin !== undefined && this.myAccountLogin.length > 0;
+        let isSetPassword = this.password !== undefined && this.password.length > 0;
 
-        this._loginService.logInUser(this.myAccountLogin, this.password, this.myAccountRememberMe, this.language).subscribe((result: any) => {
-            if (result.errors.length > 0) {
-                this.message = result.errors[0].message;
-            } else {
-                this.message = '';
-                this.toggleMain.emit(false);
-                // this window.location.reload should be removed once the menu and router injection update issue is fixed
-                window.location.reload();
+        if (isSetUserId && isSetPassword) {
+            this._loginService.logInUser(this.myAccountLogin, this.password, this.myAccountRememberMe, this.language).subscribe((result:any) => {
+                if (result.errors.length > 0) {
+                    this.message = result.errors[0].message;
+                } else {
+                    this.message = '';
+                    this.toggleMain.emit(false);
+                    // this window.location.reload should be removed once the menu and router injection update issue is fixed
+                    window.location.reload();
+                }
+            }, (error) => {
+                if (error.response.status === 400 || error.response.status === 401) {
+                    this.message = this.getErrorMessage(error);
+                } else {
+                    console.log(error);
+                }
+            });
+        } else {
+            let error = '';
+            if (!isSetUserId) {
+                error += (this.mandatoryFieldError).replace('{0}', this.emailAddressLabel);
             }
-        }, (error) => {
-            if (error.response.status === 400 || error.response.status === 401) {
-                this.message = this.getErrorMessage(error);
-            } else {
-                console.log(error);
+
+            if (!isSetPassword) {
+                if (error !== '') {
+                    error +=  '<br>';
+                }
+                error += (this.mandatoryFieldError).replace('{0}', this.passwordLabel);
             }
-        });
+            this.message = error;
+        }
 
     }
 
@@ -124,6 +144,9 @@ export class LoginComponent {
             this.emailAddressLabel = dataI18n['email-address'];
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
+                if(this.myAccountLogin === undefined || this.myAccountLogin === ''){
+                    this.myAccountLogin = entity.companyEmail;
+                }
             } else {
                 this.userIdOrEmailLabel = dataI18n['user-id'];
                 this.myAccountLogin = '';
@@ -136,6 +159,7 @@ export class LoginComponent {
             this.cancelButton = dataI18n.cancel;
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
             this.serverLabel = dataI18n.Server;
+            this.mandatoryFieldError = dataI18n['error.form.mandatory'];
 
             // Set background color and image with the values provided by the service
             if (entity.backgroundColor !== 'undefined' && entity.backgroundColor !== '') {
@@ -154,12 +178,16 @@ export class LoginComponent {
 
             // Configure languages
             if (this.languages.length === 0) {
+                let currentLanguage = entity.currentLanguage;
+
                 entity.languages.forEach(lang => {
                     this.languages.push({
-                        label: lang.country,
-                        value: lang.language + '_' + lang.country
+                        label: lang.displayName,
+                        value: lang.language + '_' + lang.country,
                     });
                 });
+
+                this.language = currentLanguage.language + '_' + currentLanguage.country;
             }
         }, (error) => {
              console.log(error);

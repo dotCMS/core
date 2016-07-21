@@ -16,8 +16,8 @@
                 </div>
                 <div class="col-sm-7">
                     <div class="signin">
-                        <h2 class="login__title">{{loginLabel}}</h2>
-                        <div class="error-message">{{message}}</div>
+                        <h2 class="login__title" [innerHTML]="loginLabel"></h2>
+                        <div class="error-message" [innerHTML]="message"></div>
                         <md-input (keyup.enter)="logInUser()" placeholder="{{userIdOrEmailLabel}}" [(ngModel)]="myAccountLogin" floatingPlaceholder="false" ></md-input>
                         <md-input (keyup.enter)="logInUser()" placeholder="{{passwordLabel}}" [(ngModel)]="password" type="password" floatingPlaceholder="false"></md-input>
                         <div class="row login__form-line">
@@ -26,7 +26,7 @@
                             </div>
                             <div class="col-sm-6">
                                 <select class="singin__language" id="language" [(ngModel)]="language" (change)="changeLanguage($event.target.value)">
-                                    <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label}}</option>
+                                    <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label | capitalize}}</option>
                                 </select>
                             </div>
                         </div>
