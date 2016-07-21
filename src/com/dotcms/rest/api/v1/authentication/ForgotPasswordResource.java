@@ -12,9 +12,10 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.SecurityLoggerAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SendPasswordException;
 import com.liferay.portal.UserEmailAddressException;
@@ -46,13 +47,15 @@ public class ForgotPasswordResource implements Serializable {
     private final UserManager userManager;
     private final CompanyAPI  companyAPI;
     private final AuthenticationHelper  authenticationHelper;
+    private final SecurityLoggerAPI securityLogger;
 
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
                 UserManagerFactory.getManager(),
                 APILocator.getCompanyAPI(),
-                AuthenticationHelper.INSTANCE
+                AuthenticationHelper.INSTANCE,
+                APILocator.getSecurityLogger()
                 );
     }
 
@@ -60,12 +63,14 @@ public class ForgotPasswordResource implements Serializable {
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
                                   final UserManager userManager,
                                   final CompanyAPI  companyAPI,
-                                  final AuthenticationHelper  authenticationHelper) {
+                                  final AuthenticationHelper  authenticationHelper,
+                                  final SecurityLoggerAPI securityLogger) {
 
         this.userLocalManager = userLocalManager;
         this.userManager      = userManager;
         this.companyAPI       = companyAPI;
         this.authenticationHelper = authenticationHelper;
+        this.securityLogger   = securityLogger;
     }
 
     @POST
@@ -93,13 +98,13 @@ public class ForgotPasswordResource implements Serializable {
                     this.companyAPI.getCompanyId(request), emailAddress, locale);
 
             res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
-            SecurityLogger.logInfo(this.getClass(),
+            this.securityLogger.logInfo(this.getClass(),
                     "Email address " + emailAddress + " has request to reset his password from IP: "
                             + request.getRemoteAddr());
         } catch (NoSuchUserException e) {
 
             boolean displayNotSuchUserError =
-                    Config.getBooleanProperty("DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD", false);
+                    Config.getBooleanProperty("si n ", false);
 
             if (displayNotSuchUserError) {
 
@@ -107,7 +112,7 @@ public class ForgotPasswordResource implements Serializable {
                         "the-email-address-you-requested-is-not-registered-in-our-database");
             } else {
 
-                SecurityLogger.logInfo(this.getClass(),
+                this.securityLogger.logInfo(this.getClass(),
                         "User does NOT exist in the Database, returning OK message for security reasons");
 
                 try {
@@ -130,8 +135,8 @@ public class ForgotPasswordResource implements Serializable {
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "please-enter-a-valid-email-address");
         } catch (Exception e) {
-            // todo: change this to new exception error handling in the issue-9333-Improvements-on-the-MenuResource
-            res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR)
         }
 
         return res;

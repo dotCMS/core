@@ -36,6 +36,8 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
+import com.dotcms.util.SecurityLoggerAPI;
+import com.dotcms.util.SecurityLoggerAPIFactory;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.web.websocket.WebSocketContainerAPI;
@@ -134,6 +136,10 @@ public class APILocator extends Locator<APIIndex>{
 		if(instance != null)
 			return;
 		instance = new APILocator();
+	}
+
+	public static SecurityLoggerAPI getSecurityLogger() {
+		return (SecurityLoggerAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
 	}
 
 	/**
@@ -813,7 +819,8 @@ enum APIIndex
     VISITOR_API,
 	SYSTEM_EVENTS_API,
 	WEB_SOCKET_CONTAINER_API,
-	COMPANY_API;
+	COMPANY_API,
+	SECURITY_LOGGER_API;
 
 	Object create() {
 		switch(this) {
@@ -877,6 +884,7 @@ enum APIIndex
 		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
 		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
 		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
+		case SECURITY_LOGGER_API: return SecurityLoggerAPIFactory.getInstance().getSecurityLoggerAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
