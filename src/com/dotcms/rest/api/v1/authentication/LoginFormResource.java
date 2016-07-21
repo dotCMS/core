@@ -121,7 +121,8 @@ public class LoginFormResource implements Serializable {
                 .logo(this.companyAPI.getLogoPath(defaultCompany))
                 .authorizationType(defaultCompany.getAuthType())
                 .currentLanguage(new LanguageView(userLocale.getLanguage(), userLocale.getCountry(),
-                            userLocale.getDisplayName(userLocale)));
+                            userLocale.getDisplayName(userLocale)))
+                .companyEmail("@" + defaultCompany.getMx());
 
             res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
