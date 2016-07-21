@@ -36,7 +36,7 @@ export class MainComponent {
      * Call the logout service
      */
     logout(): void {
-        this._loginService.logOutUser().subscribe( data => {
+        this._loginService.logOutUser().subscribe(data => {
             // This line update the browser url page without reloading the page
             window.history.replaceState('index.html', 'index', '/html/ng/index.html');
             this.toggleMain.emit(true);

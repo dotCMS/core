@@ -11,10 +11,12 @@
   }
 
   md-toolbar {
+    align-items: center;
     display: flex;
     justify-content: space-around;
+    position: relative;
     width: 100%;
-    align-items: center;
+    z-index: 1;
 
     .md-toolbar-layout {
       width: 100%;
@@ -31,6 +33,7 @@
 
   .toolbar__logout {
     color: $white;
+    cursor: pointer;
     font-size: rem-cal(14px);
   }
 
