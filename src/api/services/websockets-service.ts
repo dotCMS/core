@@ -19,53 +19,56 @@ export class $WebSocket {
         'CLOSED': 3,
         'RECONNECT_ABORTED': 4
     };
-    private  normalCloseCode = 1000;
-    private  reconnectableStatusCodes = [4000];
+    private normalCloseCode = 1000;
+    private reconnectableStatusCodes = [4000];
     private socket: WebSocket;
     private dataStream: Subject<any>;
-    private  internalConnectionState: number;
-    constructor(private url:string, private protocols?:Array<string>, private config?: WebSocketConfig  ) {
+    private internalConnectionState: number;
+
+    constructor(private url:string, private protocols?:Array<string>, private config?:WebSocketConfig  ) {
         var match = new RegExp('wss?:\/\/').test(url);
         if (!match) {
             throw new Error('Invalid url provided');
         }
-        this.config = config ||{ initialTimeout: 500, maxTimeout : 300000, reconnectIfNotNormalClose :false};
+        this.config = config || { initialTimeout: 500, maxTimeout : 300000, reconnectIfNotNormalClose : false };
         this.dataStream = new Subject();
     }
 
     connect(force:boolean = false) {
         var self = this;
         if (force || !this.socket || this.socket.readyState !== this.readyStateConstants.OPEN) {
-            self.socket =this.protocols ? new WebSocket(this.url, this.protocols) : new WebSocket(this.url);
+            self.socket = this.protocols ? new WebSocket(this.url, this.protocols) : new WebSocket(this.url);
 
-            self.socket.onopen =(ev: Event) => {
-                //    console.log('onOpen: %s', ev);
+            self.socket.onopen = (ev: Event) => {
+                //console.log('onOpen: %s', ev);
                 this.onOpenHandler(ev);
             };
             self.socket.onmessage = (ev: MessageEvent) => {
-                //   console.log('onNext: %s', ev.data);
+                //console.log('onNext: %s', ev.data);
                 self.onMessageHandler(ev);
                 this.dataStream.next(ev);
             };
             this.socket.onclose = (ev: CloseEvent) => {
-                //     console.log('onClose, completed');
+                //console.log('onClose, completed');
                 self.onCloseHandler(ev);
                 this.dataStream.complete()
             };
 
             this.socket.onerror = (ev: ErrorEvent) => {
-                //    console.log('onError', ev);
+                //console.log('onError', ev);
                 self.onErrorHandler(ev);
                 this.dataStream.error(ev);
             };
 
         }
     }
+
     send(data) {
         var self = this;
-        if (this.getReadyState() != this.readyStateConstants.OPEN &&this.getReadyState() != this.readyStateConstants.CONNECTING ){
+        if (this.getReadyState() != this.readyStateConstants.OPEN && this.getReadyState() != this.readyStateConstants.CONNECTING) {
             this.connect();
         }
+        // TODO: change this for an observer
         return new Promise((resolve, reject) => {
             if (self.socket.readyState === self.readyStateConstants.RECONNECT_ABORTED) {
                 reject('Socket connection has been closed');
@@ -74,11 +77,10 @@ export class $WebSocket {
                 self.sendQueue.push({message: data});
                 self.fireQueue();
             }
-
         });
-    };
+    }
 
-    getDataStream():Subject<any>{
+    getDataStream():Subject<any> {
         return this.dataStream;
     }
 
@@ -86,12 +88,14 @@ export class $WebSocket {
         this.reconnectAttempts = 0;
         this.notifyOpenCallbacks(event);
         this.fireQueue();
-    };
+    }
+
     notifyOpenCallbacks(event) {
         for (let i = 0; i < this.onOpenCallbacks.length; i++) {
             this.onOpenCallbacks[i].call(this, event);
         }
     }
+
     fireQueue() {
         while (this.sendQueue.length && this.socket.readyState === this.readyStateConstants.OPEN) {
             var data = this.sendQueue.shift();
@@ -118,7 +122,7 @@ export class $WebSocket {
     onOpen(cb) {
         this.onOpenCallbacks.push(cb);
         return this;
-    };
+    }
 
     onClose(cb) {
         this.onCloseCallbacks.push(cb);
@@ -128,8 +132,7 @@ export class $WebSocket {
     onError(cb) {
         this.onErrorCallbacks.push(cb);
         return this;
-    };
-
+    }
 
     onMessage(callback, options) {
         if (!isFunction(callback)) {
@@ -153,21 +156,18 @@ export class $WebSocket {
             currentCallback.fn.apply(self, message);
         }
 
-    };
+    }
+
     onCloseHandler(event: CloseEvent) {
         this.notifyCloseCallbacks(event);
         if ((this.config.reconnectIfNotNormalClose && event.code !== this.normalCloseCode) || this.reconnectableStatusCodes.indexOf(event.code) > -1) {
             this.reconnect();
         }
-    };
+    }
 
     onErrorHandler(event) {
         this.notifyErrorCallbacks(event);
-    };
-
-
-
-
+    }
 
     reconnect() {
         this.close(true);
@@ -183,7 +183,8 @@ export class $WebSocket {
             this.socket.close();
         }
         return this;
-    };
+    }
+
     // Exponential Backoff Formula by Prof. Douglas Thain
     // http://dthain.blogspot.co.uk/2009/02/exponential-backoff-in-distributed.html
     getBackoffDelay(attempt) {
@@ -194,7 +195,7 @@ export class $WebSocket {
         var M = this.config.maxTimeout;
 
         return Math.floor(Math.min(R * T * Math.pow(F, N), M));
-    };
+    }
 
     setInternalState(state) {
         if (Math.floor(state) !== state || state < 0 || state > 4) {

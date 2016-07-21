@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {CoreWebService} from "../services/core-web-service";
+import {CoreWebService} from '../services/core-web-service';
 import {Http, RequestMethod} from '@angular/http';
 import {ApiRoot} from '../persistence/ApiRoot';
 
@@ -21,7 +21,7 @@ export class NotificationsService extends CoreWebService {
         return this.request({
             url: this.notificationsUrl,
             method: RequestMethod.Get
-        })
+        });
     }
 
 }

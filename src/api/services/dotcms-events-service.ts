@@ -1,5 +1,5 @@
-import {Injectable} from '@angular/core'
-import {Observable} from 'rxjs/Rx'
+import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
 
 @Injectable()
@@ -32,8 +32,7 @@ export class DotcmsEventsService {
                 function(e) { console.log('Error: ' + e.message); },
                 function() { console.log('Completed'); }
             );
-        })
-
+        });
 
     }
 
