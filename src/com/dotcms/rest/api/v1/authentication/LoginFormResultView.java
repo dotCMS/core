@@ -23,6 +23,7 @@ public class LoginFormResultView implements Serializable {
     private final String logo;
     private final String authorizationType;
     private final LanguageView currentLanguage;
+    private final String companyEmail;
 
     private LoginFormResultView(LoginFormResultView.Builder builder) {
         serverId           = builder.serverId;
@@ -35,6 +36,7 @@ public class LoginFormResultView implements Serializable {
         logo               = builder.logo;
         authorizationType  = builder.authorizationType;
         currentLanguage    = builder.currentLanguage;
+        companyEmail       = builder.companyEmail;
     }
 
     public String getServerId() {
@@ -76,6 +78,10 @@ public class LoginFormResultView implements Serializable {
     public String getAuthorizationType() {
         return authorizationType;
     }
+    
+    public String getCompanyEmail() {
+        return companyEmail;
+    }
 
     public static final class Builder {
 
@@ -89,6 +95,7 @@ public class LoginFormResultView implements Serializable {
         private String logo;
         private String authorizationType;
         private LanguageView currentLanguage;
+        private String companyEmail;
 
         public Builder currentLanguage(LanguageView currentLanguage) {
             this.currentLanguage = currentLanguage;
@@ -137,6 +144,11 @@ public class LoginFormResultView implements Serializable {
 
         public Builder authorizationType(String authorizationType) {
             this.authorizationType = authorizationType;
+            return this;
+        }
+        
+        public Builder companyEmail(String companyEmail) {
+            this.companyEmail = companyEmail;
             return this;
         }
 
