@@ -31,7 +31,6 @@ export class LoginComponent {
     @Output() toggleMain = new EventEmitter<boolean>();
 
     languages: Array<string> = [];
-    currentlang: string = '';
     message: string = '';
 
     // labels
