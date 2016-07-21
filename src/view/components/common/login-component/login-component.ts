@@ -145,7 +145,7 @@ export class LoginComponent {
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
                 if(this.myAccountLogin === undefined || this.myAccountLogin === ''){
-                    this.myAccountLogin = '@dotcms.com';
+                    this.myAccountLogin = entity.companyEmail;
                 }
             } else {
                 this.userIdOrEmailLabel = dataI18n['user-id'];
