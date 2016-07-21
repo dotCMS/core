@@ -25,10 +25,7 @@ import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -384,7 +381,10 @@ public class LoginServiceFactory implements Serializable {
                                                     encryptUserId,
                                                     user.getCompanyId())),
                                     encryptUserId,
-                                    maxAge)
+                                    (maxAge > 0)?
+                                            DateUtil.daysToMillis(maxAge):
+                                            maxAge
+                                    )
                     );
 
             createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
