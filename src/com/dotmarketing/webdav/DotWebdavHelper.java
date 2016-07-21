@@ -870,8 +870,17 @@ public class DotWebdavHelper {
 			Contentlet fileAssetCont = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-				long langContentlet = APILocator.getContentletAPI().searchByIdentifier("+identifier:" + identifier.getId(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), false, PermissionAPI.PERMISSION_READ, true).get(0).getLanguageId();
-				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, langContentlet, user, false);				
+				List<Contentlet> list = APILocator.getContentletAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);	
+				long langContentlet = list.get(0).getLanguageId();
+				if(langContentlet != defaultLang){
+					for(Contentlet c : list){
+						if(c.getLanguageId() == defaultLang){
+							langContentlet = defaultLang;
+							break;
+						}
+					}
+				}
+				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, langContentlet, user, false);
 				workingFile = fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD);
 				destinationFile = APILocator.getFileAssetAPI().fromContentlet(fileAssetCont);
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
