@@ -26,7 +26,7 @@
                             </div>
                             <div class="col-sm-6">
                                 <select class="singin__language" id="language" [(ngModel)]="language" (change)="changeLanguage($event.target.value)">
-                                    <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label}}</option>
+                                    <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label | capitalize}}</option>
                                 </select>
                             </div>
                         </div>
