@@ -1,34 +1,42 @@
-md-toolbar {
-  .main-toolbar {
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+  dot-toolbar-notifications {
+    margin-right: 20px;
+  }
+
+  md-sidenav-layout[fullscreen] {
+    top: 64px
+  }
+
+  md-toolbar {
     display: flex;
     justify-content: space-around;
     width: 100%;
     align-items: center;
+
+    .md-toolbar-layout {
+      width: 100%;
+    }
   }
 
-  .user {
+  .toolbar__actions,
+  .toolbar__host {
+    display: flex;
     flex: 1;
-    text-align: right;
-    font-size: 14px;
+    flex-direction: row;
+    align-items: center;
   }
 
-  h1 {
+  .toolbar__logout {
+    color: $white;
+    font-size: rem-cal(14px);
+  }
+
+  .toolbar__title {
     font-size: 20px;
     margin: 0 0 0 10px;
     align-self: center;
   }
-
-  .host-selector {
-    display: flex;
-    flex: 1;
-    flex-direction: row;
-  }
-}
-
-md-sidenav-layout[fullscreen] {
-  top: 64px
-}
-
-.pointer{
- cursor: pointer;
 }

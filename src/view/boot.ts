@@ -14,6 +14,7 @@ import {AppComponent} from './components/app';
 import {RoutingService} from '../api/services/routing-service';
 import {provide} from '@angular/core';
 import {disableDeprecatedForms, provideForms} from '@angular/forms';
+import {MdIconRegistry} from '@angular2-material/icon/icon';
 
 new RoutingService().getRoutes().subscribe(menu => {
     bootstrap(AppComponent, [
@@ -28,6 +29,7 @@ new RoutingService().getRoutes().subscribe(menu => {
         ConditionService,
         RoutingService,
         HTTP_PROVIDERS,
+        MdIconRegistry
         provide('menuItems', {useValue: menu.menuItems}),
         provideRouter(menu.routes),
         // Form controls use the new @angular/forms package. To make migration easier, you can alternatively install
