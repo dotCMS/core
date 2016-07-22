@@ -7,11 +7,10 @@
                 <div class="col-sm-5 cms-info">
                     <div class="cms-info__inner">
                         <img src="{{dotcmscompanyLogo}}" class="cms-info__logo" />
-                        <p class="cms-info__message">You are currently using the free Community Editon of dotCMS Content Management Platform. If you would like to <b>upgrade to the Enterprise Edition</b> please
-                            <a href="#">contact us</a>.</p>
-                        <!--<p>{{serverLabel}}: {{dotcmsServerId}}</p>-->
-                        <!--<p>{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>-->
-                        <!--<p>( {{dotcmsBuildDateString}} )</p>-->
+                        <p class="cms-info__message" *ngIf="isCommunityLicense" [innerHTML]="communityLicenseInfoMessage"></p>
+                        <p class="cms-info__message" *ngIf="!isCommunityLicense">{{serverLabel}}: {{dotcmsServerId}}</p>
+                        <p class="cms-info__message" *ngIf="!isCommunityLicense">{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
+                        <p class="cms-info__message" *ngIf="!isCommunityLicense">( {{dotcmsBuildDateString}} )</p>
                     </div>
                 </div>
                 <div class="col-sm-7">
