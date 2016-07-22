@@ -53,11 +53,13 @@ export class LoginComponent {
     dotcmsVersion: string = '';
     dotcmsBuildDateString: string = '';
     mandatoryFieldError: string = '';
+    communityLicenseInfoMessage: string = '';
 
     isForgotPasswordCardHidden: boolean = true;
     isLoginCardHidden: boolean = false;
+    isCommunityLicense: boolean = true;
 
-    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent', 'Server', 'error.form.mandatory'];
+    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent', 'Server', 'error.form.mandatory', 'angular.login.component.community.licence.message'];
 
     constructor(@Inject('menuItems') private menuItems: any[], private _loginService: LoginService) {
         this.updateScreenBackground();
@@ -160,6 +162,7 @@ export class LoginComponent {
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
             this.serverLabel = dataI18n.Server;
             this.mandatoryFieldError = dataI18n['error.form.mandatory'];
+            this.communityLicenseInfoMessage = dataI18n['angular.login.component.community.licence.message'];
 
             // Set background color and image with the values provided by the service
             if (entity.backgroundColor !== 'undefined' && entity.backgroundColor !== '') {
@@ -173,6 +176,11 @@ export class LoginComponent {
             this.dotcmscompanyLogo = entity.logo;
             this.dotcmsServerId = entity.serverId;
             this.dotcmslicenceLevel = entity.levelName;
+            if ( this.dotcmslicenceLevel.indexOf('COMMUNITY') !== -1) {
+                this.isCommunityLicense = true;
+            } else {
+                this.isCommunityLicense = false;
+            }
             this.dotcmsVersion = entity.version;
             this.dotcmsBuildDateString = entity.buildDateString;
 
