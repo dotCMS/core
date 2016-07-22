@@ -7,13 +7,13 @@ import {DotcmsEventsService} from '../../../../api/services/dotcms-events-servic
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
 
 @Component({
+    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES],
+    encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+    providers: [DotcmsEventsService, NotificationsService],
     selector: 'dot-toolbar-notifications',
     styleUrls: ['toolbar-notifications.css'],
     templateUrl: ['toolbar-notifications.html'],
-    providers: [DotcmsEventsService, NotificationsService],
-    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES],
-    encapsulation: ViewEncapsulation.Emulated
 })
 export class ToolbarNotifications {
     private showNotifications:boolean = false;
@@ -35,7 +35,7 @@ export class ToolbarNotifications {
     getNotifications() {
         this.notificationService.getNotifications().subscribe(res => {
             this.notifications = res.entity.map(data => data.notificationData)
-        })
+        });
     }
 
     ngOnInit() {

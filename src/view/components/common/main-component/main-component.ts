@@ -5,23 +5,23 @@ import {LoginService} from '../../../../api/services/login-service';
 // Custom Components
 import {GlobalSearch} from '../global-search/global-search';
 import {MainNavigation} from '../main-navigation/main-navigation';
-import {ToolbarNotifications} from '../toolbar-notifications/toolbar-notifications'
+import {ToolbarNotifications} from '../toolbar-notifications/toolbar-notifications';
 
 // Angular Material
 import {MdToolbar} from '@angular2-material/toolbar/toolbar';
 import {MD_SIDENAV_DIRECTIVES} from '@angular2-material/sidenav/sidenav';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {MdButton, MdAnchor} from '@angular2-material/button/button';
+import {MdButton} from '@angular2-material/button/button';
 import {MdIcon, MdAnchor} from '@angular2-material/icon/icon';
 
 @Component({
-    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdAnchor, MdButton, MdIcon, GlobalSearch, MainNavigation, ToolbarNotifications],
+    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdButton, MdIcon, GlobalSearch, MainNavigation, ToolbarNotifications],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [LoginService],
     selector: 'dot-main-component',
     styleUrls: ['main-component.css'],
-    templateUrl: ['main-component.html']
+    templateUrl: ['main-component.html'],
 })
 export class MainComponent {
 
