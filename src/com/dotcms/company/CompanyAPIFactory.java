@@ -1,6 +1,5 @@
 package com.dotcms.company;
 
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;

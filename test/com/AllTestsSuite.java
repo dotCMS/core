@@ -1,6 +1,7 @@
 package com;
 
 import com.dotcms.rest.api.v1.authentication.AuthenticationResourceTest;
+import com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceTest;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 import org.junit.runner.RunWith;
@@ -145,6 +146,7 @@ import com.liferay.portal.ejb.UserLocalManagerTest;
         // Authentication
         AuthenticationResourceTest.class,
         LogoutResource.class,
+        ForgotPasswordResourceTest.class,
 
     //Rules:Actionlets.
     ActionletResourceFTest.class, //Needs Enterprise License.
