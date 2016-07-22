@@ -29,7 +29,7 @@ new RoutingService().getRoutes().subscribe(menu => {
         ConditionService,
         RoutingService,
         HTTP_PROVIDERS,
-        MdIconRegistry
+        MdIconRegistry,
         provide('menuItems', {useValue: menu.menuItems}),
         provideRouter(menu.routes),
         // Form controls use the new @angular/forms package. To make migration easier, you can alternatively install
