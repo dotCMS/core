@@ -151,7 +151,8 @@ public class UserModel extends BaseModel {
 		String greeting, String resolution, String refreshRate,
 		String layoutIds, String comments, Date createDate, Date loginDate,
 		String loginIP, Date lastLoginDate, String lastLoginIP,
-		int failedLoginAttempts, boolean agreedToTermsOfUse, boolean active) {
+		int failedLoginAttempts, boolean agreedToTermsOfUse, boolean active,
+					 boolean deleteInProgress, Date deleteDate) {
 		_userId = userId;
 		_companyId = companyId;
 		_password = password;
@@ -193,6 +194,8 @@ public class UserModel extends BaseModel {
 		_failedLoginAttempts = failedLoginAttempts;
 		_agreedToTermsOfUse = agreedToTermsOfUse;
 		_active = active;
+		_deleteInProgress = deleteInProgress;
+		_deleteDate = deleteDate;
 	}
 
 	public String getPrimaryKey() {
@@ -887,6 +890,35 @@ public class UserModel extends BaseModel {
 		}
 	}
 
+	public boolean getDeleteInProgress() {
+		return _deleteInProgress;
+	}
+
+	public boolean isDeleteInProgress() {
+		return _deleteInProgress;
+	}
+
+	public void setDeleteInProgress(boolean deleteInProgress) {
+		if (deleteInProgress != _deleteInProgress) {
+			_deleteInProgress = deleteInProgress;
+			setModified(true);
+		}
+	}
+
+	public Date getDeleteDate() {
+		return _deleteDate;
+	}
+
+	public void setDeleteDate(Date deleteDate) {
+		if (((deleteDate == null) && (_deleteDate != null)) ||
+			((deleteDate != null) && (_deleteDate == null)) ||
+			((deleteDate != null) && (_deleteDate != null) &&
+				!deleteDate.equals(_deleteDate))) {
+			_deleteDate = deleteDate;
+			setModified(true);
+		}
+	}
+
 	public BaseModel getProtected() {
 		return null;
 	}
@@ -906,7 +938,7 @@ public class UserModel extends BaseModel {
 			getGreeting(), getResolution(), getRefreshRate(), getLayoutIds(),
 			getComments(), getCreateDate(), getLoginDate(), getLoginIP(),
 			getLastLoginDate(), getLastLoginIP(), getFailedLoginAttempts(),
-			getAgreedToTermsOfUse(), getActive());
+			getAgreedToTermsOfUse(), getActive(), getDeleteInProgress(), getDeleteDate());
 	}
 
 	public int compareTo(Object obj) {
@@ -1009,4 +1041,6 @@ public class UserModel extends BaseModel {
 	private int _failedLoginAttempts;
 	private boolean _agreedToTermsOfUse;
 	private boolean _active;
+	private boolean _deleteInProgress;
+	private Date _deleteDate;
 }

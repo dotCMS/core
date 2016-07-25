@@ -1318,21 +1318,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @throws DotSecurityException 
 	 */	
 	protected void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
-             Connection conn = DbConnectionFactory.getConnection();
+             /*Connection conn = DbConnectionFactory.getConnection();
              try(PreparedStatement ps = conn.prepareStatement("Select inode from contentlet where mod_user = ?");
                  PreparedStatement ps2 = conn.prepareStatement("UPDATE contentlet set mod_user = ? where mod_user = ? ");
                  PreparedStatement ps3 = conn.prepareStatement("update contentlet_version_info set locked_by=? where locked_by  = ?")) {
                  ps.setString(1, userId);
 
-                 try(ResultSet rs = ps.executeQuery()) {
-                     while (rs.next()) {
-                         String inode = rs.getString("inode");
-                         cc.remove(inode);
-                         Contentlet content = find(inode);
-                         /*new ESContentletIndexAPI().addContentToIndex(content);
-                         break;*/
-                     }
+                 ResultSet rs = ps.executeQuery();
+                 while (rs.next()) {
+                     String inode = rs.getString("inode");
+                     cc.remove(inode);
+                     Contentlet content = find(inode);
+                     new ESContentletIndexAPI().addContentToIndex(content);
                  }
+
 
                  ps2.setString(1, replacementUserId);
                  ps2.setString(2, userId);
@@ -1345,7 +1344,38 @@ public class ESContentFactoryImpl extends ContentletFactory {
              } catch (SQLException e) {
                  Logger.error(this.getClass(),e.getMessage(),e);
                  throw new DotDataException(e.getMessage(), e);
-             }
+             }*/
+
+        DotConnect dc = new DotConnect();
+        try {
+            List<HashMap<String, String>> contentInodes;
+            do {
+                dc.setSQL("Select inode from contentlet where mod_user = ?");
+                dc.addParam(userId);
+                dc.setMaxRows(1000);
+                contentInodes = dc.loadResults();
+
+                for (HashMap<String, String> ident : contentInodes) {
+                    String inode = ident.get("inode");
+                    cc.remove(inode);
+                    Contentlet content = find(inode);
+                    new ESContentletIndexAPI().addContentToIndex(content);
+                }
+            }while(contentInodes!=null && !contentInodes.isEmpty());
+
+            dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
+            dc.addParam(replacementUserId);
+            dc.addParam(userId);
+            dc.loadResult();
+
+            dc.setSQL("update contentlet_version_info set locked_by=? where locked_by  = ?");
+            dc.addParam(replacementUserId);
+            dc.addParam(userId);
+            dc.loadResult();
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(),e.getMessage(),e);
+            throw new DotDataException(e.getMessage(), e);
+        }
 	}
 
 	@Override

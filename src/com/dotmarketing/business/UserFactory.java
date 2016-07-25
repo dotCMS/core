@@ -231,5 +231,7 @@ public abstract class UserFactory {
 	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
 			int pageSize, boolean includeAnonymous) throws DotDataException;
 
+	protected abstract User updateUser(User user);
+
 
 }

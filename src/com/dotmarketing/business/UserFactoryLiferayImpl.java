@@ -530,4 +530,16 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
+
+	@Override
+	protected User updateUser(User user){
+		try {
+			user = UserLocalManagerUtil.updateUser(user);
+		} catch (PortalException e) {
+			e.printStackTrace();
+		} catch (SystemException e) {
+			e.printStackTrace();
+		}
+		return user;
+	}
 }
