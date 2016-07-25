@@ -143,6 +143,8 @@
 		<property name="failedLoginAttempts" type="com.liferay.util.dao.hibernate.IntegerType" />
 		<property name="agreedToTermsOfUse" type="com.liferay.util.dao.hibernate.BooleanType" />
 		<property name="active" column="active_" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="deleteInProgress" column="deleteInProgress" type="com.liferay.util.dao.hibernate.BooleanType" />
+		<property name="deleteDate"/>
 	</class>
 	<class name="com.liferay.portal.ejb.UserTrackerHBM" table="UserTracker">
 		<!--<cache usage="read-write" />-->

@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,9 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -37,6 +38,11 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User entities from liferay's repository.  Classes within the dotCMS
@@ -387,7 +393,7 @@ public class UserAPIImpl implements UserAPI {
 
 		logDelete(DeletionStage.END, userToDelete, user, "Workflows");
 
-		//removing user roles		
+		//removing user roles
 		perAPI.removePermissionsByRole(userRole.getId());
 		roleAPI.removeAllRolesFromUser(userToDelete);
 
@@ -484,6 +490,15 @@ public class UserAPIImpl implements UserAPI {
 				PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
 		save(user, currentUser, respectFrontEndRoles);
 
+	}
+
+	@Override
+	public void markToDelete(User userToDelete) throws DotHibernateException {
+		HibernateUtil.startTransaction();
+		userToDelete.setDeleteInProgress(true);
+		userToDelete.setDeleteDate(Calendar.getInstance().getTime());
+		uf.updateUser(userToDelete);
+		HibernateUtil.commitTransaction();
 	}
 
 

@@ -2586,3 +2586,7 @@ create table rule_condition_value (id varchar(36) primary key,condition_id varch
 create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamp);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
+
+-- Delete User
+ALTER TABLE user_ ADD COLUMN deleteInProgress BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_ ADD COLUMN deleteDate TIMESTAMP;

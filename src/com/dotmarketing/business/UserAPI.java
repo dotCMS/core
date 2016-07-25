@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
@@ -332,4 +333,5 @@ public interface UserAPI {
 	 */
 	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException, DotInvalidPasswordException;
 
+    public void markToDelete(User userToDelete) throws DotHibernateException;
 }

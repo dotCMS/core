@@ -98,7 +98,7 @@ public class User extends UserModel implements Recipient {
 				String refreshRate, String layoutIds, String comments,
 				Date createDate, Date loginDate, String loginIP,
 				Date lastLoginDate, String lastLoginIP, int failedLoginAttempts,
-				boolean agreedToTermsOfUse, boolean active) {
+				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate) {
 
 		super(userId, companyId, password, passwordEncrypted,
 			  passwordExpirationDate, passwordReset, firstName, middleName,
@@ -108,7 +108,7 @@ public class User extends UserModel implements Recipient {
 			  timeZoneId, skinId, dottedSkins, roundedSkins, greeting,
 			  resolution, refreshRate, layoutIds, comments, createDate,
 			  loginDate, loginIP, lastLoginDate, lastLoginIP,
-			  failedLoginAttempts, agreedToTermsOfUse, active);
+			  failedLoginAttempts, agreedToTermsOfUse, active, deleteInProgress, deleteDate);
 
 		setCompanyId(companyId);
 		setLanguageId(languageId);
