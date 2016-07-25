@@ -136,7 +136,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontEndPermissions);
 		Folder f = ffac.findFolderByPath(id.getParentPath(), host);
 
-		if(f == null) return null;
+		if(f == null || !UtilMethods.isSet(f.getInode())) return null;
 		if (!papi.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 		    if(UtilMethods.isSet(f.getPath())){
 		        //Folder exists in DB, but the user does not have permissions to read it.
