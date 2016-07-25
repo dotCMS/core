@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
 import com.dotmarketing.db.DbConnectionFactory;
 import java.io.File;
@@ -12,6 +13,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class Config {
+
+	private static final String BLANK = "";
 
 	//Generated File Indicator
 	public static final String GENERATED_FILE ="dotGenerated_";
@@ -172,6 +175,8 @@ public class Config {
 		return getStringProperty(name, defValue, true);
 	}
 
+
+
 	/**
 	 * Returns a string property
 	 *
@@ -188,15 +193,9 @@ public class Config {
 		if(props != null) {
 			String[] propsArr = props.getStringArray(name);
 			StringBuilder property = new StringBuilder();
-			int i = 0;
+
 			if(propsArr != null && propsArr.length > 0) {
-				for (String propItem : propsArr) {
-					if(i > 0) {
-						property.append(",");
-					}
-					property.append(propItem);
-					i++;
-				}
+				buildProperty(propsArr, property);
 				result = property.toString();
 			} else if(forceDefaultToString) {
 				result = String.valueOf(defValue);
@@ -206,6 +205,60 @@ public class Config {
 			result = defValue;
 		}
 		return result;
+	}
+
+	/**
+	 * Returns a string property, the supplier is useful when you want lazy evaluation for the default value.
+	 *
+	 * @param name {@link String}
+	 * @param defValue {@link Supplier}
+	 * @return String
+	 */
+	public static String getStringProperty(String name, Supplier<String> defValue) {
+
+		return getStringProperty(name, defValue, true);
+	}
+	/**
+	 * Returns a string property, the supplier is useful when you want lazy evaluation for the default value.
+	 *
+	 * @param name {@link String}
+	 * @param defValue {@link Supplier}
+	 * @return String
+	 */
+	public static String getStringProperty(String name, Supplier<String> defValue, boolean forceDefaultToString) {
+
+		_refreshProperties();
+		String result = BLANK;
+
+		if(props != null) {
+			String[] propsArr = props.getStringArray(name);
+			StringBuilder property = new StringBuilder();
+			int i = 0;
+			if(propsArr != null && propsArr.length > 0) {
+				buildProperty(propsArr, property);
+				result = property.toString();
+			} else if(forceDefaultToString) {
+				result = defValue.get();
+			}
+		} else {
+			// default is not forced to string here for historical reasons. Presumably props is never actually null.
+			result = defValue.get();
+		}
+
+		return result;
+	}
+
+	private static void buildProperty(String[] propsArr, StringBuilder property) {
+
+		int i = 0;
+
+		for (String propItem : propsArr) {
+            if(i > 0) {
+                property.append(",");
+            }
+            property.append(propItem);
+            i++;
+        }
 	}
 
 	/**
