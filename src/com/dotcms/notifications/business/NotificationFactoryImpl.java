@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.dotcms.notifications.bean.Notification;
-import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -19,21 +18,28 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+/**
+ * Concrete implementation of the {@link NotificationFactory} class.
+ * 
+ * @author Daniel Silva
+ * @version 3.0, 3.7
+ * @since Feb 3, 2014
+ *
+ */
 public class NotificationFactoryImpl extends NotificationFactory {
 
-	public void saveNotification(Notification notification) throws DotDataException {
-	    DotConnect dc = new DotConnect();
+	@Override
+	public void saveNotification(final NotificationDTO notification) throws DotDataException {
+		final DotConnect dc = new DotConnect();
 		dc.setSQL("insert into notification (id,message,notification_type,notification_level,user_id,time_sent) "
-		        + " values(?,?,?,?,?,?)");
-
-		if(!UtilMethods.isSet(notification.getId())) {
+				+ " values(?,?,?,?,?,?)");
+		if (!UtilMethods.isSet(notification.getId())) {
 			notification.setId(UUID.randomUUID().toString());
 		}
-
 		dc.addParam(notification.getId());
 		dc.addParam(notification.getMessage());
-		dc.addParam(UtilMethods.isSet(notification.getType())?notification.getType().name():NotificationType.GENERIC.name());
-		dc.addParam(notification.getLevel().name());
+		dc.addParam(UtilMethods.isSet(notification.getType()) ? notification.getType() : NotificationType.GENERIC.name());
+		dc.addParam(notification.getLevel());
 		dc.addParam(notification.getUserId());
 		dc.addParam(new Date());
 
@@ -73,62 +79,65 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		CacheLocator.getNewNotificationCache().remove(notification.getUserId());
 	}
 
-	public Notification findNotification(String notificationId) throws DotDataException {
-	    DotConnect dc = new DotConnect();
+	@Override
+	public NotificationDTO findNotification(String notificationId) throws DotDataException {
+		final DotConnect dc = new DotConnect();
 		dc.setSQL("select * from notification where id = ?");
 		dc.addParam(notificationId);
-
-		Notification n = null;
-		List<Map<String, Object>> results = dc.loadObjectResults();
-
-		if(results!=null && !results.isEmpty()) {
+		NotificationDTO notification = null;
+		final List<Map<String, Object>> results = dc.loadObjectResults();
+		if (results != null && !results.isEmpty()) {
 			Map<String, Object> row = results.get(0);
-			n = new Notification();
-			n.setId((String)row.get("id"));
-			n.setMessage((String)row.get("message"));
-			n.setType(NotificationType.valueOf((String)row.get("notification_type")));
-			n.setLevel(NotificationLevel.valueOf((String)row.get("notification_level")));
-			n.setUserId((String)row.get("user_id"));
-			n.setTimeSent((Date)row.get("time_sent"));
-			n.setWasRead((DbConnectionFactory.isDBTrue(row.get("was_read").toString())));
+			final String id = (String) row.get("id");
+			final String message = (String) row.get("message");
+			final String type = (String) row.get("notification_type");
+			final String level = (String) row.get("notification_level");
+			final String userId = (String) row.get("user_id");
+			final Date timeSent = (Date) row.get("time_sent");
+			final boolean wasRead = DbConnectionFactory.isDBTrue(row.get("was_read").toString());
+			notification = new NotificationDTO(id, message, type, level, userId, timeSent, wasRead);
 		}
-
-		return n;
+		return notification;
 	}
 
-	public void deleteNotification(String notificationId) throws DotDataException {
-	    DotConnect dc = new DotConnect();
+	@Override
+	public void deleteNotification(final String notificationId) throws DotDataException {
+		final DotConnect dc = new DotConnect();
 		dc.setSQL("delete from notification where id = ?");
 		dc.addParam(notificationId);
 		dc.loadObjectResults();
 	}
 
-	public void deleteNotifications(String userId) throws DotDataException {
-	    DotConnect dc = new DotConnect();
-		String userWhere = UtilMethods.isSet(userId)?" where user_id = ? ":"";
+	@Override
+	public void deleteNotifications(final String userId) throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		final String userWhere = UtilMethods.isSet(userId) ? " where user_id = ? " : "";
 		dc.setSQL("delete from notification " + userWhere);
 
-		if(UtilMethods.isSet(userId)) {
+		if (UtilMethods.isSet(userId)) {
 			dc.addParam(userId);
 		}
 
 		dc.loadObjectResults();
 	}
 
-	public List<Notification> getNotifications(long offset, long limit) throws DotDataException {
+	@Override
+	public List<NotificationDTO> getNotifications(final long offset, final long limit) throws DotDataException {
 		return getNotifications(null, offset, limit);
 	}
 
-	public List<Notification> getAllNotifications(String userId) throws DotDataException {
+	@Override
+	public List<NotificationDTO> getAllNotifications(final String userId) throws DotDataException {
 		return getNotifications(userId, -1, -1);
 	}
 
-	public Long getNotificationsCount(String userId) throws DotDataException {
-	    DotConnect dc = new DotConnect();
-		String userWhere = UtilMethods.isSet(userId)?"where user_id = ? ":"";
+	@Override
+	public Long getNotificationsCount(final String userId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		String userWhere = UtilMethods.isSet(userId) ? "where user_id = ? " : "";
 		dc.setSQL("select count(*) as count from notification " + userWhere);
 
-		if(UtilMethods.isSet(userId)) {
+		if (UtilMethods.isSet(userId)) {
 			dc.addParam(userId);
 		}
 
@@ -137,56 +146,59 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		return count;
 	}
 
-	public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
-	    DotConnect dc = new DotConnect();
-		String userWhere = UtilMethods.isSet(userId)?" where user_id = ? ":"";
-		String sql = "select * from notification " + userWhere + " order by time_sent desc";
-		dc.setSQL( (UtilMethods.isSet(offset)&&offset>-1 && UtilMethods.isSet(limit) && limit>0)
-				? SQLUtil.addLimits(sql, offset, limit)
-						: sql);
-
-		if(UtilMethods.isSet(userId)) {
+	@Override
+	public List<NotificationDTO> getNotifications(final String userId, final long offset, final long limit)
+			throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		final String userWhere = UtilMethods.isSet(userId) ? " where user_id = ? " : "";
+		final String sql = "select * from notification " + userWhere + " order by time_sent desc";
+		dc.setSQL((UtilMethods.isSet(offset) && offset > -1 && UtilMethods.isSet(limit) && limit > 0) ? SQLUtil.addLimits(
+				sql, offset, limit) : sql);
+		if (UtilMethods.isSet(userId)) {
 			dc.addParam(userId);
 		}
 
-		List<Map<String, Object>> results = dc.loadObjectResults();
-		List<Notification> notifications = new ArrayList<Notification>();
-
+		final List<Map<String, Object>> results = dc.loadObjectResults();
+		final List<NotificationDTO> notifications = new ArrayList<>();
 		for (Map<String, Object> row : results) {
-			Notification n = new Notification();
-			n.setId((String)row.get("id"));
-			n.setMessage((String)row.get("message"));
-			n.setType(NotificationType.valueOf((String)row.get("notification_type")));
-			n.setLevel(NotificationLevel.valueOf((String)row.get("notification_level")));
-			n.setUserId((String)row.get("user_id"));
-			n.setTimeSent((Date)row.get("time_sent"));
-			n.setWasRead((DbConnectionFactory.isDBTrue(row.get("was_read").toString())));
-			notifications.add(n);
+			final String id = (String) row.get("id");
+			final String message = (String) row.get("message");
+			final String type = (String) row.get("notification_type");
+			final String level = (String) row.get("notification_level");
+			final Date timeSent = (Date) row.get("time_sent");
+			final boolean wasRead = DbConnectionFactory.isDBTrue(row.get("was_read").toString());
+			final NotificationDTO notification = new NotificationDTO(id, message, type, level, userId, timeSent, wasRead);
+			notifications.add(notification);
 		}
 
 		return notifications;
 	}
 
-	public Long getNewNotificationsCount(String userId)  throws DotDataException {
-	    DotConnect dc = new DotConnect();
-		String userWhere = UtilMethods.isSet(userId)?" user_id = ? and ":"";
-		dc.setSQL("select count(*) as count from notification where " + userWhere + " was_read = " + DbConnectionFactory.getDBFalse());
+	@Override
+	public Long getNewNotificationsCount(final String userId) throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		final String userWhere = UtilMethods.isSet(userId) ? " user_id = ? and " : "";
+		dc.setSQL("select count(*) as count from notification where " + userWhere + " was_read = "
+				+ DbConnectionFactory.getDBFalse());
 
-		if(UtilMethods.isSet(userId)) {
+		if (UtilMethods.isSet(userId)) {
 			dc.addParam(userId);
 		}
 
-		List<Map<String, Object>> results = dc.loadObjectResults();
-		return ((Number)results.get(0).get("count")).longValue();
+		final List<Map<String, Object>> results = dc.loadObjectResults();
+		return ((Number) results.get(0).get("count")).longValue();
 	}
 
-	public void markNotificationsAsRead(String userId) throws DotDataException {
-	    DotConnect dc = new DotConnect();
-		if(!UtilMethods.isSet(userId)) return;
+	@Override
+	public void markNotificationsAsRead(final String userId) throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		if (!UtilMethods.isSet(userId))
+			return;
 
-		dc.setSQL("update notification set was_read = "+ DbConnectionFactory.getDBTrue()
-				+ " where was_read = "+ DbConnectionFactory.getDBFalse()+" and user_id = ?");
+		dc.setSQL("update notification set was_read = " + DbConnectionFactory.getDBTrue() + " where was_read = "
+				+ DbConnectionFactory.getDBFalse() + " and user_id = ?");
 		dc.addParam(userId);
 		dc.loadResult();
 	}
+
 }

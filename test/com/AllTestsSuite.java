@@ -1,5 +1,13 @@
 package com;
 
+import com.dotcms.rest.api.v1.authentication.AuthenticationResourceTest;
+import com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceTest;
+import com.dotcms.rest.api.v1.authentication.LogoutResource;
+import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceTest;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
@@ -7,6 +15,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
+import com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptorTest;
 import com.dotcms.notification.business.NotificationAPITest;
 import com.dotcms.publisher.ajax.RemotePublishAjaxActionTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
@@ -17,6 +26,9 @@ import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotcms.util.CollectionsUtilsTest;
+import com.dotcms.util.ReflectionUtilsTest;
+import com.dotcms.util.marshal.MarshalUtilsTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -30,7 +42,6 @@ import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
-import com.dotmarketing.portlets.contentlet.business.FileAssetTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
@@ -67,10 +78,6 @@ import com.dotmarketing.tag.business.TagAPITest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
-
-import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 /**
  * @author Jonathan Gamba.
@@ -124,12 +131,22 @@ import org.junit.runners.Suite;
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ActionResourceFTest.class,
     TagAPITest.class,
-    FileAssetTest.class,
+        ReflectionUtilsTest.class,
+        CollectionsUtilsTest.class,
+        MarshalUtilsTest.class,
+        JsonWebTokenServiceTest.class,
+        JsonWebTokenInterceptorTest.class,
+
 
     //Rules.
     RulesAPIFTest.class, //Needs Enterprise License.
     RulesCacheFTest.class, //Needs Enterprise License.
     RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
+
+        // Authentication
+        AuthenticationResourceTest.class,
+        LogoutResource.class,
+        ForgotPasswordResourceTest.class,
 
     //Rules:Actionlets.
     ActionletResourceFTest.class, //Needs Enterprise License.

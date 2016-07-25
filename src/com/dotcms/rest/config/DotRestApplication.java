@@ -3,6 +3,10 @@ package com.dotcms.rest.config;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
+import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
+import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
+import com.dotcms.rest.api.v1.authentication.LoginFormResource;
+import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
@@ -14,6 +18,7 @@ import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.user.UserResource;
+import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 
 import java.util.HashSet;
@@ -44,7 +49,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.UserResource.class);
 					REST_CLASSES.add(com.dotcms.rest.ClusterResource.class);
 					REST_CLASSES.add(com.dotcms.rest.EnvironmentResource.class);
-					REST_CLASSES.add(com.dotcms.rest.NotificationResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v1.notification.NotificationResource.class);
 					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 					REST_CLASSES.add(com.dotcms.rest.LicenseResource.class);
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
@@ -69,6 +74,13 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ActionletsResource.class);
 					REST_CLASSES.add(I18NResource.class);
 					REST_CLASSES.add(LanguagesResource.class);
+					
+					REST_CLASSES.add(MenuResource.class);
+
+					REST_CLASSES.add(AuthenticationResource.class);
+					REST_CLASSES.add(LogoutResource.class);
+					REST_CLASSES.add(LoginFormResource.class);
+					REST_CLASSES.add(ForgotPasswordResource.class);
 
 				}
 			}
