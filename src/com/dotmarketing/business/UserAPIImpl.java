@@ -425,13 +425,9 @@ public class UserAPIImpl implements UserAPI {
 	}
 
 	@Override
-	public void markToDelete(User userToDelete) throws DotHibernateException {
-		HibernateUtil.startTransaction();
+	public void markToDelete(User userToDelete) throws DotDataException {
 		userToDelete.setDeleteInProgress(true);
 		userToDelete.setDeleteDate(Calendar.getInstance().getTime());
-		uf.updateUser(userToDelete);
-		HibernateUtil.commitTransaction();
+		uf.saveUser(userToDelete);
 	}
-
-
 }

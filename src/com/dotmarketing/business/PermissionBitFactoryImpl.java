@@ -2281,6 +2281,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			baseSql.append(" user_.companyid = ? and user_.userid <> 'system' ");
 			baseSql.append(" and users_cms_roles.role_id in (" + roleIdsSB.toString() + ")");
 			baseSql.append(" and user_.userId = users_cms_roles.user_id ");
+			baseSql.append(" and user_.delete_in_progress = false ");
 
 			boolean isFilteredByName = UtilMethods.isSet(filter);
 			if (isFilteredByName) {

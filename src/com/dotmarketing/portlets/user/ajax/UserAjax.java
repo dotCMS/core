@@ -364,7 +364,6 @@ public class UserAjax {
 
 				User userToDelete = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
 				User replacementUser = uAPI.loadUserById(replacingUserId,uWebAPI.getLoggedInUser(request),false);
-
 				uAPI.markToDelete(userToDelete);
 				DeleteUserJob.triggerDeleteUserJob(userToDelete, replacementUser,  uWebAPI.getLoggedInUser(request),!uWebAPI.isLoggedToBackend(request));
 			} catch (Exception e) {

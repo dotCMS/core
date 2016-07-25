@@ -2634,5 +2634,5 @@ create index idx_rules_fire_on on dot_rule (fire_on);
 
 
 -- Delete User
-ALTER TABLE user_ ADD deleteInProgress number(1,0) default 0;
-ALTER TABLE user_ ADD deleteDate DATE;
+ALTER TABLE user_ ADD delete_in_progress number(1,0) default 0;
+ALTER TABLE user_ ADD delete_date DATE;
