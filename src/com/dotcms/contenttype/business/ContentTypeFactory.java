@@ -60,6 +60,15 @@ public interface ContentTypeFactory {
 
 
 	void delete(ContentType type, List<Observer> observers) throws DotDataException;
+
+
+	String suggestVelocityVar(String tryVar) throws DotDataException;
+
+
+	ContentType findDefaultType() throws DotDataException;
+
+
+	ContentType setAsDefault(ContentType type) throws DotDataException;
 	
 	
 	

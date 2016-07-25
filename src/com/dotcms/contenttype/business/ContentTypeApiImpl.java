@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -14,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -112,10 +114,9 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 	public ContentType findByVarName(String varName, User user) throws DotSecurityException, DotDataException {
 
 		ContentType type = this.fac.findByVar(varName);
-		if (APILocator.getPermissionAPI().doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user)) {
-			return type;
-		}
-		throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.READ, user);
+		return type;
+
 	}
 
 	@Override
@@ -125,8 +126,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 	@Override
 	public void saveContentType(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException {
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(type, PermissionAPI.PERMISSION_PUBLISH, user)) {
-			throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT, user)) {
+			throw new DotSecurityException("User " + user + " does not have PERMISSION_EDIT permissions on ContentType " + type);
 		}
 		Preconditions.checkNotNull(fields);
 
@@ -136,6 +137,28 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 			field = FieldBuilder.builder(field).contentTypeId(type.inode()).sortOrder(i++).build();
 			ffac.save(field);
 		}
+	}
+	@Override
+	public synchronized String suggestVelocityVar(final String tryVar) throws DotDataException{
+		if(!UtilMethods.isSet(tryVar)){
+			return UUID.randomUUID().toString();
+		}else{
+			return this.fac.suggestVelocityVar(tryVar);
+		}
+	}
+	@Override
+	public ContentType setAsDefault(ContentType type, User user) throws DotDataException, DotSecurityException{
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.READ, user);
+		return fac.setAsDefault(type);
 
 	}
+	
+	@Override
+	public ContentType findDefault(User user) throws DotDataException, DotSecurityException{
+		ContentType type = fac.findDefaultType();
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.READ, user);
+		return type;
+
+	}
+	
 }

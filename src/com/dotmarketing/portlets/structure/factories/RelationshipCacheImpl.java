@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.structure.factories;
 
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -46,12 +48,28 @@ public class RelationshipCacheImpl extends RelationshipCache {
 		
 	}
 	@Override
+	public List<Relationship> getRelationshipsByType(ContentType type) throws DotCacheException {
+		
+		return (List<Relationship>) cache.get("STRUCT" + type.inode(), primaryGroup);
+		
+	}
+	@Override
 	public void putRelationshipsByStruct(Structure struct, List<Relationship> rels)  {
-		cache.put("STRUCT" + struct.getInode(), rels, primaryGroup);
+		
+		cache.put("STRUCT" + struct.getInode(), ImmutableList.copyOf(rels), primaryGroup);
+	}
+	@Override
+	public void putRelationshipsByType(ContentType type, List<Relationship> rels)  {
+		
+		cache.put("STRUCT" + type.inode(), ImmutableList.copyOf(rels), primaryGroup);
 	}
 	@Override
 	public void removeRelationshipsByStruct(Structure struct)  {
 		cache.remove("STRUCT" + struct.getInode(), primaryGroup);
+	}
+	@Override
+	public void removeRelationshipsByType(ContentType type)  {
+		cache.remove("STRUCT" + type.inode(), primaryGroup);
 	}
 	
 	@Override

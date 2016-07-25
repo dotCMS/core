@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -125,7 +126,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	public List<ContentType> findByBaseType(BaseContentTypes type) throws DotDataException {
 		return dbByType(type.getType());
 	}
-
+	@Override
+	public ContentType findDefaultType() throws DotDataException {
+		return dbSelectDefaultType();
+	}
 	@Override
 	public List<ContentType> findByBaseType(int type) throws DotDataException {
 		return dbByType(type);
@@ -136,6 +140,36 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		return LocalTransaction.wrapReturn(() -> {
 			return dbSaveUpdate(type);
 		});
+	}
+
+	@Override
+	public ContentType setAsDefault(ContentType type) throws DotDataException{
+		if(!type.equals(findDefaultType())){
+			LocalTransaction.wrapReturn(() -> {
+				return dbUpdateDefaultToTrue(type);
+			});
+		}
+		return type;
+	}
+	private ContentType dbSelectDefaultType() throws DotDataException {
+		DotConnect dc = new DotConnect()
+			.setSQL(this.contentTypeSql.findDefaultContentType);
+		
+		
+		return new DbContentTypeTransformer(dc.loadObjectResults()).from();
+	}
+
+	private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
+		
+		DotConnect dc = new DotConnect();
+
+		dc.setSQL(this.contentTypeSql.updateAllDefaultToFalse);
+		dc.addParam(false);
+		dc.loadResult();
+		type = ContentTypeBuilder.builder(type).defaultStructure(true).build();
+		return save(type);
+
+
 	}
 
 	private List<ContentType> dbByType(int type) throws DotDataException {
@@ -157,7 +191,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	}
 
-	private ContentType dbById(String id) throws DotDataException {
+	private ContentType dbById(@NotNull String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.findById);
 		dc.addParam(id);
@@ -169,6 +203,22 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		}
 		return new DbContentTypeTransformer(results.get(0)).from();
 
+	}
+	
+	@Override
+	public String suggestVelocityVar(final String tryVar) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		String var = tryVar;
+		for(int i=1;i<100000;i++){
+			dc.setSQL(this.contentTypeSql.tryVelocityVar);
+			dc.addParam(tryVar);
+			if(dc.getInt("test")==0){
+				return var;
+			}
+			var = tryVar + String.valueOf(i);
+		}
+		throw new DotDataException("Unable to suggest a variable name.  Got to:"+ var);
+		
 	}
 
 	private ContentType dbByVar(String var) throws DotDataException {
@@ -407,9 +457,5 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		public String toString() {
 			return "SearchCondition [search=" + search + ", condition=" + condition + "]";
 		}
-		
-		
-		
-		
 	}
 }

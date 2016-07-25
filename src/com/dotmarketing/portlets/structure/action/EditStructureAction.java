@@ -11,11 +11,21 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.business.ContentTypeApiImpl;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.ToContentTypeTransformer;
+import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.fop.svg.A;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
@@ -25,6 +35,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,8 +46,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -175,57 +185,53 @@ public class EditStructureAction extends DotPortletAction {
 	}
 
 	@SuppressWarnings("deprecation")
-	private Structure _loadStructure(ActionForm form, ActionRequest req, ActionResponse res) throws ActionException, DotDataException {
+	private Structure _loadStructure(ActionForm form, ActionRequest req, ActionResponse res) throws ActionException, DotDataException, DotSecurityException {
 
 		User user = _getUser(req);
-		Structure structure = new Structure();
 		String inodeString = req.getParameter("inode");
-		if (InodeUtils.isSet(inodeString)) {
-			/*
-			 * long inode = Long.parseLong(inodeString); if (inode != 0) {
-			 * structure = StructureFactory.getStructureByInode(inode); }
-			 */
-
-			if (InodeUtils.isSet(inodeString)) {
-				structure = StructureFactory.getStructureByInode(inodeString);
-			}
+		ContentType type;
+		try{
+			type= APILocator.getContentTypeAPI2().find(inodeString, user);
 		}
-		if(!structure.isFixed()){//GIT-780
-			if(structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET
-					&& structure.getVelocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
-				
-						structure.setFixed(true);
-						StructureFactory.saveStructure(structure);
+		catch(NotFoundInDbException nodb){
+			type= ImmutableSimpleContentType.builder().name("").velocityVarName("").build();
+		}
+		
+
+		if(!type.fixed()){//GIT-780
+			if(type.baseType() == BaseContentTypes.WIDGET
+					&& type.velocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
+						type = ContentTypeBuilder.builder(type).fixed(true).build();
+						APILocator.getContentTypeAPI2().saveContentType(type, type.fields(), user);
 			}
 		}
 		
-		req.setAttribute(WebKeys.Structure.STRUCTURE, structure);
+		req.setAttribute(WebKeys.Structure.STRUCTURE, new ToStructureTransformer(type).from());
 
 		boolean searchable = false;
 
-		List<Field> fields = structure.getFields();
-		for (Field f : fields) {
-			if (f.isIndexed()) {
+
+		List<com.dotcms.contenttype.model.field.Field> fields = type.fields();
+		for (com.dotcms.contenttype.model.field.Field f : fields) {
+			if (f.indexed()) {
 				searchable = true;
 				break;
 			}
 		}
 
-		if (!searchable && InodeUtils.isSet(structure.getInode())) {
+		if (!searchable && InodeUtils.isSet(type.inode())) {
 			String message = "warning.structure.notsearchable";
 			SessionMessages.add(req, "message", message);
 
 		}
 
-		if (structure.isFixed()) {
+		if (type.fixed()) {
 			String message = "warning.object.isfixed";
 			SessionMessages.add(req, "message", message);
 		}
 
-		// Checking permissions
-		_checkUserPermissions(structure, user, PermissionAPI.PERMISSION_READ);
 
-		return structure;
+		return new ToStructureTransformer(type).from();
 	}
 
 	private void _saveStructure(ActionForm form, ActionRequest req, ActionResponse res) {
@@ -391,27 +397,7 @@ public class EditStructureAction extends DotPortletAction {
 
 			if (newStructure) {
 				String structureVelocityName = VelocityUtil.convertToVelocityVariable(structure.getName(), true);
-				List<String> velocityvarnames = StructureFactory.getAllVelocityVariablesNames();
-				int found = 0;
-				if (VelocityUtil.isNotAllowedVelocityVariableName(structureVelocityName)) {
-					found++;
-				}
-
-				for (String velvar : velocityvarnames) {
-					if (velvar != null) {
-						if (structureVelocityName.equalsIgnoreCase(velvar)) {
-							found++;
-						} else if (velvar.toLowerCase().contains(structureVelocityName.toLowerCase())) {
-							String number = velvar.substring(structureVelocityName.length());
-							if (RegEX.contains(number, "^[0-9]+$")) {
-								found++;
-							}
-						}
-					}
-				}
-				if (found > 0) {
-					structureVelocityName = structureVelocityName + Integer.toString(found);
-				}
+				structureVelocityName = new ContentTypeApiImpl().suggestVelocityVar(structureVelocityName);
 				structure.setVelocityVarName(structureVelocityName);
 			}
 
@@ -428,7 +414,7 @@ public class EditStructureAction extends DotPortletAction {
 			}
 
 			// If there is no default structure this would be
-			Structure defaultStructure = StructureFactory.getDefaultStructure();
+			Structure defaultStructure = new ToStructureTransformer(APILocator.getContentTypeAPI2().findDefault(user)).from();
 			if (!InodeUtils.isSet(defaultStructure.getInode())) {
 				structure.setDefaultStructure(true);
 			}
@@ -553,9 +539,9 @@ public class EditStructureAction extends DotPortletAction {
 			}
 			if (UtilMethods.isSet(structure.getDetailPage())) {
 				Identifier ident = APILocator.getIdentifierAPI().find(structure.getDetailPage());
-				HTMLPage page = HTMLPageFactory.getLiveHTMLPageByIdentifier(ident);
+				Versionable page = APILocator.getVersionableAPI().findLiveVersion(ident.getId(), APILocator.systemUser(), true);
 				if (InodeUtils.isSet(page.getInode())) {
-					structureForm.setDetailPage(page.getIdentifier());
+					structureForm.setDetailPage(ident.getId());
 				}
 			}
 
@@ -608,12 +594,7 @@ public class EditStructureAction extends DotPortletAction {
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
 			User user = _getUser(req);
-			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
-			_checkWritePermissions(structure, user, httpReq);
-
-			StructureFactory.disableDefault();
-			structure.setDefaultStructure(true);
-			StructureFactory.saveStructure(structure);
+			APILocator.getContentTypeAPI2().setAsDefault(new FromStructureTransformer(structure).from(), user);
 			String message = "message.structure.defaultstructure";
 			SessionMessages.add(req, "message", message);
 		} catch (Exception ex) {
@@ -622,16 +603,5 @@ public class EditStructureAction extends DotPortletAction {
 
 	}
 
-	private void _checkWritePermissions(Structure structure, User user, HttpServletRequest httpReq) throws Exception {
-		try {
-			_checkUserPermissions(structure, user, PERMISSION_PUBLISH);
-
-		} catch (Exception ae) {
-			if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
-				SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.save");
-			}
-			throw ae;
-		}
-	}
 
 }

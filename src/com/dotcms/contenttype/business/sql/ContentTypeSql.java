@@ -18,6 +18,7 @@ public abstract class ContentTypeSql {
 	public String findByVar = SELECT_ALL_STRUCTURE_FIELDS + " and structure.velocity_var_name = ?";
 	public String findAll = SELECT_ALL_STRUCTURE_FIELDS + " order by %s  ";
 	public String findType = SELECT_ALL_STRUCTURE_FIELDS + " where structure_type= ? order by %s ";
+	public String findDefaultContentType = SELECT_ALL_STRUCTURE_FIELDS + " where default_structure= true ";
 
 	public String updateContentTypeInode = "update inode set inode=?, idate=?, owner = ? where inode = ? and type='structure'";
 
@@ -55,8 +56,9 @@ public abstract class ContentTypeSql {
 			+ " and structuretype>=? and structuretype<= ? ";
 	
 	
+	public String tryVelocityVar="select count(*) from structure where velocity_var_name like ?";
 	
-	
+	public String updateAllDefaultToFalse = "update structure set default_structure=?";
 	/**
 	 * Fields in the db inode owner idate type inode name description
 	 * default_structure page_detail structuretype system fixed

@@ -2,8 +2,11 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.ToContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -27,7 +30,12 @@ public class StructureAPIImpl implements StructureAPI {
 	public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
 		APILocator.getContentTypeAPI2().delete(new FromStructureTransformer(st).from(), user);
 	}
+	
+	@Override
+	public void save(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
+		APILocator.getContentTypeAPI2().saveContentType(new FromStructureTransformer(st).from(), new LegacyFieldTransformer(st.getFields()).asList(), user);
 
+	}
 	@Override
 	public Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException {
 

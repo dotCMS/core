@@ -26,6 +26,12 @@ public interface ContentTypeApi {
 
 	void saveContentType(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException;
 
+	String suggestVelocityVar(String tryVar) throws DotDataException;
+
+	ContentType setAsDefault(ContentType type, User user) throws DotDataException, DotSecurityException;
+
+	ContentType findDefault(User user) throws DotDataException, DotSecurityException;
+
 
 
 
