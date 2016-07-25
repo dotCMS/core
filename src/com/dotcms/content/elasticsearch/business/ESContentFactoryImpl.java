@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.*;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.count.CountRequestBuilder;
@@ -68,6 +69,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Calendar;
@@ -1400,9 +1402,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                                 + " has finished successfully.",
                             userToReplace.getUserId() + "/" + userToReplace.getFullName()));
 
-                        notAPI.info(String.format("Reindex of updated related content after deleting user %s "
-                            + " has finished successfully.",
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName()), user.getUserId());
+                        String reindexMsg = MessageFormat.format(LanguageUtil.get(user,
+                            "com.dotmarketing.business.UserAPI.delete.reindex"),
+                            userToReplace.getUserId() + "/" + userToReplace.getFullName());
+
+                        notAPI.info(reindexMsg, user.getUserId());
 
                     } catch (Exception e) {
                         Logger.error(this.getClass(),e.getMessage(),e);
