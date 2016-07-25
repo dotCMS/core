@@ -378,7 +378,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<Contentlet> loadDeps(Contentlet content) throws DotDataException, DotSecurityException {
+	public List<Contentlet> loadDeps(Contentlet content) throws DotDataException, DotSecurityException {
 	    List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
 	    List<String> depsIdentifiers=mappingAPI.dependenciesLeftToReindex(content);
         for(String ident : depsIdentifiers) {

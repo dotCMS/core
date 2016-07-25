@@ -313,7 +313,6 @@ public class UserAjax {
 			User user;
 			try {
 				user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
-				APILocator.getContentletAPI().removeUserReferences(userId);
 				DeleteUserJob.triggerDeleteUserJob(user, uWebAPI.getLoggedInUser(request),  uWebAPI.getLoggedInUser(request),!uWebAPI.isLoggedToBackend(request));
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);

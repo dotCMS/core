@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import org.quartz.Job;
@@ -21,6 +22,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.UUID;
 
@@ -78,18 +80,30 @@ public class DeleteUserJob implements Job {
         User replacementUser = (User) map.get("replacementUser");
         User user = (User) map.get("user");
         Boolean respectFrontEndRoles = (Boolean) map.get("respectFrontEndRoles");
-        notfAPI.info(String.format("Deletion of User '%s' has been started. Replacement user: '%s",
-            userToDelete.getUserId() + "/" + userToDelete.getFullName(),
-            replacementUser.getUserId() + "/" + replacementUser.getFullName()), user.getUserId());
+        String errorMessage = null;
 
         try {
+            String startMessage = MessageFormat.format(LanguageUtil.get(user,
+                "com.dotmarketing.business.UserAPI.delete.start"),
+                userToDelete.getUserId() + "/" + userToDelete.getFullName(),
+                replacementUser.getUserId() + "/" + replacementUser.getFullName());
+
+            String finishMessage = MessageFormat.format(LanguageUtil.get(user,
+                "com.dotmarketing.business.UserAPI.delete.success"),
+                userToDelete.getUserId() + "/" + userToDelete.getFullName());
+
+            errorMessage = MessageFormat.format(LanguageUtil.get(user,
+                "com.dotmarketing.business.UserAPI.delete.error"),
+                userToDelete.getUserId() + "/" + userToDelete.getFullName());
+
+            notfAPI.info(startMessage, user.getUserId());
+
             HibernateUtil.startTransaction();
 
             uAPI.delete(userToDelete, replacementUser, user, respectFrontEndRoles);
             HibernateUtil.commitTransaction();
 
-            notfAPI.info(String.format("User '%s' was deleted succesfully.",
-                userToDelete.getUserId()), user.getUserId());
+            notfAPI.info(finishMessage, user.getUserId());
         } catch (Exception e) {
             try {
                 HibernateUtil.rollbackTransaction();
@@ -98,8 +112,8 @@ public class DeleteUserJob implements Job {
             }
             Logger.error(this, String.format("Unable to delete user '%s'.",
                 userToDelete.getUserId() + "/" + userToDelete.getFullName()), e);
-            notfAPI.error(String.format("Unable to delete user '%s'.",
-                userToDelete.getUserId() + "/" + userToDelete.getFullName()), user.getUserId());
+
+            notfAPI.error(errorMessage, user.getUserId());
         } finally {
             try {
                 HibernateUtil.closeSession();
