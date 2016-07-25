@@ -33,13 +33,12 @@ import com.dotcms.repackage.com.google.common.cache.CacheStats;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
+import com.dotcms.repackage.com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class H22Cache extends CacheProvider {
 

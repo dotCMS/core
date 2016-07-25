@@ -200,7 +200,7 @@ dependencies {
 	compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
-    compile group: 'com.zaxxer', name: 'HikariCP', version:'2.4.6'
+	compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
