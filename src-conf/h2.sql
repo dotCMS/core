@@ -2343,5 +2343,5 @@ create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(
 create index idx_rules_fire_on on dot_rule (fire_on);
 
 -- Delete User
-ALTER TABLE user_ ADD deleteInProgress BOOLEAN DEFAULT FALSE;
-ALTER TABLE user_ ADD deleteDate TIMESTAMP;
+ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_ ADD delete_date TIMESTAMP;

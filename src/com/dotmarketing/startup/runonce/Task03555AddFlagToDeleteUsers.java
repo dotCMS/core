@@ -21,8 +21,8 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
      */
     @Override
     public String getPostgresScript () {
-        return "ALTER TABLE user_ ADD COLUMN deleteInProgress BOOLEAN DEFAULT FALSE;\n" +
-                "ALTER TABLE user_ ADD COLUMN deleteDate TIMESTAMP;";
+        return "ALTER TABLE user_ ADD COLUMN delete_in_progress BOOLEAN DEFAULT FALSE;\n" +
+                "ALTER TABLE user_ ADD COLUMN delete_date TIMESTAMP;";
     }
 
     /**
@@ -32,8 +32,8 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMySQLScript () {
-        return "ALTER TABLE user_ ADD deleteInProgress BOOLEAN DEFAULT FALSE;\n" +
-                "ALTER TABLE user_ ADD deleteDate DATETIME;";
+        return "ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;\n" +
+                "ALTER TABLE user_ ADD delete_date DATETIME;";
     }
 
     /**
@@ -43,8 +43,8 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
      */
     @Override
     public String getOracleScript () {
-        return "ALTER TABLE user_ ADD deleteInProgress number(1,0) default 0;\n" +
-                "ALTER TABLE user_ ADD deleteDate DATE;";
+        return "ALTER TABLE user_ ADD delete_in_progress number(1,0) default 0;\n" +
+                "ALTER TABLE user_ ADD delete_date DATE;";
     }
 
     /**
@@ -54,8 +54,8 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMSSQLScript () {
-        return "ALTER TABLE user_ ADD deleteInProgress TINYINT DEFAULT 0;\n" +
-                "ALTER TABLE user_ ADD deleteDate DATETIME NULL;";
+        return "ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;\n" +
+                "ALTER TABLE user_ ADD delete_date DATETIME NULL;";
     }
 
     /**
@@ -65,8 +65,8 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
      */
     @Override
     public String getH2Script () {
-        return "ALTER TABLE user_ ADD deleteInProgress BOOLEAN DEFAULT FALSE;\n" +
-                "ALTER TABLE user_ ADD deleteDate TIMESTAMP;";
+        return "ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;\n" +
+                "ALTER TABLE user_ ADD delete_date TIMESTAMP;";
     }
 
     @Override

@@ -369,6 +369,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		filter = SQLUtil.sanitizeParameter(filter);    		
 		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
 				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " + ((!includeAnonymous)?"AND userid <> 'anonymous'":"") +
+				" and delete_in_progress = false " +
 				"order by firstName asc,lastname asc";
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);

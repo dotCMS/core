@@ -361,6 +361,8 @@ public class User extends UserModel implements Recipient {
 		map.put("nickname", this.getNickName());
 		map.put("userId", this.getUserId());
 		map.put("timeZoneId", this.getTimeZoneId());
+		map.put("deleteInProgress", getDeleteInProgress());
+		map.put("deleteDate", getDeleteDate());
 		return map;
 	}
 
