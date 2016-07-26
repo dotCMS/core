@@ -498,4 +498,9 @@ public class UserAPIImpl implements UserAPI {
 		userToDelete.setDeleteDate(Calendar.getInstance().getTime());
 		uf.saveUser(userToDelete);
 	}
+
+	@Override
+	public List<User> getUnDeletedUsers() throws DotDataException {
+		return uf.getUnDeletedUsers();
+	}
 }

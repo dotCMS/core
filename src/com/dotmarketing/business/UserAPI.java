@@ -334,4 +334,6 @@ public interface UserAPI {
 	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException, DotInvalidPasswordException;
 
     public void markToDelete(User userToDelete) throws DotDataException;
+
+	public List<User> getUnDeletedUsers() throws DotDataException;
 }
