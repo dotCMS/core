@@ -475,7 +475,7 @@ function saveEvent(isAutoSave){
 		}
 	}
 	
-	$(document.body).observe("keyup", checkEscapeKey);	
+	dojo.require.on(document.body,"keyup",checkEscapeKey);
 	
 
 	function hideEditButtonsRow() {
