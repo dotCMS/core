@@ -198,9 +198,10 @@ public class LocaleUtil {
 	 * if the LOCALE_KEY is also null, will get the request default one.
 	 *
 	 * If country or language are not null (one of them could be null), will build a new locale and set to the session under {@link Globals} LOCALE_KEY
-	 * @param request
-	 * @param country
-	 * @param language
+	 * @param request {@link HttpServletRequest}
+	 * @param country {@link String}
+	 * @param language {@link String}
+	 * @return Locale
 	 * @param createSession true if you want to create the session in case it is not created, false otherwise. If the session is not created, won't set the locale in the session at the end of the process.
      * @return Locale
      */
