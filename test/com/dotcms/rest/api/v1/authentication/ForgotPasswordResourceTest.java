@@ -6,7 +6,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.util.SecurityLoggerAPI;
+import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
@@ -78,7 +78,7 @@ public class ForgotPasswordResourceTest {
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
         final WebResource webResource       = new WebResource(apiProvider);
-        final SecurityLoggerAPI securityLogger       = mock(SecurityLoggerAPI.class);
+        final SecurityLoggerServiceAPI securityLogger       = mock(SecurityLoggerServiceAPI.class);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
@@ -143,7 +143,7 @@ public class ForgotPasswordResourceTest {
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
         final WebResource webResource       = new WebResource(apiProvider);
-        final SecurityLoggerAPI securityLogger       = mock(SecurityLoggerAPI.class);
+        final SecurityLoggerServiceAPI securityLogger       = mock(SecurityLoggerServiceAPI.class);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
@@ -208,7 +208,7 @@ public class ForgotPasswordResourceTest {
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
         final WebResource webResource       = new WebResource(apiProvider);
-        final SecurityLoggerAPI securityLogger       = mock(SecurityLoggerAPI.class);
+        final SecurityLoggerServiceAPI securityLogger       = mock(SecurityLoggerServiceAPI.class);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
