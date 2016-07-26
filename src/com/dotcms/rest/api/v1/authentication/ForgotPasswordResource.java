@@ -136,7 +136,7 @@ public class ForgotPasswordResource implements Serializable {
                     "please-enter-a-valid-email-address");
         } catch (Exception e) {
 
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR)
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;
