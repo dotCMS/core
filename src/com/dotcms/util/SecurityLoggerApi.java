@@ -3,7 +3,7 @@ package com.dotcms.util;
 import java.io.Serializable;
 
 /**
- * Logger to report security stuff
+ * Logger to report security stuff.
  * @author jsanca
  */
 public interface SecurityLoggerAPI extends Serializable {

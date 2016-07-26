@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 /**
  * Factory for the Security Logger Factory.
+ * 
  * @author jsanca
  */
 public class SecurityLoggerAPIFactory implements Serializable {
