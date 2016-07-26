@@ -2,6 +2,8 @@ package com;
 
 import com.dotcms.rest.api.v1.authentication.AuthenticationResourceTest;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
+import com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest;
+
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -173,7 +175,10 @@ import com.liferay.portal.ejb.UserLocalManagerTest;
     VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
     VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
     UserAPITest.class,
-    UserLocalManagerTest.class
+    UserLocalManagerTest.class,
+    
+    // REST end-points
+    ConfigurationResourceTest.class
 })
 
 public class AllTestsSuite {}
