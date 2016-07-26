@@ -5,9 +5,7 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -35,6 +33,7 @@ import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 
+import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
