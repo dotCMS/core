@@ -6,12 +6,7 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -36,8 +31,8 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
-import com.dotcms.util.SecurityLoggerAPI;
-import com.dotcms.util.SecurityLoggerAPIFactory;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.SecurityLoggerServiceAPIFactory;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.web.websocket.WebSocketContainerAPI;
@@ -138,8 +133,8 @@ public class APILocator extends Locator<APIIndex>{
 		instance = new APILocator();
 	}
 
-	public static SecurityLoggerAPI getSecurityLogger() {
-		return (SecurityLoggerAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
+	public static SecurityLoggerServiceAPI getSecurityLogger() {
+		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
 	}
 
 	/**
@@ -884,7 +879,7 @@ enum APIIndex
 		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
 		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
 		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
-		case SECURITY_LOGGER_API: return SecurityLoggerAPIFactory.getInstance().getSecurityLoggerAPI();
+		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

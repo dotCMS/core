@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Logger to report security stuff.
  * @author jsanca
  */
-public interface SecurityLoggerAPI extends Serializable {
+public interface SecurityLoggerServiceAPI extends Serializable {
 
 
     /**
@@ -28,4 +28,4 @@ public interface SecurityLoggerAPI extends Serializable {
 
         com.dotmarketing.util.SecurityLogger.logDebug(cl, msg);
     }
-} // E:O:F:SecurityLoggerAPI.
+} // E:O:F:SecurityLoggerServiceAPI.

@@ -13,7 +13,7 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.SecurityLoggerAPI;
+import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.NoSuchUserException;
@@ -47,7 +47,7 @@ public class ForgotPasswordResource implements Serializable {
     private final UserManager userManager;
     private final CompanyAPI  companyAPI;
     private final AuthenticationHelper  authenticationHelper;
-    private final SecurityLoggerAPI securityLogger;
+    private final SecurityLoggerServiceAPI securityLogger;
 
     public ForgotPasswordResource() {
 
@@ -64,7 +64,7 @@ public class ForgotPasswordResource implements Serializable {
                                   final UserManager userManager,
                                   final CompanyAPI  companyAPI,
                                   final AuthenticationHelper  authenticationHelper,
-                                  final SecurityLoggerAPI securityLogger) {
+                                  final SecurityLoggerServiceAPI securityLogger) {
 
         this.userLocalManager = userLocalManager;
         this.userManager      = userManager;
