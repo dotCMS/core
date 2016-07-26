@@ -1,21 +1,50 @@
 package com.dotcms.notifications.business;
 
+import java.util.Date;
 import java.util.List;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationData;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.dto.NotificationDTO;
+import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+/**
+ * Concrete implementation of the {@link NotificationAPI} class.
+ * 
+ * @author Daniel Silva
+ * @version 3.0, 3.7
+ * @since Feb 3, 2014
+ *
+ */
 public class NotificationAPIImpl implements NotificationAPI {
 
-	private NotificationFactory notificationFactory;
+	private final NotificationFactory notificationFactory;
+	private final SystemEventsAPI systemEventsAPI;
+	private final MarshalUtils marshalUtils;
+	private final ConversionUtils conversionUtils;
 
+	/**
+	 * Retrieve the factory class that interacts with the database.
+	 */
 	public NotificationAPIImpl() {
-		notificationFactory = FactoryLocator.getNotificationFactory();
+		this.notificationFactory = FactoryLocator.getNotificationFactory();
+		this.systemEventsAPI = APILocator.getSystemEventsAPI();
+		this.marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
+		this.conversionUtils = ConversionUtils.INSTANCE;
 	}
 
 	@Override
@@ -36,56 +65,115 @@ public class NotificationAPIImpl implements NotificationAPI {
 		}
 	}
 
+	@Override
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
-		Notification n = new Notification(message, level, userId);
-		notificationFactory.saveNotification(n);
+		NotificationData data = new NotificationData("", message, null);
+		String msg = this.marshalUtils.marshal(data);
+		NotificationDTO dto = new NotificationDTO("", msg, NotificationType.GENERIC.name(), level.name(), userId, null,
+				false);
+		notificationFactory.saveNotification(dto);
+		// Adding notification to System Events table
+		Notification n = new Notification(level, userId, data);
+		Payload payload = new Payload(n);
+		SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+		this.systemEventsAPI.push(systemEvent);
 	}
 
+	@Override
 	public Notification findNotification(String notificationId) throws DotDataException {
-		return notificationFactory.findNotification(notificationId); 
+		NotificationDTO dto = notificationFactory.findNotification(notificationId);
+		return this.conversionUtils.convert(dto, (NotificationDTO record) -> {
+			return convertNotificationDTO(record);
+		});
 	}
 
+	@Override
 	public void deleteNotification(String notificationId) throws DotDataException {
 		notificationFactory.deleteNotification(notificationId);
 	}
 
+	@Override
 	public void deleteNotifications(String userId) throws DotDataException {
 		notificationFactory.deleteNotifications(userId);
 	}
 
+	@Override
 	public List<Notification> getNotifications(long offset, long limit) throws DotDataException {
-		return notificationFactory.getNotifications(offset, limit);
+		List<NotificationDTO> dtos = this.notificationFactory.getNotifications(offset, limit);
+		return this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
+			return convertNotificationDTO(record);
+		});
 	}
 
+	@Override
 	public Long getNotificationsCount() throws DotDataException {
 		return notificationFactory.getNotificationsCount(null);
 	}
 
+	@Override
 	public Long getNotificationsCount(String userId) throws DotDataException {
 		return notificationFactory.getNotificationsCount(userId);
 	}
 
+	@Override
 	public List<Notification> getAllNotifications(String userId) throws DotDataException {
-		return notificationFactory.getAllNotifications(userId);
+		List<NotificationDTO> dtos = this.notificationFactory.getAllNotifications(userId);
+		return this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
+			return convertNotificationDTO(record);
+		});
 	}
 
+	@Override
 	public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
-		return notificationFactory.getNotifications(userId, offset, limit);
+		List<NotificationDTO> dtos = this.notificationFactory.getNotifications(userId, offset, limit);
+		return this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
+			return convertNotificationDTO(record);
+		});
 	}
 
-	public Long getNewNotificationsCount(String userId)  throws DotDataException {
+	@Override
+	public Long getNewNotificationsCount(String userId) throws DotDataException {
 		Long count = CacheLocator.getNewNotificationCache().get(userId);
-
-		if(!UtilMethods.isSet(count)) {
+		if (!UtilMethods.isSet(count)) {
 			count = notificationFactory.getNewNotificationsCount(userId);
 			CacheLocator.getNewNotificationCache().add(userId, count);
 		}
-
 		return count;
 	}
 
+	@Override
 	public void markNotificationsAsRead(String userId) throws DotDataException {
 		notificationFactory.markNotificationsAsRead(userId);
 		CacheLocator.getNewNotificationCache().remove(userId);
 	}
+
+	/**
+	 * Converts the physical representation of a Notification (i.e., the
+	 * information as stored in the database) to the logical representation.
+	 * 
+	 * @param record
+	 *            - The {@link NotificationDTO} object.
+	 * @return The {@link Notification} object.
+	 */
+	private Notification convertNotificationDTO(NotificationDTO record) {
+		final String id = record.getId();
+		final String typeStr = record.getType();
+		final String levelStr = record.getLevel();
+		final NotificationType type = (UtilMethods.isSet(typeStr)) ? NotificationType.valueOf(typeStr)
+				: NotificationType.GENERIC;
+		final NotificationLevel level = (UtilMethods.isSet(levelStr)) ? NotificationLevel.valueOf(levelStr)
+				: NotificationLevel.INFO;
+		final String userId = record.getUserId();
+		final Date timeSent = record.getTimeSent();
+		final boolean wasRead = record.getWasRead();
+		NotificationData data;
+		try {
+			data = this.marshalUtils.unmarshal(record.getMessage(), NotificationData.class);
+		} catch (Exception e) {
+			// If JSON cannot be parsed, just put the message
+			data = new NotificationData("", record.getMessage(), null);
+		}
+		return new Notification(id, type, level, userId, timeSent, wasRead, data);
+	}
+
 }

@@ -163,6 +163,8 @@ public class TaskLocatorUtil {
 		ret.add(Task03540UpdateTagInodesReferences.class);
 		ret.add(Task03545FixVarcharSizeInFolderOperations.class);
 		ret.add(Task03550RenameContainersTable.class);
+        ret.add(Task03555ModificationDateColumnAddedToUserTable.class);
+        ret.add(Task03700AddingSystemEventTable.class);
         return ret;
     }
 
@@ -184,7 +186,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00009ClusterInitialize.class);
 		ret.add(Task00010CheckAnonymousUser.class);
-		
 		return ret;
 	}
 

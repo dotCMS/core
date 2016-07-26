@@ -29,6 +29,8 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.Validator;
 
+import java.util.Date;
+
 /**
  * <a href="UserUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -103,6 +105,11 @@ public class UserUtil {
 			else {
 				listener.onBeforeUpdate(user);
 			}
+		}
+
+		if (null == user.getModificationDate()) {
+
+			user.setModificationDate(new Date());
 		}
 
 		user = persistence.update(user);

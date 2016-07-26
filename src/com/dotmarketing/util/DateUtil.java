@@ -12,6 +12,15 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 
+/**
+ * Provides utility methods to interact with {@link Date} objects, date formats,
+ * transformation of time units, etc.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class DateUtil {
 
 	public static final String DIFF_YEARS = "diffYears";
@@ -25,11 +34,11 @@ public class DateUtil {
 	 * instead of void like the Calendar does
 	 *
 	 * @param date
-	 *            The date to modify
+	 *            - The date to modify
 	 * @param calendarField
-	 *            The static field from java.util.Calendar to add
+	 *            - The static field from java.util.Calendar to add
 	 * @param numberToAdd
-	 *            The number to add
+	 *            - The number to add
 	 * @return Date
 	 */
 	public static Date addDate(Date date, int calendarField, int numberToAdd) {
@@ -42,7 +51,7 @@ public class DateUtil {
 	/**
 	 * This method will set the time on a date to 00:00:00
 	 *
-	 * @param date
+	 * @param date - 
 	 * @return Date
 	 */
 	public static Date minTime(Date date) {
@@ -58,7 +67,7 @@ public class DateUtil {
 	/**
 	 * This method will set the time on a date to 23:59:59
 	 *
-	 * @param date
+	 * @param date - 
 	 * @return Date
 	 */
 	public static Date maxTime(Date date) {
@@ -75,9 +84,9 @@ public class DateUtil {
 	 * This method will return the diff between to dates
 	 *
 	 * @param from
-	 *            Date
+	 *            - Date
 	 * @param to
-	 *            Date
+	 *            - Date
 	 * @return HashMap
 	 */
 	public static HashMap<String, Long> diffDates(Date from, Date to) {
@@ -122,13 +131,12 @@ public class DateUtil {
 	 * the valid formats
 	 *
 	 * @param date
-	 *            the string to be parsed
+	 *            - the string to be parsed
 	 * @param formats
-	 *            the valid format to parse the string
+	 *            - the valid format to parse the string
 	 * @return return the Date object that represent the string
 	 * @throws java.text.ParseException
 	 */
-
 	public static Date convertDate(String date, String[] formats) throws java.text.ParseException {
 		Date ret = null;
 		for (String pattern : formats) {
@@ -151,6 +159,12 @@ public class DateUtil {
 		return new SimpleDateFormat(format).format(date);
 	}
 
+	/**
+	 * 
+	 * @param date
+	 * @param locale
+	 * @return
+	 */
 	public static String prettyDateSince(Date date, Locale locale) {
 
 		if (locale == null) {
@@ -199,10 +213,21 @@ public class DateUtil {
 		return sinceMessage;
 	}
 
+	/**
+	 * 
+	 * @param date
+	 * @return
+	 */
 	public static String prettyDateSince(Date date) {
 		return prettyDateSince(date, null);
 	}
 
+	/**
+	 * 
+	 * @param date
+	 * @param locale
+	 * @return
+	 */
 	public static String prettyDateSinceWithDate(Date date, Locale locale) {
 		if (locale == null) {
 			Company company = PublicCompanyFactory.getDefaultCompany();
@@ -216,15 +241,35 @@ public class DateUtil {
 
 	}
 
+	/**
+	 * 
+	 * @param date
+	 * @return
+	 */
 	public static String prettyDateSinceWithDate(Date date) {
 		return prettyDateSinceWithDate(date, null);
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public static String getCurrentDate() {
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Date now = Calendar.getInstance().getTime();
 		String date = df.format(now);
 		return date;
+	}
+
+	/**
+	 * Converts the specified number of days to milliseconds.
+	 * 
+	 * @param days
+	 *            - The number of days.
+	 * @return The number of days transformed to milliseconds.
+	 */
+	public static long daysToMillis(int days) {
+		return days * 24 * 3600 * 1000L;
 	}
 
 }
