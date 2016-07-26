@@ -1,47 +1,64 @@
 package com.dotcms.rest.api.v1.system;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.business.ApiProvider;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
 /**
+ * This Jersey end-point provides access to configuration parameters that are
+ * useful to the dotCMS Angular UI. This way, parameters such as URLs or
+ * Websocket end-points can be updated more easily. The idea behind this
+ * approach is to provide new property values as they are needed.
  * 
  * @author Jose Castro
  * @version 3.7
  * @since Jul 22, 2016
  *
  */
+@Path("/v1/configuration")
 @SuppressWarnings("serial")
 public class ConfigurationResource implements Serializable {
 
-	private final WebResource webResource;
+	private final ConfigurationHelper helper;
 
+	/**
+	 * Default constructor.
+	 */
 	public ConfigurationResource() {
-		this(new WebResource(new ApiProvider()));
+		this.helper = ConfigurationHelper.INSTANCE;
 	}
 
-	@VisibleForTesting
-	protected ConfigurationResource(WebResource webResource) {
-		this.webResource = webResource;
-	}
-
+	/**
+	 * Returns the list of system properties that are useful to the UI layer.
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The JSON representation of configuration parameters.
+	 */
 	@GET
 	@JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response get(@Context final HttpServletRequest request) {
-		return null;
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public final Response list(@Context final HttpServletRequest request) {
+		try {
+			final Map<String, Object> configMap = helper.getConfigProperties(request);
+			return Response.ok(new ResponseEntityView(configMap)).build();
+		} catch (Exception e) {
+			// In case of unknown error, so we report it as a 500
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 }
