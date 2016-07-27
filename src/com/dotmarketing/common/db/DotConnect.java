@@ -87,16 +87,18 @@ public class DotConnect {
             throw new DotDataException(e.toString(),e);
         }
     }
-    public void setMaxRows(int x) {
+    public DotConnect setMaxRows(int x) {
         maxRows = x;
+        return this;
     }
 
-    public void setMaxRows(String x) {
+    public DotConnect setMaxRows(String x) {
         try {
             setMaxRows(Integer.parseInt(x));
         } catch (Exception e) {
             throw new DotRuntimeException(e.toString(),e);
         }
+        return this;
     }
 
     public int getMaxRows() {
@@ -264,7 +266,7 @@ public class DotConnect {
 
     }
 
-    public void setSQL(String x) {
+    public DotConnect setSQL(String x) {
         cursor = 0;
         gotResult = false;
         paramList = new ArrayList<Object>();
@@ -273,9 +275,10 @@ public class DotConnect {
         maxRows = -1;
         
         Logger.debug(this, "setSQL: " + x);
+        return this;
     }
     
-    public void setSQL(String x, int limit) {
+    public DotConnect setSQL(String x, int limit) {
         if(DbConnectionFactory.isMsSql()){
         	x = x.trim();
             if(x.startsWith("select distinct"))
@@ -289,6 +292,7 @@ public class DotConnect {
         else {
             setSQL(x+" limit "+limit);
         }
+        return this;
     }
 
     public String getSQL() {
@@ -395,16 +399,18 @@ public class DotConnect {
      * @param startRow
      *            The startRow to set
      */
-    public void setStartRow(int startRow) {
+    public DotConnect setStartRow(int startRow) {
         this.startRow = startRow;
+        return this;
     }
 
-    public void setStartRow(String x) {
+    public DotConnect setStartRow(String x) {
         try {
             setStartRow(Integer.parseInt(x));
         } catch (Exception e) {
             throw new DotRuntimeException(e.toString(),e);
         }
+        return this;
     }
 
     /**
@@ -416,14 +422,16 @@ public class DotConnect {
         return startRow;
     }
 
-    public void addObject(Object x) {
+    public DotConnect addObject(Object x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (Object): " + x);
         paramList.add(paramList.size(), x);
+        return this;
     }
 
-    public void addParam(Object x) {
+    public DotConnect addParam(Object x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (Object): " + x);
         paramList.add(paramList.size(), x);
+        return this;
     }
 
     /**
@@ -432,9 +440,10 @@ public class DotConnect {
      * @param x
      *            The feature to be added to the Param attribute
      */
-    public void addParam(boolean x) {
+    public DotConnect addParam(boolean x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (boolean): " + x);
         paramList.add(paramList.size(), x);
+        return this;
     }
 
     /**
@@ -444,9 +453,10 @@ public class DotConnect {
      * @param x
      *            The feature to be added to the Param attribute
      */
-    public void addParam(int x) {
+    public DotConnect addParam(int x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (int): " + x);
         paramList.add(paramList.size(), x);
+        return this;
     }
 
     /**
@@ -456,9 +466,11 @@ public class DotConnect {
      * @param x
      *            The feature to be added to the Param attribute
      */
-    public void addParam(String x) {
+    public DotConnect addParam(String x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (String): " + x);
         paramList.add(paramList.size(), x);
+        return this;
+        
     }
 
     /**
@@ -467,9 +479,10 @@ public class DotConnect {
      * @param x
      *            The feature to be added to the Param attribute
      */
-    public void addParam(long x) {
+    public DotConnect addParam(long x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (long): " + x);
         paramList.add(paramList.size(), x);
+        return this;
     }
 
     /**
@@ -478,9 +491,10 @@ public class DotConnect {
      * @param x
      *            The feature to be added to the Param attribute
      */
-    public void addParam(double x) {
+    public DotConnect addParam(double x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (double): " + x);
         paramList.add(paramList.size(), x);
+        return this;
     }
 
     /**
@@ -489,9 +503,10 @@ public class DotConnect {
      * @param x
      *            The feature to be added to the Param attribute
      */
-    public void addParam(java.util.Date x) {
+    public DotConnect addParam(java.util.Date x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
         paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
+        return this;
     }
     
     
