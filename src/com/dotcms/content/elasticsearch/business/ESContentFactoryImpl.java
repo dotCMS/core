@@ -1372,7 +1372,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         try(PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
 
                             List<Contentlet> contentToIndex = new ArrayList<>();
-                            int batchSize = 500;
+                            int batchSize = 100;
                             int completed = 0;
 
                             try (ResultSet rs = ps.executeQuery()) {
