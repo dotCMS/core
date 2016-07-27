@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -46,6 +47,11 @@ public class CleanUnDeletedUsersJob implements StatefulJob {
             }
             HibernateUtil.commitTransaction();
         } catch (DotDataException | DotSecurityException e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.error(CleanUnDeletedUsersJob.class, "Error executing rollback", e1);
+            }
             Logger.error(CleanUnDeletedUsersJob.class, "Error executing CleanUnDeletedUsersJob", e);
         }
     }
