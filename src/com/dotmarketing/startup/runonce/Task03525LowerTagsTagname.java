@@ -92,7 +92,7 @@ public class Task03525LowerTagsTagname extends AbstractJDBCStartupTask {
 
             Logger.info(Task03525LowerTagsTagname.class, "Updating tag, lower all tagnames");
 
-            dc.setSQL("UPDATE tag SET tagname=LOWER(tagname);");
+            dc.setSQL("UPDATE tag SET tagname=LOWER(tagname)");
             dc.loadResult();
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
