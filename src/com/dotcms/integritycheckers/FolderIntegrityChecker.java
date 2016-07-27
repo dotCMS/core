@@ -106,7 +106,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             // lets create a temp table and insert all the records coming from
             // the CSV file
-            String tempKeyword = getTempKeyword();
+            String tempKeyword = DbConnectionFactory.getTempKeyword();
 
             String createTempTable = "create "
                     + tempKeyword

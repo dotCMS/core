@@ -1332,9 +1332,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         DotConnect dc = new DotConnect();
         try {
 
+            String tempKeyword = DbConnectionFactory.getTempKeyword();
             // CTU content-to-update table
-            String tableName = "CTU_" + UtilMethods.getRandomNumber(10000000);
-            dc.setSQL("CREATE TEMP TABLE "+tableName+" as select inode from contentlet where mod_user = ?");
+            final String tableName = (DbConnectionFactory.isMsSql()?"#":"") + "CTU_"
+                + UtilMethods.getRandomNumber(10000000);
+
+            String createTempTable = "CREATE "+tempKeyword+" TABLE "+tableName+" as select inode from contentlet "
+                + "where mod_user = ?" + (DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : "");
+
+            dc.setSQL(createTempTable);
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
@@ -1381,6 +1387,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                                         indexAPI.indexContentList(contentToIndex, null, false);
                                         completed += batchSize;
                                         contentToIndex = new ArrayList<>();
+                                        HibernateUtil.getSession().clear();
                                         Logger.info(this,
                                             String.format("Reindexing related content after deletion of user %s. "
                                                 + "Completed: " + completed + " out of " + totalCount,
