@@ -62,7 +62,10 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				if (!session.isOpen()) {
 					closedSessions.add(session);
 				} else {
-					session.getBasicRemote().sendObject(event);
+
+					//if (this.apply (event.getPayload(), session)) {
+						session.getBasicRemote().sendObject(event);
+					//}
 				}
 			}
 			queue.removeAll(closedSessions);

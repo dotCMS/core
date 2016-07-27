@@ -1,5 +1,6 @@
 package com.dotcms.api.system.event;
 
+import java.beans.Visibility;
 import java.io.Serializable;
 
 /**
@@ -16,6 +17,8 @@ public class Payload implements Serializable {
 
 	private final String type;
 	private final Object data;
+	//private final Visibility visibility;
+	//private final String  visibilityId; // user id or role uid, if it is global, this is not need
 
 	/**
 	 * Creates a payload object.
@@ -26,6 +29,7 @@ public class Payload implements Serializable {
 	public Payload(Object data) {
 		this.type = data.getClass().getName();
 		this.data = data;
+	//	visibility = Visibility.GLOBAL;
 	}
 
 	/**

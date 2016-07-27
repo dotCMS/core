@@ -231,6 +231,7 @@ public class Config {
 	    _refreshProperties ();
 	    return props.getStringArray(name);
 	}
+
 	/**
 	 * @deprecated  Use getIntProperty(String name, int default) and
 	 * set an intelligent default
@@ -239,6 +240,14 @@ public class Config {
 	public static int getIntProperty (String name) {
 	    _refreshProperties ();
 	    return props.getInt(name);
+	}
+
+	public static long getLongProperty (String name, final long defaultVal) {
+		_refreshProperties ();
+		if ( props == null ) {
+			return defaultVal;
+		}
+		return props.getLong(name, defaultVal);
 	}
 
 	public static int getIntProperty (String name, int defaultVal) {
