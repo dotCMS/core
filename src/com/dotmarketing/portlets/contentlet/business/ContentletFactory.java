@@ -336,13 +336,14 @@ public abstract class ContentletFactory {
 	/**
 	 * Method will replace user references of the given userId in Contentlets
 	 * with the replacement user id  
-	 * @param userId User Id to replace
+	 * @param userToReplace the user to replace
 	 * @param replacementUserId Replacement User Id
+	 * @param user the user requesting the operation
 	 * @exception DotDataException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */	
-	protected abstract void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException;
-	
+	protected abstract void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException;
+
 	protected abstract void deleteVersion(Contentlet contentlet)throws DotDataException;
 	
 	/**
