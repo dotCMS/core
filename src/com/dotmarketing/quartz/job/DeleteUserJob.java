@@ -23,6 +23,7 @@ import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
+import org.quartz.StatefulJob;
 
 import java.text.MessageFormat;
 import java.util.Date;
@@ -31,7 +32,7 @@ import java.util.UUID;
 /**
  * Created by nollymar on 7/19/16.
  */
-public class DeleteUserJob implements Job {
+public class DeleteUserJob implements StatefulJob {
 
     private final UserAPI uAPI;
     private final NotificationAPI notfAPI;
