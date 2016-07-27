@@ -8,6 +8,7 @@ import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CalendarReminderThread;
+import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
@@ -846,6 +847,45 @@ public class DotInitScheduler {
 			} else {
 				if ((sched.getJobDetail(FSCjobName, FSCobGroup)) != null) {
 					sched.deleteJob(FSCjobName, FSCobGroup);
+				}
+			}
+
+			//Schedule CleanUnDeletedUsersJob
+			String CUUjobName = "CleanUnDeletedUsersJob";
+			String CUUjobGroup = "dotcms_jobs";
+			String CUUtriggerName = "trigger26";
+			String CUUtriggerGroup = "group26";
+
+			if ( Config.getBooleanProperty( "ENABLE_CLEAN_UNDELETED_USERS", true ) ) {
+				try {
+					isNew = false;
+
+					try {
+						if ((job = sched.getJobDetail(CUUjobName, CUUjobGroup)) == null) {
+							job = new JobDetail(CUUjobName, CUUjobGroup, CleanUnDeletedUsersJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob(CUUjobName, CUUjobGroup);
+						job = new JobDetail(CUUjobName, CUUjobGroup, CleanUnDeletedUsersJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+					//By default, the job runs once a day at 12 AM
+					trigger = new CronTrigger(CUUtriggerName, CUUtriggerGroup, CUUjobName, CUUjobGroup, calendar.getTime(), null,Config.getStringProperty("CLEAN_USERS_CRON_EXPRESSION", "0 0 0 1/1 * ? *"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob(CUUtriggerName, CUUtriggerGroup, trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+				if ((sched.getJobDetail(CUUjobName, CUUjobGroup)) != null) {
+					sched.deleteJob(CUUjobName, CUUjobGroup);
 				}
 			}
             

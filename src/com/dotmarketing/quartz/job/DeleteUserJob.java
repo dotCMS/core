@@ -5,8 +5,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
@@ -21,6 +23,7 @@ import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
+import org.quartz.StatefulJob;
 
 import java.text.MessageFormat;
 import java.util.Date;
@@ -29,7 +32,7 @@ import java.util.UUID;
 /**
  * Created by nollymar on 7/19/16.
  */
-public class DeleteUserJob implements Job {
+public class DeleteUserJob implements StatefulJob {
 
     private final UserAPI uAPI;
     private final NotificationAPI notfAPI;
@@ -63,7 +66,17 @@ public class DeleteUserJob implements Job {
             Scheduler sched = QuartzUtils.getSequentialScheduler();
             sched.scheduleJob(jd, trigger);
         } catch (SchedulerException e) {
-            Logger.error(DeleteFieldJob.class, "Error scheduling DeleteUserJob", e);
+            Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
+
+            //Rolling back of user status (deleteInProgress)
+            userToDelete.setDeleteDate(null);
+            userToDelete.setDeleteInProgress(false);
+            try {
+                APILocator.getUserAPI().save(userToDelete, user, false);
+            } catch (DotDataException | DotSecurityException e1) {
+                Logger.error(DeleteUserJob.class, "Error in rollback transaction", e);
+            }
+
             throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
         }
 
@@ -107,9 +120,15 @@ public class DeleteUserJob implements Job {
         } catch (Exception e) {
             try {
                 HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
+
+                //Rolling back of user status (deleteInProgress)
+                userToDelete.setDeleteDate(null);
+                userToDelete.setDeleteInProgress(false);
+                uAPI.save(userToDelete, user, false);
+            } catch (DotDataException | DotSecurityException e1) {
                 Logger.error(this, "Error in rollback transaction", e);
             }
+
             Logger.error(this, String.format("Unable to delete user '%s'.",
                 userToDelete.getUserId() + "/" + userToDelete.getFullName()), e);
 
