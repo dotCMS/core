@@ -1,18 +1,20 @@
-package com.dotcms.web.websocket;
+package com.dotcms.rest.api.v1.system.websocket;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.portal.util.PortalUtil;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
-
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotmarketing.util.Logger;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * This Websocket end-point allows other parts of the system (such as the User
@@ -27,13 +29,22 @@ import com.dotmarketing.util.Logger;
  *
  */
 @SuppressWarnings("serial")
-@ServerEndpoint(value = "/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
+@ServerEndpoint(value = "/api/v1/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
 	private final Queue<Session> queue = new ConcurrentLinkedQueue<>();
 
 	@OnOpen
 	public void open(Session session) {
+
+		System.out.println(session.getPathParameters());
+		System.out.println(session.getId());
+		System.out.println(session.getQueryString());
+		System.out.println(session.getRequestParameterMap());
+		System.out.println(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+		System.out.println(HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession());
+		System.out.println(PrincipalThreadLocal.getName());
+		System.out.println(PortalUtil.getUserId(HttpServletRequestThreadLocal.INSTANCE.getRequest()));
 		queue.add(session);
 	}
 

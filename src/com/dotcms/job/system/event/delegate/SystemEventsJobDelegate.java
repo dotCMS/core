@@ -7,8 +7,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.job.system.event.AbstractJobDelegate;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
-import com.dotcms.web.websocket.SystemEventsWebSocketEndPoint;
-import com.dotcms.web.websocket.WebSocketContainerAPI;
+import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 
