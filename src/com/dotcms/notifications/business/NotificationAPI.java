@@ -1,9 +1,12 @@
 package com.dotcms.notifications.business;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotmarketing.exception.DotDataException;
 
 /**
@@ -26,7 +29,7 @@ import com.dotmarketing.exception.DotDataException;
  * @since Feb 3, 2014
  *
  */
-public interface NotificationAPI {
+public interface NotificationAPI extends Serializable {
 
 	/**
 	 * Sends an information message to the Notification queue.
@@ -63,6 +66,45 @@ public interface NotificationAPI {
 	 */
 	void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException;
 
+	/**
+	 * Sends a customized message to the Notification queue.
+	 *
+	 * @param message
+	 *            - The message that will be displayed to the user.
+	 * @param level
+	 *            - The urgency level of the message according to the
+	 *            {@link NotificationLevel} class.
+	 *
+	 * @param type
+	 * 			  - The type of the notification, by default is gonna be generic
+	 * @param userId
+	 *            - The ID of the user that triggered this notification.
+	 * @throws DotDataException
+	 *             An error occurred when saving the message in the database.
+	 */
+	void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException;
+
+	/**
+	 * Sends a customized message to the Notification queue.
+	 * @param title
+	 *            - title for the message
+	 * @param message
+	 *            - The message that will be displayed to the user.
+	 * @param actions
+	 * 			  - {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+	 * @param level
+	 *            - The urgency level of the message according to the
+	 *            {@link NotificationLevel} class.
+	 *
+	 * @param type
+	 * 			  - The type of the notification, by default is gonna be generic
+	 * @param userId
+	 *            - The ID of the user that triggered this notification.
+	 * @throws DotDataException
+	 *             An error occurred when saving the message in the database.
+	 */
+	 void generateNotification(String title, String message, List<NotificationAction> actions,
+									 NotificationLevel level, NotificationType type, String userId) throws DotDataException;
 	/**
 	 * Returns a notification based on its ID.
 	 * 

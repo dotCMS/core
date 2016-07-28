@@ -83,6 +83,27 @@ public class LanguageUtil {
 	public static String get(Locale locale, String key) throws LanguageException {
 		return get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
 	}
+
+	/**
+	 * Get the i18n message based on the locale and the key (the message should be in the Language.properties, or the specific language file)
+	 * In addition if you have placeholders such as {0}, {1}, etc in order to interpolate arguments, you can use the arguments parameter in order to
+	 * send as much as you need.
+	 * @param locale {@link Locale}
+	 * @param key    {@link String}
+	 * @param arguments {@link Object} array
+	 * @return String
+	 * @throws LanguageException
+     */
+	public static String get(final Locale locale,
+							 final String key,
+							 final Object... arguments) throws LanguageException {
+
+		final String i18nMessage = get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
+
+		return  (null != arguments && arguments.length > 0)?
+			MessageFormat.format(i18nMessage, arguments):
+				i18nMessage;
+	} // get
 	
 	public static String get(Company company, String key)
 	throws LanguageException {

@@ -7,11 +7,9 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.notifications.bean.Notification;
-import com.dotcms.notifications.bean.NotificationData;
-import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.bean.*;
 import com.dotcms.notifications.dto.NotificationDTO;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -67,15 +65,30 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 	@Override
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
-		NotificationData data = new NotificationData("", message, null);
-		String msg = this.marshalUtils.marshal(data);
-		NotificationDTO dto = new NotificationDTO("", msg, NotificationType.GENERIC.name(), level.name(), userId, null,
+
+		generateNotification(message, level, NotificationType.GENERIC, userId);
+	}
+
+	@Override
+	public void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException {
+
+		generateNotification(StringUtils.EMPTY, message, null, level, NotificationType.GENERIC, userId);
+	}
+
+	@Override
+	public void generateNotification(String title, String message, List<NotificationAction> actions,
+									 NotificationLevel level, NotificationType type, String userId) throws DotDataException {
+		final NotificationData data = new NotificationData(title, message, actions);
+		final String msg = this.marshalUtils.marshal(data);
+		final NotificationDTO dto = new NotificationDTO("", msg, type.name(), level.name(), userId, null,
 				false);
-		notificationFactory.saveNotification(dto);
+
+		this.notificationFactory.saveNotification(dto);
+
 		// Adding notification to System Events table
-		Notification n = new Notification(level, userId, data);
-		Payload payload = new Payload(n);
-		SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+		final Notification n = new Notification(level, userId, data);
+		final Payload payload = new Payload(n);
+		final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
 		this.systemEventsAPI.push(systemEvent);
 	}
 
