@@ -3,12 +3,18 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -17,6 +23,7 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -35,8 +42,16 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -61,9 +76,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -111,7 +132,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         	if(DbConnectionFactory.isMySql())
        		 	sql.append(field.getFieldContentlet() + " = ");
        	    else
-       	    	sql.append("\""+field.getFieldContentlet()+"\"" + " = "); 
+       	    	sql.append("\""+field.getFieldContentlet()+"\"" + " = ");
         }else{
             sql.append(field.getFieldContentlet() + " = ");
         }
@@ -553,7 +574,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
                 try {
-                    com.dotmarketing.portlets.contentlet.business.Contentlet c = 
+                    com.dotmarketing.portlets.contentlet.business.Contentlet c =
                             (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, con.getInode());
                     if(c!=null && InodeUtils.isSet(c.getInode())) {
                         HibernateUtil.delete(c);
@@ -841,7 +862,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 	    ArrayList<Contentlet> result = new ArrayList<Contentlet>();
         ArrayList<String> inodesNotFound = new ArrayList<String>();
         for (String i : inodes) {
@@ -858,13 +879,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String hql = "select {contentlet.*} from contentlet join inode contentlet_1_ " +
                 "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
-        
+
         for(int init=0; init < inodesNotFound.size(); init+=200) {
             int end = Math.min(init + 200, inodesNotFound.size());
-            
+
             HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
             hu.setSQLQuery( hql + StringUtils.join(inodesNotFound.subList(init, end), "','") + "')");
-            
+
             List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
             for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
                 Contentlet con = convertFatContentletToContentlet(fatty);
@@ -873,7 +894,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
             HibernateUtil.getSession().clear();
         }
-        
+
         return result;
 	}
 
@@ -1183,10 +1204,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @return
      */
     private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
-    	
-    	
-    	
-    	
+
+
+
+
         if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
@@ -1261,7 +1282,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             		String[] test = sortBy.split("\\s+");
             		String defualtSecondarySort = "moddate";
             		SortOrder defaultSecondardOrder = SortOrder.DESC;
-            		
+
             		if(test.length>2){
             			if(test[2].equalsIgnoreCase("desc"))
             				defaultSecondardOrder = SortOrder.DESC;
@@ -1285,9 +1306,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 					}
             	}
             }
-            
-            
-            
+
+
+
             try{
             	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {
@@ -1297,7 +1318,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 					throw e;
 				}
 			}
-        } catch (Exception e) {          
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 	    return resp.getHits();
@@ -1306,40 +1327,111 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	   User systemUser =  APILocator.getUserAPI().getSystemUser();
-	   updateUserReferences(userId,systemUser.getUserId());
+       User userToReplace = APILocator.getUserAPI().loadUserById(userId);
+	   updateUserReferences(userToReplace,systemUser.getUserId(), systemUser );
 	}
-	
-	/**
-	 * Method will replace user references of the given userId in Contentlets
-	 * with the replacement user id  
-	 * @param userId User Id to replace
-	 * @param replacementUserId Replacement User Id
-	 * @exception DotDataException There is a data inconsistency
-	 * @throws DotSecurityException 
-	 */	
-	protected void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
-	    DotConnect dc = new DotConnect();
-         try {
-           dc.setSQL("Select inode from contentlet where mod_user = ?");
-           dc.addParam(userId);
-           List<HashMap<String, String>> contentInodes = dc.loadResults();
-           
-           dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
-           dc.addParam(replacementUserId);
-           dc.addParam(userId);
-           dc.loadResult();
-           
-           dc.setSQL("update contentlet_version_info set locked_by=? where locked_by  = ?");
-           dc.addParam(replacementUserId);
-           dc.addParam(userId);
-           dc.loadResult();
-           
-           for(HashMap<String, String> ident:contentInodes){
-             String inode = ident.get("inode");
-             cc.remove(inode);
-             Contentlet content = find(inode);
-             new ESContentletIndexAPI().addContentToIndex(content);
-          }
+
+        /**
+         * Method will replace user references of the given User in Contentlets
+         * with the replacement user id
+         * @param userToReplace the user to replace
+         * @param replacementUserId Replacement User Id
+         * @param user the user requesting the operation
+         * @exception DotDataException There is a data inconsistency
+         * @throws DotSecurityException
+         */
+	protected void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+        DotConnect dc = new DotConnect();
+        try {
+
+            // CTU content-to-update table
+            String tableName = "CTU_" + UtilMethods.getRandomNumber(10000000);
+            dc.setSQL("CREATE TEMP TABLE "+tableName+" as select inode from contentlet where mod_user = ?");
+            dc.addParam(userToReplace.getUserId());
+            dc.loadResult();
+
+            dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
+            dc.addParam(replacementUserId);
+            dc.addParam(userToReplace.getUserId());
+            dc.loadResult();
+
+            dc.setSQL("update contentlet_version_info set locked_by=? where locked_by  = ?");
+            dc.addParam(replacementUserId);
+            dc.addParam(userToReplace.getUserId());
+            dc.loadResult();
+
+            FlushCacheRunnable reindexContent = new FlushCacheRunnable() {
+                @Override
+                public void run() {
+
+                    NotificationAPI notAPI = APILocator.getNotificationAPI();
+
+                    try {
+                        ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
+
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("select count(*) as count from " + tableName);
+                        List<Map<String,String>> results = dc.loadResults();
+                        long totalCount = Long.parseLong(results.get(0).get("count"));
+
+                        Connection conn = DbConnectionFactory.getConnection();
+                        try(PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
+
+                            List<Contentlet> contentToIndex = new ArrayList<>();
+                            int batchSize = 500;
+                            int completed = 0;
+
+                            try (ResultSet rs = ps.executeQuery()) {
+                                for (int i = 1; rs.next(); i++) {
+                                    String inode = rs.getString("inode");
+                                    cc.remove(inode);
+                                    Contentlet content = find(inode);
+                                    contentToIndex.add(content);
+                                    contentToIndex.addAll(indexAPI.loadDeps(content));
+
+                                    if (i % batchSize == 0) {
+                                        indexAPI.indexContentList(contentToIndex, null, false);
+                                        completed += batchSize;
+                                        contentToIndex = new ArrayList<>();
+                                        Logger.info(this,
+                                            String.format("Reindexing related content after deletion of user %s. "
+                                                + "Completed: " + completed + " out of " + totalCount,
+                                            userToReplace.getUserId() + "/" + userToReplace.getFullName()));
+                                    }
+                                }
+
+                                // index remaining records if any
+                                if(!contentToIndex.isEmpty()) {
+                                    indexAPI.indexContentList(contentToIndex, null, false);
+                                }
+                            }
+                        }
+
+                        dc.setSQL("DROP TABLE " + tableName);
+                        dc.loadResult();
+
+                        Logger.info(this, String.format("Reindex of updated related content after deleting user %s "
+                                + " has finished successfully.",
+                            userToReplace.getUserId() + "/" + userToReplace.getFullName()));
+
+                        String reindexMsg = MessageFormat.format(LanguageUtil.get(user,
+                            "com.dotmarketing.business.UserAPI.delete.reindex"),
+                            userToReplace.getUserId() + "/" + userToReplace.getFullName());
+
+                        notAPI.info(reindexMsg, user.getUserId());
+
+                    } catch (Exception e) {
+                        Logger.error(this.getClass(),e.getMessage(),e);
+                        notAPI.error(String.format("Unable to Reindex updated related content for deleted user '%s'. "
+                            + "Please run a full Reindex.",
+                            userToReplace.getUserId() + "/" + userToReplace.getFullName()), user.getUserId());
+                    }
+                }
+            };
+
+            HibernateUtil.addCommitListener(reindexContent);
+
+
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);

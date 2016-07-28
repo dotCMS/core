@@ -19,6 +19,7 @@
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="java.util.Map"%>
 <%@ include file="/html/common/init.jsp"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="java.util.List"%>
 <%
 
@@ -196,11 +197,13 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
-                 
-                <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
-                    <span class="fixIcon"></span>
-                    <%= LanguageUtil.get(pageContext,"Update-Replicas-Index") %>
-                </div>
+        <%if(!Config.getBooleanProperty("CLUSTER_AUTOWIRE",true) || !Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){ %>
+            <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
+                <span class="fixIcon"></span>
+                <%= LanguageUtil.get(pageContext,"Update-Replicas-Index") %>
+            </div>
+        <%} %>
+
                 
                 
 			 	<div dojoType="dijit.MenuItem" onClick="showRestoreIndexDialog('<%=x %>');" class="showPointer">

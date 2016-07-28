@@ -5068,13 +5068,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     /**
 	 * Method will replace user references of the given userId in Contentlets
 	 * with the replacement user id
-	 * @param userId User Id to replace
+	 * @param userToReplace the user to replace
 	 * @param replacementUserId Replacement User Id
 	 * @exception DotDataException There is a data error
 	 * @throws DotSecurityException
 	 */
-	public void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotSecurityException{
-		conFac.updateUserReferences(userId, replacementUserId);
+	public void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotSecurityException{
+		conFac.updateUserReferences(userToReplace, replacementUserId, user);
 	}
 
 
