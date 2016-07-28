@@ -128,7 +128,7 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
                 "Delete Field",
                 "Unable to delete field velocityVar. Field Inode: iFieldNode1, Structure Inode: iStructureNode1",
                 null,
-                NotificationLevel.INFO,
+                NotificationLevel.ERROR,
                 NotificationType.GENERIC,
                 "admin@dotcms.com"
         );
