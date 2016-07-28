@@ -8,7 +8,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.structure.model.Structure;
 
-public class ToStructureTransformer  {
+public class ToStructureTransformer implements StructureTransformer  {
 	final List<Structure> list;
 
 	public ToStructureTransformer(ContentType type) {
@@ -52,11 +52,11 @@ public class ToStructureTransformer  {
 
 	}
 
-
+	@Override
 	public Structure from() throws DotStateException {
 		return this.list.get(0);
 	}
-
+	@Override
 	public List<Structure> asList() throws DotStateException {
 		return this.list;
 	}

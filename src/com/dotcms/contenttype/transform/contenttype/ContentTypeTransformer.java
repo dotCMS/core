@@ -5,7 +5,7 @@ import java.util.List;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.DotStateException;
 
-public interface ToContentTypeTransformer {
+public interface ContentTypeTransformer {
 
 	ContentType from() throws DotStateException;
 

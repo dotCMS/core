@@ -108,7 +108,7 @@ public interface Field extends FieldType {
 	@Value.Lazy
 	default List<FieldVariable> fieldVariables(){
 		try {
-			return FactoryLocator.getFieldFactory2().loadVariables(this);
+			return FactoryLocator.fieldFactory().loadVariables(this);
 		} catch (DotDataException e) {
 			throw new DotStateException("unable to load field variables:"  +e.getMessage(), e);
 		}

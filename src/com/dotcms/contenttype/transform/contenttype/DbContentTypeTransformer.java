@@ -12,7 +12,7 @@ import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 
-public class DbContentTypeTransformer implements ToContentTypeTransformer{
+public class DbContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
 	
 	

@@ -199,7 +199,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 		results = dc.loadObjectResults();
 		if (results.size() == 0) {
-			throw new NotFoundInDbException("Content Type with id:" + id + " not found");
+			throw new NotFoundInDbException("Content Type with id:'" + id + "' not found");
 		}
 		return new DbContentTypeTransformer(results.get(0)).from();
 

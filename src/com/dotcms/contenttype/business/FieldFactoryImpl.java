@@ -23,7 +23,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -61,9 +60,6 @@ public class FieldFactoryImpl implements FieldFactory {
 			 return deleteFieldInDb(field);
 		});
 	}
-	
-
-	
 
 	@Override
 	public List<FieldVariable> loadVariables(Field field) throws DotDataException {

@@ -12,7 +12,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.structure.model.Structure;
 
-public class FromStructureTransformer implements ToContentTypeTransformer {
+public class FromStructureTransformer implements ContentTypeTransformer {
 	final List<ContentType> list;
 
 	public FromStructureTransformer(Structure struct) {

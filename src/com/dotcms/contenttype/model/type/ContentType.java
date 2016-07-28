@@ -111,7 +111,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 	@Value.Lazy
 	public  List<Field> fields(){
 		try {
-			return FactoryLocator.getFieldFactory2().byContentType(this);
+			return FactoryLocator.fieldFactory().byContentType(this);
 		} catch (DotDataException e) {
 			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);
 		}

@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.transform.contenttype;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.contenttype.model.type.BaseContentTypes;
@@ -14,7 +13,7 @@ import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 
-public class ImplClassContentTypeTransformer implements ToContentTypeTransformer{
+public class ImplClassContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
 	
 	

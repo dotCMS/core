@@ -30,7 +30,7 @@ import com.liferay.portal.model.User;
 public class ContentTypeApiImpl implements ContentTypeApi {
 
 	ContentTypeFactory fac = FactoryLocator.getContentTypeFactory2();
-	FieldFactory ffac = FactoryLocator.getFieldFactory2();
+	FieldFactory ffac = FactoryLocator.fieldFactory();
 
 	@Override
 	public void delete(ContentType type, User user) throws DotSecurityException, DotDataException {

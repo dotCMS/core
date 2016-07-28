@@ -2,14 +2,12 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import javax.servlet.ServletContext;
-import javax.sql.DataSource;
 
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -33,7 +31,6 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourceForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -49,7 +46,7 @@ public class FieldFactoryImplTest {
 	@BeforeClass
 	public static void initDb() throws DotDataException, Exception {
 		new DataSourceForTesting().setup();
-		Connection c = DbConnectionFactory.getConnection();
+
 
 		ServletContext context = Mockito.mock(ServletContext.class);
 		Config.CONTEXT = context;
@@ -130,6 +127,13 @@ public class FieldFactoryImplTest {
 		}
 	}
 
+	
+	
+	@Test
+	public void testFieldVariables() throws Exception {
+		
+		
+	}
 	
 	
 	
