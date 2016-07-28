@@ -121,6 +121,8 @@ public class DotJobStore extends JobStoreCMT {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.DotMSSQLDelegate");
 				setLockHandler(sem);
+				setAcquireTriggersWithinLock(true);  
+				setSelectWithLockSQL("SELECT * FROM {0}LOCKS WHERE LOCK_NAME = ? FOR UPDATE");
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
