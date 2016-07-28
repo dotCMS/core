@@ -33,6 +33,10 @@ public abstract class FieldSql {
 	public String findByContentTypeVar = SELECT_ALL_FIELDS
 			+ ", structure where inode.inode = field.inode and field.structure_inode = structure.inode and structure.velocity_var_name= ? order by sort_order";
 	
+	
+	public String findByContentTypeAndFieldVar = SELECT_ALL_FIELDS + " where inode.inode = field.inode and structure_inode =? and field.velocity_var_name=?";
+	
+	
 	public String deleteByContentType = "delete from field where structure_inode = ?";
 	public String deleteById = "delete from field where inode = ?";
 	public String deleteInodeById = "delete from inode where inode = ? and type='field'";

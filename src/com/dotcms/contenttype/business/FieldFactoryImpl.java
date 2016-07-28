@@ -38,7 +38,16 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	@Override
 	public Field byId(String id) throws DotDataException {
-		return findInDb(id);
+		return selectInDb(id);
+	}
+	
+	@Override
+	public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
+		return byContentTypeIdFieldVar(type.inode(), var);
+	}
+	@Override
+	public Field byContentTypeIdFieldVar(String id, String var) throws DotDataException {
+		return selectByContentTypeFieldVarInDb(id,var);
 	}
 
 	@Override
@@ -47,11 +56,11 @@ public class FieldFactoryImpl implements FieldFactory {
 	}
 	@Override
 	public List<Field> byContentTypeId(String id) throws DotDataException {
-		return findByContentTypeInDb(id);
+		return selectByContentTypeInDb(id);
 	}
 	@Override
 	public List<Field> byContentTypeVar(String var) throws DotDataException {
-		return findByContentTypeVarInDb(var);
+		return selectByContentTypeVarInDb(var);
 	}
 
 	@Override
@@ -142,7 +151,7 @@ public class FieldFactoryImpl implements FieldFactory {
 	}
 
 	
-	private List<Field> findByContentTypeInDb(String id) throws DotDataException {
+	private List<Field> selectByContentTypeInDb(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.findByContentType);
 		dc.addParam(id);
@@ -151,8 +160,24 @@ public class FieldFactoryImpl implements FieldFactory {
 		return new DbFieldTransformer(results).asList();
 
 	}
+	
+	private Field selectByContentTypeFieldVarInDb(String id,String var) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(sql.findByContentTypeAndFieldVar)
+		.addParam(id)
+		.addParam(var);
+		
 
-	private List<Field> findByContentTypeVarInDb(String var) throws DotDataException {
+		List<Map<String, Object>> results;
+
+		results = dc.loadObjectResults();
+		if (results.size() == 0) {
+			throw new NotFoundInDbException("Field with contentype:" + id + " and var:" + var + " not found");
+		}
+		return new DbFieldTransformer(results.get(0)).from();
+
+	}
+	private List<Field> selectByContentTypeVarInDb(String var) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.findByContentTypeVar);
 		dc.addParam(var);
@@ -162,7 +187,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	}
 
-	private Field findInDb(String id) throws DotDataException {
+	private Field selectInDb(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.findById);
 		dc.addParam(id);

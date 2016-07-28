@@ -35,7 +35,12 @@ public interface FieldFactory {
 	void deleteByContentType(ContentType type) throws DotDataException;
 
 
+	Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException;
 
+
+	Field byContentTypeIdFieldVar(String id, String var) throws DotDataException;
+
+	
 
 
 }

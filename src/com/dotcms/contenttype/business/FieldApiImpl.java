@@ -35,6 +35,11 @@ public class FieldApiImpl implements FieldApi {
 	}
 	
 	@Override
+	public Field byContentTypeAndVar(ContentType type,String fieldVar) throws DotDataException {
+		 return fac.byContentTypeFieldVar(type,fieldVar);
+	}
+	
+	@Override
 	public void deleteFieldsByContentType(ContentType type) throws DotDataException {
 		 fac.deleteByContentType(type);
 	}

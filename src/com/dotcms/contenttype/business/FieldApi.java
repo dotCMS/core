@@ -29,4 +29,6 @@ public interface FieldApi {
 
 	List<Field> byContentType(ContentType type) throws DotDataException;
 
+	Field byContentTypeAndVar(ContentType type, String fieldVar) throws DotDataException;
+
 }
