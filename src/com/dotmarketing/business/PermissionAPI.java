@@ -790,5 +790,7 @@ public interface PermissionAPI {
      */
     boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
 
+	void checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException;
+
 
 }
