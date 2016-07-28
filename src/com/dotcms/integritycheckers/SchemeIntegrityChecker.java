@@ -92,7 +92,7 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
             DotConnect dc = new DotConnect();
             String tempTableName = getTempTableName(endpointId);
 
-            String tempKeyword = getTempKeyword();
+            String tempKeyword = DbConnectionFactory.getTempKeyword();
 
             String createTempTable = "create " + tempKeyword + " table " + tempTableName
                     + " (inode varchar(36) not null, name varchar(255) not null, "

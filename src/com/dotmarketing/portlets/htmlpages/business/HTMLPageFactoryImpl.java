@@ -645,13 +645,10 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
            for(HashMap<String, String> ident:pages){
                String identifier = ident.get("identifier");
 
-			   if(identifier==null) {
-				   Logger.error(this, "Null Identifier found in htmlpage table.");
-				   return;
+			   if(UtilMethods.isSet(identifier)) {
+				   HTMLPage page = loadWorkingPageById(identifier);
+				   CacheLocator.getHTMLPageCache().remove(page);
 			   }
-
-			   HTMLPage page = loadWorkingPageById(identifier);
-			   CacheLocator.getHTMLPageCache().remove(page);
            }
         } catch (DotDataException e) {
             Logger.error(HTMLPageFactory.class,e.getMessage(),e);
