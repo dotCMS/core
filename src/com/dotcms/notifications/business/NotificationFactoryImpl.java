@@ -1,5 +1,7 @@
 package com.dotcms.notifications.business;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -13,6 +15,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -39,7 +42,40 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		dc.addParam(notification.getLevel());
 		dc.addParam(notification.getUserId());
 		dc.addParam(new Date());
-		dc.loadResult();
+
+		Connection conn = null;
+
+		try {
+			conn = DbConnectionFactory.getDataSource().getConnection();
+			conn.setAutoCommit(false);
+			dc.loadResult(conn);
+			conn.commit();
+		} catch (SQLException e) {
+			Logger.error(this, "Error creating notification.", e);
+			try {
+				if(conn!=null) {
+					conn.rollback();
+				}
+			} catch (SQLException q) {
+				Logger.error(this, "Error rolling back transaction.", e);
+			}
+		} finally {
+			if(conn!=null) {
+				try {
+					conn.setAutoCommit(true);
+				} catch (SQLException e) {
+					Logger.error(this, "Error setting autocommit to true.", e);
+				}
+
+				try {
+					conn.close();
+				} catch (SQLException e) {
+					Logger.error(this, "Error closing db connection.", e);
+				}
+			}
+		}
+
+
 		CacheLocator.getNewNotificationCache().remove(notification.getUserId());
 	}
 

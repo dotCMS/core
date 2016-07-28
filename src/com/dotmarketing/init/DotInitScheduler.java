@@ -29,6 +29,7 @@ import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CalendarReminderThread;
+import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
@@ -51,7 +52,7 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * Initializes all dotCMS startup jobs.
- * 
+ *
  * @author David H Torres
  * @version 1.0
  * @since Feb 22, 2012
@@ -63,7 +64,7 @@ public class DotInitScheduler {
 
 	/**
 	 * Configures and initializes every system Job to run on dotCMS.
-	 * 
+	 *
 	 * @throws SchedulerException
 	 *             An error occurred when trying to schedule one of our system
 	 *             jobs.
@@ -860,7 +861,46 @@ public class DotInitScheduler {
 					sched.deleteJob(FSCjobName, FSCobGroup);
 				}
 			}
-			
+
+            //Schedule CleanUnDeletedUsersJob
+            String CUUjobName = "CleanUnDeletedUsersJob";
+            String CUUjobGroup = "dotcms_jobs";
+            String CUUtriggerName = "trigger26";
+            String CUUtriggerGroup = "group26";
+
+            if ( Config.getBooleanProperty( "ENABLE_CLEAN_UNDELETED_USERS", true ) ) {
+                try {
+                    isNew = false;
+
+                    try {
+                        if ((job = sched.getJobDetail(CUUjobName, CUUjobGroup)) == null) {
+                            job = new JobDetail(CUUjobName, CUUjobGroup, CleanUnDeletedUsersJob.class);
+                            isNew = true;
+                        }
+                    } catch (SchedulerException se) {
+                        sched.deleteJob(CUUjobName, CUUjobGroup);
+                        job = new JobDetail(CUUjobName, CUUjobGroup, CleanUnDeletedUsersJob.class);
+                        isNew = true;
+                    }
+                    calendar = GregorianCalendar.getInstance();
+                    //By default, the job runs once a day at 12 AM
+                    trigger = new CronTrigger(CUUtriggerName, CUUtriggerGroup, CUUjobName, CUUjobGroup, calendar.getTime(), null,Config.getStringProperty("CLEAN_USERS_CRON_EXPRESSION", "0 0 0 1/1 * ? *"));
+                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+                    sched.addJob(job, true);
+
+                    if (isNew)
+                        sched.scheduleJob(trigger);
+                    else
+                        sched.rescheduleJob(CUUtriggerName, CUUtriggerGroup, trigger);
+                } catch (Exception e) {
+                    Logger.error(DotInitScheduler.class, e.getMessage(),e);
+                }
+            } else {
+                if ((sched.getJobDetail(CUUjobName, CUUjobGroup)) != null) {
+                    sched.deleteJob(CUUjobName, CUUjobGroup);
+                }
+            }
+
 			// Enabling the System Events Job
 			if (Config.getBooleanProperty("ENABLE_SYSTEM_EVENTS", true)) {
 				JobBuilder systemEventsJob = new JobBuilder().setJobClass(SystemEventsJob.class)
@@ -885,7 +925,7 @@ public class DotInitScheduler {
 						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 				scheduleJob(deleteOldSystemEventsJob);
 			}
-			
+
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (SchedulerException e) {
@@ -897,7 +937,7 @@ public class DotInitScheduler {
 	/**
 	 * Creates a Quartz Job and schedules it for execution. If the Job has
 	 * already been registered, it will be re-scheduled to run again.
-	 * 
+	 *
 	 * @param jobBuilder
 	 *            - Class containing all the information that the Quartz Job
 	 *            needs to execute.
@@ -939,7 +979,7 @@ public class DotInitScheduler {
 
 	/**
 	 * Utility builder class for creating and scheduling Quartz Jobs.
-	 * 
+	 *
 	 * @author Jose Castro
 	 * @version 3.7
 	 * @since Jul 15, 2016
@@ -958,7 +998,7 @@ public class DotInitScheduler {
 
 		/**
 		 * Sets the class representing the Quartz Job to execute.
-		 * 
+		 *
 		 * @param jobClass
 		 *            - The Quartz job.
 		 */
@@ -969,7 +1009,7 @@ public class DotInitScheduler {
 
 		/**
 		 * Sets the name of the Job.
-		 * 
+		 *
 		 * @param jobName
 		 *            - The job name.
 		 */
@@ -980,7 +1020,7 @@ public class DotInitScheduler {
 
 		/**
 		 * Sets the name of the Quartz Group the Job will belong to.
-		 * 
+		 *
 		 * @param jobGroup
 		 *            - The job group name.
 		 */
@@ -991,7 +1031,7 @@ public class DotInitScheduler {
 
 		/**
 		 * Sets the name of the trigger for the specified Job.
-		 * 
+		 *
 		 * @param triggerName
 		 *            - The trigger name.
 		 */
@@ -1002,7 +1042,7 @@ public class DotInitScheduler {
 
 		/**
 		 * Sets the name of the trigger group for the specified Job.
-		 * 
+		 *
 		 * @param triggerGroup
 		 *            - The trigger group name.
 		 */
@@ -1015,7 +1055,7 @@ public class DotInitScheduler {
 		 * Sets the property name in the {@code dotmarketing-config.properties}
 		 * file that contains the user-defined cron expression which defines the
 		 * execution times of the Job.
-		 * 
+		 *
 		 * @param cronExpressionProp
 		 *            - The cron expression property name.
 		 */
@@ -1028,7 +1068,7 @@ public class DotInitScheduler {
 		 * Sets the default value of the Job cron expression in case it's not
 		 * defined in the {@code dotmarketing-config.properties} configuration
 		 * file.
-		 * 
+		 *
 		 * @param cronExpressionPropDefault
 		 *            - The default cron expression value.
 		 */
@@ -1041,7 +1081,7 @@ public class DotInitScheduler {
 		 * Determines what the Quartz handle needs to do if the job scheduler
 		 * discovers a miss-fire situation, i.e., if the application was not
 		 * able to start the job at the specified date/time.
-		 * 
+		 *
 		 * @param cronMissfireInstruction
 		 *            - The miss-fire instruction.
 		 */

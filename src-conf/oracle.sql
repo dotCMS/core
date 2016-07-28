@@ -2641,3 +2641,7 @@ CREATE TABLE system_event (
 	PRIMARY KEY (identifier)
 );
 CREATE INDEX idx_system_event ON system_event (created);
+
+-- Delete User
+ALTER TABLE user_ ADD delete_in_progress number(1,0) default 0;
+ALTER TABLE user_ ADD delete_date DATE;
