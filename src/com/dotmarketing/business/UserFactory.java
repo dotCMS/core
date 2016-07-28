@@ -1,14 +1,14 @@
 package com.dotmarketing.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public abstract class UserFactory {
 
@@ -230,6 +230,13 @@ public abstract class UserFactory {
      */
 	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
 			int pageSize, boolean includeAnonymous) throws DotDataException;
+
+    /**
+     * Search for users that could not be deleted successfully
+     *
+     * @return List of users with uncompleted status
+     */
+    protected abstract List<User> getUnDeletedUsers() throws DotDataException;
 
 
 }

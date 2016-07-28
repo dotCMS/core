@@ -5,6 +5,7 @@ package com.dotmarketing.business;
 
 import java.util.*;
 
+import com.dotcms.repackage.org.apache.commons.collections.ArrayStack;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -14,6 +15,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
@@ -369,6 +371,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		filter = SQLUtil.sanitizeParameter(filter);    		
 		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
 				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " + ((!includeAnonymous)?"AND userid <> 'anonymous'":"") +
+				" and delete_in_progress = false " +
 				"order by firstName asc,lastname asc";
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql);
@@ -394,6 +397,33 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		}
 		return users;    		
 	}
+
+    @Override
+    protected List<User> getUnDeletedUsers() throws DotDataException {
+
+        List<User> users = new ArrayList();
+
+        Calendar calendar = Calendar.getInstance();
+        //By default, the filter searches by registers whose delete_date value is less equals than 24 hours
+        calendar.add(Calendar.HOUR, Config.getIntProperty("CLEAN_UNDELETED_USERS_INTERVAL", -25));
+
+        StringBuilder
+            sql =
+            new StringBuilder("select userid from user_ where delete_in_progress = true and delete_date<='");
+        sql.append(calendar.getTime());
+        sql.append("'");
+        DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(sql.toString());
+
+        List results = dotConnect.loadResults();
+
+        for (int i = 0; i < results.size(); i++) {
+            HashMap hash = (HashMap) results.get(i);
+            String userId = (String) hash.get("userid");
+            users.add(loadUserById(userId));
+        }
+        return users;
+    }
 
     @Override
     public List<String> getUsersIdsByCreationDate ( Date filterDate, int start, int limit ) throws DotDataException {
@@ -530,4 +560,5 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
+
 }
