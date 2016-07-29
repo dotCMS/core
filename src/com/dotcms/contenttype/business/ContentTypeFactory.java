@@ -3,7 +3,7 @@ package com.dotcms.contenttype.business;
 import java.util.List;
 import java.util.Observer;
 
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 
@@ -23,7 +23,7 @@ public interface ContentTypeFactory {
 
 	List<ContentType> findAll(String orderBy) throws DotDataException;
 
-	List<ContentType> findByBaseType(BaseContentTypes type) throws DotDataException;
+	List<ContentType> findByBaseType(BaseContentType type) throws DotDataException;
 
 	List<ContentType> findByBaseType(int type) throws DotDataException;
 
@@ -50,10 +50,10 @@ public interface ContentTypeFactory {
 
 	List<ContentType> search(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException;
 	
-	List<ContentType> search(String search, BaseContentTypes type, String orderBy, int offset, int limit) throws DotDataException;
+	List<ContentType> search(String search, BaseContentType type, String orderBy, int offset, int limit) throws DotDataException;
 
 
-	int searchCount(String search, BaseContentTypes baseType) throws DotDataException;
+	int searchCount(String search, BaseContentType baseType) throws DotDataException;
 
 
 	void delete(ContentType type) throws DotDataException;

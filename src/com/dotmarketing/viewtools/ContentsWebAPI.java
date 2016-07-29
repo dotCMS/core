@@ -1307,22 +1307,7 @@ public class ContentsWebAPI implements ViewTool {
 	public List<String> findFieldValues(String structureName, String fieldName, User user) throws DotDataException {
 		List<String> result = new ArrayList<String>();
 
-		try {
-			@SuppressWarnings("deprecation")
-			Structure structure = CacheLocator.getContentTypeCache().getStructureByName(structureName);
-			if ((structure == null) || !InodeUtils.isSet(structure.getInode()))
-				return result;
-
-			Field field = FieldFactory.getFieldByName(structure.getInode(), fieldName);
-			if ((field == null) || !InodeUtils.isSet(field.getInode()))
-				return result;
-
-			result = conAPI.findFieldValues(structure.getInode(), field, user, true);
-		} catch (Exception e) {
-			Logger.debug(this, e.toString());
-			HibernateUtil.closeSession();
-		}
-
+		Logger.warn(this.getClass(), "findFieldValues search by fieldName name not used and no longer supported");
 		return result;
 	}
 

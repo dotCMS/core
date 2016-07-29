@@ -26,8 +26,8 @@ public abstract class WidgetContentType extends ContentType {
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public BaseContentTypes baseType() {
-		return BaseContentTypes.WIDGET;
+	public BaseContentType baseType() {
+		return BaseContentType.WIDGET;
 	}
 	@Value.Default
 	public boolean multilingualable(){

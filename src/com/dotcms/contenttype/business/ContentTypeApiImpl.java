@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.UUID;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.python.modules.newmodule;
@@ -22,6 +24,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.Preconditions;
@@ -30,7 +33,7 @@ import com.liferay.portal.model.User;
 public class ContentTypeApiImpl implements ContentTypeApi {
 
 	ContentTypeFactory fac = FactoryLocator.getContentTypeFactory2();
-	FieldFactory ffac = FactoryLocator.fieldFactory();
+	FieldFactory ffac = FactoryLocator.getFieldFactory2();
 
 	@Override
 	public void delete(ContentType type, User user) throws DotSecurityException, DotDataException {
@@ -161,4 +164,34 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 	}
 	
+	@Override
+	public List<ContentType> findByBaseType(BaseContentType type, String orderBy, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException {
+		try {
+			return APILocator.getPermissionAPI().filterCollection(this.fac.search("1=1", type, orderBy, offset, limit),
+					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		} catch (DotSecurityException e) {
+			return ImmutableList.of();
+		}
+
+	}
+
+	@Override
+	public List<ContentType> findByType(BaseContentType type, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		try {
+			return APILocator.getPermissionAPI().filterCollection(this.fac.findByBaseType(type),
+					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		} catch (DotSecurityException e) {
+			return ImmutableList.of();
+		}
+	}
+	
+	@Override
+	public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException{
+		List<SimpleStructureURLMap> res = new ArrayList<SimpleStructureURLMap>();
+		for(ContentType type : APILocator.getContentTypeAPI2().findAll(APILocator.systemUser(), false)){
+			res.add(new SimpleStructureURLMap(type.inode(), type.urlMapPattern()));
+		}		
+		return ImmutableList.copyOf(res);
+	}
 }

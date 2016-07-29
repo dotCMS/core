@@ -13,19 +13,17 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.contenttype.business.ContentTypeApiImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
-import com.dotcms.contenttype.transform.contenttype.ToContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.fop.svg.A;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
@@ -199,7 +197,7 @@ public class EditStructureAction extends DotPortletAction {
 		
 
 		if(!type.fixed()){//GIT-780
-			if(type.baseType() == BaseContentTypes.WIDGET
+			if(type.baseType() == BaseContentType.WIDGET
 					&& type.velocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
 						type = ContentTypeBuilder.builder(type).fixed(true).build();
 						APILocator.getContentTypeAPI2().saveContentType(type, type.fields(), user);

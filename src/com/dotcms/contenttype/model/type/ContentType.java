@@ -101,7 +101,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 		return new Date();
 	}
 
-	public abstract BaseContentTypes baseType();
+	public abstract BaseContentType baseType();
 
 	@Value.Default
 	public String host() {
@@ -111,7 +111,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 	@Value.Lazy
 	public  List<Field> fields(){
 		try {
-			return FactoryLocator.fieldFactory().byContentType(this);
+			return FactoryLocator.getFieldFactory2().byContentType(this);
 		} catch (DotDataException e) {
 			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);
 		}

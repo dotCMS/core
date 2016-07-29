@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
-import com.dotcms.contenttype.transform.contenttype.ToContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;

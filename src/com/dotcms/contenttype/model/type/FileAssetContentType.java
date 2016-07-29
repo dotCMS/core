@@ -24,8 +24,8 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public  BaseContentTypes baseType() {
-		return  BaseContentTypes.FILEASSET;
+	public  BaseContentType baseType() {
+		return  BaseContentType.FILEASSET;
 	}
 
 

@@ -2,7 +2,8 @@ package com.dotcms.contenttype.transform.contenttype;
 
 import java.util.List;
 
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
@@ -24,7 +25,7 @@ public class ImplClassContentTypeTransformer implements ContentTypeTransformer{
 
 
 	private static ContentType transformToSubclass(ContentType type) throws DotStateException{
-		final BaseContentTypes TYPE = type.baseType();
+		final BaseContentType TYPE = type.baseType();
 		switch (TYPE) {
 			case CONTENT:
 				return ImmutableSimpleContentType.builder().from(type).build();

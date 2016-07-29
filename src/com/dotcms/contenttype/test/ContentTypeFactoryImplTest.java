@@ -19,7 +19,7 @@ import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
@@ -98,20 +98,20 @@ public class ContentTypeFactoryImplTest {
 		ContentType persona = factory.find(Constants.PERSONA);
 
 		// Test all the types
-		assertThat("ContentType is type Content", content.baseType() == BaseContentTypes.CONTENT);
+		assertThat("ContentType is type Content", content.baseType() == BaseContentType.CONTENT);
 		assertThat("ContentType is type Content", content instanceof ImmutableSimpleContentType);
 		assertThat("News is not simple content", !news.equals(content));
 
-		assertThat("ContentType is type FILEASSET", fileAsset.baseType() == BaseContentTypes.FILEASSET);
+		assertThat("ContentType is type FILEASSET", fileAsset.baseType() == BaseContentType.FILEASSET);
 		assertThat("ContentType is type FILEASSET", fileAsset instanceof ImmutableFileAssetContentType);
-		assertThat("ContentType is type WIDGET", widget.baseType() == BaseContentTypes.WIDGET);
+		assertThat("ContentType is type WIDGET", widget.baseType() == BaseContentType.WIDGET);
 		assertThat("ContentType is type WIDGET", widget instanceof ImmutableWidgetContentType);
 
-		assertThat("ContentType is type FORM", form.baseType() == BaseContentTypes.FORM);
+		assertThat("ContentType is type FORM", form.baseType() == BaseContentType.FORM);
 		assertThat("ContentType is type FORM", form instanceof ImmutableFormContentType);
-		assertThat("ContentType is type PERSONA", persona.baseType() == BaseContentTypes.PERSONA);
+		assertThat("ContentType is type PERSONA", persona.baseType() == BaseContentType.PERSONA);
 		assertThat("ContentType is type PERSONA", persona instanceof ImmutablePersonaContentType);
-		assertThat("ContentType is type HTMLPAGE", htmlPage.baseType() == BaseContentTypes.HTMLPAGE);
+		assertThat("ContentType is type HTMLPAGE", htmlPage.baseType() == BaseContentType.HTMLPAGE);
 		assertThat("ContentType is type HTMLPAGE", htmlPage instanceof ImmutablePageContentType);
 
 	}
@@ -230,7 +230,7 @@ public class ContentTypeFactoryImplTest {
 			long time = System.currentTimeMillis() + i;
 			int base = (i % 5) + 1;
 			Thread.sleep(1);
-			ContentType type = ContentTypeBuilder.builder(BaseContentTypes.getContentTypeClass(base)).description("description" + time)
+			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base)).description("description" + time)
 					.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("ContentTypeTesting" + time).owner("owner")
 					.velocityVarName("velocityVarNameTesting" + time).build();
 			type = factory.save(type);
@@ -246,25 +246,25 @@ public class ContentTypeFactoryImplTest {
 		int totalCount = factory.searchCount(null);
 
 		List<ContentType> types;
-		assertThat("we have at least 40 content types", factory.search(null, BaseContentTypes.ANY, "name", 0, 100).size() > 40);
-		types = factory.search(null, BaseContentTypes.ANY, "name", 0, 5);
+		assertThat("we have at least 40 content types", factory.search(null, BaseContentType.ANY, "name", 0, 100).size() > 40);
+		types = factory.search(null, BaseContentType.ANY, "name", 0, 5);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
-			types = factory.search(null, BaseContentTypes.ANY, "name", x, 5);
+			types = factory.search(null, BaseContentType.ANY, "name", x, 5);
 			assertThat("we have max five content types", types.size() < 6);
 		}
 
-		for (int i = 0; i < BaseContentTypes.values().length; i++) {
-			types = factory.search(null, BaseContentTypes.getBaseContentType(i), "name", 0, 1000);
-			assertThat("we have content types of" + BaseContentTypes.getBaseContentType(i), types.size() > 0);
-			int count = factory.searchCount(null,  BaseContentTypes.getBaseContentType(i));
+		for (int i = 0; i < BaseContentType.values().length; i++) {
+			types = factory.search(null, BaseContentType.getBaseContentType(i), "name", 0, 1000);
+			assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
+			int count = factory.searchCount(null,  BaseContentType.getBaseContentType(i));
 			assertThat("Count works as well", types.size() == count);
 		}
 
 		for (int i = 0; i < searchTerms.length; i++) {
-			types = factory.search(searchTerms[i], BaseContentTypes.ANY, "mod_date desc", 0, 1000);
+			types = factory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 0, 1000);
 			assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
-			int count = factory.searchCount(searchTerms[i],  BaseContentTypes.ANY);
+			int count = factory.searchCount(searchTerms[i],  BaseContentType.ANY);
 			assertThat("Count works as well", types.size() == count);
 		}
 
@@ -275,7 +275,7 @@ public class ContentTypeFactoryImplTest {
 
 		int countAll = factory.searchCount(null);
 		int runs = 20;
-		int countWidgets = factory.searchCount(null, BaseContentTypes.WIDGET);
+		int countWidgets = factory.searchCount(null, BaseContentType.WIDGET);
 
 		for (int i = 0; i < runs; i++) {
 			addWidget();
@@ -283,7 +283,7 @@ public class ContentTypeFactoryImplTest {
 		}
 
 		int countAll2 = factory.searchCount(null);
-		int countWidgets2 = factory.searchCount(null, BaseContentTypes.WIDGET);
+		int countWidgets2 = factory.searchCount(null, BaseContentType.WIDGET);
 		assertThat("counts are working", countAll == countAll2 - runs);
 		assertThat("counts are working", countAll2 > countWidgets2);
 		assertThat("counts are working", countWidgets == countWidgets2 - runs);
@@ -295,7 +295,7 @@ public class ContentTypeFactoryImplTest {
 
 		int countAll = factory.searchCount(null);
 		int runs = 20;
-		int countPersonas = factory.searchCount(null, BaseContentTypes.PERSONA);
+		int countPersonas = factory.searchCount(null, BaseContentType.PERSONA);
 
 		for (int i = 0; i < runs; i++) {
 			addPersona();
@@ -303,7 +303,7 @@ public class ContentTypeFactoryImplTest {
 		}
 
 		int countAll2 = factory.searchCount(null);
-		int countPersonas2 = factory.searchCount(null, BaseContentTypes.PERSONA);
+		int countPersonas2 = factory.searchCount(null, BaseContentType.PERSONA);
 		assertThat("counts are working", countAll == countAll2 - runs);
 		assertThat("counts are working", countAll2 > countPersonas2);
 		assertThat("counts are working", countPersonas == countPersonas2 - runs);
@@ -315,7 +315,7 @@ public class ContentTypeFactoryImplTest {
 
 		int countAll = factory.searchCount(null);
 		int runs = 20;
-		int countFiles = factory.searchCount(null, BaseContentTypes.FILEASSET);
+		int countFiles = factory.searchCount(null, BaseContentType.FILEASSET);
 
 		for (int i = 0; i < runs; i++) {
 			addFileAsset();
@@ -323,7 +323,7 @@ public class ContentTypeFactoryImplTest {
 		}
 
 		int countAll2 = factory.searchCount(null);
-		int countPersonas2 = factory.searchCount(null, BaseContentTypes.FILEASSET);
+		int countPersonas2 = factory.searchCount(null, BaseContentType.FILEASSET);
 		assertThat("counts are working", countAll == countAll2 - runs);
 		assertThat("counts are working", countAll2 > countPersonas2);
 		assertThat("counts are working", countFiles == countPersonas2 - runs);
@@ -335,7 +335,7 @@ public class ContentTypeFactoryImplTest {
 
 		int countAll = factory.searchCount(null);
 		int runs = 20;
-		int countForms = factory.searchCount(null, BaseContentTypes.FORM);
+		int countForms = factory.searchCount(null, BaseContentType.FORM);
 
 		for (int i = 0; i < runs; i++) {
 			addForm();
@@ -343,7 +343,7 @@ public class ContentTypeFactoryImplTest {
 		}
 
 		int countAll2 = factory.searchCount(null);
-		int countForms2 = factory.searchCount(null, BaseContentTypes.FORM);
+		int countForms2 = factory.searchCount(null, BaseContentType.FORM);
 		assertThat("counts are working", countAll == countAll2 - runs);
 		assertThat("counts are working", countAll2 > countForms2);
 		assertThat("counts are working", countForms == countForms2 - runs);

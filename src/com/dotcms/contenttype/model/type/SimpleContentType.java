@@ -12,8 +12,8 @@ public abstract class SimpleContentType extends ContentType implements UrlMapabl
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public  BaseContentTypes baseType() {
-		return  BaseContentTypes.CONTENT;
+	public  BaseContentType baseType() {
+		return  BaseContentType.CONTENT;
 	}
 	public abstract static class Builder implements ContentTypeBuilder {}
 

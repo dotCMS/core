@@ -23,8 +23,8 @@ public abstract class PageContentType extends ContentType{
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public  BaseContentTypes baseType() {
-		return  BaseContentTypes.HTMLPAGE;
+	public  BaseContentType baseType() {
+		return  BaseContentType.HTMLPAGE;
 	}
 	public abstract static class Builder implements ContentTypeBuilder {}
 	

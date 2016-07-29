@@ -11,7 +11,7 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -82,7 +82,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	}
 
 	@Override
-	public List<ContentType> search(String search, BaseContentTypes baseType, String orderBy, int offset, int limit)
+	public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int offset, int limit)
 			throws DotDataException {
 		return dbSearch(search, baseType.getType(), orderBy, offset, limit);
 	}
@@ -118,14 +118,16 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	}
 
 	@Override
-	public int searchCount(String search, BaseContentTypes baseType) throws DotDataException {
+	public int searchCount(String search, BaseContentType baseType) throws DotDataException {
 		return dbCount(search, baseType.getType());
 	}
 
 	@Override
-	public List<ContentType> findByBaseType(BaseContentTypes type) throws DotDataException {
+	public List<ContentType> findByBaseType(BaseContentType type) throws DotDataException {
 		return dbByType(type.getType());
 	}
+	
+	
 	@Override
 	public ContentType findDefaultType() throws DotDataException {
 		return dbSelectDefaultType();
@@ -357,7 +359,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	private List<ContentType> dbSearch(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException {
 		int bottom = (baseType == 0) ? 0 : baseType;
 		int top = (baseType == 0) ? 100000 : baseType;
-
+		limit = (limit <0) ? 10000:limit;
 		// our legacy code passes in raw sql conditions and so we need to detect
 		// and handle those
 		SearchCondition searchCondition = new SearchCondition(search);

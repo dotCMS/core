@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -32,7 +32,7 @@ public class FromStructureTransformer implements ContentTypeTransformer {
 	private ContentType transform(final Structure struct) throws DotStateException {
 
 		
-		BaseContentTypes base =  BaseContentTypes.getBaseContentType(struct.getStructureType());
+		BaseContentType base =  BaseContentType.getBaseContentType(struct.getStructureType());
 
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
@@ -119,8 +119,8 @@ public class FromStructureTransformer implements ContentTypeTransformer {
 			}
 
 			@Override
-			public BaseContentTypes baseType() {
-				return BaseContentTypes.getBaseContentType(struct.getStructureType());
+			public BaseContentType baseType() {
+				return BaseContentType.getBaseContentType(struct.getStructureType());
 			}
 			@Override
 			public List<Field> fields() {

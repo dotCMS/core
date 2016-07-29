@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
@@ -34,8 +34,8 @@ public class ContentTypeBuilderTest {
 	
 	@Test
 	public void testAllContentTypeBuilders() throws Exception {
-		for(BaseContentTypes  type : BaseContentTypes.values()){
-			if(type==BaseContentTypes.ANY)continue;
+		for(BaseContentType  type : BaseContentType.values()){
+			if(type==BaseContentType.ANY)continue;
 			ContentTypeBuilder.instanceOf(type.implClass());
 			ContentTypeBuilder.builder(type.implClass()).inode("asd");
 			

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.BaseContentTypes;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -30,7 +30,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 	
 	
 	private static ContentType transform(final Map<String, Object> map) throws DotStateException {
-		BaseContentTypes base =  BaseContentTypes.getBaseContentType((Integer) map.get("structuretype"));
+		BaseContentType base =  BaseContentType.getBaseContentType((Integer) map.get("structuretype"));
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
 			@Override
@@ -114,7 +114,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 				return (Date) map.get("idate");
 			}
 			@Override
-			public BaseContentTypes baseType() {
+			public BaseContentType baseType() {
 				return base;
 			}
 

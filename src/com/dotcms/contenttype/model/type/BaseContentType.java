@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
 
-public enum BaseContentTypes {
+public enum BaseContentType {
 	ANY(0, ContentType.class),
 	CONTENT(1, SimpleContentType.class),
 	WIDGET(2, WidgetContentType.class),
@@ -13,7 +13,7 @@ public enum BaseContentTypes {
 	int type;
 	Class implClass;
 	
-	BaseContentTypes(int type, Class clazz) {
+	BaseContentType(int type, Class clazz) {
 		this.type = type;
 		this.implClass=clazz;
 	}
@@ -28,9 +28,9 @@ public enum BaseContentTypes {
 	public Class implClass() {
 		return implClass;
 	}
-	public static BaseContentTypes getBaseContentType (int value) {
-		BaseContentTypes[] types = BaseContentTypes.values();
-		for (BaseContentTypes type : types) {
+	public static BaseContentType getBaseContentType (int value) {
+		BaseContentType[] types = BaseContentType.values();
+		for (BaseContentType type : types) {
 			if (type.type==value){
 				return type;
 			}
@@ -39,8 +39,8 @@ public enum BaseContentTypes {
 	}
 	
 	public static Class getContentTypeClass (int value) {
-		BaseContentTypes[] types = BaseContentTypes.values();
-		for (BaseContentTypes type : types) {
+		BaseContentType[] types = BaseContentType.values();
+		for (BaseContentType type : types) {
 			if (type.type==value){
 				return type.implClass;
 			}
