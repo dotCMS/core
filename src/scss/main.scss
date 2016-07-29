@@ -1,4 +1,3 @@
-
 @import "variables";
 @import "mixins";
 @import "grids";
@@ -20,6 +19,14 @@ html, body {
 body {
     background-repeat: no-repeat;
     background-position: top center;
+}
+
+a {
+    color: $primary;
+
+    &:hover {
+        text-decoration: none;
+    }
 }
 
 // This is legacy code, needs to once we refactor rule-engine component and remove semantic-ui

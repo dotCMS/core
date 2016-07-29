@@ -1,4 +1,18 @@
-<li>
-    <h4>{{data.title}}</h4>
-    <p>{{data.message}}</p>
+<li class="notification-item {{data.level | lowercase}}">
+    <button md-icon-button (click)="onClear()" class="notification-item__close">
+        <md-icon class="md-24">close</md-icon>
+    </button>
+
+    <div class="notification-item__wrapper">
+        <md-icon class="notification-item__icon">{{getIconName(data.level)}}</md-icon>
+        <div class="notification-item__content">
+            <h4 *ngIf="showTitleLinked" class="notification-item__title"><a [href]="data.notificationData.actions[0].action">{{data.notificationData.title}}</a></h4>
+            <h4 *ngIf="!showTitleLinked" class="notification-item__title">{{data.notificationData.title}}</h4>
+            <p class="notification-item__message">
+                {{data.notificationData.message}}
+                <a *ngIf="showLinkAction" [href]="data.notificationData.actions[0].action" class="notification-item__link">{{data.notificationData.actions[0].text}}</a>
+            </p>
+            <!--TODO: hand more than one action-->
+        </div>
+    </div>
 </li>

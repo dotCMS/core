@@ -6,12 +6,24 @@
 
     dot-notifications-list {
         font-size: rem-cal(14px);
+        margin: 0 1rem;
+    }
+
+    .badge {
+        background-color: $secondary;
+        border-radius: 2px;
+        font-size: rem-cal(12px);
+        line-height: rem-cal(12px);
+        padding: 2px 5px;
+        position: absolute;
+        right: 0;
+        top: 0;
+
     }
 
     .toolbar-notifications {
         @include box_shadow(2);
         background-color: $white;
-        padding: 20px;
         color: $black;
         position: absolute;
         right: 0;
@@ -30,7 +42,21 @@
         }
     }
 
+    .toolbar-notifications__content {
+        height: 320px;
+        overflow: scroll;
+    }
+
+    .toolbar-notifications__heading {
+        display: flex;
+        margin-bottom: rem-cal(10px);
+        justify-content: space-between;
+        padding: rem-cal(12px) 1rem 0;
+    }
+
     .toolbar-notifications__title {
-        margin-top: 0;
+        align-self: center;
+        font-size: rem-cal(18px);
+        margin: 0;
     }
 }

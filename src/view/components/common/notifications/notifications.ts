@@ -1,10 +1,17 @@
-import {Component, ViewEncapsulation, Input} from '@angular/core';
+import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
 import {INotification} from '../../../../api/services/notifications-service';
 
+// Pipes
+import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
+
+// Angular Material components
+import {MdIcon} from '@angular2-material/icon/icon';
+
 @Component({
-    directives: [],
+    directives: [MdIcon],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
+    pipes: [CapitalizePipe],
     providers: [],
     selector: 'dot-notifications-item',
     styleUrls: ['notifications-item.css'],
@@ -13,7 +20,36 @@ import {INotification} from '../../../../api/services/notifications-service';
 })
 export class NotificationsItem {
     @Input() data;
-    constructor() {}
+    @Output() clear = new EventEmitter<Object>();
+
+    private showLinkAction:boolean = false;
+    private showTitleLinked:boolean = false;
+    private notificationIcons:Object = {
+        'WARNING': 'cancel',
+        'ERROR': 'warning',
+        'INFO': 'info'
+    };
+
+    constructor() {
+    }
+
+    ngOnInit():void {
+        // TODO: hand more than one action
+        //console.log(this.data);
+        let actions = this.data.actions ? this.data.actions[0] : null;
+        this.showLinkAction = actions && actions.actionType === 'LINK' && (actions.text || actions.text !== '') && actions.action && actions.action !== '';
+        this.showTitleLinked = actions && actions.actionType === 'LINK' && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
+    }
+
+    getIconName(val:string) {
+        return this.notificationIcons[val];
+    }
+
+    onClear() {
+        this.clear.emit({
+            id: this.data.id
+        });
+    }
 }
 
 @Component({
@@ -27,6 +63,11 @@ export class NotificationsItem {
 })
 export class NotificationsList {
     @Input() notifications:INotification;
+    @Output() dismissNotification = new EventEmitter<Object>()
 
     constructor() {}
+
+    onClearNotification($event) {
+        this.dismissNotification.emit($event);
+    }
 }
