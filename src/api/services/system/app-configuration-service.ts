@@ -1,32 +1,43 @@
-import {Routes} from '@ngrx/router';
+import { Routes } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx';
 
-import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
-import {IframeLegacyComponent} from '../../view/components/common/iframe-legacy/IframeLegacyComponent';
+import {IframeLegacyComponent} from '../../../view/components/common/iframe-legacy/IframeLegacyComponent';
+import {RuleEngineContainer} from '../../../view/components/rule-engine/rule-engine.container';
 
-export class RoutingService {
+export class AppConfigurationService {
 
     private menus: Array<any>;
 
     private mapComponents;
 
+    /**
+     * Default constructor of the service.
+     */
     constructor() {
         this.mapComponents = {
             'RULES_ENGINE_PORTLET': RuleEngineContainer,
         };
     }
 
-   public getRoutes(): Observable<any> {
+    /**
+     * Transforms the response sent by the App Configuration end-point into
+     * a useful easier to read object that other components can inject in
+     * order to access system configuration parameters.
+     *
+     * @returns {any} The Observable containing useful dotCMS configuration
+     *          data.
+     */
+   public getConfigProperties(): Observable<any> {
         return Observable.create(observer => {
-            this.getMenus().subscribe((navigationItems) => {
+            this.getConfig().subscribe((configurationItems) => {
                 // TODO: do this more elegant
                 // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
                 let routes: Routes = [];
                 let mapPaths = {};
-                if (navigationItems.errors.length > 0) {
-                    console.log(navigationItems.errors[0].message);
-                }else {
-                    navigationItems.entity.forEach((item) => {
+                if (configurationItems.errors.length > 0) {
+                    console.log(configurationItems.errors[0].message);
+                } else {
+                    configurationItems.entity.menu.forEach((item) => {
                         item.menuItems.forEach(subMenuItem => {
                             if (subMenuItem.angular) {
                                 routes.push({
@@ -44,9 +55,12 @@ export class RoutingService {
                     path: '/portlet/:id',
                 });
                 observer.next({
+                    dotcmsConfig: {
+                        properties: configurationItems.entity.config,
+                    },
                     menuItems: {
                         mapPaths: mapPaths,
-                        navigationItems: navigationItems.entity,
+                        navigationItems: configurationItems.entity.menu,
                     },
                     routes: routes,
                 });
@@ -56,7 +70,13 @@ export class RoutingService {
 
    }
 
-   private getMenus(): Observable<any> {
+    /**
+     * Returns the configuration parameters for this Web App through the
+     * configuration end-point.
+     *
+     * @returns {any} A JSON response with the app configuration parameters.
+     */
+   private getConfig(): Observable<any> {
 
         return Observable.create(observer => {
             let oReq = new XMLHttpRequest();
@@ -73,7 +93,7 @@ export class RoutingService {
                     observer.complete();
                 }
             });
-            oReq.open('GET', '/api/v1/core_web/menu');
+            oReq.open('GET', '/api/v1/appconfiguration');
             oReq.send();
         });
    }

@@ -1,6 +1,6 @@
 import {Component, Inject} from '@angular/core';
 import {Accordion, AccordionGroup} from '../accordion/accordion';
-import {RoutingService} from '../../../../api/services/routing-service';
+import {AppConfigurationService} from '../../../../api/services/system/app-configuration-service';
 import {provideRouter, ROUTES} from '@ngrx/router';
 import {provide} from '@angular/core';
 
@@ -18,7 +18,7 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
 
 export class MainNavigation {
 
-    constructor(@Inject('menuItems') private menuItems: Array<any>, private _routingService: RoutingService) {
+    constructor(@Inject('menuItems') private menuItems: Array<any>, private _appConfigurationService: AppConfigurationService) {
         // TODO update dinamically menuItems and routes calling
         // this.updateRoutes();
 
@@ -30,7 +30,7 @@ export class MainNavigation {
      * are not visible in the other component
      */
     public updateRoutes(): void {
-        this._routingService.getRoutes().subscribe(menu => {
+        this._appConfigurationService.getConfigProperties().subscribe(menu => {
             this.menuItems = menu.menuItems;
             provide('menuItems', {useValue: menu.menuItems});
             provideRouter(menu.routers);
