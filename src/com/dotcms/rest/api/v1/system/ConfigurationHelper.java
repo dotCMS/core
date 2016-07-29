@@ -17,7 +17,8 @@ import com.dotmarketing.util.Config;
 /**
  * A utility class that provides the required dotCMS configuration properties to
  * the {@link ConfigurationResource} end-point. The idea behind this approach is
- * to add new property values as they are needed.
+ * to provide other system modules - such as the UI - with access to specific 
+ * system properties as they are needed.
  * 
  * @author Jose Castro
  * @version 3.7

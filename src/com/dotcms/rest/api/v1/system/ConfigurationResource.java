@@ -18,9 +18,9 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 
 /**
  * This Jersey end-point provides access to configuration parameters that are
- * useful to the dotCMS Angular UI. This way, parameters such as URLs or
- * Websocket end-points can be updated more easily. The idea behind this
- * approach is to provide new property values as they are needed.
+ * set through the property files for dotCMS configuration:
+ * {@code dotmarketing-config.properties}, and
+ * {@code dotcms-config-cluster.properties}.
  * 
  * @author Jose Castro
  * @version 3.7
@@ -41,7 +41,8 @@ public class ConfigurationResource implements Serializable {
 	}
 
 	/**
-	 * Returns the list of system properties that are useful to the UI layer.
+	 * Returns the list of system properties that are set through the dotCMS
+	 * configuration files.
 	 * 
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
@@ -53,8 +54,8 @@ public class ConfigurationResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-			final Map<String, Object> configMap = helper.getConfigProperties(request);
-			return Response.ok(new ResponseEntityView(configMap)).build();
+			final Map<String, Object> configPropsMap = helper.getConfigProperties(request);
+			return Response.ok(new ResponseEntityView(configPropsMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

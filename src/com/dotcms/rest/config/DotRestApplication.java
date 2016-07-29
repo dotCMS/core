@@ -15,6 +15,7 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueRe
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotcms.rest.api.v1.system.AppConfigurationResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
@@ -90,6 +91,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(LoginFormResource.class);
 					REST_CLASSES.add(ForgotPasswordResource.class);
 					REST_CLASSES.add(ConfigurationResource.class);
+					REST_CLASSES.add(AppConfigurationResource.class);
 				}
 			}
 		}
