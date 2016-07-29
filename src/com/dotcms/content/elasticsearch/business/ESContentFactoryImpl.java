@@ -1349,12 +1349,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final String tableName = (DbConnectionFactory.isMsSql()?"#":"") + "CTU_"
                 + UtilMethods.getRandomNumber(10000000);
 
-            String createTempTable = "CREATE "+tempKeyword+" TABLE "+tableName+" as select inode from contentlet "
-                + "where mod_user = ?" + (DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : "");
+            StringBuilder createTempTable = new StringBuilder();
 
-            dc.setSQL(createTempTable);
-            dc.addParam(userToReplace.getUserId());
-            dc.loadResult();
+            if (DbConnectionFactory.isMsSql()) {
+                createTempTable.append("SELECT inode INTO ");
+                createTempTable.append(tableName);
+                createTempTable.append(" FROM contentlet WHERE mod_user = '");
+                createTempTable.append(user.getUserId());
+                createTempTable.append("'");
+            } else {
+                createTempTable.append("CREATE ");
+                createTempTable.append(tempKeyword);
+                createTempTable.append(" TABLE ");
+                createTempTable.append(tableName);
+                createTempTable.append(DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : " ");
+                createTempTable.append("as select inode from contentlet ");
+                createTempTable.append("where mod_user = '");
+                createTempTable.append(userToReplace.getUserId());
+                createTempTable.append("'");
+            }
+
+            dc.executeStatement(createTempTable.toString());
 
             dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
             dc.addParam(replacementUserId);
@@ -1439,11 +1454,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             HibernateUtil.addCommitListener(reindexContent);
 
 
-        } catch (DotDataException e) {
+        } catch (DotDataException | SQLException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
-	}
+    }
 
 	@Override
     protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
