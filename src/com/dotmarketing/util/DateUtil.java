@@ -41,8 +41,11 @@ public class DateUtil {
 	 *            - The number to add
 	 * @return Date
 	 */
-	public static Date addDate(Date date, int calendarField, int numberToAdd) {
-		Calendar c = Calendar.getInstance();
+	public static Date addDate(final Date date,
+							   final int calendarField,
+							   final int numberToAdd) {
+
+		final Calendar c = Calendar.getInstance();
 		c.setTime(date);
 		c.add(calendarField, numberToAdd);
 		return c.getTime();
@@ -54,8 +57,8 @@ public class DateUtil {
 	 * @param date - 
 	 * @return Date
 	 */
-	public static Date minTime(Date date) {
-		Calendar c = Calendar.getInstance();
+	public static Date minTime(final Date date) {
+		final Calendar c = Calendar.getInstance();
 		c.setTime(date);
 		c.set(Calendar.HOUR, 0);
 		c.set(Calendar.MINUTE, 0);
@@ -70,8 +73,8 @@ public class DateUtil {
 	 * @param date - 
 	 * @return Date
 	 */
-	public static Date maxTime(Date date) {
-		Calendar c = Calendar.getInstance();
+	public static Date maxTime(final Date date) {
+		final Calendar c = Calendar.getInstance();
 		c.setTime(date);
 		c.set(Calendar.HOUR, 11);
 		c.set(Calendar.MINUTE, 59);
@@ -88,13 +91,20 @@ public class DateUtil {
 	 * @param to
 	 *            - Date
 	 * @return HashMap
+	 * 		- {@link DateUtil}.DIFF_YEARS
+	 *		- {@link DateUtil}.DIFF_MONTHS
+	 *		- {@link DateUtil}.DIFF_DAYS
+	 *		- {@link DateUtil}.DIFF_HOURS
+	 *		- {@link DateUtil}.DIFF_MINUTES
 	 */
-	public static HashMap<String, Long> diffDates(Date from, Date to) {
-		HashMap<String, Long> result = new HashMap<String, Long>(8);
+	public static HashMap<String, Long> diffDates(final Date from, final Date to) {
+		final HashMap<String, Long> result = new HashMap<String, Long>(8);
+
 		try {
-			Calendar toCal = new GregorianCalendar();
+
+			final Calendar toCal = new GregorianCalendar();
 			toCal.setTime(to);
-			Calendar fromCal = new GregorianCalendar();
+			final Calendar fromCal = new GregorianCalendar();
 			fromCal.setTime(from);
 			long diffYears = 0;
 			long diffMonths = -1;
@@ -111,11 +121,11 @@ public class DateUtil {
 			result.put(DIFF_YEARS, diffYears);
 			result.put(DIFF_MONTHS, diffMonths);
 
-			long milliSecondDiff = to.getTime() - from.getTime();
-			long diffDays = milliSecondDiff / (24 * 3600 * 1000);
-			long diffHours = milliSecondDiff / (3600 * 1000);
-			long timeLeft = milliSecondDiff % (3600 * 1000);
-			long diffMinutes = timeLeft / (60 * 1000);
+			final long milliSecondDiff = to.getTime() - from.getTime();
+			final long diffDays = milliSecondDiff / (24 * 3600 * 1000);
+			final long diffHours = milliSecondDiff / (3600 * 1000);
+			final long timeLeft = milliSecondDiff % (3600 * 1000);
+			final long diffMinutes = timeLeft / (60 * 1000);
 
 			result.put(DIFF_DAYS, diffDays);
 			result.put(DIFF_HOURS, diffHours);
@@ -137,9 +147,10 @@ public class DateUtil {
 	 * @return return the Date object that represent the string
 	 * @throws java.text.ParseException
 	 */
-	public static Date convertDate(String date, String[] formats) throws java.text.ParseException {
+	public static Date convertDate(final String date,
+								   final String[] formats) throws java.text.ParseException {
 		Date ret = null;
-		for (String pattern : formats) {
+		for (String pattern : formats) { // todo: usually the formaters are cached and thread-safe
 			try {
 				ret = new SimpleDateFormat(pattern).parse(date);
 				break;
@@ -155,29 +166,58 @@ public class DateUtil {
 	/**
 	 * This method takes a Date and the desired format to convert it to a String
 	 */
-	public static String formatDate(Date date, String format) {
+	public static String formatDate(final Date date,
+									final String format) {
+
 		return new SimpleDateFormat(format).format(date);
 	}
 
 	/**
-	 * 
+	 * Pretty format for a date using as to Date the current Date.
+	 * For instance if the locale is english, and the distance between today and the date parameter is more than a year, a message such as will be returned:
+	 *
+	 * "more than a year ago"
+	 *
+	 * The same for months, days, etc.
+	 *
+	 * see {@link DateUtilTest} to check more about it
+	 *
 	 * @param date
 	 * @param locale
-	 * @return
+	 * @return String
 	 */
-	public static String prettyDateSince(Date date, Locale locale) {
+	public static String prettyDateSince(final Date date, final Locale locale) {
+
+		return prettyDateSince(date, locale, new Date());
+	}
+	/**
+	 * Pretty format for a date using as to date the toDate parameter
+	 * For instance if the locale is english, and the distance between today and the date parameter is more than a year, a message such as will be returned:
+	 *
+	 * "more than a year ago"
+	 *
+	 * The same for months, days, etc.
+	 *
+	 * see {@link DateUtilTest} to check more about it
+	 *
+	 * @param fromDate
+	 * @param locale
+	 * @param toDate
+	 * @return String
+	 */
+	public static String prettyDateSince(final Date fromDate,
+										 Locale locale,
+										 final Date toDate) {
 
 		if (locale == null) {
 			Company company = PublicCompanyFactory.getDefaultCompany();
 			locale = company.getLocale();
 		}
 		String sinceMessage = null;
-		SimpleDateFormat sdf = new SimpleDateFormat("h:mm aa, MMMM d?, yyyy", locale);
-		String modDate = sdf.format(date);
-		modDate = modDate.replaceAll("\\?", "th");
+
 		try {
 
-			HashMap<String, Long> diffDates = DateUtil.diffDates(date, new Date());
+			HashMap<String, Long> diffDates = DateUtil.diffDates(fromDate, toDate);
 			if (0 < diffDates.get(DateUtil.DIFF_YEARS)) {
 				sinceMessage = LanguageUtil.get(locale, "more-than-a-year-ago");
 			} else if (1 < diffDates.get(DateUtil.DIFF_MONTHS)) {
@@ -254,7 +294,7 @@ public class DateUtil {
 	 * 
 	 * @return
 	 */
-	public static String getCurrentDate() {
+	public static String getCurrentDate() { // todo: this should be configurable for all the app (the default format date)
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Date now = Calendar.getInstance().getTime();
 		String date = df.format(now);

@@ -27,6 +27,8 @@ public class BaseMessageResources {
                 new PropertyMessageResources(factory,
                         "messages.Language");
 
+        messageResources.setReturnNull(true);
+
         WebAppPool.put(User.DEFAULT, Globals.MESSAGES_KEY, messageResources);
     }
 

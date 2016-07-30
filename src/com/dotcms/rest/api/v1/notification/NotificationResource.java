@@ -26,7 +26,12 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
+/**
+ * Resource to handle the notification stuff.
+ * - Mark as read
+ * - Get notification
+ * - Remove notification
+ */
 @Path("/v1/notification")
 public class NotificationResource {
 
