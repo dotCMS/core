@@ -1,3 +1,4 @@
+import {DotcmsConfig} from './system/dotcms-config';
 import {Inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
@@ -15,13 +16,13 @@ export class DotcmsEventsService {
      * Initializes this service with the configuration properties that are
      * necessary for opening the Websocket with the System Events end-point.
      *
-     * @param _dotcmsConfig - The dotCMS configuration properties that include
+     * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(@Inject('dotcmsConfig') private _dotcmsConfig: any) {
-        this.protocol = _dotcmsConfig.properties['dotcms.websocket.protocol'];
-        this.baseUrl = _dotcmsConfig.properties['dotcms.websocket.baseurl'];
-        this.endPoint = _dotcmsConfig.properties['dotcms.websocket.endpoints']['websocket.systemevents.endpoint'];
+    constructor(@Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig) {
+        this.protocol = dotcmsConfig.getWebsocketProtocol();
+        this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
+        this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
     }
 
     /**

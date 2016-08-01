@@ -30,11 +30,11 @@ export class MainNavigation {
      * are not visible in the other component
      */
     public updateRoutes(): void {
-        this._appConfigurationService.getConfigProperties().subscribe(menu => {
-            this.menuItems = menu.menuItems;
-            provide('menuItems', {useValue: menu.menuItems});
-            provideRouter(menu.routers);
-            provide(ROUTES, { useValue: menu.routes });
+        this._appConfigurationService.getConfigProperties().subscribe(configData => {
+            this.menuItems = configData.menuItems;
+            provide('menuItems', {useValue: configData.menuItems});
+            provideRouter(configData.routers);
+            provide(ROUTES, { useValue: configData.routes });
         }, (error) => {
             console.log( error);
         });

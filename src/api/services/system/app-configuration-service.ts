@@ -1,8 +1,8 @@
-import { Routes } from '@ngrx/router';
+import { DotcmsConfig } from './dotcms-config';
+import { IframeLegacyComponent } from '../../../view/components/common/iframe-legacy/IframeLegacyComponent';
 import { Observable } from 'rxjs/Rx';
-
-import {IframeLegacyComponent} from '../../../view/components/common/iframe-legacy/IframeLegacyComponent';
-import {RuleEngineContainer} from '../../../view/components/rule-engine/rule-engine.container';
+import { Routes } from '@ngrx/router';
+import { RuleEngineContainer } from '../../../view/components/rule-engine/rule-engine.container';
 
 export class AppConfigurationService {
 
@@ -34,6 +34,7 @@ export class AppConfigurationService {
                 // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
                 let routes: Routes = [];
                 let mapPaths = {};
+                let dotcmsConfig = new DotcmsConfig(configurationItems.entity);
                 if (configurationItems.errors.length > 0) {
                     console.log(configurationItems.errors[0].message);
                 } else {
@@ -55,19 +56,16 @@ export class AppConfigurationService {
                     path: '/portlet/:id',
                 });
                 observer.next({
-                    dotcmsConfig: {
-                        properties: configurationItems.entity.config,
-                    },
+                    dotcmsConfig: dotcmsConfig,
                     menuItems: {
                         mapPaths: mapPaths,
-                        navigationItems: configurationItems.entity.menu,
+                        navigationItems: dotcmsConfig.getNavigationMenu(),
                     },
                     routes: routes,
                 });
                 observer.complete();
             });
         });
-
    }
 
     /**
