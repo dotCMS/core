@@ -1,32 +1,44 @@
-import {Routes} from '@ngrx/router';
+import { DotcmsConfig } from './dotcms-config';
+import { IframeLegacyComponent } from '../../../view/components/common/iframe-legacy/IframeLegacyComponent';
 import { Observable } from 'rxjs/Rx';
+import { Routes } from '@ngrx/router';
+import { RuleEngineContainer } from '../../../view/components/rule-engine/rule-engine.container';
 
-import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
-import {IframeLegacyComponent} from '../../view/components/common/iframe-legacy/IframeLegacyComponent';
-
-export class RoutingService {
+export class AppConfigurationService {
 
     private menus: Array<any>;
 
     private mapComponents;
 
+    /**
+     * Default constructor of the service.
+     */
     constructor() {
         this.mapComponents = {
             'RULES_ENGINE_PORTLET': RuleEngineContainer,
         };
     }
 
-   public getRoutes(): Observable<any> {
+    /**
+     * Transforms the response sent by the App Configuration end-point into
+     * a useful easier to read object that other components can inject in
+     * order to access system configuration parameters.
+     *
+     * @returns {any} The Observable containing useful dotCMS configuration
+     *          data.
+     */
+   public getConfigProperties(): Observable<any> {
         return Observable.create(observer => {
-            this.getMenus().subscribe((navigationItems) => {
+            this.getConfig().subscribe((configurationItems) => {
                 // TODO: do this more elegant
                 // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
                 let routes: Routes = [];
                 let mapPaths = {};
-                if (navigationItems.errors.length > 0) {
-                    console.log(navigationItems.errors[0].message);
-                }else {
-                    navigationItems.entity.forEach((item) => {
+                let dotcmsConfig = new DotcmsConfig(configurationItems.entity);
+                if (configurationItems.errors.length > 0) {
+                    console.log(configurationItems.errors[0].message);
+                } else {
+                    configurationItems.entity.menu.forEach((item) => {
                         item.menuItems.forEach(subMenuItem => {
                             if (subMenuItem.angular) {
                                 routes.push({
@@ -44,19 +56,25 @@ export class RoutingService {
                     path: '/portlet/:id',
                 });
                 observer.next({
+                    dotcmsConfig: dotcmsConfig,
                     menuItems: {
                         mapPaths: mapPaths,
-                        navigationItems: navigationItems.entity,
+                        navigationItems: dotcmsConfig.getNavigationMenu(),
                     },
                     routes: routes,
                 });
                 observer.complete();
             });
         });
-
    }
 
-   private getMenus(): Observable<any> {
+    /**
+     * Returns the configuration parameters for this Web App through the
+     * configuration end-point.
+     *
+     * @returns {any} A JSON response with the app configuration parameters.
+     */
+   private getConfig(): Observable<any> {
 
         return Observable.create(observer => {
             let oReq = new XMLHttpRequest();
@@ -73,7 +91,7 @@ export class RoutingService {
                     observer.complete();
                 }
             });
-            oReq.open('GET', '/api/v1/core_web/menu');
+            oReq.open('GET', '/api/v1/appconfiguration');
             oReq.send();
         });
    }
