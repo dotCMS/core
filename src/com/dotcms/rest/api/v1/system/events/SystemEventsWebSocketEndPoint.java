@@ -1,4 +1,4 @@
-package com.dotcms.web.websocket;
+package com.dotcms.rest.api.v1.system.events;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -12,6 +12,9 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.web.websocket.DotCmsWebSocketConfigurator;
+import com.dotcms.web.websocket.SystemEventEncoder;
+import com.dotcms.web.websocket.WebSocketContainerAPI;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -27,7 +30,7 @@ import com.dotmarketing.util.Logger;
  *
  */
 @SuppressWarnings("serial")
-@ServerEndpoint(value = "/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
+@ServerEndpoint(value = "/api/v1/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
 	private final Queue<Session> queue = new ConcurrentLinkedQueue<>();
