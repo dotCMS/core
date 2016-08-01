@@ -31,6 +31,7 @@ public class TimeMachineAjaxActionTest extends BaseMessageResources {
         final ServletContext context = mock(ServletContext.class);
         final TimeMachineAjaxAction machineAjaxAction =
                 new TimeMachineAjaxAction(notificationAPI);
+        final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         this.initMessages();
         Config.CONTEXT = context;
@@ -46,16 +47,17 @@ public class TimeMachineAjaxActionTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Reindex failed",
+                "Time Machine",
                 "Time Machine Snapshot created.",
                 null,
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                "admin@dotcms.com"
+                "admin@dotcms.com",
+                locale
         );
 
         machineAjaxAction.generateNotification
-                (new Locale.Builder().setLanguage("en").setRegion("US").build(),
+                (locale,
                         "admin@dotcms.com");
 
 

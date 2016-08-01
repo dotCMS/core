@@ -439,7 +439,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                             null, // no actions
                             NotificationLevel.INFO,
                             NotificationType.GENERIC,
-                            user.getUserId()
+                            user.getUserId(),
+                            user.getLocale()
                     );
 
     				Logger.info(this, LanguageUtil.get( user.getLocale(), "htmlpages-were-succesfully-converted" ));

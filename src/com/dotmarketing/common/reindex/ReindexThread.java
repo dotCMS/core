@@ -821,7 +821,8 @@ public class ReindexThread extends Thread {
 				null, // no actions
 				NotificationLevel.ERROR,
 				NotificationType.GENERIC,
-				systemUser.getUserId()
+				systemUser.getUserId(),
+				systemUser.getLocale()
 		);
 	}
 

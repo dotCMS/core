@@ -137,7 +137,8 @@ public class ESContentletAPIHelper implements Serializable {
                     null, // no actions
                     NotificationLevel.ERROR,
                     NotificationType.GENERIC,
-                    userId
+                    userId,
+                    locale
             );
         } catch (LanguageException | DotDataException e) {
 

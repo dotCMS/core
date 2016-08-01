@@ -357,7 +357,8 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
                 null, // no actions
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                userId
+                userId,
+                userLocale
         );
     } // generateNotification.
 

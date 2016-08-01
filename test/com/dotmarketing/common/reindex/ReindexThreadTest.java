@@ -36,6 +36,7 @@ public class ReindexThreadTest extends BaseMessageResources {
         final NotificationAPI notificationAPI = mock(NotificationAPI.class);
         final ServletContext context = mock(ServletContext.class);
         final DistributedJournalAPI<String> jAPI = mock(DistributedJournalAPI.class);
+        final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         final ReindexThread reindexThread =
                 new ReindexThread(jAPI, notificationAPI);
@@ -59,7 +60,8 @@ public class ReindexThreadTest extends BaseMessageResources {
                 null,
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,
-                "admin@dotcms.com"
+                "admin@dotcms.com",
+                locale
         );
 
         final String identToIndex = "index1";
@@ -67,7 +69,7 @@ public class ReindexThreadTest extends BaseMessageResources {
                 + identToIndex
                 + "'. The record is in a bad state or can be associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and re-start the reindex.";
         final User user = new User();
-        user.setLocale(new Locale.Builder().setLanguage("en").setRegion("US").build());
+        user.setLocale(locale);
         user.setUserId("admin@dotcms.com");
 
         reindexThread.sendNotification

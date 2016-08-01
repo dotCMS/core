@@ -35,6 +35,7 @@ public class ESContentletAPIHelperTest extends BaseMessageResources {
                 ESContentletAPIHelper.INSTANCE;
         final NotificationAPI notificationAPI = mock(NotificationAPI.class);
         final ServletContext context = mock(ServletContext.class);
+        final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         this.initMessages();
         Config.CONTEXT = context;
@@ -55,11 +56,12 @@ public class ESContentletAPIHelperTest extends BaseMessageResources {
                 null,
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,
-                "admin@dotcms.com"
+                "admin@dotcms.com",
+                locale
         );
 
         esContentletAPIHelper.generateNotificationCanNotDelete
-                (notificationAPI, new Locale.Builder().setLanguage("en").setRegion("US").build(),
+                (notificationAPI, locale,
                         "admin@dotcms.com", "iFieldNode1");
 
 

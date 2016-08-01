@@ -134,7 +134,8 @@ public class IdentifierDateJob implements Job {
 					null, // no actions
 					NotificationLevel.INFO,
 					NotificationType.GENERIC,
-					user.getUserId()
+					user.getUserId(),
+					user.getLocale()
 			);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
@@ -160,9 +161,8 @@ public class IdentifierDateJob implements Job {
 	/**
 	 * Setup the job and trigger it immediately
 	 * 
-	 * @param structure
-	 * @param newPublishVar
-	 * @param newExpireVar
+	 * @param structure {@link Structure}
+	 * @param user      {@link User}
 	 */
 	public static void triggerJobImmediately (Structure structure, User user) {
 		String randomID = UUID.randomUUID().toString();

@@ -2,6 +2,7 @@ package com.dotcms.notifications.business;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -66,18 +68,25 @@ public class NotificationAPIImpl implements NotificationAPI {
 	@Override
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
 
-		generateNotification(message, level, NotificationType.GENERIC, userId);
+		this.generateNotification(message, level, NotificationType.GENERIC, userId);
 	}
 
 	@Override
 	public void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException {
 
-		generateNotification(StringUtils.EMPTY, message, null, level, NotificationType.GENERIC, userId);
+		this.generateNotification(StringUtils.EMPTY, message, null, level, NotificationType.GENERIC, userId);
 	}
 
 	@Override
 	public void generateNotification(String title, String message, List<NotificationAction> actions,
 									 NotificationLevel level, NotificationType type, String userId) throws DotDataException {
+
+		this.generateNotification(title, message, actions, level, type, userId, null);
+	}
+
+	@Override
+	public void generateNotification(String title, String message, List<NotificationAction> actions,
+									 NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException {
 		final NotificationData data = new NotificationData(title, message, actions);
 		final String msg = this.marshalUtils.marshal(data);
 		final NotificationDTO dto = new NotificationDTO("", msg, type.name(), level.name(), userId, null,
@@ -87,6 +96,9 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 		// Adding notification to System Events table
 		final Notification n = new Notification(level, userId, data);
+
+		n.setPrettyDate(DateUtil.prettyDateSince(n.getTimeSent(), locale));
+
 		final Payload payload = new Payload(n);
 		final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
 		this.systemEventsAPI.push(systemEvent);
@@ -103,6 +115,12 @@ public class NotificationAPIImpl implements NotificationAPI {
 	@Override
 	public void deleteNotification(String notificationId) throws DotDataException {
 		notificationFactory.deleteNotification(notificationId);
+	}
+
+
+	@Override
+	public void deleteNotifications(final String... notificationsId) throws DotDataException {
+		notificationFactory.deleteNotification(notificationsId);
 	}
 
 	@Override

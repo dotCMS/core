@@ -49,7 +49,8 @@ public class DeleteFieldJobHelper implements Serializable {
                 null, // no actions
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                userId
+                userId,
+                locale
         );
     } // generateNotificationStartDeleting.
 
@@ -82,7 +83,8 @@ public class DeleteFieldJobHelper implements Serializable {
                 null, // no actions
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                userId
+                userId,
+                locale
         );
     } // generateNotificationEndDeleting.
 
@@ -114,7 +116,8 @@ public class DeleteFieldJobHelper implements Serializable {
                 null, // no actions
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,
-                userId
+                userId,
+                locale
         );
     } // generateNotificationEndDeleting.
 

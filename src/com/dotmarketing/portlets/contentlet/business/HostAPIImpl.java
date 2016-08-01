@@ -559,7 +559,8 @@ public class HostAPIImpl implements HostAPI {
 								null, // no actions
 								NotificationLevel.ERROR,
 								NotificationType.GENERIC,
-								user.getUserId()
+								user.getUserId(),
+								user.getLocale()
 						);
 
 					} catch (LanguageException e1) {
