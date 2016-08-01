@@ -44,6 +44,7 @@ import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
@@ -98,7 +99,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
                 SetValueActionlet.class,
-                PushNowActionlet.class
+                PushNowActionlet.class,
+				TranslationActionlet.class
 		}));
 
 		refreshWorkFlowActionletMap();
@@ -897,7 +899,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if(local){
 				HibernateUtil.rollbackTransaction();
 			}
-			throw new DotWorkflowException(e.getMessage());
+			/* Show a more descriptive error of what caused an issue here */
+			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage(), e);
+			throw new DotWorkflowException(e.getMessage(), e);
 
 		}
 	}

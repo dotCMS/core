@@ -34,6 +34,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
     protected Host host;
     protected boolean isAutoPub;
     protected DotWebdavHelper dotDavHelper=new DotWebdavHelper();
+    protected long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     
     public BasicFolderResourceImpl(String path) {
         this.path=path;
@@ -43,6 +44,12 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        try {
+			dotDavHelper.stripMapping(path);
+		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e);
+		}
+        this.lang = dotDavHelper.getLanguage();
         this.isAutoPub=dotDavHelper.isAutoPub(path);
     }
     

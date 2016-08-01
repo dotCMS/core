@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -643,8 +644,11 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
          
            for(HashMap<String, String> ident:pages){
                String identifier = ident.get("identifier");
-               HTMLPage page = loadWorkingPageById(identifier);
-               CacheLocator.getHTMLPageCache().remove(page);
+
+			   if(UtilMethods.isSet(identifier)) {
+				   HTMLPage page = loadWorkingPageById(identifier);
+				   CacheLocator.getHTMLPageCache().remove(page);
+			   }
            }
         } catch (DotDataException e) {
             Logger.error(HTMLPageFactory.class,e.getMessage(),e);

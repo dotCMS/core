@@ -236,7 +236,7 @@
 		</joined-subclass>
 
 
-		<joined-subclass name="com.dotmarketing.portlets.containers.model.Container" table="containers">
+		<joined-subclass name="com.dotmarketing.portlets.containers.model.Container" table="dot_containers">
 			<key column="inode" />
 			<property column="code" name="code" type="string" length="123456789" />
 			<property column="pre_loop" name="preLoop" type="string" length="123456789" />

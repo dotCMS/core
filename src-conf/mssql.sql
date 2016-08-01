@@ -1,56 +1,4 @@
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-create table ABContact (
-	contactId varchar(100) not null primary key,
-	userId varchar(100) not null,
-	firstName varchar(100) null,
-	middleName varchar(100) null,
-	lastName varchar(100) null,
-	nickName varchar(100) null,
-	emailAddress varchar(100) null,
-	homeStreet varchar(100) null,
-	homeCity varchar(100) null,
-	homeState varchar(100) null,
-	homeZip varchar(100) null,
-	homeCountry varchar(100) null,
-	homePhone varchar(100) null,
-	homeFax varchar(100) null,
-	homeCell varchar(100) null,
-	homePager varchar(100) null,
-	homeTollFree varchar(100) null,
-	homeEmailAddress varchar(100) null,
-	businessCompany varchar(100) null,
-	businessStreet varchar(100) null,
-	businessCity varchar(100) null,
-	businessState varchar(100) null,
-	businessZip varchar(100) null,
-	businessCountry varchar(100) null,
-	businessPhone varchar(100) null,
-	businessFax varchar(100) null,
-	businessCell varchar(100) null,
-	businessPager varchar(100) null,
-	businessTollFree varchar(100) null,
-	businessEmailAddress varchar(100) null,
-	employeeNumber varchar(100) null,
-	jobTitle varchar(100) null,
-	jobClass varchar(100) null,
-	hoursOfOperation varchar(1000) null,
-	birthday datetime null,
-	timeZoneId varchar(100) null,
-	instantMessenger varchar(100) null,
-	website varchar(100) null,
-	comments varchar(1000) null
-);
-
-create table ABContacts_ABLists (
-	contactId varchar(100) not null,
-	listId varchar(100) not null
-);
-
-create table ABList (
-	listId varchar(100) not null primary key,
-	userId varchar(100) not null,
-	name varchar(100) null
-);
 
 create table Address (
 	addressId varchar(100) not null primary key,
@@ -82,181 +30,6 @@ create table AdminConfig (
 	config text null
 );
 
-create table BJEntries_BJTopics (
-	entryId varchar(100) not null,
-	topicId varchar(100) not null
-);
-
-create table BJEntries_BJVerses (
-	entryId varchar(100) not null,
-	verseId varchar(100) not null
-);
-
-create table BJEntry (
-	entryId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	content text null,
-	versesInput varchar(1000) null
-);
-
-create table BJTopic (
-	topicId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	description text null
-);
-
-create table BJVerse (
-	verseId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	name varchar(100) null
-);
-
-create table BlogsCategory (
-	categoryId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null
-);
-
-create table BlogsComments (
-	commentsId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	entryId varchar(100) null,
-	content text null
-);
-
-create table BlogsEntry (
-	entryId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	categoryId varchar(100) null,
-	title varchar(100) null,
-	content text null,
-	displayDate datetime null,
-	sharing bit,
-	commentable bit,
-	propsCount int,
-	commentsCount int
-);
-
-create table BlogsLink (
-	linkId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	url varchar(100) null
-);
-
-create table BlogsProps (
-	propsId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	entryId varchar(100) null,
-	quantity int
-);
-
-create table BlogsReferer (
-	entryId varchar(100) not null,
-	url varchar(100) not null,
-	type_ varchar(100) not null,
-	quantity int,
-	primary key (entryId, url, type_)
-);
-
-create table BlogsUser (
-	userId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	entryId varchar(100) not null,
-	lastPostDate datetime null
-);
-
-create table BookmarksEntry (
-	entryId varchar(100) not null primary key,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	folderId varchar(100) null,
-	name varchar(100) null,
-	url varchar(100) null,
-	comments varchar(1000) null,
-	visits int
-);
-
-create table BookmarksFolder (
-	folderId varchar(100) not null primary key,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	parentFolderId varchar(100) null,
-	name varchar(100) null
-);
-
-create table CalEvent (
-	eventId varchar(100) not null primary key,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	title varchar(100) null,
-	description varchar(1000) null,
-	startDate datetime null,
-	endDate datetime null,
-	durationHour int,
-	durationMinute int,
-	allDay bit,
-	timeZoneSensitive bit,
-	type_ varchar(100) null,
-	location varchar(100) null,
-	street varchar(100) null,
-	city varchar(100) null,
-	state varchar(100) null,
-	zip varchar(100) null,
-	phone varchar(100) null,
-	repeating bit,
-	recurrence text null,
-	remindBy varchar(100) null,
-	firstReminder int,
-	secondReminder int
-);
-
-create table CalTask (
-	taskId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	title varchar(100) null,
-	description varchar(1000) null,
-	noDueDate bit,
-	dueDate datetime null,
-	priority int,
-	status int
-);
-
 create table Company (
 	companyId varchar(100) not null primary key,
 	key_ text null,
@@ -284,256 +57,9 @@ create table Counter (
 	currentId int
 );
 
-create table CyrusUser (
-	userId varchar(100) not null primary key,
-	password_ varchar(100) not null
-);
-
-create table CyrusVirtual (
-	emailAddress varchar(100) not null primary key,
-	userId varchar(100) not null
-);
-
-create table DLFileProfile (
-	companyId varchar(100) not null,
-	repositoryId varchar(100) not null,
-	fileName varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	versionUserId varchar(100) not null,
-	versionUserName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	readRoles varchar(100) null,
-	writeRoles varchar(100) null,
-	description text null,
-	version float,
-	size_ int,
-	primary key (companyId, repositoryId, fileName)
-);
-
-create table DLFileRank (
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	repositoryId varchar(100) not null,
-	fileName varchar(100) not null,
-	createDate datetime null,
-	primary key (companyId, userId, repositoryId, fileName)
-);
-
-create table DLFileVersion (
-	companyId varchar(100) not null,
-	repositoryId varchar(100) not null,
-	fileName varchar(100) not null,
-	version float not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	size_ int,
-	primary key (companyId, repositoryId, fileName, version)
-);
-
-create table DLRepository (
-	repositoryId varchar(100) not null primary key,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	readRoles varchar(100) null,
-	writeRoles varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	lastPostDate datetime null
-);
-
-create table IGFolder (
-	folderId varchar(100) not null primary key,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	parentFolderId varchar(100) null,
-	name varchar(100) null
-);
-
-create table IGImage (
-	imageId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	folderId varchar(100) null,
-	description text null,
-	height int,
-	width int,
-	size_ int,
-	primary key (imageId, companyId)
-);
-
 create table Image (
 	imageId varchar(200) not null primary key,
 	text_ text not null
-);
-
-create table JournalArticle (
-	articleId varchar(100) not null,
-	version float not null,
-	portletId varchar(100) not null,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	title varchar(100) null,
-	content text null,
-	type_ varchar(100) null,
-	structureId varchar(100) null,
-	templateId varchar(100) null,
-	displayDate datetime null,
-	expirationDate datetime null,
-	approved bit,
-	approvedByUserId varchar(100) null,
-	approvedByUserName varchar(100) null,
-	primary key (articleId, version)
-);
-
-create table JournalStructure (
-	structureId varchar(100) not null primary key,
-	portletId varchar(100) not null,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	xsd text null
-);
-
-create table JournalTemplate (
-	templateId varchar(100) not null primary key,
-	portletId varchar(100) not null,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	structureId varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	xsl text null,
-	smallImage bit,
-	smallImageURL varchar(100) null
-);
-
-create table Layer (
-	layerId varchar(100) not null,
-	skinId varchar(100) not null,
-	href varchar(100) null,
-	hrefHover varchar(100) null,
-	background varchar(100) null,
-	foreground varchar(100) null,
-	negAlert varchar(100) null,
-	posAlert varchar(100) null,
-	primary key (layerId, skinId)
-);
-
-create table MailReceipt (
-	receiptId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	recipientName varchar(100) null,
-	recipientAddress varchar(100) null,
-	subject varchar(100) null,
-	sentDate datetime null,
-	readCount int,
-	firstReadDate datetime null,
-	lastReadDate datetime null
-);
-
-create table MBMessage (
-	messageId varchar(100) not null,
-	topicId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	threadId varchar(100) null,
-	parentMessageId varchar(100) null,
-	subject varchar(100) null,
-	body text null,
-	attachments bit,
-	anonymous bit,
-	primary key (messageId, topicId)
-);
-
-create table MBMessageFlag (
-	topicId varchar(100) not null,
-	messageId varchar(100) not null,
-	userId varchar(100) not null,
-	flag varchar(100) null,
-	primary key (topicId, messageId, userId)
-);
-
-create table MBThread (
-	threadId varchar(100) not null primary key,
-	rootMessageId varchar(100) null,
-	topicId varchar(100) null,
-	messageCount int,
-	lastPostDate datetime null
-);
-
-create table MBTopic (
-	topicId varchar(100) not null primary key,
-	portletId varchar(100) not null,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	readRoles varchar(100) null,
-	writeRoles varchar(100) null,
-	name varchar(100) null,
-	description text null,
-	lastPostDate datetime null
-);
-
-create table NetworkAddress (
-	addressId varchar(100) not null primary key,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	url varchar(100) null,
-	comments varchar(1000) null,
-	content text null,
-	status int,
-	lastUpdated datetime null,
-	notifyBy varchar(100) null,
-	interval_ int,
-	active_ bit
-);
-
-create table Note (
-	noteId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	className varchar(100) null,
-	classPK varchar(100) null,
-	content text null
 );
 
 create table PasswordTracker (
@@ -600,236 +126,12 @@ create table PortletPreferences (
 	primary key (portletId, userId, layoutId)
 );
 
-create table ProjFirm (
-	firmId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	url varchar(100) null
-);
-
-create table ProjProject (
-	projectId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	firmId varchar(100) null,
-	code varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null
-);
-
-create table ProjTask (
-	taskId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	projectId varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	comments text null,
-	estimatedDuration int,
-	estimatedEndDate datetime null,
-	actualDuration int,
-	actualEndDate datetime null,
-	status int
-);
-
-create table ProjTime (
-	timeId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	projectId varchar(100) null,
-	taskId varchar(100) null,
-	description varchar(1000) null,
-	startDate datetime null,
-	endDate datetime null
-);
-
 create table Release_ (
 	releaseId varchar(100) not null primary key,
 	createDate datetime null,
 	modifiedDate datetime null,
 	buildNumber int null,
 	buildDate datetime null
-);
-
-create table Skin (
-	skinId varchar(100) not null primary key,
-	name varchar(100) null,
-	imageId varchar(100) null,
-	alphaLayerId varchar(100) null,
-	alphaSkinId varchar(100) null,
-	betaLayerId varchar(100) null,
-	betaSkinId varchar(100) null,
-	gammaLayerId varchar(100) null,
-	gammaSkinId varchar(100) null,
-	bgLayerId varchar(100) null,
-	bgSkinId varchar(100) null
-);
-
-create table ShoppingCart (
-	cartId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	itemIds varchar(1000) null,
-	couponIds varchar(1000) null,
-	altShipping int
-);
-
-create table ShoppingCategory (
-	categoryId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	parentCategoryId varchar(100) null,
-	name varchar(100) null
-);
-
-create table ShoppingCoupon (
-	couponId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	startDate datetime null,
-	endDate datetime null,
-	active_ bit,
-	limitCategories varchar(1000) null,
-	limitSkus varchar(1000) null,
-	minOrder float,
-	discount float,
-	discountType varchar(100) null
-);
-
-create table ShoppingItem (
-	itemId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	categoryId varchar(100) null,
-	sku varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	properties varchar(1000) null,
-	supplierUserId varchar(100) null,
-	fields_ bit,
-	fieldsQuantities varchar(1000) null,
-	minQuantity int,
-	maxQuantity int,
-	price float,
-	discount float,
-	taxable bit,
-	shipping float,
-	useShippingFormula bit,
-	requiresShipping bit,
-	stockQuantity int,
-	featured_ bit,
-	sale_ bit,
-	smallImage bit,
-	smallImageURL varchar(100) null,
-	mediumImage bit,
-	mediumImageURL varchar(100) null,
-	largeImage bit,
-	largeImageURL varchar(100) null
-);
-
-create table ShoppingItemField (
-	itemFieldId varchar(100) not null primary key,
-	itemId varchar(100) null,
-	name varchar(100) null,
-	values_ varchar(1000) null,
-	description varchar(1000) null
-);
-
-create table ShoppingItemPrice (
-	itemPriceId varchar(100) not null primary key,
-	itemId varchar(100) null,
-	minQuantity int,
-	maxQuantity int,
-	price float,
-	discount float,
-	taxable bit,
-	shipping float,
-	useShippingFormula bit,
-	status int
-);
-
-create table ShoppingOrder (
-	orderId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	tax float,
-	shipping float,
-	altShipping varchar(100),
-	requiresShipping bit,
-	couponIds varchar(1000) null,
-	couponDiscount float,
-	billingFirstName varchar(100) null,
-	billingLastName varchar(100) null,
-	billingEmailAddress varchar(100) null,
-	billingCompany varchar(100) null,
-	billingStreet varchar(100) null,
-	billingCity varchar(100) null,
-	billingState varchar(100) null,
-	billingZip varchar(100) null,
-	billingCountry varchar(100) null,
-	billingPhone varchar(100) null,
-	shipToBilling bit,
-	shippingFirstName varchar(100) null,
-	shippingLastName varchar(100) null,
-	shippingEmailAddress varchar(100) null,
-	shippingCompany varchar(100) null,
-	shippingStreet varchar(100) null,
-	shippingCity varchar(100) null,
-	shippingState varchar(100) null,
-	shippingZip varchar(100) null,
-	shippingCountry varchar(100) null,
-	shippingPhone varchar(100) null,
-	ccName varchar(100) null,
-	ccType varchar(100) null,
-	ccNumber varchar(100) null,
-	ccExpMonth int,
-	ccExpYear int,
-	ccVerNumber varchar(100) null,
-	comments text null,
-	ppTxnId varchar(100) null,
-	ppPaymentStatus varchar(100) null,
-	ppPaymentGross float,
-	ppReceiverEmail varchar(100) null,
-	ppPayerEmail varchar(100) null,
-	sendOrderEmail bit,
-	sendShippingEmail bit
-);
-
-create table ShoppingOrderItem (
-	orderId varchar(100) not null,
-	itemId varchar(100) not null,
-	sku varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	properties varchar(1000) null,
-	supplierUserId varchar(100) null,
-	price float,
-	quantity int,
-	shippedDate datetime null,
-	primary key (orderId, itemId)
 );
 
 create table User_ (
@@ -876,16 +178,6 @@ create table User_ (
 	active_ bit
 );
 
-create table Users_ProjProjects (
-	userId varchar(100) not null,
-	projectId varchar(100) not null
-);
-
-create table Users_ProjTasks (
-	userId varchar(100) not null,
-	taskId varchar(100) not null
-);
-
 create table UserTracker (
 	userTrackerId varchar(100) not null primary key,
 	companyId varchar(100) not null,
@@ -903,58 +195,14 @@ create table UserTrackerPath (
 	pathDate datetime not null
 );
 
-create table WikiDisplay (
-	layoutId varchar(100) not null,
-	userId varchar(100) not null,
-	portletId varchar(100) not null,
-	nodeId varchar(100) not null,
-	showBorders bit,
-	primary key (layoutId, userId, portletId)
-);
-
-create table WikiNode (
-	nodeId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	readRoles varchar(100) null,
-	writeRoles varchar(100) null,
-	name varchar(100) null,
-	description varchar(1000) null,
-	sharing bit,
-	lastPostDate datetime null
-);
-
-create table WikiPage (
-	nodeId varchar(100) not null,
-	title varchar(100) not null,
-	version float not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	content text null,
-	format varchar(100) null,
-	head bit,
-	primary key (nodeId, title, version)
-);
-
 --
 -- Global
 --
 
 insert into Counter values ('com.liferay.portal.model.Address', 10);
-insert into Counter values ('com.liferay.portal.model.Group', 20);
 insert into Counter values ('com.liferay.portal.model.Role', 100);
 insert into Counter values ('com.liferay.portal.model.User.liferay.com', 10);
-insert into Counter values ('com.liferay.portlet.imagegallery.model.IGFolder', 20);
-insert into Counter values ('com.liferay.portlet.imagegallery.model.IGImage.liferay.com', 42);
 insert into Counter values ('com.liferay.portlet.polls.model.PollsQuestion', 10);
-insert into Counter values ('com.liferay.portlet.shopping.model.ShoppingCategory', 20);
-insert into Counter values ('com.liferay.portlet.shopping.ejb.ShoppingItem', 40);
-insert into Counter values ('com.liferay.portlet.wiki.model.WikiNode', 10);
 
 --
 -- Liferay, LLC
@@ -968,10 +216,6 @@ insert into PollsChoice (choiceId, questionId, description) values ('a', '1', 'C
 insert into PollsChoice (choiceId, questionId, description) values ('b', '1', 'Strawberry');
 insert into PollsChoice (choiceId, questionId, description) values ('c', '1', 'Vanilla');
 insert into PollsQuestion (questionId, portletId, groupId, companyId, userId, userName, createDate, modifiedDate, title, description) values ('1', '25', '-1', 'liferay.com', 'liferay.com.1', 'John Wayne', GetDate(), GetDate(), 'What is your favorite ice cream flavor?', 'What is your favorite ice cream flavor?');
-
-insert into WikiDisplay (layoutId, userId, portletId, nodeId, showBorders) values ('1.1', 'group.1', '54', '1', '1');
-insert into WikiNode (nodeId, companyId, userId, userName, createDate, modifiedDate, readRoles, writeRoles, name, description, sharing, lastPostDate) values ('1', 'liferay.com', 'liferay.com.1', 'John Wayne', GetDate(), GetDate(), 'User,' ,'User,', 'Welcome', '', '1', GetDate());
-insert into WikiPage (nodeId, title, version, companyId, userId, userName, createDate, content, format, head) values ('1', 'FrontPage', 1.0, 'liferay.com', 'liferay.com.1', 'John Wayne', GetDate(), '<font class="bg" size="2">Welcome! Thank you for your interest in Liferay Enterprise Portal.<br><br>Your login is <b>test@liferay.com</b> and your password is <b>test</b>. The test user has the Administrator role.<br><br>To use the <b>Mail</b> portlet, make sure there is a mail server running on <i>localhost</i> accessible through the IMAP protocol.<br><br>The mail server must have an account with <b>liferay.com.1</b> as the user and <b>test</b> as the password.<br><br><hr><br>Is Liferay useful for your company? Tell us about it by email at <b>staff@liferay.com</b>.<br><br>We hope you enjoy our product!</font>', 'html', '1');
 
 --
 -- Default User
@@ -2231,7 +1475,7 @@ create table analytic_summary_referer (
    uri varchar(255) null,
    primary key (id)
 );
-create table containers (
+create table dot_containers (
    inode varchar(36) not null,
    code text null,
    pre_loop text null,
@@ -2619,7 +1863,7 @@ create index idx_campaign_2 on campaign (start_date);
 create index idx_campaign_1 on campaign (user_id);
 alter table campaign add constraint fkf7a901105fb51eb foreign key (inode) references inode;
 alter table analytic_summary_referer add constraint fk5bc0f3e2ed30e054 foreign key (summary_id) references analytic_summary;
-alter table containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
+alter table dot_containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
 alter table communication add constraint fkc24acfd65fb51eb foreign key (inode) references inode;
 alter table links add constraint fk6234fb95fb51eb foreign key (inode) references inode;
 alter table user_proxy add constraint fk7327d4fa5fb51eb foreign key (inode) references inode;
@@ -2787,7 +2031,7 @@ ALTER TABLE layouts_cms_roles ADD CONSTRAINT IX_layouts_cms_roles UNIQUE NONCLUS
 alter table layouts_cms_roles add constraint fklayouts_cms_roles1 foreign key (role_id) references cms_role;
 alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (layout_id) references cms_layout;
 
-ALTER TABLE containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
+ALTER TABLE dot_containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE htmlpage add constraint htmlpage_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier) references identifier(id);
@@ -2934,7 +2178,7 @@ fetch next from link_cur_Deleted into @identifier
 END;
 
 CREATE Trigger check_container_versions
-ON containers
+ON dot_containers
 FOR DELETE AS
  DECLARE @totalCount int
  DECLARE @identifier varchar(100)
@@ -2946,7 +2190,7 @@ FOR DELETE AS
  fetch next from container_cur_Deleted into @identifier
  while @@FETCH_STATUS <> -1
  BEGIN
- select @totalCount = count(*) from containers where identifier = @identifier
+ select @totalCount = count(*) from dot_containers where identifier = @identifier
  IF (@totalCount = 0)
   BEGIN
    DELETE from identifier where id = @identifier
@@ -3034,7 +2278,7 @@ CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
 CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
 
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
---ALTER TABLE containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
+--ALTER TABLE dot_containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
 ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
 
 CREATE Trigger check_template_identifier
@@ -3082,7 +2326,7 @@ END;
 
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);
 alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid);
-alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
+alter table dot_containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
 alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid);
 alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid);
 alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid);
@@ -3204,14 +2448,14 @@ alter table fileasset_version_info  add constraint fk_fileasset_version_info_ide
 alter table link_version_info       add constraint fk_link_version_info_identifier       foreign key (identifier) references identifier(id);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_working foreign key (working_inode) references contentlet(inode);
-alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references containers(inode);
+alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_working   foreign key (working_inode) references template(inode);
 alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_working   foreign key (working_inode) references htmlpage(inode);
 alter table fileasset_version_info  add constraint fk_fileasset_version_info_working  foreign key (working_inode) references file_asset(inode);
 alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_live foreign key (live_inode) references contentlet(inode);
-alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references containers(inode);
+alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_live   foreign key (live_inode) references template(inode);
 alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_live   foreign key (live_inode) references htmlpage(inode);
 alter table fileasset_version_info  add constraint fk_fileasset_version_info_live  foreign key (live_inode) references file_asset(inode);
@@ -3513,3 +2757,8 @@ create table rule_condition_value (id varchar(36) primary key,condition_id varch
 create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
+
+
+-- Delete User
+ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;
+ALTER TABLE user_ ADD delete_date DATETIME NULL;

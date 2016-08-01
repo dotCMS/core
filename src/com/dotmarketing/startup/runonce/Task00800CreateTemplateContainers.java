@@ -34,7 +34,7 @@ public class Task00800CreateTemplateContainers implements StartupTask{
 											  "where parent = template.inode and template.inode = inode.inode and " +
 											  "parent in(select inode from inode where type='template') and " +
 											  "child in(select id from identifier where asset_type='containers')";
-		
+
 		String delete_template_containers = "Delete from tree where child in(select id from identifier where asset_type='containers') " +
 											"and parent in(select inode from inode where type='template')";
 		

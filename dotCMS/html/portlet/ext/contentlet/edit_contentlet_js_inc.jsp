@@ -276,7 +276,7 @@ dojo.require("dojox.layout.ContentPane");
 
 		//Taking the text from all the textareas
 		var k = 0;
-		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
+		dojo.query('textarea', dojo.byId(formId)).forEach(
 				function (textareaObj) {
 					var aceEditor;
 					if(textareaObj.id == aceTextId[textareaObj.id]) {

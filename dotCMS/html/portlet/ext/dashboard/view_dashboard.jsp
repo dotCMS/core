@@ -107,16 +107,17 @@ int periodData = dAPI.checkPeriodData(0,0);
 
   		//Taking the text from all the textareas
   		var k = 0;
-  		$(document.getElementById(formId)).getElementsBySelector('textarea').each(
-  				function (textareaObj) {
-  					if ((textareaObj.id != "") && (aceEditor != null)) {
-  						try {
-  							document.getElementById(textareaObj.id).value= aceEditor.getValue();
-  						} catch (e) {
-  						}
-  					}
-  				}
-  			);
+  		
+  		dojo.query('textarea', dojo.byId(formId)).forEach(
+  			 function(textareaObj){
+  				if ((textareaObj.id != "") && (aceEditor != null)) {
+						try {
+							document.getElementById(textareaObj.id).value= aceEditor.getValue();
+						} catch (e) {}
+				}
+  			 }
+  		);
+  		
 
   		var formElements = document.getElementById(formId).elements;
   		

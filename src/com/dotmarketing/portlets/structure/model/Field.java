@@ -358,4 +358,8 @@ public class Field extends Inode implements Exportable, Importable
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
 	}
+
+	public String getDataType() {
+		return this.getFieldContentlet().replaceAll("[0-9]*", "");
+	}
 }

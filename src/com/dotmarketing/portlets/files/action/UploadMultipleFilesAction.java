@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -43,6 +44,7 @@ import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.FileUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
@@ -185,7 +187,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	}
 
 	public void _saveFileAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user, String subcmd)
-	throws WebAssetException, ActionException, DotDataException, DotSecurityException, LanguageException {
+	throws WebAssetException, ActionException, DotDataException, DotSecurityException, LanguageException, IOException {
 
 	    boolean isAdmin = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
 
@@ -231,6 +233,9 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 		boolean filterError = false;
 
 		List<String> existingFileNames = new ArrayList<String>();
+		final java.io.File tempFolder = java.io.File.createTempFile("temp", UUID.randomUUID().toString());
+		tempFolder.delete();
+		tempFolder.mkdirs();
 		for (int k=0;k<fileNamesArray.length;k++) {
 			try{
 				HibernateUtil.startTransaction();
@@ -249,6 +254,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	               filterError = true;
 	               continue;
 	            }
+				
 
 				if (fileName.length()>0) {
 
@@ -257,7 +263,13 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                     contentlet.setStringProperty("fileName", fileName);
 
                     java.io.File uploadedFile = uploadReq.getFile(fileName);
-                    contentlet.setBinary("fileAsset", uploadedFile);
+                    java.io.File renamedFile = new java.io.File(tempFolder + java.io.File.separator + fileName);
+                    
+                    FileUtil.move(uploadedFile, renamedFile);
+                    
+
+                    
+                    contentlet.setBinary("fileAsset", renamedFile);
 
                     if ( uploadedFile != null ) {
 
@@ -278,9 +290,9 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                         }
 
                         HibernateUtil.commitTransaction();
-                        APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 
                     }
+
 				}
 			}
 			catch (DuplicateFileException e){
@@ -298,7 +310,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				HibernateUtil.rollbackTransaction();
 			}
 		}
-
+        FileUtil.deltree(tempFolder);
 		if(!existingFileNames.isEmpty()){
 			StringBuffer messageText = new StringBuffer();
 			if(existingFileNames.size()>1){

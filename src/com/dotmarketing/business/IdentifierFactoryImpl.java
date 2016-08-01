@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -527,11 +528,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			db.addParam(ident.getInode());
 			db.loadResult();
 
-			db.setSQL("select inode from "+ident.getAssetType()+" where inode=?");
+			db.setSQL("select inode from "+ Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() +" where inode=?");
 			db.addParam(ident.getInode());
 			List<Map<String,Object>> deleteme = db.loadResults();
 
-			String versionInfoTable=UtilMethods.getVersionInfoTableName(ident.getAssetType());
+			String versionInfoTable=Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName();
 			if(versionInfoTable!=null) {
 			    db.setSQL("delete from "+versionInfoTable+" where identifier = ?");
 			    db.addParam(ident.getId());
@@ -546,7 +547,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			    APILocator.getWorkflowAPI().deleteWorkflowTask(wft);
 			}
 			
-			db.setSQL("delete from " + ident.getAssetType()+ " where identifier = ?");
+			db.setSQL("delete from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where identifier = ?");
 			db.addParam(ident.getId());
 			db.loadResult();
 

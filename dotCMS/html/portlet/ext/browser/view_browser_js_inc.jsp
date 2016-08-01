@@ -1926,7 +1926,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function viewFile(objId,fileExt) {
-		window.open('/contentAsset/raw-data/' + objId + '/fileAsset' + "?random=<%=UtilMethods.getRandomNumber(100000)%>",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+		window.open('/contentAsset/raw-data/' + objId + '/fileAsset/byInode/1' + "?random=<%=UtilMethods.getRandomNumber(100000)%>",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
 	}
 
 	function copyFile (objId, parentId, referer) {

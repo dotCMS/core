@@ -95,7 +95,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
             DotConnect dc = new DotConnect();
             String tempTableName = getTempTableName(endpointId);
 
-            String tempKeyword = getTempKeyword();
+            String tempKeyword = DbConnectionFactory.getTempKeyword();
 
             String createTempTable = "create " + tempKeyword + " table " + tempTableName
                     + " (inode varchar(36) not null, velocity_var_name varchar(255) not null, "

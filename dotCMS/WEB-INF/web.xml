@@ -10,12 +10,10 @@
 		<param-name>company_id</param-name>
 		<param-value>dotcms.org</param-value>
 	</context-param>
-
 	<context-param>
 		<param-name>isLog4jAutoInitializationDisabled</param-name>
 		<param-value>true</param-value>
 	</context-param>
-
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN CONTEXT-PARAMS -->
     <!-- END CONTEXT-PARAMS -->
@@ -49,7 +47,6 @@
 		<filter-name>URLMapFilter</filter-name>
 		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
 	</filter>
-
 	 <filter>
 		<filter-name>CacheImagesFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CacheImagesFilter</filter-class>
@@ -69,7 +66,6 @@
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 	</filter>
-
 	<filter>
 		<filter-name>NoCacheFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.NoCacheFilter</filter-class>
@@ -94,8 +90,6 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
  	<!-- END FILTERS -->
-
-
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTER-MAPPINGS -->
  	<!-- END FILTER-MAPPINGS -->
@@ -116,7 +110,6 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-
 	<filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -141,7 +134,6 @@
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>NoCacheFilter</filter-name>
 		<url-pattern>/dotCMS/*</url-pattern>
@@ -151,12 +143,10 @@
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
-
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	
 	
@@ -235,7 +225,6 @@
 		<servlet-name>RedirectURLServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.RedirectURLServlet</servlet-class>
 	</servlet>
-
 	<servlet>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
@@ -328,7 +317,6 @@
 		<servlet-name>ScheduledJobs</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.RunScheduledJobServlet</servlet-class>
 	</servlet>
-
 	<servlet>
 		<servlet-name>BinaryExporterServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.BinaryExporterServlet</servlet-class>
@@ -344,7 +332,6 @@
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONTagsServlet</servlet-class>
 	</servlet>
-
     <servlet>
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -392,7 +379,7 @@
  	<!-- END SERVLETS -->
  	
  	
-    <!-- TEST FRAMEWORK SERVLETS -->                                            
+    <!-- TEST FRAMEWORK SERVLETS -->                                                                                     
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -404,9 +391,6 @@
       </servlet-mapping>
 	<!-- END OF TEST FRAMEWORK SERVLETS -->
 	
-
-
-
     <!-- DOTCMS SERVLET-MAPPINGS -->
     <servlet-mapping>
         <servlet-name>proxy</servlet-name>
@@ -432,7 +416,6 @@
         <servlet-name>AjaxDirector</servlet-name>
         <url-pattern>/DotAjaxDirector/*</url-pattern>
     </servlet-mapping>
-
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
@@ -477,27 +460,30 @@
 		<servlet-name>CMIS</servlet-name>
 		<url-pattern>/cmis/*</url-pattern>
 	</servlet-mapping>
-	
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/autopub/*</url-pattern>
 	</servlet-mapping>
-	
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/nonpub/*</url-pattern>
 	</servlet-mapping>
-
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/live/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/working/*</url-pattern>
+	</servlet-mapping>
 	<servlet-mapping>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<url-pattern>/servlets/ajax_file_upload</url-pattern>
     </servlet-mapping>
-
 	<servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
 		<url-pattern>/servlets/VelocityServlet</url-pattern>
 	</servlet-mapping>
-
 	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<url-pattern>/dotAsset/*</url-pattern>
@@ -517,7 +503,6 @@
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
 	</servlet-mapping>
-
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>

@@ -143,13 +143,31 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 				if(p.contains(File.separator)){
 					p = path.replace(File.separator, "/");
 				}
-				if(file.isDirectory()){
-					TempFolderResourceImpl tr = new TempFolderResourceImpl("/webdav/autopub/system/languages/" + p,file,true);
-					result.add(tr);
+				
+				if(Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
+					if(file.isDirectory()){
+						TempFolderResourceImpl tr = new TempFolderResourceImpl("/webdav/autopub/system/languages/" + p,file,true);
+						result.add(tr);
+					}else{
+						TempFileResourceImpl tr = new TempFileResourceImpl(file,"/webdav/autopub/system/languages/" + p,true);
+						result.add(tr);
+					}
 				}else{
-					TempFileResourceImpl tr = new TempFileResourceImpl(file,"/webdav/autopub/system/languages/" + p,true);
-					result.add(tr);
+					try {
+						dotDavHelper.stripMapping(path);
+					} catch (IOException e) {
+						Logger.error( this, "Error happened with uri: [" + path + "]", e);
+					}
+					String pathFolder = "/webdav/live/" + dotDavHelper.getLanguage() + "/system/languages/";
+					if(file.isDirectory()){
+						TempFolderResourceImpl tr = new TempFolderResourceImpl(pathFolder + p,file,true);
+						result.add(tr);
+					}else{
+						TempFileResourceImpl tr = new TempFileResourceImpl(file,pathFolder + p,true);
+						result.add(tr);
+					}
 				}
+				
 			}
 		}
 		return result;
