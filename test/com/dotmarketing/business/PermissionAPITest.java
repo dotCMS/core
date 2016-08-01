@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.apache.chemistry.util.GregorianCalendar;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -122,7 +123,7 @@ public class PermissionAPITest extends TestBase {
     public void doesUserHavePermission() throws DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole2");
 
-        User user= getUser();
+        User user= getUser("useruser", false);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -281,7 +282,7 @@ public class PermissionAPITest extends TestBase {
     public void getUsersWithPermission() throws DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole5");
 
-        User user= getUser();
+        User user= getUser("useruser", false);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -857,7 +858,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser();
+        User user = getUser("useruser", false);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -886,7 +887,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser();
+        User user = getUser("useruser", false);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -910,22 +911,143 @@ public class PermissionAPITest extends TestBase {
         APILocator.getFolderAPI().delete(f, sysuser, false);
     }
 
-    private User getUser() throws DotDataException, DotSecurityException {
+    @Test
+    public void testGetUsersCountWithoutFilter() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = getUser("useruser", false);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, null);
+
+        assertTrue(count > 0);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersCountWithFilter() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = getUser("useruser", false);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser");
+
+        assertTrue(count == 1);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersCountDeleted() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = getUser("deletedUser", true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser");
+
+        assertTrue(count == 0);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersDeleted() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = getUser("deletedUser", true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser", -1, -1);
+
+        assertNotNull(users);
+        assertTrue(users.size() == 0);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    /**
+     * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
+     */
+    private User getUser(String userName, boolean setDeleted) throws DotDataException, DotSecurityException {
         User user = null;
         try {
-            user = APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
+            user = APILocator.getUserAPI().loadUserById(userName, sysuser, false);
         } catch (Exception ex) {
             user = null;
         } finally {
             if (user == null || !UtilMethods.isSet(user.getUserId())) {
-                user = APILocator.getUserAPI().createUser("useruser", "user@fake.org");
+                user = APILocator.getUserAPI().createUser(userName, userName + "@fake.org");
+
+                if (setDeleted) {
+                    user.setDeleteDate(GregorianCalendar.getInstance().getTime());
+                    user.setDeleteInProgress(true);
+                }
+
                 APILocator.getUserAPI().save(user, sysuser, false);
-                user = APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
+                user = APILocator.getUserAPI().loadUserById(userName, sysuser, false);
             }
         }
         return user;
     }
 
+    /**
+     * Generate a new role with the given name
+     */
     private Role getRole(String roleName) throws DotDataException {
         Role nrole = APILocator.getRoleAPI().loadRoleByKey(roleName);
         if (!UtilMethods.isSet(nrole) || !UtilMethods.isSet(nrole.getId())) {
