@@ -17,7 +17,7 @@ import com.dotmarketing.util.Config;
 /**
  * A utility class that provides the required dotCMS configuration properties to
  * the {@link ConfigurationResource} end-point. The idea behind this approach is
- * to provide other system modules - such as the UI - with access to specific 
+ * to provide other system modules - such as the UI - with access to specific
  * system properties as they are needed.
  * 
  * @author Jose Castro
@@ -39,7 +39,8 @@ public class ConfigurationHelper implements Serializable {
 
 	/**
 	 * Reads the required configuration properties from the dotCMS configuration
-	 * files and also from the {@link HttpServletRequest} object.
+	 * files and also from the {@link HttpServletRequest} object. New properties
+	 * can be added as they are needed.
 	 * 
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.

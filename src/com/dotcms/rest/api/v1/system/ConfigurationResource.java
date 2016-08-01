@@ -20,7 +20,9 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
  * This Jersey end-point provides access to configuration parameters that are
  * set through the property files for dotCMS configuration:
  * {@code dotmarketing-config.properties}, and
- * {@code dotcms-config-cluster.properties}.
+ * {@code dotcms-config-cluster.properties}. By default, <b>not all
+ * configuration properties are available through this end-point</b>, they must
+ * be programmatically read and returned.
  * 
  * @author Jose Castro
  * @version 3.7
