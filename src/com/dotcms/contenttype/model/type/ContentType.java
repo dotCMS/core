@@ -11,6 +11,7 @@ import org.immutables.value.Value.Default;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -21,6 +22,7 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -105,13 +107,13 @@ public abstract class ContentType implements Serializable, Permissionable {
 
 	@Value.Default
 	public String host() {
-		return "SYSTEM_HOST";
+		return Host.SYSTEM_HOST;
 	}
 	
 	@Value.Lazy
 	public  List<Field> fields(){
 		try {
-			return FactoryLocator.getFieldFactory2().byContentType(this);
+			return APILocator.getFieldAPI2().byContentType(this);
 		} catch (DotDataException e) {
 			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);
 		}
@@ -119,7 +121,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 	
 	@Value.Default
 	public String folder() {
-		return "SYSTEM_FOLDER";
+		return Folder.SYSTEM_FOLDER;
 	}
 
 	public Permissionable permissionable() {

@@ -33,7 +33,10 @@ public class FieldApiImpl implements FieldApi {
 	public List<Field> byContentType(ContentType type) throws DotDataException {
 		 return fac.byContentType(type);
 	}
-	
+	@Override
+	public List<Field> byContentTypeId(String typeId) throws DotDataException {
+		 return fac.byContentTypeId(typeId);
+	}
 	@Override
 	public Field byContentTypeAndVar(ContentType type,String fieldVar) throws DotDataException {
 		 return fac.byContentTypeFieldVar(type,fieldVar);

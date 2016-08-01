@@ -277,11 +277,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void  checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException{
 		try{
 			if(!doesUserHavePermission(permissionable, level.type, user, true)){
-				throw new DotSecurityException("User:" + user +" does not have permissions " + level + " for object " + permissionable);
+				throw new DotSecurityException("User:" + user +" does not have permissions " + level + " for object " + permissionable + " of type " + permissionable.getPermissionType());
 			}
 		}
-		catch(Exception e){
-			throw new DotSecurityException("User:" + user +" does not have permissions " + level + " for object " + permissionable,e);
+		catch(DotDataException e){
+			throw new DotStateException(e);
 		}
 	}
 

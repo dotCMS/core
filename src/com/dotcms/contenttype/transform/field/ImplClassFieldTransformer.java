@@ -8,7 +8,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotmarketing.business.DotStateException;
 import com.google.common.collect.ImmutableList;
 
-public class ImplClassFieldTransformer implements ToFieldTransformer{
+public class ImplClassFieldTransformer implements FieldTransformer{
 	
 	final List<Field> genericFields ;
 	

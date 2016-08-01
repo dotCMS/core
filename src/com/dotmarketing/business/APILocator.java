@@ -38,6 +38,7 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -379,6 +380,12 @@ public class APILocator extends Locator<APIIndex>{
     public static User systemUser() throws DotDataException {
 		return getUserAPI().getSystemUser();
 	}
+    
+    public static Host systemHost() throws DotDataException {
+		return getHostAPI().findSystemHost();
+	}
+    
+    
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){

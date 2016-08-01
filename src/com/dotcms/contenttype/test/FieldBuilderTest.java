@@ -15,18 +15,13 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourceForTesting;
 
 public class FieldBuilderTest {
 
 	FieldFactory factory = new FieldFactoryImpl();
 	
-	@BeforeClass
-	public static void initDb() throws FileNotFoundException, Exception{
-		new DataSourceForTesting().setup();
-	}
-	
+
 	@Test
 	public void testEquals() throws Exception {
 		Field f1 = FieldBuilder.instanceOf(TextField.class);

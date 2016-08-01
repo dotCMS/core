@@ -16,7 +16,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 
-public class DbFieldTransformer implements ToFieldTransformer {
+public class DbFieldTransformer implements FieldTransformer {
 
 	final List<Map<String, Object>> results;
 

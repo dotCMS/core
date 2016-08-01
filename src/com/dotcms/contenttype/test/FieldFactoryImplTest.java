@@ -7,13 +7,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.servlet.ServletContext;
-
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.mockito.Mockito;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
@@ -43,13 +40,10 @@ public class FieldFactoryImplTest {
 
 	FieldFactoryImpl factory = new FieldFactoryImpl();
 	final static String TEST_VAR_PREFIX = "testField";
+
 	@BeforeClass
 	public static void initDb() throws DotDataException, Exception {
-		new DataSourceForTesting().setup();
 
-
-		ServletContext context = Mockito.mock(ServletContext.class);
-		Config.CONTEXT = context;
 		DotConnect dc = new DotConnect();
 		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
 

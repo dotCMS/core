@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
@@ -1644,7 +1645,8 @@ public class Contentlet extends WebAsset implements Serializable {
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String, Object> myMap = new HashMap<String, Object>();
-		List<Field> fields = FieldsCache.getFieldsByStructureInode(structureInode);
+		try{
+		List<Field> fields = new LegacyFieldTransformer(APILocator.getFieldAPI2().byContentTypeId(structureInode),true).asOldFieldList();
 		for (Field f : fields) {
 			if(!APILocator.getFieldAPI().valueSettable(f)){
 				continue;
@@ -1697,6 +1699,10 @@ public class Contentlet extends WebAsset implements Serializable {
 
 		}
 		return myMap;
+		}
+		catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	/**

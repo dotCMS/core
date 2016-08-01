@@ -35,6 +35,7 @@ import com.dotmarketing.db.test.DataSourceForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -45,10 +46,7 @@ public class ContentTypeFactoryImplTest {
 
 	@BeforeClass
 	public static void initDb() throws DotDataException, Exception {
-		new DataSourceForTesting().setup();
 
-		ServletContext context = Mockito.mock(ServletContext.class);
-		Config.CONTEXT = context;
 		DotConnect dc = new DotConnect();
 		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
 
@@ -202,6 +200,8 @@ public class ContentTypeFactoryImplTest {
 
 	@Test
 	public void testLegacyTransform() throws Exception {
+		
+		Structure st = new Structure();
 		List<ContentType> types = factory.findAll("name");
 		List<ContentType> oldTypes = new FromStructureTransformer(StructureFactory.getStructures()).asList();
 

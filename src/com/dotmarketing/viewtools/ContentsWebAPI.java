@@ -15,11 +15,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+
 import org.elasticsearch.search.SearchHits;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -131,10 +133,13 @@ public class ContentsWebAPI implements ViewTool {
 	 *
 	 * @param structureType
 	 * @return
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
-	public Structure getStructureByType(String structureType) {
-		return CacheLocator.getContentTypeCache().getStructureByType(structureType);
+	public Structure getStructureByType(String structureType) throws DotStateException, DotSecurityException, DotDataException {
+		return new StructureTransformer(APILocator.getContentTypeAPI2().findByVarName(structureType, user)).asStructure();
 	}
 
 	/**
@@ -143,10 +148,13 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return Structure
 	 * @author Oswaldo Gallango
 	 * @version 1.0
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 * @since 1.5
 	 */
-	public Structure getStructureByInode(String structureInode) {
-		return CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
+	public Structure getStructureByInode(String structureInode) throws DotStateException, DotSecurityException, DotDataException {
+		return new StructureTransformer(APILocator.getContentTypeAPI2().find(structureInode, user)).asStructure();
 	}
 
 	/**
@@ -177,7 +185,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<Contentlet> getLastestContents(String structureType, String categoryName, int maxResults) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
-		Structure structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
+		Structure structure = getStructureByType(structureType);
 		return getLastestContents(structure, category, maxResults);
 	}
 
@@ -206,7 +214,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<Contentlet> getLastestContents(String structureType, String categoryName) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
-		Structure structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
+		Structure structure = getStructureByType(structureType);
 		return getLastestContents(structure, category);
 	}
 
@@ -232,12 +240,15 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureType The structure type name
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
-	public Field getFieldByName(String structureType, String fieldName) {
-		Structure st = CacheLocator.getContentTypeCache().getStructureByType(structureType);
-		return getFieldByName(st, fieldName);
+	public Field getFieldByName(String structureType, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
+		Structure structure = getStructureByType(structureType);
+		return getFieldByName(structure, fieldName);
 	}
 
 	/**
@@ -245,10 +256,13 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureInode The structure inode
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
-	public Field getFieldByInode(long structureInode, String fieldName) {
+	public Field getFieldByInode(long structureInode, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
 		return getFieldByInode(String.valueOf(structureInode), fieldName);
 	}
 	/**
@@ -256,11 +270,14 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureInode The structure inode
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 * @deprecated This method was deprecated because it uses the presentation name of the field
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
-	public Field getFieldByInode(String structureInode, String fieldName) {
-		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
+	public Field getFieldByInode(String structureInode, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
+		Structure st =  new StructureTransformer(APILocator.getContentTypeAPI2().find(structureInode, user)).asStructure();
 		return getFieldByName(st, fieldName);
 	}
 
@@ -284,11 +301,14 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureType The structure type name
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found, an empty field if it wasn't found
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 */
-	public Field getFieldByLogicalName(String structureType, String fieldName) {
-		@SuppressWarnings("deprecation")
-		Structure st = CacheLocator.getContentTypeCache().getStructureByType(structureType);
-		return getFieldByLogicalName(st, fieldName);
+	public Field getFieldByLogicalName(String structureType, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
+
+
+		return getFieldByLogicalName(getStructureByType(structureType), fieldName);
 	}
 
 	/**
@@ -296,8 +316,11 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureInode The structure inode
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found, an empty field if it wasn't found
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 */
-	public Field getFieldByLogicalNameAndInode(long structureInode, String fieldName) {
+	public Field getFieldByLogicalNameAndInode(long structureInode, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
 		return getFieldByLogicalNameAndInode(String.valueOf(structureInode),fieldName);
 	}
 	/**
@@ -305,9 +328,12 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param structureInode The structure inode
 	 * @param fieldName  The presentation name of the field
 	 * @return The field found, an empty field if it wasn't found
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 */
-	public Field getFieldByLogicalNameAndInode(String structureInode, String fieldName) {
-		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
+	public Field getFieldByLogicalNameAndInode(String structureInode, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
+		Structure st = getStructureByInode(structureInode);
 		return getFieldByLogicalName(st, fieldName);
 	}
 
@@ -316,10 +342,13 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param fieldName
 	 * @param content
 	 * @return
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 * @deprecated Try using the #getContentDetail or #getContentDetailByIdentifier macros to retrieve the fields of a content.
 	 */
-	public Object getFieldValue(String fieldName, Contentlet content) {
-		Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(content.getStructureInode());
+	public Object getFieldValue(String fieldName, Contentlet content) throws DotStateException, DotSecurityException, DotDataException {
+		Structure structure = getStructureByInode(content.getStructureInode());
 		Field theField = null;
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 		for (Field field : fields) {
@@ -388,7 +417,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<Contentlet> getContents(String structureType, String categoryName) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
-		Structure structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
+		Structure structure = getStructureByType(structureType);
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode() + " +c" + category.getInode() + "c:on");
 		return conAPI.search(buffy.toString(), 0, -1, "mod_date", user, true);
@@ -414,20 +443,22 @@ public class ContentsWebAPI implements ViewTool {
 	 *            The number of records you want to show per page.
 	 * @return
 	 * @throws DotSecurityException
+	 * @throws DotDataException 
+	 * @throws DotStateException 
 	 */
 	@SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
 	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, String pageStr,
-			String rowsPerPage) throws DotSecurityException {
+			String rowsPerPage) throws DotSecurityException, DotStateException, DotDataException {
 
 		String structInode = "";
 		Structure structure = null;
-		try {
-			structInode = structureType;
-			structure = new Structure();
-			structure.setInode(structInode);
-		} catch (Exception e) {
-			structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
-		}
+
+		structInode = structureType;
+		structure = new Structure();
+		structure.setInode(structInode);
+
+		structure = getStructureByType(structureType);
+		
 
 		Logger.debug(ContentsWebAPI.class, "search: luceneCondition: " + luceneCondition + ", sortBy: " + sortBy
 				+ ", page: " + pageStr);
@@ -464,7 +495,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, int maxResults) throws DotSecurityException {
+	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, int maxResults) throws DotSecurityException, DotStateException, DotDataException {
 		int page = 1;
 		int pageSize = -1;
 		return searchWithLuceneQuery(structureType, luceneCondition, sortBy, maxResults, page, pageSize);
@@ -472,7 +503,7 @@ public class ContentsWebAPI implements ViewTool {
 
 	@SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
 	public HashMap searchWithLuceneQuery(String structureType, String luceneCondition, String sortBy, int maxResults,
-			int page, int pageSize) throws DotSecurityException {
+			int page, int pageSize) throws DotSecurityException, DotStateException, DotDataException {
 		/*
 		 * We avoid a db hit if we pass the structure inode
 		 */
@@ -484,7 +515,7 @@ public class ContentsWebAPI implements ViewTool {
 			structure = new Structure();
 			structure.setInode(structInode);
 		} catch (Exception e) {
-			structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
+			structure = getStructureByType(structureType);
 		}
 
 		int offSet = 0;
@@ -1124,8 +1155,11 @@ public class ContentsWebAPI implements ViewTool {
 	 * @param fieldName
 	 *            The full name of the field, e.g. "The Department Url"
 	 * @return The identifier of the top matching contentlet
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 * @throws DotStateException 
 	 */
-	public String getContentletByUrl(HttpServletRequest request, String structureName, String fieldName) {
+	public String getContentletByUrl(HttpServletRequest request, String structureName, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
 		long x = System.currentTimeMillis();
 		// get the default language
 		long languageId = langAPI.getDefaultLanguage().getId();
@@ -1168,7 +1202,7 @@ public class ContentsWebAPI implements ViewTool {
 
 		// get the structure and field
 		@SuppressWarnings("deprecation")
-		Structure structure = CacheLocator.getContentTypeCache().getStructureByName(structureName);
+		Structure structure = getStructureByType(structureName);
         if(structure ==null){
             Logger.error(this.getClass(), "getContentletByUrl unable to find structure " +structureName + "." +fieldName );
             return null;

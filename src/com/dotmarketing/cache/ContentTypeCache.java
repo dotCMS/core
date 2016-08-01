@@ -2,6 +2,7 @@ package com.dotmarketing.cache;
 
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
@@ -15,27 +16,19 @@ import com.dotmarketing.portlets.structure.model.Structure;
 public abstract class ContentTypeCache implements Cachable {
     public abstract String getContainerStructureGroup();
 
+    @Deprecated
     public abstract void add(Structure st);
-
+    @Deprecated
     public abstract Structure getStructureByInode(String inode);
-
-    public abstract Structure getStructureByName(String name);
-
+    @Deprecated
     public abstract Structure getStructureByVelocityVarName(String variableName);
-
     @Deprecated
-    public abstract Structure getStructureByType(String type);
-
+    public abstract Structure getStructureByName(String variableName);
     @Deprecated
-    public abstract boolean hasStructureByType(String name);
-
-    @Deprecated
-    public abstract boolean hasStructureByName(String name);
-
     public abstract boolean hasStructureByVelocityVarName(String varname);
-
+    @Deprecated
     public abstract boolean hasStructureByInode(String inode);
-
+    @Deprecated
     public abstract void remove(Structure st);
 
     public abstract String getURLMasterPattern() throws DotCacheException;
@@ -53,13 +46,12 @@ public abstract class ContentTypeCache implements Cachable {
 
     public abstract void removeContainerStructures(String containerIdentifier,
             String containerInode);
+ 
+
+	public abstract void add(ContentType type);
+	
+    public abstract void remove(ContentType type);
     
-    public abstract String getStructuresByTypeGroup();
-    
-    public abstract List<Structure> getStructuresByType(int structureType);
-    
-    public abstract void addStructuresByType(List<Structure> structures, int structureType);
-    
-    public abstract void removeStructuresByType(int structureType);
-    
+    public abstract ContentType byInode(String inode);
+    public abstract ContentType byVar(String var);
 }

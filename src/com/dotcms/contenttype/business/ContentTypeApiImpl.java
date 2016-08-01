@@ -10,10 +10,13 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.python.modules.newmodule;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -24,6 +27,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -67,10 +71,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 				proxy.setInode(contentlet.getInode());
 				proxy.setOwner(null);
 				proxy.setType(new Contentlet().getType());
-				if (!APILocator.getPermissionAPI().doesUserHavePermission(proxy, PermissionAPI.PERMISSION_PUBLISH, user)) {
-					throw new DotSecurityException("Cannot delete structure. " + user + " does not have DELETE permissions on Content id:"
-							+ proxy.getIdentifier());
-				}
+				APILocator.getPermissionAPI().checkPermission(proxy, PermissionLevel.PUBLISH, user);
 			}
 
 		} while (contentlets.size() > 0);
@@ -128,10 +129,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 	}
 
 	@Override
-	public void saveContentType(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException {
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT, user)) {
-			throw new DotSecurityException("User " + user + " does not have PERMISSION_EDIT permissions on ContentType " + type);
-		}
+	public void save(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException {
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
 		Preconditions.checkNotNull(fields);
 
 		type = this.fac.save(type);
@@ -140,6 +139,14 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 			field = FieldBuilder.builder(field).contentTypeId(type.inode()).sortOrder(i++).build();
 			ffac.save(field);
 		}
+	}
+	@Override
+	public void save(ContentType type, User user) throws DotDataException, DotSecurityException {
+
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
+
+		type = this.fac.save(type);
+
 	}
 	@Override
 	public synchronized String suggestVelocityVar(final String tryVar) throws DotDataException{
@@ -193,5 +200,23 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 			res.add(new SimpleStructureURLMap(type.inode(), type.urlMapPattern()));
 		}		
 		return ImmutableList.copyOf(res);
+	}
+	
+	@Override
+	public void moveToSystemFolder(Folder folder) throws DotDataException{
+
+		List<ContentType> types = APILocator.getContentTypeAPI2().find("folder='" + folder.getIdentifier() + "'", "mod_date", 10000, 0, "asc", APILocator.systemUser(), false);
+
+		for(ContentType  type : types){
+			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+			builder.host(folder.getHostId());
+			builder.folder(Folder.SYSTEM_FOLDER);
+			
+
+
+			type=	fac.save(builder.build());
+			CacheLocator.getContentTypeCache().remove(new StructureTransformer(type).from());
+			APILocator.getPermissionAPI().resetPermissionReferences(type);
+		}
 	}
 }

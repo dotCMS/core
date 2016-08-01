@@ -19,11 +19,7 @@ import com.dotmarketing.db.test.DataSourceForTesting;
 public class ContentTypeBuilderTest {
 
 	FieldFactory factory = new FieldFactoryImpl();
-	
-	@BeforeClass
-	public static void initDb() throws FileNotFoundException, Exception{
-		new DataSourceForTesting().setup();
-	}
+
 	
 	@Test
 	public void testEquals() throws Exception {

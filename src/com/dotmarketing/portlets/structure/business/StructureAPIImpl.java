@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
-import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -32,20 +32,20 @@ public class StructureAPIImpl implements StructureAPI {
 	
 	@Override
 	public void save(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2().saveContentType(new FromStructureTransformer(st).from(), new LegacyFieldTransformer(st.getFields()).asList(), user);
+		APILocator.getContentTypeAPI2().save(new FromStructureTransformer(st).from(), new LegacyFieldTransformer(st.getFields()).asList(), user);
 
 	}
 	@Override
 	public Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException {
 
-		return new ToStructureTransformer(APILocator.getContentTypeAPI2().find(inode, user)).from();
+		return new StructureTransformer(APILocator.getContentTypeAPI2().find(inode, user)).asStructure();
 
 	}
 
 	@Override
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly) throws DotDataException {
 
-		return new ToStructureTransformer(APILocator.getContentTypeAPI2().findAll(user, respectFrontendRoles)).asList();
+		return new StructureTransformer(APILocator.getContentTypeAPI2().findAll(user, respectFrontendRoles)).asStructureList();
 
 	}
 
@@ -53,15 +53,15 @@ public class StructureAPIImpl implements StructureAPI {
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly, String condition, String orderBy,
 			int limit, int offset, String direction) throws DotDataException {
 
-		return new ToStructureTransformer(APILocator.getContentTypeAPI2().find(condition, orderBy, limit,
-				offset, direction,user, respectFrontendRoles)).asList();
+		return new StructureTransformer(APILocator.getContentTypeAPI2().find(condition, orderBy, limit,
+				offset, direction,user, respectFrontendRoles)).asStructureList();
 
 	}
 
 	@Override
 	public Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException {
 
-		return new ToStructureTransformer(APILocator.getContentTypeAPI2().findByVarName(varName, user)).from();
+		return new StructureTransformer(APILocator.getContentTypeAPI2().findByVarName(varName, user)).asStructure();
 
 	}
 

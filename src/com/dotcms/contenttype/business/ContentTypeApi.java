@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.liferay.portal.model.User;
 
@@ -26,8 +27,6 @@ public interface ContentTypeApi {
 
 	int countContentType(String condition) throws DotDataException;
 
-	void saveContentType(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException;
-
 	String suggestVelocityVar(String tryVar) throws DotDataException;
 
 	ContentType setAsDefault(ContentType type, User user) throws DotDataException, DotSecurityException;
@@ -42,6 +41,12 @@ public interface ContentTypeApi {
 			DotSecurityException;
 
 	List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException;
+
+	void moveToSystemFolder(Folder folder) throws DotDataException;
+
+	void save(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException;
+
+	void save(ContentType type, User user) throws DotDataException, DotSecurityException;
 
 
 

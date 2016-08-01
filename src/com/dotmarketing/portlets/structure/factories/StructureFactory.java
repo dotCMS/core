@@ -12,7 +12,9 @@ import java.util.Map;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
@@ -32,6 +34,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -83,7 +86,7 @@ public class StructureFactory {
 	 */
 	public static Structure getStructureByInode(String inode) {
 		try {
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().find(inode,APILocator.systemUser())).from();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().find(inode,APILocator.systemUser())).asStructure();
 		} catch (Exception e) {
 			throw new DotStateException(e);
 		}
@@ -98,7 +101,7 @@ public class StructureFactory {
 		type = SQLUtil.sanitizeParameter(type);
 		String condition = " name = '" + type + "'";
 		try {
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().find(condition, "mod_date", 1, 0, "desc", APILocator.systemUser(), false)).from();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().find(condition, "mod_date", 1, 0, "desc", APILocator.systemUser(), false)).asStructure();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
 		}
@@ -113,7 +116,7 @@ public class StructureFactory {
 	{
 
 		try {
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().findByVarName(varName,APILocator.systemUser())).from();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().findByVarName(varName,APILocator.systemUser())).asStructure();
 		} catch (Exception e) {
 			throw new DotStateException(e);
 		}
@@ -122,7 +125,7 @@ public class StructureFactory {
 	public static Structure getDefaultStructure()
 	{
 		try {
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().findDefault(APILocator.systemUser())).from();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().findDefault(APILocator.systemUser())).asStructure();
 		} catch (Exception e) {
 			throw new DotStateException(e);
 		}
@@ -176,7 +179,7 @@ public class StructureFactory {
 	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly)
 			throws DotDataException {
 		List<ContentType> types = APILocator.getContentTypeAPI2().findAll(user, respectFrontendRoles);
-		return new ToStructureTransformer(types).asList();
+		return new StructureTransformer(types).asStructureList();
 	}
 
 	/**
@@ -218,7 +221,7 @@ public class StructureFactory {
 		
 		try {
 			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, orderBy, limit, offset, direction, user, false);
-			return new ToStructureTransformer(types).asList();
+			return new StructureTransformer(types).asStructureList();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
 		}
@@ -227,7 +230,7 @@ public class StructureFactory {
 	public static List<Structure> getStructures()
 	{
 		try {
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().find("1=1", "name", 10000, 0, "desc", APILocator.systemUser(), false)).asList();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().find("1=1", "name", 10000, 0, "desc", APILocator.systemUser(), false)).asStructureList();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
 		}
@@ -249,7 +252,7 @@ public class StructureFactory {
     {
 		BaseContentType type = BaseContentType.getBaseContentType(structureType);
 		try {
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().findByType(type, APILocator.systemUser(),false)).asList();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().findByType(type, APILocator.systemUser(),false)).asStructureList();
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotStateException(e);
 		}
@@ -266,7 +269,7 @@ public class StructureFactory {
 
 		try {
 			
-			List<Structure>  structs= new ToStructureTransformer(APILocator.getContentTypeAPI2().findAll(APILocator.systemUser(),false)).asList();
+			List<Structure>  structs= new StructureTransformer(APILocator.getContentTypeAPI2().findAll(APILocator.systemUser(),false)).asStructureList();
 			return APILocator.getPermissionAPI().filterCollection(structs,PermissionAPI.PERMISSION_WRITE, respectFrontendRoles, user);
 		
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
@@ -278,7 +281,7 @@ public class StructureFactory {
 	{
 		try {
 			
-			return new ToStructureTransformer(APILocator.getContentTypeAPI2().findAll(user,respectFrontendRoles)).asList();
+			return new StructureTransformer(APILocator.getContentTypeAPI2().findAll(user,respectFrontendRoles)).asStructureList();
 	
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
@@ -291,7 +294,7 @@ public class StructureFactory {
 		int limit = -1;
 		String condition = " structure.system= " + DbConnectionFactory.getDBFalse();
 		List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, orderBy, limit, 0, "asc", user, respectFrontendRoles);
-		return new ToStructureTransformer(types).asList();
+		return new StructureTransformer(types).asStructureList();
 
 	}
 
@@ -304,7 +307,7 @@ public class StructureFactory {
 			String condition = " host = ?";
 			int limit = -1;
 			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, "mod_date", limit, 0, "desc", user, respectFrontendRoles);
-			return new ToStructureTransformer(types).asList();
+			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
@@ -320,7 +323,7 @@ public class StructureFactory {
 			String condition = " structure.inode exists (select structure_id from workflow_scheme_x_structure where workflow_scheme_x_structure.scheme_id = ' "  + scheme.getId() + "')";
 			int limit = -1;
 			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, "name", limit, 0, "asc", user, respectFrontendRoles);
-			return new ToStructureTransformer(types).asList();
+			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
 			Logger.error(StructureFactory.class, e.getMessage(), e);
@@ -362,7 +365,7 @@ public class StructureFactory {
 
 		try{
 			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, orderBy, limit, offset, direction, APILocator.systemUser(), false);
-			return new ToStructureTransformer(types).asList();
+			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
 			throw new DotStateException(e);
@@ -383,12 +386,11 @@ public class StructureFactory {
 	//### CREATE AND UPDATE
 	public static void saveStructure(Structure structure) throws DotHibernateException
 	{
-		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
-		Date now = new Date();
-		structure.setiDate(now);
-		structure.setModDate(now);
-		fixFolderHost(structure);
-		HibernateUtil.saveOrUpdate(structure);
+		try {
+			APILocator.getContentTypeAPI2().save(new FromStructureTransformer(structure).from(), APILocator.systemUser());
+		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			throw new DotHibernateException(e.getMessage(),e);
+		}
 
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
 		    CacheLocator.getContentTypeCache().clearURLMasterPattern();
@@ -397,12 +399,11 @@ public class StructureFactory {
 
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
 	{
-		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
-		Date now = new Date();
-		structure.setiDate(now);
-		structure.setModDate(now);
-		fixFolderHost(structure);
-		HibernateUtil.saveWithPrimaryKey(structure, existingId);
+		try {
+			APILocator.getContentTypeAPI2().save(new FromStructureTransformer(structure).from(), APILocator.systemUser());
+		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			throw new DotHibernateException(e.getMessage(),e);
+		}
 	}
 
 	//### DELETE ###
@@ -417,17 +418,17 @@ public class StructureFactory {
 
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
-		InodeFactory.deleteInode(structure);
+		try {
+			APILocator.getContentTypeAPI2().delete(new FromStructureTransformer(structure).from(), APILocator.systemUser());
+		} catch (DotStateException | DotSecurityException e) {
+			Logger.error(StructureFactory.class, e.getMessage(), e);
+			throw new DotDataException(e.getMessage());
+		}
 	}
 
 	public static void disableDefault() throws DotHibernateException
 	{
-		Structure defaultStructure = getDefaultStructure();
-		if (InodeUtils.isSet(defaultStructure.getInode()))
-		{
-			defaultStructure.setDefaultStructure(false);
-			saveStructure(defaultStructure);
-		}
+		throw new DotHibernateException("You cannot disbale the defualt without setting a new one");
 	}
 
 	public static int getTotalDates(Structure structure)
@@ -483,152 +484,10 @@ public class StructureFactory {
 	 * @throws DotHibernateException
 	 *
 	 */
-	public static void createDefaultStructure () throws DotHibernateException {
+	public static void createDefaultStructure () {
 		Structure st = StructureFactory.getDefaultStructure();
 		if (st == null || !InodeUtils.isSet(st.getInode())) {
 
-			Logger.info(StructureFactory.class, "Creating the default cms contentlet structure");
-
-			st.setDefaultStructure(true);
-			st.setFixed(false);
-			st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
-			st.setDescription("Default CMS Content Structure");
-			st.setName("Web Page Content");
-			StructureFactory.saveStructure(st);
-
-			Field field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("text1");
-			field.setFieldName("Title");
-			field.setFieldType(Field.FieldType.TEXT.toString());
-			field.setHint("");
-			field.setRegexCheck("");
-			field.setRequired(true);
-			field.setSortOrder(0);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setVelocityVarName("ContentletTitle");
-			field.setIndexed(true);
-			field.setSearchable(true);
-			field.setListed(true);
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
-
-
-			field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("text_area1");
-			field.setFieldName("Body");
-			field.setFieldType(Field.FieldType.WYSIWYG.toString());
-			field.setHint("");
-			field.setRegexCheck("");
-			field.setRequired(true);
-			field.setSortOrder(8);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setIndexed(true);
-			field.setVelocityVarName("Body");
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
-
-
-
-			/* Let's create a News Items structure as well */
-
-			st = new Structure();
-			st.setName("News Item");
-			st.setDescription("News Items and Press Releases");
-			st.setFixed(false);
-			st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
-			StructureFactory.saveStructure(st);
-
-			field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("text1");
-			field.setFieldName("Headline");
-			field.setFieldType(Field.FieldType.TEXT.toString());
-			field.setHint("");
-			field.setRegexCheck("");
-			field.setRequired(true);
-			field.setSortOrder(0);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setVelocityVarName("NewsHeadline");
-			field.setIndexed(true);
-			field.setListed(true);
-			field.setSearchable(true);
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
-
-			field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("text_area1");
-			field.setFieldName("Short Summary");
-			field.setFieldType(Field.FieldType.TEXT_AREA.toString());
-			field.setHint("This is teaser copy shown on listing pages");
-			field.setRegexCheck("");
-			field.setRequired(true);
-			field.setSortOrder(1);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setVelocityVarName("NewsSummary");
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
-
-			field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("date1");
-			field.setFieldName("Publish Date");
-			field.setFieldType(Field.FieldType.DATE_TIME.toString());
-			field.setHint("<br>The date this news item will be displayed");
-			field.setRegexCheck("");
-			field.setRequired(true);
-			field.setSortOrder(2);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setVelocityVarName("NewsPublishDate");
-			field.setListed(true);
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
-
-			field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("date2");
-			field.setFieldName("Expire Date");
-			field.setFieldType(Field.FieldType.DATE_TIME.toString());
-			field.setHint("<br>The date this item will expire");
-			field.setRegexCheck("");
-			field.setRequired(false);
-			field.setSortOrder(3);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setVelocityVarName("NewsExpireDate");
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
-
-
-			field = new Field ();
-			field.setDefaultValue("");
-			field.setFieldContentlet("text_area2");
-			field.setFieldName("Body");
-			field.setFieldType(Field.FieldType.WYSIWYG.toString());
-			field.setHint("");
-			field.setRegexCheck("");
-			field.setRequired(true);
-			field.setSortOrder(4);
-			field.setStructureInode(st.getInode());
-			field.setFieldRelationType("");
-			field.setIndexed(true);
-			field.setVelocityVarName("NewsBody");
-			field.setFixed(false);
-			field.setReadOnly(false);
-			FieldFactory.saveField(field);
 
 
 
@@ -754,37 +613,9 @@ public class StructureFactory {
 		return QueryUtil.DBSearch(query, dbColToObjectAttribute, null, user, true, respectFrontendRoles);
 	}
 
-	private static String cleanURLMap(String urlMap){
-		if(!UtilMethods.isSet(urlMap)){
-			return null;
-		}
-		urlMap = urlMap.trim();
-		if(!urlMap.startsWith("/")){
-			urlMap = "/" + urlMap;
-		}
-		return urlMap;
-	}
 
-	public static void updateFolderReferences(Folder folder) throws DotDataException{
 
-		HibernateUtil dh = new HibernateUtil(Structure.class);
-        dh.setQuery("select inode from inode in class " + Structure.class.getName() + " where inode.folder = ?");
-	    dh.setParam(folder.getInode());
-		List<Structure> results = dh.list();
-		for(Structure  structure : results){
-			if(UtilMethods.isSet(folder.getHostId()) && !hostAPI.findSystemHost().getIdentifier().equals(folder.getHostId())){
-				structure.setHost(folder.getHostId());
-			}else{
-				structure.setHost("SYSTEM_HOST");
-			}
-			structure.setFolder("SYSTEM_FOLDER");
-			HibernateUtil.saveOrUpdate(structure);
-			CacheLocator.getContentTypeCache().remove(structure);
-			permissionAPI.resetPermissionReferences(structure);
 
-		}
-
-	}
 
 	public static void updateFolderFileAssetReferences(Structure st) throws DotDataException{
 		Structure defaultFileAssetStructure = getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);

@@ -17,7 +17,7 @@ import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -226,7 +226,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						continue;
 					}
 
-					Structure st = new ToStructureTransformer(type).from();
+					Structure st = new StructureTransformer(type).asStructure();
 
                     //Continue only if have a detail
                     if ( !InodeUtils.isSet( st.getPagedetail() ) ) {

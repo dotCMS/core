@@ -20,6 +20,7 @@ import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -30,7 +31,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 
@@ -295,7 +298,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
 		dc.addParam(type.velocityVarName());
-		dc.addParam(type.urlMapPattern());
+		dc.addParam(new CleanURLMap(type.urlMapPattern()).toString());
 		dc.addParam(type.host());
 		dc.addParam(type.folder());
 		dc.addParam(type.expireDateVar());
@@ -317,7 +320,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
 		dc.addParam(type.velocityVarName());
-		dc.addParam(type.urlMapPattern());
+		dc.addParam(new CleanURLMap(type.urlMapPattern()).toString());
 		dc.addParam(type.host());
 		dc.addParam(type.folder());
 		dc.addParam(type.expireDateVar());
@@ -460,4 +463,25 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			return "SearchCondition [search=" + search + ", condition=" + condition + "]";
 		}
 	}
+
+	 
+	class CleanURLMap {
+		final String urlMap;
+		public CleanURLMap(String url){
+			this.urlMap=url;
+		}
+		
+		@Override
+		public String toString() {
+			String ret=null;
+			if(this.urlMap!=null){
+				ret = this.urlMap.trim();
+				if(!ret.startsWith("/")){
+					ret = "/" + ret;
+				}
+			}
+			return ret;
+		}
+	}
+	
 }

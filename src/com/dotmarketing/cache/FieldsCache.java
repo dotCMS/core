@@ -34,12 +34,6 @@ public class FieldsCache {
 	    }catch (DotCacheException e) {
 			Logger.debug(FieldsCache.class, "Cache Entry not found", e);
 		}
-        if (fields == null) {
-            Structure st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
-            fields = st.getFields();
-            if(fields.size()>0)
-                addFields(st, fields);
-        }
         return fields;
 	}
 

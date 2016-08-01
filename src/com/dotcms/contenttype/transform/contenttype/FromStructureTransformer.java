@@ -13,23 +13,30 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.structure.model.Structure;
 
 public class FromStructureTransformer implements ContentTypeTransformer {
-	final List<ContentType> list;
+	final List<ContentType> cTypeList;
 
 	public FromStructureTransformer(Structure struct) {
-		this.list = ImmutableList.of(transform(struct));
+		this.cTypeList = ImmutableList.of(transformToContentType(struct));
 	}
-
+	public FromStructureTransformer(ContentType type) {
+		this.cTypeList = ImmutableList.of(type);
+	}
+	
+	public FromStructureTransformer(List<ContentType> contentTypes, boolean hidden) {
+		this.cTypeList = ImmutableList.copyOf(contentTypes);
+	}
+	
 	public FromStructureTransformer(List<Structure> initList) {
 		
 		List<ContentType> newList = new ArrayList<ContentType>();
 		for (Structure struct : initList) {
-			newList.add(transform(struct));
+			newList.add(transformToContentType(struct));
 		}
-		this.list = ImmutableList.copyOf(newList);
+		this.cTypeList = ImmutableList.copyOf(newList);
 	}
 
 	@SuppressWarnings("static-method")
-	private ContentType transform(final Structure struct) throws DotStateException {
+	private ContentType transformToContentType(final Structure struct) throws DotStateException {
 
 		
 		BaseContentType base =  BaseContentType.getBaseContentType(struct.getStructureType());
@@ -135,12 +142,12 @@ public class FromStructureTransformer implements ContentTypeTransformer {
 
 	@Override
 	public ContentType from() throws DotStateException {
-		return this.list.get(0);
+		return this.cTypeList.get(0);
 	}
 
 	@Override
 	public List<ContentType> asList() throws DotStateException {
-		return this.list;
+		return this.cTypeList;
 	}
 }
 

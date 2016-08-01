@@ -18,7 +18,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
-import com.dotcms.contenttype.transform.contenttype.ToStructureTransformer;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -200,11 +200,11 @@ public class EditStructureAction extends DotPortletAction {
 			if(type.baseType() == BaseContentType.WIDGET
 					&& type.velocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
 						type = ContentTypeBuilder.builder(type).fixed(true).build();
-						APILocator.getContentTypeAPI2().saveContentType(type, type.fields(), user);
+						APILocator.getContentTypeAPI2().save(type, type.fields(), user);
 			}
 		}
 		
-		req.setAttribute(WebKeys.Structure.STRUCTURE, new ToStructureTransformer(type).from());
+		req.setAttribute(WebKeys.Structure.STRUCTURE, new StructureTransformer(type).from());
 
 		boolean searchable = false;
 
@@ -229,7 +229,7 @@ public class EditStructureAction extends DotPortletAction {
 		}
 
 
-		return new ToStructureTransformer(type).from();
+		return new StructureTransformer(type).asStructure();
 	}
 
 	private void _saveStructure(ActionForm form, ActionRequest req, ActionResponse res) {
@@ -262,12 +262,7 @@ public class EditStructureAction extends DotPortletAction {
 			auxStructureName = (auxStructureName != null ? auxStructureName.trim() : "");
 			auxStructureName = auxStructureName.replace("'", "''");
 
-			@SuppressWarnings("deprecation")
-			Structure auxStructure = CacheLocator.getContentTypeCache().getStructureByType(auxStructureName);
 
-			if (InodeUtils.isSet(auxStructure.getInode()) && !auxStructure.getInode().equalsIgnoreCase(structure.getInode())) {
-				throw new DotDataException(LanguageUtil.format(user.getLocale(), "structure-name-already-exist",new String[]{auxStructureName},false));
-			}
 
 			Arrays.sort(reservedStructureNames);
 			if (!InodeUtils.isSet(structureForm.getInode()) && (Arrays.binarySearch(reservedStructureNames, auxStructureName) >= 0)) {
@@ -412,7 +407,7 @@ public class EditStructureAction extends DotPortletAction {
 			}
 
 			// If there is no default structure this would be
-			Structure defaultStructure = new ToStructureTransformer(APILocator.getContentTypeAPI2().findDefault(user)).from();
+			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI2().findDefault(user)).asStructure();
 			if (!InodeUtils.isSet(defaultStructure.getInode())) {
 				structure.setDefaultStructure(true);
 			}

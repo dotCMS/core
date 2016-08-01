@@ -484,7 +484,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			/************ Structures *****************/
-			StructureFactory.updateFolderReferences(folder);
+			
 		} catch (Exception e) {
 			Logger.error(FolderAPI.class, e.getMessage(), e);
 			throw new DotStateException(e.getMessage());
