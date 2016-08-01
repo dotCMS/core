@@ -124,9 +124,10 @@ public class UserPersistence extends BasePersistence {
 							user.getLoginDate(), user.getLoginIP(),
 							user.getLastLoginDate(), user.getLastLoginIP(),
 							user.getFailedLoginAttempts(),
-							user.getAgreedToTermsOfUse(), user.getActive());
+							user.getAgreedToTermsOfUse(), user.getActive(),
+							user.getDeleteInProgress(), user.getDeleteDate());
 
-					userHBM.setModDate(user.getModificationDate());
+                    userHBM.setModDate(user.getModificationDate());
 					session.save(userHBM);
 					session.flush();
 				}
@@ -174,6 +175,8 @@ public class UserPersistence extends BasePersistence {
 						userHBM.setFailedLoginAttempts(user.getFailedLoginAttempts());
 						userHBM.setAgreedToTermsOfUse(user.getAgreedToTermsOfUse());
 						userHBM.setActive(user.getActive());
+						userHBM.setDeleteInProgress(user.getDeleteInProgress());
+						userHBM.setDeleteDate(user.getDeleteDate());
 						userHBM.setModDate(user.getModificationDate());
 						session.flush();
 					}
@@ -201,7 +204,8 @@ public class UserPersistence extends BasePersistence {
 								user.getLoginDate(), user.getLoginIP(),
 								user.getLastLoginDate(), user.getLastLoginIP(),
 								user.getFailedLoginAttempts(),
-								user.getAgreedToTermsOfUse(), user.getActive());
+								user.getAgreedToTermsOfUse(), user.getActive(),
+								user.getDeleteInProgress(), user.getDeleteDate());
 
 						userHBM.setModDate(user.getModificationDate());
 						session.save(userHBM);

@@ -1,11 +1,8 @@
 package com.dotmarketing.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -28,11 +25,19 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.PasswordTrackerLocalManager;
 import com.liferay.portal.ejb.PasswordTrackerLocalManagerFactory;
 import com.liferay.portal.ejb.UserManagerUtil;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
+
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User entities from liferay's repository.  Classes within the dotCMS
@@ -49,11 +54,13 @@ public class UserAPIImpl implements UserAPI {
 	private UserFactory uf;
 	private PermissionAPI perAPI;
 	private UserProxyAPI upAPI;
+	private final NotificationAPI notfAPI;
 
 	public UserAPIImpl() {
 		uf = FactoryLocator.getUserFactory();
 		perAPI = APILocator.getPermissionAPI();
 		upAPI = APILocator.getUserProxyAPI();
+		notfAPI = APILocator.getNotificationAPI();
 	}
 
 	public User loadUserById(String userId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
@@ -292,7 +299,7 @@ public class UserAPIImpl implements UserAPI {
 	 * inode and version info tables. 
 	 * @param userToDelete User to delete 
 	 * @param replacementUser User to replace the db reference of the user to delete
-	 * @param user User requesting the delete user
+	 * @param user User requesting the operation
 	 * @param respectFrontEndRoles
 	 * @throws DotDataException The user to delete or the replacement user are not set
 	 * @throws DotSecurityException The user requesting the delete doesn't have permission edit permission
@@ -315,41 +322,73 @@ public class UserAPIImpl implements UserAPI {
 		}
 
 		//replace the user reference in Inodes
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Inodes");
+
 		InodeFactory.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
+		logDelete(DeletionStage.END, userToDelete, user, "Inodes");
+
 		//replace the user references in contentlets
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Contentlets");
+
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		conAPI.updateUserReferences(userToDelete.getUserId(),replacementUser.getUserId());
+		conAPI.updateUserReferences(userToDelete,replacementUser.getUserId(), user);
+
+		logDelete(DeletionStage.END, userToDelete, user, "Contentlets");
 
 		//replace the user references in menulink
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Menulinks");
+
 		MenuLinkAPI menuAPI = APILocator.getMenuLinkAPI();
 		menuAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
+		logDelete(DeletionStage.END, userToDelete, user, "Menulinks");
+
 		//replace user references in htmlpages
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "HTMLPages");
+
 		HTMLPageAPI pageAPI  = APILocator.getHTMLPageAPI();
 		pageAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
+		logDelete(DeletionStage.END, userToDelete, user, "HTMLPages");
+
 		//replace user references in file_assets
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "FileAssets");
+
 		FileAPI fileAPI = APILocator.getFileAPI();
 		fileAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
+		logDelete(DeletionStage.END, userToDelete, user, "FileAssets");
+
 		//replace user references in containers
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");
+
 		ContainerAPI contAPI = APILocator.getContainerAPI();
 		contAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
+		logDelete(DeletionStage.END, userToDelete, user, "Containers");
+
 		//replace user references in templates
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Templates");
+
 		TemplateAPI temAPI = APILocator.getTemplateAPI();
 		temAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		logDelete(DeletionStage.END, userToDelete, user, "Templates");
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role userRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
 		Role replacementUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
 
-		//replace the user reference in Inodes
+		//replace the user reference in workflows
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Workflows");
+
 		WorkflowAPI wofAPI = APILocator.getWorkflowAPI();
 		wofAPI.updateUserReferences(userToDelete.getUserId(), userRole.getId(), replacementUser.getUserId(),replacementUserRole.getId());
 
-		//removing user roles		
+		logDelete(DeletionStage.END, userToDelete, user, "Workflows");
+
+		//removing user roles
 		perAPI.removePermissionsByRole(userRole.getId());
 		roleAPI.removeAllRolesFromUser(userToDelete);
 
@@ -364,6 +403,33 @@ public class UserAPIImpl implements UserAPI {
 		/*Delete role*/
 		uf.delete(userToDelete);
 
+	}
+
+	private enum DeletionStage {
+		BEGINNING,
+		END
+	}
+
+	private void logDelete(DeletionStage stage, User userToDelete, User user, String referenceType) {
+
+		String userToDeleteStr = userToDelete.getUserId() + "/" + userToDelete.getFullName();
+
+		try {
+			String msg = stage==DeletionStage.BEGINNING
+				?
+				MessageFormat.format(LanguageUtil.get(user,
+				"com.dotmarketing.business.UserAPI.delete.beginning"), userToDeleteStr, referenceType)
+				:
+				MessageFormat.format(LanguageUtil.get(user,
+					"com.dotmarketing.business.UserAPI.delete.end"), userToDeleteStr, referenceType);
+
+			Logger.info(this, msg);
+
+			notfAPI.info(msg, user.getUserId());
+
+		} catch (LanguageException e) {
+			Logger.error(this, "Error logging info of Delete user operation. User: " + userToDeleteStr);
+		}
 	}
 
 	public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
@@ -421,5 +487,15 @@ public class UserAPIImpl implements UserAPI {
 
 	}
 
+	@Override
+	public void markToDelete(User userToDelete) throws DotDataException {
+		userToDelete.setDeleteInProgress(true);
+		userToDelete.setDeleteDate(Calendar.getInstance().getTime());
+		uf.saveUser(userToDelete);
+	}
 
+	@Override
+	public List<User> getUnDeletedUsers() throws DotDataException {
+		return uf.getUnDeletedUsers();
+	}
 }

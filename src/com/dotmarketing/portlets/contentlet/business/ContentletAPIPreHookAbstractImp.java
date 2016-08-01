@@ -616,7 +616,7 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
     }
 
     @Override
-    public boolean updateUserReferences(String userId, String replacementUserId) throws DotDataException {
+    public boolean updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException {
         return true;
     }
 

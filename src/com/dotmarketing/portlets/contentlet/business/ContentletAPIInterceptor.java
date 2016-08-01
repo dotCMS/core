@@ -2422,18 +2422,18 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
 	@Override
-	public void updateUserReferences(String userId, String replacementUserId)
+	public void updateUserReferences(User userToReplace, String replacementUserId, User user)
 			throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.updateUserReferences(userId,replacementUserId);
+			boolean preResult = pre.updateUserReferences(userToReplace,replacementUserId, user);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		conAPI.updateUserReferences(userId,replacementUserId);
+		conAPI.updateUserReferences(userToReplace,replacementUserId, user);
 		for(ContentletAPIPostHook post : postHooks){
-			post.updateUserReferences(userId,replacementUserId);
+			post.updateUserReferences(userToReplace,replacementUserId, user);
 		}
 		
 	}

@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
@@ -12,7 +13,15 @@ public class Task03550RenameContainersTable extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        try {
+            DotConnect dc=new DotConnect();
+            dc.setSQL("select identifier from dot_containers");
+            dc.loadResult();
+        }
+        catch(Exception ex) {
+            return true;
+        }
+        return false;
     }
 
     @Override

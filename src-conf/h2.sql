@@ -2343,6 +2343,10 @@ create table rule_action (id varchar(36) primary key,rule_id varchar(36) referen
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
+-- Delete User
+ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_ ADD delete_date TIMESTAMP;
+
 CREATE TABLE system_event (
     identifier VARCHAR(36) NOT NULL,
     event_type VARCHAR(50) NOT NULL,

@@ -52,7 +52,7 @@ public class UserHBM {
 		String greeting, String resolution, String refreshRate,
 		String layoutIds, String comments, Date createDate, Date loginDate,
 		String loginIP, Date lastLoginDate, String lastLoginIP,
-		int failedLoginAttempts, boolean agreedToTermsOfUse, boolean active) {
+		int failedLoginAttempts, boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate) {
 		_userId = userId;
 		_companyId = companyId;
 		_password = password;
@@ -94,6 +94,8 @@ public class UserHBM {
 		_failedLoginAttempts = failedLoginAttempts;
 		_agreedToTermsOfUse = agreedToTermsOfUse;
 		_active = active;
+		_deleteInProgress = deleteInProgress;
+		_deleteDate = deleteDate;
 	}
 
 	public String getPrimaryKey() {
@@ -464,13 +466,30 @@ public class UserHBM {
 		_projTasks = projTasks;
 	}
 
-	public Date getModDate() {
-		return _modDate;
+    public Date getModDate() {
+        return _modDate;
+    }
+
+    public void setModDate(Date _modDate) {
+        this._modDate = _modDate;
+    }
+
+	protected boolean getDeleteInProgress() {
+		return _deleteInProgress;
 	}
 
-	public void setModDate(Date _modDate) {
-		this._modDate = _modDate;
+	protected void setDeleteInProgress(boolean deleteInProgress) {
+		_deleteInProgress = deleteInProgress;
 	}
+
+	protected Date getDeleteDate() {
+		return _deleteDate;
+	}
+
+	protected void setDeleteDate(Date deleteDate) {
+		_deleteDate = deleteDate;
+	}
+
 
 	private String _userId;
 	private String _companyId;
@@ -514,6 +533,8 @@ public class UserHBM {
 	private int _failedLoginAttempts;
 	private boolean _agreedToTermsOfUse;
 	private boolean _active;
+	private boolean _deleteInProgress;
+	private Date _deleteDate;
 	private Set _groups;
 	private Set _roles;
 	private Set _projProjects;

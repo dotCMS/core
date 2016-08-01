@@ -1166,10 +1166,11 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Method will replace user references of the given userId in Contentlet s
 	 * and replaced with the specified replacement userId 
-	 * @param userId User Id to replace
+	 * @param userToReplace the user to replace
 	 * @param replacementUserId Replacement User Id
-	 */	
-	public void updateUserReferences(String userId,String replacementUserId)throws DotDataException;
+	 * @param user the user requesting the operation
+	 */
+	public void updateUserReferences(User userToReplace,String replacementUserId, User user)throws DotDataException;
 
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.
