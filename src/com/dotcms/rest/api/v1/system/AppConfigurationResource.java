@@ -16,7 +16,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.CollectionsUtils;
 
@@ -26,6 +25,11 @@ import com.dotcms.util.CollectionsUtils;
  * configuration files, and the menu items that logged in users can see in their
  * navigation bar, are just a couple of configuration properties that this
  * end-point can provide.
+ * <p>
+ * The number of configuration properties my vary depending on whether the user
+ * is logged in or not before calling this end-point. For example, the list of
+ * navigation menu items <b>will be returned as an empty list</b> if the user is
+ * not authenticated yet.
  * 
  * @author Jose Castro
  * @version 3.7
@@ -39,11 +43,13 @@ public class AppConfigurationResource implements Serializable {
 	private static final String MENU = "menu";
 	private static final String CONFIG = "config";
 
+	private final AppConfigurationHelper helper;
+
 	/**
 	 * Default constructor.
 	 */
 	public AppConfigurationResource() {
-		
+		this.helper = AppConfigurationHelper.INSTANCE;
 	}
 
 	/**
@@ -61,14 +67,10 @@ public class AppConfigurationResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-			final MenuResource menuResource = new MenuResource();
-			final Response menuResponse = menuResource.getMenus(MenuResource.App.CORE_WEB.name(), request);
-			final ConfigurationResource configurationResource = new ConfigurationResource();
-			final Response configurationResponse = configurationResource.list(request);
+			final Object menuData = this.helper.getMenuData(request);
+			final Object configData = this.helper.getConfigurationData(request);
 			// Return all configuration parameters in one response
-			final Map<String, Object> configMap = CollectionsUtils.map(
-					MENU, ResponseEntityView.class.cast(menuResponse.getEntity()).getEntity(), 
-					CONFIG, ResponseEntityView.class.cast(configurationResponse.getEntity()).getEntity());
+			final Map<String, Object> configMap = CollectionsUtils.map(MENU, menuData, CONFIG, configData);
 			return Response.ok(new ResponseEntityView(configMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
