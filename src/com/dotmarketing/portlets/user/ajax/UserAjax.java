@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.quartz.job.DeleteUserJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
@@ -311,18 +312,14 @@ public class UserAjax {
 
 			User user;
 			try {
-				HibernateUtil.startTransaction();
 				user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
-				APILocator.getContentletAPI().removeUserReferences(userId);
-				uAPI.delete(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-				HibernateUtil.commitTransaction();
+				DeleteUserJob.triggerDeleteUserJob(user, uWebAPI.getLoggedInUser(request),  uWebAPI.getLoggedInUser(request),!uWebAPI.isLoggedToBackend(request));
 			} catch (Exception e) {
-				HibernateUtil.rollbackTransaction();
 				Logger.error(this, e.getMessage(), e);
 				return false;
 			}
 
-		} catch(DotDataException | DotStateException e) {
+		} catch(DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			throw e;
@@ -362,19 +359,16 @@ public class UserAjax {
 
 			User user;
 			try {
-				HibernateUtil.startTransaction();
+
 				User userToDelete = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
 				User replacementUser = uAPI.loadUserById(replacingUserId,uWebAPI.getLoggedInUser(request),false);
-				
-				uAPI.delete(userToDelete, replacementUser,  uWebAPI.getLoggedInUser(request),!uWebAPI.isLoggedToBackend(request));
-				HibernateUtil.commitTransaction();
+				DeleteUserJob.triggerDeleteUserJob(userToDelete, replacementUser,  uWebAPI.getLoggedInUser(request),!uWebAPI.isLoggedToBackend(request));
 			} catch (Exception e) {
-				HibernateUtil.rollbackTransaction();
 				Logger.error(this, e.getMessage(), e);
 				return false;
 			}
 
-		} catch(DotDataException | DotStateException e) {
+		} catch(DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + userId);
 			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + userId);
 			throw e;

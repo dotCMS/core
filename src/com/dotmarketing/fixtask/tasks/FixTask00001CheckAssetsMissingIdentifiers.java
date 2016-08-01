@@ -54,7 +54,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 					"Deleting all assets with no identifier");
 			DotConnect db = new DotConnect();
 
-			String tableNameOfAsset[] = { "contentlet", "containers",
+			String tableNameOfAsset[] = { "contentlet", Inode.Type.CONTAINERS.getTableName(),
 					"file_asset", "htmlpage", "links", "template" };
 
 			for (String asset : tableNameOfAsset) {
@@ -214,7 +214,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 
 	public boolean shouldRun() {
 
-		String tableNameOfAsset[] = { "contentlet", "containers", "file_asset",
+		String tableNameOfAsset[] = { "contentlet", Inode.Type.CONTAINERS.getTableName(), "file_asset",
 				"htmlpage", "links", "template" };
 		int total = 0;
 		DotConnect dc = new DotConnect();

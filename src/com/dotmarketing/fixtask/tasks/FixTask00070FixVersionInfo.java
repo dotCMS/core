@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Versionable;
@@ -35,9 +36,9 @@ public class FixTask00070FixVersionInfo implements FixTask {
                 
                 String[] versionables=new String[] {
                         "file_asset","htmlpage",
-                        "template","containers","links"};
+                        "template", Inode.Type.CONTAINERS.getTableName(),"links"};
                 for(String table : versionables) {
-                    String vitable=UtilMethods.getVersionInfoTableName(table);
+                    String vitable=Inode.Type.valueOf(table.toUpperCase()).getVersionTableName();
                     String sql = " select distinct id from "+table+" join identifier on (id=identifier) " +
                     		     " left outer join " + vitable +
                     		     " on("+table+".identifier="+vitable+".identifier) " +

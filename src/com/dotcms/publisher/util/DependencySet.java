@@ -90,7 +90,8 @@ public class DependencySet extends HashSet<String> {
 			return true;
 		}
 
-		boolean modified = false;
+		boolean modifiedOnCurrentEnv = false;
+		boolean modifiedOnAtLeastOneEnv = false;
 
 		// we need to check if all environments have the last version of the asset in
 		// order to skip adding it to the Set
@@ -113,23 +114,23 @@ public class DependencySet extends HashSet<String> {
 					return true;
 				}
 
-				modified = (asset==null || (assetModDate!=null && asset.getPushDate().before(assetModDate)));
+				modifiedOnCurrentEnv = (asset==null || (assetModDate!=null && asset.getPushDate().before(assetModDate)));
 				
 				try {
-				    if(!modified && assetType.equals("content")) {
+				    if(!modifiedOnCurrentEnv && assetType.equals("content")) {
 				        // check for versionInfo TS on content
 				        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
                             ContentletVersionInfo info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
                             if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
-                                modified = modified || (null == info.getVersionTs()) || asset.getPushDate().before(info.getVersionTs());
+                                modifiedOnCurrentEnv = modifiedOnCurrentEnv || (null == info.getVersionTs()) || asset.getPushDate().before(info.getVersionTs());
                             }
 				        }
 				    }
-				    if(!modified && (assetType.equals("template") || assetType.equals("links") || assetType.equals("container") || assetType.equals("htmlpage"))) {
+				    if(!modifiedOnCurrentEnv && (assetType.equals("template") || assetType.equals("links") || assetType.equals("container") || assetType.equals("htmlpage"))) {
 				        // check for versionInfo TS
                         VersionInfo info=APILocator.getVersionableAPI().getVersionInfo(assetId);
                         if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
-                            modified = asset.getPushDate().before(info.getVersionTs());
+                            modifiedOnCurrentEnv = asset.getPushDate().before(info.getVersionTs());
                         }
 				    }
 				} catch (Exception e) {
@@ -137,10 +138,12 @@ public class DependencySet extends HashSet<String> {
                             " process continues without checking versionInfo.ts",e);
                 }
 				
-				if(modified) {
+				if(modifiedOnCurrentEnv) {
 					try {
                         asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
                         APILocator.getPushedAssetsAPI().savePushedAsset(asset);
+                        //If the asset was modified at least in one environment, set this to true
+                        modifiedOnAtLeastOneEnv = true;
 					} catch (DotDataException e) {
 						Logger.error(getClass(), "Could not save PushedAsset. "
 								+ "AssetId: " + assetId + ". AssetType: " + assetType + ". Env Id: " + env.getId(), e);
@@ -149,7 +152,7 @@ public class DependencySet extends HashSet<String> {
 			}
 		}
 
-        if ( isForcePush || isDownload || !isPublish || modified ) {
+        if ( isForcePush || isDownload || !isPublish || modifiedOnAtLeastOneEnv ) {
             super.add( assetId );
             return true;
         }

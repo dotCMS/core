@@ -17,6 +17,8 @@ import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import junit.framework.Assert;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+
+import org.junit.Before;
 import org.junit.Test;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -28,6 +30,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.ettrema.httpclient.File;
 import com.ettrema.httpclient.Folder;
@@ -37,6 +40,12 @@ import com.ettrema.httpclient.Resource;
 import com.liferay.portal.model.User;
 
 public class WebDavTest extends TestBase {
+	
+	@Before
+	public void before () {
+		Config.setProperty("WEBDAV_LEGACY_PATHING", true);
+	}
+	
 	@Test
 	public void uploadTest() throws Exception {
 		final HttpServletRequest req=ServletTestRunner.localRequest.get();

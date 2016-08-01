@@ -486,7 +486,7 @@ public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
     }
 
     @Override
-    public void updateUserReferences(String userId, String replacementUserId) throws DotDataException {
+    public void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException {
 
     }
 

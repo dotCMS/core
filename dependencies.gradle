@@ -63,7 +63,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.drools-jsr94', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_2'
     compile group: 'com.dotcms.lib', name: 'dot.ehcache', version:'1.6.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.4.2_4'
+    compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.7.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.gif89', version:'ukv_2'
@@ -129,16 +129,16 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.log4j-core', version:'2.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-jcl', version:'2.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-expressions', version:'4.10.2_1'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-join', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-memory', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-queries', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-queryparser', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-sandbox', version:'4.10.2_3'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-suggest', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-expressions', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-join', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-memory', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-queries', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-queryparser', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-sandbox', version:'4.10.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-suggest', version:'4.10.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.mail-ejb', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.milton-api', version:'1.8.1.4_2'
     compile group: 'com.dotcms.lib', name: 'dot.milton-servlet', version:'1.8.1.4_2'
@@ -200,7 +200,7 @@ dependencies {
 	compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
-
+	compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
@@ -249,6 +249,7 @@ dependencies {
     compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
     compile 'junit:junit:4.12'
     compile "org.mockito:mockito-core:1.+"
+    compile "org.testng:testng:6.9.10"
 
     /**
      * Order matters here: OSGI-Core must come after felix.
@@ -268,7 +269,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    compile group: 'com.dotcms', name: 'starter', version: '20160404', ext: 'zip'
+    compile group: 'com.dotcms', name: 'starter', version: '20160622-SNAPSHOT', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.6.0-SNAPSHOT', ext: 'zip', changing: true
 
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')

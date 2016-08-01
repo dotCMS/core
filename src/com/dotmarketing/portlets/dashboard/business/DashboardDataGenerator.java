@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.dashboard.business;
 
 import java.util.List;
 
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.db.DbConnectionFactory;
 
 public abstract class DashboardDataGenerator {
@@ -29,9 +30,9 @@ public abstract class DashboardDataGenerator {
 			(DbConnectionFactory.isMySql())?" CONCAT(identifier.parent_path,identifier.asset_name) ": " identifier.parent_path + identifier.asset_name ")+" as name "+ 
 			" from file_asset join identifier identifier on identifier.id = file_asset.identifier join fileasset_version_info finfo on finfo.identifier=file_asset.identifier "+ 
 			" UNION  "+ 
-			" select containers.inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, " +
-			"        case when containers.inode=ccinfo.live_inode then 1 else 0 end as live, case when containers.inode=ccinfo.live_inode then 1 else 0 end as working, ccinfo.deleted, containers.title as name "+ 
-			" from containers join identifier identifier on identifier.id = containers.identifier join container_version_info ccinfo on ccinfo.identifier=containers.identifier "+ 
+			" select " + Inode.Type.CONTAINERS.getTableName() + ".inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, " +
+			"        case when " + Inode.Type.CONTAINERS.getTableName() + ".inode=ccinfo.live_inode then 1 else 0 end as live, case when " + Inode.Type.CONTAINERS.getTableName() + ".inode=ccinfo.live_inode then 1 else 0 end as working, ccinfo.deleted, " + Inode.Type.CONTAINERS.getTableName() + ".title as name "+
+			" from " + Inode.Type.CONTAINERS.getTableName() + " join identifier identifier on identifier.id = " + Inode.Type.CONTAINERS.getTableName() + ".identifier join container_version_info ccinfo on ccinfo.identifier=" + Inode.Type.CONTAINERS.getTableName() + ".identifier "+
 			" UNION "+ 
 			" select links.inode as inode, 'link' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, " +
 			"        case when links.inode=linfo.live_inode then 1 else 0 end as live, case when links.inode=linfo.live_inode then 1 else 0 end as working, linfo.deleted, links.title as name "+ 

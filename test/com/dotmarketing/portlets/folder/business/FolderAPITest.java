@@ -19,13 +19,16 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
 
 public class FolderAPITest {
@@ -171,8 +174,9 @@ public class FolderAPITest {
 		APILocator.getVersionableAPI().setLive(link2);
 		
 		/*Adding file asset to folder */
-		String fileTitle="logo.gif";
-		File destFile = testFolder.newFile(fileTitle);
+        String fileTitle = "testMove.txt";
+        File destFile = testFolder.newFile(fileTitle);
+		FileUtil.write(destFile, "helloworld");
 
 		Contentlet contentAsset3=new Contentlet();
 		Structure st = StructureFactory.getStructureByVelocityVarName("FileAsset");
@@ -363,6 +367,7 @@ public class FolderAPITest {
 
 		/*Adding file asset to folder fcopy1*/
 		File destFile = testFolder.newFile(LOGO_GIF_1);
+		FileUtil.write(destFile, "helloworld");
 
 		Contentlet contentAsset3=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("FileAsset");
@@ -402,6 +407,7 @@ public class FolderAPITest {
 		 
 		/*Adding page and file asset to folder fcopy2*/
 		destFile = testFolder.newFile(LOGO_GIF_2);
+		FileUtil.write(destFile, "helloworld");
 
 		Contentlet contentAsset4=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("FileAsset");

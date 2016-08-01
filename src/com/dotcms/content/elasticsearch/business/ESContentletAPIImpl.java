@@ -2513,6 +2513,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles, boolean createNewVersion) throws DotDataException, DotSecurityException, DotContentletStateException,
             DotContentletValidationException {
 
+    	boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
+    	
     	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
  		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
  		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
@@ -2921,7 +2923,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
 				                	//FileUtil.deltree(binaryFieldFolder);
 
-			                		FileUtil.move(incomingFile, newFile);
+			                		FileUtil.move(incomingFile, newFile, validateEmptyFile);
 
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
@@ -5066,13 +5068,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     /**
 	 * Method will replace user references of the given userId in Contentlets
 	 * with the replacement user id
-	 * @param userId User Id to replace
+	 * @param userToReplace the user to replace
 	 * @param replacementUserId Replacement User Id
 	 * @exception DotDataException There is a data error
 	 * @throws DotSecurityException
 	 */
-	public void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotSecurityException{
-		conFac.updateUserReferences(userId, replacementUserId);
+	public void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotSecurityException{
+		conFac.updateUserReferences(userToReplace, replacementUserId, user);
 	}
 
 

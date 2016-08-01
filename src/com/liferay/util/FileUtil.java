@@ -22,14 +22,25 @@
 
 package com.liferay.util;
 
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.org.apache.commons.codec.digest.DigestUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.ByteBuffer;
@@ -39,7 +50,11 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -56,19 +71,19 @@ public class FileUtil {
 	final static long TERA_BYTE = 1024*1024*1024*1024;
 
 	public static void copyDirectory(
-			String sourceDirName, String destinationDirName, boolean hardLinks) {
+			String sourceDirName, String destinationDirName, boolean hardLinks) throws IOException {
 
 			copyDirectory(new File(sourceDirName), new File(destinationDirName), hardLinks);
 		}
 
 	public static void copyDirectory(
-		String sourceDirName, String destinationDirName) {
+		String sourceDirName, String destinationDirName) throws IOException {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
 
 	public static void copyDirectory(
-			String sourceDirName, String destinationDirName, FileFilter filter) {
+			String sourceDirName, String destinationDirName, FileFilter filter) throws IOException {
 
 			copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
 		}
@@ -76,11 +91,11 @@ public class FileUtil {
 	
 	
 	
-	public static void copyDirectory(File source, File destination, boolean hardLinks) {
+	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
 	    copyDirectory(source,destination,hardLinks,null);
 	}
 	
-	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) {
+	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) throws IOException {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				destination.mkdirs();
@@ -110,94 +125,88 @@ public class FileUtil {
 		}
 	}
 
-	public static void copyDirectory(File source, File destination) {
+	public static void copyDirectory(File source, File destination) throws IOException {
 		copyDirectory(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 	
 
 	public static void copyFile(
-		String sourceFileName, String destinationFileName) {
+		String sourceFileName, String destinationFileName) throws IOException {
 
 		copyFile(new File(sourceFileName), new File(destinationFileName));
 	}
 
-	public static void copyFile(File source, File destination) {
+	public static void copyFile(File source, File destination) throws IOException {
 		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
-
-	public static void copyFile(File source, File destination, boolean hardLinks) {
-		if (!source.exists()) {
-			return;
-		}
-
-		
-		if(hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)){
-			hardLinks = false;
-		}
-		
-		
-		if ((destination.getParentFile() != null) &&
-			(!destination.getParentFile().exists())) {
-
-			destination.getParentFile().mkdirs();
-		}
-
-		if ( hardLinks ) {
-			// I think we need to be sure to unlink first
-            if ( destination.exists() ) {
-                Path destinationPath = Paths.get( destination.getAbsolutePath() );
-                try {
-                    //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-                    Files.delete( destinationPath );
-                } catch ( IOException e ) {
-                    Logger.error( FileUtil.class, "Error removing hardLink: " + destination.getAbsolutePath(), e );
-                }
+	
+	private static void validateEmptyFile(File source) throws IOException{
+		final String metaDataPath = "metaData" + File.separator + "content";
+        final String languagePropertyPath = "messages" + File.separator + "cms_language";
+        
+        if (source.length() == 0) {
+            Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
+            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && !(source.getAbsolutePath()
+                .endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
+                throw new IOException("Source file is 0 length, failing " + source);
             }
-
-            try {
-
-                Path newLink = Paths.get( destination.getAbsolutePath() );
-                Path existingFile = Paths.get( source.getAbsolutePath() );
-
-                Files.createLink( newLink, existingFile );
-                // setting this means we will try again if we cannot hard link
-				if( !destination.exists() ){
-					hardLinks = false;
-				}
-			} catch (IOException e) {
-				Logger.error(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-						+ ", destination: " + destination.getAbsolutePath());
-				// setting this means we will try again if we cannot hard link
-				hardLinks = false;
-			}
-		
-		}
-		if(!hardLinks) {
-			
-			FileChannel srcChannel = null;
-			FileChannel dstChannel = null;
-			
-			try {
-				srcChannel = new FileInputStream(source).getChannel();
-				dstChannel = new FileOutputStream(destination).getChannel();
-
-				dstChannel.transferFrom(srcChannel, 0, srcChannel.size());				
-			}catch (IOException ioe) {
-				Logger.error(FileUtil.class,ioe.getMessage(),ioe);
-			}	
-			finally {
-				try {
-					srcChannel.close();
-					dstChannel.close();
-				} catch (IOException ioe) {
-					Logger.error(FileUtil.class,ioe.getMessage(),ioe);
-				}
-			}
-			
-			
-		}
-
+        }
 	}
+
+	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+		
+        
+        if (!source.exists()) {
+            throw new IOException("Source file does not exist" + source);
+        }
+        
+        validateEmptyFile(source);
+
+        if (hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)) {
+            hardLinks = false;
+        }
+
+        if ((destination.getParentFile() != null) &&
+            (!destination.getParentFile().exists())) {
+
+            destination.getParentFile().mkdirs();
+        }
+
+        if (hardLinks) {
+            // I think we need to be sure to unlink first
+            if (destination.exists()) {
+                Path destinationPath = Paths.get(destination.getAbsolutePath());
+                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+                Files.delete(destinationPath);
+            }
+            Path newLink = Paths.get(destination.getAbsolutePath());
+            Path existingFile = Paths.get(source.getAbsolutePath());
+
+            Files.createLink(newLink, existingFile);
+            // setting this means we will try again if we cannot hard link
+            if (!destination.exists() || destination.length() == 0) {
+                hardLinks = false;
+                Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+                    + ", destination: " + destination.getAbsolutePath());
+            }
+        }
+
+        if (!hardLinks) {
+
+            FileInputStream ios = new FileInputStream(source);
+            FileOutputStream fos = new FileOutputStream(destination);
+            FileChannel srcChannel = ios.getChannel();
+            FileChannel dstChannel = fos.getChannel();
+            dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
+            srcChannel.close();
+            dstChannel.close();
+            ios.close();
+            fos.close();
+
+
+        }
+
+    }
 
 	public static void copyFileLazy(String source, String destination)
 		throws IOException {
@@ -458,16 +467,31 @@ public class FileUtil {
 	}
 
 	public static boolean move(
-		String sourceFileName, String destinationFileName) {
+		String sourceFileName, String destinationFileName) throws IOException {
 
 		return move(new File(sourceFileName), new File(destinationFileName));
 	}
 
-	public static boolean move(File source, File destination) {
+	public static boolean move(File source, File destination) throws IOException {
+		return move(source, destination, true);
+	}
+	/**
+	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
+	 * 
+	 * @param source
+	 * @param destination
+	 * @param validateEmptyFile if is false it won't check if the file is empty
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean move(File source, File destination, boolean validateEmptyFile) throws IOException {
 		if (!source.exists()) {
 			return false;
 		}
 		
+		if(validateEmptyFile){
+			validateEmptyFile(source);
+		}
 		//If both files exists and are equals no need to move it.
 		try {
 			//Confirms that destination exists. 
