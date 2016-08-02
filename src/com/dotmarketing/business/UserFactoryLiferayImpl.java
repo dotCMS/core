@@ -202,7 +202,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
 			baseSql.append(" and delete_in_progress = 0");
-		}else{
+		} else {
 			baseSql.append(" and delete_in_progress = false");
 		}
 
@@ -317,7 +317,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
 			sql.append(" and delete_in_progress = 0");
-		}else{
+		} else {
 			sql.append(" and delete_in_progress = false");
 		}
 	
@@ -335,7 +335,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);    	
+		filter = SQLUtil.sanitizeParameter(filter);
 		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
 		sql.append(filter);
 		sql.append("%' or lower(firstName) like '%");
@@ -346,14 +346,14 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append(filter);
 		sql.append("%' ");
 		sql.append(" or ");
-		sql.append(DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }));
+		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%') AND userid <> 'system' ");
 
 		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
 			sql.append(" and delete_in_progress = 0 ");
-		}else{
+		} else {
 			sql.append(" and delete_in_progress = false ");
 		}
 
@@ -393,7 +393,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);    	
+		filter = SQLUtil.sanitizeParameter(filter);
 		StringBuilder sql = new StringBuilder("select count(*) as count from user_ where ");
 		sql.append("(lower(userid) like '%");
 		sql.append(filter);
@@ -405,15 +405,15 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append("lower(emailAddress) like '%");
 		sql.append(filter);
 		sql.append("%' or ");
-		sql.append(DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }));
+		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%')");
-		sql.append((!includeAnonymous)?"AND userid <> 'anonymous'":"");
+		sql.append((!includeAnonymous) ? "AND userid <> 'anonymous'" : "");
 
 		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
 			sql.append(" and delete_in_progress = 0");
-		}else{
+		} else {
 			sql.append(" and delete_in_progress = false");
 		}
 		DotConnect dotConnect = new DotConnect();
@@ -436,7 +436,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);    		
+		filter = SQLUtil.sanitizeParameter(filter);
 		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
 		sql.append(filter);
 		sql.append("%' or lower(firstName) like '%");
@@ -446,15 +446,15 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append("%' or lower(emailAddress) like '%");
 		sql.append(filter);
 		sql.append("%'  or ");
-		sql.append(DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }));
+		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%') AND userid <> 'system' ");
-		sql.append(((!includeAnonymous)?"AND userid <> 'anonymous'":""));
+		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : ""));
 
 		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
 			sql.append(" AND delete_in_progress = 0 ");
-		}else{
+		} else {
 			sql.append(" AND delete_in_progress = false ");
 		}
 
@@ -531,19 +531,21 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
         DotConnect dotConnect = new DotConnect();
         //Build the sql query
-        StringBuffer query = new StringBuffer( "SELECT user_.userId FROM user_ WHERE companyid = ? AND userid <> 'system' " );
-        if ( UtilMethods.isSet( filterDate ) ) {
-            query.append( " AND createdate >= ?" );
-        }
+		StringBuffer
+			query =
+			new StringBuffer("SELECT user_.userId FROM user_ WHERE companyid = ? AND userid <> 'system' ");
+		if (UtilMethods.isSet(filterDate)) {
+			query.append(" AND createdate >= ?");
+		}
 
 		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
 			query.append(" AND delete_in_progress = 0");
-		}else{
+		} else {
 			query.append(" AND delete_in_progress = false");
 		}
 
-        query.append( " ORDER BY firstName ASC, lastname ASC" );
-        dotConnect.setSQL( query.toString() );
+		query.append(" ORDER BY firstName ASC, lastname ASC");
+		dotConnect.setSQL( query.toString() );
         Logger.debug( UserFactoryLiferayImpl.class, "::getUsersByCreationDate -> query: " + dotConnect.getSQL() );
 
         //Add the required params
