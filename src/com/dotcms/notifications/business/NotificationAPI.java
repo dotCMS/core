@@ -1,9 +1,13 @@
 package com.dotcms.notifications.business;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Locale;
 
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotmarketing.exception.DotDataException;
 
 /**
@@ -26,7 +30,7 @@ import com.dotmarketing.exception.DotDataException;
  * @since Feb 3, 2014
  *
  */
-public interface NotificationAPI {
+public interface NotificationAPI extends Serializable {
 
 	/**
 	 * Sends an information message to the Notification queue.
@@ -64,6 +68,69 @@ public interface NotificationAPI {
 	void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException;
 
 	/**
+	 * Sends a customized message to the Notification queue.
+	 *
+	 * @param message
+	 *            - The message that will be displayed to the user.
+	 * @param level
+	 *            - The urgency level of the message according to the
+	 *            {@link NotificationLevel} class.
+	 *
+	 * @param type
+	 * 			  - The type of the notification, by default is gonna be generic
+	 * @param userId
+	 *            - The ID of the user that triggered this notification.
+	 * @throws DotDataException
+	 *             An error occurred when saving the message in the database.
+	 */
+	void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException;
+
+	/**
+	 * Sends a customized message to the Notification queue.
+	 * @param title
+	 *            - title for the message
+	 * @param message
+	 *            - The message that will be displayed to the user.
+	 * @param actions
+	 * 			  - {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+	 * @param level
+	 *            - The urgency level of the message according to the
+	 *            {@link NotificationLevel} class.
+	 *
+	 * @param type
+	 * 			  - The type of the notification, by default is gonna be generic
+	 * @param userId
+	 *            - The ID of the user that triggered this notification.
+	 * @throws DotDataException
+	 *             An error occurred when saving the message in the database.
+	 */
+	 void generateNotification(String title, String message, List<NotificationAction> actions,
+									 NotificationLevel level, NotificationType type, String userId) throws DotDataException;
+
+	/**
+	 * Sends a customized message to the Notification queue.
+	 * @param title
+	 *            - title for the message
+	 * @param message
+	 *            - The message that will be displayed to the user.
+	 * @param actions
+	 * 			  - {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+	 * @param level
+	 *            - The urgency level of the message according to the
+	 *            {@link NotificationLevel} class.
+	 *
+	 * @param type
+	 * 			  - The type of the notification, by default is gonna be generic
+	 * @param userId
+	 *            - The ID of the user that triggered this notification.
+	 * @param locale
+	 * 			  - if you send a locale will be used to create the pretty message, otherwise will use the company default.
+	 * @throws DotDataException
+	 *             An error occurred when saving the message in the database.
+	 */
+	void generateNotification(String title, String message, List<NotificationAction> actions,
+							  NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException;
+	/**
 	 * Returns a notification based on its ID.
 	 * 
 	 * @param notificationId
@@ -85,6 +152,17 @@ public interface NotificationAPI {
 	 *             database.
 	 */
 	void deleteNotification(String notificationId) throws DotDataException;
+
+	/**
+	 * Deletes a notification based on its ID.
+	 *
+	 * @param notificationId
+	 *            - The ID of the notification.
+	 * @throws DotDataException
+	 *             An error occurred when deleting the notification in the
+	 *             database.
+	 */
+	void deleteNotifications(String... notificationId) throws DotDataException;
 
 	/**
 	 * Deletes all the notifications associated to a specific user ID.
@@ -162,6 +240,7 @@ public interface NotificationAPI {
 	 *             the database.
 	 */
 	List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException;
+
 
 	/**
 	 * Returns the number of new notifications for a specific user ID.

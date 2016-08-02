@@ -25,6 +25,7 @@ public class Notification implements Serializable {
 	private String userId;
 	private Date timeSent;
 	private Boolean wasRead;
+	private String prettyDate;
 
 	/**
 	 * Default constructor.
@@ -310,6 +311,14 @@ public class Notification implements Serializable {
 	 */
 	public NotificationData getNotificationData() {
 		return this.notificationData;
+	}
+
+	public String getPrettyDate() {
+		return prettyDate;
+	}
+
+	public void setPrettyDate(String prettyDate) {
+		this.prettyDate = prettyDate;
 	}
 
 	@Override

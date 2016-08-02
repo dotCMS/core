@@ -1,10 +1,6 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 
 import java.io.Serializable;
 import java.security.Key;
@@ -183,24 +179,35 @@ public class JsonWebTokenFactory implements Serializable {
                 throw new IllegalArgumentException("Security Token not found");
             }
 
-            //This line will throw an exception if it is not a signed JWS (as expected)
-            final Jws<Claims> jws = Jwts.parser()
-                    .setSigningKey(this.signingKey)
-                    .parseClaimsJws(jsonWebToken);
+            try {
+                //This line will throw an exception if it is not a signed JWS (as expected)
+                final Jws<Claims> jws = Jwts.parser()
+                        .setSigningKey(this.signingKey)
+                        .parseClaimsJws(jsonWebToken);
 
-            if ( null != jws ) {
+                if (null != jws) {
 
-                final Claims body = jws.getBody();
-                if (null != body) {
+                    final Claims body = jws.getBody();
+                    if (null != body) {
 
-                    jwtBean =
-                            new JWTBean(body.getId(),
-                                    body.getSubject(),
-                                    body.getIssuer(),
-                                    (null != body.getExpiration())?
-                                            body.getExpiration().getTime():
-                                            0);
+                        jwtBean =
+                                new JWTBean(body.getId(),
+                                        body.getSubject(),
+                                        body.getIssuer(),
+                                        (null != body.getExpiration()) ?
+                                                body.getExpiration().getTime() :
+                                                0);
+                    }
                 }
+            } catch (ExpiredJwtException e) {
+
+                if (Logger.isDebugEnabled(this.getClass())) {
+
+                    Logger.debug(this.getClass(),
+                            e.getMessage(), e);
+                }
+
+                jwtBean = null;
             }
 
             return jwtBean;

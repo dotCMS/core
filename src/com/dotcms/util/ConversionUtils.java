@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -92,5 +94,27 @@ public class ConversionUtils implements Serializable {
 
 		return destinyList;
 	} // convert
+
+	public static long toLong (final String sLong) {
+
+		return toLong(sLong, 0l);
+	}
+
+	public static long toLong (final String sLong, final Long defaultLong) {
+
+		long l = defaultLong;
+
+		try {
+			if (UtilMethods.isSet(sLong)) {
+				l = Long.parseLong(sLong);
+			}
+		} catch (NumberFormatException e) {
+
+			l = defaultLong;
+		}
+
+		return l;
+	}
+
     
 } // E:O:F:ConversionUtils.
