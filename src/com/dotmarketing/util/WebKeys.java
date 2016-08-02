@@ -271,6 +271,7 @@ public final class WebKeys {
     // NON_LOGGED_IN_USER_CATS
     public static final String NON_LOGGED_IN_USER_CATS = "com.dotmarketing.NON_LOGGED_IN_USER_CATS";
     public static final String LOGGED_IN_USER_CATS = "com.dotmarketing.LOGGED_IN_USER_CATS";
+
     // NON_LOGGED_IN_USER_TAGS
     public static final String NON_LOGGED_IN_USER_TAGS = "com.dotmarketing.NON_LOGGED_IN_USER_TAGS";
     public static final String LOGGED_IN_USER_TAGS = "com.dotmarketing.LOGGED_IN_USER_TAGS";
@@ -668,7 +669,6 @@ public final class WebKeys {
 	public static final String USER_SESSIONS = "USER_SESSIONS";
 	
 	// ACE Text Editor
-	
 	public static final String TEXT_EDITOR = "textEditor";
 	public static final String VELOCITY = "velocity";
 	
@@ -692,5 +692,9 @@ public final class WebKeys {
 	
 	// System Events
 	public static final String WEBSOCKET_SYSTEMEVENTS_ENDPOINT = "websocket.systemevents.endpoint";
+
+	// System Security
+	public static final String AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED = "auth.failedattempts.delay.enabled";
+	public static final String AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY = "auth.failedattempts.delay.strategy";
 
 }
