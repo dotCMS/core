@@ -45,7 +45,8 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 	private List <Map<String, String>>  modifiedData = new  ArrayList <Map<String,String>>();
 	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
 	private int total = 0;
-	private String tableNameOfAsset[] = { "contentlet", "containers", "file_asset", "htmlpage", "links", "template" };
+	private String assetNames[] = { "contentlet", "containers", "file_asset", "htmlpage", "links", "template" };
+
 
 	
 	/**
@@ -71,12 +72,15 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 				HibernateUtil.startTransaction();
 				DotConnect dc = new DotConnect();
 												
-				for (String asset : tableNameOfAsset) {
+				for (String asset : assetNames) {
+
+					Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
+					final String tableName = assetType.getTableName();
 
 					if (badDataCount.get("tree_child_"+asset).intValue() > 0) {						
 						//Delete orphan tree entries where identifier is child
 						final String deleteTreesToDelete_child = "delete from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='" + 
-								asset + "' and not exists (select * from " + asset + " where i.id=identifier))";
+								asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 											
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(child) type " + asset + " : " + deleteTreesToDelete_child);
 					
@@ -91,7 +95,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 					if (badDataCount.get("tree_parent_"+asset).intValue() > 0) {	
 						//Delete orphan tree entries where identifier is parent
 						final String deleteTreesToDelete_parent = "delete from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='" + 
-								asset + "' and not exists (select * from " + asset + " where i.id=identifier))";
+								asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 					
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(parent) type " + asset + " : " + deleteTreesToDelete_parent);
 					
@@ -106,7 +110,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 					if (badDataCount.get("identifier_"+asset).intValue() > 0) {
 						//Delete orphan entries from identifier
 						final String indentifiersToDelete = "delete from identifier i where (i.asset_type='" + 
-								asset + "' and not exists (select * from " + asset + " where i.id=identifier))";
+								asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from identifier type " + asset + " : " + indentifiersToDelete);
 						
@@ -177,19 +181,22 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 		
 		Logger.debug(MaintenanceUtil.class,"Task 20: Checking for orphan entries");
 		
-		for (String asset : tableNameOfAsset) {
+		for (String asset : assetNames) {
+
+			Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
+			final String tableName = assetType.getTableName();
 
 			//Check for orphan tree entries (child) needing to be deleted
 			final String treesToDeleteChild = "select count(*) from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='" + 
-										 asset + "' and not exists (select * from " + asset + " where i.id=identifier))";
+										 asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 			
 			//Check for orphan tree entries (parent) needing to be deleted
 			final String treesToDeleteParent = "select count(*) from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='" + 
-										 asset + "' and not exists (select * from " + asset + " where i.id=identifier))";
+										 asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 			
 			//Check for orphan identifier entries needing to be deleted
 			final String indentifiersToDelete = "select count(*) from identifier i where (i.asset_type='" + 
-					 asset + "' and not exists (select * from " + asset + " where i.id=identifier))";
+					 asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 					
 			
 			try {
