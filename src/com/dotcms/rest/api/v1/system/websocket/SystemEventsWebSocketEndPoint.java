@@ -90,7 +90,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 							addToNormalSession = false; // not need to add the normal session, since the wrapper was added.
 						}
 					}
-				} catch (DotDataException | DotSecurityException e) {
+				} catch (Exception e) {
 
 					if (Logger.isErrorEnabled(this.getClass())) {
 
@@ -139,7 +139,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 					if (this.apply (event, session)) {
 
-						session.getBasicRemote().sendObject(event);
+						session.getAsyncRemote().sendObject(event);
 					}
 				}
 			}

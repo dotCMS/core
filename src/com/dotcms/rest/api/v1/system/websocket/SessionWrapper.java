@@ -67,111 +67,111 @@ public class SessionWrapper implements Session {
 
     @Override
     public String getNegotiatedSubprotocol() {
-        return this.getNegotiatedSubprotocol();
+        return this.session.getNegotiatedSubprotocol();
     }
 
     @Override
     public List<Extension> getNegotiatedExtensions() {
-        return this.getNegotiatedExtensions();
+        return this.session.getNegotiatedExtensions();
     }
 
     @Override
     public boolean isSecure() {
-        return this.isSecure();
+        return this.session.isSecure();
     }
 
     @Override
     public boolean isOpen() {
-        return this.isOpen();
+        return this.session.isOpen();
     }
 
     @Override
     public long getMaxIdleTimeout() {
-        return this.getMaxIdleTimeout();
+        return this.session.getMaxIdleTimeout();
     }
 
     @Override
     public void setMaxIdleTimeout(long milliseconds) {
-        this.setMaxIdleTimeout(milliseconds);
+        this.session.setMaxIdleTimeout(milliseconds);
     }
 
     @Override
     public void setMaxBinaryMessageBufferSize(int length) {
-        this.setMaxBinaryMessageBufferSize(length);
+        this.session.setMaxBinaryMessageBufferSize(length);
     }
 
     @Override
     public int getMaxBinaryMessageBufferSize() {
-        return this.getMaxBinaryMessageBufferSize();
+        return this.session.getMaxBinaryMessageBufferSize();
     }
 
     @Override
     public void setMaxTextMessageBufferSize(int length) {
-        this.setMaxTextMessageBufferSize(length);
+        this.session.setMaxTextMessageBufferSize(length);
     }
 
     @Override
     public int getMaxTextMessageBufferSize() {
-        return this.getMaxTextMessageBufferSize();
+        return this.session.getMaxTextMessageBufferSize();
     }
 
     @Override
     public RemoteEndpoint.Async getAsyncRemote() {
-        return this.getAsyncRemote();
+        return this.session.getAsyncRemote();
     }
 
     @Override
     public RemoteEndpoint.Basic getBasicRemote() {
-        return this.getBasicRemote();
+        return this.session.getBasicRemote();
     }
 
     @Override
     public String getId() {
-        return this.getId();
+        return this.session.getId();
     }
 
     @Override
     public void close() throws IOException {
-        this.close();
+        this.session.close();
     }
 
     @Override
     public void close(CloseReason closeReason) throws IOException {
-        this.close(closeReason);
+        this.session.close(closeReason);
     }
 
     @Override
     public URI getRequestURI() {
-        return this.getRequestURI();
+        return this.session.getRequestURI();
     }
 
     @Override
     public Map<String, List<String>> getRequestParameterMap() {
-        return this.getRequestParameterMap();
+        return this.session.getRequestParameterMap();
     }
 
     @Override
     public String getQueryString() {
-        return this.getQueryString();
+        return this.session.getQueryString();
     }
 
     @Override
     public Map<String, String> getPathParameters() {
-        return this.getPathParameters();
+        return this.session.getPathParameters();
     }
 
     @Override
     public Map<String, Object> getUserProperties() {
-        return this.getUserProperties();
+        return this.session.getUserProperties();
     }
 
     @Override
     public Principal getUserPrincipal() {
-        return this.getUserPrincipal();
+        return this.session.getUserPrincipal();
     }
 
     @Override
     public Set<Session> getOpenSessions() {
-        return this.getOpenSessions();
+        return this.session.getOpenSessions();
     }
 } // E:O:F:SessionWrapper.
