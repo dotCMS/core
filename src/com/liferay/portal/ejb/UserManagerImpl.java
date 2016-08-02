@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import javax.mail.internet.InternetAddress;
 
@@ -42,6 +43,7 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;
@@ -71,7 +73,8 @@ import com.liferay.util.Validator;
 import com.liferay.util.mail.MailMessage;
 
 /**
- * <a href="UserManagerImpl.java.html"><b><i>View Source</i></b></a>
+ * This manager provides interaction with {@link User} objects in terms of 
+ * authentication, verification, maintenance, etc.
  *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.3 $
@@ -79,8 +82,11 @@ import com.liferay.util.mail.MailMessage;
  */
 public class UserManagerImpl extends PrincipalBean implements UserManager {
 
+	private static final Log _log = LogFactory.getLog(UserManagerImpl.class);
+
 	// Business methods
 
+	@Override
 	public User addUser(
 			String companyId, boolean autoUserId, String userId,
 			boolean autoPassword, String password1, String password2,
@@ -101,6 +107,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			birthday, emailAddress, locale);
 	}
 
+	@Override
 	public int authenticateByEmailAddress(
 			String companyId, String emailAddress, String password)
 		throws PortalException, SystemException {
@@ -108,6 +115,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return _authenticate(companyId, emailAddress, password, true);
 	}
 
+	@Override
 	public int authenticateByUserId(
 			String companyId, String userId, String password)
 		throws PortalException, SystemException {
@@ -115,6 +123,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return _authenticate(companyId, userId, password, false);
 	}
 
+	@Override
 	public KeyValuePair decryptUserId(
 			String companyId, String userId, String password)
 		throws PortalException, SystemException {
@@ -164,6 +173,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 	}
 
+	@Override
 	public void deleteUser(String userId)
 		throws PortalException, SystemException {
 
@@ -178,6 +188,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		UserLocalManagerUtil.deleteUser(userId);
 	}
 
+	@Override
 	public String encryptUserId(String userId)
 		throws PortalException, SystemException {
 
@@ -206,7 +217,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 	}
 
-	public List findByAnd_C_FN_MN_LN_EA_M_BD_IM_A(
+	@Override
+	public List<?> findByAnd_C_FN_MN_LN_EA_M_BD_IM_A(
 			String firstName, String middleName, String lastName,
 			String emailAddress, Boolean male, Date age1, Date age2, String im,
 			String street1, String street2, String city, String state,
@@ -219,11 +231,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			zip, phone,fax, cell);
 	}
 
-	public List findByC_SMS() throws PortalException, SystemException {
+	@Override
+	public List<?> findByC_SMS() throws PortalException, SystemException {
 		return UserFinder.findByC_SMS(getUser().getCompanyId());
 	}
 
-	public List findByOr_C_FN_MN_LN_EA_M_BD_IM_A(
+	@Override
+	public List<?> findByOr_C_FN_MN_LN_EA_M_BD_IM_A(
 			String firstName, String middleName, String lastName,
 			String emailAddress, Boolean male, Date age1, Date age2, String im,
 			String street1, String street2, String city, String state,
@@ -236,6 +250,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			zip, phone,fax, cell);
 	}
 
+	@Override
 	public String getCompanyId(String userId)
 		throws PortalException, SystemException {
 
@@ -244,13 +259,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return user.getCompanyId();
 	}
 
+	@Override
 	public User getDefaultUser(String companyId)
 		throws PortalException, SystemException {
 
 		return UserLocalManagerUtil.getDefaultUser(companyId);
 	}
 
-
+	@Override
 	public User getUserByEmailAddress(String emailAddress)
 		throws PortalException, SystemException {
 
@@ -268,6 +284,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 	}
 
+	@Override
 	public User getUserById(String userId)
 		throws PortalException, SystemException {
 
@@ -285,6 +302,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 	}
 
+	@Override
 	public User getUserById(String companyId, String userId)
 		throws PortalException, SystemException {
 
@@ -302,6 +320,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 	}
 
+	@Override
 	public String getUserId(String companyId, String emailAddress)
 		throws PortalException, SystemException {
 
@@ -312,6 +331,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return user.getUserId();
 	}
 
+	@Override
 	public int notifyNewUsers() throws PortalException, SystemException {
 		String companyId = getUser().getCompanyId();
 
@@ -336,7 +356,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		String subject = registrationEmail.getSubject();
 		String body = registrationEmail.getBody();
 
-		List users = UserUtil.findByC_P(companyId, "password");
+		List<?> users = UserUtil.findByC_P(companyId, "password");
 
 		for (int i = 0; i < users.size(); i++) {
 			User user = (User)users.get(i);
@@ -386,6 +406,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return users.size();
 	}
 
+	@Override
 	public void sendPassword(String companyId, String emailAddress, Locale locale)
 		throws PortalException, SystemException {
 
@@ -430,6 +451,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 	}
 
+	@Override
 	public void test() {
 		String userId = null;
 
@@ -443,7 +465,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		_log.info(userId);
 	}
 
-
+	@Override
 	public User updateActive(String userId, boolean active)
 		throws PortalException, SystemException {
 
@@ -466,6 +488,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return user;
 	}
 
+	@Override
 	public User updateAgreedToTermsOfUse(boolean agreedToTermsOfUse)
 		throws PortalException, SystemException {
 
@@ -478,6 +501,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return user;
 	}
 
+	@Override
 	public User updateLastLogin(String loginIP)
 		throws PortalException, SystemException {
 
@@ -485,58 +509,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		if (user.getLoginDate() == null &&
 			user.getLastLoginDate() == null) {
-
-			boolean universalPersonalization = GetterUtil.get(
-				PropsUtil.get(PropsUtil.UNIVERSAL_PERSONALIZATION), false);
-
-			boolean powerUser = true;
-
-//			if (!universalPersonalization) {
-//				powerUser = RoleLocalManagerUtil.isPowerUser(user.getUserId());
-//			}
-
-//			if (powerUser) {
-//				Group group = GroupLocalManagerUtil.getGroupByName(
-//					user.getCompanyId(), Group.GENERAL_USER);
-//
-//				Layout groupDefaultLayout = group.getDefaultLayout();
-//
-//				String[] portletIds = groupDefaultLayout.getPortletIds();
-//
-//				List defaultPortletIds = new ArrayList();
-//
-//				for (int i = 0; i < portletIds.length; i++) {
-//					try {
-//						Portlet portlet = PortletManagerUtil.getPortletById(
-//							user.getCompanyId(), portletIds[i]);
-//
-//						if (RoleLocalManagerUtil.hasRoles(
-//								getUserId(),
-//								StringUtil.split(portlet.getRoles()))) {
-//
-//							defaultPortletIds.add(portlet.getPortletId());
-//						}
-//					}
-//					catch (Exception e) {
-//					}
-//				}
-
-//				Layout userDefaultLayout = LayoutLocalManagerUtil.addUserLayout(
-//					user.getUserId(), groupDefaultLayout.getName(),
-//					(String[])defaultPortletIds.toArray(new String[0]));
-//
-//				LayoutLocalManagerUtil.updateLayout(
-//					userDefaultLayout.getPrimaryKey(),
-//					groupDefaultLayout.getName(),
-//					groupDefaultLayout.getColumnOrder(),
-//					groupDefaultLayout.getNarrow1(),
-//					groupDefaultLayout.getNarrow2(),
-//					groupDefaultLayout.getWide(),
-//					groupDefaultLayout.getStateMax(),
-//					groupDefaultLayout.getStateMin(),
-//					groupDefaultLayout.getModeEdit(),
-//					groupDefaultLayout.getModeHelp());
-//			}
 		}
 
 		user.setLastLoginDate(user.getLoginDate());
@@ -550,6 +522,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return user;
 	}
 
+	@Override
 	public void updatePortrait(String userId, byte[] bytes)
 		throws PortalException, SystemException {
 
@@ -562,6 +535,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		ImageLocalUtil.put(userId, bytes);
 	}
 
+	@Override
 	public User updateUser(
 			String userId, String password1, String password2,
 			boolean passwordReset)
@@ -579,6 +553,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			userId, password1, password2, passwordReset);
 	}
 
+	@Override
 	public User updateUser(
 			String userId, String password, String firstName, String middleName,
 			String lastName, String nickName, boolean male, Date birthday,
@@ -609,6 +584,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 	// Permission methods
 
+	@Override
 	public boolean hasAdmin(String userId)
 		throws PortalException, SystemException {
 
@@ -624,6 +600,29 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 	// Private methods
 
+	/**
+	 * Authenticates the user based on their e-mail or user ID.
+	 * 
+	 * @param companyId
+	 *            - The ID of the company that the user belongs to.
+	 * @param login
+	 *            - The identification mechanism: The user e-mail, or the user
+	 *            ID.
+	 * @param password
+	 *            - The user password.
+	 * @param byEmailAddress
+	 *            - If the user authentication is performed against e-mail, set
+	 *            this to {@code true}. If it's against the user ID, set to
+	 *            {@code false}.
+	 * @return A status code indicating the result of the operation:
+	 *         {@link Authenticator#SUCCESS}, {@link Authenticator#FAILURE}, or
+	 *         {@link Authenticator#DNE}.
+	 * @throws PortalException
+	 *             - There's a problem with the information provided by or
+	 *             retrieved for the user.
+	 * @throws SystemException
+	 *             - User information could not be updated.
+	 */
 	private int _authenticate(
 			String companyId, String login, String password,
 			boolean byEmailAddress)
@@ -706,6 +705,11 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 						PropsUtil.AUTH_PIPELINE_POST), companyId, login,
 						password);
 			}
+			if (authResult == Authenticator.SUCCESS) {
+				// User authenticated, reset failed attempts
+				user.setFailedLoginAttempts(0);
+				UserUtil.update(user);
+			}
 		}
 
 		if (authResult == Authenticator.FAILURE) {
@@ -720,7 +724,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 				}
 
 				int failedLoginAttempts = user.getFailedLoginAttempts();
-
+				if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
+					delayLoginRequest(failedLoginAttempts);
+				}
 				user.setFailedLoginAttempts(++failedLoginAttempts);
 
 				UserUtil.update(user);
@@ -751,6 +757,37 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return authResult;
 	}
 
-	private static final Log _log = LogFactory.getLog(UserManagerImpl.class);
+	/**
+	 * This is a security measure for DoS and similar attacks in which the login
+	 * process will be delayed based on the number of times a specific user
+	 * fails to authenticate. Users are allowed to fail once without being
+	 * penalized for it. Different security strategies can be configured in
+	 * order to counter-attack these threats.
+	 * <p>
+	 * By default, the approach consists of retrieving the number of failed
+	 * login attempts and raise it to the power of 2. The result will represent
+	 * the seconds that the login process will wait before sending the error.
+	 * This way, the more times hackers attempt to authenticate incorrectly, the
+	 * more time they will have to wait to try it again.
+	 * 
+	 * @param failedAttempts
+	 *            - The number of times that a user has tried to log in and
+	 *            failed.
+	 */
+	private void delayLoginRequest(int failedAttempts) {
+		final String delayStrategy = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+		failedAttempts = Math.abs(failedAttempts);
+		if (delayStrategy.equalsIgnoreCase("pow")) {
+			long sleepTime = 1L;
+			if (failedAttempts > 0) {
+				sleepTime = (long) Math.pow(failedAttempts, 2);
+				try {
+					TimeUnit.SECONDS.sleep(sleepTime);
+				} catch (InterruptedException e) {
+					// Sleep was interrupted, just ignore
+				}
+			}
+		}
+	}
 
 }
