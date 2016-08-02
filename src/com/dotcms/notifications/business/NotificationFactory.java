@@ -64,6 +64,13 @@ public abstract class NotificationFactory {
 	public abstract void deleteNotifications(final String userId) throws DotDataException;
 
 	/**
+	 * Deletes all the notification in the array.
+	 * @param notificationsId {@link String} array
+	 * @throws DotDataException
+     */
+	public abstract void deleteNotification(String[] notificationsId) throws DotDataException;
+
+	/**
 	 * Returns a paginated result of all the notifications according to the
 	 * specified filters.
 	 * 
@@ -112,7 +119,7 @@ public abstract class NotificationFactory {
 	 *            - The row number to read notifications from.
 	 * @param limit
 	 *            - The limit of rows to include in the result.
-	 * @return The list of paginated {@link Notification} objects associated to
+	 * @return The list of paginated {@link NotificationDTO} objects associated to
 	 *         a user.
 	 * @throws DotDataException
 	 *             An error occurred when executing the SQL query. Please check

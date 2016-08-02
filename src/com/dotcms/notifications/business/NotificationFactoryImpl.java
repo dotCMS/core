@@ -2,16 +2,14 @@ package com.dotcms.notifications.business;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.dto.NotificationDTO;
+import static com.dotcms.util.CollectionsUtils.*;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -119,6 +117,43 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		}
 
 		dc.loadObjectResults();
+	}
+
+	@Override
+	public void deleteNotification(final String[] notificationsId) throws DotDataException {
+
+		final DotConnect dc = new DotConnect();
+		final List<Params> params = list();
+
+		for (String notificationId : notificationsId) {
+
+			params.add(new Params(notificationId));
+		}
+
+		final int [] results = dc.executeBatch("delete from notification where id = ?",
+				params);
+
+		if (results.length == notificationsId.length) {
+
+			if (Logger.isDebugEnabled(this.getClass())) {
+
+				Logger.debug(this.getClass(),
+						"All the notifications: " + Arrays.asList(notificationsId) +
+								" were deleted."
+				);
+			}
+		} else {
+
+			if (Logger.isDebugEnabled(this.getClass())) {
+
+				Logger.debug(this.getClass(),
+						"Of the notifications: " + Arrays.asList(notificationsId) +
+								" were just deleted: " + results.length
+				);
+			}
+
+			// todo: should throw an exception reporting the error.
+		}
 	}
 
 	@Override

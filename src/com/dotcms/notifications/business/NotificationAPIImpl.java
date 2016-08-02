@@ -1,14 +1,9 @@
 package com.dotcms.notifications.business;
 
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.api.system.event.*;
-import com.dotcms.notifications.bean.Notification;
-import com.dotcms.notifications.bean.NotificationData;
-import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.bean.*;
 import com.dotcms.notifications.dto.NotificationDTO;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -16,8 +11,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Concrete implementation of the {@link NotificationAPI} class.
@@ -64,14 +64,40 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 	@Override
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
-		final NotificationData data = new NotificationData("", message, null);
+
+		this.generateNotification(message, level, NotificationType.GENERIC, userId);
+	}
+
+	@Override
+	public void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException {
+
+		this.generateNotification(StringUtils.EMPTY, message, null, level, NotificationType.GENERIC, userId);
+	}
+
+	@Override
+	public void generateNotification(String title, String message, List<NotificationAction> actions,
+									 NotificationLevel level, NotificationType type, String userId) throws DotDataException {
+
+		this.generateNotification(title, message, actions, level, type, userId, null);
+	}
+
+	@Override
+	public void generateNotification(String title, String message, List<NotificationAction> actions,
+									 NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException {
+
+		final NotificationData data = new NotificationData(title, message, actions);
 		final String msg = this.marshalUtils.marshal(data);
-		final NotificationDTO dto = new NotificationDTO("", msg, NotificationType.GENERIC.name(), level.name(), userId, null,
-				false);
-		notificationFactory.saveNotification(dto);
+		final NotificationDTO dto = new NotificationDTO(StringUtils.EMPTY, msg, type.name(), level.name(), userId, null,
+				Boolean.FALSE);
+
+		this.notificationFactory.saveNotification(dto);
+
 		// Adding notification to System Events table
 		final Notification n = new Notification(level, userId, data);
 		final Payload payload = new Payload(n, Visibility.USER, userId);
+
+		n.setPrettyDate(DateUtil.prettyDateSince(new Date(), locale));
+
 		final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
 		this.systemEventsAPI.push(systemEvent);
 	}
@@ -87,6 +113,12 @@ public class NotificationAPIImpl implements NotificationAPI {
 	@Override
 	public void deleteNotification(String notificationId) throws DotDataException {
 		notificationFactory.deleteNotification(notificationId);
+	}
+
+
+	@Override
+	public void deleteNotifications(final String... notificationsId) throws DotDataException {
+		notificationFactory.deleteNotification(notificationsId);
 	}
 
 	@Override
