@@ -343,6 +343,14 @@ public class Config {
 	    return props.getInt(name);
 	}
 
+	public static long getLongProperty (String name, final long defaultVal) {
+		_refreshProperties ();
+		if ( props == null ) {
+			return defaultVal;
+		}
+		return props.getLong(name, defaultVal);
+	}
+
 	/**
 	 * 
 	 * @param name

@@ -1,13 +1,8 @@
 package com.dotcms.notifications.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.*;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.*;
 import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
@@ -22,6 +17,10 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
 /**
  * Concrete implementation of the {@link NotificationAPI} class.
  * 
@@ -32,10 +31,13 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class NotificationAPIImpl implements NotificationAPI {
 
+	public static final String NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME = "notifications";
 	private final NotificationFactory notificationFactory;
 	private final SystemEventsAPI systemEventsAPI;
 	private final MarshalUtils marshalUtils;
 	private final ConversionUtils conversionUtils;
+	private final DotConcurrentFactory dotConcurrentFactory;
+	private final DotSubmitter dotSubmitter;
 
 	/**
 	 * Retrieve the factory class that interacts with the database.
@@ -45,6 +47,9 @@ public class NotificationAPIImpl implements NotificationAPI {
 		this.systemEventsAPI = APILocator.getSystemEventsAPI();
 		this.marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 		this.conversionUtils = ConversionUtils.INSTANCE;
+		this.dotConcurrentFactory = DotConcurrentFactory.getInstance();
+		this.dotSubmitter = // getting the thread pool for notifications.
+				this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME); // by default use the standard configuration, but it can be override via properties config.
 	}
 
 	@Override
@@ -85,23 +90,50 @@ public class NotificationAPIImpl implements NotificationAPI {
 	}
 
 	@Override
-	public void generateNotification(String title, String message, List<NotificationAction> actions,
-									 NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException {
-		final NotificationData data = new NotificationData(title, message, actions);
-		final String msg = this.marshalUtils.marshal(data);
-		final NotificationDTO dto = new NotificationDTO("", msg, type.name(), level.name(), userId, null,
-				false);
+	public void generateNotification(final String title, final String message, final List<NotificationAction> actions,
+									 final NotificationLevel level, final NotificationType type, final String userId, final Locale locale) throws DotDataException {
 
-		this.notificationFactory.saveNotification(dto);
+		// since the notification is not a priory process on the current thread, we decided to execute it async
+		this.dotSubmitter.execute(() -> {
 
-		// Adding notification to System Events table
-		final Notification n = new Notification(level, userId, data);
+				final NotificationData data = new NotificationData(title, message, actions);
+				final String msg = this.marshalUtils.marshal(data);
+				final NotificationDTO dto = new NotificationDTO(StringUtils.EMPTY, msg, type.name(), level.name(), userId, null,
+						Boolean.FALSE);
 
-		n.setPrettyDate(DateUtil.prettyDateSince(n.getTimeSent(), locale));
+				try {
 
-		final Payload payload = new Payload(n);
-		final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
-		this.systemEventsAPI.push(systemEvent);
+					Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
+
+					this.notificationFactory.saveNotification(dto);
+				} catch (DotDataException e) {
+					if (Logger.isErrorEnabled(NotificationAPIImpl.class)) {
+
+						Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
+					}
+				}
+
+				// Adding notification to System Events table
+				final Notification n = new Notification(level, userId, data);
+				final Payload payload = new Payload(n, Visibility.USER, userId);
+
+				n.setTimeSent(new Date());
+				n.setPrettyDate(DateUtil.prettyDateSince(n.getTimeSent(), locale));
+
+				final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+
+				try {
+
+					Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
+
+					this.systemEventsAPI.push(systemEvent);
+				} catch (DotDataException e) {
+					if (Logger.isErrorEnabled(NotificationAPIImpl.class)) {
+
+						Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
+					}
+				}
+		});
 	}
 
 	@Override

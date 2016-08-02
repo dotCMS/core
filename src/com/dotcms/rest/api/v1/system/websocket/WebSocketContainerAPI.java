@@ -1,4 +1,4 @@
-package com.dotcms.web.websocket;
+package com.dotcms.rest.api.v1.system.websocket;
 
 import java.io.Serializable;
 
