@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 import javax.mail.internet.InternetAddress;
 
@@ -39,6 +38,7 @@ import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -725,7 +725,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 				int failedLoginAttempts = user.getFailedLoginAttempts();
 				if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
-					delayLoginRequest(failedLoginAttempts);
+					SecurityUtils.delayRequest(failedLoginAttempts,
+							Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow"));
 				}
 				user.setFailedLoginAttempts(++failedLoginAttempts);
 
@@ -755,39 +756,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		}
 
 		return authResult;
-	}
-
-	/**
-	 * This is a security measure for DoS and similar attacks in which the login
-	 * process will be delayed based on the number of times a specific user
-	 * fails to authenticate. Users are allowed to fail once without being
-	 * penalized for it. Different security strategies can be configured in
-	 * order to counter-attack these threats.
-	 * <p>
-	 * By default, the approach consists of retrieving the number of failed
-	 * login attempts and raise it to the power of 2. The result will represent
-	 * the seconds that the login process will wait before sending the error.
-	 * This way, the more times hackers attempt to authenticate incorrectly, the
-	 * more time they will have to wait to try it again.
-	 * 
-	 * @param failedAttempts
-	 *            - The number of times that a user has tried to log in and
-	 *            failed.
-	 */
-	private void delayLoginRequest(int failedAttempts) {
-		final String delayStrategy = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
-		failedAttempts = Math.abs(failedAttempts);
-		if (delayStrategy.equalsIgnoreCase("pow")) {
-			long sleepTime = 1L;
-			if (failedAttempts > 0) {
-				sleepTime = (long) Math.pow(failedAttempts, 2);
-				try {
-					TimeUnit.SECONDS.sleep(sleepTime);
-				} catch (InterruptedException e) {
-					// Sleep was interrupted, just ignore
-				}
-			}
-		}
 	}
 
 }
