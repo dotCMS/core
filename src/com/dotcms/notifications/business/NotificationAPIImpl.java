@@ -3,10 +3,7 @@ package com.dotcms.notifications.business;
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.*;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationData;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -67,15 +64,15 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 	@Override
 	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
-		NotificationData data = new NotificationData("", message, null);
-		String msg = this.marshalUtils.marshal(data);
-		NotificationDTO dto = new NotificationDTO("", msg, NotificationType.GENERIC.name(), level.name(), userId, null,
+		final NotificationData data = new NotificationData("", message, null);
+		final String msg = this.marshalUtils.marshal(data);
+		final NotificationDTO dto = new NotificationDTO("", msg, NotificationType.GENERIC.name(), level.name(), userId, null,
 				false);
 		notificationFactory.saveNotification(dto);
 		// Adding notification to System Events table
-		Notification n = new Notification(level, userId, data);
-		Payload payload = new Payload(n);
-		SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+		final Notification n = new Notification(level, userId, data);
+		final Payload payload = new Payload(n, Visibility.USER, userId);
+		final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
 		this.systemEventsAPI.push(systemEvent);
 	}
 
