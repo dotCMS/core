@@ -201,18 +201,16 @@ public abstract class DashboardFactory {
 	}
 
 	protected String getWorkstreamListQuery(){
-		return new StringBuilder("select distinct {analytic_summary_workstream.*}, user_.firstname as username, contentlet.title as hostname ").append(
-		" from analytic_summary_workstream, user_ , contentlet,contentlet_version_info contentinfo ").append(
-		" where user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id ").append(
-		" and contentlet.identifier = contentinfo.identifier and contentinfo.live_inode is not null and analytic_summary_workstream.name is not null ").append(
-			DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()? " and user_.delete_in_progress = 0":" and user_.delete_in_progress = false").toString();
+		return "select distinct {analytic_summary_workstream.*}, user_.firstname as username, contentlet.title as hostname " +
+		" from analytic_summary_workstream, user_ , contentlet,contentlet_version_info contentinfo " +
+		" where user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id " +
+		" and contentlet.identifier = contentinfo.identifier and contentinfo.live_inode is not null and analytic_summary_workstream.name is not null ";
 	}
 
 	protected String getWorkstreamCountQuery(){
-		return new StringBuilder("select count(distinct analytic_summary_workstream.id) as summaryCount from analytic_summary_workstream, user_, contentlet,contentlet_version_info info where").append(
-		  " user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id ").append(
-		  " and contentlet.identifier = info.identifier and info.live_inode is not null and analytic_summary_workstream.name is not null ").append(
-			DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()? " and user_.delete_in_progress = 0":" and user_.delete_in_progress = false").toString();
+		return "select count(distinct analytic_summary_workstream.id) as summaryCount from analytic_summary_workstream, user_, contentlet,contentlet_version_info info where" +
+		  " user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id " +
+		  " and contentlet.identifier = info.identifier and info.live_inode is not null and analytic_summary_workstream.name is not null ";
 	}
 
 
