@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.TestBase;
+import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -562,49 +563,362 @@ public class UserAPITest extends TestBase{
 	}
 
 	@Test
-    public void testGetUsersByNameOrEmailOrUserID() throws DotDataException {
-        UserAPI userAPI = APILocator.getUserAPI();
-        List<User> users = userAPI.getUsersByNameOrEmailOrUserID(null, 0, 40, false);
-        assertNotNull(users);
-        assertTrue(users.size() > 0);
-    }
+	public void testGetUsersByNameOrEmailOrUserID() throws DotDataException {
+		UserAPI userAPI = APILocator.getUserAPI();
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(null, 0, 40, false);
+		assertNotNull(users);
+		assertTrue(users.size() > 0);
+	}
 
-    @Test
-    public void testGetUnDeletedUsers() throws DotDataException {
-        UserAPI userAPI = APILocator.getUserAPI();
-        String id = String.valueOf(new Date().getTime());
+	@Test
+	public void testGetUsersByNameOrEmailOrUserIDWithFilter() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.HOUR, -48);
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
 
-        /**
-         * Add user
-         */
-        String newUserName = "user" + id;
-        User newUser = userAPI.createUser(newUserName + "@test.com", newUserName + "@test.com");
-        newUser.setFirstName(newUserName);
-        newUser.setLastName("TestUser");
-        newUser.setDeleteInProgress(true);
-        newUser.setDeleteDate(calendar.getTime());
-        try {
-            userAPI.save(newUser, systemUser, false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+		user = getUser(userName, false);
 
-        List<User> users = userAPI.getUnDeletedUsers();
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
 
-        assertNotNull(users);
-        assertTrue(users.size() == 1);
-        assertTrue(users.get(0).getDeleteInProgress());
-        assertNotNull(users.get(0).getDeleteDate());
-        assertEquals(users.get(0).getFirstName(), newUserName);
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
 
-        try {
-            userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+	@Test
+	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
 
-    }
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, true);
+
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 0);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
+
+	@Test
+	public void testGetUnDeletedUsers() throws DotDataException {
+		User newUser = null;
+		UserAPI userAPI = APILocator.getUserAPI();
+		String id = String.valueOf(new Date().getTime());
+
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR, -48);
+
+		/**
+		 * Add user
+		 */
+		String newUserName = "user" + id;
+
+		try {
+			newUser = getUser(newUserName, true, calendar.getTime());
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+
+		List<User> users = userAPI.getUnDeletedUsers();
+
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
+		assertTrue(users.get(0).getDeleteInProgress());
+		assertNotNull(users.get(0).getDeleteDate());
+		assertEquals(users.get(0).getFirstName(), newUserName);
+
+		try {
+			userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+
+	}
+
+	@Test
+	public void testGetUsersByName() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, false);
+
+		List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
+
+	@Test
+	public void testGetUsersByNameDeleted() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, true);
+
+		List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 0);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
+
+	@Test
+	public void testGetUsersByNameOrEmail() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, false);
+
+		List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
+
+	@Test
+	public void testGetUsersByNameOrEmailDeleted() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, true);
+
+		List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
+		assertNotNull(users);
+		assertTrue(users.size() == 0);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmail() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, false);
+
+		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
+
+		assertTrue(count == 1);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmailDeleted() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, true);
+
+		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
+
+		assertTrue(count == 0);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmailOrUserID() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, false);
+
+		long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
+
+		assertTrue(count == 1);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, true);
+
+		long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
+
+		assertTrue(count == 0);
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+
+	}
+
+	@Test
+	public void testGetUsersIdsByCreationDate() throws DotDataException, DotSecurityException {
+
+		UserAPI userAPI = APILocator.getUserAPI();
+
+		List<String> users = userAPI.getUsersIdsByCreationDate(null, 0, 40);
+		assertNotNull(users);
+		assertTrue(users.size() > 0);
+
+	}
+
+	@Test
+	public void testGetUsersIdsByCreationDateDeleted() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+		Calendar calendar;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = getUser(userName, true);
+
+		calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR, -24);
+
+		List<String> users = userAPI.getUsersIdsByCreationDate(calendar.getTime(), 0, 40);
+		assertNotNull(users);
+		assertTrue(!users.contains(user.getUserId()));
+
+		try {
+			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+		} catch (DotSecurityException e) {
+			// no need to validate this
+		}
+	}
+
+
+	/**
+	 * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
+	 */
+	private User getUser(String userName, boolean toBeDeleted) throws DotDataException, DotSecurityException {
+		return getUser(userName, toBeDeleted, GregorianCalendar.getInstance().getTime());
+	}
+
+	/**
+	 * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
+	 */
+	private User getUser(String userName, boolean toBeDeleted, Date deletionDate)
+		throws DotSecurityException, DotDataException {
+		UserAPI userAPI = APILocator.getUserAPI();
+		User user;
+		user = APILocator.getUserAPI().createUser(userName, userName + "@fake.org");
+
+		user.setDeleteInProgress(toBeDeleted);
+
+		if (toBeDeleted) {
+			user.setDeleteDate(deletionDate);
+
+		}
+		userAPI.save(user, systemUser, false);
+
+		return user;
+	}
 }
