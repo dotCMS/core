@@ -8,6 +8,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -100,8 +101,9 @@ public class SiteBrowserResource implements Serializable {
             locale = (null != user && null == locale)?
                     user.getLocale():locale;
 
-            filter = (filterParam.endsWith(NO_FILTER))?
-                    filterParam.substring(0, filterParam.length() - 1):filterParam;
+            filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
+                    filterParam.substring(0, filterParam.length() - 1):
+                    (null != filterParam)? filterParam: StringUtils.EMPTY;
 
             hostResults = this.hostAPI.findAll(user, Boolean.TRUE)
                         .stream().sorted(HOST_NAME_COMPARATOR)
@@ -112,7 +114,7 @@ public class SiteBrowserResource implements Serializable {
                         .collect(Collectors.toList());
 
             response = Response.ok(new ResponseEntityView
-                    (map(   "result",         hostResults.toArray()
+                    (map(   "result",         hostResults
                             //,"hostManagerUrl", getHostManagerUrl(req, this.layoutAPI.loadLayoutsForUser(user)) // NOTE: this is not needed yet.
                             ),
                      this.i18NUtil.getMessagesMap(locale, "select-host",
