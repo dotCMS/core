@@ -32,7 +32,7 @@ import java.util.UUID;
 /**
  * Created by nollymar on 7/19/16.
  */
-public class DeleteUserJob implements StatefulJob {
+public class DeleteUserJob implements Job {
 
     private final UserAPI uAPI;
     private final NotificationAPI notfAPI;
@@ -64,7 +64,24 @@ public class DeleteUserJob implements StatefulJob {
 
         try {
             Scheduler sched = QuartzUtils.getSequentialScheduler();
-            sched.scheduleJob(jd, trigger);
+            UserAPI userAPI = APILocator.getUserAPI();
+            NotificationAPI notAPI = APILocator.getNotificationAPI();
+
+            String deleteInProgress = MessageFormat.format(LanguageUtil.get(user,
+                "com.dotmarketing.business.UserAPI.delete.inProgress"),
+                userToDelete.getUserId() + "/" + userToDelete.getFullName());
+
+            synchronized (userToDelete.getUserId().intern()) {
+                User freshUser = userAPI.loadUserById(userToDelete.getUserId());
+                if(! freshUser.isDeleteInProgress()) {
+                    userAPI.markToDelete(userToDelete);
+                    sched.scheduleJob(jd, trigger);
+                } else {
+                    notAPI.info(deleteInProgress, user.getUserId());
+                }
+            }
+
+
         } catch (SchedulerException e) {
             Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
 
@@ -77,6 +94,9 @@ public class DeleteUserJob implements StatefulJob {
                 Logger.error(DeleteUserJob.class, "Error in rollback transaction", e);
             }
 
+            throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
+        } catch (Exception e) {
+            Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
             throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
         }
 
