@@ -381,7 +381,7 @@ public class UserManagerUtil {
 			com.liferay.portal.SystemException {
 		try {
 			UserManager userManager = UserManagerFactory.getManager();
-			userManager.sendPassword(companyId, emailAddress, locale);
+			userManager.sendPassword(companyId, emailAddress, locale, false);
 		}
 		catch (com.liferay.portal.PortalException pe) {
 			throw pe;

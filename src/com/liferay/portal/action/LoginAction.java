@@ -34,6 +34,7 @@ import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.rest.api.v1.authentication.TokenUnvalidException;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.beans.Host;
@@ -52,6 +53,7 @@ import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.portal.ejb.UserManagerImpl;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
@@ -206,65 +208,49 @@ public class LoginAction extends Action {
 		return mapping.findForward("portal.login");
 	}
 
-    /**
-     * 
-     * @param req
-     * @throws Exception
-     */
+	/**
+	 *
+	 * @param req
+	 * @throws Exception
+	 */
 	private void _resetPassword(HttpServletRequest req) throws Exception {
-	    String userId = ParamUtil.getString(req, "my_user_id");
-	    String token = ParamUtil.getString(req, "token");
-	    
-	    String newpass1 = ParamUtil.getString(req, "my_new_pass1");
-	    String newpass2 = ParamUtil.getString(req, "my_new_pass2");
-	    
-	    if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
-	        User user = APILocator.getUserAPI().loadUserById(userId);
-	        String tokenInfo = user.getIcqId();
-	        if(user!=null && UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
-	            String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
-	            if(userToken.equals(token)) {
-    	            // check if token expired
-    	            Calendar ttl = Calendar.getInstance();
-    	            ttl.setTimeInMillis(Long.parseLong(tokenInfo.substring(tokenInfo.indexOf(':')+1)));
-    	            ttl.add(Calendar.MINUTE, Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20));
-    	            if(ttl.after(Calendar.getInstance())) {
-    	                // all ok
-    	                if(UtilMethods.isSet(newpass1) && UtilMethods.isSet(newpass2)) {
-    	                    // actualy change password
-    	                    if(newpass1.equals(newpass2)) {
-    	                        try {
-    	                            APILocator.getUserAPI().updatePassword(user, newpass1, APILocator.getUserAPI().getSystemUser(), false);
-    	                            SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
-    	                            SessionMessages.add(req, "reset_pass_success");
-    	                        }
-    	                        catch(DotInvalidPasswordException ex) {
-    	                            SecurityLogger.logInfo(LoginAction.class, "User "+userId+" couldn't reset password because it is invalid. From IP:"+req.getRemoteAddr());
-    	                            SessionErrors.add(req, "reset_pass_invalid_pass");
-    	                        }
-    	                        
-    	                    }
-    	                    else {
-    	                        SessionErrors.add(req, "reset_pass_not_match");
-    	                    }
-    	                }
-    	                else {
-    	                    // just show the option to reset in UI
-        	                SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful password reset request from IP:"+req.getRemoteAddr());
-        	                SessionMessages.add(req, "reset_ok");
-    	                }
-    	            }
-    	            else {
-    	                SecurityLogger.logInfo(LoginAction.class, "User "+userId+" requested password reset with expired token from IP:"+req.getRemoteAddr());
-    	                SessionErrors.add(req, "reset_token_expired");
-    	            }
-	            }
-	            else {
-	                SecurityLogger.logInfo(LoginAction.class, "Attempt to reset user password ("+userId+") with wrong token. IP:"+req.getRemoteAddr());
-	            }
-	        }
-	    }
-	    
+		String userId = ParamUtil.getString(req, "my_user_id");
+		String token = ParamUtil.getString(req, "token");
+
+		String newpass1 = ParamUtil.getString(req, "my_new_pass1");
+		String newpass2 = ParamUtil.getString(req, "my_new_pass2");
+
+
+		if(UtilMethods.isSet(newpass1) && UtilMethods.isSet(newpass2)) {
+			// actualy change password
+			if(newpass1.equals(newpass2)) {
+				try {
+					UserManagerFactory.getManager().resetPassword(userId, token, newpass1);
+					SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
+					SessionMessages.add(req, "reset_pass_success");
+				}catch(com.dotmarketing.business.NoSuchUserException | DotSecurityException e){
+					throw e;
+				}catch(TokenUnvalidException e){
+					if (e.isExpired()){
+						SecurityLogger.logInfo(LoginAction.class, "User "+userId+" requested password reset with expired token from IP:"+req.getRemoteAddr());
+						SessionErrors.add(req, "reset_token_expired");
+					}else{
+						SecurityLogger.logInfo(LoginAction.class, "Attempt to reset user password ("+userId+") with wrong token. IP:"+req.getRemoteAddr());
+					}
+				}catch(DotInvalidPasswordException e){
+					SecurityLogger.logInfo(LoginAction.class, "User "+userId+" couldn't reset password because it is invalid. From IP:"+req.getRemoteAddr());
+					SessionErrors.add(req, "reset_pass_invalid_pass");
+				}
+			}
+			else {
+				SessionErrors.add(req, "reset_pass_not_match");
+			}
+		}
+		else {
+			// just show the option to reset in UI
+			SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful password reset request from IP:"+req.getRemoteAddr());
+			SessionMessages.add(req, "reset_ok");
+		}
 	}
 
 	/**

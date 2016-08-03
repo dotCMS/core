@@ -22,6 +22,11 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.rest.api.v1.authentication.TokenUnvalidException;
+import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.exception.DotSecurityException;
+
 import java.util.Locale;
 
 /**
@@ -125,9 +130,10 @@ public interface UserManager {
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
+	//TODO: When the old UI will be deleted - remove the fromAngular parameter
 	public void sendPassword(java.lang.String companyId,
-		java.lang.String emailAddress,Locale locale)
-		throws com.liferay.portal.PortalException, 
+							 java.lang.String emailAddress,Locale locale, boolean fromAngular)
+			throws com.liferay.portal.PortalException,
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
 	public void test() throws java.rmi.RemoteException;
@@ -177,4 +183,7 @@ public interface UserManager {
 	public boolean hasAdmin(java.lang.String userId)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
+
+	public void resetPassword(String userId, String token, String newPassword) throws NoSuchUserException,
+			DotSecurityException, TokenUnvalidException, DotInvalidPasswordException;
 }
