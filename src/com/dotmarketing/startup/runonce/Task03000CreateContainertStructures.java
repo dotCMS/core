@@ -32,10 +32,10 @@ public class Task03000CreateContainertStructures implements StartupTask {
 
 		String createIndex = "create index idx_container_id on container_structures(container_id)";
 		String addTemplateFK = "alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id)";
-		String container_structures_relations = "Select identifier,structure_inode, code from " + Inode.Type.CONTAINERS.getTableName() + " where max_contentlets > 0 ";
-		String delete_code_when_content = "update " + Inode.Type.CONTAINERS.getTableName() + " set code='' where max_contentlets > 0";
-		String drop_structure_column = "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column structure_inode";
-		String drop_metadata_column = "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column for_metadata";
+		String container_structures_relations = "Select identifier,structure_inode, code from containers where max_contentlets > 0 ";
+		String delete_code_when_content = "update containers set code='' where max_contentlets > 0";
+		String drop_structure_column = "alter table containers drop column structure_inode";
+		String drop_metadata_column = "alter table containers drop column for_metadata";
 
 		try {
 			DbConnectionFactory.getConnection().setAutoCommit(true);
@@ -115,12 +115,12 @@ public class Task03000CreateContainertStructures implements StartupTask {
 		try {
 			DotConnect dc = new DotConnect();
 			if (DbConnectionFactory.isMySql()){
-				dc.executeStatement("alter table " + Inode.Type.CONTAINERS.getTableName() + " drop foreign key structure_fk ");
+				dc.executeStatement("alter table containers drop foreign key structure_fk ");
 			} else{
-				dc.executeStatement("alter table " + Inode.Type.CONTAINERS.getTableName() + " drop constraint structure_fk ");
+				dc.executeStatement("alter table containers drop constraint structure_fk ");
 			}
 		} catch(Exception e) {
-			Logger.info(this, "foreign key for structure_inode on " + Inode.Type.CONTAINERS.getTableName() + " table didn't exist, not dropping anything here");
+			Logger.info(this, "foreign key for structure_inode on containers table didn't exist, not dropping anything here");
 		}
 		
 		//Lets remove the foreign key if exists prior to drop the column.
@@ -130,7 +130,7 @@ public class Task03000CreateContainertStructures implements StartupTask {
 			dc.executeStatement(drop_structure_column);
 			dc.executeStatement(drop_metadata_column);
 		} catch(Exception e) {
-			Logger.info(this, "Columns from " + Inode.Type.CONTAINERS.getTableName() + " table could not be dropped: " + e.getMessage());
+			Logger.info(this, "Columns from containers table could not be dropped: " + e.getMessage());
 		}
 
 	}

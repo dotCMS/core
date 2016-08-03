@@ -268,7 +268,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         dc.executeStatement(
           "alter table link_version_info       add constraint fk_link_ver_info_ident        foreign key (identifier) references identifier(id)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_contain_ver_info_working   foreign key (working_inode) references " + Inode.Type.CONTAINERS.getTableName() + "(inode)");
+          "alter table container_version_info  add constraint fk_contain_ver_info_working   foreign key (working_inode) references containers(inode)");
         dc.executeStatement(
           "alter table template_version_info   add constraint fk_temp_ver_info_working      foreign key (working_inode) references template(inode)");
         dc.executeStatement(
@@ -280,7 +280,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
         dc.executeStatement(
           "alter table contentlet_version_info add constraint fk_cont_version_info_working  foreign key (working_inode) references contentlet(inode)");
         dc.executeStatement(
-          "alter table container_version_info  add constraint fk_container_ver_info_live    foreign key (live_inode) references " + Inode.Type.CONTAINERS.getTableName() + "(inode)");
+          "alter table container_version_info  add constraint fk_container_ver_info_live    foreign key (live_inode) references containers(inode)");
         dc.executeStatement(
           "alter table template_version_info   add constraint fk_template_ver_info_live     foreign key (live_inode) references template(inode)");
         dc.executeStatement(
@@ -440,13 +440,13 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             "alter table contentlet drop column locked");
 
         dc.executeStatement(
-            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column live");
+            "alter table containers drop column live");
         dc.executeStatement(
-            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column working");
+            "alter table containers drop column working");
         dc.executeStatement(
-            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column deleted");
+            "alter table containers drop column deleted");
         dc.executeStatement(
-            "alter table " + Inode.Type.CONTAINERS.getTableName() + " drop column locked");
+            "alter table containers drop column locked");
 
         dc.executeStatement(
             "alter table template drop column live");
@@ -656,7 +656,7 @@ public class Task00795LiveWorkingToIdentifier implements StartupTask {
             	createNewTables();
             }
             addNewForeignKeys();
-            String[] types=new String[] {Inode.Type.CONTAINERS.getValue(),"links","template","file_asset","htmlpage"};
+            String[] types=new String[] {"containers","links","template","file_asset","htmlpage"};
             for(String tt : types) {
                 associateWorking(tt);
                 associateLiveNotWorking(tt);
