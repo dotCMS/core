@@ -5,7 +5,6 @@ export class DotCMSHttpResponse{
     private bodyJsonObject:any;
 
     public constructor( public resp:Response ){
-        console.log('body', resp._body);
         this.bodyJsonObject = JSON.parse(resp._body)
     }
 
@@ -13,7 +12,7 @@ export class DotCMSHttpResponse{
         return this.bodyJsonObject.i18nMessagesMap;
     }
 
-    get entity() : any{
+    get entity():any{
         return this.bodyJsonObject.entity;
     }
 
