@@ -23,12 +23,25 @@
 package com.liferay.portal.ejb;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
+import com.dotcms.repackage.com.ibm.icu.text.MessageFormat;
+import com.dotcms.rest.api.v1.authentication.TokenUnvalidException;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.*;
+import com.liferay.util.*;
+import com.liferay.util.Validator;
+import com.liferay.util.servlet.SessionErrors;
+import com.liferay.util.servlet.SessionMessages;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -39,10 +52,6 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Mailer;
-import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;
 import com.liferay.portal.SystemException;
@@ -61,13 +70,6 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portlet.admin.ejb.AdminConfigManagerUtil;
 import com.liferay.portlet.admin.model.EmailConfig;
 import com.liferay.portlet.admin.model.UserConfig;
-import com.liferay.util.Encryptor;
-import com.liferay.util.EncryptorException;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.InstancePool;
-import com.liferay.util.KeyValuePair;
-import com.liferay.util.StringUtil;
-import com.liferay.util.Validator;
 import com.liferay.util.mail.MailMessage;
 
 /**
@@ -386,7 +388,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return users.size();
 	}
 
-	public void sendPassword(String companyId, String emailAddress, Locale locale)
+	public void sendPassword(String companyId, String emailAddress, Locale locale, boolean fromAngular)
 		throws PortalException, SystemException {
 
 		emailAddress = emailAddress.trim().toLowerCase();
@@ -409,10 +411,18 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		String url=(company.getPortalURL().contains("://") ? "" : "https://") +
-		        company.getPortalURL() + "/c/portal_public/login?my_account_cmd=ereset&my_user_id="+user.getUserId()+
-		        "&token="+token+"&switchLocale="+locale.getLanguage()+"_"+locale.getCountry();
-		
+		String url = null;
+		String urlPrefix = (company.getPortalURL().contains("://") ? "" : "https://") + company.getPortalURL();
+
+		if ( !fromAngular ) {
+			url = urlPrefix + "/c/portal_public/login?my_account_cmd=ereset&my_user_id=" + user.getUserId() +
+					"&token=" + token + "&switchLocale=" + locale.getLanguage() + "_" + locale.getCountry();
+		}else{
+			url = urlPrefix + "/" + java.text.MessageFormat.format("html/ng?resetPassword=true&userId={0}&token={1}", user.getUserId(), token);
+		}
+
+		System.out.println("###url = " + url);
+
 		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 		
 		try {
@@ -751,6 +761,42 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return authResult;
 	}
 
-	private static final Log _log = LogFactory.getLog(UserManagerImpl.class);
+	public void resetPassword(String userId, String token, String newPassword) throws  NoSuchUserException,
+			DotSecurityException, TokenUnvalidException, DotInvalidPasswordException{
+		try {
+			if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
+				User user  = APILocator.getUserAPI().loadUserById(userId);
 
+				if (user == null){
+					throw new NoSuchUserException("");
+				}
+
+				String tokenInfo = user.getIcqId();
+				if(UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
+					String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
+					if(userToken.equals(token)) {
+						// check if token expired
+						Calendar ttl = Calendar.getInstance();
+						ttl.setTimeInMillis(Long.parseLong(tokenInfo.substring(tokenInfo.indexOf(':')+1)));
+						ttl.add(Calendar.MINUTE, Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20));
+						if(ttl.after(Calendar.getInstance())) {
+							APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
+						}
+						else {
+							throw new TokenUnvalidException(tokenInfo, true);
+						}
+					}
+					else {
+						throw new TokenUnvalidException(tokenInfo);
+					}
+				}else{
+					throw new TokenUnvalidException(tokenInfo);
+				}
+			}
+		} catch (DotDataException e) {
+			throw new IllegalArgumentException();
+		}
+	}
+
+	private static final Log _log = LogFactory.getLog(UserManagerImpl.class);
 }
