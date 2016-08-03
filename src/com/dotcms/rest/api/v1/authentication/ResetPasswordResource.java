@@ -16,15 +16,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.ejb.UserLocalManagerFactory;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.servlet.SessionMessages;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Locale;
 
 /**
@@ -79,7 +75,7 @@ public class ResetPasswordResource {
                     "please-enter-a-valid-login");
         } catch (DotSecurityException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        } catch (TokenUnvalidException e) {
+        } catch (DotInvalidTokenException e) {
             if (e.isExpired()){
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset_token_expired");

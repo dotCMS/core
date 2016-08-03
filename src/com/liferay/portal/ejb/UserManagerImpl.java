@@ -30,7 +30,7 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
-import com.dotcms.rest.api.v1.authentication.TokenUnvalidException;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
@@ -771,7 +771,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 	}
 
 	public void resetPassword(String userId, String token, String newPassword) throws NoSuchUserException,
-			DotSecurityException, TokenUnvalidException, DotInvalidPasswordException {
+			DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
 		try {
 			if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
 				User user  = APILocator.getUserAPI().loadUserById(userId);
@@ -792,14 +792,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 							APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
 						}
 						else {
-							throw new TokenUnvalidException(tokenInfo, true);
+							throw new DotInvalidTokenException(tokenInfo, true);
 						}
 					}
 					else {
-						throw new TokenUnvalidException(tokenInfo);
+						throw new DotInvalidTokenException(tokenInfo);
 					}
 				}else{
-					throw new TokenUnvalidException(tokenInfo);
+					throw new DotInvalidTokenException(tokenInfo);
 				}
 			}
 		} catch (DotDataException e) {

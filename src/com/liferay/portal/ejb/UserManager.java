@@ -22,7 +22,7 @@
 
 package com.liferay.portal.ejb;
 
-import com.dotcms.rest.api.v1.authentication.TokenUnvalidException;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -185,5 +185,5 @@ public interface UserManager {
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
 	public void resetPassword(String userId, String token, String newPassword) throws NoSuchUserException,
-			DotSecurityException, TokenUnvalidException, DotInvalidPasswordException;
+			DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException;
 }
