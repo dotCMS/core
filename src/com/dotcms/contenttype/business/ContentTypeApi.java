@@ -48,6 +48,8 @@ public interface ContentTypeApi {
 
 	void save(ContentType type, User user) throws DotDataException, DotSecurityException;
 
+	List<ContentType> find(String condition, User user, boolean respectFrontendRoles) throws DotDataException;
+
 
 
 

@@ -15,7 +15,10 @@ public class StructureTransformer extends FromStructureTransformer implements St
 		super(type);
 		this.structList = ImmutableList.of(transformToStruct(type));
 	}
-
+	public StructureTransformer(Structure type) {
+		super(type);
+		this.structList = ImmutableList.of(type);
+	}
 	public StructureTransformer(List<ContentType> initList) {
 		super(initList,true);
 		this.structList=transformToStruct(initList);

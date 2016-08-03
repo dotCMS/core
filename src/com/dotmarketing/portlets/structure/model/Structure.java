@@ -42,31 +42,31 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#WIDGET}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_WIDGET 		= BaseContentType.CONTENT.getType();
+	public static final int STRUCTURE_TYPE_WIDGET 		= BaseContentType.WIDGET.getType();
 
 	/**
 	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#FORM}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_FORM 		= BaseContentType.CONTENT.getType();
+	public static final int STRUCTURE_TYPE_FORM 		= BaseContentType.FORM.getType();
 
 	/**
 	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#FILEASSET}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_FILEASSET 	= BaseContentType.CONTENT.getType();
+	public static final int STRUCTURE_TYPE_FILEASSET 	= BaseContentType.FILEASSET.getType();
 
 	/**
 	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#HTMLPAGE}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_HTMLPAGE     = BaseContentType.CONTENT.getType();
+	public static final int STRUCTURE_TYPE_HTMLPAGE     = BaseContentType.HTMLPAGE.getType();
 
 	/**
 	 * @deprecated As of 2016-07-28, replaced by  {@link BaseContentType#PERSONA}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_PERSONA		= BaseContentType.CONTENT.getType();
+	public static final int STRUCTURE_TYPE_PERSONA		= BaseContentType.PERSONA.getType();
 
 			
 	private static final long serialVersionUID = 1L;

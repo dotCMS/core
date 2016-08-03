@@ -101,7 +101,18 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 		}
 
 	}
+	
+	@Override
+	public List<ContentType> find(String condition,User user, boolean respectFrontendRoles) throws DotDataException {
+		try {
+			return APILocator.getPermissionAPI().filterCollection(this.fac.search(condition, "mod_date", 0, 10000),
+					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+		} catch (DotSecurityException e) {
+			return ImmutableList.of();
+		}
 
+	}
+	
 	@Override
 	public List<ContentType> find(String condition, String orderBy, int limit, int offset,
 			String direction,User user, boolean respectFrontendRoles) throws DotDataException {
@@ -196,7 +207,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 	@Override
 	public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException{
 		List<SimpleStructureURLMap> res = new ArrayList<SimpleStructureURLMap>();
-		for(ContentType type : APILocator.getContentTypeAPI2().findAll(APILocator.systemUser(), false)){
+		
+		for(ContentType type : fac.findUrlMapped()){
 			res.add(new SimpleStructureURLMap(type.inode(), type.urlMapPattern()));
 		}		
 		return ImmutableList.copyOf(res);
@@ -215,7 +227,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 
 			type=	fac.save(builder.build());
-			CacheLocator.getContentTypeCache().remove(new StructureTransformer(type).from());
+			CacheLocator.getContentTypeCache2().remove(type);
 			APILocator.getPermissionAPI().resetPermissionReferences(type);
 		}
 	}

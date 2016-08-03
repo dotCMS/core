@@ -63,6 +63,9 @@ public class ContentletCacheImpl extends ContentletCache {
 	public void addMetadata(String key, com.dotmarketing.portlets.contentlet.model.Contentlet content) {
 	    // http://jira.dotmarketing.net/browse/DOTCMS-7335
         // we need metadata in other cache region
+		if("CACHE_404_CONTENTLET".equals(content.getInode())){
+			return;
+		}
         Structure st=content.getStructure();
         if(st!=null && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
             Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
@@ -88,6 +91,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
 	@Override
 	public com.dotmarketing.portlets.contentlet.model.Contentlet add(String key, com.dotmarketing.portlets.contentlet.model.Contentlet content) {
+
 		addMetadata(key, content);
 	    
 	    key = primaryGroup + key;

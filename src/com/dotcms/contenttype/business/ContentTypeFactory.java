@@ -13,8 +13,7 @@ public interface ContentTypeFactory {
 	default ContentTypeFactory instance(){
 		return new ContentTypeFactoryImpl();
 	}
-	
-	
+
 	ContentType find(String id) throws DotDataException;
 	
 	ContentType findByVar(String id) throws DotDataException;
@@ -69,6 +68,12 @@ public interface ContentTypeFactory {
 
 
 	ContentType setAsDefault(ContentType type) throws DotDataException;
+
+
+	List<ContentType> findUrlMapped() throws DotDataException;
+
+
+	List<ContentType> search(String search, int limit) throws DotDataException;
 	
 	
 	

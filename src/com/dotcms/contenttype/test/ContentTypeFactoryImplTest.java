@@ -128,7 +128,17 @@ public class ContentTypeFactoryImplTest {
 			}
 		}
 	}
-
+	@Test
+	public void testFindUrlMapped() throws Exception {
+		List<ContentType> types = factory.findUrlMapped();
+		assertThat("findUrlMapped only returns urlmapped content", types.size()>0);
+		for(ContentType type : types){
+			assertThat("findUrlMapped only returns urlmapped content", type.urlMapPattern()!=null);
+		}
+		
+	}
+	
+	
 	@Test
 	public void testFindAll() throws Exception {
 		List<ContentType> types = factory.findAll();
@@ -239,6 +249,15 @@ public class ContentTypeFactoryImplTest {
 		assertThat("contenttypes are added", count == count2 - runs);
 	}
 
+	
+	@Test public void testDefaultType() throws DotDataException{
+		ContentType type = factory.findDefaultType();
+		assertThat("we have a default content type", type !=null);
+
+	}
+	
+	
+	
 	@Test
 	public void testSearch() throws Exception {
 		String[] searchTerms = { Constants.NEWS, "news", "content", "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'" };
@@ -447,4 +466,31 @@ public class ContentTypeFactoryImplTest {
 		}
 	}
 
+	
+	@Test
+	public void searchCount() throws DotDataException {
+		String query = " velocity_var_name like '%content%'";
+		List<ContentType> types = factory.search(query, 10000);
+		
+		int count= factory.searchCount(query,BaseContentType.ANY);
+		assertThat("we have content type:", types.size()>0);
+		assertThat("we have the right content types:", types.size() == count);
+
+	}
+	@Test
+	public void suggestVelocityVar() throws DotDataException {
+		String tryVar = "content" + System.currentTimeMillis();
+		String newVar = factory.suggestVelocityVar(tryVar);
+		
+		assertThat("random velocity var works", newVar!=null);
+		assertThat("random velocity var works", newVar.equals(tryVar));
+		
+		
+		tryVar = "news" ;
+		newVar = factory.suggestVelocityVar(tryVar);
+		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
+
+	}
+	
+	
 }

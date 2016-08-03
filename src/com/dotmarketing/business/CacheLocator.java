@@ -6,6 +6,8 @@ import java.util.Set;
 
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.contenttype.business.ContentTypeCache2;
+import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
 import com.dotcms.notifications.business.NewNotificationCache;
@@ -19,7 +21,7 @@ import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
-import com.dotmarketing.cache.ContentTypeCacheImpl;
+import com.dotmarketing.cache.LegacyContentTypeCacheImpl;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -301,7 +303,10 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static ContentTypeCache getContentTypeCache() {
         return (ContentTypeCache) getInstance(CacheIndex.ContentTypeCache);
     }
-
+    
+    public static ContentTypeCache2 getContentTypeCache2() {
+        return (ContentTypeCache2) getInstance(CacheIndex.ContentTypeCache2);
+    }
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -391,8 +396,8 @@ enum CacheIndex
 	RulesCache("Rules Cache"),
 	SiteVisitCache("Rules Engine - Site Visits"),
 	NewNotification("NewNotification Cache"),
-	ContentTypeCache("Content Type Cache");
-
+	ContentTypeCache("Legacy Content Type Cache"),
+	ContentTypeCache2("New Content Type Cache");
 	Cachable create() {
 		switch(this) {
 		case Permission: return new PermissionCacheImpl();
@@ -433,7 +438,9 @@ enum CacheIndex
       	case NewNotification: return new NewNotificationCacheImpl();
       	case RulesCache : return new RulesCacheImpl();
       	case SiteVisitCache : return new SiteVisitCacheImpl();
-      	case ContentTypeCache: return new ContentTypeCacheImpl();
+      	case ContentTypeCache: return new LegacyContentTypeCacheImpl();
+      	case ContentTypeCache2: return new ContentTypeCache2Impl();
+      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

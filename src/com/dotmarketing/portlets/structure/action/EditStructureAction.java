@@ -204,7 +204,7 @@ public class EditStructureAction extends DotPortletAction {
 			}
 		}
 		
-		req.setAttribute(WebKeys.Structure.STRUCTURE, new StructureTransformer(type).from());
+		req.setAttribute(WebKeys.Structure.STRUCTURE, new StructureTransformer(type).asStructure());
 
 		boolean searchable = false;
 
@@ -482,7 +482,7 @@ public class EditStructureAction extends DotPortletAction {
 			SessionMessages.add(req, "message", message);
 			AdminLogger.log(EditStructureAction.class, "_saveStructure", "Structure saved : " + structure.getName(), user);
 		} catch (Exception ex) {
-			Logger.error(this.getClass(), ex.toString());
+			Logger.error(this.getClass(), ex.toString(),ex);
 			String message = ex.getMessage();
 			SessionMessages.add(req, "error", message);
 		}

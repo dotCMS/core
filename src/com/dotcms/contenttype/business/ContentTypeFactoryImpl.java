@@ -20,8 +20,8 @@ import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -31,33 +31,44 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	final ContentTypeSql contentTypeSql;
-
+	final ContentTypeCache2 cache;
+	
 	public ContentTypeFactoryImpl() {
 		this.contentTypeSql = ContentTypeSql.getInstance();
+		this.cache = CacheLocator.getContentTypeCache2();
 	}
 
 	@Override
 	public ContentType find(String id) throws DotDataException {
-		return dbById(id);
+		ContentType type = cache.byInode(id);
+		if(type==null){
+			type= dbById(id);
+			cache.add(type);
+		}
+		return type;
 	}
 
 	@Override
 	public ContentType findByVar(final String var) throws DotDataException {
-		return dbByVar(var);
+		ContentType type = cache.byVar(var);
+		if(type==null){
+			type= dbByVar(var);
+			cache.add(type);
+		}
+		return type;
+
 	}
 
 	@Override
 	public List<ContentType> findAll() throws DotDataException {
-		return dbAll("mod_date desc");
+		return dbAll("structuretype,upper(name)");
 	}
 
 	@Override
@@ -65,6 +76,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		LocalTransaction.wrapReturn(() -> {
 			return dbDelete(type);
 		});
+		cache.remove(type);
 	}
 
 	@Override
@@ -72,11 +84,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		LocalTransaction.wrapReturn(() -> {
 			return dbDelete(type);
 		});
+		cache.remove(type);
 	}
 
 	@Override
 	public List<ContentType> findAll(String orderBy) throws DotDataException {
 		return dbAll(orderBy);
+	}
+	
+	@Override
+	public List<ContentType> findUrlMapped() throws DotDataException {
+		return dbSearch(" url_map_pattern is not null ",BaseContentType.ANY.getType(), "mod_date",0,10000);
 	}
 
 	@Override
@@ -104,7 +122,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	public List<ContentType> search(String search) throws DotDataException {
 		return search(search, 0, "mod_date desc", 0, Config.getIntProperty("PER_PAGE", 50));
 	}
-
+	
+	@Override
+	public List<ContentType> search(String search, int limit) throws DotDataException {
+		return search(search, 0, "mod_date desc", 0, limit);
+	}
 	@Override
 	public List<ContentType> search(String search, String orderBy, int limit) throws DotDataException {
 		return search(search, 0, orderBy, 0, limit);
@@ -142,9 +164,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	@Override
 	public ContentType save(ContentType type) throws DotDataException {
-		return LocalTransaction.wrapReturn(() -> {
-			return dbSaveUpdate(type);
-		});
+	
+			return LocalTransaction.wrapReturn(() -> {
+				try{
+					return dbSaveUpdate(type);
+				}
+				finally{
+					cache.remove(type);
+				}
+			});
+		
+
 	}
 
 	@Override
@@ -154,11 +184,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 				return dbUpdateDefaultToTrue(type);
 			});
 		}
+		cache.clearCache();
 		return type;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
 	private ContentType dbSelectDefaultType() throws DotDataException {
 		DotConnect dc = new DotConnect()
-			.setSQL(this.contentTypeSql.findDefaultContentType);
+			.setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
 		
 		
 		return new DbContentTypeTransformer(dc.loadObjectResults()).from();
@@ -168,7 +207,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		
 		DotConnect dc = new DotConnect();
 
-		dc.setSQL(this.contentTypeSql.updateAllDefaultToFalse);
+		dc.setSQL(this.contentTypeSql.UPDATE_ALL_DEFUALT);
 		dc.addParam(false);
 		dc.loadResult();
 		type = ContentTypeBuilder.builder(type).defaultStructure(true).build();
@@ -179,8 +218,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private List<ContentType> dbByType(int type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		String sql = this.contentTypeSql.findAll;
-		dc.setSQL(String.format(sql, "mod_date desc"));
+		String sql = this.contentTypeSql.SELECT_BY_TYPE;
+		dc.setSQL(String.format(sql, "mod_date desc")).addParam(type);
 
 		return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
 
@@ -188,7 +227,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private List<ContentType> dbAll(String orderBy) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		String sql = this.contentTypeSql.findAll;
+		String sql = this.contentTypeSql.SELECT_ALL;
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		dc.setSQL(String.format(sql, orderBy));
 
@@ -198,7 +237,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private ContentType dbById(@NotNull String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.findById);
+		dc.setSQL(this.contentTypeSql.SELECT_BY_INODE);
 		dc.addParam(id);
 		List<Map<String, Object>> results;
 
@@ -215,8 +254,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		DotConnect dc = new DotConnect();
 		String var = tryVar;
 		for(int i=1;i<100000;i++){
-			dc.setSQL(this.contentTypeSql.tryVelocityVar);
-			dc.addParam(tryVar);
+			dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
+			dc.addParam(var);
 			if(dc.getInt("test")==0){
 				return var;
 			}
@@ -228,7 +267,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private ContentType dbByVar(String var) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.findByVar);
+		dc.setSQL(this.contentTypeSql.SELECT_BY_VAR);
 		dc.addParam(var);
 		List<Map<String, Object>> results;
 
@@ -270,7 +309,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInodeUpdate(final ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.updateContentTypeInode);
+		dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
 		dc.addParam(type.inode());
 		dc.addParam(type.iDate());
 		dc.addParam(type.owner());
@@ -280,7 +319,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInodeInsert(final ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.insertContentTypeInode);
+		dc.setSQL(this.contentTypeSql.INSERT_TYPE_INODE);
 		dc.addParam(type.inode());
 		dc.addParam(type.iDate());
 		dc.addParam(type.owner());
@@ -289,12 +328,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbUpdate(ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.updateContentType);
+		dc.setSQL(this.contentTypeSql.UPDATE_TYPE);
 		dc.addParam(type.name());
 		dc.addParam(type.description());
 		dc.addParam(type.defaultStructure());
 		dc.addParam(type.pagedetail());
-		dc.addParam(type.baseType());
+		dc.addParam(type.baseType().getType());
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
 		dc.addParam(type.velocityVarName());
@@ -310,7 +349,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInsert(ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.insertContentType);
+		dc.setSQL(this.contentTypeSql.INSERT_TYPE);
 		dc.addParam(type.inode());
 		dc.addParam(type.name());
 		dc.addParam(type.description());
@@ -367,7 +406,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		// and handle those
 		SearchCondition searchCondition = new SearchCondition(search);
 		DotConnect dc = new DotConnect();
-		dc.setSQL(String.format(this.contentTypeSql.searchStructures, searchCondition.condition, SQLUtil.sanitizeSortBy(orderBy)));
+		dc.setSQL(String.format(this.contentTypeSql.SELECT_QUERY_CONDITION, searchCondition.condition, SQLUtil.sanitizeSortBy(orderBy)));
 		dc.setMaxRows(limit);
 		dc.setStartRow(offset);
 		dc.addParam(searchCondition.search);
@@ -387,7 +426,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		SearchCondition searchCondition = new SearchCondition(search);
 
 		DotConnect dc = new DotConnect();
-		dc.setSQL(String.format(this.contentTypeSql.countStructures, searchCondition.condition));
+		dc.setSQL(String.format(this.contentTypeSql.SELECT_COUNT_CONDITION, searchCondition.condition));
 		dc.addParam(searchCondition.search);
 		dc.addParam(searchCondition.search);
 		dc.addParam(searchCondition.search);
@@ -446,8 +485,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 				this.condition = "";
 				this.search = "%";
 			}
-			else if (searchOrCondition.contains("<") || searchOrCondition.contains("=") || searchOrCondition.contains("<")
-					|| searchOrCondition.contains(" like ")) {
+			else if (searchOrCondition.contains("<") 
+					|| searchOrCondition.contains("=") 
+					|| searchOrCondition.contains("<")
+					|| searchOrCondition.contains(" like ")
+					|| searchOrCondition.contains(" is ")
+					) {
 				this.search = "%";
 				this.condition = (searchOrCondition.toLowerCase().trim().startsWith("and")) ? searchOrCondition : "and " +searchOrCondition;
 
