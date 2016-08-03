@@ -70,6 +70,12 @@ public class UserManagerListBuilderFactory {
 		queryWherePortion.append(PublicCompanyFactory.getDefaultCompany().getCompanyId());
 		queryWherePortion.append("'");
 
+		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+			queryWherePortion.append(" and user_.delete_in_progress = 0 ");
+		}else{
+			queryWherePortion.append(" and user_.delete_in_progress = false ");
+		}
+
 		String[] arrayUserIds = form.getArrayUserIds();
 		List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
 		boolean runQuery = true;

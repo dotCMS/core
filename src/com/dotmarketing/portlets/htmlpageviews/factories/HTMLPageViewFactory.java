@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 
@@ -29,8 +30,9 @@ public class HTMLPageViewFactory {
     private static String GET_TOP_INTERNAL_EXIT_PAGES = "select cr2.request_uri, cr2.associated_identifier, count(cr.request_uri) as num_referring from clickstream_request cr left join clickstream_request cr2 on (cr2.request_order = cr.request_order + 1 and cr2.clickstream_id = cr.clickstream_id) where cr2.request_uri is not null and cr.request_uri = ? and cr2.request_uri <> ? and cr.timestampper between ? and ? and cr.host_id = ? group by cr2.request_uri, cr2.associated_identifier order by num_referring desc";
     private static String GET_TOP_EXTERNAL_REFERRING_PAGES = "select referer, count(request_uri) as num_referring from clickstream_request, clickstream where clickstream.clickstream_id = clickstream_request.clickstream_id and request_order = 1 and request_uri = ? and timestampper between ? and ? and clickstream_request.host_id = ? group by referer order by num_referring desc";
     private static String GET_TOP_USERS = "select user_id, count(request_uri) as num_views from clickstream_request, clickstream where clickstream.clickstream_id = clickstream_request.clickstream_id and request_uri = ? and timestampper between ? and ? and clickstream_request.host_id = ? group by user_id order by num_views desc";
-    private static String GET_ALL_USERS = "select distinct user_id, User_.* from clickstream_request, clickstream, User_ where clickstream.clickstream_id = clickstream_request.clickstream_id and clickstream.user_id = User_.userid and  request_uri = ? and timestampper between ? and ? and clickstream_request.host_id = ?" ;
-    
+    private static String GET_ALL_USERS = "select distinct user_id, User_.* from clickstream_request, clickstream, User_ where clickstream.clickstream_id = clickstream_request.clickstream_id and clickstream.user_id = User_.userid and  request_uri = ? and timestampper between ? and ? and clickstream_request.host_id = ?" + ((DbConnectionFactory.isOracle() || DbConnectionFactory
+        .isMsSql())? " and User_.delete_in_progress = 0":" and User_.delete_in_progress = false");
+
     private static String GET_CONTENTS_INODES_VIEWS = "select query_string as num_views from clickstream_request where request_uri = ? and timestampper between ? and ? and host_id = ?";
     private static String GET_CONTENTS_INODES_UNIQUE_VISITORS = "select query_string, clickstream.clickstream_id as clickstream_id from clickstream_request, clickstream where clickstream.clickstream_id = clickstream_request.clickstream_id and request_uri = ? and timestampper between ? and ? and clickstream_request.host_id = ?";
     
