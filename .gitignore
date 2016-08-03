@@ -29,31 +29,7 @@ jspm_bundles/
 #################
 # IntelliJ Idea (this is actually including IntelliJ files!)
 #################
-.idea/shelf
-.idea/*.xml
-.idea/copyright/*.xml
-.idea/dictionaries/*.xml
-.idea/inspectionProfiles/*.xml
-.idea/libraries/*.xml
-.idea/scopes/*.xml
-
-### Intellij Keepers such as inspections and formatting styles. "Don't ignore" using specific inclusions, due to potential for cruft (e.g. named dictionaries)
-!.idea/.name
-!.idea/checkstyle-idea.xml
-!.idea/compiler.xml
-!.idea/encodings.xml
-!.idea/jsLibraryMappings.xml
-#!.idea/misc.xml
-!.idea/modules.xml
-
-!.idea/copyright/profiles_settings.xml
-!.idea/inspectionProfiles/Project_Default.xml
-!.idea/inspectionProfiles/profiles_settings.xml
-!.idea/libraries/*.xml
-!.idea/scopes/SourceScope.xml
-
-
-
+.idea/
 
 #################
 ## Eclipse
