@@ -35,7 +35,7 @@ export class LoginContainer{
                 this.message = result.errors[0].message;
             } else {
                 this.message = '';
-                this.router.go('/');
+                this.router.go('/main');
                 //TODO: this window.location.reload should be removed once the menu and router injection update issue is fixed
                 //window.location.reload();
             }
