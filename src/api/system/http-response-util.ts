@@ -12,6 +12,9 @@ export class CwError {
 
   constructor(public code:number, public message:string, public request?:Request, public response?:Response, public source?:any){}
 
+
+
+
 }
 
 export interface ResponseError {

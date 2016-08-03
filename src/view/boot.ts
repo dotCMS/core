@@ -15,6 +15,7 @@ import {RoutingService} from '../api/services/routing-service';
 import {provide} from '@angular/core';
 import {disableDeprecatedForms, provideForms} from '@angular/forms';
 import {MdIconRegistry} from '@angular2-material/icon/icon';
+import {DotCMSHttpService} from '../api/services/http/dotcms-http-service';
 
 new RoutingService().getRoutes().subscribe(menu => {
     bootstrap(AppComponent, [
@@ -37,5 +38,6 @@ new RoutingService().getRoutes().subscribe(menu => {
         // Please see: https://angular.io/docs/ts/latest/guide/forms.html
         disableDeprecatedForms(),
         provideForms(),
+        DotCMSHttpService
     ]);
 });

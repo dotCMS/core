@@ -6,6 +6,8 @@ import {Observable} from 'rxjs/Rx';
 import {ApiRoot} from '../persistence/ApiRoot';
 import {Http, RequestMethod} from '@angular/http';
 import {CoreWebService} from '../services/core-web-service';
+import {DotCMSHttpService} from "./http/dotcms-http-service";
+import { Router } from '@ngrx/router';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -19,17 +21,19 @@ export class LoginService extends CoreWebService {
     private serverInfoURL: string;
     private recoverPasswordURL: string;
     private logoutURL: string;
+    private changePasswordURL: string;
 
     private lang: string = '';
     private country: string = '';
 
-    constructor(_apiRoot: ApiRoot, _http: Http) {
+    constructor(_apiRoot: ApiRoot, _http: Http, public httpService: DotCMSHttpService, private router: Router) {
         super(_apiRoot, _http);
 
         this.userAuthURL = `${_apiRoot.baseUrl}api/v1/authentication`;
         this.serverInfoURL = `${_apiRoot.baseUrl}api/v1/loginform`;
-        this.recoverPasswordURL = `${_apiRoot.baseUrl}api/v1/recoverpassword`;
+        this.recoverPasswordURL = `${_apiRoot.baseUrl}api/v1/forgotpassword`;
         this.logoutURL = `${_apiRoot.baseUrl}api/v1/logout`;
+        this.changePasswordURL = `${_apiRoot.baseUrl}api/v1/changePassword`;
     }
 
     /**
@@ -75,6 +79,7 @@ export class LoginService extends CoreWebService {
      * @returns {Observable<any>}
      */
     public logOutUser(): Observable<any> {
+        this.router.go('/login/login');
 
         return this.request({
             method: RequestMethod.Get,
@@ -89,10 +94,10 @@ export class LoginService extends CoreWebService {
      * @returns an array with message indicating if the recover password was successfull
      * or if there is an error
      */
-    public recoverPassword(email: string): Observable<any> {
-        let body = JSON.stringify({'email': email});
+    public recoverPassword(login: string): Observable<any> {
+        let body = JSON.stringify({'userId': login});
 
-        return this.request({
+        return this.httpService.request({
             body: body,
             method: RequestMethod.Post,
             url: this.recoverPasswordURL,
@@ -109,5 +114,15 @@ export class LoginService extends CoreWebService {
             this.lang = languageDesc[0];
             this.country = languageDesc[1];
         }
+    }
+
+    public changePassword(login:string, password:string, token:string): Observable<any> {
+        let body = JSON.stringify({'userId': login, 'password': password, 'token': token});
+
+        return this.httpService.request({
+            body: body,
+            method: RequestMethod.Post,
+            url: this.changePasswordURL,
+        });
     }
 }
