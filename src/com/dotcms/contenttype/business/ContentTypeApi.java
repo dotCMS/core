@@ -44,9 +44,9 @@ public interface ContentTypeApi {
 
 	void moveToSystemFolder(Folder folder) throws DotDataException;
 
-	void save(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException;
+	ContentType save(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException;
 
-	void save(ContentType type, User user) throws DotDataException, DotSecurityException;
+	ContentType save(ContentType type, User user) throws DotDataException, DotSecurityException;
 
 	List<ContentType> find(String condition, User user, boolean respectFrontendRoles) throws DotDataException;
 

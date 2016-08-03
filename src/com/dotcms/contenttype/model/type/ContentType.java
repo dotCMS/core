@@ -22,6 +22,7 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
@@ -156,20 +157,12 @@ public abstract class ContentType implements Serializable, Permissionable {
 	@JsonIgnore
 	public Permissionable getParentPermissionable()  {
 		try {
-
-			if (UtilMethods.isSet(folder()) && !folder().equals("SYSTEM_FOLDER")) {
-
-				return APILocator.getFolderAPI().find(folder(), APILocator.getUserAPI().getSystemUser(), false);
-
-			} else if (UtilMethods.isSet(host()) && !host().equals("SYSTEM_HOST")) {
-
-				try {
-					return APILocator.getHostAPI().find(host(), APILocator.getUserAPI().getSystemUser(), false);
-				} catch (DotSecurityException e) {
-					Logger.debug(getClass(), e.getMessage(), e);
-				}
-			}
-			return APILocator.getHostAPI().findSystemHost();
+			Permissionable parent =  (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) 
+					? APILocator.getHostAPI().find(this.host(), APILocator.systemUser(), false)
+							: APILocator.getFolderAPI().find(this.folder(), APILocator.systemUser(), false);
+					
+			
+			return parent;
 		} catch (Exception e) {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}

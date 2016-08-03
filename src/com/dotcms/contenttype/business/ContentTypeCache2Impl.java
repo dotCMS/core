@@ -95,8 +95,12 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
 
     @Override
 	public ContentType byInode(String inode) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return (ContentType) cache.get(primaryGroup + inode, primaryGroup);
+		} catch (DotCacheException e) {
+			Logger.debug(ContentTypeCache2.class,"Cache Entry not found", e);
+			return null;
+		}
 	}
 
     @Override
