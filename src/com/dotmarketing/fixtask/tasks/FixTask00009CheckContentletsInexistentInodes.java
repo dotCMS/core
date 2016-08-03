@@ -52,7 +52,7 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 				DotConnect db = new DotConnect();
 
 				int total=0;
-				String query = "select * from contentlet c where c.inode not in (select inode from inode where type='contentlet')";
+				String query = "select * from contentlet c where not exists (select * from inode i where c.inode = i.inode and type='contentlet')";
 				Logger.debug(CMSMaintenanceFactory.class,
 						"Running query for Contentlets: " + query);
 				db.setSQL(query);
@@ -152,7 +152,7 @@ public class FixTask00009CheckContentletsInexistentInodes implements FixTask {
 	public boolean shouldRun() {
 		DotConnect db = new DotConnect();
 
-		String query = "select c.inode from contentlet c where c.inode not in (select inode from inode where type='contentlet') ";
+		String query = "select c.inode from contentlet c where not exists (select * from inode i where c.inode = i.inode and type='contentlet')";
 		
 		db.setSQL(query);
 		List<HashMap<String, String>> contentletIds =null;

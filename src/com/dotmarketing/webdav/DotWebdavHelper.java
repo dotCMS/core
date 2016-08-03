@@ -905,11 +905,6 @@ public class DotWebdavHelper {
 				vc.remove(ResourceManager.RESOURCE_TEMPLATE + workingFile.getPath());
 			}
 
-			// If content is empty or null we cannot do anything
-			if(content == null || content.available() == 0) {
-                Logger.warn(this, "The 'content' param is null or empty. We are going to create an empty file.");
-            }
-
 			if(destinationFile==null){
 				Contentlet fileAsset = new Contentlet();
 				Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
@@ -925,6 +920,11 @@ public class DotWebdavHelper {
                 final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+                
+				if(fileData.length() == 0){
+					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
+					FileUtil.write(fileData, " ");
+				}
 
 				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
 				fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);

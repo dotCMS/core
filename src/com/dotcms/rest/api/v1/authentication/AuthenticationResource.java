@@ -1,11 +1,18 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -18,11 +25,13 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.language.LanguageWrapper;
@@ -30,28 +39,26 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Locale;
-
 /**
- * This resource does the authentication, if the authentication is successfully returns the User Object as a Json,
- * If there is a known error returns 500 and the error messages related.
- * Otherwise returns 500 and the exception as Json.
+ * This resource does the authentication, if the authentication is successfully
+ * returns the User Object as a Json, If there is a known error returns 500 and
+ * the error messages related. Otherwise returns 500 and the exception as Json.
+ * 
  * @author jsanca
+ * @version 3.7
+ * @since Jul 7, 2016
  */
+@SuppressWarnings("serial")
 @Path("/v1/authentication")
 public class AuthenticationResource implements Serializable {
 
     private final UserLocalManager userLocalManager;
     private final LoginService loginService;
-    private final WebResource webResource;
     private final AuthenticationHelper  authenticationHelper;
 
-    @SuppressWarnings("unused")
+    /**
+     * Default constructor.
+     */
     public AuthenticationResource() {
         this(LoginServiceFactory.getInstance().getLoginService(),
                 UserLocalManagerFactory.getManager(),
@@ -67,10 +74,9 @@ public class AuthenticationResource implements Serializable {
         this.loginService = loginService;
         this.userLocalManager = userLocalManager;
         this.authenticationHelper = authenticationHelper;
-        this.webResource = webResource;
     }
 
-    // todo: add the https annotation
+    // TODO: add the https annotation
     @POST
     @JSONP
     @NoCache
@@ -99,16 +105,10 @@ public class AuthenticationResource implements Serializable {
                 res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
             }
         } catch (NoSuchUserException | UserEmailAddressException e) {
-        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "please-enter-a-valid-login");
-        } catch (AuthException e) {
-        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
-        }  catch (UserPasswordException e) {
-        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "please-enter-a-valid-password");
+        } catch (AuthException e) {
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
         } catch (RequiredLayoutException e) {
-        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 
@@ -130,7 +130,5 @@ public class AuthenticationResource implements Serializable {
 
         return res;
     } // authentication
-
-
 
 } // E:O:F:AuthenticationResource.

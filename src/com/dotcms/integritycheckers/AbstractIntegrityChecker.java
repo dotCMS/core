@@ -334,22 +334,6 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         return exists;
     }
 
-    /**
-     * Return Temporary word depending on the Database in the data source.
-     *
-     * @return
-     */
-    protected String getTempKeyword() {
-        String tempKeyword = "temporary";
-
-        if (DbConnectionFactory.isMsSql()) {
-            tempKeyword = "";
-        } else if (DbConnectionFactory.isOracle()) {
-            tempKeyword = "global " + tempKeyword;
-        }
-
-        return tempKeyword;
-    }
 
     protected void createContentletTemporaryTable(final String endpointId) throws SQLException {
         DotConnect dc = new DotConnect();
@@ -357,7 +341,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         // Create a temporary table and insert all the records coming from
         // the CSV file.
         final String tempTableName = getTempTableName(endpointId);
-        final String tempKeyword = getTempKeyword();
+        final String tempKeyword = DbConnectionFactory.getTempKeyword();
         final String integerKeyword = getIntegerKeyword();
 
         String createTempTableStr = new StringBuilder("create ").append(tempKeyword)
