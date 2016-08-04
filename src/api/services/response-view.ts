@@ -12,7 +12,7 @@ import { Response } from '@angular/http'
  * }
  * </code>
  */
-export class DotCMSHttpResponse{
+export class ResponseView{
 
     private bodyJsonObject:any;
 

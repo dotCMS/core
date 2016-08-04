@@ -45,7 +45,7 @@ export class LoginService  {
 
         let body = JSON.stringify({'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country});
 
-        return this.coreWebService.getResponseView({
+        return this.coreWebService.requestView({
             body: body,
             method: RequestMethod.Post,
             url: this.serverInfoURL,
@@ -66,7 +66,7 @@ export class LoginService  {
         let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
         return Observable.create(observer => { 
-            this.coreWebService.getResponseView({
+            this.coreWebService.requestView({
                 body: body,
                 method: RequestMethod.Post,
                 url: this.userAuthURL
@@ -84,7 +84,7 @@ export class LoginService  {
     public logOutUser(): Observable<any> {
         this.router.go('/login/login');
 
-        return this.coreWebService.getResponseView({
+        return this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.logoutURL,
         });
@@ -100,7 +100,7 @@ export class LoginService  {
     public recoverPassword(login: string): Observable<any> {
         let body = JSON.stringify({'userId': login});
 
-        return this.coreWebService.getResponseView({
+        return this.coreWebService.requestView({
             body: body,
             method: RequestMethod.Post,
             url: this.recoverPasswordURL,
@@ -122,7 +122,7 @@ export class LoginService  {
     public changePassword(login:string, password:string, token:string): Observable<any> {
         let body = JSON.stringify({'userId': login, 'password': password, 'token': token});
 
-        return this.coreWebService.getResponseView({
+        return this.coreWebService.requestView({
             body: body,
             method: RequestMethod.Post,
             url: this.changePasswordURL,

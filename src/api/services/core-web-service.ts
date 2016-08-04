@@ -7,7 +7,7 @@ import {
     CLIENTS_ONLY_MESSAGES, SERVER_RESPONSE_ERROR
 } from "../system/http-response-util";
 import {ApiRoot} from "../persistence/ApiRoot";
-import {DotCMSHttpResponse} from "./dotcms-http-response";
+import {ResponseView} from "./response-view";
 
 
 export const RULE_CREATE = 'RULE_CREATE'
@@ -105,20 +105,20 @@ export class CoreWebService {
    * @param options
    * @returns {DotCMSHttpResponse}
      */
-  public getResponseView( options:RequestOptionsArgs ):Observable<any> {
+  public requestView(options:RequestOptionsArgs ):Observable<any> {
     let request = this.getRequestOpts( options );
 
     return   Observable.create(observer => {
       this._http.request(request).subscribe(
           resp => {
             if (resp._body.errors && resp._body.errors.length > 0){
-              observer.error(new DotCMSHttpResponse(resp));
+              observer.error(new ResponseView(resp));
             }else {
-              observer.next(new DotCMSHttpResponse(resp));
+              observer.next(new ResponseView(resp));
             }
           },
           resp => {
-            observer.error( new DotCMSHttpResponse( resp ) )
+            observer.error( new ResponseView( resp ) )
           }
       );
     });

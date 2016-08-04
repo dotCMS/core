@@ -1,8 +1,8 @@
 import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from "../../../../../api/services/login-service";
-import {FogotPasswordComponent} from "./fogot-password-component";
+import {FogotPasswordComponent} from "./forgot-password-component";
 import { Router } from '@ngrx/router';
-import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
+import {ResponseView} from "../../../../../api/services/response-view";
 
 @Component({
     directives: [FogotPasswordComponent],
@@ -29,9 +29,9 @@ export class FogotPasswordContainer{
     }
 
     recoverPassword(forgotPasswordLogin:string): void {
-        this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:DotCMSHttpResponse) => {
+        this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:ResponseView) => {
             this.goToLogin();
-        }, (resp:DotCMSHttpResponse) => {
+        }, (resp:ResponseView) => {
             if (!resp.existError("a-new-password-has-been-sent-to-x")){
                 this.message = resp.errorsMessages;
             }else{

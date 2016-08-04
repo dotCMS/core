@@ -9,7 +9,7 @@ import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine
 import {IframeLegacyComponent} from '../../view/components/common/iframe-legacy/IframeLegacyComponent';
 import {MainComponent} from "../../../view/components/common/main-component/main-component";
 import {LoginPageComponent} from "../../../view/components/common/login/login-page-component";
-import {FogotPasswordContainer} from "../../../view/components/common/login/fogot-password-component/fogot-password-container";
+import {FogotPasswordContainer} from "../../../view/components/common/login/forgot-password-component/forgot-password-container";
 import {LoginContainer} from "../../../view/components/common/login/login-component/login-container";
 import {ResetPasswordContainer} from "../../../view/components/common/login/reset-password-component/reset-password-container";
 

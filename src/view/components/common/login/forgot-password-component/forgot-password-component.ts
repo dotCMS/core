@@ -5,7 +5,7 @@ import {LoginService} from '../../../../../api/services/login-service';
 import {MdButton} from '@angular2-material/button';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {DotCMSHttpService} from "../../../../../api/services/http/dotcms-http-service";
-import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
+import {ResponseView} from "../../../../../api/services/response-view";
 import { Router } from '@ngrx/router';
 
 @Component({
@@ -16,7 +16,7 @@ import { Router } from '@ngrx/router';
     providers: [],
     selector: 'dot-fogot-password-component',
     styleUrls: [],
-    templateUrl: ['fogot-password-component.html'],
+    templateUrl: ['forgot-password-component.html'],
 })
 
 export class FogotPasswordComponent {
