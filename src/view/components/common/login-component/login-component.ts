@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Inject, Input, Output, ViewEncapsulation} from '@angular/core';
+import {Component, EventEmitter, Inject, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
 import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 
@@ -7,10 +7,11 @@ import {MdButton} from '@angular2-material/button';
 import {MD_CARD_DIRECTIVES} from '@angular2-material/card';
 import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
+import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
 import {MdToolbar} from '@angular2-material/toolbar';
 
 @Component({
-    directives: [MdButton, MD_CARD_DIRECTIVES, MdCheckbox, MD_INPUT_DIRECTIVES, MdToolbar],
+    directives: [MdButton, MD_CARD_DIRECTIVES, MdCheckbox, MD_INPUT_DIRECTIVES, MD_PROGRESS_CIRCLE_DIRECTIVES, MdToolbar],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [CapitalizePipe],
@@ -37,7 +38,7 @@ export class LoginComponent {
 
     // labels
     loginLabel: string = '';
-    emailAddressLabel: string = ''
+    emailAddressLabel: string = '';
     userIdOrEmailLabel: string = '';
     passwordLabel: string = '';
     rememberMeLabel: string = '';
@@ -58,11 +59,18 @@ export class LoginComponent {
     isForgotPasswordCardHidden: boolean = true;
     isLoginCardHidden: boolean = false;
     isCommunityLicense: boolean = true;
+    isLoginInProgress: boolean = false;
 
-    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent', 'Server', 'error.form.mandatory', 'angular.login.component.community.licence.message'];
+    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
+        'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent', 'Server',
+        'error.form.mandatory', 'angular.login.component.community.licence.message'];
 
-    constructor(@Inject('menuItems') private menuItems: any[], private _loginService: LoginService) {
-        this.updateScreenBackground();
+    constructor(private loginService: LoginService, private ngZone: NgZone) {
+        this.renderPageData();
+        // TODO: Change in the future once the Angular autofocus directive works correctly.
+        this.ngZone.runOutsideAngular(() => {
+            setTimeout(() => document.getElementById('md-input-0-input').focus(), 0);
+        });
     }
 
     /**
@@ -71,9 +79,10 @@ export class LoginComponent {
     logInUser(): void {
         let isSetUserId = this.myAccountLogin !== undefined && this.myAccountLogin.length > 0;
         let isSetPassword = this.password !== undefined && this.password.length > 0;
-
+        this.message = '';
+        this.isLoginInProgress = true;
         if (isSetUserId && isSetPassword) {
-            this._loginService.logInUser(this.myAccountLogin, this.password, this.myAccountRememberMe, this.language).subscribe((result:any) => {
+            this.loginService.logInUser(this.myAccountLogin, this.password, this.myAccountRememberMe, this.language).subscribe((result:any) => {
                 if (result.errors.length > 0) {
                     this.message = result.errors[0].message;
                 } else {
@@ -88,6 +97,7 @@ export class LoginComponent {
                 } else {
                     console.log(error);
                 }
+                this.isLoginInProgress = false;
             });
         } else {
             let error = '';
@@ -102,8 +112,8 @@ export class LoginComponent {
                 error += (this.mandatoryFieldError).replace('{0}', this.passwordLabel);
             }
             this.message = error;
+            this.isLoginInProgress = false;
         }
-
     }
 
     /**
@@ -114,7 +124,7 @@ export class LoginComponent {
             this.isForgotPasswordCardHidden = true;
             this.isLoginCardHidden = false;
 
-            this._loginService.recoverPassword(this.forgotPasswordEmail).subscribe((result: any) => {
+            this.loginService.recoverPassword(this.forgotPasswordEmail).subscribe((result: any) => {
 
             }, (error) => {
                 console.log(error);
@@ -128,15 +138,15 @@ export class LoginComponent {
      */
     changeLanguage(lang: string): void {
         this.language = lang;
-        this.updateScreenBackground();
+        this.renderPageData();
     }
 
     /**
-     * Update the color and or image according to the values specified
+     * Renders all the labels, images, and placeholder values for the Log In page.
      */
-    private updateScreenBackground(): void {
+    private renderPageData(): void {
 
-        this._loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
+        this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
 
             // Translate labels and messages
             let dataI18n = data.i18nMessagesMap;
@@ -146,12 +156,8 @@ export class LoginComponent {
             this.emailAddressLabel = dataI18n['email-address'];
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
-                if(this.myAccountLogin === undefined || this.myAccountLogin === ''){
-                    this.myAccountLogin = entity.companyEmail;
-                }
             } else {
                 this.userIdOrEmailLabel = dataI18n['user-id'];
-                this.myAccountLogin = '';
             }
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
