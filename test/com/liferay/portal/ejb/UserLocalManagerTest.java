@@ -17,7 +17,7 @@ import org.junit.Test;
  *
  * @author Nollymar Longa
  */
-public class UserLocalManagerTest extends TestBase {
+public class UserLocalManagerTest {
 
     @Test
     public void testValidName() throws DotDataException, SystemException, PortalException, DotSecurityException {

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -65,6 +66,12 @@ public class UserFinder {
 			query.append("SELECT userId ");
 			query.append("FROM User_ WHERE ");
 			query.append("userId = skinId");
+
+			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+				query.append(" AND delete_in_progress = 0");
+			}else{
+				query.append(" AND delete_in_progress = false");
+			}
 
 			ps = con.prepareStatement(query.toString());
 
@@ -110,6 +117,13 @@ public class UserFinder {
 			query.append("FROM User_ WHERE ");
 			query.append("companyId = ? AND ");
 			query.append("(smsId IS NOT NULL AND smsId != '')");
+
+			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+				query.append(" AND delete_in_progress = 0");
+			}else{
+				query.append(" AND delete_in_progress = false");
+			}
+
 
 			ps = con.prepareStatement(query.toString());
 
@@ -202,8 +216,12 @@ public class UserFinder {
 			query.append("(lower(lastName) LIKE ? OR ? IS NULL) AND ");
 			query.append("(lower(emailAddress) LIKE ? OR ? IS NULL) AND ");
 			query.append("(male = ? OR ? IS NULL) AND ");
-			query.append("(birthday >= ? OR ? IS NULL) AND ");
-			query.append("(birthday <= ? OR ? IS NULL) AND ");
+			query.append("(birthday >= ? OR ?");
+			query.append(DbConnectionFactory.isPostgres()? "::TIMESTAMP":"");
+			query.append(" IS NULL) AND ");
+			query.append("(birthday <= ? OR ?");
+			query.append(DbConnectionFactory.isPostgres()? "::TIMESTAMP":"");
+			query.append(" IS NULL) AND ");
 			query.append("(lower(aimId) LIKE ? OR lower(icqId) LIKE ? OR lower(msnId) LIKE ? OR lower(ymId) LIKE ? OR ? IS NULL) AND ");
 			query.append("(lower(Address.street1) LIKE ? AND Address.classPK = User_.userId OR ? IS NULL) AND ");
 			query.append("(lower(Address.street2) LIKE ? AND Address.classPK = User_.userId OR ? IS NULL) AND ");
@@ -214,6 +232,13 @@ public class UserFinder {
 			query.append("(lower(Address.fax) LIKE ? AND Address.classPK = User_.userId OR ? IS NULL) AND ");
 			query.append("(lower(Address.cell) LIKE ? AND Address.classPK = User_.userId OR ? IS NULL) ");
 			query.append(")");
+
+			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+				query.append(" AND User_.delete_in_progress = 0");
+			}else{
+				query.append(" AND User_.delete_in_progress = false");
+			}
+
 
 			ps = con.prepareStatement(query.toString());
 
@@ -349,8 +374,12 @@ public class UserFinder {
 			query.append("(lower(lastName) LIKE ? AND ? IS NOT NULL) OR ");
 			query.append("(lower(emailAddress) LIKE ? AND ? IS NOT NULL) OR ");
 			query.append("(male = ? AND ? IS NOT NULL) OR ");
-			query.append("(birthday >= ? AND ? IS NOT NULL) OR ");
-			query.append("(birthday <= ? AND ? IS NOT NULL) OR ");
+			query.append("(birthday >= ? AND ?");
+			query.append(DbConnectionFactory.isPostgres()? "::TIMESTAMP":"");
+			query.append(" IS NOT NULL) OR ");
+			query.append("(birthday <= ? AND ?");
+			query.append(DbConnectionFactory.isPostgres()? "::TIMESTAMP":"");
+			query.append(" IS NOT NULL) OR ");
 			query.append("(lower(aimId) LIKE ? OR lower(icqId) LIKE ? OR lower(msnId) LIKE ? OR lower(ymId) LIKE ? AND ? IS NOT NULL) OR ");
 			query.append("(lower(Address.street1) LIKE ? AND Address.classPK = User_.userId AND ? IS NOT NULL) OR ");
 			query.append("(lower(Address.street2) LIKE ? AND Address.classPK = User_.userId AND ? IS NOT NULL) OR ");
@@ -361,6 +390,13 @@ public class UserFinder {
 			query.append("(lower(Address.fax) LIKE ? AND Address.classPK = User_.userId AND ? IS NOT NULL) OR ");
 			query.append("(lower(Address.cell) LIKE ? AND Address.classPK = User_.userId AND ? IS NOT NULL) ");
 			query.append(")");
+
+			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+				query.append(" AND User_.delete_in_progress = 0");
+			}else{
+				query.append(" AND User_.delete_in_progress = false");
+			}
+
 
 			ps = con.prepareStatement(query.toString());
 
