@@ -1,5 +1,6 @@
 package com.dotmarketing.cache;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.business.CacheLocator;
@@ -39,11 +40,13 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
         if (type == null) {
             try {
 				type = FactoryLocator.getContentTypeFactory2().find(inode);
-			} catch (DotDataException e) {
-				Logger.warn(this.getClass(), "Structure with inode: " + inode + " not found in db");
+				return new StructureTransformer(type).asStructure();
+			} catch (Exception e) {
+				Logger.warn(this.getClass(), "Structure with inode: '" + inode + "' not found in db");
 			}
         }
-        return new StructureTransformer(type).asStructure();
+        return null;
+        
     }
 
     /**
@@ -85,11 +88,12 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
         if (type == null) {
             try {
 				type = FactoryLocator.getContentTypeFactory2().findByVar(variableName);
-			} catch (DotDataException e) {
-				Logger.warn(this.getClass(), "Structure with var: " + variableName + " not found in db");
+				return new StructureTransformer(type).asStructure();
+			} catch (Exception e) {
+				Logger.warn(this.getClass(), "Structure with var: '" + variableName + "' not found in db");
 			}
         }
-        return new StructureTransformer(type).asStructure();
+        return null;
     }
     /**
      * @see getStructureByName(String)
