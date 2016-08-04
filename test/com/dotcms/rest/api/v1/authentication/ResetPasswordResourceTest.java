@@ -79,7 +79,7 @@ public class ResetPasswordResourceTest {
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
+        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-unvalid");
     }
 
 

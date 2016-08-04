@@ -81,7 +81,7 @@ public class ResetPasswordResource {
                         "reset_token_expired");
             }else{
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
-                        "reset-password-token-invalid");
+                        "reset-password-token-unvalid");
             }
         } catch (DotInvalidPasswordException e){
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
