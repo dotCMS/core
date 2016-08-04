@@ -10,7 +10,7 @@ public class Task03035FixContainerCheckTrigger extends AbstractJDBCStartupTask {
 
 	String createTrigger = "drop trigger check_container_versions;\n" +
 			"CREATE Trigger check_container_versions\n" +
-			"ON " + Inode.Type.CONTAINERS.getTableName() + "\n" +
+			"ON containers\n" +
 			"FOR DELETE AS\n" +
 			"DECLARE @totalCount int\n" +
 			"DECLARE @identifier varchar(36)\n" +
@@ -22,7 +22,7 @@ public class Task03035FixContainerCheckTrigger extends AbstractJDBCStartupTask {
 			"fetch next from container_cur_Deleted into @identifier\n" +
 			"while @@FETCH_STATUS <> -1\n" +
 			"BEGIN\n" +
-			"select @totalCount = count(*) from " + Inode.Type.CONTAINERS.getTableName() + " where identifier = @identifier\n" +
+			"select @totalCount = count(*) from containers where identifier = @identifier\n" +
 			"IF (@totalCount = 0)\n" +
 			"BEGIN\n" +
 			"DELETE from identifier where id = @identifier\n" +
