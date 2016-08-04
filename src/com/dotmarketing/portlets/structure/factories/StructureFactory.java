@@ -391,10 +391,6 @@ public class StructureFactory {
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
 		}
-
-		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
-		    CacheLocator.getContentTypeCache().clearURLMasterPattern();
-		}
 	}
 
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
