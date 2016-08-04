@@ -223,7 +223,7 @@ public class HibernateUtil {
 			session.delete(obj);
 			session.flush();
 		}catch (Exception e) {
-			throw new DotHibernateException("Error deleting object ", e);
+			throw new DotHibernateException("Error deleting object " + e.getMessage(), e);
 		}
 	}
 
@@ -235,7 +235,7 @@ public class HibernateUtil {
 			Session session = getSession();
 			session.delete(sql);
 		}catch (Exception e) {
-			throw new DotHibernateException("Error deleteing SQL ", e);
+			throw new DotHibernateException("Error deleteing SQL " + e.getMessage(), e);
 		}
 	}
 
@@ -244,7 +244,7 @@ public class HibernateUtil {
 			Session session = getSession();
 			return (ArrayList) session.find(x);
 		}catch (Exception e) {
-			throw new DotHibernateException("Error executing a find on Hibernate Session ", e);
+			throw new DotHibernateException("Error executing a find on Hibernate Session " + e.getMessage(), e);
 		}
 	}
 
