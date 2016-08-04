@@ -69,7 +69,7 @@ public class ContentletCacheImpl extends ContentletCache {
         Structure st=content.getStructure();
         if(st!=null && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
             Field f=st.getFieldVar(FileAssetAPI.META_DATA_FIELD);
-            if(UtilMethods.isSet(f.getInode())) {
+            if(f!=null && UtilMethods.isSet(f.getInode())) {
                 String metadata=(String)content.get(FileAssetAPI.META_DATA_FIELD);
                 addMetadata(key, metadata);
                 content.setStringProperty(FileAssetAPI.META_DATA_FIELD, ContentletCache.CACHED_METADATA);
