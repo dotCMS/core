@@ -11,6 +11,10 @@ public class DotDataException extends Exception {
 	private static final long serialVersionUID = -7641394178731435069L;
 
 	private String message;
+	public DotDataException(Throwable t) {
+		super(t.getMessage(),t);
+		this.message = t.getMessage();
+	}
 	
 	public DotDataException(String message) {
 		this.message = message;
