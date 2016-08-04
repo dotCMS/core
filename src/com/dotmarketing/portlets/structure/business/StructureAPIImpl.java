@@ -75,7 +75,7 @@ public class StructureAPIImpl implements StructureAPI {
 	@Override
 	public int countStructures(String condition) {
 		try {
-			return APILocator.getContentTypeAPI2().countContentType(condition);
+			return APILocator.getContentTypeAPI2().count(condition);
 		} catch (DotDataException dde) {
 			throw new DotStateException(dde.getMessage(), dde);
 		}
