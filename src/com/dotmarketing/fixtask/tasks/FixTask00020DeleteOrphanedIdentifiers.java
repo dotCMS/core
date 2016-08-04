@@ -67,6 +67,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
 			FixAssetsProcessStatus.startProgress();
 			FixAssetsProcessStatus.setDescription("Task 20: Deleting Orphan Identifiers");
+			FixAssetsProcessStatus.setTotal(total);
 
 			try{
 				HibernateUtil.startTransaction();
@@ -79,7 +80,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
 					if (badDataCount.get("tree_child_"+asset).intValue() > 0) {
 						//Delete orphan tree entries where identifier is child
-						final String deleteTreesToDelete_child = "delete from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='" +
+						final String deleteTreesToDelete_child = "delete from tree where exists (select * from identifier i where tree.child=i.id and i.asset_type='" +
 							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(child) type " + asset + " : " + deleteTreesToDelete_child);
@@ -94,7 +95,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
 					if (badDataCount.get("tree_parent_"+asset).intValue() > 0) {
 						//Delete orphan tree entries where identifier is parent
-						final String deleteTreesToDelete_parent = "delete from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='" +
+						final String deleteTreesToDelete_parent = "delete from tree where exists (select * from identifier i where tree.parent=i.id and i.asset_type='" +
 							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
 
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(parent) type " + asset + " : " + deleteTreesToDelete_parent);
@@ -109,8 +110,8 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
 					if (badDataCount.get("identifier_"+asset).intValue() > 0) {
 						//Delete orphan entries from identifier
-						final String indentifiersToDelete = "delete from identifier i where (i.asset_type='" +
-							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+						final String indentifiersToDelete = "delete from identifier where (identifier.asset_type='" +
+							asset + "' and not exists (select * from " + tableName + " where identifier.id=identifier))";
 
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from identifier type " + asset + " : " + indentifiersToDelete);
 
@@ -123,6 +124,8 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 						}
 					}
 				}
+
+				FixAssetsProcessStatus.setErrorsFixed(total);
 
 				FixAudit Audit = new FixAudit();
 				Audit.setTableName("identifier");
