@@ -10,17 +10,36 @@ export interface INotification {
 
 @Injectable()
 export class NotificationsService extends CoreWebService {
-    private notificationsUrl:string;
+    private getNotificationsUrl:string;
+    private dismissNotificationsUrl:string;
+    private markAsReadNotificationsUrl:string;
 
     constructor(_apiRoot: ApiRoot, _http: Http) {
         super(_apiRoot, _http);
-        this.notificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/getNotifications/allUsers/true`;
+        this.getNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/getNotifications/allUsers/true`;
+        this.dismissNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/delete`;
+        this.markAsReadNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/markAsRead`;
     }
 
     getNotifications() {
         return this.request({
-            url: this.notificationsUrl,
+            url: this.getNotificationsUrl,
             method: RequestMethod.Get
+        });
+    }
+
+    dismissNotifications(items:Object) {
+        return this.request({
+            url: this.dismissNotificationsUrl,
+            method: RequestMethod.Put,
+            body: items
+        });
+    }
+
+    markAllAsRead() {
+        return this.request({
+            url: this.markAsReadNotificationsUrl,
+            method: RequestMethod.Put
         });
     }
 

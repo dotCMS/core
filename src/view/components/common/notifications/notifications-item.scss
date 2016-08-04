@@ -1,9 +1,69 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+$close-button-size: 16px;
+
 :host {
-    h4 {
+    display: block;
+
+    a {
+        color: $black;
+    }
+
+    .notification-item {
+        border-top: solid 1px $gray-lighter;
+        position: relative;
+    }
+
+    .notification-item__content {
+        margin-left: rem-cal(5px);
+    }
+
+    .notification-item__close {
+        height: $close-button-size;
+        position: absolute;
+        right: 0;
+        top: 1rem;
+        width: $close-button-size;
+
+        md-icon {
+            font-size: rem-cal($close-button-size);
+            color: $gray;
+            height: $close-button-size;
+            width: $close-button-size;
+        }
+    }
+
+    .notification-item__icon {
+        font-size: rem-cal(18px);
+        margin-top: rem-cal(2px);
+        width: auto;
+    }
+
+    .notification-item__title,
+    .notification-item__message {
         margin: 0;
     }
 
-    p {
-        margin-top: 0;
+    .notification-item__wrapper {
+        display: flex;
+        padding: 1rem 0;
+    }
+
+    .warning {
+        .notification-item__icon,
+        .notification-item__link,
+        .notification-item__title,
+        .notification-item__title a {
+            color: $primary;
+        }
+    }
+
+    .error {
+        .notification-item__icon,
+        .notification-item__link,
+        .notification-item__title,
+        .notification-item__title a {
+            color: $secondary;
+        }
     }
 }

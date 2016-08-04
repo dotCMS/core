@@ -1,7 +1,15 @@
 <button md-icon-button (click)="toggleNotifications()" [disabled]="!notifications.length">
     <md-icon class="md-24">notifications</md-icon>
+    <span *ngIf="notificationsUnreadCount" class="badge">{{notificationsUnreadCount}}</span>
 </button>
 <div class="toolbar-notifications" *ngIf="showNotifications">
-    <h3 class="toolbar-notifications__title">Notifications</h3>
-    <dot-notifications-list [notifications]="notifications"></dot-notifications-list>
+    <div class="toolbar-notifications__heading">
+        <h3 class="toolbar-notifications__title">Notifications</h3>
+        <button md-icon-button (click)="dismissAllNotifications()">
+            <md-icon class="md-24">clear_all</md-icon>
+        </button>
+    </div>
+    <div class="toolbar-notifications__content">
+        <dot-notifications-list [notifications]="notifications" (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>
+    </div>
 </div>
