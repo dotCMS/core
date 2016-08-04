@@ -1,10 +1,7 @@
 package com.dotcms.rest.api.v1.site;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -22,16 +19,16 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -124,6 +121,57 @@ public class SiteBrowserResource implements Serializable {
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    } // sites.
+
+
+    @PUT
+    @Path ("/id/{id}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response switchSite(
+            @Context final HttpServletRequest req,
+            @PathParam("id")   final String hostId
+    ) {
+
+        Response response = null;
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null); // should logged in
+        final HttpSession session = req.getSession();
+        final User user = initData.getUser();
+        boolean switchDone = false;
+        Optional<Host> hostFound = null;
+
+        try {
+
+            if (UtilMethods.isSet(hostId)) {
+
+                // we verified if the host id pass by parameter is one of the user's hosts
+                hostFound = this.hostAPI.findAll(user, Boolean.TRUE)
+                        .stream().filter (host -> !host.isSystemHost() && hostId.equals(host.getIdentifier()) )
+                        .findFirst();
+
+                if (hostFound.isPresent()) {
+
+                    session.setAttribute(
+                            com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, hostId);
+                    session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
+
+                    switchDone = true;
+                }
+            }
+
+            response = (switchDone) ?
+                    Response.ok(new ResponseEntityView(map("hostSwitched",
+                            switchDone))).build(): // 200
+                    Response.status(Response.Status.NOT_FOUND).build();
+
+        } catch (Exception e) { // this is an unknown error, so we report as a 500.
+
+            response = ExceptionMapperUtil.createResponse(e,
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
