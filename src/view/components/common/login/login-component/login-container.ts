@@ -9,7 +9,7 @@ import {LoginComponent} from "./login-component";
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-login-container',
     styleUrls: [],
     template: `
@@ -30,15 +30,8 @@ export class LoginContainer{
 
     logInUser(loginData:LoginData): void {
       this.loginService.logInUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result:any) => {
-          console.log();
-            if (result.errors.length > 0) {
-                this.message = result.errors[0].message;
-            } else {
-                this.message = '';
-                this.router.go('/main');
-                //TODO: this window.location.reload should be removed once the menu and router injection update issue is fixed
-                //window.location.reload();
-            }
+            this.message = '';
+            this.router.go('/main');
         }, (error) => {
             if (error.response.status === 400 || error.response.status === 401) {
                 this.message = error.getErrorMessage();

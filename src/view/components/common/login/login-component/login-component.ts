@@ -6,7 +6,7 @@ import {CapitalizePipe} from '../../../../../api/pipes/capitalize-pipe';
 import {MdButton} from '@angular2-material/button';
 import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {DotCMSHttpResponse} from "../../../../../api/services/http/dotcms-http-response";
+import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
 import {LoginData} from "./login-container";
 
 @Component({
@@ -14,7 +14,7 @@ import {LoginData} from "./login-container";
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [CapitalizePipe],
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-login-component',
     styleUrls: [],
     templateUrl: ['login-component.html'],

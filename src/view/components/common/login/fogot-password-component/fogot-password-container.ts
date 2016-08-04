@@ -2,14 +2,14 @@ import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from "../../../../../api/services/login-service";
 import {FogotPasswordComponent} from "./fogot-password-component";
 import { Router } from '@ngrx/router';
-import {DotCMSHttpResponse} from "../../../../../api/services/http/dotcms-http-response";
+import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
 
 @Component({
     directives: [FogotPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-fogot-password-container',
     styleUrls: [],
     template: `
@@ -32,10 +32,8 @@ export class FogotPasswordContainer{
         this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:DotCMSHttpResponse) => {
             this.goToLogin();
         }, (resp:DotCMSHttpResponse) => {
-            console.log('Error', resp);
             if (!resp.existError("a-new-password-has-been-sent-to-x")){
                 this.message = resp.errorsMessages;
-                console.log(this.message );
             }else{
                 this.goToLogin();
             }

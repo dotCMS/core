@@ -9,7 +9,7 @@ import {LoginService} from "../../../../api/services/login-service";
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-login-page-component',
     styleUrls: ['login-page.css'],
     templateUrl: ['login-page-component.html'],

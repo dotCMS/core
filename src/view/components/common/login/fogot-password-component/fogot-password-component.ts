@@ -5,7 +5,7 @@ import {LoginService} from '../../../../../api/services/login-service';
 import {MdButton} from '@angular2-material/button';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {DotCMSHttpService} from "../../../../../api/services/http/dotcms-http-service";
-import {DotCMSHttpResponse} from "../../../../../api/services/http/dotcms-http-response";
+import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
 import { Router } from '@ngrx/router';
 
 @Component({
@@ -13,7 +13,7 @@ import { Router } from '@ngrx/router';
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-fogot-password-component',
     styleUrls: [],
     templateUrl: ['fogot-password-component.html'],

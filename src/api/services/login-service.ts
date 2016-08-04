@@ -4,9 +4,8 @@
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {ApiRoot} from '../persistence/ApiRoot';
-import {Http, RequestMethod} from '@angular/http';
+import {RequestMethod} from '@angular/http';
 import {CoreWebService} from '../services/core-web-service';
-import {DotCMSHttpService} from "./http/dotcms-http-service";
 import { Router } from '@ngrx/router';
 
 /**
@@ -14,8 +13,8 @@ import { Router } from '@ngrx/router';
  * and execute the login and forgot password routines
  */
 @Injectable()
-export class LoginService extends CoreWebService {
-
+export class LoginService  {
+    private user:User;
     private serverInfo: Array<any>;
     private userAuthURL: string;
     private serverInfoURL: string;
@@ -26,8 +25,7 @@ export class LoginService extends CoreWebService {
     private lang: string = '';
     private country: string = '';
 
-    constructor(_apiRoot: ApiRoot, _http: Http, public httpService: DotCMSHttpService, private router: Router) {
-        super(_apiRoot, _http);
+    constructor(_apiRoot: ApiRoot, public coreWebService: CoreWebService, private router: Router) {
 
         this.userAuthURL = `${_apiRoot.baseUrl}api/v1/authentication`;
         this.serverInfoURL = `${_apiRoot.baseUrl}api/v1/loginform`;
@@ -47,7 +45,7 @@ export class LoginService extends CoreWebService {
 
         let body = JSON.stringify({'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country});
 
-        return this.request({
+        return this.coreWebService.getResponseView({
             body: body,
             method: RequestMethod.Post,
             url: this.serverInfoURL,
@@ -67,10 +65,15 @@ export class LoginService extends CoreWebService {
 
         let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
-        return this.request({
-            body: body,
-            method: RequestMethod.Post,
-            url: this.userAuthURL,
+        return Observable.create(observer => { 
+            this.coreWebService.getResponseView({
+                body: body,
+                method: RequestMethod.Post,
+                url: this.userAuthURL
+            }).subscribe(response =>{ 
+                this.user = response.entity; 
+                observer.next(response); 
+            }, error => observer.error(error));
         });
     }
 
@@ -81,7 +84,7 @@ export class LoginService extends CoreWebService {
     public logOutUser(): Observable<any> {
         this.router.go('/login/login');
 
-        return this.request({
+        return this.coreWebService.getResponseView({
             method: RequestMethod.Get,
             url: this.logoutURL,
         });
@@ -97,7 +100,7 @@ export class LoginService extends CoreWebService {
     public recoverPassword(login: string): Observable<any> {
         let body = JSON.stringify({'userId': login});
 
-        return this.httpService.request({
+        return this.coreWebService.getResponseView({
             body: body,
             method: RequestMethod.Post,
             url: this.recoverPasswordURL,
@@ -119,10 +122,39 @@ export class LoginService extends CoreWebService {
     public changePassword(login:string, password:string, token:string): Observable<any> {
         let body = JSON.stringify({'userId': login, 'password': password, 'token': token});
 
-        return this.httpService.request({
+        return this.coreWebService.getResponseView({
             body: body,
             method: RequestMethod.Post,
             url: this.changePasswordURL,
         });
     }
+    public getLoginUser():User{
+        return this.user;
+    }
+}
+
+export interface User{
+    birthday:number //Timestamp
+    lastName:string
+    comments:string
+    timeZoneId:string
+    languageId:string
+    active:boolean
+    fullName:string
+    lastLoginDate:number //Timestamp
+    failedLoginAttempts:number
+    userId:string
+    lastLoginIP:string
+    firstName:string
+    companyId:string
+    modificationDate:number //Timestamp
+    emailAddress:string
+    deleteInProgress:boolean
+    nickname:string
+    middleName:string
+    female:boolean
+    actualCompanyId:string
+    male:boolean
+    createDate:number //Timestamp
+    deleteDate:number //Timestamp
 }

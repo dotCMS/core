@@ -15,7 +15,7 @@ import {ChangePasswordData} from "./reset-password-container";
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: [],
     templateUrl: ['reset-password-component.html'],

@@ -17,8 +17,6 @@ import {ResetPasswordContainer} from "../../../view/components/common/login/rese
 
 export class AppConfigurationService {
 
-    private menus: Array<any>;
-
     private mapComponents;
 
     /**

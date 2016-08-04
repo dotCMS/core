@@ -1,11 +1,13 @@
-import {Http, Response, Request, Headers} from '@angular/http'
+import {Http, Response, Request, Headers, RequestOptionsArgs} from '@angular/http'
 import {Observable} from 'rxjs/Rx'
+import {Injectable} from '@angular/core';
 
 import {
     hasContent, CwError, NETWORK_CONNECTION_ERROR, UNKNOWN_RESPONSE_ERROR,
     CLIENTS_ONLY_MESSAGES, SERVER_RESPONSE_ERROR
 } from "../system/http-response-util";
 import {ApiRoot} from "../persistence/ApiRoot";
+import {DotCMSHttpResponse} from "./dotcms-http-response";
 
 
 export const RULE_CREATE = 'RULE_CREATE'
@@ -32,32 +34,16 @@ export const RULE_CONDITION_UPDATE_TYPE = 'RULE_CONDITION_UPDATE_TYPE'
 export const RULE_CONDITION_UPDATE_PARAMETER = 'RULE_CONDITION_UPDATE_PARAMETER'
 export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR'
 
-
+@Injectable()
 export class CoreWebService {
 
-  _apiRoot:ApiRoot
-  _http:Http
-  constructor( _apiRoot:ApiRoot, _http:Http){
-    this._apiRoot = _apiRoot
-    this._http = _http
+  constructor( private _apiRoot:ApiRoot, private _http:Http){
 
   }
 
   request(options:any):Observable<any> {
-    let headers:Headers = this._apiRoot.getDefaultRequestHeaders()
-    let tempHeaders = options.headers ? options.headers : {"Content-Type": "application/json"}
-    Object.keys(tempHeaders).forEach((key)=>{
-      headers.set(key, tempHeaders[key])
-    })
-    var source = options.body
-    if (options.body) {
-      if (typeof options.body !== 'string') {
-        options.body = JSON.stringify(options.body);
-      }
-    }
-    options.headers = headers
+    var request = this.getRequestOpts( options );
 
-    var request = new Request(options)
     return this._http.request(request)
         .map((resp:Response) => {
           return hasContent(resp) ? resp.json() : resp
@@ -85,6 +71,58 @@ export class CoreWebService {
           }
           return null
         })
+  }
+
+  private getRequestOpts(options:any):Request{
+    let headers:Headers = this._apiRoot.getDefaultRequestHeaders()
+    let tempHeaders = options.headers ? options.headers : {"Content-Type": "application/json"}
+    Object.keys(tempHeaders).forEach((key)=>{
+      headers.set(key, tempHeaders[key])
+    })
+    var source = options.body
+    if (options.body) {
+      if (typeof options.body !== 'string') {
+        options.body = JSON.stringify(options.body);
+      }
+    }
+    options.headers = headers
+
+    return new Request(options)
+  }
+
+  /**
+   * Return a response adapted to the follow json format:
+   *
+   * <code>
+   * {
+   *   "errors":[],
+   *   "entity":{},
+   *   "messages":[],
+   *   "i18nMessagesMap":{}
+   * }
+   * </code>
+   *
+   * @param options
+   * @returns {DotCMSHttpResponse}
+     */
+  public getResponseView( options:RequestOptionsArgs ):Observable<any> {
+    let request = this.getRequestOpts( options );
+
+    return   Observable.create(observer => {
+      this._http.request(request).subscribe(
+          resp => {
+            console.log('RRRRR', resp);
+            if (resp._body.errors && resp._body.errors.length > 0){
+              observer.error(new DotCMSHttpResponse(resp));
+            }else {
+              observer.next(new DotCMSHttpResponse(resp));
+            }
+          },
+          resp => {
+            observer.error( new DotCMSHttpResponse( resp ) )
+          }
+      );
+    });
   }
 }
 

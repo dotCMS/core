@@ -1,5 +1,17 @@
 import { Response } from '@angular/http'
 
+/**
+ *
+ *
+ * <code>
+ * {
+ *   "errors":[],
+ *   "entity":{},
+ *   "messages":[],
+ *   "i18nMessagesMap":{}
+ * }
+ * </code>
+ */
 export class DotCMSHttpResponse{
 
     private bodyJsonObject:any;

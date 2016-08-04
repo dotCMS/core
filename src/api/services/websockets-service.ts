@@ -5,6 +5,7 @@ import {Subject} from 'rxjs/Subject';
 
 @Injectable()
 export class $WebSocket {
+    private static sockets:WebSocket[] = [];
 
     private reconnectAttempts = 0;
     private sendQueue = [];
@@ -217,6 +218,13 @@ export class $WebSocket {
         }
         return this.internalConnectionState || this.socket.readyState;
     }
+
+    /**
+     * Close all the Web sockets connections
+     */
+    public static closeAllSockets():void{
+        $WebSocket.sockets.forEach(ws => ws.close());
+     }
 
 }
 

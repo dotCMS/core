@@ -35,7 +35,7 @@
     "./src/api/services/bundle-service.ts",
     "./src/api/services/core-web-service.ts",
     "./src/api/services/http/dotcms-http-service.ts",
-    "./src/api/services/http/dotcms-http-response.ts",
+    "./src/api/services/dotcms-http-response.ts",
     "./src/api/services/login-service.ts",
     "./src/api/system/http-response-util.ts",
     "./src/api/system/locale/I18n.it-spec.ts",
