@@ -1286,18 +1286,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		// Log contentlet identifiers that we are going to destroy
 		HashSet<String> l = new HashSet<String>();
 		for (Contentlet contentlet : contentlets) {
+			
 			l.add(contentlet.getIdentifier());
 		}
 		AdminLogger.log(this.getClass(), "destroy", "User trying to destroy the following contents: " + l.toString(), user);
 		Iterator<Contentlet> itr = contentlets.iterator();
 		while (itr.hasNext()) {
 			Contentlet con = itr.next();
+			con.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+			
 			// Force unpublishing and archiving the contentlet
-			if (con.isLive()) {
-				unpublish(con, user);
+			try{
+				if (con.isLive()) {
+					unpublish(con, user);
+				}
+				if (!con.isArchived()) {
+					archive(con, user, false);
+				}
 			}
-			if (!con.isArchived()) {
-				archive(con, user, false);
+			// make destroy more robust if we cannot find ContentletVersionInfo
+			// keep going
+			catch(DotStateException e){
+				Logger.debug(this, e.getMessage());
 			}
 			// Remove Rules with this contentlet as Parent.
 			try {
@@ -1342,6 +1352,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				contentwbin.setMap(cont.getMap());
 				Boolean arebinfiles = false;
 				java.io.File file = null;
+				
 				for (Field field : fields) {
 					if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
 						try {
