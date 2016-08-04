@@ -16,18 +16,29 @@ public class FromStructureTransformer implements ContentTypeTransformer {
 	final List<ContentType> cTypeList;
 
 	public FromStructureTransformer(Structure struct) {
+		if(struct==null){
+			throw new DotStateException("Cannot transform a null content type to a structure");
+		}
 		this.cTypeList = ImmutableList.of(transformToContentType(struct));
 	}
 	public FromStructureTransformer(ContentType type) {
+		if(type==null){
+			throw new DotStateException("Cannot transform a null content type to a structure");
+		}
 		this.cTypeList = ImmutableList.of(type);
 	}
 	
 	public FromStructureTransformer(List<ContentType> contentTypes, boolean hidden) {
+		if(contentTypes==null){
+			throw new DotStateException("Cannot transform null content types to a structure");
+		}
 		this.cTypeList = ImmutableList.copyOf(contentTypes);
 	}
 	
 	public FromStructureTransformer(List<Structure> initList) {
-		
+		if(initList==null){
+			throw new DotStateException("Cannot transform null content types to a structure");
+		}
 		List<ContentType> newList = new ArrayList<ContentType>();
 		for (Structure struct : initList) {
 			newList.add(transformToContentType(struct));
