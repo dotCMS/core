@@ -1,7 +1,6 @@
 
 import {Component, EventEmitter, Inject, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
-import {LoginService} from '../../../../api/services/login-service';
-import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
+
 
 // angular material imports
 import {MdButton} from '@angular2-material/button';
@@ -11,6 +10,8 @@ import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-respon
 import {LoginData} from "./login-container";
 import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
 import {MdToolbar} from '@angular2-material/toolbar';
+import {LoginService} from "../../../../../api/services/login-service";
+import {CapitalizePipe} from "../../../../../api/pipes/capitalize-pipe";
 
 @Component({
     directives: [MdButton,MdCheckbox, MD_INPUT_DIRECTIVES, MD_PROGRESS_CIRCLE_DIRECTIVES],
