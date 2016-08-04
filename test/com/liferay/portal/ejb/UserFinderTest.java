@@ -233,7 +233,7 @@ public class UserFinderTest {
         }
     }
 
-    //@Test
+    @Test
     public void testFindByOr_C_FN_MN_LN_EA_M_BD_IM_A() throws DotDataException, DotSecurityException, SystemException {
 
         Calendar calendar;
@@ -273,7 +273,7 @@ public class UserFinderTest {
         }
     }
 
-    //@Test
+    @Test
     public void testFindByOr_C_FN_MN_LN_EA_M_BD_IM_AMarkDeleted()
         throws DotDataException, DotSecurityException, SystemException {
 
