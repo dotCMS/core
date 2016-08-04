@@ -6,13 +6,14 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -115,7 +116,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 			}
 
 			structures = StructureFactory.getStructuresByUser(user,queryCondition, orderby, limit, offset, direction);
-			count = (int) ((PaginatedArrayList<Structure>)structures).getTotalResults();
+			count = APILocator.getContentTypeAPI2().count(queryCondition,user);
 			req.setAttribute(countWebKey, new Integer(count));
 			req.setAttribute(viewWebKey, structures);
 		} catch (Exception e) {
