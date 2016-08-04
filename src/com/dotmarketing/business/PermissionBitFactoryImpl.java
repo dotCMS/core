@@ -44,6 +44,7 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -2745,7 +2746,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				}
 
 				if(permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed()) && ((Template) permissionable).isDrawed()) {
-					 type = Template.TEMPLATE_LAYOUTS_CANONICAL_NAME;
+					 type = TemplateLayout.class.getCanonicalName();
 				}
 
 				if(permissionable instanceof NavResult) {

@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.InodeUtils;
@@ -256,7 +257,7 @@ public class PermissionAjax {
 				}
 				String templateLayoutsPermission = permission.get("templateLayoutsPermission");
 				if(templateLayoutsPermission != null) {
-					newSetOfPermissions.add(new Permission(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME, asset.getPermissionId(), roleId,
+					newSetOfPermissions.add(new Permission(TemplateLayout.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(templateLayoutsPermission), true));
 				}
 				String structurePermission = permission.get("structurePermission");

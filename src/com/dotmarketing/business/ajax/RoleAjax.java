@@ -51,6 +51,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.quartz.ScheduledTask;
@@ -741,7 +742,7 @@ public class RoleAjax {
 		}
 		if(permissions.get("templateLayouts") != null) {
 			int permission = Integer.parseInt(permissions.get("templateLayouts"));
-			permissionsToSave.add(new Permission("com.dotmarketing.portlets.templates.model.TemplateLayout", permissionable.getPermissionId(), roleId, permission, true));
+			permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
 		}
 		if(permissions.get("files") != null) {
 			int permission = Integer.parseInt(permissions.get("files"));

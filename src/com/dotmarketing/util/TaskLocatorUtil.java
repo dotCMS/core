@@ -164,6 +164,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03545FixVarcharSizeInFolderOperations.class);
 		ret.add(Task03550RenameContainersTable.class);
 		ret.add(Task03555AddFlagToDeleteUsers.class);
+		ret.add(Task03560TemplateLayoutCanonicalName.class);
         return ret;
     }
 
