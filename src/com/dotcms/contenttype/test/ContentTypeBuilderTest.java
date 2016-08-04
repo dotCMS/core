@@ -32,8 +32,8 @@ public class ContentTypeBuilderTest {
 	public void testAllContentTypeBuilders() throws Exception {
 		for(BaseContentType  type : BaseContentType.values()){
 			if(type==BaseContentType.ANY)continue;
-			ContentTypeBuilder.instanceOf(type.implClass());
-			ContentTypeBuilder.builder(type.implClass()).inode("asd");
+			ContentTypeBuilder.instanceOf(type.immutableClass());
+			ContentTypeBuilder.builder(type.immutableClass()).inode("asd");
 			
 		}
 	}

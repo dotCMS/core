@@ -46,9 +46,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 	PermissionAPI perms = APILocator.getPermissionAPI();
 	@Override
 	public void delete(ContentType type, User user) throws DotSecurityException, DotDataException {
-		if (!perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_WRITE, user)) {
-			throw new DotSecurityException("User " + user + " does not have WRITE permissions on ContentType " + type);
-		}
+		perms.checkPermission(type, PermissionLevel.PUBLISH, user);
 		// checking if there is containers using this structure
 		List<Container> containers = APILocator.getContainerAPI().findContainersForStructure(type.inode());
 
@@ -140,10 +138,14 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 	}
 
 	@Override
-	public int countContentType(String condition) throws DotDataException {
+	public int count(String condition) throws DotDataException {
 		return this.fac.searchCount(condition);
 	}
-
+	
+	@Override
+	public int count(String condition, User user) throws DotDataException {
+		return find(condition, user, false).size();
+	}
 	@Override
 	public ContentType save(ContentType type, List<Field> fields, User user) throws DotDataException, DotSecurityException {
 

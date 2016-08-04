@@ -58,9 +58,6 @@ public interface ContentTypeFactory {
 	void delete(ContentType type) throws DotDataException;
 
 
-	void delete(ContentType type, List<Observer> observers) throws DotDataException;
-
-
 	String suggestVelocityVar(String tryVar) throws DotDataException;
 
 

@@ -11,11 +11,11 @@ public enum BaseContentType {
 	PERSONA(6,PersonaContentType.class);
 
 	int type;
-	Class implClass;
+	Class immutableClass;
 	
 	BaseContentType(int type, Class clazz) {
 		this.type = type;
-		this.implClass=clazz;
+		this.immutableClass=clazz;
 	}
 
 	/**
@@ -25,8 +25,8 @@ public enum BaseContentType {
 	public int getType() {
 		return type;
 	}
-	public Class implClass() {
-		return implClass;
+	public Class immutableClass() {
+		return immutableClass;
 	}
 	public static BaseContentType getBaseContentType (int value) {
 		BaseContentType[] types = BaseContentType.values();
@@ -42,9 +42,9 @@ public enum BaseContentType {
 		BaseContentType[] types = BaseContentType.values();
 		for (BaseContentType type : types) {
 			if (type.type==value){
-				return type.implClass;
+				return type.immutableClass;
 			}
 		}
-		return ANY.implClass;
+		return ANY.immutableClass;
 	}
 }

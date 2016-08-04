@@ -65,5 +65,11 @@ public abstract class ContentTypeSql {
 	 * velocity_var_name url_map_pattern host folder expire_date_var
 	 * publish_date_var mod_date
 	 */
+	
+	public final String DELETE_INODE_BY_INODE = "delete from inode where inode = ? and type='structure'";
 
+	public final String DELETE_TYPE_BY_INODE = "delete from structure where inode =?";
+	
+	
+	public final String SELECT_CONTENTLET_PROXIES = "select inode, identifier,language_id from contentlet where structure_inode=?";
 }

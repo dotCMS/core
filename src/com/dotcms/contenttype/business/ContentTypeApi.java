@@ -25,8 +25,8 @@ public interface ContentTypeApi {
 
 	ContentType findByVarName(String varName, User user) throws DotSecurityException, DotDataException;
 
-	int countContentType(String condition) throws DotDataException;
-
+	int count(String condition) throws DotDataException;
+	int count(String condition,User user) throws DotDataException;
 	String suggestVelocityVar(String tryVar) throws DotDataException;
 
 	ContentType setAsDefault(ContentType type, User user) throws DotDataException, DotSecurityException;

@@ -1,10 +1,12 @@
 package com.dotcms.contenttype.business;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Observer;
+import java.util.Set;
 import java.util.UUID;
 
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
@@ -16,13 +18,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.LocalTransaction;
@@ -74,17 +77,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	@Override
 	public void delete(ContentType type) throws DotDataException {
 		LocalTransaction.wrapReturn(() -> {
-			return dbDelete(type);
+			dbDelete(type);
+			cache.remove(type);
+			return null;
 		});
-		cache.remove(type);
-	}
-
-	@Override
-	public void delete(ContentType type, List<Observer> observers) throws DotDataException {
-		LocalTransaction.wrapReturn(() -> {
-			return dbDelete(type);
-		});
-		cache.remove(type);
+		
 	}
 
 	@Override
@@ -166,12 +163,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	public ContentType save(ContentType type) throws DotDataException {
 	
 			return LocalTransaction.wrapReturn(() -> {
-				try{
-					return dbSaveUpdate(type);
+				ContentType returnType = dbSaveUpdate(type);
+				cache.remove(returnType);
+				if(type instanceof UrlMapable) {
+				    cache.clearURLMasterPattern();
 				}
-				finally{
-					cache.remove(type);
-				}
+				return returnType;
 			});
 		
 
@@ -181,10 +178,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	public ContentType setAsDefault(ContentType type) throws DotDataException{
 		if(!type.equals(findDefaultType())){
 			LocalTransaction.wrapReturn(() -> {
-				return dbUpdateDefaultToTrue(type);
+				ContentType returnType  = dbUpdateDefaultToTrue(type);
+				cache.clearCache();
+				return returnType;
 			});
 		}
-		cache.clearCache();
+		
 		return type;
 	}
 	
@@ -205,11 +204,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
 		
-		DotConnect dc = new DotConnect();
-
-		dc.setSQL(this.contentTypeSql.UPDATE_ALL_DEFUALT);
-		dc.addParam(false);
-		dc.loadResult();
+		new DotConnect()
+			.setSQL(this.contentTypeSql.UPDATE_ALL_DEFUALT)
+			.addParam(false)
+			.loadResult();
 		type = ContentTypeBuilder.builder(type).defaultStructure(true).build();
 		return save(type);
 
@@ -372,16 +370,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 		// default structure can't be deleted
 		if (type.defaultStructure()) {
-			throw new DotDataException("Can't delete default structure");
+			throw new DotDataException("contenttype.delete.cannot.delete.default.type");
+		}
+		if(type.system()){
+			throw new DotDataException("contenttype.delete.cannot.delete.system.type");
 		}
 
 		// deleting fields
 		APILocator.getFieldAPI2().deleteFieldsByContentType(type);
-
-		// delete Forms entry if it is a form structure
-		if (type instanceof FormContentType) {
-			deleteFormEntries((FormContentType) type);
-		}
 
 		// make sure folders don't refer to this structure as default fileasset
 		// structure
@@ -389,12 +385,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			updateFolderFileAssetReferences((FileAssetContentType) type);
 		}
 
-		deleteContentByType(type);
+		deleteContentletsByType(type);
 		// remove structure permissions
 		APILocator.getPermissionAPI().removePermissions(type);
 
 		// remove structure itself
-		FactoryLocator.getContentTypeFactory2().delete(type);
+		DotConnect dc = new DotConnect();
+		dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.inode()).loadResult();
+		dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.inode()).loadResult();
 		return true;
 	}
 
@@ -444,31 +442,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.loadResult();
 	}
 
-	private void deleteFormEntries(FormContentType form) throws DotDataException {
-		ContentType forms = findByVar(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
-		try {
-			APILocator.getContentletAPI().delete(
-					APILocator.getContentletAPI().search("+structureInode:" + form.inode() + " +structureInode:" + form.inode(), 0, 0, "",
-							APILocator.systemUser(), false), APILocator.systemUser(), false);
-		} catch (Exception e) {
-			throw new DotDataException("cannot delete form entries", e);
-		}
-	}
 
-	private static void deleteContentByType(ContentType type) throws DotDataException {
+	private void deleteContentletsByType(ContentType type) throws DotDataException {
 		// permissions have already been checked at this point
 		int limit = 200;
-		int offset = 0;
 		ContentletAPI conAPI = APILocator.getContentletAPI();
-		List<Contentlet> contentlets = null;
-		do {
-			try {
-				contentlets = conAPI.search("+contenttype:" + type.inode(), limit, offset, "mod_date", APILocator.systemUser(), false);
+		List<Contentlet> contentlets = new ArrayList<>();
+		
+		try {
+			contentlets = conAPI.findByStructure(type.inode(), APILocator.systemUser(), false, limit, 0);
+
+			while(contentlets.size()>0){
 				conAPI.destroy(contentlets, APILocator.systemUser(), false);
-			} catch (DotDataException | DotSecurityException e) {
-				throw new DotDataException("cannot delete deleteContentByType", e);
+				contentlets = conAPI.findByStructure(type.inode(), APILocator.systemUser(), false, limit, 0);
 			}
-		} while (contentlets.size() > 0);
+		} catch (DotSecurityException e) {
+			throw new DotDataException(e);
+		}
+		
 	}
 
 	/**

@@ -40,7 +40,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public String urlMapPattern() {
-				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? (String) map.get("url_map_pattern") : null;
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? (String) map.get("url_map_pattern") : null;
 				
 			}
 
@@ -52,7 +52,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public String pagedetail() {
-				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? (String) map.get("page_detail") : null;
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? (String) map.get("page_detail") : null;
 			}
 
 			@Override

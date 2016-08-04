@@ -9,16 +9,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 
-import javax.servlet.ServletContext;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -31,12 +31,10 @@ import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.test.DataSourceForTesting;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -213,7 +211,7 @@ public class ContentTypeFactoryImplTest {
 		
 		Structure st = new Structure();
 		List<ContentType> types = factory.findAll("name");
-		List<ContentType> oldTypes = new FromStructureTransformer(StructureFactory.getStructures()).asList();
+		List<ContentType> oldTypes = new FromStructureTransformer(getCrappyStructures()).asList();
 
 		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
 
@@ -241,16 +239,18 @@ public class ContentTypeFactoryImplTest {
 			int base = (i % 5) + 1;
 			Thread.sleep(1);
 			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base)).description("description" + time)
-					.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("ContentTypeTesting" + time).owner("owner")
+					.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("ContentTypeTestingWithFields" + time).owner("owner")
 					.velocityVarName("velocityVarNameTesting" + time).build();
 			type = factory.save(type);
+			addFields(type);
 		}
 		int count2 = factory.searchCount(null);
 		assertThat("contenttypes are added", count == count2 - runs);
 	}
 
 	
-	@Test public void testDefaultType() throws DotDataException{
+	@Test 
+	public void testDefaultType() throws DotDataException{
 		ContentType type = factory.findDefaultType();
 		assertThat("we have a default content type", type !=null);
 
@@ -289,98 +289,77 @@ public class ContentTypeFactoryImplTest {
 
 	}
 
-	@Test
-	public void testAddingWidgets() throws Exception {
 
-		int countAll = factory.searchCount(null);
-		int runs = 20;
-		int countWidgets = factory.searchCount(null, BaseContentType.WIDGET);
 
-		for (int i = 0; i < runs; i++) {
-			addWidget();
-			Thread.sleep(1);
-		}
-
-		int countAll2 = factory.searchCount(null);
-		int countWidgets2 = factory.searchCount(null, BaseContentType.WIDGET);
-		assertThat("counts are working", countAll == countAll2 - runs);
-		assertThat("counts are working", countAll2 > countWidgets2);
-		assertThat("counts are working", countWidgets == countWidgets2 - runs);
-
-	}
 
 	@Test
-	public void testAddingPersonas() throws Exception {
+	public void testAdding() throws Exception {
 
-		int countAll = factory.searchCount(null);
-		int runs = 20;
-		int countPersonas = factory.searchCount(null, BaseContentType.PERSONA);
-
-		for (int i = 0; i < runs; i++) {
-			addPersona();
-			Thread.sleep(1);
+		for(BaseContentType baseType: BaseContentType.values()){
+			if(baseType == BaseContentType.ANY)continue;
+			int countAll = factory.searchCount(null);
+			int runs = 20;
+			int countBaseType = factory.searchCount(null, baseType);
+	
+			for (int i = 0; i < runs; i++) {
+				add(baseType);
+				Thread.sleep(1);
+			}
+	
+			int countAll2 = factory.searchCount(null);
+			int countBaseType2 = factory.searchCount(null,baseType);
+			assertThat("counts are working", countAll == countAll2 - runs);
+			assertThat("counts are working", countAll2 > countBaseType2);
+			assertThat("counts are working", countBaseType == countBaseType2 - runs);
+	
+			testDeleting(baseType);
 		}
+	}
+	
+	
+	
 
-		int countAll2 = factory.searchCount(null);
-		int countPersonas2 = factory.searchCount(null, BaseContentType.PERSONA);
-		assertThat("counts are working", countAll == countAll2 - runs);
-		assertThat("counts are working", countAll2 > countPersonas2);
-		assertThat("counts are working", countPersonas == countPersonas2 - runs);
+	public void testDeleting(BaseContentType baseType) throws Exception {
+		
+
+			
+			List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", baseType, "mod_date", 0, 100);
+			assertThat(baseType +" search is working", types.size() > 0);
+			for(ContentType type : types){
+				ContentType test1 = factory.find(type.inode());
+				assertThat("factory find works", test1.equals(type) );
+				factory.delete(type);
+				try{
+					test1 = factory.find(type.inode());
+				}
+				catch(NotFoundInDbException e){
+					assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
+				}
+			}
 
 	}
+	
 
-	@Test
-	public void testAddingFileAssets() throws Exception {
-
-		int countAll = factory.searchCount(null);
-		int runs = 20;
-		int countFiles = factory.searchCount(null, BaseContentType.FILEASSET);
-
-		for (int i = 0; i < runs; i++) {
-			addFileAsset();
-			Thread.sleep(1);
-		}
-
-		int countAll2 = factory.searchCount(null);
-		int countPersonas2 = factory.searchCount(null, BaseContentType.FILEASSET);
-		assertThat("counts are working", countAll == countAll2 - runs);
-		assertThat("counts are working", countAll2 > countPersonas2);
-		assertThat("counts are working", countFiles == countPersonas2 - runs);
-
-	}
-
-	@Test
-	public void testAddingForms() throws Exception {
-
-		int countAll = factory.searchCount(null);
-		int runs = 20;
-		int countForms = factory.searchCount(null, BaseContentType.FORM);
-
-		for (int i = 0; i < runs; i++) {
-			addForm();
-			Thread.sleep(1);
-		}
-
-		int countAll2 = factory.searchCount(null);
-		int countForms2 = factory.searchCount(null, BaseContentType.FORM);
-		assertThat("counts are working", countAll == countAll2 - runs);
-		assertThat("counts are working", countAll2 > countForms2);
-		assertThat("counts are working", countForms == countForms2 - runs);
-
-	}
-
-	public void addWidget() throws DotDataException {
+	
+	public void add(BaseContentType baseType) throws DotDataException {
 
 		long i = System.currentTimeMillis();
+		
 
-		ContentType type = ImmutableWidgetContentType.builder().description("description" + i).expireDateVar(null)
-				.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("widgetTesting" + i).owner("owner")
-
-				.velocityVarName("velocityVarNameTesting" + i).build();
+		ContentType type = ContentTypeBuilder.builder(baseType.immutableClass())
+				.description("description" + i)
+				.expireDateVar(null)
+				.folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Constants.SYSTEM_HOST)
+				.name(baseType.name() + "Testing" + i)
+				.owner("owner")
+				.velocityVarName("velocityVarNameTesting" + i)
+				.build();
+		
 		type = factory.save(type);
 
 		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
-		List<Field> baseTypeFields = ImmutableWidgetContentType.builder().name("test").velocityVarName("rewarwa").build().requiredFields();
+		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").velocityVarName("rewarwa").build().requiredFields();
 		assertThat("fields are all added", fields.size() == baseTypeFields.size());
 
 		for (int j = 0; j < fields.size(); j++) {
@@ -393,79 +372,8 @@ public class ContentTypeFactoryImplTest {
 			assertThat("fields are correct:", field.sortOrder() == baseField.sortOrder());
 		}
 	}
-
-	public void addForm() throws DotDataException {
-
-		long i = System.currentTimeMillis();
-
-		ContentType type = ImmutableFormContentType.builder().description("description" + i).expireDateVar(null)
-				.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("FormTesting" + i).owner("owner")
-				.velocityVarName("velocityVarNameTesting" + i).build();
-		type = factory.save(type);
-
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
-		List<Field> baseTypeFields = ImmutableFormContentType.builder().name("test").velocityVarName("rewarwa").build().requiredFields();
-		assertThat("fields are all added", fields.size() == baseTypeFields.size());
-
-		for (int j = 0; j < fields.size(); j++) {
-			Field field = fields.get(j);
-			Field baseField = baseTypeFields.get(j);
-			assertThat("fields are correct:", field.dataType().equals(baseField.dataType()));
-			assertThat("fields are correct:", field.variable().equals(baseField.variable()));
-			assertThat("fields are correct:", field.getClass().equals(baseField.getClass()));
-			assertThat("fields are correct:", field.name().equals(baseField.name()));
-			assertThat("fields are correct:", field.sortOrder() == baseField.sortOrder());
-		}
-	}
-
-	public void addPersona() throws DotDataException {
-
-		long i = System.currentTimeMillis();
-
-		ContentType type = ImmutablePersonaContentType.builder().description("description" + i).expireDateVar(null)
-				.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("PersonaTesting" + i).owner("owner")
-				.velocityVarName("velocityVarNameTesting" + i).build();
-		type = factory.save(type);
-
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
-		List<Field> baseTypeFields = ContentTypeBuilder.builder(type).build().requiredFields();
-		assertThat("fields are all added", fields.size() == baseTypeFields.size());
-
-		for (int j = 0; j < fields.size(); j++) {
-			Field field = fields.get(j);
-			Field baseField = baseTypeFields.get(j);
-			assertThat("fields dataType correct:", field.dataType().equals(baseField.dataType()));
-			assertThat("fields variable correct:", field.variable().equals(baseField.variable()));
-			assertThat("fields getClass correct:", field.getClass().equals(baseField.getClass()));
-			assertThat("fields name are correct:", field.name().equals(baseField.name()));
-			assertThat("fields sortOrder are correct:", field.sortOrder() == baseField.sortOrder());
-		}
-	}
-
-	public void addFileAsset() throws DotDataException {
-
-		long i = System.currentTimeMillis();
-
-		ContentType type = ImmutableFileAssetContentType.builder().description("description" + i).expireDateVar(null)
-				.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("FileAssetTesting" + i).owner("owner")
-				.velocityVarName("velocityVarNameTesting" + i).build();
-		type = factory.save(type);
-
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
-		List<Field> baseTypeFields = ContentTypeBuilder.builder(type).build().requiredFields();
-		assertThat("fields are all added", fields.size() == baseTypeFields.size());
-
-		for (int j = 0; j < fields.size(); j++) {
-			Field field = fields.get(j);
-			Field baseField = baseTypeFields.get(j);
-			assertThat("fields dataType correct:", field.dataType().equals(baseField.dataType()));
-			assertThat("fields variable correct:", field.variable().equals(baseField.variable()));
-			assertThat("fields getClass correct:", field.getClass().equals(baseField.getClass()));
-			assertThat("fields name are correct:", field.name().equals(baseField.name()));
-			assertThat("fields sortOrder are correct:", field.sortOrder() == baseField.sortOrder());
-		}
-	}
-
+	
+	
 	
 	@Test
 	public void searchCount() throws DotDataException {
@@ -492,5 +400,41 @@ public class ContentTypeFactoryImplTest {
 
 	}
 	
+	private static List<Structure> getCrappyStructures(){
+		return InodeFactory.getInodesOfClass(Structure.class,"name");
+	}
 	
+	
+	
+
+	private void addFields(ContentType type) throws Exception {
+
+		long time = System.currentTimeMillis();
+		String TEST_VAR_PREFIX = "testField";
+
+		int numFields = 0;
+		for(Class clazz : APILocator.getFieldAPI2().fieldTypes()){
+			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").build();
+			boolean save = true;
+			if(fakeField.onePerContentType()){
+				for(Field field : APILocator.getFieldAPI2().byContentType(type)){
+					if(field.getClass().equals(fakeField.getClass())){
+						save = false;
+						break;
+					}
+				}
+			}
+			if(!save) continue;
+			for (DataTypes dt : fakeField.acceptedDataTypes()) {
+				Field savedField = FieldBuilder.builder(clazz)
+					.name("test field" + numFields)
+					.variable(TEST_VAR_PREFIX + "textField" + numFields)
+					.contentTypeId(type.inode())
+					.dataType(dt)
+					.build();
+				APILocator.getFieldAPI2().save(savedField);
+				numFields++;
+			}
+		}
+	}
 }

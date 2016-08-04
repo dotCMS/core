@@ -51,7 +51,7 @@ public class FromStructureTransformer implements ContentTypeTransformer {
 
 			@Override
 			public String urlMapPattern() {
-				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? struct.getUrlMapPattern() : null;
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? struct.getUrlMapPattern() : null;
 	
 			}
 
@@ -62,7 +62,7 @@ public class FromStructureTransformer implements ContentTypeTransformer {
 
 			@Override
 			public String pagedetail() {
-				return (UrlMapable.class.isAssignableFrom(base.implClass())) ? struct.getPagedetail() : null;
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? struct.getPagedetail() : null;
 			}
 
 			@Override
