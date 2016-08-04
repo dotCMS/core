@@ -15,6 +15,7 @@ import {LoginComponent} from "./login-component";
     template: `
         <dot-login-component
             [message]="message"
+            [isLoginInProgress] = "isLoginInProgress"
             (login)="logInUser($event)"
             (recoverPassword)="showForgotPassword()"
         >
@@ -23,13 +24,16 @@ import {LoginComponent} from "./login-component";
 })
 export class LoginContainer{
     private message:string;
+    private isLoginInProgress: boolean = false;
 
     constructor(private loginService: LoginService, private router: Router) {
 
     }
 
     logInUser(loginData:LoginData): void {
-      this.loginService.logInUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result:any) => {
+        this.isLoginInProgress = true;
+
+        this.loginService.logInUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result:any) => {
             this.message = '';
             this.router.go('/main');
         }, (error) => {
@@ -38,6 +42,8 @@ export class LoginContainer{
             } else {
                 console.log(error);
             }
+            this.isLoginInProgress = false
+            ;
         });
     }
 

@@ -1,6 +1,7 @@
-import {Component, EventEmitter, Inject, Input, Output, ViewEncapsulation} from '@angular/core';
-import {LoginService} from '../../../../../api/services/login-service';
-import {CapitalizePipe} from '../../../../../api/pipes/capitalize-pipe';
+
+import {Component, EventEmitter, Inject, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
+import {LoginService} from '../../../../api/services/login-service';
+import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 
 // angular material imports
 import {MdButton} from '@angular2-material/button';
@@ -8,9 +9,11 @@ import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
 import {LoginData} from "./login-container";
+import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
+import {MdToolbar} from '@angular2-material/toolbar';
 
 @Component({
-    directives: [MdButton, MdCheckbox, MD_INPUT_DIRECTIVES],
+    directives: [MdButton,MdCheckbox, MD_INPUT_DIRECTIVES, MD_PROGRESS_CIRCLE_DIRECTIVES],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [CapitalizePipe],
@@ -26,12 +29,13 @@ import {LoginData} from "./login-container";
  */
 export class LoginComponent {
 
+    @Input() isLoginInProgress: boolean = false;
+
     @Output() recoverPassword  = new EventEmitter<>();
     @Output() login  = new EventEmitter<LoginData>();
     private myAccountLogin: string;
     private password: string;
     private myAccountRememberMe: boolean = false;
-    private forgotPasswordLogin: string;
     private language: string = '';
 
     languages: Array<string> = [];
@@ -39,7 +43,7 @@ export class LoginComponent {
 
     // labels
     loginLabel: string = '';
-    emailAddressLabel: string = ''
+    emailAddressLabel: string = '';
     userIdOrEmailLabel: string = '';
     passwordLabel: string = '';
     rememberMeLabel: string = '';
@@ -57,10 +61,17 @@ export class LoginComponent {
 
     isCommunityLicense: boolean = true;
 
-    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in', 'get-new-password', 'cancel', 'Server', 'error.form.mandatory', 'angular.login.component.community.licence.message'];
 
-    constructor(private loginService: LoginService) {
-        this.updateScreenBackground();
+   private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
+       'get-new-password', 'cancel', 'Server', 'error.form.mandatory',
+       'angular.login.component.community.licence.message'];
+
+    constructor(private loginService: LoginService, private ngZone: NgZone) {
+        this.renderPageData();
+        // TODO: Change in the future once the Angular autofocus directive works correctly.
+        this.ngZone.runOutsideAngular(() => {
+            setTimeout(() => document.getElementById('md-input-0-input').focus(), 0);
+        });
     }
 
     /**
@@ -69,6 +80,7 @@ export class LoginComponent {
     logInUser(): void {
         let isSetUserId = this.myAccountLogin !== undefined && this.myAccountLogin.length > 0;
         let isSetPassword = this.password !== undefined && this.password.length > 0;
+        this.message = '';
 
         if (isSetUserId && isSetPassword) {
             this.login.emit({
@@ -90,8 +102,8 @@ export class LoginComponent {
                 error += (this.mandatoryFieldError).replace('{0}', this.passwordLabel);
             }
             this.message = error;
+            this.isLoginInProgress = false;
         }
-
     }
 
     /**
@@ -99,13 +111,13 @@ export class LoginComponent {
      */
     changeLanguage(lang: string): void {
         this.language = lang;
-        this.updateScreenBackground();
+        this.renderPageData();
     }
 
     /**
-     * Update the color and or image according to the values specified
+     * Renders all the labels, images, and placeholder values for the Log In page.
      */
-    private updateScreenBackground(): void {
+    private renderPageData(): void {
 
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
 
@@ -117,12 +129,8 @@ export class LoginComponent {
             this.emailAddressLabel = dataI18n['email-address'];
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];
-                if(this.myAccountLogin === undefined || this.myAccountLogin === ''){
-                    this.myAccountLogin = entity.companyEmail;
-                }
             } else {
                 this.userIdOrEmailLabel = dataI18n['user-id'];
-                this.myAccountLogin = '';
             }
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];

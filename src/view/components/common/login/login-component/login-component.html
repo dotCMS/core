@@ -4,9 +4,9 @@
         <div class="cms-info__inner">
             <img src="{{dotcmscompanyLogo}}" class="cms-info__logo" />
             <p class="cms-info__message" *ngIf="isCommunityLicense" [innerHTML]="communityLicenseInfoMessage"></p>
-            <p class="cms-info__message" *ngIf="!isCommunityLicense">{{serverLabel}}: {{dotcmsServerId}}</p>
-            <p class="cms-info__message" *ngIf="!isCommunityLicense">{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
-            <p class="cms-info__message" *ngIf="!isCommunityLicense">( {{dotcmsBuildDateString}} )</p>
+            <p class="cms-info__message">{{serverLabel}}: {{dotcmsServerId}}</p>
+            <p class="cms-info__message">{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
+            <p class="cms-info__message">( {{dotcmsBuildDateString}} )</p>
         </div>
     </div>
     <div class="col-sm-7">
@@ -27,7 +27,8 @@
             </div>
             <div class="row login__form-line">
                 <div class="col-sm-12">
-                    <button md-button md-raised-button (click)="logInUser()">{{loginButton}}</button>
+                    <md-spinner color="accent" *ngIf="isLoginInProgress" class="app-spinner"></md-spinner>
+                    <button md-button md-raised-button *ngIf="!isLoginInProgress" (click)="logInUser()">{{loginButton}}</button>
                     <button md-button md-flat-button (click)="showForgotPassword()">{{forgotPasswordButton}}</button>
                 </div>
             </div>

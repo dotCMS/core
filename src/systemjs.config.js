@@ -118,7 +118,8 @@
         'input',
         'icon',
         'checkbox',
-        'card'
+        'card',
+        'progress-circle'
     ];
 
     angularMaterialPackages.forEach(function(pkg) {
