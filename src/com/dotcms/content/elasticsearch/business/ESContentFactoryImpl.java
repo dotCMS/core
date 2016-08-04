@@ -1344,11 +1344,32 @@ public class ESContentFactoryImpl extends ContentletFactory {
         DotConnect dc = new DotConnect();
         try {
 
+            String tempKeyword = DbConnectionFactory.getTempKeyword();
             // CTU content-to-update table
-            String tableName = "CTU_" + UtilMethods.getRandomNumber(10000000);
-            dc.setSQL("CREATE TEMP TABLE "+tableName+" as select inode from contentlet where mod_user = ?");
-            dc.addParam(userToReplace.getUserId());
-            dc.loadResult();
+            final String tableName = (DbConnectionFactory.isMsSql()?"#":"") + "CTU_"
+                + UtilMethods.getRandomNumber(10000000);
+
+            StringBuilder createTempTable = new StringBuilder();
+
+            if (DbConnectionFactory.isMsSql()) {
+                createTempTable.append("SELECT inode INTO ");
+                createTempTable.append(tableName);
+                createTempTable.append(" FROM contentlet WHERE mod_user = '");
+                createTempTable.append(user.getUserId());
+                createTempTable.append("'");
+            } else {
+                createTempTable.append("CREATE ");
+                createTempTable.append(tempKeyword);
+                createTempTable.append(" TABLE ");
+                createTempTable.append(tableName);
+                createTempTable.append(DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : " ");
+                createTempTable.append("as select inode from contentlet ");
+                createTempTable.append("where mod_user = '");
+                createTempTable.append(userToReplace.getUserId());
+                createTempTable.append("'");
+            }
+
+            dc.executeStatement(createTempTable.toString());
 
             dc.setSQL("UPDATE contentlet set mod_user = ? where mod_user = ? ");
             dc.addParam(replacementUserId);
@@ -1378,7 +1399,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         try(PreparedStatement ps = conn.prepareStatement("select inode from " + tableName)) {
 
                             List<Contentlet> contentToIndex = new ArrayList<>();
-                            int batchSize = 500;
+                            int batchSize = 100;
                             int completed = 0;
 
                             try (ResultSet rs = ps.executeQuery()) {
@@ -1393,6 +1414,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                                         indexAPI.indexContentList(contentToIndex, null, false);
                                         completed += batchSize;
                                         contentToIndex = new ArrayList<>();
+                                        HibernateUtil.getSession().clear();
                                         Logger.info(this,
                                             String.format("Reindexing related content after deletion of user %s. "
                                                 + "Completed: " + completed + " out of " + totalCount,
@@ -1432,11 +1454,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             HibernateUtil.addCommitListener(reindexContent);
 
 
-        } catch (DotDataException e) {
+        } catch (DotDataException | SQLException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
-	}
+    }
 
 	@Override
     protected Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {

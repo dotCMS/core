@@ -13,7 +13,7 @@ public class Task00765AddUserForeignKeys extends AbstractJDBCStartupTask {
 		"update contentlet set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update htmlpage set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update file_asset set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
-		"update " + Inode.Type.CONTAINERS.getTableName() + " set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
+		"update containers set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update template set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update links set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"drop index file_asset.idx_file_1; \n"+
@@ -21,7 +21,7 @@ public class Task00765AddUserForeignKeys extends AbstractJDBCStartupTask {
         "create index idx_file_1 on file_asset (mod_user); \n"+
 		"alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid); \n"+
 		"alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid); \n"+
-		"alter table " + Inode.Type.CONTAINERS.getTableName() + " add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
+		"alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
 		"alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid); \n"+
 		"alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid); \n"+
 		"alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid); ";
@@ -33,13 +33,13 @@ public class Task00765AddUserForeignKeys extends AbstractJDBCStartupTask {
 		"update contentlet set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update htmlpage set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update file_asset set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
-		"update " + Inode.Type.CONTAINERS.getTableName() + " set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
+		"update containers set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update template set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update links set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"alter table file_asset modify mod_user varchar(100); \n"+
 		"alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid); \n"+
 		"alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid); \n"+
-		"alter table " + Inode.Type.CONTAINERS.getTableName() + " add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
+		"alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
 		"alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid); \n"+
 		"alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid); \n"+
 		"alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid); ";
@@ -51,13 +51,13 @@ public class Task00765AddUserForeignKeys extends AbstractJDBCStartupTask {
 		"update contentlet set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update htmlpage set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update file_asset set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
-		"update " + Inode.Type.CONTAINERS.getTableName() + " set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
+		"update containers set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update template set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update links set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"alter table file_asset modify mod_user varchar2(100); \n"+
 		"alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid); \n"+
 		"alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid); \n"+
-		"alter table " + Inode.Type.CONTAINERS.getTableName() + " add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
+		"alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
 		"alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid); \n"+
 		"alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid); \n"+
 		"alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid); ";
@@ -69,13 +69,13 @@ public class Task00765AddUserForeignKeys extends AbstractJDBCStartupTask {
 		"update contentlet set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update htmlpage set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update file_asset set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
-		"update " + Inode.Type.CONTAINERS.getTableName() + " set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
+		"update containers set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update template set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"update links set mod_user = 'system' where not exists(select userid from user_ where userid = mod_user); \n "+
 		"alter table file_asset alter column mod_user type varchar(100); \n"+
 		"alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid); \n"+
 		"alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid); \n"+
-		"alter table " + Inode.Type.CONTAINERS.getTableName() + " add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
+		"alter table containers add constraint fk_user_containers foreign key (mod_user) references user_(userid); \n"+
 		"alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid); \n"+
 		"alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid); \n"+
 		"alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid); ";

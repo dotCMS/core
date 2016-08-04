@@ -294,12 +294,12 @@
     
     
     function viewDiff(){
-		var varHTMLPage = document.getElementById("htmlPage").value;
+		var varHTMLPage = document.getElementById("htmlPageId").value;
 		var diffUrl;
         #if($UtilMethods.isSet($request.getAttribute('com.dotmarketing.wiki.contentlet')))
-        	diffUrl="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage + "&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')";
+        	diffUrl="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage + "&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')" + "&pageLang=" + language;
         #else
-        	diffUrl="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage;
+        	diffUrl="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage + "&pageLang=" + language;
         #end
         var nothingChangedMsg='$languagewebapi.getFromUserLanguage("nothing-changed")';
         
@@ -694,6 +694,7 @@
     <input type="hidden" name="cmd" id="cmd" value="addChild">
     <input type="hidden" name="container" id="container" value="">
     <input type="hidden" name="htmlPage" id="htmlPage" value="$htmlPageInode">
+    <input type="hidden" name="htmlPageId" id="htmlPageId" value="$HTMLPAGE_IDENTIFIER">
     <input type="hidden" name="contentlet" id="contentlet" value="">
     <input type="hidden" name="selectedcontentlet" id="selectedcontentlet" value="">
     <input type="hidden" name="menuItem" id="menuItem" value="">

@@ -1,23 +1,5 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -63,6 +45,26 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * 
@@ -558,4 +560,51 @@ public class UserAPITest extends TestBase{
 			// no need to validate this, only used to get the user objects
 		}
 	}
+
+	@Test
+    public void testGetUsersByNameOrEmailOrUserID() throws DotDataException {
+        UserAPI userAPI = APILocator.getUserAPI();
+        List<User> users = userAPI.getUsersByNameOrEmailOrUserID(null, 0, 40, false);
+        assertNotNull(users);
+        assertTrue(users.size() > 0);
+    }
+
+    @Test
+    public void testGetUnDeletedUsers() throws DotDataException {
+        UserAPI userAPI = APILocator.getUserAPI();
+        String id = String.valueOf(new Date().getTime());
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, -48);
+
+        /**
+         * Add user
+         */
+        String newUserName = "user" + id;
+        User newUser = userAPI.createUser(newUserName + "@test.com", newUserName + "@test.com");
+        newUser.setFirstName(newUserName);
+        newUser.setLastName("TestUser");
+        newUser.setDeleteInProgress(true);
+        newUser.setDeleteDate(calendar.getTime());
+        try {
+            userAPI.save(newUser, systemUser, false);
+        } catch (DotSecurityException e) {
+            // no need to validate this
+        }
+
+        List<User> users = userAPI.getUnDeletedUsers();
+
+        assertNotNull(users);
+        assertTrue(users.size() == 1);
+        assertTrue(users.get(0).getDeleteInProgress());
+        assertNotNull(users.get(0).getDeleteDate());
+        assertEquals(users.get(0).getFirstName(), newUserName);
+
+        try {
+            userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+        } catch (DotSecurityException e) {
+            // no need to validate this
+        }
+
+    }
 }

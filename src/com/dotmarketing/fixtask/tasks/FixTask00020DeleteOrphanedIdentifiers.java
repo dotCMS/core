@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.dotmarketing.fixtask.tasks;
 
 import java.io.BufferedOutputStream;
@@ -30,86 +27,103 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
- * @author jasontesser
+ * This task removes records from identifier and tree when they do not have a mathing identifier in the
+ * table matching its asset type.
+ * It applies to contentlets, containers, file assets, html pages, links, and templates.
  *
+ *   @author jasontesser
+ *   @author jgambarios
+ *   @author Jose Castro
+ *   @author oarrietadotcms
+ *
+ *   @author gabbydotCMS
+ *   @version 2.0
+ *   @since June 18, 2016
  */
 public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
-	private List <Map<String, String>>  modifiedData= new  ArrayList <Map<String,String>>();
-	
+	private List <Map<String, String>>  modifiedData = new  ArrayList <Map<String,String>>();
+	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
+	private int total = 0;
+	private String assetNames[] = { "contentlet", "containers", "file_asset", "htmlpage", "links", "template" };
+
+
+
+	/**
+	 * This method executes the deletes from tree and identifier in case any inconsistencies are found
+	 *
+	 * @return Status of the excecution of the fixes
+	 * @throws DotDataException
+	 * @throws DotRuntimeException
+	 */
 	public List<Map<String, Object>> executeFix() throws DotDataException,
-			DotRuntimeException {
+		DotRuntimeException {
 
 		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+
 		Logger.info(FixTask00020DeleteOrphanedIdentifiers.class,"Beginning DeleteOrphanedIdentifiers");
-		
-		String identifiersToDelete = "select * from identifier where (asset_type='contentlet' and id not in(select identifier from contentlet )) " + 
-                                "OR (asset_type='htmlpage' and id not in(select identifier from htmlpage)) " +
-                                "OR (asset_type='file_asset' and id not in(select identifier from file_asset)) " +
-                                "OR (asset_type='links' and id not in(select identifier from links)) " +
-                                "OR (asset_type='containers' and id not in(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
-                                "OR (asset_type='template' and id not in(select identifier from template)) ";
-		
-		String treesToDelete = "SELECT * from tree where child IN (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
-        					   "OR child in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
-        					   "OR child in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-        					   "OR child in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-        					   "OR child in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
-        					   "OR child in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) " +                       
-        					   "OR parent in (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
-        					   "OR parent in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
-        					   "OR parent in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-        					   "OR parent in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-        					   "OR parent in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
-        					   "OR parent in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) ";
-		
-		String deleteTreesToDelete = "DELETE from tree where child IN (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
-		   					         "OR child in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
-		   					         "OR child in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-		   					         "OR child in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-		   					         "OR child in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
-		   					         "OR child in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) " +                       
-		   					         "OR parent in (SELECT id from identifier where asset_type='contentlet' and id NOT IN(select identifier from contentlet)) " + 
-		   					         "OR parent in (SELECT id from identifier where asset_type='htmlpage' and id NOT IN(select identifier from htmlpage)) " + 
-		   					         "OR parent in (SELECT id from identifier where asset_type='file_asset' and id NOT IN(select identifier from file_asset)) " + 
-		   					         "OR parent in (SELECT id from identifier where asset_type='links' and id NOT IN(select identifier from links)) " + 
-		   					         "OR parent in (SELECT id from identifier where asset_type='containers' and id NOT IN(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
-		   					         "OR parent in (SELECT id from identifier where asset_type='template' and id NOT IN(select identifier from template)) ";
-		
-		String deleteIdentifiersToDelete = "DELETE FROM identifier where (asset_type='contentlet' and id not in(select identifier from contentlet )) " + 
-        							       "OR (asset_type='htmlpage' and id not in(select identifier from htmlpage)) " +
-        							       "OR (asset_type='file_asset' and id not in(select identifier from file_asset)) " +
-        							       "OR (asset_type='links' and id not in(select identifier from links)) " +
-        							       "OR (asset_type='containers' and id not in(select identifier from " + Inode.Type.CONTAINERS.getTableName() + ")) " +
-        							       "OR (asset_type='template' and id not in(select identifier from template)) ";
-     if (!FixAssetsProcessStatus.getRunning()) {
+
+		if (!FixAssetsProcessStatus.getRunning()) {
+
 			FixAssetsProcessStatus.startProgress();
-			FixAssetsProcessStatus.setDescription("task 20: DeleteOrphanedIdentifiers");
-			HibernateUtil.startTransaction();
-			int total=0;
-		    try {
+			FixAssetsProcessStatus.setDescription("Task 20: Deleting Orphan Identifiers");
+
+			try{
+				HibernateUtil.startTransaction();
 				DotConnect dc = new DotConnect();
-				dc.setSQL(treesToDelete);
-				modifiedData = dc.loadResults();
-				total = total + dc.getResults().size();
-				dc.setSQL(identifiersToDelete);
-				modifiedData.addAll(dc.loadResults());
-				total = total + dc.getResults().size();
-				FixAssetsProcessStatus.setTotal(total);
-				getModifiedData();
-				if(total > 0){
-				  try{
-					HibernateUtil.startTransaction();
-					dc.executeStatement(deleteTreesToDelete);
-					dc.executeStatement(deleteIdentifiersToDelete);
-					FixAssetsProcessStatus.setErrorsFixed(total);
-					HibernateUtil.commitTransaction();
-				 }catch (Exception e) {
-					Logger.error(this, "Unable to clean orphaned identifiers",e);
-					HibernateUtil.rollbackTransaction();
-					modifiedData.clear();
-				  }
+
+				for (String asset : assetNames) {
+
+					Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
+					final String tableName = assetType.getTableName();
+
+					if (badDataCount.get("tree_child_"+asset).intValue() > 0) {
+						//Delete orphan tree entries where identifier is child
+						final String deleteTreesToDelete_child = "delete from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='" +
+							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+
+						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(child) type " + asset + " : " + deleteTreesToDelete_child);
+
+						dc.setSQL(deleteTreesToDelete_child);
+						try {
+							dc.loadResult();
+						} catch (DotDataException e) {
+							Logger.error(this,e.getMessage(), e);
+						}
+					}
+
+					if (badDataCount.get("tree_parent_"+asset).intValue() > 0) {
+						//Delete orphan tree entries where identifier is parent
+						final String deleteTreesToDelete_parent = "delete from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='" +
+							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+
+						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(parent) type " + asset + " : " + deleteTreesToDelete_parent);
+
+						dc.setSQL(deleteTreesToDelete_parent);
+						try {
+							dc.loadResult();
+						} catch (DotDataException e) {
+							Logger.error(this,e.getMessage(), e);
+						}
+					}
+
+					if (badDataCount.get("identifier_"+asset).intValue() > 0) {
+						//Delete orphan entries from identifier
+						final String indentifiersToDelete = "delete from identifier i where (i.asset_type='" +
+							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+
+						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from identifier type " + asset + " : " + indentifiersToDelete);
+
+						dc.setSQL(indentifiersToDelete);
+
+						try {
+							dc.loadResult();
+						} catch (DotDataException e) {
+							Logger.error(this,e.getMessage(), e);
+						}
+					}
 				}
+
 				FixAudit Audit = new FixAudit();
 				Audit.setTableName("identifier");
 				Audit.setDatetime(new Date());
@@ -123,13 +137,13 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 				FixAssetsProcessStatus.stopProgress();
 				Logger.debug(FixTask00020DeleteOrphanedIdentifiers.class,"Ending DeleteOrphanedIdentifiers");
 			} catch (Exception e) {
-				Logger.debug(FixTask00020DeleteOrphanedIdentifiers.class,"There was a problem during DeleteOrphanedIdentifiers", e);
+				Logger.error(this,e.getMessage(), e);
 				HibernateUtil.rollbackTransaction();
 				FixAssetsProcessStatus.stopProgress();
 				FixAssetsProcessStatus.setActual(-1);
 			}
-        }	
-	  return returnValue;
+		}
+		return returnValue;
 	}
 
 	public List<Map<String, String>> getModifiedData() {
@@ -144,7 +158,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 				new File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdirs();
 			}
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_"
-					+ "FixTask00020DeleteOrphanedIdentifiers" + ".xml");
+				+ "FixTask00020DeleteOrphanedIdentifiers" + ".xml");
 
 			BufferedOutputStream _bout = null;
 			try {
@@ -156,47 +170,70 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 		}
 		return modifiedData;
 	}
-	private void deleteInodesInMySQL(DotConnect dc)throws DotDataException,
-				DotRuntimeException {
-		int count = 0;
-		try {
-			dc.setSQL("SELECT count(*) size from inode where type = 'identifier' and inode not in (SELECT inode FROM identifier)");
-			List<HashMap<String, String>> rs = dc.loadResults();
-			int size = Integer.parseInt(rs.get(0).get("size"));
-			if(size > 500)
-			  count = (int)Math.ceil(size/500.00);
-			else
-			   count=1;
-			for(int i=0;i<count;i++){
-				
-				dc.setSQL("SELECT inode from inode where type = 'identifier' and " 
-						+ " inode not in (SELECT inode FROM identifier) order by inode"
-						+ " limit 500 offset " + i*500);
-				
-			    List<HashMap<String, String>> identifiers = dc.loadResults();
-				StringBuilder identCondition = new StringBuilder(128);
-			    identCondition.ensureCapacity(32);
-				identCondition.append("");
 
-				for (HashMap<String, String> inode : identifiers) {
-					if (0 < identCondition.length())
-						identCondition.append(",'" + inode.get("inode")+"'");
-					else
-						identCondition.append("'"+inode.get("inode")+"'");
-				}
-				if(identCondition.length()>0)
-				  dc.executeStatement("DELETE FROM inode where (type = 'identifier' and inode not in (SELECT inode FROM identifier)) "
-							        + "OR identifier in (" +identCondition + ")");
-			}
-		} catch (Exception e) {
-			Logger.error(this, "Unable to clean orphaned identifiers",e);
-			HibernateUtil.rollbackTransaction();
-			modifiedData.clear();
-		} 
-		
-	}
 	public boolean shouldRun() {
-		return true;
+
+		total=0;
+		badDataCount.clear();
+
+		DotConnect dc = new DotConnect();
+		List<Map<String, String>> result;
+
+		Logger.debug(MaintenanceUtil.class,"Task 20: Checking for orphan entries");
+
+		for (String asset : assetNames) {
+
+			Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
+			final String tableName = assetType.getTableName();
+
+			//Check for orphan tree entries (child) needing to be deleted
+			final String treesToDeleteChild = "select count(*) as count from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='" +
+				asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+
+			//Check for orphan tree entries (parent) needing to be deleted
+			final String treesToDeleteParent = "select count(*) as count from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='" +
+				asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+
+			//Check for orphan identifier entries needing to be deleted
+			final String indentifiersToDelete = "select count(*) as count from identifier i where (i.asset_type='" +
+				asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+
+
+			try {
+
+				dc.setSQL(treesToDeleteChild);
+				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (child) for " + asset + ": " + treesToDeleteChild);
+				result = dc.loadResults();
+				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (child) for " + asset + ": " + result.get(0).get("count") + " entries");
+				badDataCount.put("tree_child_" + asset, Integer.valueOf(result.get(0).get("count")));
+				total += Integer.parseInt(result.get(0).get("count"));
+
+
+				dc.setSQL(treesToDeleteParent);
+				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (parent) for " + asset + ": " + treesToDeleteParent);
+				result = dc.loadResults();
+				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (parent) for " + asset + ": " + result.get(0).get("count") + " entries");
+				badDataCount.put("tree_parent_" + asset, Integer.valueOf(result.get(0).get("count")));
+				total += Integer.parseInt(result.get(0).get("count"));
+
+				dc.setSQL(indentifiersToDelete);
+				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan identifier entries for " + asset + ": " + indentifiersToDelete);
+				result = dc.loadResults();
+				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan identifier entries for " + asset + ": " + result.get(0).get("count") + " entries");
+				badDataCount.put("identifier_" + asset, Integer.valueOf(result.get(0).get("count")));
+				total += Integer.parseInt(result.get(0).get("count"));
+
+			} catch (DotDataException e) {
+				Logger.error(this,e.getMessage(), e);
+			}
+		}
+
+		if (total > 0) {
+			Logger.info(MaintenanceUtil.class,"Task 20: " + total + " orphan entries to delete" );
+			return true;
+		} else
+			return false;
+
 	}
 
 }

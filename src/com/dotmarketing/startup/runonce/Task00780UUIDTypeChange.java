@@ -29,8 +29,8 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 		       "ALTER TABLE contentlet ADD CONSTRAINT pk_contentlet PRIMARY KEY (inode);" +
 		       "ALTER TABLE contentlet ALTER COLUMN folder varchar(36);" +
 		       "ALTER TABLE contentlet ALTER COLUMN structure_inode varchar(36);" +
-		       "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " ALTER COLUMN inode varchar(36) NOT NULL;" +
-		       "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " ADD CONSTRAINT pk_containers PRIMARY KEY (inode);" +
+		       "ALTER TABLE containers ALTER COLUMN inode varchar(36) NOT NULL;" +
+		       "ALTER TABLE containers ADD CONSTRAINT pk_containers PRIMARY KEY (inode);" +
 		       "ALTER TABLE template ALTER COLUMN inode varchar(36) NOT NULL;" +
 		       "ALTER TABLE template ADD CONSTRAINT pk_template PRIMARY KEY (inode);" +
 		       "ALTER TABLE template ALTER COLUMN image varchar(36);" +
@@ -216,7 +216,7 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 		       "ALTER TABLE contentlet MODIFY inode varchar(36);" +
 		       "ALTER TABLE contentlet MODIFY folder varchar(36);" +
 		       "ALTER TABLE contentlet MODIFY structure_inode varchar(36);" +
-		       "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " MODIFY inode varchar(36);" +
+		       "ALTER TABLE containers MODIFY inode varchar(36);" +
 		       "ALTER TABLE template MODIFY inode varchar(36);" +
 		       "ALTER TABLE template MODIFY image varchar(36);" +
 		       "ALTER TABLE htmlpage MODIFY inode varchar(36);" +
@@ -348,12 +348,12 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 			   "ALTER table CONTENTLET drop column folder;" +
 			   "ALTER table CONTENTLET rename column new_folder to folder;" +
 			   
-			   "ALTER table " + Inode.Type.CONTAINERS.getTableName() + " add (new_inode varchar2(36));" +
-			   "UPDATE " + Inode.Type.CONTAINERS.getTableName() + " set new_inode = cast(inode as varchar2(36));" +
-			   "ALTER table " + Inode.Type.CONTAINERS.getTableName() + " drop column inode;" +
-			   "ALTER table " + Inode.Type.CONTAINERS.getTableName() + " rename column new_inode to inode;" +
-			   "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " MODIFY (inode NOT NULL);" +
-			   "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " ADD CONSTRAINT pk_containers PRIMARY KEY (inode);" +
+			   "ALTER table containers add (new_inode varchar2(36));" +
+			   "UPDATE containers set new_inode = cast(inode as varchar2(36));" +
+			   "ALTER table containers drop column inode;" +
+			   "ALTER table containers rename column new_inode to inode;" +
+			   "ALTER TABLE containers MODIFY (inode NOT NULL);" +
+			   "ALTER TABLE containers ADD CONSTRAINT pk_containers PRIMARY KEY (inode);" +
 			   
 			   "ALTER table TEMPLATE add (new_inode varchar2(36));" +
 			   "UPDATE TEMPLATE set new_inode = cast(inode as varchar2(36));" +
@@ -892,7 +892,7 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 		       "ALTER TABLE contentlet ALTER COLUMN inode TYPE varchar(36);" +
 		       "ALTER TABLE contentlet ALTER COLUMN folder TYPE varchar(36);" +
 		       "ALTER TABLE contentlet ALTER COLUMN structure_inode TYPE varchar(36);" +
-		       "ALTER TABLE " + Inode.Type.CONTAINERS.getTableName() + " ALTER COLUMN inode TYPE varchar(36);" +
+		       "ALTER TABLE containers ALTER COLUMN inode TYPE varchar(36);" +
 		       "ALTER TABLE template ALTER COLUMN inode TYPE varchar(36);" +
 		       "ALTER TABLE template ALTER COLUMN image TYPE varchar(36);" +
 		       "ALTER TABLE htmlpage ALTER COLUMN inode TYPE varchar(36);" +

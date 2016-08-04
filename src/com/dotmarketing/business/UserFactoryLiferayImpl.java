@@ -3,13 +3,12 @@
  */
 package com.dotmarketing.business;
 
-import java.util.*;
-
-import com.dotcms.repackage.org.apache.commons.collections.ArrayStack;
+import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,7 +17,6 @@ import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.PortalException;
@@ -29,6 +27,14 @@ import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -362,6 +368,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		List users = new ArrayList(pageSize);
+		DotConnect dotConnect = new DotConnect();
 		if(page==0){
 			page = 1;
 		}
@@ -369,12 +376,30 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
 		filter = SQLUtil.sanitizeParameter(filter);    		
-		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
-				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " + ((!includeAnonymous)?"AND userid <> 'anonymous'":"") +
-				" and delete_in_progress = false " +
-				"order by firstName asc,lastname asc";
-		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
+		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(firstName) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(lastName) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(emailAddress) like '%");
+		sql.append(filter);
+		sql.append("%'  or ");
+		sql.append(DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }));
+		sql.append(" like '%");
+		sql.append(filter);
+		sql.append("%') AND userid <> 'system' ");
+		sql.append(((!includeAnonymous)?"AND userid <> 'anonymous'":""));
+
+		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+			sql.append(" and delete_in_progress = 0 ");
+		}else{
+			sql.append(" and delete_in_progress = false ");
+		}
+
+		sql.append("order by firstName asc,lastname asc");
+
+		dotConnect.setSQL(sql.toString());
 		dotConnect.setMaxRows(top);
 		List results = dotConnect.getResults();
 		
@@ -398,32 +423,47 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		return users;    		
 	}
 
-    @Override
-    protected List<User> getUnDeletedUsers() throws DotDataException {
+	@Override
+	protected List<User> getUnDeletedUsers() throws DotDataException {
 
-        List<User> users = new ArrayList();
+		List<User> users = new ArrayList();
+		String date;
+		Calendar calendar = Calendar.getInstance();
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        Calendar calendar = Calendar.getInstance();
-        //By default, the filter searches by registers whose delete_date value is less equals than 24 hours
-        calendar.add(Calendar.HOUR, Config.getIntProperty("CLEAN_UNDELETED_USERS_INTERVAL", -25));
+		//By default, the filter searches by registers whose delete_date value is less equals than 24 hours
+		calendar.add(Calendar.HOUR, Config.getIntProperty("CLEAN_UNDELETED_USERS_INTERVAL", -25));
 
-        StringBuilder
-            sql =
-            new StringBuilder("select userid from user_ where delete_in_progress = true and delete_date<='");
-        sql.append(calendar.getTime());
-        sql.append("'");
-        DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL(sql.toString());
+		StringBuilder sql = new StringBuilder("select userid from user_ where ");
 
-        List results = dotConnect.loadResults();
+		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+			sql.append("delete_in_progress = 1 ");
+		} else {
+			sql.append("delete_in_progress = true ");
+		}
 
-        for (int i = 0; i < results.size(); i++) {
-            HashMap hash = (HashMap) results.get(i);
-            String userId = (String) hash.get("userid");
-            users.add(loadUserById(userId));
-        }
-        return users;
-    }
+		if (DbConnectionFactory.isOracle()) {
+			sql.append("and delete_date<=to_date('");
+			sql.append(format.format(calendar.getTime()));
+			sql.append("', 'YYYY-MM-DD HH24:MI:SS')");
+		} else {
+			sql.append("and delete_date<='");
+			sql.append(format.format(calendar.getTime()));
+			sql.append("'");
+		}
+
+		DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(sql.toString());
+
+		List results = dotConnect.loadResults();
+
+		for (int i = 0; i < results.size(); i++) {
+			HashMap hash = (HashMap) results.get(i);
+			String userId = (String) hash.get("userid");
+			users.add(loadUserById(userId));
+		}
+		return users;
+	}
 
     @Override
     public List<String> getUsersIdsByCreationDate ( Date filterDate, int start, int limit ) throws DotDataException {
