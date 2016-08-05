@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by nollymar on 8/4/16.
+ * Created by Nollymar Longa on 8/4/16.
  */
 public class UserFinderTest {
 
@@ -322,7 +322,7 @@ public class UserFinderTest {
         throws DotSecurityException, DotDataException {
 
         User user;
-        user = APILocator.getUserAPI().createUser(userName, userName + "@fake.org");
+        user = userAPI.createUser(userName, userName + "@fake.org");
 
         user.setDeleteInProgress(toBeDeleted);
 
