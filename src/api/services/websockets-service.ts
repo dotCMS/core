@@ -61,6 +61,8 @@ export class $WebSocket {
                 this.dataStream.error(ev);
             };
 
+            $WebSocket.sockets.push(this.socket);
+
         }
     }
 

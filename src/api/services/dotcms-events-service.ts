@@ -33,8 +33,7 @@ export class DotcmsEventsService {
     connectWithSocket(): void {
         let loginUser:User = this.loginService.getLoginUser();
         this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${loginUser.userId}`);
-
-        this.ws.send();
+        this.ws.connect();
     }
 
     /**
