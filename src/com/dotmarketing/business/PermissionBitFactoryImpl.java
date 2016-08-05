@@ -3320,25 +3320,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * @throws DotDataException
      */
 	private void cascadePermissionUnder(Permissionable permissionable, Role role, Permissionable permissionsPermissionable, List<Permission> allPermissions) throws DotDataException {
-
-		boolean isHost = isHost(permissionable);
 		boolean isFolder = isFolder(permissionable);
 
-		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-
-		Permissionable host = null;
-		try {
-			host = isHost ? permissionable : hostAPI.findParentHost((Folder) permissionable, systemUser, false);
-		} catch (DotSecurityException e) {
-			Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
 
 		List<Permission> permissionablePermissions = loadPermissions(permissionable);
 
 		PermissionType[] values = PermissionType.values();
-
 
 		for (PermissionType permissionType : values) {
 
@@ -3359,7 +3347,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			savePermission(permissionToUpdate, permissionable);
 
 			//Looking for children  overriding inheritance to also apply the cascade changes
-			List<String> idsToUpdate = getChildrenOverridingInheritancePermission(host, permissionType);
+			List<String> idsToUpdate = getChildrenOverridingInheritancePermission(permissionable, permissionType);
 
 			int permission = 0;
 			if (inheritablePermission != null) {
@@ -3452,13 +3440,23 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * @return a list of {@link Permissionable} 's id
 	 */
 	public List<String> getChildrenOverridingInheritancePermission(Permissionable permissionable, PermissionType permissionType) throws DotDataException {
+		HostAPI hostAPI = APILocator.getHostAPI();
+		User systemUser = APILocator.getUserAPI().getSystemUser();
+
 		String fieldNameFromQueryToreturn = "id";
 		DotConnect dc = new DotConnect();
 
 		boolean isHost = isHost(permissionable);
 		boolean isFolder = isFolder(permissionable);
+		Permissionable host;
+		try {
+			host = isHost ? permissionable : hostAPI.findParentHost((Folder) permissionable, systemUser, false);
+		} catch (DotSecurityException e) {
+			Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
 		Folder folder = isFolder ? (Folder) permissionable : null;
-		String folderPath = folder!=null?APILocator.getIdentifierAPI().find(folder).getPath():"";
+		String folderPath = folder != null ? APILocator.getIdentifierAPI().find(folder).getPath() : "";
 		String query = selectChildrenWithIndividualPermissionsSQLs.get(permissionType);
 
 		List<String> result = new ArrayList<String>();
@@ -3468,37 +3466,39 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 			switch (permissionType) {
 				case TEMPLATE:
+					dc.addParam(host.getPermissionId());
+					break;
 				case CONTAINER:
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					break;
 				case FOLDER:
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					dc.addParam(isHost ? "%" : folderPath + "%");
 					dc.addParam(isHost ? " " : folderPath + "");
 					fieldNameFromQueryToreturn = "inode";
 					break;
 				case IHTMLPAGE:
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					dc.addParam(isHost ? "%" : folderPath + "%");
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					dc.addParam(isHost ? "%" : folderPath + "%");
 					break;
 				case FILE:
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					dc.addParam(isHost ? "%" : folderPath + "%");
 					break;
 				case LINK:
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					dc.addParam(isHost ? "%" : folderPath + "%");
 					break;
 				case CONTENTLET:
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					dc.addParam(isHost ? "%" : folderPath + "%");
 					break;
 				case STRUCTURE:
 					dc.addParam(isHost ? "%" : folderPath + "%");
-					dc.addParam(permissionable.getPermissionId());
-					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(host.getPermissionId());
+					dc.addParam(host.getPermissionId());
 					fieldNameFromQueryToreturn = "inode";
 					break;
 				default:
