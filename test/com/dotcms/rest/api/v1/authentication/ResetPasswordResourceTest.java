@@ -70,7 +70,7 @@ public class ResetPasswordResourceTest {
     }
 
     @Test
-    public void testTokenUnvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
+    public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
 
@@ -79,7 +79,7 @@ public class ResetPasswordResourceTest {
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-unvalid");
+        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
     }
 
 

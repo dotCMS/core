@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 /**
- * Thrown when a Token is unvalid
+ * Thrown when a Token is invalid
  */
 public class DotInvalidTokenException extends Exception{
 
