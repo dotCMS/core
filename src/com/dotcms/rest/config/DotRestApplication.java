@@ -3,10 +3,7 @@ package com.dotcms.rest.config;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
-import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
-import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
-import com.dotcms.rest.api.v1.authentication.LoginFormResource;
-import com.dotcms.rest.api.v1.authentication.LogoutResource;
+import com.dotcms.rest.api.v1.authentication.*;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.site.SiteBrowserResource;
@@ -94,7 +91,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ConfigurationResource.class);
 					REST_CLASSES.add(AppConfigurationResource.class);
 					REST_CLASSES.add(SiteBrowserResource.class);
-
+					REST_CLASSES.add(ResetPasswordResource.class);
 				}
 			}
 		}

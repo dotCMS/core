@@ -95,7 +95,7 @@ public class ForgotPasswordResource implements Serializable {
                         forgotPasswordForm.getUserId();
 
             this.userManager.sendPassword(
-                    this.companyAPI.getCompanyId(request), emailAddress, locale);
+                    this.companyAPI.getCompanyId(request), emailAddress, locale, true);
 
             res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
             this.securityLogger.logInfo(this.getClass(),
@@ -104,7 +104,7 @@ public class ForgotPasswordResource implements Serializable {
         } catch (NoSuchUserException e) {
 
             boolean displayNotSuchUserError =
-                    Config.getBooleanProperty("si n ", false);
+                    Config.getBooleanProperty("DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD", false);
 
             if (displayNotSuchUserError) {
 

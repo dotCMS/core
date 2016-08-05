@@ -23,12 +23,24 @@
 package com.liferay.portal.ejb;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.util.UrlUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+
+
+import com.dotmarketing.util.*;
+import com.liferay.portal.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,18 +52,7 @@ import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Mailer;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.RequiredUserException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.UserEmailAddressException;
-import com.liferay.portal.UserIdException;
-import com.liferay.portal.UserPasswordException;
+
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -407,7 +408,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 	}
 
 	@Override
-	public void sendPassword(String companyId, String emailAddress, Locale locale)
+	public void sendPassword(String companyId, String emailAddress, Locale locale, boolean fromAngular)
 		throws PortalException, SystemException {
 
 		emailAddress = emailAddress.trim().toLowerCase();
@@ -421,7 +422,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		// we use the ICQ field to store the token:timestamp of the
 		// password reset request we put in the email
 		// the timestamp is used to set an expiration on the token
-		String token = RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) );
+		String token = ResetPasswordTokenUtil.createToken();
 		user.setIcqId(token+":"+new Date().getTime());
 		
 		UserUtil.update(user);
@@ -430,21 +431,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		String url=(company.getPortalURL().contains("://") ? "" : "https://") +
-		        company.getPortalURL() + "/c/portal_public/login?my_account_cmd=ereset&my_user_id="+user.getUserId()+
-		        "&token="+token+"&switchLocale="+locale.getLanguage()+"_"+locale.getCountry();
+		String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, fromAngular);
 		
 		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
-		
+		String subject = LanguageUtil.get(locale, "reset-password-email-subject");
+
 		try {
-			Mailer m = new Mailer();
-			m.setToEmail(emailAddress);
-			m.setToName(user.getFullName());
-			m.setSubject(LanguageUtil.get(locale, "reset-password-email-subject"));
-			m.setHTMLBody(body.toString());
-			m.setFromName(company.getName());
-			m.setFromEmail(company.getEmailAddress());
-			m.sendMessage();
+			EmailUtils.sendMail(user, company, subject, body);
 		}
 		catch (Exception ioe) {
 			throw new SystemException(ioe);
@@ -758,4 +751,20 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return authResult;
 	}
 
+	public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
+			DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
+		try {
+			if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
+				User user  = APILocator.getUserAPI().loadUserById(userId);
+
+				if (user == null){
+					throw new com.dotmarketing.business.NoSuchUserException("");
+				}
+
+				ResetPasswordTokenUtil.checkToken(user, token);
+			}
+		} catch (DotDataException e) {
+			throw new IllegalArgumentException();
+		}
+	}
 }
