@@ -2,6 +2,8 @@ import {DotcmsConfig} from './system/dotcms-config';
 import {Inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
+import {User} from "./login-service";
+import {LoginService} from "./login-service";
 
 @Injectable()
 export class DotcmsEventsService {
@@ -19,7 +21,7 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(@Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig) {
+    constructor(@Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig, private loginService: LoginService) {
         this.protocol = dotcmsConfig.getWebsocketProtocol();
         this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
         this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
@@ -29,8 +31,9 @@ export class DotcmsEventsService {
      * Opens the Websocket connection with the System Events end-point.
      */
     connectWithSocket(): void {
-        this.ws = new $WebSocket(this.protocol + '://' + this.baseUrl + this.endPoint);
-        this.ws.send();
+        let loginUser:User = this.loginService.getLoginUser();
+        this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${loginUser.userId}`);
+        this.ws.connect();
     }
 
     /**

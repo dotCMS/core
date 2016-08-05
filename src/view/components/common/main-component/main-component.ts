@@ -13,12 +13,13 @@ import {MD_SIDENAV_DIRECTIVES} from '@angular2-material/sidenav/sidenav';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MdButton} from '@angular2-material/button/button';
 import {MdIcon, MdAnchor} from '@angular2-material/icon/icon';
+import { Router } from '@ngrx/router';
 
 @Component({
     directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdButton, MdIcon, GlobalSearch, MainNavigation, ToolbarNotifications],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    providers: [LoginService],
+    providers: [],
     selector: 'dot-main-component',
     styleUrls: ['main-component.css'],
     templateUrl: ['main-component.html'],
@@ -28,18 +29,21 @@ export class MainComponent {
     @Output() toggleMain = new EventEmitter<boolean>();
     logoutLabel: string;
 
-    constructor(@Inject('menuItems') private menuItems: Array<any>, private _loginService: LoginService) {
+    constructor(@Inject('menuItems') private menuItems: Array<any>, private loginService: LoginService, private router: Router) {
         this.logoutLabel = 'Logout'; // TODO need to use internationalization
+    }
+
+    ngOnInit(){
+        document.body.style.backgroundColor = '';
+        document.body.style.backgroundImage = '';
     }
 
     /**
      * Call the logout service
      */
     logout(): void {
-        this._loginService.logOutUser().subscribe(data => {
-            // This line update the browser url page without reloading the page
-            window.history.replaceState('index.html', 'index', '/html/ng/index.html');
-            this.toggleMain.emit(true);
+        this.loginService.logOutUser().subscribe(data => {
+            this.router.go('/login/login');
         }, (error) => {
             console.log(error);
         });

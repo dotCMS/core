@@ -4,9 +4,18 @@ import { Observable } from 'rxjs/Rx';
 import { Routes } from '@ngrx/router';
 import { RuleEngineContainer } from '../../../view/components/rule-engine/rule-engine.container';
 
-export class AppConfigurationService {
 
-    private menus: Array<any>;
+import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
+import {IframeLegacyComponent} from '../../view/components/common/iframe-legacy/IframeLegacyComponent';
+import {MainComponent} from "../../../view/components/common/main-component/main-component";
+import {LoginPageComponent} from "../../../view/components/common/login/login-page-component";
+import {FogotPasswordContainer} from "../../../view/components/common/login/forgot-password-component/forgot-password-container";
+import {LoginContainer} from "../../../view/components/common/login/login-component/login-container";
+import {ResetPasswordContainer} from "../../../view/components/common/login/reset-password-component/reset-password-container";
+
+
+
+export class AppConfigurationService {
 
     private mapComponents;
 
@@ -32,29 +41,39 @@ export class AppConfigurationService {
             this.getConfig().subscribe((configurationItems) => {
                 // TODO: do this more elegant
                 // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
-                let routes: Routes = [];
+                let loginRoutes =  this.getLoginRoutes();
+                let mainRoutes = { path: '/main',
+                    component: MainComponent,
+                    children: []
+                };
+                let routes: Routes = [ mainRoutes, loginRoutes ];
+
                 let mapPaths = {};
                 let dotcmsConfig = new DotcmsConfig(configurationItems.entity);
+
+
                 if (configurationItems.errors.length > 0) {
                     console.log(configurationItems.errors[0].message);
                 } else {
                     configurationItems.entity.menu.forEach((item) => {
                         item.menuItems.forEach(subMenuItem => {
                             if (subMenuItem.angular) {
-                                routes.push({
+                                mainRoutes.children.push({
                                     component: this.mapComponents[subMenuItem.id],
                                     path: subMenuItem.url,
                                 });
                             } else {
-                                mapPaths[subMenuItem.id] = subMenuItem.url + '&in_frame=true&frame=detailFrame';
+                                mainRoutes.children[subMenuItem.id] = subMenuItem.url + '&in_frame=true&frame=detailFrame';
                             }
                         });
+
                     });
                 }
                 routes.push({
                     component: IframeLegacyComponent,
                     path: '/portlet/:id',
                 });
+
                 observer.next({
                     dotcmsConfig: dotcmsConfig,
                     menuItems: {
@@ -67,6 +86,27 @@ export class AppConfigurationService {
             });
         });
    }
+
+    private getLoginRoutes():any {
+        return {
+            path: '/login',
+            component: LoginPageComponent,
+            children: [
+                {
+                    path: 'fogotPassword',
+                    component: FogotPasswordContainer
+                },
+                {
+                    path: 'login',
+                    component: LoginContainer
+                },
+                {
+                    path: 'resetPassword/:userId',
+                    component: ResetPasswordContainer
+                }
+            ]
+        };
+    }
 
     /**
      * Returns the configuration parameters for this Web App through the

@@ -15,6 +15,8 @@ import {AppConfigurationService} from '../api/services/system/app-configuration-
 import {provide} from '@angular/core';
 import {disableDeprecatedForms, provideForms} from '@angular/forms';
 import {MdIconRegistry} from '@angular2-material/icon/icon';
+import {CoreWebService} from "../api/services/core-web-service";
+import {LoginService} from "../api/services/login-service";
 
 new AppConfigurationService().getConfigProperties().subscribe(config => {
     bootstrap(AppComponent, [
@@ -28,6 +30,8 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
         ConditionGroupService,
         ConditionService,
         AppConfigurationService,
+        LoginService,
+        CoreWebService,
         HTTP_PROVIDERS,
         MdIconRegistry,
         provide('menuItems', {useValue: config.menuItems}),
@@ -37,6 +41,6 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
         // alpha.5-3, which is the same as alpha.6 without the new forms package.
         // Please see: https://angular.io/docs/ts/latest/guide/forms.html
         disableDeprecatedForms(),
-        provideForms(),
+        provideForms()
     ]);
 });
