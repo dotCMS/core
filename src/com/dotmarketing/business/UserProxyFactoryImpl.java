@@ -8,6 +8,7 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -121,6 +122,18 @@ public class UserProxyFactoryImpl extends UserProxyFactory {
 				condition.append(" and lower(user_.lastName) like ?");
 			else
 				condition.append(" where lower(user_.lastName) like ?");
+		}
+
+		if (0 < condition.length()){
+			condition.append(" and ");
+		}else{
+			condition.append(" where ");
+		}
+
+		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+			condition.append("user_.delete_in_progress = 0 ");
+		}else{
+			condition.append("user_.delete_in_progress = false ");
 		}
 		
 		if ((UtilMethods.isSet(orderBy) && orderBy.trim().toLowerCase().startsWith("cms_role.")) ||
