@@ -30,6 +30,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Resource for Contentlet stuff
+ * - Gets the ContentLet types.
  * @author jsanca
  */
 @SuppressWarnings("serial")
