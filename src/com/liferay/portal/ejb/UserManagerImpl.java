@@ -31,6 +31,8 @@ import java.util.Locale;
 import javax.mail.internet.InternetAddress;
 
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.util.UrlUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.exception.DotDataException;
@@ -420,7 +422,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		// we use the ICQ field to store the token:timestamp of the
 		// password reset request we put in the email
 		// the timestamp is used to set an expiration on the token
-		String token = RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) );
+		String token = ResetPasswordTokenUtil.createToken();
 		user.setIcqId(token+":"+new Date().getTime());
 		
 		UserUtil.update(user);
@@ -429,27 +431,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		String url = null;
-		String urlPrefix = (company.getPortalURL().contains("://") ? "" : "https://") + company.getPortalURL();
-
-		if ( !fromAngular ) {
-			url = urlPrefix + "/c/portal_public/login?my_account_cmd=ereset&my_user_id=" + user.getUserId() +
-					"&token=" + token + "&switchLocale=" + locale.getLanguage() + "_" + locale.getCountry();
-		}else{
-			url = urlPrefix + "/" + java.text.MessageFormat.format("html/ng?resetPassword=true&userId={0}&token={1}", user.getUserId(), token);
-		}
+		String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, fromAngular);
 		
 		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
-		
+		String subject = LanguageUtil.get(locale, "reset-password-email-subject");
+
 		try {
-			Mailer m = new Mailer();
-			m.setToEmail(emailAddress);
-			m.setToName(user.getFullName());
-			m.setSubject(LanguageUtil.get(locale, "reset-password-email-subject"));
-			m.setHTMLBody(body.toString());
-			m.setFromName(company.getName());
-			m.setFromEmail(company.getEmailAddress());
-			m.sendMessage();
+			EmailUtils.sendMail(user, company, subject, body);
 		}
 		catch (Exception ioe) {
 			throw new SystemException(ioe);
@@ -773,27 +761,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 					throw new com.dotmarketing.business.NoSuchUserException("");
 				}
 
-				String tokenInfo = user.getIcqId();
-				if(UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
-					String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
-					if(userToken.equals(token)) {
-						// check if token expired
-						Calendar ttl = Calendar.getInstance();
-						ttl.setTimeInMillis(Long.parseLong(tokenInfo.substring(tokenInfo.indexOf(':')+1)));
-						ttl.add(Calendar.MINUTE, Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20));
-						if(ttl.after(Calendar.getInstance())) {
-							APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-						}
-						else {
-							throw new DotInvalidTokenException(tokenInfo, true);
-						}
-					}
-					else {
-						throw new DotInvalidTokenException(tokenInfo);
-					}
-				}else{
-					throw new DotInvalidTokenException(tokenInfo);
-				}
+				ResetPasswordTokenUtil.checkToken(user, token);
 			}
 		} catch (DotDataException e) {
 			throw new IllegalArgumentException();

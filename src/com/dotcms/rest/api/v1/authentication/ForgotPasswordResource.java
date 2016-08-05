@@ -104,7 +104,7 @@ public class ForgotPasswordResource implements Serializable {
         } catch (NoSuchUserException e) {
 
             boolean displayNotSuchUserError =
-                    Config.getBooleanProperty("si n ", false);
+                    Config.getBooleanProperty("DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD", false);
 
             if (displayNotSuchUserError) {
 
