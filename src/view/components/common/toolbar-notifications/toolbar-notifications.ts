@@ -66,7 +66,7 @@ export class ToolbarNotifications {
     }
 
     private handleClick($event) {
-        let clickedComponent = event.target;
+        let clickedComponent = $event.target;
         let inside = false;
         do {
             if (clickedComponent === this.elementRef.nativeElement) {
