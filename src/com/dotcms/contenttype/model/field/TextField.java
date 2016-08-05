@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class TextField implements Field {
+public abstract class TextField extends Field {
 
 	private static final long serialVersionUID = 1L;
 

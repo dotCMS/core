@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.hamcrest.generator.qdox.junit.APITestCase;
+
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -16,6 +18,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
@@ -23,6 +26,7 @@ import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -34,9 +38,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -249,8 +256,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	
 	@Override
 	public String suggestVelocityVar(final String tryVar) throws DotDataException{
+		
 		DotConnect dc = new DotConnect();
-		String var = tryVar;
+		String var = VelocityUtil.convertToVelocityVariable(tryVar);
 		for(int i=1;i<100000;i++){
 			dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
 			dc.addParam(var);
@@ -277,18 +285,41 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	}
 
-	private ContentType dbSaveUpdate(final ContentType throwawayType) throws DotDataException {
+	private ContentType dbSaveUpdate(final ContentType saveType) throws DotDataException {
 
-		Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-		ContentType retType = ContentTypeBuilder.builder(throwawayType).from(throwawayType).modDate(modDate).build();
 
-		// assign an inode if needed
-		if (retType.inode() == null) {
-			retType = ContentTypeBuilder.builder(retType).from(retType).inode(UUID.randomUUID().toString()).build();
+		ContentTypeBuilder builder = ContentTypeBuilder.builder(saveType)
+				.modDate(DateUtils.round(new Date(), Calendar.SECOND));
+
+		if(saveType.inode()==null){
+			builder.inode(UUID.randomUUID().toString()).build();
+		}
+		
+		if(!(saveType instanceof UrlMapable)){
+			builder.urlMapPattern(null);
+			builder.detailPage(null);
+		}
+		if(!(saveType instanceof Expireable)){
+			builder.expireDateVar(null);
+			builder.publishDateVar(null);
+		}
+		
+		
+		
+		boolean existsInDb = false;
+		try{
+			dbById(saveType.inode());
+			existsInDb=true;
+		}
+		catch(NotFoundInDbException notThere){
+			Logger.debug(getClass(), "structure inode not found in db:" + saveType.inode());
+		}
+		
+		ContentType retType=builder.build();
+		
+		if (!existsInDb) {
 			dbInodeInsert(retType);
 			dbInsert(retType);
-			retType = new ImplClassContentTypeTransformer(retType).from();
-
 			// set up default fields;
 			List<Field> fields = retType.requiredFields();
 			FieldApi fapi = new FieldApiImpl().instance();
@@ -299,6 +330,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			return retType;
 
 		} else {
+
 			dbInodeUpdate(retType);
 			dbUpdate(retType);
 			return new ImplClassContentTypeTransformer(retType).from();
@@ -308,8 +340,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	private void dbInodeUpdate(final ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
-		dc.addParam(type.inode());
-		dc.addParam(type.iDate());
 		dc.addParam(type.owner());
 		dc.addParam(type.inode());
 		dc.loadResult();
@@ -330,7 +360,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.addParam(type.name());
 		dc.addParam(type.description());
 		dc.addParam(type.defaultStructure());
-		dc.addParam(type.pagedetail());
+		dc.addParam(type.detailPage());
 		dc.addParam(type.baseType().getType());
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
@@ -346,13 +376,18 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	}
 
 	private void dbInsert(ContentType type) throws DotDataException {
+		
+		if(ContentTypeApi.reservedStructureNames.contains(type.name().toLowerCase())){
+			throw new DotDataException("cannot save a structure with name:" + type.name());
+		}
+		
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.INSERT_TYPE);
 		dc.addParam(type.inode());
 		dc.addParam(type.name());
 		dc.addParam(type.description());
 		dc.addParam(type.defaultStructure());
-		dc.addParam(type.pagedetail());
+		dc.addParam(type.detailPage());
 		dc.addParam(type.baseType().getType());
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
@@ -508,7 +543,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		@Override
 		public String toString() {
 			String ret=null;
-			if(this.urlMap!=null){
+			if(UtilMethods.isSet(urlMap)){
 				ret = this.urlMap.trim();
 				if(!ret.startsWith("/")){
 					ret = "/" + ret;

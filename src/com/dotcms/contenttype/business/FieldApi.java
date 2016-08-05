@@ -3,7 +3,7 @@ package com.dotcms.contenttype.business;
 import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldType;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 
@@ -19,9 +19,9 @@ public interface FieldApi {
 
 	List<Class> fieldTypes();
 
-	void registerFieldType(FieldType type);
+	void registerFieldType(Field type);
 
-	void deRegisterFieldType(FieldType type);
+	void deRegisterFieldType(Field type);
 
 	void delete(Field field) throws DotDataException;
 

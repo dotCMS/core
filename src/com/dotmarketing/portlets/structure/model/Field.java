@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -20,7 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 
 
 
-public class Field extends Inode implements Exportable, Importable
+public class Field extends Inode implements Exportable, Importable, FieldIf
 {
 
 	public enum FieldType {

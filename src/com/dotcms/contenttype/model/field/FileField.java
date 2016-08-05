@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class FileField implements Field {
+public abstract class FileField extends Field {
 
 	@Override
 	public Class type() {

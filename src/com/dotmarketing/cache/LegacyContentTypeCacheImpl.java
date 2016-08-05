@@ -45,7 +45,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 				Logger.warn(this.getClass(), "Structure with inode: '" + inode + "' not found in db");
 			}
         }
-        return null;
+        return new StructureTransformer(type).asStructure();
         
     }
 
@@ -93,7 +93,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 				Logger.warn(this.getClass(), "Structure with var: '" + variableName + "' not found in db");
 			}
         }
-        return null;
+        return new StructureTransformer(type).asStructure();
     }
     /**
      * @see getStructureByName(String)

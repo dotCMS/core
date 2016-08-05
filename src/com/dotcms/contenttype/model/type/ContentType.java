@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -11,25 +12,37 @@ import org.immutables.value.Value.Default;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.google.common.base.Preconditions;
 
 
-public abstract class ContentType implements Serializable, Permissionable {
+public abstract class ContentType implements Serializable, Permissionable,ContentTypeIf {
+	
+	
+	
+	@Value.Check
+	protected void check() {
+		if(!(this instanceof UrlMapable)){
+			Preconditions.checkArgument(detailPage()==null,"Detail Page cannot be set for " + this.getClass());
+			Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for " + this.getClass());
+		}
+		if(!(this instanceof Expireable)){
+			Preconditions.checkArgument(expireDateVar()==null,"expireDateVar cannot be set for " + this.getClass());
+			Preconditions.checkArgument(publishDateVar()==null,"publishDateVar cannot be set for " + this.getClass());
+		}
+	}
 
 	static final long serialVersionUID = 1L;
 
@@ -40,10 +53,6 @@ public abstract class ContentType implements Serializable, Permissionable {
 
 	@Nullable
 	public abstract String description();
-
-	final public String type() {
-		return "structure";
-	}
 
 	@Value.Default
 	public boolean defaultStructure() {
@@ -56,7 +65,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 	}
 	
 	@Nullable
-	public abstract String pagedetail();
+	public abstract String detailPage();
 
 	@Value.Default
 	public boolean fixed() {
@@ -65,7 +74,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 
 	@Value.Default
 	public Date iDate() {
-		return new Date();
+		return DateUtils.round(new Date(), Calendar.SECOND);
 	}
 
 	@Value.Default
@@ -101,7 +110,7 @@ public abstract class ContentType implements Serializable, Permissionable {
 
 	@Value.Default
 	public Date modDate() {
-		return new Date();
+		return DateUtils.round(new Date(), Calendar.SECOND);
 	}
 
 	public abstract BaseContentType baseType();

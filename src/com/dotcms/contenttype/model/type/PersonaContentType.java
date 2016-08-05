@@ -29,14 +29,6 @@ public abstract class PersonaContentType extends ContentType{
 		return  BaseContentType.PERSONA;
 	}
 
-	@Value.Check
-	protected void check() {
-		Preconditions.checkArgument(pagedetail()==null,"Detail Page cannot be set for forms");
-		Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for forms");
-		Preconditions.checkArgument(expireDateVar()==null,"expireDate cannot be set for forms");
-		Preconditions.checkArgument(publishDateVar()==null,"expireDate cannot be set for forms");
-	}
-
 	
 	
 	public abstract static class Builder implements ContentTypeBuilder {}

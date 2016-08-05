@@ -15,12 +15,13 @@ import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 
 @Value.Immutable
 public abstract class FileAssetContentType extends ContentType implements UrlMapable{
 
 
-
+	
 	private static final long serialVersionUID = 1L;
 
 	@Override

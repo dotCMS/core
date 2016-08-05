@@ -1,30 +1,21 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PermissionedWebAssetUtil;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
@@ -35,7 +26,6 @@ import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -48,7 +38,6 @@ import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -387,7 +376,9 @@ public class StructureFactory {
 	public static void saveStructure(Structure structure) throws DotHibernateException
 	{
 		try {
-			APILocator.getContentTypeAPI2().save(new FromStructureTransformer(structure).from(), APILocator.systemUser());
+			ContentType type = new StructureTransformer(structure).from();
+			type = APILocator.getContentTypeAPI2().save(type, APILocator.systemUser());
+			structure.setInode(type.inode());
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
 		}
@@ -396,7 +387,8 @@ public class StructureFactory {
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
 	{
 		try {
-			APILocator.getContentTypeAPI2().save(new FromStructureTransformer(structure).from(), APILocator.systemUser());
+			ContentType type = APILocator.getContentTypeAPI2().save(new StructureTransformer(structure).from(), APILocator.systemUser());
+			structure.setInode(type.inode());
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
 		}
@@ -415,7 +407,7 @@ public class StructureFactory {
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
 		try {
-			APILocator.getContentTypeAPI2().delete(new FromStructureTransformer(structure).from(), APILocator.systemUser());
+			APILocator.getContentTypeAPI2().delete(new StructureTransformer(structure).from(), APILocator.systemUser());
 		} catch (DotStateException | DotSecurityException e) {
 			Logger.error(StructureFactory.class, e.getMessage(), e);
 			throw new DotDataException(e.getMessage());

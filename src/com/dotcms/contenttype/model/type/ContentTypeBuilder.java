@@ -29,7 +29,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder storageType(StorageType variable);
 
-	ContentTypeBuilder pagedetail(String variable);
+	ContentTypeBuilder detailPage(String variable);
 
 	ContentTypeBuilder fixed(boolean variable);
 

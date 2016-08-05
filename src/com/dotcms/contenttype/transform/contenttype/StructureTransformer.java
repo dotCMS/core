@@ -1,28 +1,49 @@
 package com.dotcms.contenttype.transform.contenttype;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UtilMethods;
 
-public class StructureTransformer extends FromStructureTransformer implements StructureTransformerIf  {
+public class StructureTransformer implements ContentTypeTransformer  {
 	final List<Structure> structList;
-
+	final List<ContentType> cTypeList;
 	public StructureTransformer(ContentType type) {
-		super(type);
-		this.structList = ImmutableList.of(transformToStruct(type));
+		this(ImmutableList.of(type));
+
 	}
 	public StructureTransformer(Structure type) {
-		super(type);
-		this.structList = ImmutableList.of(type);
+		this(ImmutableList.of(type));
 	}
-	public StructureTransformer(List<ContentType> initList) {
-		super(initList,true);
-		this.structList=transformToStruct(initList);
+	public StructureTransformer(List<? extends ContentTypeIf> types) {
+		List<Structure> strucs = new ArrayList<Structure>();
+		List<ContentType> cTypes = new ArrayList<ContentType>();
+		for(ContentTypeIf type : types){
+			if(type instanceof Structure){
+				strucs.add((Structure)type);
+				cTypes.add(transformToContentType((Structure)type));
+			}else{
+				strucs.add(transformToStruct((ContentType)type));
+				cTypes.add((ContentType)type);
+			}
+			
+		}
+
+		this.cTypeList = ImmutableList.copyOf(cTypes);
+		this.structList = ImmutableList.copyOf(strucs);
 	}
+
 
 	private static List<Structure> transformToStruct(final List<ContentType> types) throws DotStateException {
 		List<Structure> newList = new ArrayList<Structure>();
@@ -38,9 +59,8 @@ public class StructureTransformer extends FromStructureTransformer implements St
 		final Structure struct = new Structure();
 		struct.setDefaultStructure(type.defaultStructure());
 		struct.setDescription(type.description());
-		struct.setDetailPage(type.pagedetail());
+		struct.setDetailPage(type.detailPage());
 		struct.setInode(type.inode());
-		struct.setExpireDateVar(type.expireDateVar());
 		struct.setFixed(type.fixed());
 		struct.setFolder(type.folder());
 		struct.setHost(type.host());
@@ -49,24 +69,140 @@ public class StructureTransformer extends FromStructureTransformer implements St
 		struct.setModDate(type.modDate());
 		struct.setName(type.name());
 		struct.setOwner(type.owner());
-		struct.setPagedetail(type.pagedetail());
 		struct.setPublishDateVar(type.publishDateVar());
+		struct.setExpireDateVar(type.expireDateVar());
 		struct.setStructureType(type.baseType().getType());
 		struct.setSystem(type.system());
-		struct.setType(type.type());
 		struct.setUrlMapPattern(type.urlMapPattern());
 		struct.setVelocityVarName(type.velocityVarName());
 		return struct;
 
 	}
 
-	@Override
+
 	public Structure asStructure() throws DotStateException {
 		return this.structList.get(0);
 	}
-	@Override
+
 	public List<Structure> asStructureList() throws DotStateException {
 		return this.structList;
+	}
+	
+	
+
+	@SuppressWarnings("static-method")
+	private ContentType transformToContentType(final Structure struct) throws DotStateException {
+
+		
+		BaseContentType base =  BaseContentType.getBaseContentType(struct.getStructureType());
+
+		final ContentType type = new ContentType() {
+			static final long serialVersionUID = 1L;
+
+			@Override
+			public String velocityVarName() {
+				return struct.getVelocityVarName();
+			}
+
+			@Override
+			public String urlMapPattern() {
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? struct.getUrlMapPattern() : null;
+	
+			}
+
+			@Override
+			public String publishDateVar() {
+				return struct.getPublishDateVar();
+			}
+
+			@Override
+			public String detailPage() {
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? struct.getPagedetail() : null;
+			}
+
+			@Override
+			public String owner() {
+				return struct.getOwner();
+			}
+
+			@Override
+			public String name() {
+				return struct.getName();
+			}
+
+			@Override
+			public String inode() {
+				return UtilMethods.isSet(struct.getInode()) ? struct.getInode() : null;
+			}
+
+			@Override
+			public String host() {
+				return UtilMethods.isSet(struct.getHost()) ? struct.getHost() : Host.SYSTEM_HOST;
+			}
+
+			@Override
+			public String folder() {
+				return UtilMethods.isSet(struct.getFolder()) ? struct.getFolder() : Folder.SYSTEM_FOLDER;
+			}
+
+			@Override
+			public String expireDateVar() {
+				return struct.getExpireDateVar();
+			}
+
+			@Override
+			public String description() {
+				return struct.getDescription();
+			}
+
+			@Override
+			public boolean fixed() {
+				return struct.isFixed();
+			}
+
+			@Override
+			public boolean system() {
+				return struct.isSystem();
+			}
+
+			@Override
+			public boolean defaultStructure() {
+				return struct.isDefaultStructure();
+			}
+
+			@Override
+			public Date modDate() {
+				return struct.getModDate();
+			}
+
+			@Override
+			public Date iDate() {
+				return struct.getIDate();
+			}
+
+			@Override
+			public BaseContentType baseType() {
+				return BaseContentType.getBaseContentType(struct.getStructureType());
+			}
+			@Override
+			public List<Field> fields() {
+				return ImmutableList.of();
+			}
+
+		};
+
+		return new ImplClassContentTypeTransformer(type).from();
+
+	}
+
+	@Override
+	public ContentType from() throws DotStateException {
+		return this.cTypeList.get(0);
+	}
+
+	@Override
+	public List<ContentType> asList() throws DotStateException {
+		return this.cTypeList;
 	}
 }
 

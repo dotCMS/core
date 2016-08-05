@@ -29,13 +29,7 @@ public abstract class FormContentType extends ContentType{
 		return false;
 	}
 	
-	@Value.Check
-	protected void check() {
-		Preconditions.checkArgument(pagedetail()==null,"Detail Page cannot be set for forms");
-		Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for forms");
-		Preconditions.checkArgument(expireDateVar()==null,"expireDate cannot be set for forms");
-		Preconditions.checkArgument(publishDateVar()==null,"expireDate cannot be set for forms");
-	}
+
 	
 	
 	

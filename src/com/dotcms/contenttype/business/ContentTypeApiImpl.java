@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -33,6 +34,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotmarketing.quartz.job.IdentifierDateJob;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.Preconditions;
@@ -165,21 +169,44 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 		Permissionable parent =  type.getParentPermissionable();
 
-		if (type instanceof FormContentType){
-			if (!perms.doesUserHavePermissions(parent, "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH, user)) {
-				throw new DotSecurityException("User-does-not-have-add-children-permission-on-host-folder");
-			}
-		} else {
-			if (!perms.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
-				throw new DotSecurityException("User-does-not-have-add-children-permission-on-host-folder");
-			}
+
+		if (!perms.doesUserHavePermissions(parent, "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH, user)) {
+			throw new DotSecurityException("User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
 		}
-
 		
+		// set to system folder if on system host or the host id of the folder it is on
+		if (!UtilMethods.isSet(type.host()) || type.host().equals(Host.SYSTEM_HOST)) {
+			type = ContentTypeBuilder.builder(type).host(Host.SYSTEM_HOST).build();
+			type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
+		}
+		if (UtilMethods.isSet(type.folder()) && !type.folder().equals(Folder.SYSTEM_FOLDER)) {
+			type = ContentTypeBuilder.builder(type).host(APILocator.getFolderAPI().find(type.folder(), user, false).getHostId()).build();
+		}else {
+			type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
+		}
 		
-		
-
+		ContentType oldType = type;
+		try{
+			if(type.inode()!=null)
+				oldType = this.fac.find(type.inode());
+		}
+		catch(NotFoundInDbException notThere){
+			// not logging, expected when inserting new from separate environment
+		}
 		type = this.fac.save(type);
+		
+		if(oldType!=null ){
+			if(fireUpdateIdentifiers(oldType.expireDateVar(), type.expireDateVar())){
+				IdentifierDateJob.triggerJobImmediately(oldType, user);	
+			}
+			else if(fireUpdateIdentifiers(oldType.publishDateVar(), type.publishDateVar())){
+				IdentifierDateJob.triggerJobImmediately(oldType, user);	
+			}
+			perms.resetPermissionReferences(type);
+		}
+		ActivityLogger.logInfo(ActivityLogger.class, "Save ContentType Action", "User " +user.getUserId() + "/" + user.getFullName() + " added structure "
+				+ type.name() + " to host id:" + type.host());
+
 		return type;
 
 	}
@@ -255,4 +282,22 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 			perms.resetPermissionReferences(type);
 		}
 	}
+	
+	private boolean fireUpdateIdentifiers(String oldVal, String newVal){
+		if(oldVal !=null || newVal!=null){
+			if(oldVal!=null){
+				if(!oldVal.equals(newVal)){
+					return true;
+				}
+			}
+			if(newVal!=null){
+				if(!newVal.equals(oldVal)){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	
 }

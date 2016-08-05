@@ -9,7 +9,7 @@ import com.google.common.base.Preconditions;
 
 
 @Value.Immutable
-public abstract class CategoryField implements Field {
+public abstract class CategoryField extends Field {
 
 	private static final long serialVersionUID = 1L;
 

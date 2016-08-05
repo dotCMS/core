@@ -26,6 +26,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.test.DataSourceForTesting;
@@ -40,48 +41,6 @@ public class FieldFactoryImplTest {
 
 	FieldFactoryImpl factory = new FieldFactoryImpl();
 	final static String TEST_VAR_PREFIX = "testField";
-
-	@BeforeClass
-	public static void initDb() throws DotDataException, Exception {
-
-		DotConnect dc = new DotConnect();
-		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
-
-		dc.setSQL("delete from field where structure_inode in " + structsToDelete);
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
-		dc.loadResult();
-
-		dc.setSQL("delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in "
-				+ structsToDelete + ")");
-		dc.loadResult();
-
-		dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='contentlet' and inode not in  (select inode from contentlet)");
-		dc.loadResult();
-
-		dc.setSQL("delete from structure where  structure.velocity_var_name like 'velocityVarNameTesting%' ");
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='structure' and inode not in  (select inode from structure)");
-		dc.loadResult();
-
-		dc.setSQL("delete from field where structure_inode not in (select inode from structure)");
-		dc.loadResult();
-
-		dc.setSQL("delete from field where velocity_var_name like '"+TEST_VAR_PREFIX+"%'");
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
-		dc.loadResult();
-
-		dc.setSQL("update structure set structure.url_map_pattern =null, structure.page_detail=null where structuretype =3");
-		dc.loadResult();
-
-	}
 
 	@Test
 	public void testEquals() throws Exception {
@@ -152,7 +111,7 @@ public class FieldFactoryImplTest {
 
 		long time = System.currentTimeMillis();
 		ContentType struct = ImmutableSimpleContentType.builder().description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
-				.host(Constants.SYSTEM_HOST).name("ContentTypeTesting" + time).owner("owner")
+				.host(Host.SYSTEM_HOST).name("ContentTypeTesting" + time).owner("owner")
 				.velocityVarName("velocityVarNameTesting" + time).build();
 		struct = new ContentTypeFactoryImpl().save(struct);
 

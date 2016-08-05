@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.structure.action;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import java.net.URLDecoder;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -16,8 +15,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -26,7 +24,6 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -42,23 +39,18 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
@@ -82,7 +74,6 @@ public class EditStructureAction extends DotPortletAction {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
 	
-	private final String[] reservedStructureNames = { "Host", "Folder", "File", "HTML Page", "Menu Link", "Virtual Link", "Container", "Template", "User" };
 
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
 
@@ -188,11 +179,14 @@ public class EditStructureAction extends DotPortletAction {
 		User user = _getUser(req);
 		String inodeString = req.getParameter("inode");
 		ContentType type;
+		Structure struc = new Structure();
 		try{
 			type= APILocator.getContentTypeAPI2().find(inodeString, user);
+			struc = new StructureTransformer(type).asStructure();
 		}
 		catch(NotFoundInDbException nodb){
-			type= ImmutableSimpleContentType.builder().name("").velocityVarName("").build();
+			type= ContentTypeBuilder.instanceOf(SimpleContentType.class);
+			
 		}
 		
 
@@ -200,11 +194,12 @@ public class EditStructureAction extends DotPortletAction {
 			if(type.baseType() == BaseContentType.WIDGET
 					&& type.velocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
 						type = ContentTypeBuilder.builder(type).fixed(true).build();
-						APILocator.getContentTypeAPI2().save(type, type.fields(), user);
+						APILocator.getContentTypeAPI2().save(type, user);
 			}
 		}
+
 		
-		req.setAttribute(WebKeys.Structure.STRUCTURE, new StructureTransformer(type).asStructure());
+		req.setAttribute(WebKeys.Structure.STRUCTURE, struc);
 
 		boolean searchable = false;
 
@@ -234,59 +229,28 @@ public class EditStructureAction extends DotPortletAction {
 
 	private void _saveStructure(ActionForm form, ActionRequest req, ActionResponse res) {
 		try {
-			boolean newStructure = false;
+			StructureForm structureForm = (StructureForm) form;
+			boolean newStructure = !UtilMethods.isSet(structureForm.getInode());
 			boolean publishChanged = false;
 			boolean expireChanged = false;
 			
-			StructureForm structureForm = (StructureForm) form;
+			
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
 			User user = _getUser(req);
 			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
 
-			if (!UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder()) || structureForm.getFolder().equals("SYSTEM_FOLDER"))) {
-				throw new DotDataException(LanguageUtil.get(user, "Host-or-folder-is-required"));
+
+			if (UtilMethods.isSet(structure.getVelocityVarName())) {
+				structureForm.setVelocityVarName(structure.getVelocityVarName());
 			}
-
-			// Checking permissions
-			_checkWritePermissions(structure, user, httpReq);
-			
-			// Validating structure type
-			
-			if (structureForm.getStructureType()< 1 ){
-                throw new DotDataException(LanguageUtil.get(user, "structure-type-is-required"));
-                
-			}
-			// Check if another structure with the same name exist
-			String auxStructureName = structureForm.getName();
-			auxStructureName = (auxStructureName != null ? auxStructureName.trim() : "");
-			auxStructureName = auxStructureName.replace("'", "''");
-
-
-
-			Arrays.sort(reservedStructureNames);
-			if (!InodeUtils.isSet(structureForm.getInode()) && (Arrays.binarySearch(reservedStructureNames, auxStructureName) >= 0)) {
-				throw new DotDataException("Invalid Reserved Structure Name : " + auxStructureName);
-			}
-
-			// Validate if is a new structure and if the name hasn't change
-			if (!InodeUtils.isSet(structure.getInode())) {
-				newStructure = true;
-			} else {
-				String structureName = structure.getName();
-				String structureFormName = structureForm.getName();
-				if (UtilMethods.isSet(structureName) && UtilMethods.isSet(structureFormName) && !structureName.equals(structureFormName) && !structure.isFixed()) {
-
-				    CacheLocator.getContentTypeCache().remove(structure);
-
-				}
-			}
-
+			/** moved to api
 			// If the structure is fixed the name cannot be changed
 			if (structure.isFixed()) {
 				structureForm.setName(structure.getName());
 			}
 
+		
 			// if I'm editing a structure the structureType couldn't not be
 			// change
 			if (UtilMethods.isSet(structure.getInode()) && InodeUtils.isSet(structure.getInode())) {
@@ -296,6 +260,8 @@ public class EditStructureAction extends DotPortletAction {
 			if (UtilMethods.isSet(structure.getVelocityVarName())) {
 				structureForm.setVelocityVarName(structure.getVelocityVarName());
 			}
+			**/
+			/**
 			if (UtilMethods.isSet(structureForm.getHost())) {
 				if (!structureForm.getHost().equals(Host.SYSTEM_HOST) && hostAPI.findSystemHost().getIdentifier().equals(structureForm.getHost())) {
 					structureForm.setHost(Host.SYSTEM_HOST);
@@ -304,7 +270,10 @@ public class EditStructureAction extends DotPortletAction {
 			} else if (UtilMethods.isSet(structureForm.getFolder())) {
 				structureForm.setHost(folderAPI.find(structureForm.getFolder(), user, false).getHostId());
 			}
-
+			**/
+			/** 
+			 * moved to ContentTypeAPI
+			 * 
 			if (UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder()) || structureForm.getFolder().equals("SYSTEM_FOLDER"))) {
 				Host host = hostAPI.find(structureForm.getHost(), user, false);
 				if (host != null) {
@@ -363,7 +332,6 @@ public class EditStructureAction extends DotPortletAction {
 					expireChanged = true;
 			}
 			if(!newStructure && (publishChanged || expireChanged)){
-
 				 List<Contentlet> results = conAPI.findByStructure(structure, user, true, 0, 0);
 					  for (Contentlet con : results) {
 						if( UtilMethods.isSet(structureForm.getExpireDateVar())){
@@ -381,12 +349,12 @@ public class EditStructureAction extends DotPortletAction {
 						}
 					  }
 				}
+			***/
+			
+			
 			
 			BeanUtils.copyProperties(structure, structureForm);
 
-			// if htmlpage doesn't exist page id should be an identifier. Should
-			// be refactored once we get identifierAPI/HTMLPage API done
-			String pageDetail = structureForm.getDetailPage();
 
 			if (newStructure) {
 				String structureVelocityName = VelocityUtil.convertToVelocityVariable(structure.getName(), true);
@@ -394,19 +362,8 @@ public class EditStructureAction extends DotPortletAction {
 				structure.setVelocityVarName(structureVelocityName);
 			}
 
-			if (UtilMethods.isSet(pageDetail)) {
-				structure.setDetailPage(pageDetail);
-			}
 
-			// Saving interval review properties
-			if (structureForm.isReviewContent()) {
-				structure.setReviewInterval(structureForm.getReviewIntervalNum() + structureForm.getReviewIntervalSelect());
-			} else {
-				structure.setReviewInterval(null);
-				structure.setReviewerRole(null);
-			}
-
-			// If there is no default structure this would be
+			// If there is no default structure this would be it
 			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI2().findDefault(user)).asStructure();
 			if (!InodeUtils.isSet(defaultStructure.getInode())) {
 				structure.setDefaultStructure(true);
@@ -415,18 +372,11 @@ public class EditStructureAction extends DotPortletAction {
 				structure.setFixed(false);
 				structure.setOwner(user.getUserId());
 			}
-			// validate iit is a form structure set it as system by default
-			if (structureForm.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-				structure.setSystem(true);
-			}
+
 			StructureFactory.saveStructure(structure);
 			
-			//If structure is modified and Publish/Expire were updated
-			//have to check if all the content has the same info in Identifiers 
-			if(!newStructure && (publishChanged || expireChanged)){
-				IdentifierDateJob.triggerJobImmediately(structure, _getUser(req));	
-			}
-			
+			//ContentType type = APILocator.getContentTypeAPI2().save(new StructureTransformer(structure).from(), user);
+			//structureForm.setInode(type.inode());
 			structureForm.setUrlMapPattern(structure.getUrlMapPattern());
 
 			WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
@@ -437,6 +387,12 @@ public class EditStructureAction extends DotPortletAction {
 				scheme = APILocator.getWorkflowAPI().findScheme(schemeId);
 				APILocator.getWorkflowAPI().saveSchemeForStruct(structure, scheme);
 			}
+
+			
+			
+			/**
+			 * 
+			 * Moved to API
 
 			// if the structure is a widget we need to add the base fields.
 			if (newStructure && structureForm.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
@@ -466,9 +422,7 @@ public class EditStructureAction extends DotPortletAction {
 			if (!newStructure) {
 				perAPI.resetPermissionReferences(structure);
 			}
-			
-			ActivityLogger.logInfo(ActivityLogger.class, "Save Structure Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added structure "
-					+ structure.getName() + ".", HostUtil.hostNameUtil(req, _getUser(req)));
+			*/
 
 			// Saving the structure in cache
 			CacheLocator.getContentTypeCache().remove(structure);
@@ -587,7 +541,7 @@ public class EditStructureAction extends DotPortletAction {
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
 			User user = _getUser(req);
-			APILocator.getContentTypeAPI2().setAsDefault(new FromStructureTransformer(structure).from(), user);
+			APILocator.getContentTypeAPI2().setAsDefault(new StructureTransformer(structure).from(), user);
 			String message = "message.structure.defaultstructure";
 			SessionMessages.add(req, "message", message);
 		} catch (Exception ex) {

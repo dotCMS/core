@@ -2,8 +2,6 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.util.List;
 
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
@@ -27,12 +25,12 @@ public class StructureAPIImpl implements StructureAPI {
 
 	@Override
 	public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2().delete(new FromStructureTransformer(st).from(), user);
+		APILocator.getContentTypeAPI2().delete(new StructureTransformer(st).from(), user);
 	}
 	
 	@Override
 	public void save(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2().save(new FromStructureTransformer(st).from(), new LegacyFieldTransformer(st.getFields()).asList(), user);
+		APILocator.getContentTypeAPI2().save(new StructureTransformer(st).from(), new LegacyFieldTransformer(st.getFields()).asList(), user);
 
 	}
 	@Override

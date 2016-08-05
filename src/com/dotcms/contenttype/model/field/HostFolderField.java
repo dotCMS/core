@@ -10,7 +10,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.google.common.base.Preconditions;
 
 @Value.Immutable
-public abstract class HostFolderField implements Field {
+public abstract class HostFolderField extends Field {
 
 	@Value.Check
 	protected void check() {

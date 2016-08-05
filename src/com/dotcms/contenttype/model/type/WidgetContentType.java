@@ -34,15 +34,6 @@ public abstract class WidgetContentType extends ContentType {
 		return false;
 	}
 	
-	@Value.Check
-	protected void check() {
-		Preconditions.checkArgument(pagedetail()==null,"Detail Page cannot be set for widgets");
-		Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for widgets");
-		Preconditions.checkArgument(expireDateVar()==null,"expireDate cannot be set for widgets");
-		Preconditions.checkArgument(publishDateVar()==null,"expireDate cannot be set for widgets");
-		Preconditions.checkArgument(multilingualable()!=true,"multilingual cannot be set for widgets");
-	}
-	
 	
 	public  List<Field> requiredFields(){
 		Field titleField = ImmutableTextField.builder()

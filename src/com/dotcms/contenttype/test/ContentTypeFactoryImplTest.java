@@ -8,8 +8,8 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
+import java.util.UUID;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
@@ -22,15 +22,18 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
 import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.contenttype.transform.contenttype.FromStructureTransformer;
+import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.repackage.org.hibernate.validator.constraints.URL;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -42,56 +45,17 @@ public class ContentTypeFactoryImplTest {
 
 	final ContentTypeFactory factory = new ContentTypeFactoryImpl();
 
-	@BeforeClass
-	public static void initDb() throws DotDataException, Exception {
-
-		DotConnect dc = new DotConnect();
-		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
-
-		dc.setSQL("delete from field where structure_inode in " + structsToDelete);
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
-		dc.loadResult();
-
-		dc.setSQL("delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in "
-				+ structsToDelete + ")");
-		dc.loadResult();
-
-		dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='contentlet' and inode not in  (select inode from contentlet)");
-		dc.loadResult();
-
-		dc.setSQL("delete from structure where  structure.velocity_var_name like 'velocityVarNameTesting%' ");
-		dc.loadResult();
-
-		dc.loadResult();
-		dc.setSQL("delete from inode where type='structure' and inode not in  (select inode from structure)");
-		dc.loadResult();
-
-		dc.setSQL("delete from field where structure_inode not in (select inode from structure)");
-		dc.loadResult();
-
-		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
-		dc.loadResult();
-
-		dc.setSQL("update structure set structure.url_map_pattern =null, structure.page_detail=null where structuretype =3");
-		dc.loadResult();
-
-	}
 
 	@Test
 	public void testDifferentContentTypes() throws Exception {
 
-		ContentType content = factory.find(Constants.CONTENT);
-		ContentType news = factory.find(Constants.NEWS);
-		ContentType widget = factory.find(Constants.WIDGET);
-		ContentType form = factory.find(Constants.FORM);
-		ContentType fileAsset = factory.find(Constants.FILEASSET);
-		ContentType htmlPage = factory.find(Constants.HTMLPAGE);
-		ContentType persona = factory.find(Constants.PERSONA);
+		ContentType content 	= factory.find(Constants.CONTENT);
+		ContentType news 		= factory.find(Constants.NEWS);
+		ContentType widget 		= factory.find(Constants.WIDGET);
+		ContentType form 		= factory.find(Constants.FORM);
+		ContentType fileAsset 	= factory.find(Constants.FILEASSET);
+		ContentType htmlPage 	= factory.find(Constants.HTMLPAGE);
+		ContentType persona 	= factory.find(Constants.PERSONA);
 
 		// Test all the types
 		assertThat("ContentType is type Content", content.baseType() == BaseContentType.CONTENT);
@@ -100,13 +64,16 @@ public class ContentTypeFactoryImplTest {
 
 		assertThat("ContentType is type FILEASSET", fileAsset.baseType() == BaseContentType.FILEASSET);
 		assertThat("ContentType is type FILEASSET", fileAsset instanceof ImmutableFileAssetContentType);
+		
 		assertThat("ContentType is type WIDGET", widget.baseType() == BaseContentType.WIDGET);
 		assertThat("ContentType is type WIDGET", widget instanceof ImmutableWidgetContentType);
 
 		assertThat("ContentType is type FORM", form.baseType() == BaseContentType.FORM);
 		assertThat("ContentType is type FORM", form instanceof ImmutableFormContentType);
+		
 		assertThat("ContentType is type PERSONA", persona.baseType() == BaseContentType.PERSONA);
 		assertThat("ContentType is type PERSONA", persona instanceof ImmutablePersonaContentType);
+		
 		assertThat("ContentType is type HTMLPAGE", htmlPage.baseType() == BaseContentType.HTMLPAGE);
 		assertThat("ContentType is type HTMLPAGE", htmlPage instanceof ImmutablePageContentType);
 
@@ -150,12 +117,12 @@ public class ContentTypeFactoryImplTest {
 
 		ContentType type = factory.find(Constants.NEWS);
 		cacheTest.put(type.inode(), type);
-		System.out.println(type);
+		//System.out.println(type);
 
 		ContentType otherType = cacheTest.getIfPresent(type.inode());
 
 		List<Field> fields = otherType.fields();
-		System.out.println(type);
+		//System.out.println(type);
 		List<Field> fields2 = APILocator.getFieldAPI2().byContentType(type);
 		assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
 		for (int j = 0; j < fields.size(); j++) {
@@ -211,7 +178,7 @@ public class ContentTypeFactoryImplTest {
 		
 		Structure st = new Structure();
 		List<ContentType> types = factory.findAll("name");
-		List<ContentType> oldTypes = new FromStructureTransformer(getCrappyStructures()).asList();
+		List<ContentType> oldTypes = new StructureTransformer(getCrappyStructures()).asList();
 
 		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
 
@@ -239,7 +206,7 @@ public class ContentTypeFactoryImplTest {
 			int base = (i % 5) + 1;
 			Thread.sleep(1);
 			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base)).description("description" + time)
-					.folder(FolderAPI.SYSTEM_FOLDER).host(Constants.SYSTEM_HOST).name("ContentTypeTestingWithFields" + time).owner("owner")
+					.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeTestingWithFields" + time).owner("owner")
 					.velocityVarName("velocityVarNameTesting" + time).build();
 			type = factory.save(type);
 			addFields(type);
@@ -248,6 +215,17 @@ public class ContentTypeFactoryImplTest {
 		assertThat("contenttypes are added", count == count2 - runs);
 	}
 
+	@Test
+	public void testUpdatingContentTypes() throws Exception {
+		List<ContentType> types = factory.findUrlMapped();
+		assertThat("findUrlMapped only returns urlmapped content", types.size()>0);
+		for(ContentType type : types){
+			assertThat("findUrlMapped only returns urlmapped content", type.urlMapPattern()!=null);
+		}
+		
+	}
+	
+	
 	
 	@Test 
 	public void testDefaultType() throws DotDataException{
@@ -264,8 +242,8 @@ public class ContentTypeFactoryImplTest {
 
 		int totalCount = factory.searchCount(null);
 
-		List<ContentType> types;
-		assertThat("we have at least 40 content types", factory.search(null, BaseContentType.ANY, "name", 0, 100).size() > 40);
+		List<ContentType> types=factory.search(null, BaseContentType.ANY, "name", 0, 100);
+		assertThat("we have at least 40 content types", types.size() > 20);
 		types = factory.search(null, BaseContentType.ANY, "name", 0, 5);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
@@ -293,71 +271,143 @@ public class ContentTypeFactoryImplTest {
 
 
 	@Test
-	public void testAdding() throws Exception {
+	public void testAddingUpdatingDeleteing() throws Exception {
 
 		for(BaseContentType baseType: BaseContentType.values()){
 			if(baseType == BaseContentType.ANY)continue;
 			int countAll = factory.searchCount(null);
-			int runs = 20;
+			int runs = 10;
 			int countBaseType = factory.searchCount(null, baseType);
 	
 			for (int i = 0; i < runs; i++) {
-				add(baseType);
+				insert(baseType,null);
 				Thread.sleep(1);
 			}
-	
+
 			int countAll2 = factory.searchCount(null);
 			int countBaseType2 = factory.searchCount(null,baseType);
 			assertThat("counts are working", countAll == countAll2 - runs);
 			assertThat("counts are working", countAll2 > countBaseType2);
 			assertThat("counts are working", countBaseType == countBaseType2 - runs);
+			
+			
+			for (int i = 0; i < runs; i++) {
+				insert(baseType,UUID.randomUUID().toString());
+				Thread.sleep(1);
+			}
+			int countAll3 = factory.searchCount(null);
+			int countBaseType3 = factory.searchCount(null,baseType);
+			assertThat("counts are working", countAll2 == countAll3 - runs);
+			assertThat("counts are working", countAll3 > countBaseType3);
+			assertThat("counts are working", countBaseType2 == countBaseType3 - runs);
+			
+		}
+		
+		testUpdating();
+		
+		testDeleting() ;
+	}
 	
-			testDeleting(baseType);
+	
+
+	private void testDeleting() throws Exception{
+		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 0, 500);
+		assertThat(types +" search is working", types.size() > 0);
+		for(ContentType type : types){
+			delete(type);
+		}
+		
+	}
+	
+	
+	private void testUpdating() throws Exception {
+		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 0, 500);
+		assertThat(types +" search is working", types.size() > 0);
+		for(ContentType type : types){
+			ContentType testing = factory.find(type.inode());
+			assertThat("contenttype is in db", testing.equals(type) );
+			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+
+			builder.host(Constants.DEFUALT_HOST);
+			builder.folder(Constants.ABOUT_US_FOLDER);
+			
+			if(type instanceof UrlMapable){
+				builder.urlMapPattern("/asdsadsadsad/");
+				builder.detailPage("asdadsad");
+				
+			}
+			if(type instanceof Expireable){
+				builder.publishDateVar("/asdsadsadsad/");
+			}
+			builder.description("new description");
+			builder.velocityVarName(type.velocityVarName() + "plus");
+			
+			type=factory.save(builder.build());
+			
+			try{
+				testing = factory.find(type.inode());
+				assertThat("Type is updated", testing.equals(type));
+			}
+			catch(Throwable t){
+				System.out.println("Old and New Contentyypes are NOT the same");
+				System.out.println(type);
+				System.out.println(testing);
+				throw t;
+			}
 		}
 	}
 	
 	
-	
 
-	public void testDeleting(BaseContentType baseType) throws Exception {
-		
+	private void delete(ContentType type) throws Exception {
 
-			
-			List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", baseType, "mod_date", 0, 100);
-			assertThat(baseType +" search is working", types.size() > 0);
-			for(ContentType type : types){
-				ContentType test1 = factory.find(type.inode());
-				assertThat("factory find works", test1.equals(type) );
-				factory.delete(type);
-				try{
-					test1 = factory.find(type.inode());
-				}
-				catch(NotFoundInDbException e){
-					assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
-				}
-			}
-
+		ContentType test1 = factory.find(type.inode());
+		assertThat("factory find works", test1.equals(type) );
+		Exception e=null;
+		try{
+			factory.delete(type);
+			test1 = factory.find(type.inode());
+		}
+		catch(Exception e2){
+			e=e2;
+			if(!(e instanceof NotFoundInDbException)) throw e;
+		}
+		assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
 	}
 	
 
 	
-	public void add(BaseContentType baseType) throws DotDataException {
+	public void insert(BaseContentType baseType, String inode) throws DotDataException {
 
 		long i = System.currentTimeMillis();
 		
 
-		ContentType type = ContentTypeBuilder.builder(baseType.immutableClass())
+		ContentTypeBuilder builder =ContentTypeBuilder.builder(baseType.immutableClass())
 				.description("description" + i)
 				.expireDateVar(null)
 				.folder(FolderAPI.SYSTEM_FOLDER)
-				.host(Constants.SYSTEM_HOST)
+				.host(Host.SYSTEM_HOST)
 				.name(baseType.name() + "Testing" + i)
 				.owner("owner")
-				.velocityVarName("velocityVarNameTesting" + i)
-				.build();
+				.velocityVarName("velocityVarNameTesting" + i);
+				
+		if(inode!=null){
+			builder.inode(inode);
+		}
 		
+		ContentType type = builder.build(); 
 		type = factory.save(type);
 
+		ContentType type2 = factory.find(type.inode());
+		try{
+			assertThat("Type saved correctly", type2.equals(type));
+		}
+		catch(Throwable t){
+			System.out.println("Old and New Contentyypes are NOT the same");
+			System.out.println(type);
+			System.out.println(type2);
+			throw t;
+		}
 		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
 		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").velocityVarName("rewarwa").build().requiredFields();
 		assertThat("fields are all added", fields.size() == baseTypeFields.size());
@@ -393,7 +443,6 @@ public class ContentTypeFactoryImplTest {
 		assertThat("random velocity var works", newVar!=null);
 		assertThat("random velocity var works", newVar.equals(tryVar));
 		
-		
 		tryVar = "news" ;
 		newVar = factory.suggestVelocityVar(tryVar);
 		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
@@ -403,9 +452,6 @@ public class ContentTypeFactoryImplTest {
 	private static List<Structure> getCrappyStructures(){
 		return InodeFactory.getInodesOfClass(Structure.class,"name");
 	}
-	
-	
-	
 
 	private void addFields(ContentType type) throws Exception {
 

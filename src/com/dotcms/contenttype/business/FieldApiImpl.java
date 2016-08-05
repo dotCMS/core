@@ -55,12 +55,12 @@ public class FieldApiImpl implements FieldApi {
 	}
 
 	@Override
-	public void registerFieldType(FieldType type) {
+	public void registerFieldType(Field type) {
 		throw new DotStateException("Not implemented");
 	}
 
 	@Override
-	public void deRegisterFieldType(FieldType type) {
+	public void deRegisterFieldType(Field type) {
 		throw new DotStateException("Not implemented");
 	}
 }

@@ -1646,7 +1646,7 @@ public class Contentlet extends WebAsset implements Serializable {
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String, Object> myMap = new HashMap<String, Object>();
 		try{
-		List<Field> fields = new LegacyFieldTransformer(APILocator.getFieldAPI2().byContentTypeId(structureInode),true).asOldFieldList();
+		List<Field> fields = new LegacyFieldTransformer(APILocator.getFieldAPI2().byContentTypeId(structureInode)).asOldFieldList();
 		for (Field f : fields) {
 			if(!APILocator.getFieldAPI().valueSettable(f)){
 				continue;

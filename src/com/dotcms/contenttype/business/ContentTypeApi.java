@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -9,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 
 
@@ -52,6 +54,8 @@ public interface ContentTypeApi {
 
 
 
+
+	Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "html page", "menu link", "virtual link", "container", "template", "user" );
 
 
 }

@@ -51,7 +51,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			}
 
 			@Override
-			public String pagedetail() {
+			public String detailPage() {
 				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? (String) map.get("page_detail") : null;
 			}
 
@@ -107,11 +107,13 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public Date modDate() {
-				return (Date) map.get("mod_date");
+				return convertSQLDate((Date) map.get("mod_date"));
+
+				
 			}
 			@Override
 			public Date iDate() {
-				return (Date) map.get("idate");
+				return convertSQLDate((Date) map.get("idate"));
 			}
 			@Override
 			public BaseContentType baseType() {
@@ -122,11 +124,20 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			public List<Field> fields() {
 				return ImmutableList.of();
 			}
-
+			
+			
+			private Date convertSQLDate(Date d){
+				Date javaDate = new Date();
+				if(d!=null) javaDate.setTime(d.getTime());
+				return javaDate;
+			}
 
 		};
 		
 
+
+		
+		
 		return new ImplClassContentTypeTransformer(type).from();
 		
 	}

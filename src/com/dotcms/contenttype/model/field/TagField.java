@@ -10,7 +10,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.google.common.base.Preconditions;
 
 @Value.Immutable
-public abstract class TagField implements Field  {
+public abstract class TagField extends Field  {
 
 
 	private static final long serialVersionUID = 1L;

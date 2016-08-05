@@ -10,50 +10,50 @@ import org.elasticsearch.common.Nullable;
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.google.common.collect.ImmutableList;
 
-public class LegacyFieldTransformer implements LegacyFieldTransformerIf {
+public class LegacyFieldTransformer implements FieldTransformer {
 
 	final List<com.dotmarketing.portlets.structure.model.Field> oldFields;
 	final List<Field> newFields;
 
 	public LegacyFieldTransformer(com.dotmarketing.portlets.structure.model.Field oldField) {
-		this.oldFields = ImmutableList.of(oldField);
-		this.newFields = ImmutableList.of(transformToNew(oldField));
-	}
+		this(ImmutableList.of(oldField));
 
-	public LegacyFieldTransformer(List<com.dotmarketing.portlets.structure.model.Field> oldFields) {
-		this.oldFields = ImmutableList.copyOf(oldFields);
-		List<Field> newList = new ArrayList<Field>();
-		for (com.dotmarketing.portlets.structure.model.Field field : oldFields) {
-			newList.add(transformToNew(field));
-		}
-		this.newFields = ImmutableList.copyOf(newList);
 	}
 
 	public LegacyFieldTransformer(Field newField) {
-		this.oldFields = ImmutableList.of(transformToOld(newField));
-		this.newFields = ImmutableList.of(newField);
+		this(ImmutableList.of(newField));
 	}
 
-	public LegacyFieldTransformer(List<Field> newFields, boolean onlyNewFields) {
-		this.newFields = ImmutableList.copyOf(newFields);
-		List<com.dotmarketing.portlets.structure.model.Field> oldList = new ArrayList<com.dotmarketing.portlets.structure.model.Field>();
-		for (Field field : newFields) {
-			oldList.add(transformToOld(field));
+	public LegacyFieldTransformer(List<? extends FieldIf> newFields) {
+		
+		List<Field> news = new ArrayList<Field>();
+		List<com.dotmarketing.portlets.structure.model.Field> olds = new ArrayList<com.dotmarketing.portlets.structure.model.Field>();
+		
+		for(FieldIf field : newFields){
+			if(field instanceof Field){
+				olds.add(transformToOld((Field) field));
+				news.add((Field)field);
+			}
+			else{
+				olds.add((com.dotmarketing.portlets.structure.model.Field) field);
+				news.add(transformToNew((com.dotmarketing.portlets.structure.model.Field) field));
+			}
 		}
-		this.oldFields = ImmutableList.copyOf(oldList);
+		
+		this.newFields = ImmutableList.copyOf(news);
+		this.oldFields = ImmutableList.copyOf(olds);
 	}
 
 	public Field from() throws DotStateException {
 		if (this.newFields.size() == 0)
 			throw new DotStateException("0 results");
-
 		return this.newFields.get(0);
-
 	}
 
 	@Override
@@ -246,12 +246,12 @@ public class LegacyFieldTransformer implements LegacyFieldTransformerIf {
 
 	}
 
-	@Override
+
 	public com.dotmarketing.portlets.structure.model.Field asOldField() throws DotStateException {
 		return oldFields.get(0);
 	}
 
-	@Override
+
 	public List<com.dotmarketing.portlets.structure.model.Field> asOldFieldList() throws DotStateException {
 		return oldFields;
 	}

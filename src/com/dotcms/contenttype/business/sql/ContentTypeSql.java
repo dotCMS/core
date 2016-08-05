@@ -20,7 +20,7 @@ public abstract class ContentTypeSql {
 	public final String SELECT_BY_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and structuretype= ? order by %s ";
 	public final String SELECT_DEFAULT_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and default_structure= true ";
 
-	public final String UPDATE_TYPE_INODE = "update inode set inode=?, idate=?, owner = ? where inode = ? and type='structure'";
+	public final String UPDATE_TYPE_INODE = "update inode set owner = ? where inode = ? and type='structure'";
 
 	public final String INSERT_TYPE_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'structure')";
 

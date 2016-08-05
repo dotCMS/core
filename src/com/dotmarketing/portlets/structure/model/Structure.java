@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.sync.Exportable;
@@ -28,7 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 
-public class Structure extends Inode implements Permissionable, Exportable, Importable,Treeable  {
+public class Structure extends Inode implements Permissionable, Exportable, Importable,Treeable,ContentTypeIf  {
 
     public static final String STRUCTURE_TYPE_ALL       = "_all";
 

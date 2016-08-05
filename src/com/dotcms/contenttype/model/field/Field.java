@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -16,74 +17,74 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 
 
-public interface Field extends FieldType {
+public abstract class Field implements FieldIf, Serializable {
 
 	@Value.Default
-	default boolean searchable() {
+	public  boolean searchable() {
 		return false;
 	}
 
 	@Value.Default
-	default boolean unique() {
+	public  boolean unique() {
 		return false;
 	}
 	
 	@Value.Default
-	default boolean indexed() {
+	public   boolean indexed() {
 		return false;
 	}
 
 	@Value.Default
-	default boolean listed() {
+	public   boolean listed() {
 		return false;
 	}
 
 	@Value.Default
-	default boolean readOnly() {
+	public   boolean readOnly() {
 		return false;
 	}
 	
 	@Value.Default
-	default boolean onePerContentType() {
+	public   boolean onePerContentType() {
 		return false;
 	}
 	
 	@Nullable
-	public  String owner();
+	public abstract   String owner();
 
 	@Nullable
-	public  String inode();
+	public abstract   String inode();
 
 	@Value.Default
-	default Date modDate() {
-		return new Date();
+	public   Date modDate() {
+		return DateUtils.round(new Date(), Calendar.SECOND);
 	}
 
 	
 	public abstract String name();
 
 	@Derived
-	default String typeName() {
+	public   String typeName() {
 		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName()).getCanonicalName();
 	}
 
 	@Derived
-	default Class<Field> type() {
+	public   Class<Field> type() {
 		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName());
 	}
 
 	@Nullable
-	public abstract String relationType();
+	public   abstract String relationType();
 
 	@Value.Default
-	default boolean required() {
+	public   boolean required() {
 		return false;
 	}
 
 	public abstract String variable();
 
 	@Value.Default
-	default int sortOrder() {
+	public   int sortOrder() {
 		return (int) (System.currentTimeMillis() / 1000);
 	}
 
@@ -101,12 +102,12 @@ public interface Field extends FieldType {
 
 
 	@Value.Default
-	default boolean fixed() {
+	public boolean fixed() {
 		return false;
 	}
 	
 	@Value.Lazy
-	default List<FieldVariable> fieldVariables(){
+	public List<FieldVariable> fieldVariables(){
 		try {
 			return FactoryLocator.getFieldFactory2().loadVariables(this);
 		} catch (DotDataException e) {
@@ -115,22 +116,22 @@ public interface Field extends FieldType {
 	}
 
 	@Value.Default
-	default List<FieldDecorator> fieldDecorators() {
+	public List<FieldDecorator> fieldDecorators() {
 		return ImmutableList.of();
 	}
 
-	public List<DataTypes> acceptedDataTypes();
+	public abstract  List<DataTypes> acceptedDataTypes();
 
-	public DataTypes dataType();
-
-	@Nullable
-	public String contentTypeId();
+	public abstract  DataTypes dataType();
 
 	@Nullable
-	public abstract String dbColumn();
+	public abstract  String contentTypeId();
+
+	@Nullable
+	public  abstract String dbColumn();
 	
 	@Value.Default
-	default Date iDate() {
+	public  Date iDate() {
 		return DateUtils.round(new Date(), Calendar.SECOND);
 
 	}
