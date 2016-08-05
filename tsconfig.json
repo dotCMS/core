@@ -103,7 +103,6 @@
     "./src/view/components/semantic/modules/restdropdown/demo.ts",
     "./src/view/components/semantic/modules/restdropdown/RestDropdown.ts",
     "./src/view/components/app.ts",
-    "./src/view/components/AuthGuard.ts",
     "./typings/main.d.ts"
   ]
 }
