@@ -33,9 +33,11 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.action.EditStructureAction;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -204,9 +206,9 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 			}
 			perms.resetPermissionReferences(type);
 		}
-		ActivityLogger.logInfo(ActivityLogger.class, "Save ContentType Action", "User " +user.getUserId() + "/" + user.getFullName() + " added structure "
+		ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " +user.getUserId() + "/" + user.getFullName() + " added ContentType "
 				+ type.name() + " to host id:" + type.host());
-
+		AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + type.name(), user);
 		return type;
 
 	}

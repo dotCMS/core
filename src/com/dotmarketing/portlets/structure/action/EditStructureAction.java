@@ -434,7 +434,7 @@ public class EditStructureAction extends DotPortletAction {
 				message = "message.form.saveform";
 			}
 			SessionMessages.add(req, "message", message);
-			AdminLogger.log(EditStructureAction.class, "_saveStructure", "Structure saved : " + structure.getName(), user);
+		
 		} catch (Exception ex) {
 			Logger.error(this.getClass(), ex.toString(),ex);
 			String message = ex.getMessage();
