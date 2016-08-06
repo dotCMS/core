@@ -26,7 +26,7 @@ public class Task03560TemplateLayoutCanonicalName extends AbstractJDBCStartupTas
      */
     @Override
     public String getPostgresScript() {
-        return null;
+        return SQL_QUERY;
     }
 
     /**
@@ -46,7 +46,7 @@ public class Task03560TemplateLayoutCanonicalName extends AbstractJDBCStartupTas
      */
     @Override
     public String getOracleScript() {
-        return null;
+        return SQL_QUERY;
     }
 
     /**
@@ -56,7 +56,7 @@ public class Task03560TemplateLayoutCanonicalName extends AbstractJDBCStartupTas
      */
     @Override
     public String getMSSQLScript() {
-        return null;
+        return SQL_QUERY;
     }
 
     /**
@@ -66,7 +66,7 @@ public class Task03560TemplateLayoutCanonicalName extends AbstractJDBCStartupTas
      */
     @Override
     public String getH2Script() {
-        return null;
+        return SQL_QUERY;
     }
 
     @Override
