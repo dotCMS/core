@@ -1,23 +1,8 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.TestBase;
-import com.dotcms.repackage.org.apache.chemistry.util.GregorianCalendar;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ajax.RoleAjax;
@@ -43,7 +28,23 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -124,7 +125,7 @@ public class PermissionAPITest extends TestBase {
     public void doesUserHavePermission() throws DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole2");
 
-        User user= getUser("useruser", false);
+        User user= UserTestUtil.getUser("useruser", false, true);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -283,7 +284,7 @@ public class PermissionAPITest extends TestBase {
     public void getUsersWithPermission() throws DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole5");
 
-        User user= getUser("useruser", false);
+        User user= UserTestUtil.getUser("useruser", false, true);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -859,7 +860,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser("useruser", false);
+        User user = UserTestUtil.getUser("useruser", false, true);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -888,7 +889,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser("useruser", false);
+        User user = UserTestUtil.getUser("useruser", false, true);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -917,7 +918,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser("useruser", false);
+        User user = UserTestUtil.getUser("useruser", false, true);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -944,7 +945,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser("useruser", false);
+        User user = UserTestUtil.getUser("useruser", false, true);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -971,7 +972,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser("deletedUser", true);
+        User user = UserTestUtil.getUser("deletedUser", true, true);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -998,7 +999,7 @@ public class PermissionAPITest extends TestBase {
 
         Role nrole = getRole("TestingRole11");
 
-        User user = getUser("deletedUser", true);
+        User user = UserTestUtil.getUser("deletedUser", true, true);
 
         if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -1019,31 +1020,6 @@ public class PermissionAPITest extends TestBase {
         assertTrue(users.size() == 0);
 
         APILocator.getFolderAPI().delete(f, sysuser, false);
-    }
-
-    /**
-     * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
-     */
-    private User getUser(String userName, boolean setDeleted) throws DotDataException, DotSecurityException {
-        User user = null;
-        try {
-            user = APILocator.getUserAPI().loadUserById(userName, sysuser, false);
-        } catch (Exception ex) {
-            user = null;
-        } finally {
-            if (user == null || !UtilMethods.isSet(user.getUserId())) {
-                user = APILocator.getUserAPI().createUser(userName, userName + "@fake.org");
-
-                if (setDeleted) {
-                    user.setDeleteDate(GregorianCalendar.getInstance().getTime());
-                    user.setDeleteInProgress(true);
-                }
-
-                APILocator.getUserAPI().save(user, sysuser, false);
-                user = APILocator.getUserAPI().loadUserById(userName, sysuser, false);
-            }
-        }
-        return user;
     }
 
     /**

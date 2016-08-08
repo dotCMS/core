@@ -3,7 +3,6 @@ package com.dotmarketing.business;
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
-import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -46,6 +45,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
 
 import org.junit.Assert;
@@ -576,7 +576,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, false);
+		user = UserTestUtil.getUser(userName, false, true);
 
 		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
 		assertNotNull(users);
@@ -595,7 +595,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, true);
+		user = UserTestUtil.getUser(userName, true, true);
 
 		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
 		assertNotNull(users);
@@ -618,7 +618,7 @@ public class UserAPITest extends TestBase{
 		 */
 		String newUserName = "user" + id;
 
-		newUser = getUser(newUserName, true, calendar.getTime());
+		newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
 
 		List<User> users = userAPI.getUnDeletedUsers();
 
@@ -643,7 +643,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, false);
+		user = UserTestUtil.getUser(userName, false, true);
 
 		List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
 		assertNotNull(users);
@@ -664,7 +664,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, true);
+		user = UserTestUtil.getUser(userName, true, true);
 
 		List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
 		assertNotNull(users);
@@ -685,7 +685,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, false);
+		user = UserTestUtil.getUser(userName, false, true);
 
 		List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
 		assertNotNull(users);
@@ -706,7 +706,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, true);
+		user = UserTestUtil.getUser(userName, true, true);
 
 		List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
 		assertNotNull(users);
@@ -726,7 +726,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, false);
+		user = UserTestUtil.getUser(userName, false, true);
 
 		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
 
@@ -747,7 +747,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, true);
+		user = UserTestUtil.getUser(userName, true, true);
 
 		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
 
@@ -767,7 +767,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, false);
+		user = UserTestUtil.getUser(userName, false, true);
 
 		long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
 
@@ -787,7 +787,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, true);
+		user = UserTestUtil.getUser(userName, true, true);
 
 		long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
 
@@ -820,7 +820,7 @@ public class UserAPITest extends TestBase{
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = getUser(userName, true);
+		user = UserTestUtil.getUser(userName, true, true);
 
 		calendar = Calendar.getInstance();
 		calendar.add(Calendar.HOUR, -24);
@@ -830,33 +830,5 @@ public class UserAPITest extends TestBase{
 		assertTrue(!users.contains(user.getUserId()));
 
 		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-	}
-
-
-	/**
-	 * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
-	 */
-	private User getUser(String userName, boolean toBeDeleted) throws DotDataException, DotSecurityException {
-		return getUser(userName, toBeDeleted, GregorianCalendar.getInstance().getTime());
-	}
-
-	/**
-	 * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
-	 */
-	private User getUser(String userName, boolean toBeDeleted, Date deletionDate)
-		throws DotSecurityException, DotDataException {
-		UserAPI userAPI = APILocator.getUserAPI();
-		User user;
-		user = APILocator.getUserAPI().createUser(userName, userName + "@fake.org");
-
-		user.setDeleteInProgress(toBeDeleted);
-
-		if (toBeDeleted) {
-			user.setDeleteDate(deletionDate);
-
-		}
-		userAPI.save(user, systemUser, false);
-
-		return user;
 	}
 }

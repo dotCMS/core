@@ -46,7 +46,7 @@ public class UserFinderTest {
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
 
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setSkinId(userName);
 
         userAPI.save(user, systemUser, false);
@@ -69,7 +69,7 @@ public class UserFinderTest {
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
 
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
 
         user.setSkinId(userName);
 
@@ -96,7 +96,7 @@ public class UserFinderTest {
 
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setSmsId(user.getEmailAddress());
 
         userAPI.save(user, systemUser, false);
@@ -122,7 +122,7 @@ public class UserFinderTest {
 
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
         user.setSmsId(user.getEmailAddress());
 
         userAPI.save(user, systemUser, false);
@@ -152,7 +152,7 @@ public class UserFinderTest {
         calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, -30);
 
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setBirthday(calendar.getTime());
 
         userAPI.save(user, systemUser, false);
@@ -189,7 +189,7 @@ public class UserFinderTest {
         calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, -30);
 
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
         user.setBirthday(calendar.getTime());
 
         userAPI.save(user, systemUser, false);

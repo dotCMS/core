@@ -51,8 +51,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         List users = UserUtil.findByCompanyId(companyId);
 
@@ -75,8 +74,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         List users = UserUtil.findByCompanyId(companyId, 0, 5, null);
 
@@ -99,8 +97,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, false, true);
 
         User result = UserUtil.findByC_U(companyId, userName);
 
@@ -122,8 +119,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         UserPool.remove(userName);
         try {
@@ -144,7 +140,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -169,7 +165,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -193,7 +189,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
         user.setPassword("1:1:EBk/HSdzfiWh52GO9xxbBJhZgsb2jd9Q:i=4e20:LnjrBImIZ2XRA6woT8lSZmGNrDP8LKgE");
         user.setCompanyId(companyId);
         userAPI.save(user, systemUser, false);
@@ -222,23 +218,23 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
         id = String.valueOf(new Date().getTime());
-        user1 = UserTestUtil.getUser("user" + id, false);
+        user1 = UserTestUtil.getUser("user" + id, false, false);
         user1.setPassword("password");
         userAPI.save(user1, systemUser, false);
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user2 = UserTestUtil.getUser(userName, false);
+        user2 = UserTestUtil.getUser(userName, false, false);
         user2.setPassword("password");
         userAPI.save(user2, systemUser, false);
 
         id = String.valueOf(new Date().getTime());
-        user3 = UserTestUtil.getUser("user" + id, true);
+        user3 = UserTestUtil.getUser("user" + id, true, false);
         user3.setPassword("password");
         userAPI.save(user3, systemUser, false);
 
         id = String.valueOf(new Date().getTime());
-        user4 = UserTestUtil.getUser("user" + id, false);
+        user4 = UserTestUtil.getUser("user" + id, false, false);
         user4.setPassword("password");
         userAPI.save(user4, systemUser, false);
 
@@ -267,8 +263,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, false, true);
 
         User result = UserUtil.findByC_EA(companyId, user.getEmailAddress());
 
@@ -290,8 +285,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         try {
             UserUtil.findByC_EA(companyId, user.getEmailAddress());
@@ -308,8 +302,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         List users = UserUtil.findAll();
 
@@ -329,7 +322,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
 
         Company company = PublicCompanyFactory.create("fake.org");
         company.setHomeURL("localhost");
@@ -360,7 +353,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
 
         Company company = PublicCompanyFactory.create("fake.org");
         company.setHomeURL("localhost");
@@ -394,9 +387,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
-
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, false, true);
 
         roleAPI.removeRoleFromUser(roleAPI.getUserRole(user), user);
 
@@ -417,9 +408,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         UserUtil.removeByC_U(companyId, userName);
 
@@ -440,7 +429,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -463,7 +452,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -487,8 +476,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, false, true);
 
         roleAPI.removeRoleFromUser(roleAPI.getUserRole(user), user);
 
@@ -509,9 +497,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         UserUtil.removeByC_EA(companyId, user.getEmailAddress());
 
@@ -544,8 +530,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, false, true);
 
         int total = UserUtil.countByC_U(companyId, userName);
 
@@ -566,8 +551,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         int total = UserUtil.countByC_U(companyId, userName);
 
@@ -587,7 +571,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -611,7 +595,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -633,8 +617,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, false);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, false, true);
 
         int total = UserUtil.countByC_EA(companyId, user.getEmailAddress());
 
@@ -655,8 +638,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = UserTestUtil.getUser(userName, true);
-        userAPI.save(user, systemUser, false);
+        user = UserTestUtil.getUser(userName, true, true);
 
         int total = UserUtil.countByC_EA(companyId, user.getEmailAddress());
 
