@@ -10,9 +10,11 @@
 <%
 
 String id = request.getParameter("id");
+long lang = Long.parseLong(request.getParameter("pageLang"));
 User user = APILocator.getUserAPI().getSystemUser();
 String contentId = request.getParameter("contentId");
-Contentlet contentlet = APILocator.getContentletAPI().find(id,user,false);
+//Contentlet contentlet = APILocator.getContentletAPI().find(id,user,false);
+Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, false, lang, user, false);
 IHTMLPage p = null;
 try{
 	if(contentlet != null)

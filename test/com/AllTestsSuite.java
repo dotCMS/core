@@ -160,7 +160,7 @@ import org.junit.runners.Suite;
     VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
     VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
     VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
-    UserAPITest.class,
+    UserAPITest.class, //Needs Enterprise License.
     UserLocalManagerTest.class,
     UserFinderTest.class,
     UserUtilTest.class,
