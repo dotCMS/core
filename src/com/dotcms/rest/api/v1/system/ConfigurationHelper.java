@@ -8,11 +8,14 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_PROTOCOL;
 import static com.dotmarketing.util.WebKeys.WEBSOCKET_SYSTEMEVENTS_ENDPOINT;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.util.Config;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 
 /**
  * A utility class that provides the required dotCMS configuration properties to
@@ -28,6 +31,8 @@ import com.dotmarketing.util.Config;
 @SuppressWarnings("serial")
 public class ConfigurationHelper implements Serializable {
 
+	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
+	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -44,9 +49,11 @@ public class ConfigurationHelper implements Serializable {
 	 * 
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
+	 * @param locale
+	 * 			  - The {@link Locale} for i18n.
 	 * @return A {@link Map} with all the required system properties.
 	 */
-	public Map<String, Object> getConfigProperties(final HttpServletRequest request) {
+	public Map<String, Object> getConfigProperties(final HttpServletRequest request, final Locale locale) throws LanguageException {
 		return map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
 				Config.getStringProperty(DOTCMS_WEBSOCKET_PROTOCOL, "ws"),
@@ -54,7 +61,17 @@ public class ConfigurationHelper implements Serializable {
 				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
 				DOTCMS_WEBSOCKET_ENDPOINTS,
 				map(WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
-						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")));
+						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")),
+				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
+				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
+				I18N_MESSAGES_MAP,
+				map("notifications_title", // Notifications
+						LanguageUtil.get(locale, "notifications_title"),
+					"notifications_dismiss", // Dismiss
+						LanguageUtil.get(locale, "notifications_dismiss"),
+						"notifications_dismissall", // Dismiss all
+						LanguageUtil.get(locale, "notifications_dismissall"))
+				);
 	}
 
 }
