@@ -1355,7 +1355,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 createTempTable.append("SELECT inode INTO ");
                 createTempTable.append(tableName);
                 createTempTable.append(" FROM contentlet WHERE mod_user = '");
-                createTempTable.append(user.getUserId());
+                createTempTable.append(userToReplace.getUserId());
                 createTempTable.append("'");
             } else {
                 createTempTable.append("CREATE ");

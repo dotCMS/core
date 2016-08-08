@@ -921,7 +921,8 @@ public class DotWebdavHelper {
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
-				if(fileData.length() == 0){
+                //This is only needed for Cyberduck, when you right click>New File
+				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
 					FileUtil.write(fileData, " ");
 				}

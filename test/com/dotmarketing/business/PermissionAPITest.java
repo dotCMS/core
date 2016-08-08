@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -958,7 +959,7 @@ public class PermissionAPITest extends TestBase {
 
           for (Permission p : perms) {
 			if(p!=null) {
-				assertTrue(p.getType().equals(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME));
+				assertTrue(p.getType().equals(TemplateLayout.class.getCanonicalName()));
 				assertTrue(p.getPermission()==(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 			}
 

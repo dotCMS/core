@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
@@ -52,7 +53,7 @@ public interface PermissionAPI {
 		put("FOLDERS", Folder.class.getCanonicalName());
 		put("LINKS", Link.class.getCanonicalName());
 		put("TEMPLATES", Template.class.getCanonicalName());
-		put("TEMPLATE_LAYOUTS", Template.TEMPLATE_LAYOUTS_CANONICAL_NAME);
+		put("TEMPLATE_LAYOUTS", TemplateLayout.class.getCanonicalName());
 		put("STRUCTURES", Structure.class.getCanonicalName());
 		put("CONTENTLETS", Contentlet.class.getCanonicalName());
 		put("CATEGORY", Category.class.getCanonicalName());
@@ -66,7 +67,7 @@ public interface PermissionAPI {
 	   FOLDERS(Folder.class.getCanonicalName()),
 	   LINKS(Link.class.getCanonicalName()),
 	   TEMPLATES(Template.class.getCanonicalName()),
-	   TEMPLATE_LAYOUTS(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME),
+	   TEMPLATE_LAYOUTS(TemplateLayout.class.getCanonicalName()),
 	   STRUCTURES(Structure.class.getCanonicalName()),
 	   CONTENTLETS(Contentlet.class.getCanonicalName()),
 	   CATEGORY(Category.class.getCanonicalName()),

@@ -233,7 +233,7 @@ function fixAssetsCallback(responser)
 
 	if(responser != undefined){
 
-		for(i = 0; i < responser.size(); i++){
+		for(i = 0; i < responser.length; i++){
 			response = responser[i];
 			var total = response['total'];
 			var errorsFixed = response['errorsFixed'];

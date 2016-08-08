@@ -48,8 +48,6 @@ public class Template extends WebAsset implements Serializable, Comparable {
 
 	private String themeName;
 
-	public static final String TEMPLATE_LAYOUTS_CANONICAL_NAME = "com.dotmarketing.portlets.templates.model.TemplateLayout";
-
 	public static final String THEME_HTML_HEAD = "html_head.vtl";
 	public static final String THEME_HEADER = "header.vtl";
 	public static final String THEME_FOOTER = "footer.vtl";
