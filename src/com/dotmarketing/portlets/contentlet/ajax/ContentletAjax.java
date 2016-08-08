@@ -1212,6 +1212,7 @@ public class ContentletAjax {
 		Map<String,Object> contentletFormData = new HashMap<String,Object>();
 		Map<String,Object> callbackData = new HashMap<String,Object>();
 		List<String> saveContentErrors = new ArrayList<String>();
+		boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
@@ -1482,6 +1483,7 @@ public class ContentletAjax {
 						errorString = errorString.replace("{0}", field.getFieldName());
 						saveContentErrors.add(errorString);
 					}
+					clearBinary = false;
 				}
 
 				if(ve.hasLengthErrors()){
@@ -1492,6 +1494,7 @@ public class ContentletAjax {
 						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
+					clearBinary = false;
 				}
 
 				if(ve.hasPatternErrors()){
@@ -1501,6 +1504,7 @@ public class ContentletAjax {
 						errorString = errorString.replace("{0}", field.getFieldName());
 						saveContentErrors.add(errorString);
 					}
+					clearBinary = false;
 				}
 
 
@@ -1511,6 +1515,7 @@ public class ContentletAjax {
 						errorString = errorString.replace("{0}", field.getFieldName());
 						saveContentErrors.add(errorString);
 					}
+					clearBinary = false;
 				}
 
 				if(ve.hasRelationshipErrors()){
@@ -1561,6 +1566,7 @@ public class ContentletAjax {
 						errorString = errorString.replace("{0}", field.getFieldName());
 						saveContentErrors.add(errorString);
 					}
+					clearBinary = false;
 				}
 
 				if(ve.getMessage().contains("The content form submission data id different from the content which is trying to be edited")){
@@ -1637,6 +1643,7 @@ public class ContentletAjax {
 				SessionMessages.clear(req.getSession());
 
 			}
+		    if(clearBinary){//if an error occur with any other field (was unique, required, length, pattern or bad type) when saving the contentlet, do not clear the binary field
 			// If an error occurred, manually delete all other uploaded binary 
 		    // files since they were not included in the Hibernate transaction
 			try {
@@ -1663,6 +1670,7 @@ public class ContentletAjax {
 			} catch (DotSecurityException e1) {
 				Logger.warn(this, "Could not delete temporary image inode", e1);
 			}
+		    }
 		}
 
 		if(!isAutoSave
