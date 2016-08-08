@@ -36,7 +36,6 @@ export class NotificationsItem {
 
     ngOnInit():void {
         // TODO: hand more than one action
-        //console.log(this.data);
         let actions = this.data.actions ? this.data.actions[0] : null;
         this.showLinkAction = actions && actions.actionType === 'LINK' && (actions.text || actions.text !== '') && actions.action && actions.action !== '';
         this.showTitleLinked = actions && actions.actionType === 'LINK' && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
