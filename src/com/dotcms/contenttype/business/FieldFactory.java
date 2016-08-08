@@ -40,6 +40,9 @@ public interface FieldFactory {
 
 	Field byContentTypeIdFieldVar(String id, String var) throws DotDataException;
 
+
+	List<Field> selectByContentTypeInDb(String id) throws DotDataException;
+
 	
 
 

@@ -10,11 +10,15 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
 import com.dotcms.contenttype.model.decorator.FieldDecorator;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.base.Preconditions;
+import com.liferay.util.StringUtil;
 
 
 public abstract class Field implements FieldIf, Serializable {
@@ -135,5 +139,6 @@ public abstract class Field implements FieldIf, Serializable {
 		return DateUtils.round(new Date(), Calendar.SECOND);
 
 	}
+
 
 }

@@ -6,7 +6,10 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
+import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
+import com.liferay.util.StringUtil;
 
 @Value.Immutable
 public abstract class CheckboxField extends Field {
@@ -32,4 +35,11 @@ public abstract class CheckboxField extends Field {
 		return ImmutableList.of(DataTypes.TEXT);
 	}
 	public abstract static class Builder implements FieldBuilder {}
+	
+	
+	
+	@Value.Check
+	protected void check() {
+		new FieldUtil().checkFieldValues(dataType(), values());
+	}
 }

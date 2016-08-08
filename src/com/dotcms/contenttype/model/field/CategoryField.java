@@ -20,7 +20,10 @@ public abstract class CategoryField extends Field {
 	
 	@Value.Check
 	protected void check() {
-		//Preconditions.checkArgument(!indexed(),"Category Fields must be indexed");
+		Preconditions.checkArgument(indexed(),"Category Fields must be indexed:" + this);
+
+		
+		
 	}
 	@Value.Default
 	@Override
@@ -37,4 +40,5 @@ public abstract class CategoryField extends Field {
 		return ImmutableList.of(DataTypes.SYSTEM);
 	}
 	public abstract static class Builder implements FieldBuilder {}
+	
 }

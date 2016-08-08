@@ -325,7 +325,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			FieldApi fapi = new FieldApiImpl().instance();
 			for (Field f : fields) {
 				f = FieldBuilder.builder(f).contentTypeId(retType.inode()).build();
-				fapi.save(f);
+				try {
+					fapi.save(f, APILocator.systemUser());
+				} catch (DotSecurityException e) {
+					throw new DotStateException(e);
+				}
 			}
 			return retType;
 

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
+import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
@@ -29,5 +30,11 @@ public abstract class RadioField extends Field {
 	public DataTypes dataType(){
 		return DataTypes.TEXT;
 	};
+	
+	@Value.Check
+	protected void check() {
+		new FieldUtil().checkFieldValues(dataType(), values());
+	}
+	
 	public abstract static class Builder implements FieldBuilder {}
 }

@@ -63,7 +63,6 @@ public interface FieldBuilder {
 	
 	public static Field instanceOf(Class<?> clazz){
 		FieldBuilder builder = builder(clazz);
-		builder.dataType(DataTypes.NONE);
 		builder.name("INSTANCEFIELD");
 		builder.variable("INSTANCEFIELD");
 		builder.modDate(new Date(0));

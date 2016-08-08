@@ -5,8 +5,14 @@ import java.util.List;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringUtil;
+
 
 public class FieldApiImpl implements FieldApi {
 
@@ -19,7 +25,16 @@ public class FieldApiImpl implements FieldApi {
 	FieldFactory fac = new FieldFactoryImpl();
 
 	@Override
-	public Field save(Field field) throws DotDataException {
+	public Field save(Field field, User user) throws DotDataException, DotSecurityException {
+		ContentTypeApi tapi = APILocator.getContentTypeAPI2();
+		ContentType type = tapi.find(field.contentTypeId(), user) ;
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
+		
+		
+		
+
+		
+		
 		return fac.save(field);
 	}
 	
@@ -30,12 +45,14 @@ public class FieldApiImpl implements FieldApi {
 
 
 	@Override
-	public List<Field> byContentType(ContentType type) throws DotDataException {
-		 return fac.byContentType(type);
-	}
-	@Override
 	public List<Field> byContentTypeId(String typeId) throws DotDataException {
 		 return fac.byContentTypeId(typeId);
+	}
+	
+	
+	@Override
+	public Field find(String id) throws DotDataException {
+		 return fac.byId(id);
 	}
 	@Override
 	public Field byContentTypeAndVar(ContentType type,String fieldVar) throws DotDataException {

@@ -38,6 +38,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	@Override
 	public Field byId(String id) throws DotDataException {
+
 		return selectInDb(id);
 	}
 	
@@ -52,7 +53,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 	@Override
 	public List<Field> byContentType(ContentType type) throws DotDataException {
-		return byContentTypeId(type.inode());
+		return type.fields();
 	}
 	@Override
 	public List<Field> byContentTypeId(String id) throws DotDataException {
@@ -88,26 +89,50 @@ public class FieldFactoryImpl implements FieldFactory {
 	private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 		boolean inserting = false;
 		Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-		Field retField = FieldBuilder.builder(throwAwayField).modDate(modDate).build();
+		FieldBuilder builder = FieldBuilder.builder(throwAwayField).modDate(modDate);
+		
 		// assign a db column if we need to
-		if (retField.dbColumn() == null) {
-			retField = FieldBuilder.builder(retField).dbColumn(assignAvailableColumn(retField)).build();
+		if (throwAwayField.dbColumn() == null) {
+			builder.dbColumn(assignAvailableColumn(throwAwayField));
 		}
 		// assign an inode if needed
-		if (retField.inode() == null) {
-			retField = FieldBuilder.builder(retField).inode(UUID.randomUUID().toString()).build();
+		if (throwAwayField.inode() == null) {
+			builder.inode(UUID.randomUUID().toString());
 			inserting = true;
 		}
 
 
-		
-		
-		if(!retField.acceptedDataTypes().contains(retField.dataType())){
-			throw new DotDataException("Field Type:" + retField.type() + " does not accept datatype " + retField.dataType());
+		if(!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType())){
+			throw new DotDataException("Field Type:" + throwAwayField.type() + " does not accept datatype " + throwAwayField.dataType());
 		}
-		if(retField.contentTypeId()==null){
-			throw new DotDataException("Field Type:" + retField.type() + " does not have a contenttype.inode set");
+		if(throwAwayField.contentTypeId()==null){
+			throw new DotDataException("Field Type:" + throwAwayField.type() + " does not have a contenttype.inode set");
 		}
+		
+
+		
+		//make sure we are properly indexed
+		if((throwAwayField.searchable() || throwAwayField.listed()) || throwAwayField instanceof HostFolderField){
+			if(!throwAwayField.indexed()){
+				builder.indexed(true);
+			}
+		}
+		if(throwAwayField.unique() && ! throwAwayField.required()){
+			builder.required(true);
+		}
+		
+		if(throwAwayField.onePerContentType()){
+			List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
+			for(Field f : fieldsAlreadyAdded){
+				if(f.inode().equals(throwAwayField.inode())){
+					continue;
+				}
+				if(f.type().equals(throwAwayField.type())){
+					throw new DotDataException("A content type cannot have two:" + throwAwayField.type() + " fields");
+				}
+			}
+		}
+		Field retField=builder.build();
 		
 		// if we don't think we are inserting, test
 		if (!inserting) {
@@ -115,28 +140,6 @@ public class FieldFactoryImpl implements FieldFactory {
 				inserting = true;
 			}
 		}
-		
-		//make sure we are properly indexed
-		if((retField.searchable() || retField.listed()) || retField instanceof HostFolderField){
-			if(!retField.indexed()){
-				retField = FieldBuilder.builder(retField).indexed(true).build();
-			}
-		}
-		
-		if(retField.onePerContentType()){
-			List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
-			for(Field f : fieldsAlreadyAdded){
-				if(f.inode().equals(throwAwayField.inode())){
-					continue;
-				}
-				if(f.type().equals(throwAwayField.type())){
-					throw new DotDataException("A content type cannot have two:" + retField.type() + " fields");
-				}
-			}
-		}
-		
-		
-		
 		
 		
 		if (inserting) {
@@ -150,8 +153,8 @@ public class FieldFactoryImpl implements FieldFactory {
 		return retField;
 	}
 
-	
-	private List<Field> selectByContentTypeInDb(String id) throws DotDataException {
+	@Override
+	public List<Field> selectByContentTypeInDb(String id) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.findByContentType);
 		dc.addParam(id);

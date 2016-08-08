@@ -4,12 +4,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
@@ -44,7 +46,10 @@ import com.google.common.cache.CacheBuilder;
 public class ContentTypeFactoryImplTest {
 
 	final ContentTypeFactory factory = new ContentTypeFactoryImpl();
-
+	@BeforeClass
+	public static void SetUpTests() throws FileNotFoundException, Exception {
+		SuperContentTypeTest.SetUpTests();
+	}
 
 	@Test
 	public void testDifferentContentTypes() throws Exception {
@@ -113,23 +118,24 @@ public class ContentTypeFactoryImplTest {
 	@Test
 	public void testFieldsMethod() throws Exception {
 
-		Cache<String, ContentType> cacheTest = CacheBuilder.newBuilder().maximumSize(100).build();
-
 		ContentType type = factory.find(Constants.NEWS);
-		cacheTest.put(type.inode(), type);
-		//System.out.println(type);
 
-		ContentType otherType = cacheTest.getIfPresent(type.inode());
+		//System.out.println(type);
+		ContentType otherType = factory.find(Constants.NEWS);
 
 		List<Field> fields = otherType.fields();
 		//System.out.println(type);
-		List<Field> fields2 = APILocator.getFieldAPI2().byContentType(type);
+		List<Field> fields2 = type.fields();
 		assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
 		for (int j = 0; j < fields.size(); j++) {
 			Field field = fields.get(j);
 			Field testField = fields2.get(j);
 			assertThat("fields are correct:", field.equals(testField));
 		}
+		
+		fields = type.fields();
+		fields = type.fields();
+		fields = type.fields();
 
 	}
 
@@ -460,10 +466,10 @@ public class ContentTypeFactoryImplTest {
 
 		int numFields = 0;
 		for(Class clazz : APILocator.getFieldAPI2().fieldTypes()){
-			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").build();
+			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.inode()).build();
 			boolean save = true;
 			if(fakeField.onePerContentType()){
-				for(Field field : APILocator.getFieldAPI2().byContentType(type)){
+				for(Field field : type.fields()){
 					if(field.getClass().equals(fakeField.getClass())){
 						save = false;
 						break;
@@ -478,7 +484,7 @@ public class ContentTypeFactoryImplTest {
 					.contentTypeId(type.inode())
 					.dataType(dt)
 					.build();
-				APILocator.getFieldAPI2().save(savedField);
+				APILocator.getFieldAPI2().save(savedField, APILocator.systemUser());
 				numFields++;
 			}
 		}

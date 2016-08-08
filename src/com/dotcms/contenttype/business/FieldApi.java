@@ -6,6 +6,8 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
 
 public interface FieldApi {
 
@@ -14,8 +16,6 @@ public interface FieldApi {
 	default FieldApi instance() {
 		return api;
 	}
-
-	Field save(Field field) throws DotDataException;
 
 	List<Class> fieldTypes();
 
@@ -27,10 +27,12 @@ public interface FieldApi {
 
 	void deleteFieldsByContentType(ContentType type) throws DotDataException;
 
-	List<Field> byContentType(ContentType type) throws DotDataException;
-
 	Field byContentTypeAndVar(ContentType type, String fieldVar) throws DotDataException;
-
+	
+	Field find(String id) throws DotDataException;
+	
 	List<Field> byContentTypeId(String typeId) throws DotDataException;
+
+	Field save(Field field, User user) throws DotDataException, DotSecurityException;
 
 }

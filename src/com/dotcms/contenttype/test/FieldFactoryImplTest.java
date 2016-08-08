@@ -2,6 +2,7 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +39,10 @@ import com.google.common.reflect.ClassPath;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FieldFactoryImplTest {
-
+	@BeforeClass
+	public static void SetUpTests() throws FileNotFoundException, Exception {
+		SuperContentTypeTest.SetUpTests();
+	}
 	FieldFactoryImpl factory = new FieldFactoryImpl();
 	final static String TEST_VAR_PREFIX = "testField";
 
@@ -212,7 +216,7 @@ public class FieldFactoryImplTest {
 				if (clazz.equals(Field.class) ) {
 					continue;
 				}
-				Field newField = FieldBuilder.builder(clazz).name("test" + clazz.getSimpleName()).variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();
+				Field newField = FieldBuilder.builder(clazz).contentTypeId("test").name("test" + clazz.getSimpleName()).variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();
 				buildObject(ImmutableList.of(newField));
 			}
 		}

@@ -35,9 +35,14 @@ import com.google.common.io.Files;
 		
 		}
 		
-		
+		static boolean inited=false;
 		@BeforeClass
 		public static void SetUpTests() throws FileNotFoundException, Exception {
+			if(inited){
+				return;
+			}
+			inited=true;
+			
 			
 			new DataSourceForTesting().setup();
 			
