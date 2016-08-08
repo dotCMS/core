@@ -117,6 +117,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 				final Notification n = new Notification(level, userId, data);
 				final Payload payload = new Payload(n, Visibility.USER, userId);
 
+				n.setId(dto.getId());
 				n.setTimeSent(new Date());
 				n.setPrettyDate(DateUtil.prettyDateSince(n.getTimeSent(), locale));
 
