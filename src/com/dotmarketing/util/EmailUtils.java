@@ -36,6 +36,10 @@ import javax.mail.internet.MimeMultipart;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
 import com.sun.mail.pop3.POP3SSLStore;
 
 /**
@@ -425,5 +429,18 @@ public class EmailUtils {
 			subject = subject.replace("  ", " ");
 		}
 		return subject;
+	}
+
+	public static void sendMail(User user, Company company, String subject, String body) {
+
+		Mailer m = new Mailer();
+		m.setToEmail(user.getEmailAddress());
+		m.setToName(user.getFullName());
+		m.setSubject(subject);
+		m.setHTMLBody(body);
+		m.setFromName(company.getName());
+		m.setFromEmail(company.getEmailAddress());
+		m.sendMessage();
+
 	}
 }
