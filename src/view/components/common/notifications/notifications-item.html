@@ -1,5 +1,5 @@
 <li class="notification-item {{data.level | lowercase}}">
-    <button md-icon-button (click)="onClear()" class="notification-item__close">
+    <button md-icon-button (click)="onClear()" class="notification-item__close" [title]="dismissNotificationLabel">
         <md-icon class="md-24">close</md-icon>
     </button>
 

@@ -24,6 +24,7 @@ export class NotificationsItem {
 
     private showLinkAction:boolean = false;
     private showTitleLinked:boolean = false;
+    private dismissNotificationLabel = 'Dismiss notification';
     private notificationIcons:Object = {
         'WARNING': 'cancel',
         'ERROR': 'warning',

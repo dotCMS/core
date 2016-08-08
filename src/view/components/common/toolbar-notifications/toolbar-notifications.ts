@@ -28,6 +28,7 @@ export class ToolbarNotifications {
     private notificationsUnreadCount:number = 0;
     private notificationService:NotificationsService;
     private showNotifications:boolean = false;
+    private dismissAllLabel = 'Dismiss all notifications';
 
     constructor(_dotcmsEventsService:DotcmsEventsService, _notificationService:NotificationsService, myElement: ElementRef) {
         this.dotcmsEventsService = _dotcmsEventsService;
@@ -48,7 +49,7 @@ export class ToolbarNotifications {
 
     private dismissAllNotifications():void {
         let items = this.notifications.map(item => item.id);
-        this.notificationService.dismissNotifications({"items": items}).subscribe(res => {
+        this.notificationService.dismissNotifications({'items': items}).subscribe(res => {
             // TODO: I think we should get here res and err
             if (res.errors.length) {
                 return;
