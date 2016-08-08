@@ -1,6 +1,5 @@
 package com.liferay.portal.ejb;
 
-import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -47,7 +46,7 @@ public class UserFinderTest {
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
 
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         user.setSkinId(userName);
 
         userAPI.save(user, systemUser, false);
@@ -58,12 +57,7 @@ public class UserFinderTest {
         assertTrue(users.size() == 1);
         assertTrue(users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
-
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -75,7 +69,7 @@ public class UserFinderTest {
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
 
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
 
         user.setSkinId(userName);
 
@@ -86,11 +80,7 @@ public class UserFinderTest {
         assertNotNull(users);
         assertTrue(users.size() == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -106,7 +96,7 @@ public class UserFinderTest {
 
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         user.setSmsId(user.getEmailAddress());
 
         userAPI.save(user, systemUser, false);
@@ -117,11 +107,7 @@ public class UserFinderTest {
         assertTrue(users.size() == 1);
         assertTrue(users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -136,7 +122,7 @@ public class UserFinderTest {
 
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         user.setSmsId(user.getEmailAddress());
 
         userAPI.save(user, systemUser, false);
@@ -146,11 +132,7 @@ public class UserFinderTest {
         assertNotNull(users);
         assertTrue(users.size() == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -170,7 +152,7 @@ public class UserFinderTest {
         calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, -30);
 
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         user.setBirthday(calendar.getTime());
 
         userAPI.save(user, systemUser, false);
@@ -186,11 +168,7 @@ public class UserFinderTest {
         assertTrue(users.size() == 1);
         assertTrue(users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -211,7 +189,7 @@ public class UserFinderTest {
         calendar = Calendar.getInstance();
         calendar.add(Calendar.YEAR, -30);
 
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         user.setBirthday(calendar.getTime());
 
         userAPI.save(user, systemUser, false);
@@ -226,30 +204,9 @@ public class UserFinderTest {
         assertNotNull(users);
         assertTrue(users.size() == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
 
-    /**
-     * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
-     */
-    private User getUser(String userName, boolean toBeDeleted)
-        throws DotSecurityException, DotDataException {
 
-        User user;
-        user = userAPI.createUser(userName, userName + "@fake.org");
-
-        user.setDeleteInProgress(toBeDeleted);
-
-        if (toBeDeleted) {
-            user.setDeleteDate(GregorianCalendar.getInstance().getTime());
-
-        }
-
-        return user;
-    }
 }

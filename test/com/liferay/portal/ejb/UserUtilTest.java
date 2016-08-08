@@ -1,6 +1,5 @@
 package com.liferay.portal.ejb;
 
-import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -52,7 +51,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         List users = UserUtil.findByCompanyId(companyId);
@@ -61,11 +60,8 @@ public class UserUtilTest {
         assertTrue(users.size() > 0);
         assertTrue(!users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
     }
 
     @Test
@@ -79,7 +75,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         List users = UserUtil.findByCompanyId(companyId, 0, 5, null);
@@ -88,11 +84,8 @@ public class UserUtilTest {
         assertTrue(users.size() > 0 && users.size() <= 5);
         assertTrue(!users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
     }
 
     @Test
@@ -106,7 +99,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         userAPI.save(user, systemUser, false);
 
         User result = UserUtil.findByC_U(companyId, userName);
@@ -114,11 +107,7 @@ public class UserUtilTest {
         assertNotNull(result);
         assertTrue(result.equals(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test(expected = NoSuchUserException.class)
@@ -133,18 +122,14 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         UserPool.remove(userName);
         try {
             UserUtil.findByC_U(companyId, userName);
         } finally {
-            try {
-                userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-            } catch (DotSecurityException e) {
-                // no need to validate this
-            }
+            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
         }
     }
 
@@ -159,7 +144,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -169,11 +154,7 @@ public class UserUtilTest {
         assertTrue(users.size() == 1);
         assertTrue(users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -188,7 +169,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -197,11 +178,7 @@ public class UserUtilTest {
         assertNotNull(users);
         assertTrue(users.size() == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -216,7 +193,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         user.setPassword("1:1:EBk/HSdzfiWh52GO9xxbBJhZgsb2jd9Q:i=4e20:LnjrBImIZ2XRA6woT8lSZmGNrDP8LKgE");
         user.setCompanyId(companyId);
         userAPI.save(user, systemUser, false);
@@ -231,11 +208,7 @@ public class UserUtilTest {
         assertTrue(users.size() > 0 && users.size() <= 5);
         assertTrue(!users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -249,23 +222,23 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
 
         id = String.valueOf(new Date().getTime());
-        user1 = getUser("user" + id, false);
+        user1 = UserTestUtil.getUser("user" + id, false);
         user1.setPassword("password");
         userAPI.save(user1, systemUser, false);
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user2 = getUser(userName, false);
+        user2 = UserTestUtil.getUser(userName, false);
         user2.setPassword("password");
         userAPI.save(user2, systemUser, false);
 
         id = String.valueOf(new Date().getTime());
-        user3 = getUser("user" + id, true);
+        user3 = UserTestUtil.getUser("user" + id, true);
         user3.setPassword("password");
         userAPI.save(user3, systemUser, false);
 
         id = String.valueOf(new Date().getTime());
-        user4 = getUser("user" + id, false);
+        user4 = UserTestUtil.getUser("user" + id, false);
         user4.setPassword("password");
         userAPI.save(user4, systemUser, false);
 
@@ -277,14 +250,10 @@ public class UserUtilTest {
         assertTrue(!users[1].equals(user3));
         assertTrue(!users[2].equals(user3));
 
-        try {
-            userAPI.delete(user1, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-            userAPI.delete(user2, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-            userAPI.delete(user3, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-            userAPI.delete(user4, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user1, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+        userAPI.delete(user2, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+        userAPI.delete(user3, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+        userAPI.delete(user4, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -298,7 +267,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         userAPI.save(user, systemUser, false);
 
         User result = UserUtil.findByC_EA(companyId, user.getEmailAddress());
@@ -306,11 +275,7 @@ public class UserUtilTest {
         assertNotNull(result);
         assertTrue(result.equals(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test(expected = NoSuchUserException.class)
@@ -325,17 +290,13 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         try {
             UserUtil.findByC_EA(companyId, user.getEmailAddress());
         } finally {
-            try {
-                userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-            } catch (DotSecurityException e) {
-                // no need to validate this
-            }
+            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
         }
     }
 
@@ -347,7 +308,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         List users = UserUtil.findAll();
@@ -356,23 +317,19 @@ public class UserUtilTest {
         assertTrue(users.size() > 0);
         assertTrue(!users.contains(user));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test(expected = NoSuchUserException.class)
     public void testRemoveByCompanyId()
-        throws DotSecurityException, DotDataException, SystemException, NoSuchUserException {
+        throws DotSecurityException, DotDataException, SystemException, NoSuchUserException, NoSuchCompanyException {
         String id;
         String userName;
         User user;
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
 
         Company company = PublicCompanyFactory.create("fake.org");
         company.setHomeURL("localhost");
@@ -389,25 +346,21 @@ public class UserUtilTest {
 
         UserUtil.removeByCompanyId(company.getCompanyId());
 
-        try {
-            PublicCompanyFactory.remove(company.getCompanyId());
-        } catch (NoSuchCompanyException e) {
-            // no need to validate this
-        }
+        PublicCompanyFactory.remove(company.getCompanyId());
         UserUtil.findByC_EA(userName, user.getEmailAddress());
 
     }
 
     @Test
     public void testRemoveByCompanyIdMarkDeleted()
-        throws DotSecurityException, DotDataException, SystemException, NoSuchUserException {
+        throws DotSecurityException, DotDataException, SystemException, NoSuchUserException, NoSuchCompanyException {
         String id;
         String userName;
         User user;
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
 
         Company company = PublicCompanyFactory.create("fake.org");
         company.setHomeURL("localhost");
@@ -426,12 +379,8 @@ public class UserUtilTest {
 
         assertNotNull(UserUtil.findByPrimaryKey(userName));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-            PublicCompanyFactory.remove(company.getCompanyId());
-        } catch (NoSuchCompanyException | DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+        PublicCompanyFactory.remove(company.getCompanyId());
 
     }
 
@@ -445,7 +394,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
 
         userAPI.save(user, systemUser, false);
 
@@ -468,7 +417,7 @@ public class UserUtilTest {
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
 
         userAPI.save(user, systemUser, false);
 
@@ -478,12 +427,7 @@ public class UserUtilTest {
 
         assertNotNull(UserUtil.findByPrimaryKey(userName));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
-
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test(expected = NoSuchUserException.class)
@@ -496,7 +440,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -519,7 +463,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -529,11 +473,7 @@ public class UserUtilTest {
 
         assertNotNull(UserUtil.findByPrimaryKey(userName));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 
     }
 
@@ -547,7 +487,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         userAPI.save(user, systemUser, false);
 
         roleAPI.removeRoleFromUser(roleAPI.getUserRole(user), user);
@@ -569,7 +509,7 @@ public class UserUtilTest {
         id = String.valueOf(new Date().getTime());
         companyId = PublicCompanyFactory.getDefaultCompanyId();
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
 
         userAPI.save(user, systemUser, false);
 
@@ -579,12 +519,7 @@ public class UserUtilTest {
 
         assertNotNull(UserUtil.findByPrimaryKey(userName));
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
-
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -609,18 +544,14 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         userAPI.save(user, systemUser, false);
 
         int total = UserUtil.countByC_U(companyId, userName);
 
         assertTrue(total == 1);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -635,18 +566,14 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         int total = UserUtil.countByC_U(companyId, userName);
 
         assertTrue(total == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -660,7 +587,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -668,11 +595,8 @@ public class UserUtilTest {
 
         assertTrue(total == 1);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
     }
 
     @Test
@@ -687,7 +611,7 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         user.setPassword(userName);
         userAPI.save(user, systemUser, false);
 
@@ -695,11 +619,7 @@ public class UserUtilTest {
 
         assertTrue(total == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -713,18 +633,14 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, false);
+        user = UserTestUtil.getUser(userName, false);
         userAPI.save(user, systemUser, false);
 
         int total = UserUtil.countByC_EA(companyId, user.getEmailAddress());
-        ;
+
         assertTrue(total == 1);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     @Test
@@ -739,37 +655,14 @@ public class UserUtilTest {
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
-        user = getUser(userName, true);
+        user = UserTestUtil.getUser(userName, true);
         userAPI.save(user, systemUser, false);
 
         int total = UserUtil.countByC_EA(companyId, user.getEmailAddress());
 
         assertTrue(total == 0);
 
-        try {
-            userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-        } catch (DotSecurityException e) {
-            // no need to validate this
-        }
-    }
-
-    /**
-     * Create a new user given a user name. Also, consider if the new user must be marked as an user to be deleted
-     */
-    private User getUser(String userName, boolean toBeDeleted)
-        throws DotSecurityException, DotDataException {
-
-        User user;
-        user = userAPI.createUser(userName, userName + "@fake.org");
-
-        user.setDeleteInProgress(toBeDeleted);
-
-        if (toBeDeleted) {
-            user.setDeleteDate(GregorianCalendar.getInstance().getTime());
-
-        }
-
-        return user;
+        userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
     private class UserUtilComparatorTest extends OrderByComparator {

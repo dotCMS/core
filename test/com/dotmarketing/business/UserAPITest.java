@@ -546,19 +546,15 @@ public class UserAPITest extends TestBase{
 	 * @throws DotDataException
 	 */
 	@Test(expected=DotDataException.class)
-	public void deleteAnonymous() throws DotDataException{
+	public void deleteAnonymous() throws DotDataException, DotSecurityException {
 
 		UserAPI userAPI = APILocator.getUserAPI();
 		User systemUser = null;
 		User anonymousUser = null;
 
-		try{
-			systemUser = userAPI.getSystemUser();
-			anonymousUser = userAPI.getAnonymousUser();
-			userAPI.delete(anonymousUser, systemUser, false);
-		}catch(DotSecurityException e){
-			// no need to validate this, only used to get the user objects
-		}
+		systemUser = userAPI.getSystemUser();
+		anonymousUser = userAPI.getAnonymousUser();
+		userAPI.delete(anonymousUser, systemUser, false);
 	}
 
 	@Test
@@ -586,12 +582,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
-	}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);}
 
 	@Test
 	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
@@ -610,15 +601,11 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
-	public void testGetUnDeletedUsers() throws DotDataException {
+	public void testGetUnDeletedUsers() throws DotDataException, DotSecurityException {
 		User newUser = null;
 		UserAPI userAPI = APILocator.getUserAPI();
 		String id = String.valueOf(new Date().getTime());
@@ -631,11 +618,7 @@ public class UserAPITest extends TestBase{
 		 */
 		String newUserName = "user" + id;
 
-		try {
-			newUser = getUser(newUserName, true, calendar.getTime());
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		newUser = getUser(newUserName, true, calendar.getTime());
 
 		List<User> users = userAPI.getUnDeletedUsers();
 
@@ -645,12 +628,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users.get(0).getDeleteDate());
 		assertEquals(users.get(0).getFirstName(), newUserName);
 
-		try {
-			userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
-
+		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -671,11 +649,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -696,11 +670,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -721,11 +691,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -746,11 +712,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -770,11 +732,7 @@ public class UserAPITest extends TestBase{
 
 		assertTrue(count == 1);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 
 	}
 
@@ -795,12 +753,7 @@ public class UserAPITest extends TestBase{
 
 		assertTrue(count == 0);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
-
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -820,12 +773,7 @@ public class UserAPITest extends TestBase{
 
 		assertTrue(count == 1);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
-
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -845,12 +793,7 @@ public class UserAPITest extends TestBase{
 
 		assertTrue(count == 0);
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
-
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 	@Test
@@ -886,11 +829,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(!users.contains(user.getUserId()));
 
-		try {
-			userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-		} catch (DotSecurityException e) {
-			// no need to validate this
-		}
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 
 
