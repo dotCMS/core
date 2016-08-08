@@ -22,6 +22,7 @@ import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
 import com.dotmarketing.business.UserAPITest;
+import com.dotmarketing.business.UserProxyFactoryTest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -162,7 +163,8 @@ import org.junit.runners.Suite;
     UserAPITest.class,
     UserLocalManagerTest.class,
     UserFinderTest.class,
-    UserUtilTest.class
+    UserUtilTest.class,
+    UserProxyFactoryTest.class
 })
 
 public class AllTestsSuite {}
