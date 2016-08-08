@@ -67,11 +67,8 @@ public class UserFinder {
             query.append("FROM User_ WHERE ");
             query.append("userId = skinId");
 
-            if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-                query.append(" AND delete_in_progress = 0");
-            } else {
-                query.append(" AND delete_in_progress = false");
-            }
+            query.append(" AND delete_in_progress = ");
+            query.append(DbConnectionFactory.getDBFalse());
 
             ps = con.prepareStatement(query.toString());
 
@@ -116,11 +113,8 @@ public class UserFinder {
             query.append("companyId = ? AND ");
             query.append("(smsId IS NOT NULL AND smsId != '')");
 
-            if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-                query.append(" AND delete_in_progress = 0");
-            } else {
-                query.append(" AND delete_in_progress = false");
-            }
+            query.append(" AND delete_in_progress = ");
+            query.append(DbConnectionFactory.getDBFalse());
 
             ps = con.prepareStatement(query.toString());
 
@@ -229,11 +223,8 @@ public class UserFinder {
             query.append("(lower(Address.cell) LIKE ? AND Address.classPK = User_.userId OR ? IS NULL) ");
             query.append(")");
 
-            if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-                query.append(" AND User_.delete_in_progress = 0");
-            } else {
-                query.append(" AND User_.delete_in_progress = false");
-            }
+            query.append(" AND User_.delete_in_progress = ");
+            query.append(DbConnectionFactory.getDBFalse());
 
             ps = con.prepareStatement(query.toString());
 
@@ -402,11 +393,9 @@ public class UserFinder {
         query.append("(lower(Address.cell) LIKE ? AND Address.classPK = User_.userId AND ? IS NOT NULL) ");
         query.append(")");
 
-        if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-            query.append(" AND User_.delete_in_progress = 0");
-        } else {
-            query.append(" AND User_.delete_in_progress = false");
-        }
+        query.append(" AND User_.delete_in_progress = ");
+        query.append(DbConnectionFactory.getDBFalse());
+
         PreparedStatement ps = con.prepareStatement(query.toString());
 
         ps.setString(1, companyId);

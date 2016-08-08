@@ -200,11 +200,8 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			baseSql.append(") like ?");
 		}
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			baseSql.append(" and delete_in_progress = 0");
-		} else {
-			baseSql.append(" and delete_in_progress = false");
-		}
+		baseSql.append(" and delete_in_progress = ");
+		baseSql.append(DbConnectionFactory.getDBFalse());
 
 		baseSql.append(" order by ");
 		baseSql.append(userFullName);
@@ -314,12 +311,8 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%')");
-
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append(" and delete_in_progress = 0");
-		} else {
-			sql.append(" and delete_in_progress = false");
-		}
+		sql.append(" and delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
 	
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql.toString());
@@ -350,14 +343,9 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%') AND userid <> 'system' ");
-
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append(" and delete_in_progress = 0 ");
-		} else {
-			sql.append(" and delete_in_progress = false ");
-		}
-
-		sql.append("order by firstName asc,lastname asc");
+		sql.append(" and delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
+		sql.append(" order by firstName asc,lastname asc");
 
 
 		DotConnect dotConnect = new DotConnect();
@@ -410,12 +398,9 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append(filter);
 		sql.append("%')");
 		sql.append((!includeAnonymous) ? "AND userid <> 'anonymous'" : "");
+		sql.append(" and delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append(" and delete_in_progress = 0");
-		} else {
-			sql.append(" and delete_in_progress = false");
-		}
 		DotConnect dotConnect = new DotConnect();
 		dotConnect.setSQL(sql.toString());
 		return dotConnect.getInt("count");
@@ -452,13 +437,10 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append("%') AND userid <> 'system' ");
 		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : ""));
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append(" AND delete_in_progress = 0 ");
-		} else {
-			sql.append(" AND delete_in_progress = false ");
-		}
+		sql.append(" AND delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
 
-		sql.append("order by firstName asc,lastname asc");
+		sql.append(" order by firstName asc,lastname asc");
 
 		dotConnect.setSQL(sql.toString());
 		dotConnect.setMaxRows(top);
@@ -497,18 +479,15 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 		StringBuilder sql = new StringBuilder("select userid from user_ where ");
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append("delete_in_progress = 1 ");
-		} else {
-			sql.append("delete_in_progress = true ");
-		}
+		sql.append("delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBTrue());
 
 		if (DbConnectionFactory.isOracle()) {
-			sql.append("and delete_date<=to_date('");
+			sql.append(" and delete_date<=to_date('");
 			sql.append(format.format(calendar.getTime()));
 			sql.append("', 'YYYY-MM-DD HH24:MI:SS')");
 		} else {
-			sql.append("and delete_date<='");
+			sql.append(" and delete_date<='");
 			sql.append(format.format(calendar.getTime()));
 			sql.append("'");
 		}
@@ -538,11 +517,8 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			query.append(" AND createdate >= ?");
 		}
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			query.append(" AND delete_in_progress = 0");
-		} else {
-			query.append(" AND delete_in_progress = false");
-		}
+		query.append(" AND delete_in_progress = ");
+		query.append(DbConnectionFactory.getDBFalse());
 
 		query.append(" ORDER BY firstName ASC, lastname ASC");
 		dotConnect.setSQL( query.toString() );

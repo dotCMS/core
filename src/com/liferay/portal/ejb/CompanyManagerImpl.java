@@ -235,7 +235,7 @@ public class CompanyManagerImpl
 	     try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL("update user_ set languageid = ?, timezoneid = ?, skinid = ?, dottedskins = " + rs + ", roundedskins = " + ds + ", resolution = ? where companyid = ? " +
-				((DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql())?" and user_.delete_in_progress = 0":" and user_.delete_in_progress = false"));
+				" and user_.delete_in_progress = " + DbConnectionFactory.getDBFalse());
 			dc.addParam(languageId);
 			dc.addParam(timeZoneId);
 			dc.addParam(skinId);

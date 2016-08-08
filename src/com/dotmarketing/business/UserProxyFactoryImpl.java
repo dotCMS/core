@@ -130,12 +130,10 @@ public class UserProxyFactoryImpl extends UserProxyFactory {
 			condition.append(" where ");
 		}
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			condition.append("user_.delete_in_progress = 0 ");
-		}else{
-			condition.append("user_.delete_in_progress = false ");
-		}
-		
+
+		condition.append("user_.delete_in_progress = ");
+		condition.append(DbConnectionFactory.getDBFalse());
+
 		if ((UtilMethods.isSet(orderBy) && orderBy.trim().toLowerCase().startsWith("cms_role.")) ||
     		((roles != null) && (0 < roles.size())) ||
     		showUserRoles) {

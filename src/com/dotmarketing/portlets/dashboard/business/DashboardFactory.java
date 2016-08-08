@@ -205,14 +205,14 @@ public abstract class DashboardFactory {
 		" from analytic_summary_workstream, user_ , contentlet,contentlet_version_info contentinfo ").append(
 		" where user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id ").append(
 		" and contentlet.identifier = contentinfo.identifier and contentinfo.live_inode is not null and analytic_summary_workstream.name is not null ").append(
-			DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()? " and user_.delete_in_progress = 0":" and user_.delete_in_progress = false").toString();
+			" and user_.delete_in_progress = ").append(DbConnectionFactory.getDBFalse()).toString();
 	}
 
 	protected String getWorkstreamCountQuery(){
 		return new StringBuilder("select count(distinct analytic_summary_workstream.id) as summaryCount from analytic_summary_workstream, user_, contentlet,contentlet_version_info info where").append(
 		  " user_.userid = analytic_summary_workstream.mod_user_id and contentlet.identifier = analytic_summary_workstream.host_id ").append(
 		  " and contentlet.identifier = info.identifier and info.live_inode is not null and analytic_summary_workstream.name is not null ").append(
-			DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()? " and user_.delete_in_progress = 0":" and user_.delete_in_progress = false").toString();
+		  	" and user_.delete_in_progress = ").append(DbConnectionFactory.getDBFalse()).toString();
 	}
 
 

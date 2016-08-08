@@ -2289,13 +2289,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			baseSql.append(" and users_cms_roles.role_id in (" + roleIdsSB.toString() + ")");
 			baseSql.append(" and user_.userId = users_cms_roles.user_id ");
 
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				baseSql.append(" and user_.delete_in_progress = 0 ");
-			}else{
-				baseSql.append(" and user_.delete_in_progress = false ");
-			}
-
-
+			baseSql.append(" and user_.delete_in_progress = ");
+			baseSql.append(DbConnectionFactory.getDBFalse());
 
 			boolean isFilteredByName = UtilMethods.isSet(filter);
 			if (isFilteredByName) {
@@ -2373,11 +2368,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			baseSql.append(" user_.companyid = ? and user_.userid <> 'system' ");
 			baseSql.append(" and users_cms_roles.role_id in (" + roleIdsSB.toString() + ") ");
 			baseSql.append(" and user_.userId = users_cms_roles.user_id ");
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				baseSql.append(" and user_.delete_in_progress = 0 ");
-			}else{
-				baseSql.append(" and user_.delete_in_progress = false ");
-			}
+			baseSql.append(" and user_.delete_in_progress = ");
+			baseSql.append(DbConnectionFactory.getDBFalse());
 
 			boolean isFilteredByName = UtilMethods.isSet(filter);
 			if (isFilteredByName) {

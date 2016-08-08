@@ -265,13 +265,10 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
-			query.append("ORDER BY ");
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -315,14 +312,11 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
 				query.append("ORDER BY ");
@@ -415,14 +409,11 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
 				query.append("ORDER BY ");
@@ -516,13 +507,10 @@ public class UserPersistence extends BasePersistence {
 			query.append(" AND ");
 			query.append("userId = ?");
 
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
-			query.append("ORDER BY ");
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -568,14 +556,9 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("password_ = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -621,18 +604,14 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("password_ = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -724,18 +703,14 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("password_ = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -822,14 +797,10 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -870,14 +841,9 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append("FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM ");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" WHERE delete_in_progress = 0 ");
-			}else{
-				query.append(" WHERE delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" WHERE delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -911,14 +877,9 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -966,14 +927,9 @@ public class UserPersistence extends BasePersistence {
 			query.append("userId = ?");
             query.append(" AND ");
             query.append(" userId <> ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -1027,14 +983,9 @@ public class UserPersistence extends BasePersistence {
 			query.append("password_ = ?");
             query.append(" AND ");
             query.append("userId <> ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -1084,14 +1035,9 @@ public class UserPersistence extends BasePersistence {
 			query.append("emailAddress = ?");
             query.append(" AND ");
             query.append("userId <> ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0 ");
-			}else{
-				query.append(" AND delete_in_progress = false ");
-			}
-
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -1137,12 +1083,8 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0");
-			}else{
-				query.append(" AND delete_in_progress = false");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1182,12 +1124,8 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("userId = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0");
-			}else{
-				query.append(" AND delete_in_progress = false");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1228,12 +1166,8 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("password_ = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0");
-			}else{
-				query.append(" AND delete_in_progress = false");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1274,12 +1208,8 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");
-
-			if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-				query.append(" AND delete_in_progress = 0");
-			}else{
-				query.append(" AND delete_in_progress = false");
-			}
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;

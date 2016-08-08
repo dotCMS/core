@@ -327,8 +327,7 @@ public class MailingListFactory {
 	private static String mailingListUsersPullQuery = " from user_proxy, user_, " +
 	"inode user_proxy_1_, tree where tree.parent = ? and user_proxy.user_id = user_.userid and " +
 	"tree.child = user_proxy.inode and tree.relation_type = ? " +
-	"and user_proxy_1_.inode = user_proxy.inode" + ((DbConnectionFactory.isOracle() || DbConnectionFactory
-		.isMsSql())? " and user_.delete_in_progress = 0":" and user_.delete_in_progress = false");
+	"and user_proxy_1_.inode = user_proxy.inode" + " and user_.delete_in_progress = " + DbConnectionFactory.getDBFalse();
 
 	private static String mailingListUsersPermissionsFilter = " and exists (select * from cms_role, " +
 	"users_cms_roles, permission where cms_role.id = users_cms_roles.role_id and " +
