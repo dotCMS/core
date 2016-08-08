@@ -6,16 +6,18 @@ import java.io.Serializable;
  * Encapsulates what is needed for a content let type
  * @author jsanca
  */
-public class ContentletTypeView implements Serializable {
+public class ContentTypeView implements Serializable {
 
     private final String type;
     private final String name;
     private final String inode;
+    private final String action;
 
-    public ContentletTypeView(String type, String name, String inode) {
-        this.type = type;
-        this.name = name;
-        this.inode = inode;
+    public ContentTypeView(String type, String name, String inode, String action) {
+        this.type   = type;
+        this.name   = name;
+        this.inode  = inode;
+        this.action = action;
     }
 
     public String getType() {
@@ -30,12 +32,17 @@ public class ContentletTypeView implements Serializable {
         return inode;
     }
 
+    public String getAction() {
+        return action;
+    }
+
     @Override
     public String toString() {
-        return "ContentletTypeView{" +
+        return "ContentTypeView{" +
                 "type='" + type + '\'' +
                 ", name='" + name + '\'' +
                 ", inode='" + inode + '\'' +
+                ", action='" + action + '\'' +
                 '}';
     }
-} // E:O:F:ContentletTypeView.
+} // E:O:F:ContentTypeView.

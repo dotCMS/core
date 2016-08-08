@@ -1,22 +1,34 @@
 package com.dotcms.rest.api.v1.content;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.portlet.PortletURL;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletURLUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,35 +41,43 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
- * Resource for Contentlet stuff
- * - Gets the ContentLet types.
+ * Gets the ContentLet types.
  * @author jsanca
  */
 @SuppressWarnings("serial")
-@Path("/v1/contentlet")
-public class ContentletResource implements Serializable {
+@Path("/v1/content")
+public class ContentTypeResource implements Serializable {
 
     private final WebResource webResource;
     private final StructureAPI structureAPI;
-    private final ContentletHelper contentletHelper;
+    private final ContentTypeHelper contentTypeHelper;
+    private final LayoutAPI layoutAPI;
+    private final LanguageAPI languageAPI;
 
-    public ContentletResource() {
-        this(new WebResource(), ContentletHelper.INSTANCE, APILocator.getStructureAPI());
+    public ContentTypeResource() {
+        this(new WebResource(), ContentTypeHelper.INSTANCE,
+                APILocator.getStructureAPI(), APILocator.getLayoutAPI(),
+                APILocator.getLanguageAPI());
     }
 
     @VisibleForTesting
-    public ContentletResource(final WebResource webResource,
-                              final ContentletHelper contentletHelper,
-                              final StructureAPI structureAPI) {
+    public ContentTypeResource(final WebResource webResource,
+                               final ContentTypeHelper contentletHelper,
+                               final StructureAPI structureAPI,
+                               final LayoutAPI layoutAPI,
+                               final LanguageAPI languageAPI) {
 
-        this.webResource = webResource;
-        this.contentletHelper  = contentletHelper;
-        this.structureAPI = structureAPI;
+        this.webResource       = webResource;
+        this.contentTypeHelper = contentletHelper;
+        this.structureAPI      = structureAPI;
+        this.layoutAPI         = layoutAPI;
+        this.languageAPI       = languageAPI;
     }
 
     @GET
     @Path("/types")
     @JSONP
+    @InitRequestRequired
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getTypes(@Context final HttpServletRequest request) {
@@ -69,7 +89,7 @@ public class ContentletResource implements Serializable {
         locale = (null != user && null == locale)? user.getLocale():locale;
         final List<Structure> structures;
         final Map<Integer, String> contentletIdNameMapping;
-        final Map<String, List<ContentletTypeView>> contentletTypeMap = map();
+        final Map<String, List<ContentTypeView>> contentletTypeMap = map();
 
         try {
 
@@ -79,7 +99,7 @@ public class ContentletResource implements Serializable {
             if (null != structures) {
 
 
-                contentletIdNameMapping = this.contentletHelper.getStrTypeNames(locale);
+                contentletIdNameMapping = this.contentTypeHelper.getStrTypeNames(locale);
 
                 // Init the type map
                 contentletIdNameMapping.values().forEach(
@@ -91,8 +111,10 @@ public class ContentletResource implements Serializable {
 
                             String typeName = contentletIdNameMapping.get(structure.getStructureType());
                             contentletTypeMap.get(typeName).add
-                                    (new ContentletTypeView(typeName,
-                                            structure.getName(), structure.getInode()));
+                                    (new ContentTypeView(typeName,
+                                            structure.getName(), structure.getInode(),
+                                            this.contentTypeHelper.getActionUrl(request, this.layoutAPI, this.languageAPI,
+                                                    structure, user)));
                         });
             }
 
@@ -107,4 +129,6 @@ public class ContentletResource implements Serializable {
         return response;
     } // getTypes.
 
-} // E:O:F:ContentletResource.
+
+
+} // E:O:F:ContentTypeResource.
