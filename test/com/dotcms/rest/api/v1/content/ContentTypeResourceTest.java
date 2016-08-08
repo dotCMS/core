@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test for the {@link ContentTypeResource}
  */
-public class ContentletResourceTest extends BaseMessageResources {
+public class ContentTypeResourceTest extends BaseMessageResources {
 
     @Test
     public void testNoContentLetTypes() throws Exception {
