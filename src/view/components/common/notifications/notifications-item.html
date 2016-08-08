@@ -1,5 +1,5 @@
 <li class="notification-item {{data.level | lowercase}}">
-    <button md-icon-button (click)="onClear()" class="notification-item__close">
+    <button md-icon-button (click)="onClear()" class="notification-item__close" [title]="dismissNotificationLabel">
         <md-icon class="md-24">close</md-icon>
     </button>
 
@@ -11,6 +11,7 @@
             <p class="notification-item__message">
                 {{data.notificationData.message}}
                 <a *ngIf="showLinkAction" [href]="data.notificationData.actions[0].action" class="notification-item__link">{{data.notificationData.actions[0].text}}</a>
+                <span class="notification-item__date">{{data.prettyDate}}</span>
             </p>
             <!--TODO: hand more than one action-->
         </div>

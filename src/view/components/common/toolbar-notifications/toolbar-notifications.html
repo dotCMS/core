@@ -5,7 +5,7 @@
 <div class="toolbar-notifications" *ngIf="showNotifications">
     <div class="toolbar-notifications__heading">
         <h3 class="toolbar-notifications__title">Notifications</h3>
-        <button md-icon-button (click)="dismissAllNotifications()">
+        <button md-icon-button (click)="dismissAllNotifications()" [title]="dismissAllLabel">
             <md-icon class="md-24">clear_all</md-icon>
         </button>
     </div>

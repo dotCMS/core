@@ -18,6 +18,11 @@ $close-button-size: 16px;
         margin-left: rem-cal(5px);
     }
 
+    .notification-item__date {
+        color: $gray;
+        display: block;
+    }
+
     .notification-item__close {
         height: $close-button-size;
         position: absolute;
@@ -42,6 +47,10 @@ $close-button-size: 16px;
     .notification-item__title,
     .notification-item__message {
         margin: 0;
+    }
+
+    .notification-item__message {
+        line-height: 1.5rem;
     }
 
     .notification-item__wrapper {
