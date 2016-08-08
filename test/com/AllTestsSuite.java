@@ -22,6 +22,7 @@ import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
 import com.dotmarketing.business.UserAPITest;
+import com.dotmarketing.business.UserProxyFactoryTest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -66,7 +67,9 @@ import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.tag.business.TagAPITest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
+import com.liferay.portal.ejb.UserFinderTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
+import com.liferay.portal.ejb.UserUtilTest;
 
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 import org.junit.runner.RunWith;
@@ -158,7 +161,10 @@ import org.junit.runners.Suite;
     VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
     VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
     UserAPITest.class, //Needs Enterprise License.
-    UserLocalManagerTest.class
+    UserLocalManagerTest.class,
+    UserFinderTest.class,
+    UserUtilTest.class,
+    UserProxyFactoryTest.class
 })
 
 public class AllTestsSuite {}

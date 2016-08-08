@@ -69,6 +69,8 @@ public class UserManagerListBuilderFactory {
 		queryWherePortion.append(" where user_.companyid ='");
 		queryWherePortion.append(PublicCompanyFactory.getDefaultCompany().getCompanyId());
 		queryWherePortion.append("'");
+		queryWherePortion.append(" and user_.delete_in_progress = ");
+		queryWherePortion.append(DbConnectionFactory.getDBFalse());
 
 		String[] arrayUserIds = form.getArrayUserIds();
 		List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
