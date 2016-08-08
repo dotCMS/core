@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.DwrAuthenticationUtil;
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.ContainerStructure;
@@ -77,7 +78,9 @@ public class UserAPITest extends TestBase{
 	private static DwrAuthenticationUtil dwrAuthentication = null;
 
 	@BeforeClass
-	public static void prepare () throws DotSecurityException, DotDataException {
+	public static void prepare () throws Exception {
+
+		LicenseTestUtil.getLicense();
 
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
@@ -93,10 +96,6 @@ public class UserAPITest extends TestBase{
 	/**
 	 * Testing {@link UserAPI#delete(User, User, User, boolean)}
 	 *
-	 * @param userToDelete User to delete 
-	 * @param replacementUser User to replace the db reference of the user to delete
-	 * @param user User requesting the delete user
-	 * @param respectFrontEndRoles
 	 * @throws DotDataException If the user to delete or the replacement user are not set
 	 * @throws DotSecurityException If the user requesting the delete doesn't have permission
 	 * @throws SystemException 
