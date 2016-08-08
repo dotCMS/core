@@ -1,19 +1,5 @@
 package com.dotmarketing.viewtools;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;
@@ -36,6 +22,19 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 public class CMSUsersWebAPI implements ViewTool {
 
@@ -333,22 +332,6 @@ public class CMSUsersWebAPI implements ViewTool {
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			return new ArrayList<String>();
-		}
-	}
-
-	/**
-	 * This method return a list of users and roles which name are like the compared string passed
-	 * @param filter compare string
-	 * @param start first element to display
-	 * @param limit max number of elements to show
-	 * @return Map<String, Object>
-	 */
-	public Map<String, Object> getUsersAnRolesByName(String filter, int start,int limit) {
-		try {
-			return APILocator.getUserAPI().getUsersAnRolesByName(filter, start, limit);
-		} catch (DotDataException e) {
-			Logger.error(this, e.getMessage(),e);
-			return new HashMap<String, Object>();
 		}
 	}
 

@@ -570,60 +570,6 @@ public class UserFactoryLiferayImpl extends UserFactory {
         }
         return ids;
     }
-
-	@Override
-	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
-		filter = (UtilMethods.isSet(filter) ? filter : "");
-		filter = SQLUtil.sanitizeParameter(filter);    	
-		DotConnect dotConnect = new DotConnect();
-	
-		StringBuilder baseSql = new StringBuilder(" (select distinct 0 as isuser, 'role' as type, ");
-		baseSql.append(dotConnect.concat( new String[]{"role_.roleId", "''"}));
-		baseSql.append(" as id, role_.name as name, 'role' as emailaddress ");
-		baseSql.append("from role_ where companyid = '");
-		baseSql.append(PublicCompanyFactory.getDefaultCompanyId());
-		baseSql.append("' union select distinct 1 as isuser, 'user' as type, user_.userId as id, ");
-		baseSql.append(dotConnect.concat( new String[]{"user_.firstName", "' '", "user_.lastName" } ));
-		baseSql.append(" as name, user_.emailaddress as emailaddress ");
-		baseSql.append("from user_ where companyid = '");
-		baseSql.append(PublicCompanyFactory.getDefaultCompanyId());
-		baseSql.append("' ");
-
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			baseSql.append(" and user_.delete_in_progress = 0 ");
-		}else{
-			baseSql.append(" and user_.delete_in_progress = false ");
-		}
-
-		baseSql.append("order by isuser, name) ");
-		
-		String sql = "select isuser, id, name, type, emailaddress from " + baseSql + " uar ";
-		if(UtilMethods.isSet(filter))
-				sql += "where lower(name) like ?";
-		dotConnect.setSQL(sql);
-		if(UtilMethods.isSet(filter))
-			dotConnect.addParam("%"+filter.toLowerCase()+"%");
-		
-		if(start > -1)
-			dotConnect.setStartRow(start);
-		if(limit > -1)
-			dotConnect.setMaxRows(limit);
-		ArrayList<Map<String, Object>> results = dotConnect.getResults();
-		
-		sql = "select count(*) as total from " + baseSql + " uar ";
-		if(UtilMethods.isSet(filter))
-				sql += "where lower(name) like ?";
-		dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
-		if(UtilMethods.isSet(filter))
-			dotConnect.addParam("%"+filter.toLowerCase()+"%");
-		int total = dotConnect.getInt("total");
-		
-		HashMap<String, Object> ret = new HashMap<String, Object>();
-		ret.put("total", total);
-		ret.put("data", results);
-		return ret;    			
-	}
 	
 	@Override
 	public void delete(User userToDelete) throws DotDataException {

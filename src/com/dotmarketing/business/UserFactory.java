@@ -8,7 +8,6 @@ import com.liferay.portal.model.User;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public abstract class UserFactory {
 
@@ -116,22 +115,6 @@ public abstract class UserFactory {
      * @version 1.9
      */
     protected abstract List<User> getUsersByNameOrEmail(String filter,int page,int pageSize) throws DotDataException;
-    
-    /**
-     * This method return a list of users and roles which name are like the compared string passed
-	 * This method will ALWAYS hit DB
-     * @param filter compare string
-     * @param start first element to display
-     * @param limit max number of elements to show
-     * @return Map<String, Object>
-     * @throws DotRuntimeException
-     * @version 1.9
-	 * @since 1.0
-	 * @author David Torres
-	 * @author Oswaldo Gallango
-	 * @deprecated
-     */
-    protected abstract Map<String, Object> getUsersAnRolesByName(String filter, int start,int limit) throws DotDataException;
 
     /**
      * Returns a list of users ids filtering by a given creation date

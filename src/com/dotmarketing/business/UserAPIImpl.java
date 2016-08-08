@@ -37,7 +37,6 @@ import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User entities from liferay's repository.  Classes within the dotCMS
@@ -219,11 +218,6 @@ public class UserAPIImpl implements UserAPI {
 
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
-	}
-
-	@SuppressWarnings("deprecation")
-	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
-		return uf.getUsersAnRolesByName(filter, start, limit);
 	}
 
 	public void save(User userToSave, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
