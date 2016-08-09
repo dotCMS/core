@@ -28,6 +28,7 @@ import com.dotmarketing.util.Config;
 @SuppressWarnings("serial")
 public class ConfigurationHelper implements Serializable {
 
+	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -54,7 +55,10 @@ public class ConfigurationHelper implements Serializable {
 				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
 				DOTCMS_WEBSOCKET_ENDPOINTS,
 				map(WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
-						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")));
+						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")),
+				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
+				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15)
+				);
 	}
 
 }
