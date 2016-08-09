@@ -111,7 +111,7 @@ public class UserFinder {
             query.append("SELECT userId ");
             query.append("FROM User_ WHERE ");
             query.append("companyId = ? AND ");
-            query.append("(smsId IS NOT NULL AND smsId != '')");
+            query.append("(smsId IS NOT NULL AND smsId != ' ')");
 
             query.append(" AND delete_in_progress = ");
             query.append(DbConnectionFactory.getDBFalse());
@@ -204,11 +204,15 @@ public class UserFinder {
             query.append("(lower(middleName) LIKE ? OR ? IS NULL) AND ");
             query.append("(lower(lastName) LIKE ? OR ? IS NULL) AND ");
             query.append("(lower(emailAddress) LIKE ? OR ? IS NULL) AND ");
-            query.append("(male = ? OR ? IS NULL) AND ");
-            query.append("(birthday >= ? OR ?");
+            /*query.append("(male = ? OR ? IS NULL) AND ");*/
+            query.append("(birthday >= ");
+            query.append(DbConnectionFactory.isOracle() ? "timestamp " : "");
+            query.append("? OR ?");
             query.append(DbConnectionFactory.isPostgres() ? "::TIMESTAMP" : "");
             query.append(" IS NULL) AND ");
-            query.append("(birthday <= ? OR ?");
+            query.append("(birthday <= ");
+            query.append(DbConnectionFactory.isOracle() ? "timestamp " : "");
+            query.append("? OR ?");
             query.append(DbConnectionFactory.isPostgres() ? "::TIMESTAMP" : "");
             query.append(" IS NULL) AND ");
             query.append(
