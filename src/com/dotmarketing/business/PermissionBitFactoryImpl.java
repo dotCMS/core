@@ -2283,7 +2283,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			DotConnect dotConnect = new DotConnect();
 			String userFullName = DotConnect.concat(new String[] { "user_.firstName", "' '", "user_.lastName" });
 
-			StringBuffer baseSql = new StringBuffer("select distinct (user_.userid), user_.firstName || ' ' || user_.lastName ");
+			StringBuffer baseSql = new StringBuffer("select distinct (user_.userid), ");
+			baseSql.append(userFullName);
 			baseSql.append(" from user_, users_cms_roles where");
 			baseSql.append(" user_.companyid = ? and user_.userid <> 'system' ");
 			baseSql.append(" and users_cms_roles.role_id in (" + roleIdsSB.toString() + ")");

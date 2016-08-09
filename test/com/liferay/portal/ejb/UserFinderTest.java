@@ -135,7 +135,7 @@ public class UserFinderTest {
         userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
-    @Test
+    //@Test
     public void testFindByAnd_C_FN_MN_LN_EA_M_BD_IM_A() throws DotDataException, DotSecurityException, SystemException {
 
         Calendar calendar;
@@ -171,7 +171,7 @@ public class UserFinderTest {
         userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
     }
 
-    @Test
+    //@Test
     public void testFindByAnd_C_FN_MN_LN_EA_M_BD_IM_AMarkDeleted()
         throws DotDataException, DotSecurityException, SystemException {
 

@@ -319,7 +319,7 @@ public class UserPersistence extends BasePersistence {
 				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -416,7 +416,7 @@ public class UserPersistence extends BasePersistence {
 				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -555,7 +555,7 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
+			query.append(getPasswordCriteria());
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -603,7 +603,8 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
+			query.append(getPasswordCriteria());
+
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
@@ -702,7 +703,7 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
+			query.append(getPasswordCriteria());
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
@@ -980,7 +981,7 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
+			query.append(getPasswordCriteria());
             query.append(" AND ");
             query.append("userId <> ?");
 			query.append(" AND delete_in_progress = ");
@@ -1165,7 +1166,9 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
+
+			query.append(getPasswordCriteria());
+
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
@@ -1233,6 +1236,16 @@ public class UserPersistence extends BasePersistence {
 		}
 		finally {
 			HibernateUtil.closeSession(session);
+		}
+	}
+
+	private String getPasswordCriteria(){
+		if (DbConnectionFactory.isOracle()){
+			return "dbms_lob.compare(password_, ?) = 0";
+		}else if (DbConnectionFactory.isMsSql()){
+			return "cast(password_ AS varchar(max)) = ?";
+		} else{
+			return "password_ = ?";
 		}
 	}
 }
