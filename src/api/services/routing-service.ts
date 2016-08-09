@@ -1,12 +1,9 @@
 import { Routes } from '@ngrx/router';
-import {LoginPageComponent} from "../../view/components/common/login/login-page-component";
 import { Observable } from 'rxjs/Rx';
-import {Observer} from "rxjs/Observer";
-import {RuleEngineContainer} from "../../view/components/rule-engine/rule-engine.container";
-import {LoginService} from "./login-service";
-import {Injectable, Inject} from '@angular/core';
-import {IframeLegacyComponent} from "../../view/components/common/iframe-legacy/IframeLegacyComponent";
-import {PatternLibrary} from "../../view/components//common/pattern-library/pattern-library";
+import { Observer } from "rxjs/Observer";
+import { RuleEngineContainer } from '../../view/components/rule-engine/rule-engine.container';
+import { Injectable, Inject } from '@angular/core';
+import { PatternLibrary } from '../../view/components/common/pattern-library/pattern-library';
 
 
 @Injectable()
