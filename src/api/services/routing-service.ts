@@ -67,7 +67,6 @@ export class RoutingService{
                         }
                     }
 
-                    console.log('ROUTES', this.routes);
                     if (this.menusChangeObserver) {
                         this.menusChangeObserver.next(this.menus);
                     }

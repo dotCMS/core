@@ -24,9 +24,7 @@ export class MainNavigation {
     private message:string = 'error';
 
     constructor(routingService:RoutingService) {
-        console.log('MainNavigation');
         routingService.subscribeMenusChange().subscribe( menu => {
-            console.log('MENU', menu);
             this.menuItems = menu;
             this.message = 'success';
         });
