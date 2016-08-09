@@ -6,6 +6,8 @@ import {RuleEngineContainer} from "../../view/components/rule-engine/rule-engine
 import {LoginService} from "./login-service";
 import {Injectable, Inject} from '@angular/core';
 import {IframeLegacyComponent} from "../../view/components/common/iframe-legacy/IframeLegacyComponent";
+import {PatternLibrary} from "../../view/components//common/pattern-library/pattern-library";
+
 
 @Injectable()
 export class RoutingService{
@@ -16,6 +18,7 @@ export class RoutingService{
 
     private mapComponents = {
         'RULES_ENGINE_PORTLET': RuleEngineContainer,
+        'PL': PatternLibrary
     };
 
     constructor(@Inject('routes') private routes: Routes[ ]){
@@ -44,13 +47,21 @@ export class RoutingService{
                 let mainRoutes = this.routes[0];
                 mainRoutes.children.slice(1, mainRoutes.children.length);
 
-                if (menuConfig.errors.length > 0) {
+                if (menuConfig.errors.length) {
                     console.log(menuConfig.errors[0].message);
                     observer.error(menuConfig.errors);
+
                 } else {
 
-
                     this.menus = menuConfig.entity.menu;
+
+                    this.menus[0].menuItems.unshift({
+                        ajax: false,
+                        angular: true
+                        id: "PL"
+                        name: "Pattern Library"
+                        url: "/pl"
+                    });
 
                     for (let i = 0; i < this.menus.length; i++){
                         let menu = menuConfig.entity.menu[i];

@@ -1,7 +1,7 @@
 @import "variables";
 @import "mixins";
 @import "grids";
-
+@import "typography";
 
 *, *:before, *:after {
     box-sizing: border-box;
@@ -21,11 +21,19 @@ body {
     background-position: top center;
 }
 
+p {
+    line-height: 1.5em;
+}
+
 a {
     color: $primary;
 
     &:hover {
         text-decoration: none;
+    }
+
+    &.link-secondary {
+        color: $secondary;
     }
 }
 
