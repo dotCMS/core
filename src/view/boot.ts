@@ -30,7 +30,8 @@ import { Routes } from '@ngrx/router';
 new AppConfigurationService().getConfigProperties().subscribe(config => {
 
     let routes: Routes = [
-        { path: 'dotCMS',
+        {
+            path: 'dotCMS',
             component: MainComponent,
             children: [{
                 component: IframeLegacyComponent,

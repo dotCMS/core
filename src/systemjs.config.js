@@ -119,12 +119,13 @@
         'icon',
         'checkbox',
         'card',
-        'progress-circle'
+        'progress-circle',
+        'radio'
     ];
 
     angularMaterialPackages.forEach(function(pkg) {
         packages[`@angular2-material/${pkg}`] = {main: `${pkg}.js`};
-    })
+    });
 
     var config = {
         map: map,

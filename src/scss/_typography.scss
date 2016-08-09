@@ -1,0 +1,36 @@
+@import "mixins";
+@import "variables";
+
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.5em;
+}
+
+h1, h2, h3 {
+    color: $primary;
+    font-weight: normal;
+}
+
+h1 {
+    font-size: rem-cal(36px);
+}
+
+h2 {
+    font-size: 30px;
+}
+
+h3 {
+    font-size: 24px;
+}
+
+
+h4 {
+    font-size: 18px;
+}
+
+h5 {
+    font-size: 14px;
+}
+
+h6 {
+    font-size: 12px;
+}
