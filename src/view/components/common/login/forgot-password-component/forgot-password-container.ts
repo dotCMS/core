@@ -1,26 +1,26 @@
 import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from "../../../../../api/services/login-service";
-import {FogotPasswordComponent} from "./forgot-password-component";
+import {ForgotPasswordComponent} from "./forgot-password-component";
 import { Router } from '@ngrx/router';
 import {ResponseView} from "../../../../../api/services/response-view";
 
 @Component({
-    directives: [FogotPasswordComponent],
+    directives: [ForgotPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
-    selector: 'dot-fogot-password-container',
+    selector: 'dot-forgot-password-container',
     styleUrls: [],
     template: `
-        <dot-fogot-password-component
+        <dot-forgot-password-component
             [message]="message"
             (cancel)="goToLogin()"
             (recoverPassword)="recoverPassword($event)"
-        ></dot-fogot-password-component>
+        ></dot-forgot-password-component>
     `,
 })
-export class FogotPasswordContainer{
+export class ForgotPasswordContainer{
 
     private message:string = '';
 
@@ -41,6 +41,6 @@ export class FogotPasswordContainer{
     }
 
     goToLogin():void{
-        this.router.go('/login/login');
+        this.router.go('/public/login');
     }
 }

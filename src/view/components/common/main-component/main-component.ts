@@ -26,10 +26,9 @@ import { Router } from '@ngrx/router';
 })
 export class MainComponent {
 
-    @Output() toggleMain = new EventEmitter<boolean>();
     logoutLabel: string;
 
-    constructor(@Inject('menuItems') private menuItems: Array<any>, private loginService: LoginService, private router: Router) {
+    constructor(private loginService: LoginService, private router: Router) {
         this.logoutLabel = 'Logout'; // TODO need to use internationalization
     }
 
@@ -43,7 +42,7 @@ export class MainComponent {
      */
     logout(): void {
         this.loginService.logOutUser().subscribe(data => {
-            this.router.go('/login/login');
+            this.router.go('/public/login');
         }, (error) => {
             console.log(error);
         });

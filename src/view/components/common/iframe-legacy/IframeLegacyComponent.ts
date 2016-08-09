@@ -4,6 +4,8 @@ import { SafeResourceUrl, DomSanitizationService } from '@angular/platform-brows
 import { RouteParams } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx';
 
+import {RoutingService} from "../../../../api/services/routing-service";
+
 @Component({
     providers: [],
     selector: 'dot-iframe',
@@ -14,11 +16,24 @@ import { Observable } from 'rxjs/Rx';
 
 export class IframeLegacyComponent {
     iframe: Observable<SafeResourceUrl>;
-    constructor(params$: RouteParams, @Inject('menuItems') private menuItems: Array<any>, sanitizer: DomSanitizationService) {
+    private menuIdUrlMatch:Map<string, string>;
+
+    constructor(params$: RouteParams, private routingService: RoutingService, sanitizer: DomSanitizationService) {
+
         this.iframe = params$.pluck<string>('id')
             .distinctUntilChanged()
             .map(id => {
-                return sanitizer.bypassSecurityTrustResourceUrl(menuItems.mapPaths[id]);
+                return sanitizer.bypassSecurityTrustResourceUrl( this.menuIdUrlMatch.get( id ) );
             });
+
+        routingService.subscribeMenusChange().subscribe( menus => {
+            this.menuIdUrlMatch = new Map();
+
+            menus.forEach(menu => menu.menuItems.forEach(
+                menuItem => {
+                    this.menuIdUrlMatch.set( menuItem.id, menuItem.url );
+                }
+            ));
+        });
     }
 }

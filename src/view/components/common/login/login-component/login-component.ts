@@ -31,6 +31,7 @@ import {CapitalizePipe} from "../../../../../api/pipes/capitalize-pipe";
 export class LoginComponent {
 
     @Input() isLoginInProgress: boolean = false;
+    @Input()  message: string = '';
 
     @Output() recoverPassword  = new EventEmitter<>();
     @Output() login  = new EventEmitter<LoginData>();
@@ -40,7 +41,6 @@ export class LoginComponent {
     private language: string = '';
 
     languages: Array<string> = [];
-    message: string = '';
 
     // labels
     loginLabel: string = '';

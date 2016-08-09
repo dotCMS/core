@@ -50,7 +50,7 @@ export class ResetPasswordContainer{
     }
 
     private goToLogin():void{
-        this.router.go('/login/login');
+        this.router.go('/public/login');
     }
 }
 

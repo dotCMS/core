@@ -14,12 +14,12 @@ import { Router } from '@ngrx/router';
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
-    selector: 'dot-fogot-password-component',
+    selector: 'dot-forgot-password-component',
     styleUrls: [],
     templateUrl: ['forgot-password-component.html'],
 })
 
-export class FogotPasswordComponent {
+export class ForgotPasswordComponent {
 
     @Input() message: string;
 

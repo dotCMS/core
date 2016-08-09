@@ -37,6 +37,7 @@
     "./src/api/services/http/dotcms-http-service.ts",
     "./src/api/services/response-view.ts",
     "./src/api/services/login-service.ts",
+    "./src/api/services/routing-service.ts",
     "./src/api/system/http-response-util.ts",
     "./src/api/system/locale/I18n.it-spec.ts",
     "./src/api/system/locale/I18n.ts",
@@ -102,6 +103,7 @@
     "./src/view/components/semantic/modules/restdropdown/boot.ts",
     "./src/view/components/semantic/modules/restdropdown/demo.ts",
     "./src/view/components/semantic/modules/restdropdown/RestDropdown.ts",
+    "./src/view/components/common/iframe-legacy/IframeLegacyComponent",
     "./src/view/components/app.ts",
     "./typings/main.d.ts"
   ]

@@ -7,6 +7,9 @@ import {ApiRoot} from '../persistence/ApiRoot';
 import {RequestMethod} from '@angular/http';
 import {CoreWebService} from '../services/core-web-service';
 import { Router } from '@ngrx/router';
+import {Observer} from "rxjs/Observer";
+import {RoutingService} from "./routing-service";
+
 
 /**
  * This Service get the server configuration to display in the login component
@@ -14,6 +17,9 @@ import { Router } from '@ngrx/router';
  */
 @Injectable()
 export class LoginService  {
+
+    private static const LOGIN_USER_SESSION_STORAGE_KEY = "user";
+
     private user:User;
     private serverInfo: Array<any>;
     private userAuthURL: string;
@@ -25,8 +31,7 @@ export class LoginService  {
     private lang: string = '';
     private country: string = '';
 
-    constructor(_apiRoot: ApiRoot, public coreWebService: CoreWebService, private router: Router) {
-
+    constructor(_apiRoot: ApiRoot, public coreWebService: CoreWebService, private router: Router, private routingService: RoutingService) {
         this.userAuthURL = `${_apiRoot.baseUrl}api/v1/authentication`;
         this.serverInfoURL = `${_apiRoot.baseUrl}api/v1/loginform`;
         this.recoverPasswordURL = `${_apiRoot.baseUrl}api/v1/forgotpassword`;
@@ -60,19 +65,24 @@ export class LoginService  {
      * @param language string with the language and country code, ex: en_US
      * @returns an array with the user if the user loggedIn successfully or the error message
      */
-    public logInUser(login: string, password: string, rememberMe: boolean, language: string): Observable<{errors: string[], entity: Object, messages: string[], i18nMessagesMap: Object}> {
+    public logInUser(login: string, password: string, rememberMe: boolean, language: string): Observable<User> {
         this.setLanguage(language);
 
         let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
-        return Observable.create(observer => { 
+        return  Observable.create(observer => {
             this.coreWebService.requestView({
                 body: body,
                 method: RequestMethod.Post,
                 url: this.userAuthURL
-            }).subscribe(response =>{ 
-                this.user = response.entity; 
-                observer.next(response); 
+            }).subscribe(response =>{
+                this.user = response.entity;
+                window.sessionStorage.setItem(LoginService.LOGIN_USER_SESSION_STORAGE_KEY, response.entity);
+
+                this.routingService.loadMenus().subscribe( (menu) => observer.next(this.user),
+                    error => observer.error(error)
+                );
+
             }, error => observer.error(error));
         });
     }
@@ -82,7 +92,8 @@ export class LoginService  {
      * @returns {Observable<any>}
      */
     public logOutUser(): Observable<any> {
-        this.router.go('/login/login');
+        this.router.go('/public/login');
+        window.sessionStorage.removeItem(LoginService.LOGIN_USER_SESSION_STORAGE_KEY);
 
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
@@ -129,6 +140,10 @@ export class LoginService  {
         });
     }
     public getLoginUser():User{
+        if ( !this.user ){
+            this.user = window.sessionStorage.getItem( LoginService.LOGIN_USER_SESSION_STORAGE_KEY );
+        }
+
         return this.user;
     }
 }

@@ -13,8 +13,8 @@
         <div class="signin">
             <h2 class="login__title" [innerHTML]="loginLabel"></h2>
             <div class="error-message" [innerHTML]="message"></div>
-            <md-input (keyup.enter)="logInUser()" placeholder="{{userIdOrEmailLabel}}" [(ngModel)]="myAccountLogin" floatingPlaceholder="false" ></md-input>
-            <md-input (keyup.enter)="logInUser()" placeholder="{{passwordLabel}}" [(ngModel)]="password" type="password" floatingPlaceholder="false"></md-input>
+            <md-input (keyup)="message=''" (keyup.enter)="logInUser()" placeholder="{{userIdOrEmailLabel}}" [(ngModel)]="myAccountLogin" floatingPlaceholder="false" ></md-input>
+            <md-input (keyup)="message=''" (keyup.enter)="logInUser()" placeholder="{{passwordLabel}}" [(ngModel)]="password" type="password" floatingPlaceholder="false"></md-input>
             <div class="row login__form-line">
                 <div class="col-sm-6">
                     <md-checkbox [(ngModel)]="myAccountRememberMe" id="myAccountRememberMe">{{rememberMeLabel}}</md-checkbox>
