@@ -432,7 +432,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
 		String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, fromAngular);
-		System.out.println("###url = " + url);
+
 		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 		String subject = LanguageUtil.get(locale, "reset-password-email-subject");
 
