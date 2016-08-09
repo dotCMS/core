@@ -56,6 +56,9 @@ public class AudioCaptchaServlet extends HttpServlet {
 
 			//String captchaSession =  (String) .getAttribute(com.dotcms.repackage.nl.captcha.servlet.Constants.SIMPLE_CAPCHA_SESSION_KEY);
 			Captcha captcha = (Captcha) request.getSession().getAttribute(Captcha.NAME);
+			//We need to remove the captcha info from the session.
+			request.getSession().removeAttribute(Captcha.NAME);
+
 			String captchaSession=captcha!=null ? captcha.getAnswer() : null;
 			if(UtilMethods.isSet(captchaSession)){
 				
