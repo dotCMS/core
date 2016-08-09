@@ -432,7 +432,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
 		String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, fromAngular);
-		
+
 		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 		String subject = LanguageUtil.get(locale, "reset-password-email-subject");
 
@@ -762,6 +762,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 				}
 
 				ResetPasswordTokenUtil.checkToken(user, token);
+				APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
 			}
 		} catch (DotDataException e) {
 			throw new IllegalArgumentException();
