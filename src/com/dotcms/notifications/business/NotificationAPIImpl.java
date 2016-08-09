@@ -113,6 +113,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 					}
 				}
 
+				CacheLocator.getNewNotificationCache().remove(userId);
 				// Adding notification to System Events table
 				final Notification n = new Notification(level, userId, data);
 				final Payload payload = new Payload(n, Visibility.USER, userId);
