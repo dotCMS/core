@@ -55,6 +55,11 @@ public class HeaderFilter implements ContainerResponseFilter {
 						headers.add(CACHE_CONTROL, NO_CACHE_CONTROL); // HTTP 1.1.
 						headers.add(PRAGMA, NO_CACHE); // HTTP 1.0.
 						headers.add(EXPIRES, EXPIRES_DEFAULT_DATE); // Proxies.
+					},
+					Deprecated.class,
+					(Annotation annotation, MultivaluedMap<String, Object> headers) -> {
+						// "This API is deprecated. Please refer to the following end-point: ..."
+						headers.add("Deprecated API ", "This is an old API, will be not available in the future");
 					}
 
 			);
