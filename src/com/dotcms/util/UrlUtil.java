@@ -27,7 +27,7 @@ public abstract class  UrlUtil {
     public static String getAbsoluteResetPasswordURL(Company company, User user, String token, Locale locale,
                                                      boolean fromAngular){
 
-         if ( !fromAngular ) {
+         if ( fromAngular ) {
             return getBaseURL(company) + ANGULAR_RESET_PASSWORD_URL_STRATEGY.getResetUserPasswordRelativeURL(user,
                     token, locale, company);
         }else{
