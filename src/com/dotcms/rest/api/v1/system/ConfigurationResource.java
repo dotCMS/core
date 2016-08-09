@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.liferay.util.LocaleUtil;
 
 /**
  * This Jersey end-point provides access to configuration parameters that are
@@ -56,7 +58,9 @@ public class ConfigurationResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-			final Map<String, Object> configPropsMap = helper.getConfigProperties(request);
+
+			final Locale locale = LocaleUtil.getLocale(request);
+			final Map<String, Object> configPropsMap = helper.getConfigProperties(request, locale);
 			return Response.ok(new ResponseEntityView(configPropsMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
