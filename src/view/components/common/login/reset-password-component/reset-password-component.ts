@@ -7,8 +7,8 @@ import {LoginService} from '../../../../../api/services/login-service';
 // angular material imports
 import {MdButton} from '@angular2-material/button';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {DotCMSHttpService} from "../../../../../api/services/http/dotcms-http-service";
-import {ChangePasswordData} from "./reset-password-container";
+import {DotCMSHttpService} from '../../../../../api/services/http/dotcms-http-service';
+import {ChangePasswordData} from './reset-password-container';
 
 @Component({
     directives: [MdButton, MD_INPUT_DIRECTIVES],

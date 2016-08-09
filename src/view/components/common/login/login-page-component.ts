@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angula
 
 
 import { Router } from '@ngrx/router';
-import {LoginService} from "../../../../api/services/login-service";
+import {LoginService} from '../../../../api/services/login-service';
 
 @Component({
     directives: [],

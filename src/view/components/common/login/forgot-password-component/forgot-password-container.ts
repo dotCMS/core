@@ -1,8 +1,8 @@
 import {Component, ViewEncapsulation} from '@angular/core';
-import {LoginService} from "../../../../../api/services/login-service";
-import {ForgotPasswordComponent} from "./forgot-password-component";
+import {LoginService} from '../../../../../api/services/login-service';
+import {ForgotPasswordComponent} from './forgot-password-component';
 import { Router } from '@ngrx/router';
-import {ResponseView} from "../../../../../api/services/response-view";
+import {ResponseView} from '../../../../../api/services/response-view';
 
 @Component({
     directives: [ForgotPasswordComponent],
