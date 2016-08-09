@@ -242,39 +242,39 @@ public class UserFinder {
             ps.setString(8, emailAddress);
             ps.setString(9, emailAddress);
 
-            /*if (male != null) {
+            if (male != null) {
                 ps.setBoolean(10, male.booleanValue());
                 ps.setBoolean(11, male.booleanValue());
             } else {
                 ps.setNull(10, Types.NUMERIC);
                 ps.setNull(11, Types.NUMERIC);
-            }*/
+            }
 
-            ps.setTimestamp(10, age1);
-            ps.setTimestamp(11, age1);
-            ps.setTimestamp(12, age2);
-            ps.setTimestamp(13, age2);
-            ps.setString(14, im);
-            ps.setString(15, im);
+            ps.setTimestamp(12, age1);
+            ps.setTimestamp(13, age1);
+            ps.setTimestamp(14, age2);
+            ps.setTimestamp(15, age2);
             ps.setString(16, im);
             ps.setString(17, im);
             ps.setString(18, im);
-            ps.setString(19, street1);
-            ps.setString(20, street1);
-            ps.setString(21, street2);
-            ps.setString(22, street2);
-            ps.setString(23, city);
-            ps.setString(24, city);
-            ps.setString(25, state);
-            ps.setString(26, state);
-            ps.setString(27, zip);
-            ps.setString(28, zip);
-            ps.setString(29, phone);
-            ps.setString(30, phone);
-            ps.setString(31, fax);
-            ps.setString(32, fax);
-            ps.setString(33, cell);
-            ps.setString(34, cell);
+            ps.setString(19, im);
+            ps.setString(20, im);
+            ps.setString(21, street1);
+            ps.setString(22, street1);
+            ps.setString(23, street2);
+            ps.setString(24, street2);
+            ps.setString(25, city);
+            ps.setString(26, city);
+            ps.setString(27, state);
+            ps.setString(28, state);
+            ps.setString(29, zip);
+            ps.setString(30, zip);
+            ps.setString(31, phone);
+            ps.setString(32, phone);
+            ps.setString(33, fax);
+            ps.setString(34, fax);
+            ps.setString(35, cell);
+            ps.setString(36, cell);
 
             rs = ps.executeQuery();
 
