@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.system;
 
+import static com.dotcms.util.CollectionsUtils.entry;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.mapEntries;
 import static com.dotcms.util.HttpRequestDataUtil.getHostname;
 import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_ENDPOINTS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_BASEURL;
@@ -65,36 +67,29 @@ public class ConfigurationHelper implements Serializable {
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				I18N_MESSAGES_MAP,
-				map("notifications_title", // Notifications
-						LanguageUtil.get(locale, "notifications_title"),
-					"notifications_dismiss", // Dismiss
-						LanguageUtil.get(locale, "notifications_dismiss"),
-					"notifications_dismissall", // Dismiss all
-						LanguageUtil.get(locale, "notifications_dismissall"),
-					"more-than-a-year-ago", // more than a year ago.
-						LanguageUtil.get(locale, "more-than-a-year-ago"),
-					"x-months-ago", // {0} months ago.
-						LanguageUtil.get(locale, "x-months-ago"),
-					"last-month",  // last month.
-						LanguageUtil.get(locale, "last-month"),
-					"x-weeks-ago", // {0} weeks ago.
-						LanguageUtil.get(locale, "x-weeks-ago"),
-					"last-week",  // last week
-						LanguageUtil.get(locale, "last-week"),
-					"x-days-ago",  // {0} days ago
-						LanguageUtil.get(locale, "x-days-ago"),
-					"yesterday",  // Yesterday
-						LanguageUtil.get(locale, "yesterday"),
-					"x-hours-ago",  // {0} hours ago
-						LanguageUtil.get(locale, "x-hours-ago"),
-					"an-hour-ago",  // an hour ago
-						LanguageUtil.get(locale, "an-hour-ago"),
-					"x-minutes-ago",  // {0} minutes ago
-						LanguageUtil.get(locale, "x-minutes-ago"),
-					"seconds-ago",  // seconds ago
-						LanguageUtil.get(locale, "seconds-ago")
-					)
-				);
+				mapEntries(message("notifications_title", locale), // Notifications
+					message("notifications_dismiss", locale), // Dismiss
+					message("notifications_dismissall", locale), // Dismiss all
+					message("relativetime.future", locale),
+					message("relativetime.past", locale),
+					message("relativetime.s", locale),
+					message("relativetime.m", locale),
+					message("relativetime.mm", locale),
+					message("relativetime.h", locale),
+					message("relativetime.hh", locale),
+					message("relativetime.d", locale),
+					message("relativetime.dd", locale),
+					message("relativetime.M", locale),
+					message("relativetime.MM", locale),
+					message("relativetime.y", locale),
+					message("relativetime.yy", locale)
+				));
+	}
+
+
+	private static Map.Entry<String, String> message (final String message, final Locale locale) throws LanguageException {
+
+		return entry(message, LanguageUtil.get(locale, message));
 	}
 
 
