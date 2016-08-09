@@ -4,8 +4,8 @@ import {LoginService} from '../../../../../api/services/login-service';
 // angular material imports
 import {MdButton} from '@angular2-material/button';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {DotCMSHttpService} from "../../../../../api/services/http/dotcms-http-service";
-import {ResponseView} from "../../../../../api/services/response-view";
+import {DotCMSHttpService} from '../../../../../api/services/http/dotcms-http-service';
+import {ResponseView} from '../../../../../api/services/response-view';
 import { Router } from '@ngrx/router';
 
 @Component({
@@ -14,12 +14,12 @@ import { Router } from '@ngrx/router';
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
-    selector: 'dot-fogot-password-component',
+    selector: 'dot-forgot-password-component',
     styleUrls: [],
     templateUrl: ['forgot-password-component.html'],
 })
 
-export class FogotPasswordComponent {
+export class ForgotPasswordComponent {
 
     @Input() message: string;
 

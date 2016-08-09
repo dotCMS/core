@@ -1,8 +1,9 @@
 
 import {Component, EventEmitter, Inject, Input, Output, ViewEncapsulation} from '@angular/core';
-import {LoginService} from "../../../../../api/services/login-service";
+import {LoginService} from '../../../../../api/services/login-service';
 import { Router } from '@ngrx/router';
-import {LoginComponent} from "./login-component";
+import {LoginComponent} from './login-component';
+import {RoutingService} from '../../../../../api/services/routing-service';
 
 @Component({
     directives: [LoginComponent],
@@ -32,13 +33,15 @@ export class LoginContainer{
 
     logInUser(loginData:LoginData): void {
         this.isLoginInProgress = true;
+        this.message = '';
 
         this.loginService.logInUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result:any) => {
             this.message = '';
-            this.router.go('/main');
-        }, (error) => {
+            this.router.go('/dotCMS');
+         }, (error) => {
+
             if (error.response.status === 400 || error.response.status === 401) {
-                this.message = error.getErrorMessage();
+                this.message = error.errorsMessages;
             } else {
                 console.log(error);
             }
@@ -51,7 +54,7 @@ export class LoginContainer{
      * Display the forgot password card
      */
     showForgotPassword(): void {
-        this.router.go('/login/fogotPassword');
+        this.router.go('/public/forgotPassword');
     }
 }
 

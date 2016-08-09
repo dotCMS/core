@@ -4,6 +4,8 @@ import {Component, Inject, ViewEncapsulation} from '@angular/core';
 import {LoginPageComponent} from './common/login/login-page-component';
 import {MainComponent} from './common/main-component/main-component';
 import { Router } from '@ngrx/router';
+import {LoginService} from "../../api/services/login-service";
+import {RoutingService} from "../../api/services/routing-service";
 
 
 @Component({
@@ -23,10 +25,8 @@ import { Router } from '@ngrx/router';
 export class AppComponent {
 
     login: boolean= true;
-    _menuItems: Array<any>;
 
-    constructor(@Inject('menuItems') private menuItems: Array<any>,
-                 router: Router) {
+    constructor(router: Router, loginService:LoginService, routingService:RoutingService) {
 
         let queryParams:Map = this.getQueryParams();
 
@@ -34,14 +34,17 @@ export class AppComponent {
             let token:string = queryParams.get('token');
             let userId:string = queryParams.get('userId');
 
-            router.go(`/login/resetPassword/${userId}?token=${token}`);
-        }else if (menuItems.navigationItems.length === 0) {
-            router.go('/login/login');
+            router.go(`public/resetPassword/${userId}?token=${token}`);
+        }else if (!loginService.getLoginUser()) {
+            router.go('public/login');
         }else {
-            router.go('/main');
-        }
 
-        this._menuItems = menuItems;
+            routingService.loadMenus().subscribe( (menu) => router.go('dotCMS'),
+                error => console.error(error)
+            );
+
+
+        }
     }
 
     private getQueryParams():Map<string, string> {

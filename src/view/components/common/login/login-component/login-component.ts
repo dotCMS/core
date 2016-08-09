@@ -6,12 +6,12 @@ import {Component, EventEmitter, Inject, Input, NgZone, Output, ViewEncapsulatio
 import {MdButton} from '@angular2-material/button';
 import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {DotCMSHttpResponse} from "../../../../../api/services/dotcms-http-response";
-import {LoginData} from "./login-container";
+import {DotCMSHttpResponse} from '../../../../../api/services/dotcms-http-response';
+import {LoginData} from './login-container';
 import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
 import {MdToolbar} from '@angular2-material/toolbar';
-import {LoginService} from "../../../../../api/services/login-service";
-import {CapitalizePipe} from "../../../../../api/pipes/capitalize-pipe";
+import {LoginService} from '../../../../../api/services/login-service';
+import {CapitalizePipe} from '../../../../../api/pipes/capitalize-pipe';
 
 @Component({
     directives: [MdButton,MdCheckbox, MD_INPUT_DIRECTIVES, MD_PROGRESS_CIRCLE_DIRECTIVES],
@@ -31,6 +31,7 @@ import {CapitalizePipe} from "../../../../../api/pipes/capitalize-pipe";
 export class LoginComponent {
 
     @Input() isLoginInProgress: boolean = false;
+    @Input()  message: string = '';
 
     @Output() recoverPassword  = new EventEmitter<>();
     @Output() login  = new EventEmitter<LoginData>();
@@ -40,7 +41,6 @@ export class LoginComponent {
     private language: string = '';
 
     languages: Array<string> = [];
-    message: string = '';
 
     // labels
     loginLabel: string = '';

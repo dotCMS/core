@@ -1,0 +1,100 @@
+import { Routes } from '@ngrx/router';
+import {LoginPageComponent} from "../../view/components/common/login/login-page-component";
+import { Observable } from 'rxjs/Rx';
+import {Observer} from "rxjs/Observer";
+import {RuleEngineContainer} from "../../view/components/rule-engine/rule-engine.container";
+import {LoginService} from "./login-service";
+import {Injectable, Inject} from '@angular/core';
+import {IframeLegacyComponent} from "../../view/components/common/iframe-legacy/IframeLegacyComponent";
+
+@Injectable()
+export class RoutingService{
+
+    private menusChangeObservable:Observable<any>;
+    private menusChangeObserver:Observer<any>;
+    private menus:any[];
+
+    private mapComponents = {
+        'RULES_ENGINE_PORTLET': RuleEngineContainer,
+    };
+
+    constructor(@Inject('routes') private routes: Routes[ ]){
+        this.menusChangeObservable = Observable.create(observer => {
+            this.menusChangeObserver = observer;
+
+            if (this.menus){
+                this.menusChangeObserver.next(this.menus);
+            }
+        });
+    }
+
+    public subscribeMenusChange():Observable<any>{
+        return this.menusChangeObservable;
+    }
+
+    public getMenus():any[]{
+        return this.menus;
+    }
+
+    public loadMenus():Observable<any>{
+        return Observable.create( observer => {
+            this.getConfig().subscribe((menuConfig) => {
+                // TODO: do this more elegant
+                // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
+                let mainRoutes = this.routes[0];
+                mainRoutes.children.slice(1, mainRoutes.children.length);
+
+                if (menuConfig.errors.length > 0) {
+                    console.log(menuConfig.errors[0].message);
+                    observer.error(menuConfig.errors);
+                } else {
+
+
+                    this.menus = menuConfig.entity.menu;
+
+                    for (let i = 0; i < this.menus.length; i++){
+                        let menu = menuConfig.entity.menu[i];
+                        for (let k = 0; k < menu.menuItems.length; k++){
+                            let subMenuItem = menu.menuItems[k];
+
+                            if (subMenuItem.angular) {
+                                mainRoutes.children.push({
+                                    component: this.mapComponents[subMenuItem.id],
+                                    path: subMenuItem.url,
+                                });
+                                subMenuItem.url = 'dotCMS' + subMenuItem.url
+                            }
+                        }
+                    }
+
+                    if (this.menusChangeObserver) {
+                        this.menusChangeObserver.next(this.menus);
+                    }
+                    observer.next(this.menus);
+                }
+            });
+        });
+    }
+
+    private getConfig(): Observable<any> {
+
+        return Observable.create(observer => {
+            let oReq = new XMLHttpRequest();
+
+            oReq.onreadystatechange = (() => {
+                if (oReq.status === 401) {
+                    // if the user is not loggedIn will be here ;
+                    observer.next(JSON.parse('{"errors":[],"entity":[]}'));
+                    observer.complete();
+                }else if (oReq.status === 400 || oReq.status === 500) {
+                    console.log('Error ' + oReq.status + ': ' + oReq.statusText);
+                }else if (oReq.readyState === XMLHttpRequest.DONE) {
+                    observer.next(JSON.parse(oReq.response));
+                    observer.complete();
+                }
+            });
+            oReq.open('GET', '/api/v1/appconfiguration');
+            oReq.send();
+        });
+    }
+}

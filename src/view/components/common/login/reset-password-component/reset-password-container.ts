@@ -1,7 +1,7 @@
 import {Component, ViewEncapsulation} from '@angular/core';
-import {LoginService} from "../../../../../api/services/login-service";
+import {LoginService} from '../../../../../api/services/login-service';
 import { Router, QueryParams, RouteParams } from '@ngrx/router';
-import {ResetPasswordComponent} from "./reset-password-component";
+import {ResetPasswordComponent} from './reset-password-component';
 
 @Component({
     directives: [ResetPasswordComponent],
@@ -50,7 +50,7 @@ export class ResetPasswordContainer{
     }
 
     private goToLogin():void{
-        this.router.go('/login/login');
+        this.router.go('/public/login');
     }
 }
 
