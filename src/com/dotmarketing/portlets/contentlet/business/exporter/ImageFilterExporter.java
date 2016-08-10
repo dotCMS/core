@@ -47,11 +47,9 @@ public class ImageFilterExporter implements BinaryContentExporter {
 				List<String> newFilters = new ArrayList<String>();
 				newFilters.add(0, "Png");
 				newFilters.addAll(Arrays.asList(filter));
-
-					
-					filter =newFilters.toArray(new String[newFilters.size()]);
-					parameters.replace("filter", filter);
-					parameters.replace("filters", filter);
+				filter =newFilters.toArray(new String[newFilters.size()]);
+				parameters.replace("filter", filter);
+				parameters.replace("filters", filter);
 				
 			}
 
