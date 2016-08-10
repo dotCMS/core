@@ -10,10 +10,15 @@
 
 <select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" onchange="updateHiddenFields();" #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end>
 
-<option value="SYSTEM_HOST" #if($tagStorage.equals("SYSTEM_HOST")) selected="selected" #end>All Sites</option>
-
 #foreach($c in $dotcontent.pull('+structureName:Host +deleted:false', 0, 'host.hostName asc'))
-<option value="$c.identifier" #if($c.identifier.equals($tagStorage) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier))) selected="selected" #end>$c.hostName</option>
+    <option value="$c.identifier" #if($c.identifier.equals($tagStorage) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier))) selected="selected" #end>
+        #if(!$c.isSystemHost)
+            $c.hostName
+        #else
+            $text.get("tag-all-hosts")
+        #end
+    </option>
+
 #end
 </select>
 
