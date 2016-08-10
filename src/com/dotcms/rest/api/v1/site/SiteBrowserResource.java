@@ -128,7 +128,7 @@ public class SiteBrowserResource implements Serializable {
 
 
     @PUT
-    @Path ("/id/{id}")
+    @Path ("/switch/{id}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
