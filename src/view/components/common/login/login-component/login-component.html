@@ -13,14 +13,30 @@
         <div class="signin">
             <h2 class="login__title" [innerHTML]="loginLabel"></h2>
             <div class="error-message" [innerHTML]="message"></div>
-            <md-input (keyup)="message=''" (keyup.enter)="logInUser()" placeholder="{{userIdOrEmailLabel}}" [(ngModel)]="myAccountLogin" floatingPlaceholder="false" ></md-input>
-            <md-input (keyup)="message=''" (keyup.enter)="logInUser()" placeholder="{{passwordLabel}}" [(ngModel)]="password" type="password" floatingPlaceholder="false"></md-input>
+            <md-input id="login-component-login-input"
+                    (keyup)="message=''"
+                    (keyup.enter)="logInUser()"
+                    placeholder="{{userIdOrEmailLabel}}"
+                    [(ngModel)]="myAccountLogin"
+                    floatingPlaceholder="false" >
+
+            </md-input>
+            <md-input id="login-component-password-input"
+                    (keyup)="message=''"
+                    (keyup.enter)="logInUser()"
+                    placeholder="{{passwordLabel}}"
+                    [(ngModel)]="password"
+                    type="password"
+                    floatingPlaceholder="false"></md-input>
             <div class="row login__form-line">
                 <div class="col-sm-6">
-                    <md-checkbox [(ngModel)]="myAccountRememberMe" id="myAccountRememberMe">{{rememberMeLabel}}</md-checkbox>
+                    <md-checkbox [(ngModel)]="myAccountRememberMe" id="login-component-remenberme-checkbox">{{rememberMeLabel}}</md-checkbox>
                 </div>
                 <div class="col-sm-6">
-                    <select class="singin__language" id="language" [(ngModel)]="language" (change)="changeLanguage($event.target.value)">
+                    <select class="singin__language"
+                            id="login-component-language-select"
+                            [(ngModel)]="language"
+                            (change)="changeLanguage($event.target.value)">
                         <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label | capitalize}}</option>
                     </select>
                 </div>
@@ -28,8 +44,10 @@
             <div class="row login__form-line">
                 <div class="col-sm-12">
                     <md-spinner color="accent" *ngIf="isLoginInProgress" class="app-spinner"></md-spinner>
-                    <button md-button md-raised-button *ngIf="!isLoginInProgress" (click)="logInUser()">{{loginButton}}</button>
-                    <button md-button md-flat-button (click)="showForgotPassword()">{{forgotPasswordButton}}</button>
+                    <button id="login-component-login-submit-button" md-button md-raised-button *ngIf="!isLoginInProgress"
+                            (click)="logInUser()">{{loginButton}}</button>
+                    <button id="login-component-show-fogot-password-button"  md-button md-flat-button
+                            (click)="showForgotPassword()">{{forgotPasswordButton}}</button>
                 </div>
             </div>
         </div>

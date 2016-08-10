@@ -32,6 +32,10 @@ export class RoutingService{
         return this.menusChangeObservable;
     }
 
+    public setMenus( menus:any[] ):void{
+        this.menus = menus;
+    }
+
     public getMenus():any[]{
         return this.menus;
     }
@@ -71,6 +75,8 @@ export class RoutingService{
                                     path: subMenuItem.url,
                                 });
                                 subMenuItem.url = 'dotCMS' + subMenuItem.url
+                            }else{
+                                subMenuItem.url = subMenuItem.url + '&in_frame=true&frame=detailFrame';
                             }
                         }
                     }

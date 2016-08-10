@@ -28,7 +28,7 @@ import {MainComponent} from "./components/common/main-component/main-component";
 import { Routes } from '@ngrx/router';
 
 new AppConfigurationService().getConfigProperties().subscribe(config => {
-
+    
     let routes: Routes = [
         {
             path: 'dotCMS',

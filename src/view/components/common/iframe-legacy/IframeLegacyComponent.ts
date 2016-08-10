@@ -23,6 +23,7 @@ export class IframeLegacyComponent {
         this.iframe = params$.pluck<string>('id')
             .distinctUntilChanged()
             .map(id => {
+                console.log('this.menuIdUrlMatch.get( id )', this.menuIdUrlMatch.get( id ));
                 return sanitizer.bypassSecurityTrustResourceUrl( this.menuIdUrlMatch.get( id ) );
             });
 
