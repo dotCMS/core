@@ -11,7 +11,7 @@ import java.util.List;
  * @version 3.7
  * @since Jun 14, 2016
  */
-public class Task03560ModificationDateColumnAddedToUserTable extends AbstractJDBCStartupTask {
+public class Task03565ModificationDateColumnAddedToUserTable extends AbstractJDBCStartupTask {
 
 	@Override
 	public boolean forceRun() {
