@@ -6,6 +6,7 @@ import java.util.Map;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.image.filter.ImageFilter;
+import com.dotmarketing.image.filter.PngImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -39,7 +40,10 @@ public class ImageFilterExporter implements BinaryContentExporter {
 			else if(parameters.get("filters") != null){
 				filter= parameters.get("filters")[0].split(","); 
 			}
+			if(!filter[0].equals("Png")){
+				file = new PngImageFilter().runFilter(file, parameters);
 
+			}
 			for(String s : filter){
 				String clazz =null;
 				try {
