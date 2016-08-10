@@ -87,6 +87,10 @@ export class LoginService  {
         });
     }
 
+    public setLogInUser( user:User ){
+        this.user = user;
+    }
+
     /**
      * Call the logout rest api
      * @returns {Observable<any>}

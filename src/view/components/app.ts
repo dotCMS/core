@@ -6,7 +6,7 @@ import {MainComponent} from './common/main-component/main-component';
 import { Router } from '@ngrx/router';
 import {LoginService} from "../../api/services/login-service";
 import {RoutingService} from "../../api/services/routing-service";
-
+import { DotcmsConfig } from '../../api/services/system/dotcms-config';
 
 @Component({
     directives: [MainComponent, LoginPageComponent],
@@ -26,7 +26,12 @@ export class AppComponent {
 
     login: boolean= true;
 
-    constructor(router: Router, loginService:LoginService, routingService:RoutingService) {
+    constructor(private router: Router, private loginService:LoginService, private routingService:RoutingService,
+                @Inject("dotcmsConfig") private dotcmsConfig:DotcmsConfig) {
+
+    }
+
+    ngOnInit(){
 
         let queryParams:Map = this.getQueryParams();
 
@@ -34,16 +39,13 @@ export class AppComponent {
             let token:string = queryParams.get('token');
             let userId:string = queryParams.get('userId');
 
-            router.go(`public/resetPassword/${userId}?token=${token}`);
-        }else if (!loginService.getLoginUser()) {
-            router.go('public/login');
+            this.router.go(`public/resetPassword/${userId}?token=${token}`);
+        }else if ( this.dotcmsConfig.configParams.user ){
+            this.routingService.setMenus( this.dotcmsConfig.configParams.menu );
+            this.loginService.setLogInUser( this.dotcmsConfig.configParams.user );
+            this.router.go('dotCMS');
         }else {
-
-            routingService.loadMenus().subscribe( (menu) => router.go('dotCMS'),
-                error => console.error(error)
-            );
-
-
+            this.router.go('public/login');
         }
     }
 
