@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -46,12 +47,12 @@ public class AppConfigurationResourceTest {
 		when(helper.getMenuData( mockHttpRequest )).thenReturn( menuData );
 		when(helper.getConfigurationData( mockHttpRequest )).thenReturn( configData );
 
-		UserAPI userApi = mock( UserAPI.class );
+		LoginService loginService = mock( LoginService.class );
 
 		User user = UserUtilTest.createUser();
-		when( userApi.loadUserById( RestUtilTest.DEFAULT_USER_ID ) ).thenReturn( user );
+		when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( user );
 
-		final AppConfigurationResource resource = new AppConfigurationResource( helper, userApi );
+		final AppConfigurationResource resource = new AppConfigurationResource( helper, loginService );
 		Response responseEntityView = resource.list(mockHttpRequest);
 
 		RestUtilTest.verifySuccessResponse( responseEntityView );

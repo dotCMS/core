@@ -4,6 +4,7 @@ import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
@@ -11,7 +12,9 @@ import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
@@ -150,6 +153,16 @@ public class LoginServiceFactory implements Serializable {
     private final class LoginServiceImpl implements LoginService {
 
         private final Log log = LogFactory.getLog(LoginService.class);
+        private final UserWebAPI userWebAPI;
+
+        @VisibleForTesting
+        public LoginServiceImpl(ApiProvider apiProvider){
+            this.userWebAPI = apiProvider.userWebAPI();
+        }
+
+        public LoginServiceImpl(){
+            this(new ApiProvider());
+        }
 
         @Override
         public void doActionLogout(final HttpServletRequest req,
@@ -449,6 +462,26 @@ public class LoginServiceFactory implements Serializable {
         @Override
         public boolean passwordMatch(String password, User user) {
             return false;
+        }
+
+        /**
+         * Return the current login user.
+         * A {@link UserLoggingException} is thrown if any error happened getting the user.
+         *
+         * @param req
+         * @return login user
+         */
+        public User getLogInUser( HttpServletRequest req ){
+            User user = null;
+
+            if(req != null) {
+                try {
+                    user = userWebAPI.getLoggedInUser(req);
+                } catch (PortalException|SystemException e) {
+                    throw new UserLoggingException( e );
+                }
+            }
+            return user;
         }
     }
 

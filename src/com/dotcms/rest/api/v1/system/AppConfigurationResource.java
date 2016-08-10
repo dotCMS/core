@@ -6,6 +6,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -53,19 +55,19 @@ public class AppConfigurationResource implements Serializable {
 	private static final String USER = "user";
 
 	private final AppConfigurationHelper helper;
-	private final UserAPI userAPI;
+	private final LoginService loginService;
 
 	/**
 	 * Default constructor.
 	 */
 	public AppConfigurationResource() {
-		this( AppConfigurationHelper.INSTANCE, APILocator.getUserAPI());
+		this( AppConfigurationHelper.INSTANCE, LoginServiceFactory.getInstance().getLoginService());
 	}
 
 	@VisibleForTesting
-	public AppConfigurationResource(AppConfigurationHelper helper, UserAPI userApi) {
+	public AppConfigurationResource(AppConfigurationHelper helper, LoginService loginService) {
 		this.helper = helper;
-		this.userAPI = userApi;
+		this.loginService = loginService;
 	}
 
 	/**
@@ -83,15 +85,7 @@ public class AppConfigurationResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-
-			final HttpSession session = request.getSession();
-			String userId = (String) session.getAttribute(WebKeys.USER_ID);
-
-			User user = null;
-
-			if (userId != null) {
-				user = this.userAPI.loadUserById( userId );
-			}
+			User user = this.loginService.getLogInUser( request );
 
 			final Object menuData = this.helper.getMenuData(request);
 			final Object configData = this.helper.getConfigurationData(request);

@@ -197,4 +197,11 @@ public interface LoginService extends Serializable {
         return LoginFactory.passwordMatch(password, user);
     }
 
+    /**
+     * Return the current login user.
+     *
+     * @param req
+     * @return login user
+     */
+    User getLogInUser( HttpServletRequest req );
 } // E:O:F:LoginService.
