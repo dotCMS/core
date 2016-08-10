@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
+
+
 public class SelectableValue {
 	final String label;
 	final Object value;

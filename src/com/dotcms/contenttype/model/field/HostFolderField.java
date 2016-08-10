@@ -13,8 +13,11 @@ import com.google.common.base.Preconditions;
 public abstract class HostFolderField extends Field {
 
 	@Value.Check
-	protected void check() {
-		//Preconditions.checkArgument(indexed(),"Host Folder Fields must be indexed");
+	public void check() {
+		super.check();
+		Preconditions.checkArgument(onePerContentType(),"There can be only one host/folder field per content");
+		if(iDate().before(legacyFieldDate))return;
+		Preconditions.checkArgument(indexed(),"Host Folder Fields must be indexed");
 	}
 	@Value.Default
 	@Override

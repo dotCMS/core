@@ -11,13 +11,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 @Value.Immutable
 public abstract class KeyValueField extends Field {
 
-	@Value.Check
-	protected void check() {
-	
-		//boolean indexed = indexed();
-		
-		//Preconditions.checkArgument(indexed(),"KeyValueField Fields must be indexed");
-	}
+
 	@Value.Default
 	@Override
 	public boolean indexed() {

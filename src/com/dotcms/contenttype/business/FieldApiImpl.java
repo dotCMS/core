@@ -2,7 +2,30 @@ package com.dotcms.contenttype.business;
 
 import java.util.List;
 
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.PermissionTabField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TabDividerField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
@@ -11,7 +34,6 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringUtil;
 
 
 public class FieldApiImpl implements FieldApi {
@@ -66,8 +88,6 @@ public class FieldApiImpl implements FieldApi {
 	
 	@Override
 	public List<Class> fieldTypes() {
-
-
 		return baseFieldTypes;
 	}
 

@@ -174,7 +174,14 @@ public class ContentTypeFactoryImplTest {
 		for (int j = 0; j < fields.size(); j++) {
 			Field field = fields.get(j);
 			Field testField = fields2.get(j);
-			assertThat("fields are correct:", field.equals(testField));
+			try{
+				assertThat("fields are correct:", field.equals(testField));
+			} catch (Throwable t) {
+				System.out.println("Old and New fields are NOT the same");
+				System.out.println(field);
+				System.out.println(testField);
+				throw t;
+			}
 		}
 
 	}

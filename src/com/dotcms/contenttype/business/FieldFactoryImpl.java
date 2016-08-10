@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
+import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -101,6 +102,7 @@ public class FieldFactoryImpl implements FieldFactory {
 			inserting = true;
 		}
 
+		new FieldUtil().checkFieldValues(throwAwayField);
 
 		if(!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType())){
 			throw new DotDataException("Field Type:" + throwAwayField.type() + " does not accept datatype " + throwAwayField.dataType());
@@ -112,12 +114,16 @@ public class FieldFactoryImpl implements FieldFactory {
 
 		
 		//make sure we are properly indexed
-		if((throwAwayField.searchable() || throwAwayField.listed()) || throwAwayField instanceof HostFolderField){
-			if(!throwAwayField.indexed()){
+		if((throwAwayField.searchable() 
+			|| throwAwayField.listed()) 
+			|| throwAwayField.unique()  
+			|| throwAwayField instanceof HostFolderField
+			|| throwAwayField instanceof TagField
+				){
 				builder.indexed(true);
-			}
+			
 		}
-		if(throwAwayField.unique() && ! throwAwayField.required()){
+		if(throwAwayField.unique() ){
 			builder.required(true);
 		}
 		

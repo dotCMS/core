@@ -123,7 +123,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	@Value.Lazy
 	public  List<Field> fields(){
 		try {
-			System.out.println("loading fields:" + this);
+			//System.out.println("loading fields:" + this);
 			return APILocator.getFieldAPI2().byContentTypeId(this.inode());
 		} catch (DotDataException e) {
 			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);

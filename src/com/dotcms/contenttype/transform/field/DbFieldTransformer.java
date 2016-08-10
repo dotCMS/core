@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.elasticsearch.common.Nullable;
 
-import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
@@ -108,7 +107,11 @@ public class DbFieldTransformer implements FieldTransformer {
 			public Date modDate() {
 				return new Date(((Date) map.get("mod_date")).getTime());
 			}
-
+			@Override
+			public void check() {
+				//no checking for a generic type
+			}
+			
 			@Override
 			public Date iDate() {
 
@@ -165,11 +168,6 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			}
 
-			@Override
-			public List<FieldDecorator> fieldDecorators() {
-
-				return ImmutableList.of();
-			}
 
 			@Override
 			public List<DataTypes> acceptedDataTypes() {
@@ -184,7 +182,6 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String typeName() {
-				// TODO Auto-generated method stub
 				return null;
 			}
 

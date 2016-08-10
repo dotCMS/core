@@ -36,17 +36,21 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 	}
 
     public Structure getStructureByInode(String inode) {
-    	ContentType type = super.byInode(inode);
-        if (type == null) {
-            try {
-				type = FactoryLocator.getContentTypeFactory2().find(inode);
-				return new StructureTransformer(type).asStructure();
-			} catch (Exception e) {
-				Logger.warn(this.getClass(), "Structure with inode: '" + inode + "' not found in db");
-			}
-        }
-        return new StructureTransformer(type).asStructure();
+    	ContentType type = null;
         
+    	type= super.byInode(inode);
+        if(type!=null){
+        	return new StructureTransformer(type).asStructure();
+        }
+        try {
+			type = FactoryLocator.getContentTypeFactory2().find(inode);
+			return new StructureTransformer(type).asStructure();
+		} catch (DotDataException e) {
+			Logger.warn(this.getClass(), "Structure with inode: '" + inode + "' not found in db");
+		}
+        
+
+        return new Structure();
     }
 
     /**

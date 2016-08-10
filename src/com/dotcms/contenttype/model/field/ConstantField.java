@@ -32,12 +32,5 @@ public abstract class ConstantField extends Field {
 	public abstract static class Builder implements FieldBuilder {}
 	
 	
-	
-	@Value.Check
-	protected void check() {
-		
-		//Preconditions.checkArgument(dataType() == DataTypes.CONSTANT,"field must be a constant:" + this);
-		//Preconditions.checkArgument(!indexed(),"field cannot be indexed:" + this);
 
-	}
 }

@@ -12,7 +12,7 @@ import com.google.common.base.Preconditions;
 import com.liferay.util.StringUtil;
 
 @Value.Immutable
-public abstract class SelectField extends Field {
+public abstract class SelectField extends SelectableValuesField {
 
 	/**
 	 * 
@@ -35,8 +35,5 @@ public abstract class SelectField extends Field {
 	};
 	public abstract static class Builder implements FieldBuilder {}
 	
-	@Value.Check
-	protected void check() {
-		new FieldUtil().checkFieldValues(dataType(), values());
-	}
+
 }

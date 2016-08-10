@@ -10,6 +10,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 public abstract class BinaryField extends Field {
 
 	private static final long serialVersionUID = 1L;
+	
 
 	@Override
 	public Class type() {

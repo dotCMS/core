@@ -17,14 +17,7 @@ public abstract class CategoryField extends Field {
 	public Class type() {
 		return CategoryField.class;
 	}
-	
-	@Value.Check
-	protected void check() {
-		Preconditions.checkArgument(indexed(),"Category Fields must be indexed:" + this);
 
-		
-		
-	}
 	@Value.Default
 	@Override
 	public boolean indexed() {

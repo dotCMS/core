@@ -29,8 +29,9 @@ public class ImplClassFieldTransformer implements FieldTransformer{
 	}
 	
 	private static Field impleClass(final Field genericField){
+		FieldBuilder builder = null;
 		try {
-			FieldBuilder builder = FieldBuilder.builder(genericField);
+			builder = FieldBuilder.builder(genericField);
 			return builder.from(genericField).build();
 		} catch (Exception e) {
 			throw new DotStateException(e.getMessage(), e);

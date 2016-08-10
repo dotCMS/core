@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.elasticsearch.common.Nullable;
 
-import com.dotcms.contenttype.model.decorator.FieldDecorator;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldIf;
@@ -214,12 +213,6 @@ public class LegacyFieldTransformer implements FieldTransformer {
 			@Override
 			public boolean unique() {
 				return oldField.isUnique();
-			}
-
-			@Override
-			public List<FieldDecorator> fieldDecorators() {
-
-				return ImmutableList.of();
 			}
 
 			@Override

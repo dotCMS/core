@@ -10,6 +10,13 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.FieldApi;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -19,6 +26,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -30,8 +38,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
@@ -59,8 +65,9 @@ public class EditFieldAction extends DotPortletAction {
 
 	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
+	private FieldApi fapi2 = APILocator.getFieldAPI2();
 	private FieldAPI fAPI = APILocator.getFieldAPI();
-
+	private ContentTypeApi tapi = APILocator.getContentTypeAPI2();
 	public CategoryAPI getCategoryAPI() {
 		return categoryAPI;
 	}
@@ -93,8 +100,9 @@ public class EditFieldAction extends DotPortletAction {
 		if ((cmd != null) && cmd.equals(Constants.ADD)) {
 			try {
 				Logger.debug(this, "Calling Add/Edit Method");
-
+				FieldForm fieldForm = (FieldForm) form;
 				Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
+				
 				if (InodeUtils.isSet(field.getInode())) {
 					if (field.isFixed()
 							|| (field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())
@@ -104,7 +112,7 @@ public class EditFieldAction extends DotPortletAction {
 									|| field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())
 									|| field.getFieldContentlet().equals(FieldAPI.ELEMENT_CONSTANT) || field
 									.getFieldType().equals(Field.FieldType.HIDDEN.toString()))) {
-						FieldForm fieldForm = (FieldForm) form;
+						
 						field.setFieldName(fieldForm.getFieldName());
 
 						// This is what you can change on a fixed field
@@ -133,8 +141,9 @@ public class EditFieldAction extends DotPortletAction {
 						BeanUtils.copyProperties(fieldForm, field);
 					}
 				}
+				
 				if (Validator.validate(req, form, mapping)) {
-					if (_saveField(form, req, res, user)) {
+					if (_saveField(fieldForm, req, res, user)) {
 						_sendToReferral(req, res, referer);
 						return;
 					}
@@ -175,7 +184,7 @@ public class EditFieldAction extends DotPortletAction {
 		setForward(req, "portlet.ext.structure.edit_field");
 	}
 
-	private void _retrieveField(ActionForm form, ActionRequest req, ActionResponse res) {
+	private void _retrieveField(ActionForm form, ActionRequest req, ActionResponse res) throws DotStateException, DotDataException {
 		Field field = new Field();
 		String inodeString = req.getParameter("inode");
 		if (InodeUtils.isSet(inodeString)) {
@@ -184,7 +193,11 @@ public class EditFieldAction extends DotPortletAction {
 			 * FieldFactory.getFieldByInode(inode); }
 			 */
 			if (InodeUtils.isSet(inodeString)) {
-				field = FieldFactory.getFieldByInode(inodeString);
+				try {
+					field = new LegacyFieldTransformer(fapi2.find(inodeString)).asOldField();
+				} catch (NotFoundInDbException e) {
+					field = new Field();
+				}
 			} else {
 				String structureInode = req.getParameter("structureInode");
 				field.setStructureInode(structureInode);
@@ -204,17 +217,22 @@ public class EditFieldAction extends DotPortletAction {
 		req.setAttribute(WebKeys.Field.FIELD, field);
 	}
 
-	private boolean _saveField(ActionForm form, ActionRequest req, ActionResponse res, User user) {
+	private boolean _saveField(FieldForm form, ActionRequest req, ActionResponse res, User user) {
 		try {
 			FieldForm fieldForm = (FieldForm) form;
 			Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-			Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
+			
+			ContentType type = tapi.find(field.getStructureInode(), user);
+			
 			boolean isNew = false;
 			boolean wasIndexed = field.isIndexed();
 
 
 			//http://jira.dotmarketing.net/browse/DOTCMS-5918
 			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
+			/*
+			 * 
+			 * moved to api/factory
 			try {
 			    _checkUserPermissions(structure, user, PERMISSION_PUBLISH);
 			} catch (Exception ae) {
@@ -238,12 +256,17 @@ public class EditFieldAction extends DotPortletAction {
 				fieldForm.setRequired(true);
 				fieldForm.setIndexed(true);
 			}
-
+			 */
 			BeanUtils.copyProperties(field, fieldForm);
 
 			//To validate values entered for decimal/number type check box field
 			//http://jira.dotmarketing.net/browse/DOTCMS-5516
 
+			
+			// moved to FileUtils
+			/**
+			 * 
+	
 			if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 				String values = fieldForm.getValues();
                 String temp = values.replaceAll("\r\n","|");
@@ -275,7 +298,8 @@ public class EditFieldAction extends DotPortletAction {
 				    return false;
 				 }
 			}
-
+		 */
+			/*
 			// check if is a new field to add at the botton of the structure
 			// field list
 			if (!InodeUtils.isSet(fieldForm.getInode())) {
@@ -327,7 +351,8 @@ public class EditFieldAction extends DotPortletAction {
 
 				field.setVelocityVarName(fieldVelocityName);
 			}
-
+			*/
+			/*
 			if (!field.isFixed() && !field.isReadOnly()) {
 				// gets the data type from the contentlet: bool, date, text, etc
 
@@ -440,15 +465,15 @@ public class EditFieldAction extends DotPortletAction {
 			boolean isUpdating = UtilMethods.isSet(field.getInode());
 			// saves this field
 			FieldFactory.saveField(field);
-
-			if(isUpdating) {
-				ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
-					    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			*/
+			if(true) {
+				//ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
+					//    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 			} else {
-				ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
-					    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
+			//	ActivityLogger.logInfo(ActivityLogger.class, "Save Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " added field " + field.getFieldName() + " to " + structure.getName()
+					 //   + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 			}
-
+			/*
 			FieldsCache.removeFields(structure);
 			CacheLocator.getContentTypeCache().remove(structure);
 			StructureServices.removeStructureFile(structure);
@@ -473,10 +498,10 @@ public class EditFieldAction extends DotPortletAction {
 				ContentletMapServices.removeContentletMapFile(structure);
 				conAPI.refresh(structure);
 			}
-
+*/
 			String message = "message.structure.savefield";
 			SessionMessages.add(req, "message", message);
-			AdminLogger.log(EditFieldAction.class, "_saveField","Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
+			//AdminLogger.log(EditFieldAction.class, "_saveField","Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
 			return true;
 		} catch (Exception ex) {
 			Logger.error(EditFieldAction.class, ex.toString(), ex);
@@ -515,20 +540,12 @@ public class EditFieldAction extends DotPortletAction {
 		}
 	}
 
-	private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) {
+	private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) throws DotStateException, DotSecurityException, DotDataException {
 		Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-		Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
 		User user = _getUser(req);
 
-		try {
-            _checkUserPermissions(structure, user, PERMISSION_PUBLISH);
-        } catch (Exception ae) {
-            if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
-            	String message = "message.insufficient.permissions.to.delete";
-            	SessionMessages.add(req, "error", message);
-            	return;
-            }
-        }
+		Structure structure = new StructureTransformer(tapi.find(field.getStructureInode(), user)).asStructure();
+
 
 		try {
 			DeleteFieldJob.triggerDeleteFieldJob(structure, field, user);
@@ -543,19 +560,22 @@ public class EditFieldAction extends DotPortletAction {
 
 	private void _reorderFields(ActionForm form, ActionRequest req, ActionResponse res) {
 		try {
+			User user = _getUser(req);
 			Enumeration enumeration = req.getParameterNames();
 			while (enumeration.hasMoreElements()) {
 				String parameterName = (String) enumeration.nextElement();
 				if (parameterName.indexOf("order_") != -1) {
 					String parameterValue = req.getParameter(parameterName);
 					String fieldInode = parameterName.substring(parameterName.indexOf("_") + 1);
-					Field field = FieldFactory.getFieldByInode(fieldInode);
-					field.setSortOrder(Integer.parseInt(parameterValue));
-					FieldFactory.saveField(field);
+					com.dotcms.contenttype.model.field.Field field = fapi2.find(fieldInode);
+
+					FieldBuilder builder = FieldBuilder.builder(field);
+					builder.sortOrder(Integer.parseInt(parameterValue));
+					fapi2.save(field, user);
 
 				}
 			}
-			FieldsCache.clearCache();
+			
 			//VirtualLinksCache.clearCache();
 			String message = "message.structure.reorderfield";
 			SessionMessages.add(req, "message", message);
@@ -570,28 +590,7 @@ public class EditFieldAction extends DotPortletAction {
 
 	private boolean validateInternalFieldVelocityVarName(String fieldVelVarName){
 
-	    if(fieldVelVarName.equals(Contentlet.INODE_KEY)||
-	    		fieldVelVarName.equals(Contentlet.LANGUAGEID_KEY)||
-	    		fieldVelVarName.equals(Contentlet.STRUCTURE_INODE_KEY)||
-	    		fieldVelVarName.equals(Contentlet.LAST_REVIEW_KEY)||
-	    		fieldVelVarName.equals(Contentlet.NEXT_REVIEW_KEY)||
-	    		fieldVelVarName.equals(Contentlet.REVIEW_INTERNAL_KEY)||
-	    		fieldVelVarName.equals(Contentlet.DISABLED_WYSIWYG_KEY)||
-	    		fieldVelVarName.equals(Contentlet.LOCKED_KEY)||
-	    		fieldVelVarName.equals(Contentlet.ARCHIVED_KEY)||
-	    		fieldVelVarName.equals(Contentlet.LIVE_KEY)||
-	    		fieldVelVarName.equals(Contentlet.WORKING_KEY)||
-	    		fieldVelVarName.equals(Contentlet.MOD_DATE_KEY)||
-	    		fieldVelVarName.equals(Contentlet.MOD_USER_KEY)||
-	    		fieldVelVarName.equals(Contentlet.OWNER_KEY)||
-	    		fieldVelVarName.equals(Contentlet.IDENTIFIER_KEY)||
-	    		fieldVelVarName.equals(Contentlet.SORT_ORDER_KEY)||
-	    		fieldVelVarName.equals(Contentlet.HOST_KEY)||
-	    		fieldVelVarName.equals(Contentlet.FOLDER_KEY)){
-	    	return false;
-	    }
-
-	    return true;
+	   return !(FieldApi.RESERVED_FIELD_VARS.contains(fieldVelVarName));
 
 	}
 

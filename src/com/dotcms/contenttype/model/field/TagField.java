@@ -29,8 +29,12 @@ public abstract class TagField extends Field  {
 		return true;
 	};
 	@Value.Check
-	protected void check() {
-		Preconditions.checkArgument(indexed(),"Tag Fields must be indexed");
+	public void check() {
+		super.check();
+		Preconditions.checkArgument(onePerContentType(),"There can be only one Tag field per content");
+		if(iDate().after(legacyFieldDate)){
+			Preconditions.checkArgument(indexed(),"Tag Fields must be indexed");
+		}
 	}
 	@Value.Default
 	@Override

@@ -1,12 +1,15 @@
 package com.dotcms.contenttype.business;
 
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 
 public interface FieldApi {
@@ -35,4 +38,26 @@ public interface FieldApi {
 
 	Field save(Field field, User user) throws DotDataException, DotSecurityException;
 
+	static Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
+			Contentlet.INODE_KEY,
+			Contentlet.LANGUAGEID_KEY,
+			Contentlet.STRUCTURE_INODE_KEY,
+			Contentlet.LAST_REVIEW_KEY,
+			Contentlet.NEXT_REVIEW_KEY,
+			Contentlet.REVIEW_INTERNAL_KEY,
+			Contentlet.DISABLED_WYSIWYG_KEY,
+			Contentlet.LOCKED_KEY,
+			Contentlet.ARCHIVED_KEY,
+			Contentlet.LIVE_KEY,
+			Contentlet.WORKING_KEY,
+			Contentlet.MOD_DATE_KEY,
+			Contentlet.MOD_USER_KEY,
+			Contentlet.OWNER_KEY,
+			Contentlet.IDENTIFIER_KEY,
+			Contentlet.SORT_ORDER_KEY,
+			Contentlet.HOST_KEY,
+			Contentlet.FOLDER_KEY);
+
+
+	
 }

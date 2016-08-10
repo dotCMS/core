@@ -9,20 +9,29 @@ import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
-import com.dotcms.contenttype.model.decorator.FieldDecorator;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.component.FieldFormRenderer;
+import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.base.Preconditions;
-import com.liferay.util.StringUtil;
 
 
 public abstract class Field implements FieldIf, Serializable {
 
+	
+	@Value.Check
+	public void check() {
+		if(iDate().after(legacyFieldDate)){
+			Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
+		}
+	}
+	
+	private static final long serialVersionUID = 5640078738113157867L;
+	final static Date legacyFieldDate = new Date(1470845479000L); // 08/10/2016 @ 4:11pm (UTC)
+	
 	@Value.Default
 	public  boolean searchable() {
 		return false;
@@ -92,6 +101,21 @@ public abstract class Field implements FieldIf, Serializable {
 		return (int) (System.currentTimeMillis() / 1000);
 	}
 
+	@Value.Lazy
+	public List<SelectableValue> selectableValues(){
+		return ImmutableList.of();
+	};
+	
+	@Value.Lazy
+	public FieldFormRenderer formRenderer(){
+		return new FieldFormRenderer(){};
+	}
+	
+	@Value.Lazy
+	public FieldValueRenderer valueRenderer(){
+		return new FieldValueRenderer(){};
+	}
+
 	@Nullable
 	public abstract String values();
 
@@ -110,6 +134,9 @@ public abstract class Field implements FieldIf, Serializable {
 		return false;
 	}
 	
+	public boolean legacyField() {
+		return false;
+	}
 	@Value.Lazy
 	public List<FieldVariable> fieldVariables(){
 		try {
@@ -119,10 +146,6 @@ public abstract class Field implements FieldIf, Serializable {
 		}
 	}
 
-	@Value.Default
-	public List<FieldDecorator> fieldDecorators() {
-		return ImmutableList.of();
-	}
 
 	public abstract  List<DataTypes> acceptedDataTypes();
 

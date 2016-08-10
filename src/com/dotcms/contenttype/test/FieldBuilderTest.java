@@ -2,6 +2,8 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.Date;
+
 import org.junit.Test;
 
 import com.dotcms.contenttype.business.FieldFactory;
@@ -11,6 +13,10 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableCheckboxField;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableMultiSelectField;
+import com.dotcms.contenttype.model.field.ImmutableRadioField;
+import com.dotcms.contenttype.model.field.ImmutableSelectField;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotmarketing.business.DotStateException;
@@ -26,6 +32,43 @@ public class FieldBuilderTest {
 		Field f2 = FieldBuilder.instanceOf(TextField.class);
 		assertThat("fieldbuilder works ",f1.equals(f2));
 	}
+
+	@Test
+	public void testFieldChecks() throws Exception {
+		Field f1 = null;
+		try{
+			 f1 = ImmutableHostFolderField.builder()
+					.indexed(false)
+					.dataType(DataTypes.BINARY)
+					.name("asdsad").variable("asdasd").build();
+
+		}
+		catch(IllegalArgumentException e){
+			assertThat("fieldChecks work:" + e.getMessage() ,true);
+		}
+		catch(Throwable e){
+			assertThat("fieldChecks do not work:" + e.getMessage() ,false);
+		}
+		
+		try{
+			f1 = ImmutableHostFolderField.builder()
+					.iDate(new Date(0L))
+					.indexed(false)
+					.dataType(DataTypes.BINARY)
+					.name("asdsad").variable("asdasd").build();
+			assertThat("fieldChecks should not be called for old fields" ,f1!=null);
+		}
+		catch(IllegalArgumentException e){
+			assertThat("fieldChecks should not be called for old fields:" + e.getMessage() ,false);
+		}
+		catch(Throwable e){
+			assertThat("fieldChecks do not work:" + e.getMessage() ,false);
+		}
+		
+		
+	}
+	
+	
 	
 	@Test
 	public void testAllFieldBuilders() throws Exception {
@@ -68,18 +111,18 @@ public class FieldBuilderTest {
 	@Test
 	public void testValuesCheck() throws Exception {
 
+		String testVal = "asdsa|asdasddas\r\nxxxxx|xx";
 		try{
-			Field test = ImmutableCheckboxField.builder()
-				.name("checkbox")
+			Field test = ImmutableSelectField.builder()
+				.name("select")
 				.dataType(DataTypes.INTEGER)
-				.variable("checkbox")
+				.variable("select")
 				.required(true)
 				.listed(true)
 				.indexed(true)
 				.sortOrder(1)
 				.fixed(true)
-				.values("asdsa|asdasddas\r\nxxxxx|xx")
-
+				.values(testVal)
 				.contentTypeId("test")
 				.build();
 			throw new Exception("field value check not working");
@@ -88,16 +131,17 @@ public class FieldBuilderTest {
 			// we should be here. the field above is in a invalid state
 		}
 		try{
-			Field test = ImmutableCheckboxField.builder()
-				.name("checkbox")
+			Field test = ImmutableRadioField.builder()
+				.name("select")
 				.dataType(DataTypes.FLOAT)
-				.variable("checkbox")
+				.variable("select")
 				.required(true)
 				.listed(true)
 				.indexed(true)
 				.sortOrder(1)
 				.fixed(true)
-				.values("asdsa|asdasddas\r\nxxxxx|xx")
+				.values(testVal)
+
 
 				.contentTypeId("test")
 				.build();
@@ -108,7 +152,7 @@ public class FieldBuilderTest {
 		}
 		
 		try{
-			Field test = ImmutableCheckboxField.builder()
+			Field test = ImmutableRadioField.builder()
 				.name("checkbox")
 				.dataType(DataTypes.BOOL)
 				.variable("checkbox")
@@ -116,8 +160,7 @@ public class FieldBuilderTest {
 				.listed(true)
 				.indexed(true)
 				.sortOrder(1)
-				.fixed(true)
-				.values("asdsa|asdasddas\r\nxxxxx|xx")
+				.values(testVal)
 
 				.contentTypeId("test")
 				.build();

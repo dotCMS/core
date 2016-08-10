@@ -206,19 +206,10 @@ public class FieldFactoryImplTest {
 	@Test
 	public void testFieldImplClasses() throws Exception {
 
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		Set<ClassPath.ClassInfo> infos = ClassPath.from(classLoader).getTopLevelClassesRecursive("com.dotcms.contenttype.model.field");
-		for (ClassPath.ClassInfo info : infos) {
-
-			Class clazz = Class.forName(info.getPackageName() + "." + info.getSimpleName());
-
-			if (Field.class.isAssignableFrom(clazz)) {
-				if (clazz.equals(Field.class) ) {
-					continue;
-				}
-				Field newField = FieldBuilder.builder(clazz).contentTypeId("test").name("test" + clazz.getSimpleName()).variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();
-				buildObject(ImmutableList.of(newField));
-			}
+		for (Class clazz : APILocator.getFieldAPI2().fieldTypes()) {
+			Field newField = FieldBuilder.builder(clazz).contentTypeId("test").name("test" + clazz.getSimpleName()).variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();
+			buildObject(ImmutableList.of(newField));
+		
 		}
 
 	}
