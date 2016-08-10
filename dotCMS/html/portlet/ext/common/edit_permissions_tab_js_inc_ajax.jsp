@@ -17,6 +17,7 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
 <%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
+<%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayout" %>
 
 <%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
 <style>
@@ -98,7 +99,7 @@
 	var folderClassName = '<%= Folder.class.getCanonicalName() %>'
 	var containerClassName = '<%= Container.class.getCanonicalName() %>'
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
-	var templateLayoutClassName = '<%= Template.TEMPLATE_LAYOUTS_CANONICAL_NAME %>'
+	var templateLayoutClassName = '<%= TemplateLayout.class.getCanonicalName() %>'
 	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
 	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'

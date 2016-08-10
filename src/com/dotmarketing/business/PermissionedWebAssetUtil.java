@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -98,7 +99,7 @@ public class PermissionedWebAssetUtil {
 		columnsToOrderBy.add(templateTitle);
 
 		List<String> tIds = queryForAssetIds("template, identifier, inode, template_version_info ",
-		        new String[] {Template.class.getCanonicalName(), Template.TEMPLATE_LAYOUTS_CANONICAL_NAME},
+		        new String[] {Template.class.getCanonicalName(), TemplateLayout.class.getCanonicalName()},
 		        "template.inode", 
 		        "identifier.id",
 		        "template.identifier = identifier.id and inode.inode = template.inode and " +

@@ -1,15 +1,13 @@
 package com.dotmarketing.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * UserAPI is an API intended to be a helper class for class to get User entities.  Classes within the dotCMS
@@ -206,22 +204,6 @@ public interface UserAPI {
      * @return List<User>
      */
     public List<User> getUsersByNameOrEmailOrUserID(String filter,int page,int pageSize, boolean includeAnonymous) throws DotDataException;
-
-    /**
-     * This method return a list of users and roles which name are like the compared string passed
-	 * This method will ALWAYS hit DB
-     * @param filter compare string
-     * @param start first element to display
-     * @param limit max number of elements to show
-     * @return Map<String, Object>
-     * @throws DotRuntimeException
-     * @version 1.9
-	 * @since 1.0
-	 * @author David Torres
-	 * @author Oswaldo Gallango
-	 * @deprecated
-     */
-    public Map<String, Object> getUsersAnRolesByName(String filter, int start,int limit) throws DotDataException;
 
     /**
      * Save or update in db the user object
