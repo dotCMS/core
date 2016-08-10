@@ -10,7 +10,19 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.api.v1.system.AppConfigurationHelper;
 import com.dotcms.rest.api.v1.system.AppConfigurationResource;
+import com.dotcms.util.UserUtilTest;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Unit test for validating the information returned by the
@@ -23,18 +35,33 @@ import com.dotcms.rest.api.v1.system.AppConfigurationResource;
  */
 public class AppConfigurationResourceTest {
 
-	protected static final String HOST_NAME = "localhost:8080";
+	@Test
+	public void testVerifyConfigurationData() throws DotSecurityException, DotDataException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
-	public void testVerifyConfigurationData() {
-		final AppConfigurationResource resource = new AppConfigurationResource();
-		final HttpServletRequest request = mock(HttpServletRequest.class);
-		when(request.getRequestURL()).thenReturn(new StringBuffer("http://" + HOST_NAME + "/html/ng/"));
-		final Response response = resource.list(request);
-		assertNotNull(response);
-		assertEquals(response.getStatus(), 200);
-		assertNotNull(response.getEntity());
-		assertTrue(response.getEntity() instanceof ResponseEntityView);
-		assertTrue(ResponseEntityView.class.cast(response.getEntity()).getErrors() == null);
+		Object menuData = new Object();
+		Object configData = new Object();
+
+		HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
+		AppConfigurationHelper helper = mock( AppConfigurationHelper.class );
+		when(helper.getMenuData( mockHttpRequest )).thenReturn( menuData );
+		when(helper.getConfigurationData( mockHttpRequest )).thenReturn( configData );
+
+		UserAPI userApi = mock( UserAPI.class );
+
+		User user = UserUtilTest.createUser();
+		when( userApi.loadUserById( RestUtilTest.DEFAULT_USER_ID ) ).thenReturn( user );
+
+		final AppConfigurationResource resource = new AppConfigurationResource( helper, userApi );
+		Response responseEntityView = resource.list(mockHttpRequest);
+
+		RestUtilTest.verifySuccessResponse( responseEntityView );
+		Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
+		assertTrue(entity instanceof Map);
+
+		Map map = ( Map ) entity;
+		assertEquals(menuData, map.get( "menu" ));
+		assertEquals(configData, map.get( "config" ));
+		assertEquals(user.toMap(), map.get( "user" ));
 	}
 
 }

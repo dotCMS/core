@@ -16,6 +16,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SendPasswordException;
 import com.liferay.portal.UserEmailAddressException;
@@ -47,15 +48,13 @@ public class ForgotPasswordResource implements Serializable {
     private final UserManager userManager;
     private final CompanyAPI  companyAPI;
     private final AuthenticationHelper  authenticationHelper;
-    private final SecurityLoggerServiceAPI securityLogger;
 
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
                 UserManagerFactory.getManager(),
                 APILocator.getCompanyAPI(),
-                AuthenticationHelper.INSTANCE,
-                APILocator.getSecurityLogger()
+                AuthenticationHelper.INSTANCE
                 );
     }
 
@@ -63,14 +62,12 @@ public class ForgotPasswordResource implements Serializable {
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
                                   final UserManager userManager,
                                   final CompanyAPI  companyAPI,
-                                  final AuthenticationHelper  authenticationHelper,
-                                  final SecurityLoggerServiceAPI securityLogger) {
+                                  final AuthenticationHelper  authenticationHelper) {
 
         this.userLocalManager = userLocalManager;
         this.userManager      = userManager;
         this.companyAPI       = companyAPI;
         this.authenticationHelper = authenticationHelper;
-        this.securityLogger   = securityLogger;
     }
 
     @POST
@@ -98,7 +95,7 @@ public class ForgotPasswordResource implements Serializable {
                     this.companyAPI.getCompanyId(request), emailAddress, locale, true);
 
             res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
-            this.securityLogger.logInfo(this.getClass(),
+            SecurityLogger.logInfo(this.getClass(),
                     "Email address " + emailAddress + " has request to reset his password from IP: "
                             + request.getRemoteAddr());
         } catch (NoSuchUserException e) {
@@ -112,7 +109,7 @@ public class ForgotPasswordResource implements Serializable {
                         "the-email-address-you-requested-is-not-registered-in-our-database");
             } else {
 
-                this.securityLogger.logInfo(this.getClass(),
+                SecurityLogger.logInfo(this.getClass(),
                         "User does NOT exist in the Database, returning OK message for security reasons");
 
                 try {

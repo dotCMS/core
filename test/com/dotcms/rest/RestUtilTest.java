@@ -1,11 +1,14 @@
 package com.dotcms.rest;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.log4j.LogManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.api.v1.authentication.ForgotPasswordForm;
+import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +18,8 @@ import java.util.Locale;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -23,12 +28,17 @@ import static org.mockito.Mockito.when;
  */
 public abstract class RestUtilTest {
 
+    public static final String DEFAULT_USER_ID = "userId";
+
     public static HttpServletRequest getMockHttpRequest() {
         HttpServletRequest request = mock(HttpServletRequest.class);
 
         final HttpSession session = mock(HttpSession.class);
-        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession( anyBoolean() )).thenReturn(session);
+        when(request.getSession(  )).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault());
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(DEFAULT_USER_ID);
+
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         return request;
     }
@@ -53,7 +63,7 @@ public abstract class RestUtilTest {
         assertTrue(response.getEntity() instanceof ResponseEntityView);
     }
 
-    public static ServletContext getMockContext(){
+    public static void initMockContext(){
 
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
@@ -67,6 +77,9 @@ public abstract class RestUtilTest {
         Config.CONTEXT=context;
         when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
 
-        return context;
+        LogMapper mockLogMapper = mock(LogMapper.class);
+        when ( mockLogMapper.isLogEnabled( any() ) ).thenReturn( false );
+
+        LogMapper.setLogMapper( mockLogMapper );
     }
 }

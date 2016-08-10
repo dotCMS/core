@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
@@ -32,20 +33,16 @@ import java.util.Locale;
 public class ResetPasswordResource {
 
     private final UserManager userManager;
-    private final SecurityLoggerServiceAPI securityLogger;
     private final AuthenticationHelper  authenticationHelper;
 
     public ResetPasswordResource(){
         this ( UserManagerFactory.getManager(),
-                APILocator.getSecurityLogger(),
                 AuthenticationHelper.INSTANCE);
     }
 
     @VisibleForTesting
-    public ResetPasswordResource(UserManager userManager, SecurityLoggerServiceAPI securityLogger,
-                                 AuthenticationHelper authenticationHelper) {
+    public ResetPasswordResource(UserManager userManager, AuthenticationHelper authenticationHelper) {
         this.userManager = userManager;
-        this.securityLogger = securityLogger;
         this.authenticationHelper = authenticationHelper;
     }
 
@@ -67,7 +64,7 @@ public class ResetPasswordResource {
         try {
             userManager.resetPassword( userId, token, password);
 
-            this.securityLogger.logInfo(this.getClass(),
+            SecurityLogger.logInfo(this.getClass(),
                     String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
             res = Response.ok(new ResponseEntityView( userId )).build();
         } catch (NoSuchUserException e) {
