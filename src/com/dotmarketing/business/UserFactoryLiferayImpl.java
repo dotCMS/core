@@ -199,6 +199,10 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			baseSql.append(userFullName);
 			baseSql.append(") like ?");
 		}
+
+		baseSql.append(" and delete_in_progress = ");
+		baseSql.append(DbConnectionFactory.getDBFalse());
+
 		baseSql.append(" order by ");
 		baseSql.append(userFullName);
 
@@ -294,13 +298,24 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	public long getCountUsersByNameOrEmail(String filter) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
 		filter = SQLUtil.sanitizeParameter(filter);    	
-		String sql = "select count(*) as count from user_ where " +
-				"lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or " +
-				"lower(emailAddress) like '%" + filter + "%' or " + 
-				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'";
+		StringBuilder sql = new StringBuilder("select count(*) as count from user_ where ");
+		sql.append("(lower(firstName) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(lastName) like '%");
+		sql.append(filter);
+		sql.append("%' or ");
+		sql.append("lower(emailAddress) like '%");
+		sql.append(filter);
+		sql.append("%' or ");
+		sql.append(DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }));
+		sql.append(" like '%");
+		sql.append(filter);
+		sql.append("%')");
+		sql.append(" and delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
 	
 		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
+		dotConnect.setSQL(sql.toString());
 		return dotConnect.getInt("count");
 	}
 	
@@ -313,12 +328,28 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);    	
-		String sql = "select userid from user_ where (lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or lower(emailAddress) like '%" + filter + "%' " +
-				" or " + DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%') AND userid <> 'system' " +
-				"order by firstName asc,lastname asc";
+		filter = SQLUtil.sanitizeParameter(filter);
+		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(firstName) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(lastName) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(emailAddress) like '%");
+		sql.append(filter);
+		sql.append("%' ");
+		sql.append(" or ");
+		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
+		sql.append(" like '%");
+		sql.append(filter);
+		sql.append("%') AND userid <> 'system' ");
+		sql.append(" and delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
+		sql.append(" order by firstName asc,lastname asc");
+
+
 		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
+		dotConnect.setSQL(sql.toString());
 		dotConnect.setMaxRows(top);
 		List results = dotConnect.getResults();
 		
@@ -350,13 +381,28 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);    	
-		String sql = "select count(*) as count from user_ where " +
-				"lower(userid) like '%" + filter + "%' or lower(firstName) like '%" + filter + "%' or lower(lastName) like '%" + filter +"%' or " +
-				"lower(emailAddress) like '%" + filter + "%' or " +
-				DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }) + " like '%" + filter +"%'" + ((!includeAnonymous)?"AND userid <> 'anonymous'":"");
+		filter = SQLUtil.sanitizeParameter(filter);
+		StringBuilder sql = new StringBuilder("select count(*) as count from user_ where ");
+		sql.append("(lower(userid) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(firstName) like '%");
+		sql.append(filter);
+		sql.append("%' or lower(lastName) like '%");
+		sql.append(filter);
+		sql.append("%' or ");
+		sql.append("lower(emailAddress) like '%");
+		sql.append(filter);
+		sql.append("%' or ");
+		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
+		sql.append(" like '%");
+		sql.append(filter);
+		sql.append("%')");
+		sql.append((!includeAnonymous) ? "AND userid <> 'anonymous'" : "");
+		sql.append(" and delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
+
 		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
+		dotConnect.setSQL(sql.toString());
 		return dotConnect.getInt("count");
 	}
 	
@@ -375,7 +421,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
 		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);    		
+		filter = SQLUtil.sanitizeParameter(filter);
 		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
 		sql.append(filter);
 		sql.append("%' or lower(firstName) like '%");
@@ -385,19 +431,16 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append("%' or lower(emailAddress) like '%");
 		sql.append(filter);
 		sql.append("%'  or ");
-		sql.append(DotConnect.concat(new String[] { "lower(firstName)", "' '", "lower(lastName)" }));
+		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%') AND userid <> 'system' ");
-		sql.append(((!includeAnonymous)?"AND userid <> 'anonymous'":""));
+		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : ""));
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append(" and delete_in_progress = 0 ");
-		}else{
-			sql.append(" and delete_in_progress = false ");
-		}
+		sql.append(" AND delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBFalse());
 
-		sql.append("order by firstName asc,lastname asc");
+		sql.append(" order by firstName asc,lastname asc");
 
 		dotConnect.setSQL(sql.toString());
 		dotConnect.setMaxRows(top);
@@ -436,18 +479,15 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 		StringBuilder sql = new StringBuilder("select userid from user_ where ");
 
-		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			sql.append("delete_in_progress = 1 ");
-		} else {
-			sql.append("delete_in_progress = true ");
-		}
+		sql.append("delete_in_progress = ");
+		sql.append(DbConnectionFactory.getDBTrue());
 
 		if (DbConnectionFactory.isOracle()) {
-			sql.append("and delete_date<=to_date('");
+			sql.append(" and delete_date<=to_date('");
 			sql.append(format.format(calendar.getTime()));
 			sql.append("', 'YYYY-MM-DD HH24:MI:SS')");
 		} else {
-			sql.append("and delete_date<='");
+			sql.append(" and delete_date<='");
 			sql.append(format.format(calendar.getTime()));
 			sql.append("'");
 		}
@@ -470,12 +510,18 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
         DotConnect dotConnect = new DotConnect();
         //Build the sql query
-        StringBuffer query = new StringBuffer( "SELECT user_.userId FROM user_ WHERE companyid = ? AND userid <> 'system' " );
-        if ( UtilMethods.isSet( filterDate ) ) {
-            query.append( " AND createdate >= ?" );
-        }
-        query.append( " ORDER BY firstName ASC, lastname ASC" );
-        dotConnect.setSQL( query.toString() );
+		StringBuffer
+			query =
+			new StringBuffer("SELECT user_.userId FROM user_ WHERE companyid = ? AND userid <> 'system' ");
+		if (UtilMethods.isSet(filterDate)) {
+			query.append(" AND createdate >= ?");
+		}
+
+		query.append(" AND delete_in_progress = ");
+		query.append(DbConnectionFactory.getDBFalse());
+
+		query.append(" ORDER BY firstName ASC, lastname ASC");
+		dotConnect.setSQL( query.toString() );
         Logger.debug( UserFactoryLiferayImpl.class, "::getUsersByCreationDate -> query: " + dotConnect.getSQL() );
 
         //Add the required params
@@ -500,47 +546,6 @@ public class UserFactoryLiferayImpl extends UserFactory {
         }
         return ids;
     }
-
-	@Override
-	public Map<String, Object> getUsersAnRolesByName(String filter, int start, int limit) throws DotDataException {
-		filter = (UtilMethods.isSet(filter) ? filter : "");
-		filter = SQLUtil.sanitizeParameter(filter);    	
-		DotConnect dotConnect = new DotConnect();
-	
-		String baseSql = " (select distinct 0 as isuser, 'role' as type, " + dotConnect.concat( new String[]{"role_.roleId", "''"}) + " as id, role_.name as name, 'role' as emailaddress " +
-		"from role_ where companyid = '" + PublicCompanyFactory.getDefaultCompanyId() + "' " +
-		"union " +
-		"select distinct 1 as isuser, 'user' as type, user_.userId as id, " + dotConnect.concat( new String[]{"user_.firstName", "' '", "user_.lastName" } ) + " as name, user_.emailaddress as emailaddress " +
-		"from user_ where companyid = '" + PublicCompanyFactory.getDefaultCompanyId() + "' " +
-		"order by isuser, name) ";
-		
-		String sql = "select isuser, id, name, type, emailaddress from " + baseSql + " uar ";
-		if(UtilMethods.isSet(filter))
-				sql += "where lower(name) like ?";
-		dotConnect.setSQL(sql);
-		if(UtilMethods.isSet(filter))
-			dotConnect.addParam("%"+filter.toLowerCase()+"%");
-		
-		if(start > -1)
-			dotConnect.setStartRow(start);
-		if(limit > -1)
-			dotConnect.setMaxRows(limit);
-		ArrayList<Map<String, Object>> results = dotConnect.getResults();
-		
-		sql = "select count(*) as total from " + baseSql + " uar ";
-		if(UtilMethods.isSet(filter))
-				sql += "where lower(name) like ?";
-		dotConnect = new DotConnect();
-		dotConnect.setSQL(sql);
-		if(UtilMethods.isSet(filter))
-			dotConnect.addParam("%"+filter.toLowerCase()+"%");
-		int total = dotConnect.getInt("total");
-		
-		HashMap<String, Object> ret = new HashMap<String, Object>();
-		ret.put("total", total);
-		ret.put("data", results);
-		return ret;    			
-	}
 	
 	@Override
 	public void delete(User userToDelete) throws DotDataException {

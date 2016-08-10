@@ -36,6 +36,7 @@ import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
 import com.dotmarketing.business.UserAPITest;
+import com.dotmarketing.business.UserProxyFactoryTest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -44,6 +45,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactoryTest;
+import com.dotmarketing.portlets.contentlet.business.FileAssetTest;
 import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
@@ -79,7 +81,9 @@ import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.tag.business.TagAPITest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
+import com.liferay.portal.ejb.UserFinderTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
+import com.liferay.portal.ejb.UserUtilTest;
 
 /**
  * @author Jonathan Gamba.
@@ -133,11 +137,12 @@ import com.liferay.portal.ejb.UserLocalManagerTest;
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ActionResourceFTest.class,
     TagAPITest.class,
-        ReflectionUtilsTest.class,
-        CollectionsUtilsTest.class,
-        MarshalUtilsTest.class,
-        JsonWebTokenServiceTest.class,
-        JsonWebTokenInterceptorTest.class,
+    FileAssetTest.class,
+    ReflectionUtilsTest.class,
+    CollectionsUtilsTest.class,
+    MarshalUtilsTest.class,
+    JsonWebTokenServiceTest.class,
+    JsonWebTokenInterceptorTest.class,
 
 
     //Rules.
@@ -145,10 +150,10 @@ import com.liferay.portal.ejb.UserLocalManagerTest;
     RulesCacheFTest.class, //Needs Enterprise License.
     RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
 
-        // Authentication
-        AuthenticationResourceTest.class,
-        LogoutResource.class,
-        ForgotPasswordResourceTest.class,
+    // Authentication
+    AuthenticationResourceTest.class,
+    LogoutResource.class,
+    ForgotPasswordResourceTest.class,
 
     //Rules:Actionlets.
     ActionletResourceFTest.class, //Needs Enterprise License.
@@ -176,9 +181,12 @@ import com.liferay.portal.ejb.UserLocalManagerTest;
     VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
     VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
     VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
-    UserAPITest.class,
+    UserAPITest.class, //Needs Enterprise License.
     UserLocalManagerTest.class,
-    
+    UserFinderTest.class,
+    UserUtilTest.class,
+    UserProxyFactoryTest.class,
+
     // REST end-points
     ConfigurationResourceTest.class
 })
