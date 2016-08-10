@@ -29,6 +29,8 @@ export class ForgotPasswordContainer{
     }
 
     recoverPassword(forgotPasswordLogin:string): void {
+        this.message = '';
+
         this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:ResponseView) => {
             this.goToLogin();
         }, (resp:ResponseView) => {
