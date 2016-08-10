@@ -37,17 +37,20 @@ public abstract class ImageFilter implements ImageFilterIf {
 		try {
 			StringBuilder sb = new StringBuilder();
 			Iterator<Entry<String, String[]>> it = parameters.entrySet().iterator();
-
-			String[] filters = parameters.get("filter")[0].split(",");
 			List<String> acceptFilter = new ArrayList<String>();
 			String thisFilter="";
-			for(int i=0;i<filters.length;i++){
-				String x = filters[i];
-				acceptFilter.add(x.toLowerCase());
-				sb.append(x + ":");
-				if (x.toLowerCase().equals(getFilterName())) {
-					thisFilter=getFilterName();
-					break;
+			if(parameters.get("filter")!=null && parameters.get("filter").length>0){
+				String[] filters = parameters.get("filter")[0].split(",");
+				
+				
+				for(int i=0;i<filters.length;i++){
+					String x = filters[i];
+					acceptFilter.add(x.toLowerCase());
+					sb.append(x + ":");
+					if (x.toLowerCase().equals(getFilterName())) {
+						thisFilter=getFilterName();
+						break;
+					}
 				}
 			}
 
@@ -87,7 +90,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 			return ret.toString();
 		} catch (NoSuchAlgorithmException e) {
-			throw new DotStateException(this.getClass() + ":" + e);
+			throw new DotStateException(this.getClass() + ":" + e,e);
 		}
 
 	}
@@ -184,7 +187,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 		}
 		catch(Exception e){
-			throw new DotRuntimeException("Cannot find the inode of the file : " + e.getMessage());
+			throw new DotRuntimeException("Cannot find the inode of the file : " + e.getMessage(),e);
 		}
 	}
 
