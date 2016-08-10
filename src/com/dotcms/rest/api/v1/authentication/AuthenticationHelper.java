@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ErrorHelper;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -49,20 +50,7 @@ public class AuthenticationHelper implements Serializable {
                                      final String userId,
                                      final String messageKey) {
 
-        try {
-
-            return Response.status(status).entity
-                (new ResponseEntityView
-                    (Arrays.asList(new ErrorEntity(messageKey,
-                            LanguageUtil.get(locale,
-                                    messageKey))))).build();
-
-
-        } catch (LanguageException e1) {
-            // Quiet
-        }
-
-        return null;
+        return ErrorHelper.INSTANCE.getErrorResponse(status, locale, messageKey);
     }
 
 } // E:O:F:AuthenticationHelper.
