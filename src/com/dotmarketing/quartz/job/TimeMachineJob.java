@@ -30,11 +30,18 @@ public class TimeMachineJob implements Job, StatefulJob {
         List<Language> langs=(List<Language>) dataMap.get("langs");
         Boolean incremental= (dataMap.get("incremental") != null) ? (Boolean) dataMap.get("incremental") : false;
         try {
+            //Log the start date and time of this job on Logfiles
+            String date = DateUtil.getCurrentDate();
+            ActivityLogger.logInfo(getClass(), "Job Started", "User:" + APILocator.getUserAPI().getSystemUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+            AdminLogger.log(getClass(), "Job Started", "User:" + APILocator.getUserAPI().getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: timemachine"  );
+            
             if(allhosts)
                 hosts=APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(), false);
 
             APILocator.getTimeMachineAPI().startTimeMachine(hosts, langs,incremental);
-            String date = DateUtil.getCurrentDate();
+
+            //Log the end date and time of this job on Logfiles
+            date = DateUtil.getCurrentDate();
             ActivityLogger.logInfo(getClass(), "Job Finished", "User:" + APILocator.getUserAPI().getSystemUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
             AdminLogger.log(getClass(), "Job Finished", "User:" + APILocator.getUserAPI().getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: timemachine"  );
         }
