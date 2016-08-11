@@ -1,4 +1,4 @@
-import {Component, ViewEncapsulation, ElementRef} from '@angular/core';
+import {Component, ViewEncapsulation, ElementRef, Inject} from '@angular/core';
 
 
 import {MdIcon} from '@angular2-material/icon/icon';
@@ -28,9 +28,10 @@ export class ToolbarNotifications {
     private notificationsUnreadCount:number = 0;
     private notificationService:NotificationsService;
     private showNotifications:boolean = false;
-    private dismissAllLabel = 'Dismiss all notifications';
+    private i18nMessagesMap:string;
 
-    constructor(_dotcmsEventsService:DotcmsEventsService, _notificationService:NotificationsService, myElement: ElementRef) {
+    constructor(@Inject('dotcmsConfig') private dotcmsConfig, _dotcmsEventsService:DotcmsEventsService, _notificationService:NotificationsService, myElement: ElementRef) {
+        this.i18nMessagesMap = dotcmsConfig.configParams.config.i18nMessagesMap;
         this.dotcmsEventsService = _dotcmsEventsService;
         this.notificationService = _notificationService;
         this.elementRef = myElement;
