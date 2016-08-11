@@ -110,10 +110,11 @@ public class PluginLoader {
 					continue;
 				}
 				loadPluginProperties(jar, plugin.getId());
-				String deployClass = attrs.getValue("Deploy-Class").trim();
+				String deployClass = attrs.getValue("Deploy-Class");
 				PluginDeployer deployer=null;
 				if (deployClass!=null && deployClass.length()>0) {
 					try {
+					    deployClass = deployClass.trim();
 						Object o=Class.forName(deployClass).newInstance();
 						if (o instanceof PluginDeployer) {
 							deployer=(PluginDeployer)o;
