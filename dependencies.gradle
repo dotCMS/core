@@ -299,4 +299,7 @@ dependencies {
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
     compile group: 'com.amazonaws', name: 'aws-java-sdk', version:'1.11.66'
+    compile group: 'org.apache.xmlgraphics', name: 'batik-anim', version:'1.8'
+    compile group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5'
+
 }
