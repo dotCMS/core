@@ -526,7 +526,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		            }
 
 		            /* Using the If-Modified-Since Header */
-		             if(ifModifiedSince != null){
+		             /*if(ifModifiedSince != null){
 					    try{
 					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
 					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
@@ -535,7 +535,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					        }
 					    }
 					    catch(Exception e){}
-					}
+					}*/
 
 		            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
 		            resp.setHeader("Content-Length", String.valueOf(_fileLength));
