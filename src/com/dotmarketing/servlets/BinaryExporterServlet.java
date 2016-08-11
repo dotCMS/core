@@ -227,7 +227,11 @@ public class BinaryExporterServlet extends HttpServlet {
 				lang = Long.parseLong(request_language);
 			}else{ 
 				if(session != null){
-					lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+					if(req.getSession().getAttribute("tm_lang")!=null){
+						lang = Long.parseLong((String) session.getAttribute("tm_lang"));
+					}else{
+						lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+					}
 				}
 			}
 			//Identifier assetId = APILocator.getIdentifierAPI().find(assetIdentifier);
