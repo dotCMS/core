@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -888,7 +889,11 @@ public class HostAPIImpl implements HostAPI {
 		for (String key: list.get(0).keySet()) {
 			Object value = list.get(0).get(key);
 			if ( key.equals(languageIdColumn) ) {
-				host.setProperty(Contentlet.LANGUAGEID_KEY, value);
+				if ( value instanceof BigDecimal){ //Hibernate maps Oracle NUMBER to BigDecimal.
+					host.setProperty(Contentlet.LANGUAGEID_KEY, ((BigDecimal) value).longValue());
+				} else {
+					host.setProperty(Contentlet.LANGUAGEID_KEY, value);
+				}
 			} if (key.equals(isDefaultColumn)) { 
 				host.setProperty(Host.IS_DEFAULT_KEY, DbConnectionFactory.isDBTrue(value.toString()));
 			} else {
