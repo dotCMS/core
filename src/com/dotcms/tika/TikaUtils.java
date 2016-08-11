@@ -141,7 +141,9 @@ public class TikaUtils {
                     }
                 }
             }
-        } catch (Exception e) {
+	} catch (IOException ioExc) {
+		Logger.debug(this.getClass(), "Error Reading TikaParse Stream.", ioExc);
+	} catch (Exception e) {
             Logger.error(this.getClass(),
                 "Could not parse file metadata for file : " + binFile.getAbsolutePath() + ". " + e.getMessage());
         } finally {
