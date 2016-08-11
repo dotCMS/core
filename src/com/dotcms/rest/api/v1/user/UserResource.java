@@ -9,7 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ErrorHelper;
+import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -28,7 +28,6 @@ import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,7 +46,7 @@ public class UserResource {
     private final PermissionAPI permissionAPI;
     private final UserProxyAPI userProxyAPI;
     private final UserHelper userHelper;
-    private final ErrorHelper errorHelper;
+    private final ErrorResponseHelper errorHelper;
     private final UserLocalManager userLocalManager;
 
     @SuppressWarnings("unused")
@@ -58,7 +57,7 @@ public class UserResource {
                 APILocator.getPermissionAPI(),
                 APILocator.getUserProxyAPI(),
                 UserHelper.INSTANCE,
-                ErrorHelper.INSTANCE,
+                ErrorResponseHelper.INSTANCE,
                 UserLocalManagerFactory.getManager()
                 );
     }
@@ -70,7 +69,7 @@ public class UserResource {
                            final PermissionAPI permissionAPI,
                            final UserProxyAPI userProxyAPI,
                            final UserHelper userHelper,
-                           final ErrorHelper errorHelper,
+                           final ErrorResponseHelper errorHelper,
                            final UserLocalManager userLocalManager) {
 
         this.webResource      = webResource;

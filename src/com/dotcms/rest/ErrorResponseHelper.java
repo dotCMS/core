@@ -12,11 +12,11 @@ import java.util.Locale;
  * Generic error helper for rest stuff
  * @author jsanca
  */
-public class ErrorHelper implements Serializable {
+public class ErrorResponseHelper implements Serializable {
 
-    public final static ErrorHelper INSTANCE = new ErrorHelper();
+    public final static ErrorResponseHelper INSTANCE = new ErrorResponseHelper();
 
-    private ErrorHelper() {}
+    private ErrorResponseHelper() {}
 
     /**
      * Get Error response based on a status and message key
@@ -45,4 +45,4 @@ public class ErrorHelper implements Serializable {
 
         return null;
     }
-} // E:O:F:ErrorHelper.
+} // E:O:F:ErrorResponseHelper.
