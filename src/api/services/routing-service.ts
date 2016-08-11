@@ -34,6 +34,40 @@ export class RoutingService{
 
     public setMenus( menus:any[] ):void{
         this.menus = menus;
+
+        // TODO: do this more elegant
+        // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
+        let mainRoutes = this.routes[0];
+        mainRoutes.children.slice(1, mainRoutes.children.length);
+
+        this.menus[0].menuItems.unshift({
+            ajax: false,
+            angular: true
+            id: "PL"
+            name: "Pattern Library"
+            url: "/pl"
+        });
+
+        for (let i = 0; i < this.menus.length; i++){
+            let menu = this.menus[i];
+            for (let k = 0; k < menu.menuItems.length; k++){
+                let subMenuItem = menu.menuItems[k];
+
+                if (subMenuItem.angular) {
+                    mainRoutes.children.push({
+                        component: this.mapComponents[subMenuItem.id],
+                        path: subMenuItem.url,
+                    });
+                    subMenuItem.url = 'dotCMS' + subMenuItem.url
+                }else{
+                    subMenuItem.url = subMenuItem.url + '&in_frame=true&frame=detailFrame';
+                }
+            }
+        }
+
+        if (this.menusChangeObserver) {
+            this.menusChangeObserver.next(this.menus);
+        }
     }
 
     public getMenus():any[]{
@@ -43,10 +77,6 @@ export class RoutingService{
     public loadMenus():Observable<any>{
         return Observable.create( observer => {
             this.getConfig().subscribe((menuConfig) => {
-                // TODO: do this more elegant
-                // TODO: this is bad, we shouldn't be create the route here, a service should only return the data.
-                let mainRoutes = this.routes[0];
-                mainRoutes.children.slice(1, mainRoutes.children.length);
 
                 if (menuConfig.errors.length) {
                     console.log(menuConfig.errors[0].message);
@@ -54,36 +84,7 @@ export class RoutingService{
 
                 } else {
 
-                    this.menus = menuConfig.entity.menu;
-
-                    this.menus[0].menuItems.unshift({
-                        ajax: false,
-                        angular: true
-                        id: "PL"
-                        name: "Pattern Library"
-                        url: "/pl"
-                    });
-
-                    for (let i = 0; i < this.menus.length; i++){
-                        let menu = menuConfig.entity.menu[i];
-                        for (let k = 0; k < menu.menuItems.length; k++){
-                            let subMenuItem = menu.menuItems[k];
-
-                            if (subMenuItem.angular) {
-                                mainRoutes.children.push({
-                                    component: this.mapComponents[subMenuItem.id],
-                                    path: subMenuItem.url,
-                                });
-                                subMenuItem.url = 'dotCMS' + subMenuItem.url
-                            }else{
-                                subMenuItem.url = subMenuItem.url + '&in_frame=true&frame=detailFrame';
-                            }
-                        }
-                    }
-
-                    if (this.menusChangeObserver) {
-                        this.menusChangeObserver.next(this.menus);
-                    }
+                    this.setMenus( menuConfig.entity.menu );
                     observer.next(this.menus);
                 }
             });

@@ -26,6 +26,8 @@ export class ResetPasswordContainer{
     private login:string = '';
     private token:string = '';
 
+    private changePasswordSuccessfully:string;
+
     constructor( private loginService: LoginService, private router: Router,
                  private queryParams: QueryParams, private routeParams: RouteParams) {
 
@@ -37,6 +39,15 @@ export class ResetPasswordContainer{
 
         this.routeParams.pluck<string>('userId').distinctUntilChanged()
             .forEach(login => this.login = login);
+
+        this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
+            let dataI18n = data.i18nMessagesMap;
+            let entity = data.entity;
+
+            this.changePasswordSuccessfully = dataI18n['message.forgot.password.password.updated'];
+        }, (error) => {
+            console.log(error);
+        });
     }
 
     public changePassword(changePasswordData:ChangePasswordData):void{
@@ -44,7 +55,7 @@ export class ResetPasswordContainer{
             .subscribe( result =>{
                 //alert(this.resetPasswordSuccessMessage);
                 // TODO need to use internationalization
-                alert('Your password have been successfully changed');
+                alert( this.changePasswordSuccessfully );
                 this.goToLogin();
             }, error => this.message = error.errorsMessages);
     }
