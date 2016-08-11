@@ -60,6 +60,7 @@ public class UserResource {
 
 		//Adding logged user information to the object
 		jsonLoggedUserObject.put("userId", user.getUserId());
+		jsonLoggedUserObject.put("emailAddress", user.getEmailAddress());
 		jsonLoggedUserObject.put("firstName", UtilMethods.escapeSingleQuotes(user.getFirstName()));
 		jsonLoggedUserObject.put("lastName", UtilMethods.escapeSingleQuotes(user.getLastName()));
 		jsonLoggedUserObject.put("roleId", myRole.getId());
