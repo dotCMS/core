@@ -1,5 +1,20 @@
 package com.dotcms.rest.api.v1.user;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.junit.Test;
+
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -7,7 +22,9 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.site.SiteBrowserResource;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -16,16 +33,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.Locale;
-import java.util.Map;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * {@link SiteBrowserResource} test
@@ -46,7 +53,7 @@ public class UserResourceTest extends BaseMessageResources {
         final UserAPI userAPI = mock(UserAPI.class);
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
-        final UserHelper userHelper  = mock(UserHelper.class);
+        final UserResourceHelper userHelper  = mock(UserResourceHelper.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final UserLocalManager userLocalManager  = mock(UserLocalManager.class);
 
@@ -61,7 +68,7 @@ public class UserResourceTest extends BaseMessageResources {
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         UserResource userResource =
                 new UserResource(webResource, userWebAPI, userAPI, permissionAPI,
-                        userProxyAPI, userHelper, errorHelper, userLocalManager);
+                        userProxyAPI, userHelper, errorHelper);
 
         try {
 
@@ -106,7 +113,7 @@ public class UserResourceTest extends BaseMessageResources {
         final UserAPI userAPI = mock(UserAPI.class);
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
-        final UserHelper userHelper  = mock(UserHelper.class);
+        final UserResourceHelper userHelper  = mock(UserResourceHelper.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final UserLocalManager userLocalManager  = mock(UserLocalManager.class);
 
@@ -125,7 +132,7 @@ public class UserResourceTest extends BaseMessageResources {
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         UserResource userResource =
                 new UserResource(webResource, userWebAPI, userAPI, permissionAPI,
-                        userProxyAPI, userHelper, errorHelper, userLocalManager);
+                        userProxyAPI, userHelper, errorHelper);
 
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1").givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();

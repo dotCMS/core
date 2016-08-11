@@ -19,7 +19,30 @@ import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
  * @version 3.7
  * @since Jun 8, 2016
  */
+@SuppressWarnings("serial")
 public class CollectionsUtils implements Serializable {
+
+	/**
+	 * Returns the object in the {@link Map} specified by its key. If it doesn't
+	 * exist, returns its default value.
+	 * 
+	 * @param map
+	 *            - The map containing the elements to inspect.
+	 * @param key
+	 *            - The key of the value to return.
+	 * @param defaultValue
+	 *            - The default value to return in case the key doesn't match a
+	 *            value in the map.
+	 * @return The value mapped to the specified key, or the default value.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T getMapValue(Map<?, ?> map, Object key, T defaultValue) {
+		if (!map.containsKey(key)) {
+			return defaultValue;
+		} else {
+			return (T) map.get(key);
+		}
+	}
 
     /**
      * Get a new empty list

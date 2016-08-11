@@ -109,10 +109,26 @@ public class SecurityUtils {
 	 * @param delayStrategy
 	 *            - The delay strategy used after a failed login.
 	 */
-	public static void delayRequest(int seed, final String delayStrategy) {
+	public static void delayRequest(long seed, final String delayStrategy) {
 		seed = Math.abs(seed);
-		// Default strategy
-		if (delayStrategy.equalsIgnoreCase("pow")) {
+		if (delayStrategy.equalsIgnoreCase("time-sec")) {
+			try {
+				TimeUnit.SECONDS.sleep(seed);
+			} catch (NumberFormatException e) {
+				// Invalid number, defaults to no thread sleep
+			} catch (InterruptedException e) {
+				// Sleep was interrupted, just ignore it
+			}
+		} else if (delayStrategy.equalsIgnoreCase("time-mills")) {
+			try {
+				TimeUnit.MILLISECONDS.sleep(seed);
+			} catch (NumberFormatException e) {
+				// Invalid number, defaults to no thread sleep
+			} catch (InterruptedException e) {
+				// Sleep was interrupted, just ignore it
+			}
+		} else {
+			// Default strategy: delayStrategy = "pow"
 			if (seed > 0) {
 				long sleepTime = (long) Math.pow(seed, 2);
 				try {
