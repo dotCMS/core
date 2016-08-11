@@ -172,6 +172,8 @@ public class CommentsForm extends ValidatorForm
 		Contentlet parentContentlet = new Contentlet();	
 		HttpSession session = request.getSession();
         Captcha captchaSession = (Captcha) session.getAttribute(Captcha.NAME);
+		//We need to remove the captcha info from the session.
+		session.removeAttribute(Captcha.NAME);
 
         try{
 			parentContentlet = conAPI.find(contentInode, APILocator.getUserAPI().getSystemUser(), true);
