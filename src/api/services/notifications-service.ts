@@ -16,7 +16,7 @@ export class NotificationsService extends CoreWebService {
 
     constructor(_apiRoot: ApiRoot, _http: Http) {
         super(_apiRoot, _http);
-        this.getNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/getNotifications/allUsers/true`;
+        this.getNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/getNotifications/offset/0/limit/25`;
         this.dismissNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/delete`;
         this.markAsReadNotificationsUrl = `${_apiRoot.baseUrl}api/v1/notification/markAsRead`;
     }
