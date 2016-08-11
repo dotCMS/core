@@ -1,4 +1,4 @@
-import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
+import {Component, ViewEncapsulation, Input, Output, EventEmitter, Inject} from '@angular/core';
 import {INotification} from '../../../../api/services/notifications-service';
 
 // Pipes
@@ -24,14 +24,15 @@ export class NotificationsItem {
 
     private showLinkAction:boolean = false;
     private showTitleLinked:boolean = false;
-    private dismissNotificationLabel = 'Dismiss notification';
+    private i18nMessagesMap;
     private notificationIcons:Object = {
         'WARNING': 'cancel',
         'ERROR': 'warning',
         'INFO': 'info'
     };
 
-    constructor() {
+    constructor(@Inject('dotcmsConfig') private dotcmsConfig) {
+        this.i18nMessagesMap = dotcmsConfig.configParams.config.i18nMessagesMap;
     }
 
     ngOnInit():void {
