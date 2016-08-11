@@ -452,7 +452,7 @@
                 <%int showDim=300; %>
                 <%int imageEditors=0; %>
                 <!--  If you are not enterprise -->
-                <%if(LicenseUtil.getLevel() < 199 || fileName.toLowerCase().endsWith("svg")){ %>
+                <%if(LicenseUtil.getLevel() < 199 ){ %>
                 <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                     <div style="position:relative;width:<%=showDim+40 %>px;">
                         <%
