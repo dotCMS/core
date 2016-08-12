@@ -22,6 +22,7 @@
 
 package com.liferay.util;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.security.Encryptor;
@@ -303,6 +304,7 @@ public class LocaleUtil {
 			throws SystemException, PortalException, DotDataException, DotSecurityException {
 
 		String uId = null;
+		String cookieValue = null;
 
 		if (null != session) {
 
@@ -311,14 +313,14 @@ public class LocaleUtil {
 
 			if (cookies != null) {
 
-				uId = CookieUtil.get
-						(request.getCookies(), CookieKeys.ID);
+				cookieValue = CookieUtil.get
+						(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
 
-				if (UtilMethods.isSet(uId)) {
+				if (UtilMethods.isSet(cookieValue)) {
 
 					try {
 
-						uId = getEncryptor().decryptString(uId);
+						uId = JsonWebTokenUtils.getUserIdFromJsonWebToken(cookieValue);
 					} catch (Exception e) {
 
 						_log.info("An invalid attempt to login as " + uId + " has been made from IP: "

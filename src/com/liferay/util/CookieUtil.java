@@ -174,7 +174,7 @@ public class CookieUtil {
 				for(Cookie cookie : req.getCookies()){
 					boolean modified = false;
 
-					if(cookie.getName().equals(CookieKeys.ID))
+					if(cookie.getName().equals(CookieKeys.JWT_ACCESS_TOKEN))
 						continue;
 
 					// if we are using websphere do not change the JSESSIONID vaules
