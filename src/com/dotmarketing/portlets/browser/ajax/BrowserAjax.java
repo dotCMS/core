@@ -1841,18 +1841,23 @@ public class BrowserAjax {
 	}
 
 	private Map<String, Object> hostMap(Host host) {
-    	String currentPath = host.getHostname();
-        Map<String,Object> hostMap = new HashMap<String, Object>();
-        hostMap.put("type", "host");
-		hostMap.put("hostName",
+		Map<String, Object> hostMap = new HashMap<String, Object>();
+
+		String
+			currentPath =
 			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-all-hosts")
-				: host.getHostname());
-		hostMap.put("name", host.getHostname());
-        hostMap.put("id", host.getIdentifier());
-        hostMap.put("identifier", host.isSystemHost() ? "allHosts": host.getIdentifier());
-        hostMap.put("fullPath", currentPath);
-        hostMap.put("absolutePath", currentPath);
-        return hostMap;
+				: host.getHostname();
+
+		String identifier = host.isSystemHost() ? "allHosts" : host.getIdentifier();
+
+		hostMap.put("type", "host");
+		hostMap.put("hostName", currentPath);
+		hostMap.put("name", currentPath);
+		hostMap.put("id", identifier);
+		hostMap.put("identifier", identifier);
+		hostMap.put("fullPath", currentPath);
+		hostMap.put("absolutePath", currentPath);
+		return hostMap;
 	}
 
 	private Map<String, Object> folderMap(Folder f) throws DotDataException, DotSecurityException {
