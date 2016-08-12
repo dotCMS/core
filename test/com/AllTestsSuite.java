@@ -81,7 +81,6 @@ import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.tag.business.TagAPITest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
-import com.liferay.portal.ejb.UserFinderTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
 import com.liferay.portal.ejb.UserUtilTest;
 
@@ -183,7 +182,6 @@ import com.liferay.portal.ejb.UserUtilTest;
     VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
     UserAPITest.class, //Needs Enterprise License.
     UserLocalManagerTest.class,
-    UserFinderTest.class,
     UserUtilTest.class,
     UserProxyFactoryTest.class,
 
