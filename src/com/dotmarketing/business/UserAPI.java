@@ -247,8 +247,6 @@ public interface UserAPI {
     public List<User> getUsersByNameOrEmailOrUserID(String filter,int page,int pageSize, boolean includeAnonymous) throws DotDataException;
 
     /**
-<<<<<<< Updated upstream
-=======
 	 * Return the list of {@link User} objects whose first name, last name, or
 	 * email are similar to the value specified in the {@code filter} parameter.
 	 * For example, retrieving all users that match {@code filter = "and"} will

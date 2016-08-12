@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.role;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
@@ -16,7 +17,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.Logger;
 
@@ -82,7 +82,7 @@ public class RoleResource implements Serializable {
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);
-			hasUserRole = this.helper.userHasRoles(userId, CollectionsUtils.list(roles));
+			hasUserRole = this.helper.userHasRoles(userId, list(roles));
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			Logger.error(this, "An error occurred when processing the request.", e);

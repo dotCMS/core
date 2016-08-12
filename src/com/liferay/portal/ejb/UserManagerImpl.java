@@ -23,24 +23,12 @@
 package com.liferay.portal.ejb;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
-import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
-import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
-import com.dotcms.util.UrlUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotInvalidPasswordException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-
-
-import com.dotmarketing.util.*;
-import com.liferay.portal.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -49,10 +37,30 @@ import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
+import com.dotcms.util.SecurityUtils.DelayStrategy;
+import com.dotcms.util.UrlUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.cms.login.factories.LoginFactory;
-
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.EmailUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.RequiredUserException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserIdException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -718,8 +726,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 				int failedLoginAttempts = user.getFailedLoginAttempts();
 				if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
-					SecurityUtils.delayRequest(failedLoginAttempts,
-							Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow"));
+					delayRequest(failedLoginAttempts);
 				}
 				user.setFailedLoginAttempts(++failedLoginAttempts);
 
@@ -751,6 +758,37 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		return authResult;
 	}
 
+	/**
+	 * If the user trying to authenticate has failed to do so, their login
+	 * process will be penalized in order to prevent potential hacking attacks.
+	 * The time that the user will have to wait is based on a specific delay
+	 * strategy. It defaults to raising the {@code defaultSeed} value to the 
+	 * power of 2.
+	 * 
+	 * @param defaultSeed
+	 *            - The default time seed in case the delay strategy does not
+	 *            specify one.
+	 */
+	private void delayRequest(int defaultSeed) {
+		int seed = defaultSeed;
+		String delayStrat = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+		String[] stratParams = delayStrat.split(":");
+		DelayStrategy strategy;
+		try {
+			strategy = DelayStrategy.valueOf(stratParams[0]);
+			if (stratParams.length > 1) {
+				seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
+			}
+		} catch (Exception e) {
+			Logger.error(this, "The specified delay strategy is invalid. Defaults to POW strategy.", e);
+			strategy = DelayStrategy.POW;
+		}
+		SecurityUtils.delayRequest(seed, strategy);
+	}
+
+	/**
+	 * 
+	 */
 	public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
 			DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
 		try {
@@ -768,4 +806,5 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			throw new IllegalArgumentException();
 		}
 	}
+
 }

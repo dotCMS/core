@@ -1,9 +1,10 @@
 package com.dotcms.util;
 
-import com.dotmarketing.util.UtilMethods;
-
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
+
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Utility class for conversion operations.
@@ -95,18 +96,33 @@ public class ConversionUtils implements Serializable {
 		return destinyList;
 	} // convert
 
+	/**
+	 * 
+	 * @param sLong
+	 * @return
+	 */
 	public static long toLong (final String sLong) {
 
 		return toLong(sLong, 0l);
 	}
 
-	public static long toLong (final String sLong, final Long defaultLong) {
+	/**
+	 * 
+	 * @param input
+	 * @param defaultLong
+	 * @return
+	 */
+	public static long toLong (final Object input, final Long defaultLong) {
 
 		long l = defaultLong;
 
 		try {
-			if (UtilMethods.isSet(sLong)) {
-				l = Long.parseLong(sLong);
+			if (UtilMethods.isSet(input)) {
+				if (input instanceof String) {
+					l = Long.parseLong(String.class.cast(input));
+				} else if (input instanceof Number) {
+					l = Number.class.cast(input).longValue();
+				}
 			}
 		} catch (NumberFormatException e) {
 
@@ -116,5 +132,85 @@ public class ConversionUtils implements Serializable {
 		return l;
 	}
 
-    
-} // E:O:F:ConversionUtils.
+	/**
+	 * Converts the specified map value into an {@code int}.
+	 * 
+	 * @param key
+	 *            - The key to the map value.
+	 * @param params
+	 *            - The Map that contains the value to convert.
+	 * @param defaultInt
+	 *            - The default value in case the map doesn't have it, or if it
+	 *            cannot be converted.
+	 * @return The map value as {@code int}, or the default value.
+	 */
+	public static int toInt(final String key, final Map<?, ?> params, final int defaultInt) {
+		int result = defaultInt;
+		if (params.containsKey(key)) {
+			result = toInt(params.get(key).toString(), defaultInt);
+		}
+		return result;
+	}
+
+	/**
+	 * Converts the specified input value into an {@code int}. The input value
+	 * can be a String or an instance of {@link Number}.
+	 * 
+	 * @param input
+	 *            - The value to convert.
+	 * @param defaultInt
+	 *            - The default value in case the input cannot be converted.
+	 * @return The input as {@code int}, or the default value.
+	 */
+	public static int toInt(final Object input, final int defaultInt) {
+		try {
+			if (input instanceof String) {
+				return Integer.parseInt(String.class.cast(input));
+			} else if (input instanceof Number) {
+				return Number.class.cast(input).intValue();
+			} else {
+				return defaultInt;
+			}
+		} catch (NumberFormatException e) {
+			return defaultInt;
+		}
+	}
+
+	/**
+	 * Converts the specified map value into a {@code boolean}.
+	 * 
+	 * @param key
+	 *            - The key to the map value.
+	 * @param params
+	 *            - The Map that contains the value to convert.
+	 * @param defaultBool
+	 *            - The default value in case the map doesn't have it, or if it
+	 *            cannot be converted.
+	 * @return The map value as {@code boolean}, or the default value.
+	 */
+	public static boolean toBoolean(final String key, final Map<?, ?> params, final boolean defaultBool) {
+		boolean result = defaultBool;
+		if (params.containsKey(key)) {
+			result = toBoolean(params.get(key).toString(), defaultBool);
+		}
+		return result;
+	}
+
+	/**
+	 * Converts the specified input into a {@code boolean}.
+	 * 
+	 * @param strBool
+	 *            - The String representation of the boolean.
+	 * @param defaultBool
+	 *            - The default value in case the input cannot be converted.
+	 * @return The input as {@code defaultBool}, or the default value.
+	 */
+	public static boolean toBoolean(final String strBool, final boolean defaultBool) {
+		try {
+			return Boolean.getBoolean(strBool);
+		} catch (Exception e) {
+			return defaultBool;
+		}
+	}
+
+}

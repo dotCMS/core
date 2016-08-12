@@ -1,11 +1,18 @@
 package com.dotcms.api.system.user;
 
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toBoolean;
+import static com.dotcms.util.ConversionUtils.toInt;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -73,6 +80,17 @@ public class UserServiceFactory implements Serializable {
 
 		private static final String USER_TYPE_VALUE = "user";
 
+		private final UserAPI userAPI;
+		private final PermissionAPI permissionAPI;
+
+		/**
+		 * Private class constructor.
+		 */
+		private UserServiceImpl() {
+			this.userAPI = APILocator.getUserAPI();
+			this.permissionAPI = APILocator.getPermissionAPI();
+		}
+
 		/**
 		 * This inner class is used to process the information related to
 		 * internal queries that ultimately generate a final useful result for
@@ -92,6 +110,8 @@ public class UserServiceFactory implements Serializable {
 			protected int limit;
 			protected boolean includeAnonymous;
 			protected boolean includeDefault;
+			
+			final ArrayList<Map<String, String>> EMPTY_MAP_LIST = new ArrayList<>();
 
 			/**
 			 * Returns the official count of {@link User} objects that make up
@@ -165,7 +185,11 @@ public class UserServiceFactory implements Serializable {
 				this.permissionType = permissionType;
 				this.filter = filter;
 				this.start = start;
-				this.limit = limit;
+				if (limit > 0) {
+					this.limit = limit;
+				} else {
+					this.limit = 1;
+				}
 				this.includeAnonymous = includeAnonymous;
 				this.includeDefault = includeDefault;
 			}
@@ -197,19 +221,15 @@ public class UserServiceFactory implements Serializable {
 						int pageSize = realUserCount;
 						list = new ArrayList<Map<String, String>>(pageSize);
 						for (User aUser : users) {
-							Map<String, String> aRecord = new HashMap<String, String>();
-							String fullName = aUser.getFullName();
-							fullName = (UtilMethods.isSet(fullName) ? fullName : " ");
-							String emailAddress = aUser.getEmailAddress();
-							emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress : " ");
-							aRecord.put("id", aUser.getUserId());
-							aRecord.put("type", USER_TYPE_VALUE);
-							aRecord.put("name", fullName);
-							aRecord.put("emailaddress", emailAddress);
+							final Map<String, String> aRecord = map(
+									"id", aUser.getUserId(), 
+									"type", USER_TYPE_VALUE, 
+									"name", UtilMethods.isSet(aUser.getFullName()) ? aUser.getFullName() : " ",
+									"emailaddress", UtilMethods.isSet(aUser.getEmailAddress()) ? aUser.getEmailAddress() : " ");
 							list.add(aRecord);
 						}
 					} else {
-						list = new ArrayList<Map<String, String>>(0);
+						list = EMPTY_MAP_LIST;
 					}
 				} catch (Exception ex) {
 					Logger.warn(UserAjax.class, "::processUsersList -> Could not process list of users.");
@@ -224,30 +244,14 @@ public class UserServiceFactory implements Serializable {
 		@Override
 		public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params)
 				throws Exception {
-			int start = 0;
-			if (params.containsKey("start")) {
-				start = Integer.parseInt((String) params.get("start"));
-			}
-			int limit = -1;
-			if (params.containsKey("limit")) {
-				limit = Integer.parseInt((String) params.get("limit"));
-			}
-			String query = "";
-			if (params.containsKey("query")) {
-				query = (String) params.get("query");
-			}
-			boolean includeAnonymous = false;
-			if (params.containsKey("includeAnonymous")) {
-				includeAnonymous = Boolean.valueOf((String) params.get("includeAnonymous"));
-			}
-			// Initially set to "true" for backwards compatibility
-			boolean includeDefault = true;
-			if (params.containsKey("includeDefault")) {
-				includeDefault = Boolean.valueOf((String) params.get("includeDefault"));
-			}
+			final int start = toInt("start", params, 0);
+			final int limit = toInt("limit", params, 100);
+			final String query = getMapValue(params, "query", StringUtils.EMPTY);
+			final boolean includeAnonymous = toBoolean("includeAnonymous", params, false);
+			// Defaults to "true" for backwards compatibility
+			final boolean includeDefault = toBoolean("includeDefault", params, true);
 			Map<String, Object> results;
-			if ((InodeUtils.isSet(assetInode) && !assetInode.equals("0"))
-					&& (UtilMethods.isSet(permission) && !permission.equals("0"))) {
+			if ((InodeUtils.isSet(assetInode) && !"0".equals(assetInode)) && (UtilMethods.isSet(permission) && !"0".equals(permission))) {
 				results = processUserListWithPermissionOnInode(assetInode, permission, query, start, limit);
 			} else {
 				results = processUserList(query, start, limit, includeAnonymous, includeDefault);
@@ -280,13 +284,12 @@ public class UserServiceFactory implements Serializable {
 		private Map<String, Object> processUserList(String query, int start, int limit, boolean includeAnonymous,
 				boolean includeDefault) {
 			Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit, includeAnonymous, includeDefault) {
-				UserAPI userAPI = APILocator.getUserAPI();
 
 				@Override
 				public int getUserCount() {
 					try {
-						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(this.filter, this.includeAnonymous,
-								this.includeDefault)).intValue();
+						return toInt(userAPI.getCountUsersByNameOrEmailOrUserID(this.filter, this.includeAnonymous,
+								this.includeDefault), 0);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;
@@ -333,31 +336,29 @@ public class UserServiceFactory implements Serializable {
 		 * @return A Map containing the user list and additional query
 		 *         information.
 		 */
+		@SuppressWarnings("unchecked")
 		private Map<String, Object> processUserListWithPermissionOnInode(String assetInode, String permission, String query,
 				int start, int limit) {
 			Map<String, Object> results;
 			try {
-				int permissionType = Integer.parseInt(permission);
-				String inode = assetInode;
-				results = new UsersListTemplate(inode, permissionType, query, start, limit) {
-
-					PermissionAPI perAPI = APILocator.getPermissionAPI();
+				final int permissionType = toInt(permission, 0);
+				results = new UsersListTemplate(assetInode, permissionType, query, start, limit) {
 
 					@Override
 					public int getUserCount() {
-						return perAPI.getUserCount(inode, permissionType, filter);
+						return permissionAPI.getUserCount(inode, permissionType, filter);
 					}
 
 					@Override
 					public List<User> getUsers() {
-						return perAPI.getUsers(inode, permissionType, filter, start, limit);
+						return permissionAPI.getUsers(inode, permissionType, filter, start, limit);
 					}
 
 				}.perform();
-			} catch (NumberFormatException nfe) {
+			} catch (Exception e) {
 				Logger.warn(UserServiceImpl.class, String.format(
 						"::getUsersList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
-				results = new HashMap<String, Object>(0);
+				results = Collections.EMPTY_MAP;
 			}
 			return results;
 		}

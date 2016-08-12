@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -392,7 +393,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		query.append("OR ").append(DotConnect.concat(new String[] { "LOWER(firstName)", "' '", "LOWER(lastName)" }))
 				.append(" LIKE '%").append(filter).append("%') ");
 		query.append((!includeAnonymous) ? "AND userid <> 'anonymous' " : " ");
-		query.append((!includeDefault) ? "AND userid <> 'dotcms.org.default' " : "");
+		query.append((!includeDefault) ? "AND userid <> 'dotcms.org.default' " : " ");
 		query.append("AND userid <> 'system' ");
 		query.append("AND delete_in_progress = ");
 		query.append(DbConnectionFactory.getDBFalse());
@@ -436,8 +437,8 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		sql.append(" like '%");
 		sql.append(filter);
 		sql.append("%') AND userid <> 'system' ");
-		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : ""));
-		sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : ""));
+		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : " "));
+		sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : " "));
 		sql.append(" AND delete_in_progress = ");
 		sql.append(DbConnectionFactory.getDBFalse());
 		sql.append(" order by firstName asc,lastname asc");

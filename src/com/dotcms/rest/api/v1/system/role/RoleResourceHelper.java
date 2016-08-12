@@ -3,7 +3,10 @@ package com.dotcms.rest.api.v1.system.role;
 import java.io.Serializable;
 import java.util.List;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
@@ -23,6 +26,22 @@ public class RoleResourceHelper implements Serializable {
 
 	public static final RoleResourceHelper INSTANCE = new RoleResourceHelper();
 
+	private final UserAPI userAPI;
+	private final RoleAPI roleAPI;
+
+	/**
+	 * Default class constructor.
+	 */
+	private RoleResourceHelper() {
+		this(APILocator.getUserAPI(), APILocator.getRoleAPI());
+	}
+
+	@VisibleForTesting
+	public RoleResourceHelper(UserAPI userAPI, RoleAPI roleAPI) {
+		this.userAPI = userAPI;
+		this.roleAPI = roleAPI;
+	}
+
 	/**
 	 * Verifies that a user is assigned to one of the specified role IDs. It is
 	 * not guaranteed that this method will traverse the full list of roles.
@@ -41,7 +60,7 @@ public class RoleResourceHelper implements Serializable {
 		}
 		User user;
 		try {
-			user = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
+			user = this.userAPI.loadUserById(userId, this.userAPI.getSystemUser(), false);
 		} catch (Exception e) {
 			Logger.error(this, "An error occurred when retrieving information of user ID [" + userId + "]", e);
 			return false;
@@ -51,7 +70,7 @@ public class RoleResourceHelper implements Serializable {
 			if (UtilMethods.isSet(roleId.trim())) {
 				currentRoleId = roleId;
 				try {
-					if (APILocator.getRoleAPI().doesUserHaveRole(user, roleId)) {
+					if (this.roleAPI.doesUserHaveRole(user, roleId)) {
 						return true;
 					}
 				} catch (DotDataException e) {

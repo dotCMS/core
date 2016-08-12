@@ -9,6 +9,7 @@ import java.util.Map;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.util.SecurityUtils;
+import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -150,22 +151,22 @@ public class UserResourceHelper implements Serializable {
 		if (loginAsUserId.equalsIgnoreCase(currentUser.getUserId())) {
 			throw new DotDataException("Current user [" + currentUser.getUserId() + "] trying to log in as himself.");
 		}
-		final Role loginAsRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
-		if (!roleAPI.doesUserHaveRole(currentUser, loginAsRole)) {
+		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
+		if (!this.roleAPI.doesUserHaveRole(currentUser, loginAsRole)) {
 			// Potential hacking attempt
-			SecurityUtils.delayRequest(10, "time-sec");
+			SecurityUtils.delayRequest(10, DelayStrategy.TIME_SEC);
 			throw new DotDataException("Current user [" + currentUser.getUserId()
 					+ "] does not have the proper 'Login As' role.");
 		}
-		User systemUser = this.userAPI.getSystemUser();
+		final User systemUser = this.userAPI.getSystemUser();
 		final User loginAsUser = this.userAPI.loadUserById(loginAsUserId, systemUser, false);
 		final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(loginAsUser);
 		if ((layouts == null) || (layouts.size() == 0) || !UtilMethods.isSet(layouts.get(0).getId())) {
 			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.");
 		}
 		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
-		if (roleAPI.doesUserHaveRole(loginAsUser, administratorRole)
-				|| roleAPI.doesUserHaveRole(loginAsUser, com.dotmarketing.business.APILocator.getRoleAPI()
+		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole)
+				|| this.roleAPI.doesUserHaveRole(loginAsUser, com.dotmarketing.business.APILocator.getRoleAPI()
 						.loadCMSAdminRole())) {
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
 				throw new DotDataException("The 'Login As' user password is required.");
@@ -175,17 +176,17 @@ public class UserResourceHelper implements Serializable {
 		}
 		Host host = null;
 		if (UtilMethods.isSet(serverName)) {
-			host = hostWebAPI.findByName(serverName, systemUser, false);
+			host = this.hostWebAPI.findByName(serverName, systemUser, false);
 			if (host == null) {
-				host = hostWebAPI.findByAlias(serverName, systemUser, false);
+				host = this.hostWebAPI.findByAlias(serverName, systemUser, false);
 			}
 			if (host == null) {
-				host = hostWebAPI.findDefaultHost(systemUser, false);
+				host = this.hostWebAPI.findDefaultHost(systemUser, false);
 			}
 		} else {
-			host = hostWebAPI.findDefaultHost(systemUser, false);
+			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		Map<String, Object> sessionData = map(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
+		final Map<String, Object> sessionData = map(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
 				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
@@ -213,24 +214,24 @@ public class UserResourceHelper implements Serializable {
 	 */
 	public Map<String, Object> doLogoutAs(final String principalUserId, final User currentLoginAsUser,
 			final String serverName) throws DotDataException, DotSecurityException {
-		User systemUser = this.userAPI.getSystemUser();
 		if (!UtilMethods.isSet(principalUserId)) {
 			throw new DotDataException("Current user [" + currentLoginAsUser.getUserId()
 					+ "] is not logged in as a different user.");
 		}
+		final User systemUser = this.userAPI.getSystemUser();
 		Host host = null;
 		if (UtilMethods.isSet(serverName)) {
-			host = hostWebAPI.findByName(serverName, systemUser, false);
+			host = this.hostWebAPI.findByName(serverName, systemUser, false);
 			if (host == null) {
-				host = hostWebAPI.findByAlias(serverName, systemUser, false);
+				host = this.hostWebAPI.findByAlias(serverName, systemUser, false);
 			}
 			if (host == null) {
-				host = hostWebAPI.findDefaultHost(systemUser, false);
+				host = this.hostWebAPI.findDefaultHost(systemUser, false);
 			}
 		} else {
-			host = hostWebAPI.findDefaultHost(systemUser, false);
+			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
-		Map<String, Object> sessionData = map(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+		final Map<String, Object> sessionData = map(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
 
