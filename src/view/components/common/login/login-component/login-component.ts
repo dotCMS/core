@@ -69,10 +69,14 @@ export class LoginComponent {
 
     constructor(private loginService: LoginService, private ngZone: NgZone) {
         this.renderPageData();
-        // TODO: Change in the future once the Angular autofocus directive works correctly.
-        this.ngZone.runOutsideAngular(() => {
-            setTimeout(() => document.getElementById('md-input-0-input').focus(), 0);
-        });
+
+    }
+
+    ngAfterViewInit() {
+
+        this.ngZone.runOutsideAngular(() =>
+            setTimeout(() => document.getElementById('login-component-login-input').getElementsByClassName('md-input-element')[0].focus()
+        );
     }
 
     /**

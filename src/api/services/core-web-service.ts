@@ -42,7 +42,8 @@ export class CoreWebService {
   }
 
   request(options:any):Observable<any> {
-    var request = this.getRequestOpts( options );
+    let request = this.getRequestOpts( options );
+    let source = options.body;
 
     return this._http.request(request)
         .map((resp:Response) => {
@@ -79,7 +80,7 @@ export class CoreWebService {
     Object.keys(tempHeaders).forEach((key)=>{
       headers.set(key, tempHeaders[key])
     })
-    var source = options.body
+
     if (options.body) {
       if (typeof options.body !== 'string') {
         options.body = JSON.stringify(options.body);

@@ -32,11 +32,15 @@ export class ForgotPasswordComponent {
     // labels
     forgotPasswordLabel: string = '';
     forgotPasswordButton: string = '';
-    forgotPasswordConfirmationMessage: string = '';
     cancelButton: string = '';
     userIdOrEmailLabel:string = ''
 
-    private i18nMessages: Array<string> = [  'user-id', 'email-address', 'forgot-password', 'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent'];
+    //Messages
+    emailMandatoryFieldError:string = '';
+    forgotPasswordConfirmationMessage: string = '';
+
+    private i18nMessages: Array<string> = [  'error.form.mandatory', 'user-id', 'email-address', 'forgot-password',
+        'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent'];
 
     constructor( private loginService: LoginService, private router: Router) {
 
@@ -77,6 +81,7 @@ export class ForgotPasswordComponent {
             this.forgotPasswordButton = dataI18n['get-new-password'];
             this.cancelButton = dataI18n.cancel;
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
+            this.emailMandatoryFieldError = (dataI18n['error.form.mandatory']).replace('{0}', this.userIdOrEmailLabel);
         }, (error) => {
              console.log(error);
         });
