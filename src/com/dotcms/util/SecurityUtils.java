@@ -26,6 +26,29 @@ import com.liferay.util.Xss;
 public class SecurityUtils {
 
 	/**
+	 * Contains the different delay strategies that can be used to halt the
+	 * normal flow of a request or thread:
+	 * <ul>
+	 * <li>{@code POW}: (Default strategy) Causes the thread to sleep for the
+	 * <b>seconds</b> specified by raising the seed value to the power of 2.</li>
+	 * <li>{@code TIME_MIN}: Causes the thread to sleep for the <b>minutes</b>
+	 * specified in the seed value.</li>
+	 * <li>{@code TIME_SEC}: Causes the thread to sleep for the <b>seconds</b>
+	 * specified in the seed value.</li>
+	 * <li>{@code TIME_MILLS}: Causes the thread to sleep for the
+	 * <b>milliseconds</b> specified in the seed value.</li>
+	 * </ul>
+	 * 
+	 * @author Jose Castro
+	 * @version 3.7
+	 * @since Aug 11, 2016
+	 *
+	 */
+	public enum DelayStrategy {
+		POW, TIME_MILLS, TIME_SEC, TIME_MIN
+	}
+	
+	/**
 	 * 
 	 * @param request
 	 * @param referer
@@ -109,12 +132,36 @@ public class SecurityUtils {
 	 * @param delayStrategy
 	 *            - The delay strategy used after a failed login.
 	 */
-	public static void delayRequest(int seed, final String delayStrategy) {
+	public static void delayRequest(long seed, final DelayStrategy delayStrategy) {
 		seed = Math.abs(seed);
-		// Default strategy
-		if (delayStrategy.equalsIgnoreCase("pow")) {
+		if (delayStrategy.equals(DelayStrategy.TIME_MIN)) {
+			try {
+				TimeUnit.MINUTES.sleep(seed);
+			} catch (NumberFormatException e) {
+				// Invalid number, defaults to no thread sleep
+			} catch (InterruptedException e) {
+				// Sleep was interrupted, just ignore it
+			}
+		} else if (delayStrategy.equals(DelayStrategy.TIME_SEC)) {
+			try {
+				TimeUnit.SECONDS.sleep(seed);
+			} catch (NumberFormatException e) {
+				// Invalid number, defaults to no thread sleep
+			} catch (InterruptedException e) {
+				// Sleep was interrupted, just ignore it
+			}
+		} else if (delayStrategy.equals(DelayStrategy.TIME_MILLS)) {
+			try {
+				TimeUnit.MILLISECONDS.sleep(seed);
+			} catch (NumberFormatException e) {
+				// Invalid number, defaults to no thread sleep
+			} catch (InterruptedException e) {
+				// Sleep was interrupted, just ignore it
+			}
+		} else {
+			// Default strategy: DelayStrategy.POW
 			if (seed > 0) {
-				long sleepTime = (long) Math.pow(seed, 2);
+				final long sleepTime = (long) Math.pow(seed, 2);
 				try {
 					TimeUnit.SECONDS.sleep(sleepTime);
 				} catch (InterruptedException e) {
