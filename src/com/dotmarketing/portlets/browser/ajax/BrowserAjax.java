@@ -374,67 +374,66 @@ public class BrowserAjax {
 			int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showArchived, boolean noFolders,
 			boolean onlyFiles, String sortBy, boolean sortByDesc,
-			boolean excludeLinks) throws DotHibernateException,
-			DotSecurityException, DotDataException {
+			boolean excludeLinks) throws DotSecurityException, DotDataException {
+
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
-		//Language selectedLang = APILocator.getLanguageAPI().getLanguage(languageId);
-		//req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, selectedLang);
 		long getAllLanguages = 0;
+
 		Map<String, Object> results = browserAPI.getFolderContent(usr,
 				folderId, offset, maxResults, filter, mimeTypes, extensions,
 				showArchived, noFolders, onlyFiles, sortBy, sortByDesc,
 				excludeLinks, getAllLanguages);
-		pageListCleanup((List<Map<String, Object>>) results.get("list"));
+
+		listCleanup((List<Map<String, Object>>) results.get("list"), getBrowserLanguageId(req));
+
 		return results;
 	}
 
 	/**
-	 * The list of content pages under a folder contains all the legacy pages
-	 * and the new content pages. The latter might include the page identifier
+	 * The list of content under a folder might include the identifier
 	 * several times, representing all the available languages for a single
-	 * page.
+	 * content.
 	 * <p>
 	 * This method takes that list and <i>leaves only one identifier per
-	 * page</i>. This unique record represents either the page with the default
-	 * language ID, or the page with the next language ID in the list of system
+	 * page</i>. This unique record represents either the content with the default
+	 * language ID, or the content with the next language ID in the list of system
 	 * languages.
 	 * </p>
 	 * 
 	 * @param results
 	 *            - The full list of pages under a given path/directory.
 	 */
-	private void pageListCleanup(List<Map<String, Object>> results) {
-		Map<String, Integer> pageLangCounter = new HashMap<String, Integer>();
+	private void listCleanup(List<Map<String, Object>> results, long languageId) {
+		Map<String, Integer> contentLangCounter = new HashMap<>();
+
 		// Examine only the pages with more than 1 assigned language
-		for (Map<String, Object> pageInfo : results) {
-			if ((boolean) pageInfo.get("isContentlet")) {
-				String ident = (String) pageInfo.get("identifier");
-				if (pageLangCounter.containsKey(ident)) {
-					int counter = pageLangCounter.get(ident);
-					pageLangCounter.put(ident, counter + 1);
+		for (Map<String, Object> content : results) {
+			if ((boolean) content.get("isContentlet")) {
+				String ident = (String) content.get("identifier");
+				if (contentLangCounter.containsKey(ident)) {
+					int counter = contentLangCounter.get(ident);
+					contentLangCounter.put(ident, counter + 1);
 				} else {
-					pageLangCounter.put(ident, 1);
+					contentLangCounter.put(ident, 1);
 				}
 			}
 		}
-		Set<String> identifierSet = pageLangCounter.keySet();
+
+		Set<String> identifierSet = contentLangCounter.keySet();
 		for (String identifier : identifierSet) {
-			int counter = pageLangCounter.get(identifier);
+			int counter = contentLangCounter.get(identifier);
 			if (counter > 1) {
-				long defaultLang = this.languageAPI.getDefaultLanguage()
-						.getId();
+				//long defaultLang = this.languageAPI.getDefaultLanguage().getId();
 				// Remove all languages except the default one
-				boolean isDeleted = removeAdditionalLanguages(identifier,
-						results, defaultLang);
+				boolean isDeleted = removeAdditionalLanguages(identifier, results, languageId);
 				if (!isDeleted) {
 					// Otherwise, leave only the next available language
 					List<Language> languages = this.languageAPI.getLanguages();
 					for (Language language : languages) {
-						if (language.getId() != defaultLang) {
-							isDeleted = removeAdditionalLanguages(identifier,
-									results, language.getId());
+						if (language.getId() != languageId) {
+							isDeleted = removeAdditionalLanguages(identifier, results, language.getId());
 							if (isDeleted) {
 								break;
 							}
@@ -1713,6 +1712,11 @@ public class BrowserAjax {
         return user;
 
     }
+
+	private long getBrowserLanguageId(HttpServletRequest req){
+		//TODO
+		return 1;
+	}
 
 
 	/**
