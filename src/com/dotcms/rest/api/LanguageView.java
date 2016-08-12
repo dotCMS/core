@@ -1,5 +1,7 @@
 package com.dotcms.rest.api;
 
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 
 /**
@@ -21,8 +23,14 @@ public class LanguageView implements Serializable {
 
     public LanguageView(String language, String country, String displayName) {
         this.language = language;
-        this.country = country;
+
         this.displayName = displayName;
+
+        if (UtilMethods.isSet( country )){
+            this.country = country;
+        }else{
+            this.country = "US";
+        }
     }
 
     public String getLanguage() {
