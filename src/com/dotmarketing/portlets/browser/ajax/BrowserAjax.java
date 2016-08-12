@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -74,6 +56,24 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  *
@@ -1841,11 +1841,13 @@ public class BrowserAjax {
 	}
 
 	private Map<String, Object> hostMap(Host host) {
-    	String currentPath = host.getHostname();
+    	String currentPath = "currentPath " + host.getHostname();
         Map<String,Object> hostMap = new HashMap<String, Object>();
         hostMap.put("type", "host");
-        hostMap.put("hostName", host.getHostname());
-        hostMap.put("name", host.getHostname());
+		hostMap.put("hostName",
+			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-all-hosts")
+				: host.getHostname());
+		hostMap.put("name", host.getHostname());
         hostMap.put("id", host.getIdentifier());
         hostMap.put("identifier", host.getIdentifier());
         hostMap.put("fullPath", currentPath);
@@ -1982,12 +1984,6 @@ public class BrowserAjax {
 			permissions = permissionAPI.getPermissionIdsFromRoles(system, roles, user);
 		} catch (DotDataException e) {
 			Logger.error(this, "Could not load permissions : ",e);
-		}
-		if(permissions.contains(PERMISSION_READ)){
-			Host allHosts = new Host();
-			allHosts.setHostname("All Hosts");
-			allHosts.setIdentifier("allHosts");
-			hostsToReturn.add(hostMap(allHosts));
 		}
 
 		return hostsToReturn;
