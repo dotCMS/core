@@ -1849,7 +1849,7 @@ public class BrowserAjax {
 				: host.getHostname());
 		hostMap.put("name", host.getHostname());
         hostMap.put("id", host.getIdentifier());
-        hostMap.put("identifier", host.getIdentifier());
+        hostMap.put("identifier", host.isSystemHost() ? "allHosts": host.getIdentifier());
         hostMap.put("fullPath", currentPath);
         hostMap.put("absolutePath", currentPath);
         return hostMap;
