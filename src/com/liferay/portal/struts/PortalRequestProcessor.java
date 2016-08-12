@@ -22,30 +22,8 @@
 
 package com.liferay.portal.struts;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.dotcms.enterprise.PasswordFactoryProxy;
-import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.javax.portlet.PortletContext;
-import com.dotcms.repackage.javax.portlet.PortletException;
-import com.dotcms.repackage.javax.portlet.PortletMode;
-import com.dotcms.repackage.javax.portlet.PortletPreferences;
-import com.dotcms.repackage.javax.portlet.WindowState;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
+import com.dotcms.repackage.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
+import com.dotcms.repackage.javax.portlet.*;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.util.SecurityUtils;
@@ -61,13 +39,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.user.business.UserUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.PortletActiveException;
-import com.liferay.portal.RequiredRoleException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.auth.AutoLogin;
-import com.liferay.portal.auth.AutoLoginException;
+import com.liferay.portal.*;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.ejb.PortletPreferencesManagerUtil;
@@ -75,26 +47,22 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserTracker;
 import com.liferay.portal.model.UserTrackerPath;
-import com.liferay.portal.util.Constants;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.WebAppPool;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.util.*;
 import com.liferay.portlet.CachePortlet;
 import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.portlet.RenderResponseImpl;
-import com.liferay.util.CollectionFactory;
-import com.liferay.util.Encryptor;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.Http;
-import com.liferay.util.InstancePool;
-import com.liferay.util.ObjectValuePair;
-import com.liferay.util.StringPool;
-import com.liferay.util.StringUtil;
-import com.liferay.util.Validator;
+import com.liferay.util.*;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.UploadServletRequest;
-import com.dotcms.repackage.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * <a href="PortalRequestProcessor.java.html"><b><i>View Source</i></b></a>
@@ -286,52 +254,6 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 					WebKeys.LAST_PATH,
 					new ObjectValuePair(
 						path, new LinkedHashMap(parameterMap)));
-			}
-		}
-
-		// Auto login
-
-		if ((userId == null) && (ses.getAttribute("j_username") == null)) {
-			try {
-				String[] autoLogins = PropsUtil.getArray(
-					PropsUtil.AUTO_LOGIN_HOOKS);
-
-				for (int i = 0; i < autoLogins.length; i++) {
-					AutoLogin autoLogin =
-						(AutoLogin)InstancePool.get(autoLogins[i]);
-
-					String[] credentials = autoLogin.login(req, res);
-
-					if ((credentials != null) && (credentials.length == 3)) {
-						String jUsername = credentials[0];
-						String jPassword = credentials[1];
-						boolean encPwd = GetterUtil.getBoolean(credentials[2]);
-
-						if (Validator.isNotNull(jUsername) &&
-							Validator.isNotNull(jPassword)) {
-
-							ses.setAttribute("j_username", jUsername);
-
-							// Not having access to the unencrypted password
-							// will not allow you to connect to external
-							// resources that require it (mail server)
-
-							if (encPwd) {
-								ses.setAttribute("j_password", jPassword);
-                            } else {
-                                final String digestedJPassword = PasswordFactoryProxy.generateHash(jPassword);
-                                ses.setAttribute("j_password", digestedJPassword);
-                                ses.setAttribute(WebKeys.USER_PASSWORD, digestedJPassword);
-                            }
-
-							return _PATH_PORTAL_PUBLIC_LOGIN;
-						}
-					}
-				}
-
-			}
-			catch (PasswordException | AutoLoginException ale) {
-				Logger.error(this,ale.getMessage(),ale);
 			}
 		}
 

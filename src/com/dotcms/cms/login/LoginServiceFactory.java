@@ -323,18 +323,6 @@ public class LoginServiceFactory implements Serializable {
 
             ses.removeAttribute("_failedLoginName");
 
-            String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always")
-                    || (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())? CookieUtil.SECURE:"";
-
-            String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
-
-            String maxAge = rememberMe?"31536000":"0"; // todo: by default this should be two weeks, but it might be configuration using the CONFIG.
-
-            StringBuilder headerStr = new StringBuilder();
-            headerStr.append(CookieKeys.ID).append("=\"").append(UserManagerUtil.encryptUserId(userId)).append("\";")
-                    .append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
-            res.addHeader("SET-COOKIE", headerStr.toString());
-
             //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
             int jwtMaxAge = rememberMe ? Config.getIntProperty(
                     JSON_WEB_TOKEN_DAYS_MAX_AGE,
