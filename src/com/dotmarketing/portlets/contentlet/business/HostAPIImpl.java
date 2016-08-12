@@ -889,8 +889,8 @@ public class HostAPIImpl implements HostAPI {
 		for (String key: list.get(0).keySet()) {
 			Object value = list.get(0).get(key);
 			if ( key.equals(languageIdColumn) ) {
-				if ( value instanceof BigDecimal){ //Hibernate maps Oracle NUMBER to BigDecimal.
-					host.setProperty(Contentlet.LANGUAGEID_KEY, ((BigDecimal) value).longValue());
+				if ( value instanceof Number){ //Hibernate maps Oracle NUMBER to BigDecimal.
+					host.setProperty(Contentlet.LANGUAGEID_KEY, ((Number) value).longValue());
 				} else {
 					host.setProperty(Contentlet.LANGUAGEID_KEY, value);
 				}
