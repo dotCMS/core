@@ -1841,7 +1841,7 @@ public class BrowserAjax {
 	}
 
 	private Map<String, Object> hostMap(Host host) {
-    	String currentPath = "currentPath " + host.getHostname();
+    	String currentPath = host.getHostname();
         Map<String,Object> hostMap = new HashMap<String, Object>();
         hostMap.put("type", "host");
 		hostMap.put("hostName",
