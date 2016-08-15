@@ -1,5 +1,23 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -56,24 +74,6 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  *
@@ -318,7 +318,7 @@ public class BrowserAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
-		
+
 		req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(languageId));
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
@@ -329,9 +329,9 @@ public class BrowserAjax {
 	 * implementation will only have one identifier per entry. This means that,
 	 * for elements such as the new content pages, the list will not contain all
 	 * the entries for all the available languages, but only the page in the
-	 * default language, or the page in the next available language (one single 
+	 * default language, or the page in the next available language (one single
 	 * entry per identifier).
-	 * 
+	 *
 	 * @param folderId
 	 *            - The identifier of the folder whose contents will be
 	 *            retrieved.
@@ -401,7 +401,7 @@ public class BrowserAjax {
 	 * language ID, or the page with the next language ID in the list of system
 	 * languages.
 	 * </p>
-	 * 
+	 *
 	 * @param results
 	 *            - The full list of pages under a given path/directory.
 	 */
@@ -450,7 +450,7 @@ public class BrowserAjax {
 	 * the specified language ID. In the end, the list will contain one page per
 	 * identifier with either the default language ID or the next available
 	 * language.
-	 * 
+	 *
 	 * @param identifier
 	 *            - The identifier of the page to clean up in the list.
 	 * @param resultList
@@ -489,7 +489,7 @@ public class BrowserAjax {
 	 * Removes all the pages from the list that are not associated to the
 	 * specified language. In the end, the list will contain one page per
 	 * identifier.
-	 * 
+	 *
 	 * @param resultList
 	 *            - The list of pages that will be displayed.
 	 * @param identifier
@@ -971,7 +971,7 @@ public class BrowserAjax {
             } else {
                 APILocator.getFileAPI().copyFile( file, host, user, false );
             }
-            
+
             result.put("status", "success");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
             return result;
@@ -991,7 +991,7 @@ public class BrowserAjax {
             return result;
         }
     }
-    
+
     /**
      * This method verify if the user has write permissions of the file asset
      * @param host
@@ -1143,11 +1143,11 @@ public class BrowserAjax {
 
         try {
             Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-            IHTMLPage page = ident.getAssetType().equals("htmlpage") 
+            IHTMLPage page = ident.getAssetType().equals("htmlpage")
                                ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
                                : APILocator.getHTMLPageAssetAPI().fromContentlet(
                                      APILocator.getContentletAPI().find(inode, user, false));
-    
+
             // gets folder parent
             Folder parent = null;
             try {
@@ -1155,12 +1155,12 @@ public class BrowserAjax {
             } catch ( Exception ignored ) {
                 //Probably what we have here is a host
             }
-    
+
             Host host = null;
             if ( parent == null ) {//If we didn't find a parent folder lets verify if this is a host
                 host = APILocator.getHostAPI().find( newFolder, user, false );
             }
-    
+
             // Checking permissions
             if(!hasHTMLPageWritePermissions(host, parent, page, user)) {
                 Logger.error(this, "The user doesn't have the required permissions.");
@@ -1218,7 +1218,7 @@ public class BrowserAjax {
             return result;
         }
     }
-    
+
     /**
      * This method verify if the user has write permissions of the page
      * @param host
@@ -1263,7 +1263,7 @@ public class BrowserAjax {
         User user = getUser( req );
 
         Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
+        IHTMLPage page = ident.getAssetType().equals("htmlpage")
                            ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
                            : APILocator.getHTMLPageAssetAPI().fromContentlet(
                                  APILocator.getContentletAPI().find(inode, user, false));
@@ -1841,23 +1841,18 @@ public class BrowserAjax {
 	}
 
 	private Map<String, Object> hostMap(Host host) {
-		Map<String, Object> hostMap = new HashMap<String, Object>();
-
-		String
-			currentPath =
-			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-all-hosts")
-				: host.getHostname();
-
-		String identifier = host.isSystemHost() ? "allHosts" : host.getIdentifier();
-
-		hostMap.put("type", "host");
-		hostMap.put("hostName", currentPath);
-		hostMap.put("name", currentPath);
-		hostMap.put("id", identifier);
-		hostMap.put("identifier", identifier);
-		hostMap.put("fullPath", currentPath);
-		hostMap.put("absolutePath", currentPath);
-		return hostMap;
+    	String currentPath = host.getHostname();
+        Map<String,Object> hostMap = new HashMap<String, Object>();
+        hostMap.put("type", "host");
+		hostMap.put("hostName",
+			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-system-host")
+				: host.getHostname());
+        hostMap.put("name", host.getHostname());
+        hostMap.put("id", host.getIdentifier());
+        hostMap.put("identifier", host.getIdentifier());
+        hostMap.put("fullPath", currentPath);
+        hostMap.put("absolutePath", currentPath);
+        return hostMap;
 	}
 
 	private Map<String, Object> folderMap(Folder f) throws DotDataException, DotSecurityException {
@@ -1989,6 +1984,12 @@ public class BrowserAjax {
 			permissions = permissionAPI.getPermissionIdsFromRoles(system, roles, user);
 		} catch (DotDataException e) {
 			Logger.error(this, "Could not load permissions : ",e);
+		}
+		if(permissions.contains(PERMISSION_READ)){
+			Host allHosts = new Host();
+			allHosts.setHostname("All Hosts");
+			allHosts.setIdentifier("allHosts");
+			hostsToReturn.add(hostMap(allHosts));
 		}
 
 		return hostsToReturn;
