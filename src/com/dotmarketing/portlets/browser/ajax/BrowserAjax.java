@@ -386,7 +386,7 @@ public class BrowserAjax {
 				showArchived, noFolders, onlyFiles, sortBy, sortByDesc,
 				excludeLinks, getAllLanguages);
 
-		listCleanup((List<Map<String, Object>>) results.get("list"), getBrowserLanguageId(req));
+		listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
 
 		return results;
 	}
@@ -1713,9 +1713,30 @@ public class BrowserAjax {
 
     }
 
-	private long getBrowserLanguageId(HttpServletRequest req){
-		//TODO
-		return 1;
+	/**
+	 * This mehod will retrieve the HTML Page LAnguage (WebKeys.CONTENT_SELECTED_LANGUAGE) that is set up in the session.
+	 *
+	 * @param request
+	 * @return language id used in Edit Contentlet Page or default language id if it is not set.
+     */
+    private long getContentSelectedLanguageId(HttpServletRequest request){
+		long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+		if ( request != null &&
+			request.getSession() != null &&
+			request.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE) != null ) {
+
+			try{
+				languageId = Long.parseLong((String)request.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE));
+			} catch (Exception e){
+				Logger.error(this.getClass(),
+					"Language Id from request is not a long value. " +
+						"We will use Default Language. " +
+						"Value from request: " + languageId, e);
+			}
+		}
+
+		return languageId;
 	}
 
 

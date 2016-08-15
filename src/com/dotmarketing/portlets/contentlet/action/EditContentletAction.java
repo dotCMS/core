@@ -770,6 +770,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute("selectedStructure", st.getInode());
 		}
 
+		if(contentlet.getLanguageId() != 0){
+			httpReq.getSession().setAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE, String.valueOf(contentlet.getLanguageId()));
+		}
+
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 
