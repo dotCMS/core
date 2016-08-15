@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -33,6 +34,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 public  class WebResource {
+
+    public static final String BASIC  = "Basic ";
+    public static final String BEARER = "Bearer ";
 
     private final UserWebAPI userWebAPI;
     private final UserAPI userAPI;
@@ -169,6 +173,10 @@ public  class WebResource {
             userPass = getAuthCredentialsFromBasicAuth(request);
         }
 
+        if(!userPass.isPresent()) {
+            userPass = getAuthCredentialsFromJWT(request);
+        }
+
         if(userPass.isPresent()) {
             user = authenticateUser(userPass.get().username, userPass.get().password, request, userAPI);
         }
@@ -194,6 +202,36 @@ public  class WebResource {
         return user;
     }
 
+    private static Optional<UsernamePassword> getAuthCredentialsFromJWT(final HttpServletRequest request) {
+
+        Optional<UsernamePassword> result = Optional.absent();
+        // Extract authentication credentials
+        final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
+        final String jsonWebToken;
+        final User user;
+
+        if (StringUtils.isNotEmpty(authentication) && authentication.startsWith(BEARER)) {
+
+            jsonWebToken = authentication.substring(BEARER.length());
+
+            if(!UtilMethods.isSet(jsonWebToken)) {
+                // "Invalid syntax for username and password"
+                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
+            }
+
+            user = JsonWebTokenUtils.getUserFromJsonWebToken(jsonWebToken.trim());
+
+            if(!UtilMethods.isSet(user)) {
+                // "Invalid syntax for username and password"
+                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
+            }
+
+            result = Optional.of(new UsernamePassword(user.getUserId(), user.getPassword()));
+        }
+
+        return result;
+    } // getAuthCredentialsFromJWT.
+
 
     private static Optional<UsernamePassword> getAuthCredentialsFromMap(Map<String, String> map) {
 
@@ -216,8 +254,8 @@ public  class WebResource {
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
-        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith("Basic ")) {
-            authentication = authentication.substring("Basic ".length());
+        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith(BASIC)) {
+            authentication = authentication.substring(BASIC.length());
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]

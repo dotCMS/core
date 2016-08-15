@@ -7,6 +7,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
@@ -19,6 +20,7 @@ import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -62,6 +64,18 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
     private LoginService loginService =
             LoginServiceFactory.getInstance().getLoginService();
+
+
+	private UserAPI userAPI = APILocator.getUserAPI();
+
+	/**
+	 * In case you need a diff implementation of the APILocator.
+	 * @param userAPI {@link UserAPI}
+     */
+	public void setUserAPI(final UserAPI userAPI) {
+
+		this.userAPI = userAPI;
+	}
 
 	/**
 	 * Sets a specific {@link JsonWebTokenService} implementation by dependency
@@ -206,27 +220,13 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
         if (null != jwtBean) {
 
-            final long millis = jwtBean.getTtlMillis();
-
-            if (this.stillValid (millis)) {
+            if (JsonWebTokenUtils.isJsonWebTokenValid (jwtBean)) {
             	// todo: handle exceptions here
                 this.processSubject(jwtBean, response, request);
             }
         }
     }
 
-	/**
-	 * Checks whether the expiration date of the JWT is greater than the current
-	 * date.
-	 * 
-	 * @param userMillis
-	 *            - The time-to-live of the JWT in milliseconds.
-	 * @return If the token's TTL is greater than the current date, returns
-	 *         {@code true}. Otherwise, returns {@code false}.
-	 */
-    protected boolean stillValid(final long userMillis) {
-        return userMillis - System.currentTimeMillis() > 0;
-    }
 
 	/**
 	 * Takes the subject from the JWT to carry on with the authentication
@@ -331,7 +331,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                                                 final HttpServletResponse response,
                                                 final HttpServletRequest request) throws DotSecurityException, DotDataException {
 
-        final User user = APILocator.getUserAPI().loadUserById(userId);
+        final User user = this.userAPI.loadUserById(userId);
 
         if (null != user) {
 
