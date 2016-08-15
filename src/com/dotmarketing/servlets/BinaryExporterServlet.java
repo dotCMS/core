@@ -227,7 +227,11 @@ public class BinaryExporterServlet extends HttpServlet {
 				lang = Long.parseLong(request_language);
 			}else{ 
 				if(session != null){
-					lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+					if(req.getSession().getAttribute("tm_lang")!=null){
+						lang = Long.parseLong((String) session.getAttribute("tm_lang"));
+					}else{
+						lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
+					}
 				}
 			}
 			//Identifier assetId = APILocator.getIdentifierAPI().find(assetIdentifier);
@@ -526,7 +530,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		            }
 
 		            /* Using the If-Modified-Since Header */
-		             if(ifModifiedSince != null){
+		             /*if(ifModifiedSince != null){
 					    try{
 					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
 					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
@@ -535,7 +539,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					        }
 					    }
 					    catch(Exception e){}
-					}
+					}*/
 
 		            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
 		            resp.setHeader("Content-Length", String.valueOf(_fileLength));
