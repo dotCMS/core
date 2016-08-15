@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -64,6 +46,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -74,6 +57,25 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  *
@@ -441,6 +443,23 @@ public class BrowserAjax {
 					}
 				}
 			}
+		}
+
+        // If any of the fallback properties, ie DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false,
+        // we need to iterate over all the contents in the result list so far, and we need to remove
+        // all the contents that don't have the same language that we are passing as parameter.
+		for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
+			Map<String, Object> contentMap = iterator.next();
+
+			if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true)
+				&& contentMap.containsKey("type")
+				&& contentMap.get("type").equals("file_asset")
+				&& !contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
+
+				iterator.remove();
+			}
+            //TODO logic for DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE
+            //TODO logic for DEFAULT_PAGE_TO_DEFAULT_LANGUAGE
 		}
 	}
 
