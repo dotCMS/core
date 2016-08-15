@@ -1,6 +1,8 @@
 import {Component, ViewEncapsulation, Input, Output, EventEmitter, Inject} from '@angular/core';
 import {INotification} from '../../../../api/services/notifications-service';
 
+import {CustomTimeComponent} from '../custom-time/custom-time';
+
 // Pipes
 import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 
@@ -8,7 +10,7 @@ import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 import {MdIcon} from '@angular2-material/icon/icon';
 
 @Component({
-    directives: [MdIcon],
+    directives: [MdIcon, CustomTimeComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
     pipes: [CapitalizePipe],

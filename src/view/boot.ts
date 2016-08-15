@@ -15,18 +15,19 @@ import {AppConfigurationService} from '../api/services/system/app-configuration-
 import {provide} from '@angular/core';
 import {disableDeprecatedForms, provideForms} from '@angular/forms';
 import {MdIconRegistry} from '@angular2-material/icon/icon';
-import {CoreWebService} from "../api/services/core-web-service";
-import {LoginService} from "../api/services/login-service";
-import {RoutingService} from "../api/services/routing-service";
+import {CoreWebService} from '../api/services/core-web-service';
+import {LoginService} from '../api/services/login-service';
+import {RoutingService} from '../api/services/routing-service';
+import {FormatDate} from '../api/services/format-date-service';
 
-import {ResetPasswordContainer} from "./components/common/login/reset-password-component/reset-password-container";
-import {LoginContainer} from "./components/common/login/login-component/login-container";
-import {ForgotPasswordContainer} from "./components/common/login/forgot-password-component/forgot-password-container";
-import {LoginPageComponent} from "./components/common/login/login-page-component";
-import {IframeLegacyComponent} from "./components/common/iframe-legacy/iframe-legacy-component";
-import {MainComponent} from "./components/common/main-component/main-component";
+import {ResetPasswordContainer} from './components/common/login/reset-password-component/reset-password-container';
+import {LoginContainer} from './components/common/login/login-component/login-container';
+import {ForgotPasswordContainer} from './components/common/login/forgot-password-component/forgot-password-container';
+import {LoginPageComponent} from './components/common/login/login-page-component';
+import {IframeLegacyComponent} from './components/common/iframe-legacy/iframe-legacy-component';
+import {MainComponent} from './components/common/main-component/main-component';
 import { Routes } from '@ngrx/router';
-import {SiteService} from "../api/services/site-service";
+import {SiteService} from '../api/services/site-service';
 
 new AppConfigurationService().getConfigProperties().subscribe(config => {
     
@@ -60,6 +61,7 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
     ];
 
     bootstrap(AppComponent, [
+        FormatDate,
         ApiRoot,
         GoogleMapService,
         I18nService,

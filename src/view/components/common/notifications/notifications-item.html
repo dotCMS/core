@@ -11,9 +11,9 @@
             <p class="notification-item__message">
                 {{data.notificationData.message}}
                 <a *ngIf="showLinkAction" [href]="data.notificationData.actions[0].action" class="notification-item__link">{{data.notificationData.actions[0].text}}</a>
-                <span class="notification-item__date">{{data.prettyDate}}</span>
+                <custom-time time="{{data.timeSent}}"></custom-time>
             </p>
-            <!--TODO: hand more than one action-->
+            <!--TODO: handle more than one action-->
         </div>
     </div>
 </li>
