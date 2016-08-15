@@ -31,6 +31,7 @@ import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
@@ -292,7 +293,7 @@ public class LoginServiceFactory implements Serializable {
             //DOTCMS-4943
             UserAPI userAPI = APILocator.getUserAPI();
             boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
-            Locale userSelectedLocale = (Locale)req.getSession().getAttribute(Globals.LOCALE_KEY);
+            Locale userSelectedLocale = LanguageUtil.getDefaultLocale( req );
             user.setLanguageId(userSelectedLocale.toString());
             userAPI.save(user, userAPI.getSystemUser(), respectFrontend);
 
