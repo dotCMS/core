@@ -3,22 +3,42 @@ package com.dotcms.rest.config;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
+import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
+import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
+import com.dotcms.rest.api.v1.authentication.LoginFormResource;
+import com.dotcms.rest.api.v1.authentication.LogoutResource;
+import com.dotcms.rest.api.v1.content.ContentTypeResource;
+import com.dotcms.rest.api.v1.authentication.*;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
+import com.dotcms.rest.api.v1.site.SiteBrowserResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
+import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotcms.rest.api.v1.system.AppConfigurationResource;
+import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.user.UserResource;
+import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This class provides the list of all the REST end-points in dotCMS. Every new
+ * service needs to be added to this list in order to be available for use.
+ * 
+ * @author Will Ezel
+ * @version 2.5.3
+ * @since Dec 5, 2013
+ *
+ */
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
 
@@ -27,7 +47,6 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 		if(REST_CLASSES == null){
 			synchronized (this.getClass().getName().intern()) {
 				if(REST_CLASSES == null){
-
 					REST_CLASSES = new HashSet<>();
                     REST_CLASSES.add(MultiPartFeature.class);
 					REST_CLASSES.add(com.dotcms.rest.ESIndexResource.class);
@@ -44,7 +63,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.UserResource.class);
 					REST_CLASSES.add(com.dotcms.rest.ClusterResource.class);
 					REST_CLASSES.add(com.dotcms.rest.EnvironmentResource.class);
-					REST_CLASSES.add(com.dotcms.rest.NotificationResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v1.notification.NotificationResource.class);
 					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 					REST_CLASSES.add(com.dotcms.rest.LicenseResource.class);
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
@@ -63,18 +82,28 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ConditionValueResource.class);
 					REST_CLASSES.add(PersonasResourcePortlet.class);
 
-
 					REST_CLASSES.add(ConditionletsResource.class);
 					REST_CLASSES.add(ActionResource.class);
 					REST_CLASSES.add(ActionletsResource.class);
 					REST_CLASSES.add(I18NResource.class);
 					REST_CLASSES.add(LanguagesResource.class);
+					
+					REST_CLASSES.add(MenuResource.class);
 
+					REST_CLASSES.add(AuthenticationResource.class);
+					REST_CLASSES.add(LogoutResource.class);
+					REST_CLASSES.add(LoginFormResource.class);
+					REST_CLASSES.add(ForgotPasswordResource.class);
+					REST_CLASSES.add(ConfigurationResource.class);
+					REST_CLASSES.add(AppConfigurationResource.class);
+					REST_CLASSES.add(SiteBrowserResource.class);
+					REST_CLASSES.add(ContentTypeResource.class);
+					REST_CLASSES.add(ResetPasswordResource.class);
+					REST_CLASSES.add(RoleResource.class);
 				}
 			}
 		}
 		return REST_CLASSES;
-
 	}
 
 }

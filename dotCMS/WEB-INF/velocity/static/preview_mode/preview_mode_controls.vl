@@ -5,6 +5,9 @@
 		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
 	#end
 #end
+#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
+#set($angularFrame = "$!request.getSession().getAttribute('frame')")
+
 <script type='text/javascript' src='/html/js/messages.js'></script>
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
@@ -1023,7 +1026,7 @@
 
 </script>
 <div style="display:none">
-    <form action="${directorURL}" id="submitParent" method="post" target="_top">
+    <form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="${angularFrame}" #else target="_top" #end >
         <input type="hidden" name="referer" id="referer" value="$referer">
         <input type="hidden" name="cmd" id="cmd" value="">
         <input type="hidden" name="container" id="container" value="">

@@ -5,7 +5,7 @@ dependencies {
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '3.6-SNAPSHOT', changing: true
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
-
+    compile 'io.jsonwebtoken:jjwt:0.6.0'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-html', version:'0.4.0-incubating_2'
@@ -84,7 +84,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version:'2.6.0-rc2_2'
-
     compile group: 'com.dotcms.lib', name: 'dot.jamm', version:'0.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jasperreports', version:'3.5.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.javacsv', version:'ukv_2'
@@ -270,10 +269,11 @@ dependencies {
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     compile group: 'com.dotcms', name: 'starter', version: '20160622-SNAPSHOT', ext: 'zip'
-    coreWeb group: 'com.dotcms', name: 'core-web', version: '3.6.0-SNAPSHOT', ext: 'zip', changing: true
+    coreWeb group: 'com.dotcms', name: 'core-web', version: '3.7.0-SNAPSHOT', ext: 'zip', changing: true
 
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
     provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
+    compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 }

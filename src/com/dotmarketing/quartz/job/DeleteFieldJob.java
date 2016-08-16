@@ -1,6 +1,7 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.APILocator;
@@ -9,6 +10,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,10 +26,12 @@ import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import org.quartz.*;
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 
 public class DeleteFieldJob implements Job {
@@ -35,11 +39,25 @@ public class DeleteFieldJob implements Job {
     private final PermissionAPI permAPI;
     private final ContentletAPI conAPI;
     private final NotificationAPI notfAPI;
+    private final DeleteFieldJobHelper deleteFieldJobHelper;
 
     public DeleteFieldJob() {
-        permAPI = APILocator.getPermissionAPI();
-        conAPI = APILocator.getContentletAPI();
-        notfAPI = APILocator.getNotificationAPI();
+        this(APILocator.getPermissionAPI(),
+            APILocator.getContentletAPI(),
+            APILocator.getNotificationAPI(),
+            DeleteFieldJobHelper.INSTANCE);
+    }
+
+    @VisibleForTesting
+    public DeleteFieldJob(final PermissionAPI permAPI,
+                          final ContentletAPI conAPI,
+                          final NotificationAPI notfAPI,
+                          final DeleteFieldJobHelper deleteFieldJobHelper) {
+
+        this.permAPI = permAPI;
+        this.conAPI = conAPI;
+        this.notfAPI = notfAPI;
+        this.deleteFieldJobHelper = deleteFieldJobHelper;
     }
 
     public static void triggerDeleteFieldJob(Structure structure, Field field, User user) {
@@ -99,9 +117,10 @@ public class DeleteFieldJob implements Job {
             }
 
             String type = field.getFieldType();
+            final Locale userLocale = user.getLocale();
 
-            notfAPI.info(String.format("Deletion of Field '%s' has been started. Field Inode: %s, Structure Inode: %s",
-                    field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
+            this.deleteFieldJobHelper.generateNotificationStartDeleting(this.notfAPI, userLocale, user.getUserId(),
+                    field.getVelocityVarName(), field.getInode(), structure.getInode());
 
             HibernateUtil.startTransaction();
 
@@ -119,8 +138,8 @@ public class DeleteFieldJob implements Job {
             // Call the commit method to avoid a deadlock
             HibernateUtil.commitTransaction();
 
-            notfAPI.info(String.format("Field '%s' was deleted succesfully. Field Inode: %s, Structure Inode: %s",
-                    field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
+            this.deleteFieldJobHelper.generateNotificationEndDeleting(this.notfAPI, userLocale, user.getUserId(),
+                    field.getVelocityVarName(), field.getInode(), structure.getInode());
 
             ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + user.getUserId() + "/"
                     + user.getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
@@ -150,8 +169,14 @@ public class DeleteFieldJob implements Job {
             }
             Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
                     field.getVelocityVarName(), field.getInode(), structure.getInode()), e);
-            notfAPI.error(String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
-                    field.getVelocityVarName(), field.getInode(), structure.getInode()), user.getUserId());
+
+            try {
+
+                this.deleteFieldJobHelper.generateNotificationUnableDelete(this.notfAPI,
+                        user.getLocale(), user.getUserId(), field.getVelocityVarName(), field.getInode(), structure.getInode());
+            } catch (LanguageException | DotDataException e1) {
+                Logger.error(this, e1.getMessage(), e1);
+            }
         } finally {
             try {
                 HibernateUtil.closeSession();

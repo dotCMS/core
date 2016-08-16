@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
-public final class WebResource {
+public  class WebResource {
 
     private final UserWebAPI userWebAPI;
     private final UserAPI userAPI;
