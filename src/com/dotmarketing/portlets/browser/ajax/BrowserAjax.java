@@ -405,9 +405,15 @@ public class BrowserAjax {
 	 * language ID, or the content with the next language ID in the list of system
 	 * languages.
 	 * </p>
+     * * <p>
+     * If the fallback properties are false <i>leaves only one identifier per
+     * page that match the param languageId</i>.
+     * </p>
 	 * 
 	 * @param results
 	 *            - The full list of pages under a given path/directory.
+     * @param languageId
+     *            - Content Language of the results.
 	 */
 	private void listCleanup(List<Map<String, Object>> results, long languageId) {
 		Map<String, Integer> contentLangCounter = new HashMap<>();
@@ -429,7 +435,6 @@ public class BrowserAjax {
 		for (String identifier : identifierSet) {
 			int counter = contentLangCounter.get(identifier);
 			if (counter > 1) {
-				//long defaultLang = this.languageAPI.getDefaultLanguage().getId();
 				// Remove all languages except the default one
 				boolean isDeleted = removeAdditionalLanguages(identifier, results, languageId);
 				if (!isDeleted) {
@@ -450,19 +455,19 @@ public class BrowserAjax {
         // If any of the fallback properties, ie DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false,
         // we need to iterate over all the contents in the result list so far, and we need to remove
         // all the contents that don't have the same language that we are passing as parameter.
-		for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
-			Map<String, Object> contentMap = iterator.next();
+        for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
+            Map<String, Object> contentMap = iterator.next();
 
-			if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true)
-				&& contentMap.containsKey("type")
-				&& contentMap.get("type").equals("file_asset")
-				&& !contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
+            if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true)
+                && contentMap.containsKey("type")
+                && "file_asset".equals(contentMap.get("type"))
+                && !contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
 
-				iterator.remove();
-			}
+                iterator.remove();
+            }
             //TODO logic for DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE
             //TODO logic for DEFAULT_PAGE_TO_DEFAULT_LANGUAGE
-		}
+        }
 	}
 
 	/**
