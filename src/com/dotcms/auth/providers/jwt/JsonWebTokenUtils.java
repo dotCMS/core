@@ -4,6 +4,7 @@ import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.Encryptor;
@@ -27,26 +28,50 @@ import com.liferay.portal.model.User;
  */
 public class JsonWebTokenUtils {
 
-    public static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
+    private static class SingletonHolder {
+        private static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
+    }
+    /**
+     * Get the instance.
+     * @return JsonWebTokenFactory
+     */
+    public static JsonWebTokenUtils getInstance() {
+
+        return JsonWebTokenUtils.SingletonHolder.INSTANCE;
+    } // getInstance.
 
     private JsonWebTokenUtils() {
         // singleton
+        this(JsonWebTokenFactory.getInstance().getJsonWebTokenService(),
+                MarshalFactory.getInstance().getMarshalUtils(),
+                CompanyLocalManagerFactory.getManager(),
+                EncryptorFactory.getInstance().getEncryptor(),
+                APILocator.getUserAPI());
     }
 
-    private final JsonWebTokenService jsonWebTokenService =
-            JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+    @VisibleForTesting
+    protected JsonWebTokenUtils(final  JsonWebTokenService jsonWebTokenService,
+                             final  MarshalUtils marshalUtils,
+                             final  CompanyLocalManager companyLocalManager,
+                             final  Encryptor encryptor,
+                             final  UserAPI userAPI) {
 
-    private final  MarshalUtils marshalUtils =
-            MarshalFactory.getInstance().getMarshalUtils();
+        this.jsonWebTokenService = jsonWebTokenService;
+        this.marshalUtils        = marshalUtils;
+        this.companyLocalManager = companyLocalManager;
+        this.encryptor           = encryptor;
+        this.userAPI             = userAPI;
+    }
 
-    private final  CompanyLocalManager companyLocalManager =
-            CompanyLocalManagerFactory.getManager();
+    private final JsonWebTokenService jsonWebTokenService;
 
-    private final  Encryptor encryptor =
-            EncryptorFactory.getInstance().getEncryptor();
+    private final  MarshalUtils marshalUtils;
 
+    private final  CompanyLocalManager companyLocalManager;
 
-    private final UserAPI userAPI = APILocator.getUserAPI();
+    private final  Encryptor encryptor;
+
+    private final UserAPI userAPI;
 
 
     /**
@@ -87,16 +112,6 @@ public class JsonWebTokenUtils {
 
         return subject;
     } // getUserId
-
-    /**
-     * Gets from the json web access token, the user.
-     * @param jwtAccessToken String
-     * @return String returns the User, if the user does not exists or is invalid will return null;
-     */
-    public static User getUserFromJsonWebToken(final String jwtAccessToken) {
-
-        return INSTANCE.getUser(jwtAccessToken);
-    }
 
     /**
      * Gets from the json web access token, the user.
@@ -183,12 +198,13 @@ public class JsonWebTokenUtils {
 
     /**
      * Gets from the json web access token, the user id decrypt.
+     * This method is static just to keep an easier way to be access on a jsp.
      * @param jwtAccessToken String
      * @return String returns the userId, null if it is not possible to get it.
      */
     public static String getUserIdFromJsonWebToken(final String jwtAccessToken) {
 
-        return INSTANCE.getUserId(jwtAccessToken);
+        return getInstance().getUserId(jwtAccessToken);
     } // getUserIdFromJsonWebToken
 
     /**
@@ -216,16 +232,6 @@ public class JsonWebTokenUtils {
                 );
 
     } // getUserIdFromJsonWebToken
-
-    /**
-     * Creates the Json Web Token based on the user
-     * @param user User
-     * @return String Json Web Token
-     */
-    public static String createJsonWebToken(final User user, int jwtMaxAge) throws SystemException, PortalException {
-
-        return INSTANCE.createToken(user, jwtMaxAge);
-    }
 
 
     private class IsValidResult {

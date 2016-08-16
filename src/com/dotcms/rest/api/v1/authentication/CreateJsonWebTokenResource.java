@@ -45,9 +45,10 @@ import static java.util.Collections.EMPTY_MAP;
 @Path("/v1/authentication")
 public class CreateJsonWebTokenResource implements Serializable {
 
-    private final UserLocalManager userLocalManager;
-    private final LoginService loginService;
+    private final UserLocalManager      userLocalManager;
+    private final LoginService          loginService;
     private final AuthenticationHelper  authenticationHelper;
+    private final JsonWebTokenUtils     jsonWebTokenUtils;
 
     /**
      * Default constructor.
@@ -55,17 +56,21 @@ public class CreateJsonWebTokenResource implements Serializable {
     public CreateJsonWebTokenResource() {
         this(LoginServiceFactory.getInstance().getLoginService(),
                 UserLocalManagerFactory.getManager(),
-                AuthenticationHelper.INSTANCE);
+                AuthenticationHelper.INSTANCE,
+                JsonWebTokenUtils.getInstance());
     }
 
     @VisibleForTesting
     protected CreateJsonWebTokenResource(final LoginService loginService,
                                      final UserLocalManager userLocalManager,
-                                     final AuthenticationHelper  authenticationHelper
+                                     final AuthenticationHelper  authenticationHelper,
+                                     final JsonWebTokenUtils     jsonWebTokenUtils
                                      ) {
-        this.loginService = loginService;
-        this.userLocalManager = userLocalManager;
+
+        this.loginService         = loginService;
+        this.userLocalManager     = userLocalManager;
         this.authenticationHelper = authenticationHelper;
+        this.jsonWebTokenUtils    = jsonWebTokenUtils;
     }
 
     @POST
@@ -151,6 +156,6 @@ public class CreateJsonWebTokenResource implements Serializable {
      */
     protected String createJsonWebToken (final User user, final int jwtMaxAge) throws PortalException, SystemException {
 
-        return JsonWebTokenUtils.createJsonWebToken(user, jwtMaxAge);
+        return this.jsonWebTokenUtils.createToken(user, jwtMaxAge);
     }
 } // E:O:F:CreateJsonWebTokenResource.

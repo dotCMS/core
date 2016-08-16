@@ -39,18 +39,28 @@ public  class WebResource {
     public static final String BASIC  = "Basic ";
     public static final String BEARER = "Bearer ";
 
-    private final UserWebAPI userWebAPI;
-    private final UserAPI userAPI;
-    private final LayoutAPI layoutAPI;
+    private final UserWebAPI        userWebAPI;
+    private final UserAPI           userAPI;
+    private final LayoutAPI         layoutAPI;
+    private final JsonWebTokenUtils jsonWebTokenUtils;
 
     public WebResource() {
+
         this(new ApiProvider());
     }
 
-    public WebResource(ApiProvider apiProvider) {
-        this.userAPI = apiProvider.userAPI();
-        this.userWebAPI = apiProvider.userWebAPI();
-        this.layoutAPI = apiProvider.layoutAPI();
+    public WebResource(final ApiProvider apiProvider) {
+
+        this(apiProvider, JsonWebTokenUtils.getInstance());
+    }
+
+    public WebResource(final ApiProvider apiProvider,
+                       final JsonWebTokenUtils jsonWebTokenUtils) {
+
+        this.userAPI           = apiProvider.userAPI();
+        this.userWebAPI        = apiProvider.userWebAPI();
+        this.layoutAPI         = apiProvider.layoutAPI();
+        this.jsonWebTokenUtils = jsonWebTokenUtils;
     }
 
     /**
@@ -179,7 +189,7 @@ public  class WebResource {
         }
 
         if(null == user) {
-            user = processAuthCredentialsFromJWT(request);
+            user = processAuthCredentialsFromJWT(request, this.jsonWebTokenUtils);
         }
 
         if(user == null && !forceFrontendAuth) {
@@ -191,19 +201,35 @@ public  class WebResource {
         }
 
         if(user == null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } else if(user == null) {
-            try {
-                user = APILocator.getUserAPI().getAnonymousUser();
-            } catch (DotDataException e) {
-                Logger.debug(getClass(), "Could not get Anonymous User. ");
-            }
+
+            user = this.getAnonymousUser();
         }
 
         return user;
     }
 
-    private static User processAuthCredentialsFromJWT(final HttpServletRequest request) {
+    /**
+     * Get the anonymous user if it is possible, otherwise will return null.
+     * @return User
+     */
+    public User getAnonymousUser() {
+
+        User user = null;
+
+        try {
+
+            user = APILocator.getUserAPI().getAnonymousUser();
+        } catch (DotDataException e) {
+            user = null;
+            Logger.debug(getClass(), "Could not get Anonymous User. ");
+        }
+        return user;
+    } // getAnonymousUser.
+
+    private static User processAuthCredentialsFromJWT(final HttpServletRequest request, final JsonWebTokenUtils jsonWebTokenUtils) {
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
@@ -220,7 +246,7 @@ public  class WebResource {
                 throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
             }
 
-            user = JsonWebTokenUtils.getUserFromJsonWebToken(jsonWebToken.trim());
+            user = jsonWebTokenUtils.getUser(jsonWebToken.trim());
 
             if(!UtilMethods.isSet(user)) {
                 // "Invalid syntax for username and password"
