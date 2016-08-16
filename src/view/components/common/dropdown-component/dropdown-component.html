@@ -6,6 +6,6 @@
     <label>{{title}}</label><i class="material-icons">keyboard_arrow_down</i>
 </button>
 
-<div class="toolbar" *ngIf="show" [ngClass]="{alignRight: alignRight}">
+<div class="dropdown-content" *ngIf="show" [ngClass]="{'dropdown-content_align-right': alignRight, 'dropdown-content_align-left': !alignRight}">
     <ng-content></ng-content>
 </div>

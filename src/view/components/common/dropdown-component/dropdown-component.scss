@@ -4,7 +4,7 @@
 :host {
   position: relative;
 
-  .toolbar {
+  .dropdown-content {
     @include box_shadow(2);
     background-color: $white;
     color: $black;
@@ -13,13 +13,17 @@
 
     position: absolute;
     top: 25px;
-    left:0;
-    display: inline-block;
+
+    overflow: scroll;
+
   }
 
-
-  .alignRight{
+  .dropdown-content_align-right{
     right: 0;
+  }
+
+  .dropdown-content_align-left{
+    left: 0;
   }
 
   i {
