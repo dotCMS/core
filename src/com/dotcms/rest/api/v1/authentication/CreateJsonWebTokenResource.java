@@ -15,7 +15,6 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import static com.dotcms.util.CollectionsUtils.*;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
@@ -34,8 +33,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Arrays;
-import static java.util.Collections.*;
 import java.util.Locale;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.util.Collections.EMPTY_MAP;
 
 /**
  * Create a new Json Web Token
@@ -72,7 +73,7 @@ public class CreateJsonWebTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response authentication(@Context final HttpServletRequest request,
+    public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
                                          final CreateTokenForm createTokenForm) {
 
@@ -97,15 +98,14 @@ public class CreateJsonWebTokenResource implements Serializable {
                             LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE,
                             LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
 
-                if (null == locale && null != user) {
-
-                    locale = user.getLocale();
-                }
-
                 res = Response.ok(new ResponseEntityView(map("token",
                         createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
+            } else {
+
+                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+                        locale, userId, "authentication-failed");
             }
-        } catch (NoSuchUserException | UserEmailAddressException e) {
+        } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException e) {
 
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                     locale, userId, "authentication-failed");

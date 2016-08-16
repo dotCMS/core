@@ -20,18 +20,19 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 public  class WebResource {
 
@@ -173,12 +174,12 @@ public  class WebResource {
             userPass = getAuthCredentialsFromBasicAuth(request);
         }
 
-        if(!userPass.isPresent()) {
-            userPass = getAuthCredentialsFromJWT(request);
-        }
-
         if(userPass.isPresent()) {
             user = authenticateUser(userPass.get().username, userPass.get().password, request, userAPI);
+        }
+
+        if(null == user) {
+            user = processAuthCredentialsFromJWT(request);
         }
 
         if(user == null && !forceFrontendAuth) {
@@ -189,11 +190,11 @@ public  class WebResource {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
 
-        if(user==null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+        if(user == null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
-        } else if(user==null) {
+        } else if(user == null) {
             try {
-                user =APILocator.getUserAPI().getAnonymousUser();
+                user = APILocator.getUserAPI().getAnonymousUser();
             } catch (DotDataException e) {
                 Logger.debug(getClass(), "Could not get Anonymous User. ");
             }
@@ -202,15 +203,15 @@ public  class WebResource {
         return user;
     }
 
-    private static Optional<UsernamePassword> getAuthCredentialsFromJWT(final HttpServletRequest request) {
+    private static User processAuthCredentialsFromJWT(final HttpServletRequest request) {
 
-        Optional<UsernamePassword> result = Optional.absent();
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
         final String jsonWebToken;
-        final User user;
+        final HttpSession session = request.getSession();
+        User user = null;
 
-        if (StringUtils.isNotEmpty(authentication) && authentication.startsWith(BEARER)) {
+        if (StringUtils.isNotEmpty(authentication) && authentication.trim().startsWith(BEARER)) {
 
             jsonWebToken = authentication.substring(BEARER.length());
 
@@ -226,10 +227,11 @@ public  class WebResource {
                 throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
             }
 
-            result = Optional.of(new UsernamePassword(user.getUserId(), user.getPassword()));
+            session.setAttribute(WebKeys.CMS_USER, user);
+            session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         }
 
-        return result;
+        return user;
     } // getAuthCredentialsFromJWT.
 
 
