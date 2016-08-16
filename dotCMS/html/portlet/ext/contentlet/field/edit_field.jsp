@@ -403,7 +403,7 @@
     //IMAGE kind of field rendering
     else if (field.getFieldType().equals(
             Field.FieldType.IMAGE.toString())) {%>
-        <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails"
+        <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" contentLanguage="<%=contentLanguage%>"
                         value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>"/>
 
 <%
@@ -412,7 +412,7 @@
     //FILE kind of field rendering
     } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
  %>
-    <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details"
+    <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details" contentLanguage="<%=contentLanguage%>"
                     value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"/>
 
  <%

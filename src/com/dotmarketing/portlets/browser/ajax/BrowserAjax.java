@@ -30,6 +30,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -64,6 +65,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -91,6 +93,7 @@ public class BrowserAjax {
 	private ContentletAPI contAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
+	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
 
 	String activeHostId = "";
     String activeFolderInode = "";
@@ -552,7 +555,7 @@ public class BrowserAjax {
 		}
 	}
 
-	public Map<String, Object> getFileInfo(String fileId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+	public Map<String, Object> getFileInfo(String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
         WebContext ctx = WebContextFactory.get();
         HttpServletRequest req = ctx.getHttpServletRequest();
         ServletContext servletContext = ctx.getServletContext();
@@ -560,6 +563,10 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userAPI.isLoggedToFrontend(req);
 
         Identifier ident = APILocator.getIdentifierAPI().find(fileId);
+
+		if(languageId==0) {
+			languageId = languageAPI.getDefaultLanguage().getId();
+		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("file_asset")) {
 			File file = fileAPI.getWorkingFileById(fileId, user, respectFrontendRoles);
@@ -578,9 +585,14 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
-		    ContentletVersionInfo vinfo=APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+
+			if(vinfo==null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+				languageId = languageAPI.getDefaultLanguage().getId();
+				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+			}
 		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
-			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, APILocator.getLanguageAPI().getDefaultLanguage().getId() , user, respectFrontendRoles);
+			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
 			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
     			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
     			java.io.File file = fileAsset.getFileAsset();
