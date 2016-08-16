@@ -1904,7 +1904,9 @@ public class BrowserAjax {
     	String currentPath = host.getHostname();
         Map<String,Object> hostMap = new HashMap<String, Object>();
         hostMap.put("type", "host");
-        hostMap.put("hostName", host.getHostname());
+		hostMap.put("hostName",
+			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-system-host")
+				: host.getHostname());
         hostMap.put("name", host.getHostname());
         hostMap.put("id", host.getIdentifier());
         hostMap.put("identifier", host.getIdentifier());
