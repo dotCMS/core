@@ -21,6 +21,12 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
 
+/**
+ * 
+ * @deprecated This Jersey end-point is deprecated. Please use new
+ *             {@link com.dotcms.rest.api.v1.user.UserResource} end-point.
+ */
+@Deprecated
 @Path("/user")
 public class UserResource {
 
@@ -38,6 +44,7 @@ public class UserResource {
 	@GET
 	@Path("/getloggedinuser/{params:.*}")
 	@Produces("application/json")
+	@Deprecated
 	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException,
 			DotRuntimeException, PortalException, SystemException, JSONException {
 
@@ -60,6 +67,7 @@ public class UserResource {
 
 		//Adding logged user information to the object
 		jsonLoggedUserObject.put("userId", user.getUserId());
+		jsonLoggedUserObject.put("emailAddress", user.getEmailAddress());
 		jsonLoggedUserObject.put("firstName", UtilMethods.escapeSingleQuotes(user.getFirstName()));
 		jsonLoggedUserObject.put("lastName", UtilMethods.escapeSingleQuotes(user.getLastName()));
 		jsonLoggedUserObject.put("roleId", myRole.getId());

@@ -325,7 +325,7 @@ public class LoginFactory {
 
                 // set id cookie
         		Cookie autoLoginCookie = UtilMethods.getCookie(request.getCookies(), WebKeys.CMS_USER_ID_COOKIE);
-
+				// todo: eventually we have to do the same thing for the json web token; keep in mind to do this in the JWTInterceptor
         		if(autoLoginCookie == null && rememberMe) {
         			autoLoginCookie = new Cookie(WebKeys.CMS_USER_ID_COOKIE, APILocator.getUserAPI().encryptUserId(user.getUserId()));
         		}

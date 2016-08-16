@@ -684,7 +684,7 @@ public class ContentResource {
 					processXML(contentlet, part.getEntityAs(InputStream.class));
 				} catch (Exception e) {
 					if(e instanceof DotSecurityException){
-						SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentletResource from " + request.getRemoteAddr());
+						SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentTypeResource from " + request.getRemoteAddr());
 					}
 					Logger.error( this.getClass(), "Error processing Stream", e );
 
@@ -782,7 +782,7 @@ public class ContentResource {
 					processXML(contentlet, request.getInputStream());
 				}
 				catch(DotSecurityException se){
-					SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentletResource from " + request.getRemoteAddr());
+					SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentTypeResource from " + request.getRemoteAddr());
 					throw new DotSecurityException("");
 				}
 			}

@@ -165,6 +165,8 @@ public class TaskLocatorUtil {
 		ret.add(Task03550RenameContainersTable.class);
 		ret.add(Task03555AddFlagToDeleteUsers.class);
 		ret.add(Task03560TemplateLayoutCanonicalName.class);
+        ret.add(Task03565ModificationDateColumnAddedToUserTable.class);
+        ret.add(Task03700AddingSystemEventTable.class);
         return ret;
     }
 
@@ -186,7 +188,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00009ClusterInitialize.class);
 		ret.add(Task00010CheckAnonymousUser.class);
-		
 		return ret;
 	}
 

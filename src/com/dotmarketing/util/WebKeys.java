@@ -2,14 +2,15 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.business.PermissionCache;
 
-
 /**
- * @author will
- *
- * To change this generated comment edit the template variable "typecomment":
- * Window>Preferences>Java>Templates.
- * To enable and disable the creation of type comments go to
- * Window>Preferences>Java>Code Generation.
+ * This class provides a centralized access point to the keys of several system
+ * parameters that are set via the configuration files in dotCMS. The
+ * configuration properties for many system features can be located in this
+ * class.
+ * 
+ * @author Will Ezel
+ * @version 1.0
+ * @since Mar 22, 2012
  */
 public final class WebKeys {
 
@@ -112,7 +113,6 @@ public final class WebKeys {
     public static final String CONTENTLET_LAST_SEARCH = "com.dotmarketing.contentlet.last_search";
     //http://jira.dotmarketing.net/browse/DOTCMS-2273
     public static final String CONTENTLET_FORM_NAME_VALUE_SEPARATOR = "com.dotmarketing.contentlet.form_name_value_separator";
-
 
     public static final String SECTIONS_LIST = "com.dotmarketing.section.list";
     public static final String COURSES_LIST = "com.dotmarketing.courses.list";
@@ -224,7 +224,6 @@ public final class WebKeys {
 	public static final String HTMLPAGE_META = "pageMeta";
 	public static final String HTMLPAGE_SERVER_NAME = "serverName";
 
-
 	public static final String HTMLPAGE_SECURE = "com.dotmarketing.htmlpage.secure";
 	public static final String HTMLPAGE_REDIRECT = "com.dotmarketing.htmlpage.redirect";
 
@@ -238,7 +237,6 @@ public final class WebKeys {
 
     public static final String FILE_EDIT_TEXT = "com.dotmarketing.portlets.file.edit.text";
     public static final String FILE_EDIT_TEXT_FILE_EXT = "com.dotmarketing.portlets.file.edit.text.file.ext";
-
 
     public static final String COPY_CONTENTLET_UNIQUE_HAS_VALIDATION = "Unique Has Validation";
     public static final String COPY_CONTENTLET_UNIQUE_NOT_TEXT = "Unique Not Text";
@@ -264,19 +262,17 @@ public final class WebKeys {
     public static final String EDIT_MODE_SESSION = "com.dotmarketing.EDIT_MODE_SESSION";
     public static final String PREVIEW_MODE_SESSION = "com.dotmarketing.PREVIEW_MODE_SESSION";
     public static final String ADMIN_MODE_SESSION = "com.dotmarketing.ADMIN_MODE_SESSION";
-
     public static final String SESSION_RATING_CACHE = "com.dotmarketing.beans.Rating";
     public static final String LAST_RATED_CONTENTLET = "last.rated.contentlet";
-
 	public static final String CMSFILTER_REDIRECTING = "com.dotmarketing.filters.CMSFilter";
 	public static final String CMSFILTER_URI = "com.dotmarketing.filters.CMSFilter.URI";
-
 	public static final String PENDING_ALERT_SEEN = "PENDING_ALERT_SEEN";
 	public static final String LOCALE = "com.dotmarketing.LOCALE";
 
     // NON_LOGGED_IN_USER_CATS
     public static final String NON_LOGGED_IN_USER_CATS = "com.dotmarketing.NON_LOGGED_IN_USER_CATS";
     public static final String LOGGED_IN_USER_CATS = "com.dotmarketing.LOGGED_IN_USER_CATS";
+
     // NON_LOGGED_IN_USER_TAGS
     public static final String NON_LOGGED_IN_USER_TAGS = "com.dotmarketing.NON_LOGGED_IN_USER_TAGS";
     public static final String LOGGED_IN_USER_TAGS = "com.dotmarketing.LOGGED_IN_USER_TAGS";
@@ -372,7 +368,6 @@ public final class WebKeys {
     public static final String TASK_CONTROL_LEFT = "com.dotmarketing.task.control.left";
     public static final String TASK_CONTROL_CLOSED = "com.dotmarketing.task.control.closed";
 
-
 	//USER PREFERENCES
     public static final String USER_PREFERENCE_EDIT = "com.dotmarketing.portlets.user.edit_userpreference";
     public static final String USER_PREFERENCE_HOME_PAGE = "com.dotmarketing.user.home_page";
@@ -400,7 +395,6 @@ public final class WebKeys {
     public static final String VIRTUAL_LINK_LIST_VIEW = "com.dotmarketing.virtuallinks.view";
     public static final String VIRTUAL_LINK_EDIT = "com.dotmarketing.virtuallinks.edit";
 
-
     //LANGUAGE MANAGER
     public static final String LANGUAGE_MANAGER_LIST = "com.dotmarketing.languagemanager.view.portlet";
     public static final String LANGUAGE_MANAGER_PROPERTIES = "com.dotmarketing.languagemanager.properties";
@@ -409,14 +403,12 @@ public final class WebKeys {
     public static final String LANGUAGE_MANAGER_ADDEDKEY= "com.dotmarketing.languagemanager.properties.addedkey";
     public static final String LANGUAGE_MANAGER_LANGUAGE= "com.dotmarketing.languagemanager.language";
     public static final String LANGUAGE_MANAGER_LANGUAGE_FORM= "com.dotmarketing.languagemanager.language_form";
-
     public static final String LANGUAGES = "com.dotmarketing.languages.languages_list";
     public static final String LANGUAGE = "com.dotmarketing.languages.language_selected";
     public static final String LANGUAGE_SEARCHED = "com.dotmarketing.languages.language_searched";
 
     public static final String CRUMB_TRAIL = "com.dotmarketing.viewtool.crumbtrail";
 	public static final String REDIRECT_AFTER_LOGIN = "REDIRECT_AFTER_LOGIN";
-
 
 	// CMS USER LOGIN
     public static final String CMS_USER = "cms.user";
@@ -471,7 +463,6 @@ public final class WebKeys {
     public static final String ORGANIZATION_VIEW = "com.dotmarketing.portlets.organization.model.Organization.view";
     public static final String ORGANIZATION_EDIT = "com.dotmarketing.portlets.organization.model.Organization.edit";
 
-
     //User Manage
     public static final String USERMANAGER_EDIT_FORM = "com.dotmarketing.portlets.usermanager.edit";
     public static final String USERMANAGERLISTFORM= "com.dotmarketing.portlets.usermanager.listForm";
@@ -479,7 +470,8 @@ public final class WebKeys {
     public static final String USERMANAGERLISTCOUNT = "com.dotmarketing.portlets.usermanager.listcount";
     public static final String USERMANAGERLISTPARAMETERS = "com.dotmarketing.portlets.usermanager.lastSearchParameters";
     public static final String USERMANAGER_PROPERTIES = "com.dotmarketing.portlets.usermanager.properties";
-	// WORKFLOW MESSAGES
+
+    // WORKFLOW MESSAGES
     public static final String WORKFLOW_MESSAGE_EDIT  = "com.dotmarketing.workflowmessages.edit";
     public static final String WORKFLOW_MESSAGE_FORM_EDIT   = "com.dotmarketing.workflowmessages.edit_form";
     public static final String WORKFLOW_MESSAGE_LIST = "com.dotmarketing.workflowmessages.list";
@@ -522,11 +514,9 @@ public final class WebKeys {
     public static final String WEBEVENT_REG_ATTENDEES = "com.dotmarketing.webevents..registration.attendees";
     public static final String WEBEVENTS_REG_USER = "com.dotmarketing.webevents.registration.user";
     public static final String WEBEVENTS_REG_USERID = "com.dotmarketing.webevents.registration.userid";
-
     public static final String WEBEVENTS_REG_ATTENDEE_EDIT = "com.dotmarketing.webevents.registration.attendee.edit";
     public static final String WEBEVENTS_REG_ATTENDEE_FORM = "com.dotmarketing.webevents.registration.attendee.form";
     public static final String WEBEVENTS_REG_STATUSES = "com.dotmarketing.webevents.registration.statuses";
-
     public static final String WEBEVENTS_REG_BEAN = "com.dotmarketing.webevents.registration.bean";
     public static final String WEBEVENTS_REG_ERRORS = "com.dotmarketing.webevents.registration.errors";
 
@@ -535,7 +525,6 @@ public final class WebKeys {
     public static final String ORDER_MGR_EDIT = "com.dotmarketing.order_manager.edit";
     public static final String ORDER_MGR_FORM = "com.dotmarketing.order_manager.form";
     public static final String ORDER_MGR_ITEMS = "com.dotmarketing.order_manager.items";
-
     public static final String ORDER_MGR_ITEM_EDIT = "com.dotmarketing.order_manager.item.edit";
     public static final String ORDER_MGR_ITEM_FORM = "com.dotmarketing.order_manager.item.form";
     public static final String ORDER_MGR_STATUSES = "com.dotmarketing.order_manager.statuses";
@@ -555,13 +544,11 @@ public final class WebKeys {
     public static final String WEBEVENTS_FORM = "com.dotmarketing.webevents.form";
     public static final String WEBEVENT_CATEGORIES = "com.dotmarketing.webevents.categories";
     public static final String WEBEVENT_LOCATIONS = "com.dotmarketing.webevents.locations";
-
     public static final String WEBEVENTS_LOCATION_EDIT = "com.dotmarketing.webevents.location.edit";
     public static final String WEBEVENTS_LOCATION_FORM = "com.dotmarketing.webevents.location.form";
 
     //ORGANIZATION
     public static final String ORGANIZATION_OBJECT = "com.dotmarketing.organization.object";
-
 	public static final String REDIRECT_AFTER_UPDATE_ACCOUNT_INFO = "REDIRECT_AFTER_UPDATE_ACCOUNT_INFO";
 
 	//SCHEDULER
@@ -677,24 +664,19 @@ public final class WebKeys {
     public static final String SELECTED_ENVIRONMENTS = "SELECTED_ENVIRONMENTS";
     public static final String SELECTED_BUNDLE = "SELECTED_BUNDLE";
 
-
 	public static final String CONTENT_EDITABLE = "CONTENT_EDITABLE";
 
 	// SYS Monitor
 	public static final String USER_SESSIONS = "USER_SESSIONS";
 	
 	// ACE Text Editor
-	
 	public static final String TEXT_EDITOR = "textEditor";
 	public static final String VELOCITY = "velocity";
-	
-	
 	
 	// Personas
     public static final String CMS_PERSONA_PARAMETER= "com.dotmarketing.persona.id";
 	
 	public static final String OSGI_ENABLED="felix.osgi.enabled";
-	
 	
 	public static final String DOTCMS_STARTED_UP="dotcms.started.up";
 	public static final String DOTCMS_STARTUP_TIME="dotcms.startup.ms";
@@ -703,4 +685,17 @@ public final class WebKeys {
 	public static final String DOTCMS_STARTUP_TIME_ES="dotcms.startup.es.ms";
 	public static final String DOTCMS_STARTUP_TIME_QUARTZ="dotcms.startup.quartz.ms";
 	public static final String DOTCMS_STARTUP_TIME_OSGI="dotcms.startup.osgi.ms";
+	
+	// Websocket configuration parameters
+	public static final String DOTCMS_WEBSOCKET_PROTOCOL = "dotcms.websocket.protocol";
+	public static final String DOTCMS_WEBSOCKET_BASEURL = "dotcms.websocket.baseurl";
+	public static final String DOTCMS_WEBSOCKET_ENDPOINTS = "dotcms.websocket.endpoints";
+	
+	// System Events
+	public static final String WEBSOCKET_SYSTEMEVENTS_ENDPOINT = "websocket.systemevents.endpoint";
+
+	// System Security
+	public static final String AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED = "auth.failedattempts.delay.enabled";
+	public static final String AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY = "auth.failedattempts.delay.strategy";
+
 }

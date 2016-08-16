@@ -1,27 +1,28 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
+import java.util.List;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 
-import java.util.Date;
-import java.util.List;
-
 /**
- * UserAPI is an API intended to be a helper class for class to get User entities.  Classes within the dotCMS
- * should use this API for user management.  The UserAPI does not do cache management. It delegates this responsibilities
+ * UserAPI is an API intended to be a helper class for class to get User
+ * entities. Classes within the dotCMS should use this API for user management.
+ * The UserAPI does not do cache management. It delegates this responsibilities
  * to underlying classes.
+ * 
  * @author Jason Tesser
  * @version 1.9
  * @since 1.6
  */
 public interface UserAPI {
-
-	
 	
 	final static String SYSTEM_USER_ID = "system";
+
 	/**
 	 * Used to encrypt a User's userid
 	 * @param userId
@@ -108,6 +109,11 @@ public interface UserAPI {
 	 */
 	public User getDefaultUser() throws DotDataException;
 
+	/**
+	 * 
+	 * @return
+	 * @throws DotDataException
+	 */
 	public User getSystemUser() throws DotDataException;
 
 	 /**
@@ -159,6 +165,41 @@ public interface UserAPI {
     public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException;
 
     /**
+	 * Return the number of users whose first name, last name, or email are
+	 * similar to the value specified in the {@code filter} parameter. For
+	 * example, retrieving all users that match {@code filter = "and"} will
+	 * return records like these:
+	 * <ul>
+	 * <li>Where {@code firstname = "Andrew"}</li>
+	 * <li>Or {@code firstname = "Alexander"}</li>
+	 * <li>Or {@code lastname = "Andrews"}</li>
+	 * <li>Or {@code lastname = "Allmand"}</li>
+	 * <li>Or {@code email = "john.anderson@domain.com"}</li>
+	 * <li>Etc.</li>
+	 * </ul>
+	 * <p>
+	 * If the filter is not specified, all users will be returned. This method 
+	 * <b>ALWAYS</b> hits the database.
+	 * 
+	 * @param filter
+	 *            - A set of characters that can match the value of the user's
+	 *            first name, last name, or e-mail. If not specified, all users
+	 *            will be returned.
+	 * @param includeAnonymous
+	 *            - If set to {@code true}, the "Anonymous" user will be
+	 *            included in the result. Otherwise, set to {@code false}.
+	 * @param includeDefault
+	 *            - If set to {@code true}, the "Default" user will be included
+	 *            in the result. Otherwise, set to {@code false}.
+	 * @return The total count of users that match the specified criteria.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the information from the
+	 *             database.
+	 */
+    public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+			throws DotDataException;
+
+    /**
      * This method return a a paginated list of user that have a firstname, lastname or email like
      * the compare string passed
 	 * This method will ALWAYS hit DB
@@ -204,6 +245,41 @@ public interface UserAPI {
      * @return List<User>
      */
     public List<User> getUsersByNameOrEmailOrUserID(String filter,int page,int pageSize, boolean includeAnonymous) throws DotDataException;
+
+    /**
+	 * Return the list of {@link User} objects whose first name, last name, or
+	 * email are similar to the value specified in the {@code filter} parameter.
+	 * For example, retrieving all users that match {@code filter = "and"} will
+	 * return records like these:
+	 * <ul>
+	 * <li>Where {@code firstname = "Andrew"}</li>
+	 * <li>Or {@code firstname = "Alexander"}</li>
+	 * <li>Or {@code lastname = "Andrews"}</li>
+	 * <li>Or {@code lastname = "Allmand"}</li>
+	 * <li>Or {@code email = "john.anderson@domain.com"}</li>
+	 * <li>Etc.</li>
+	 * </ul>
+	 * <p>
+	 * If the filter is not specified, all users will be returned. This method
+	 * <b>ALWAYS</b> hits the database.
+	 * 
+	 * @param filter
+	 *            - A set of characters that can match the value of the user's
+	 *            first name, last name, or e-mail. If not specified, all users
+	 *            will be returned.
+	 * @param includeAnonymous
+	 *            - If set to {@code true}, the "Anonymous" user will be
+	 *            included in the result. Otherwise, set to {@code false}.
+	 * @param includeDefault
+	 *            - If set to {@code true}, the "Default" user will be included
+	 *            in the result. Otherwise, set to {@code false}.
+	 * @return The list of users that match the specified criteria.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the information from the
+	 *             database.
+	 */
+    public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException;
 
     /**
      * Save or update in db the user object
@@ -315,7 +391,18 @@ public interface UserAPI {
 	 */
 	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException, DotInvalidPasswordException;
 
+	/**
+	 * 
+	 * @param userToDelete
+	 * @throws DotDataException
+	 */
     public void markToDelete(User userToDelete) throws DotDataException;
 
+    /**
+     * 
+     * @return
+     * @throws DotDataException
+     */
 	public List<User> getUnDeletedUsers() throws DotDataException;
+
 }

@@ -240,20 +240,6 @@ dojo.require("dojo.cookie");
         <%request.getSession().removeAttribute(
                             "portal_login_as_error");
                 }%>
-
-
-         // check for new notifications now and every N seconds
-        //checkNotifications();
-
-		<% if(Config.getBooleanProperty("KEEP_SESSION_ALIVE", true)) {%>
-			// Call Every 5 seconds
-			window.setInterval(function(){
-				checkNotifications();
-			}, 5000);
-    	<%} else { %>
-			setTimeout("checkNotifications()",5000);
-    	<%} %>
-
     });
 
 
@@ -535,8 +521,7 @@ dojo.require("dojo.cookie");
         <% } %>
 
    		<a id="autoUpdaterLink" style="display:none;" class="goEnterpriseLink"  href="javascript: showAutoUpdaterPopUp();"><span class="exclamation-red"></span><%= LanguageUtil.get(pageContext, "Update-available") %></a>
-		<!-- User Notifications -->
-			<a href="#" id="hasNotifications" onclick="showNotifications();" ><span id="notificationsIcon" class="hostStoppedIcon"></a>
+
 		<!-- User Actions -->
 		<% if (request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) { %>
 			<a href="#" id="account-trigger" onclick="toggleAccount();" class="trigger-off"><%=user.getFullName()%></a>
@@ -547,12 +532,6 @@ dojo.require("dojo.cookie");
 <% } %>
 
 <!-- End Site Tools -->
-
-<!-- Start Notifications Area -->
-
-<%@ include file="/html/common/notifications_inc.jsp" %>
-
-<!-- End Notifications Area -->
 
 <!-- User Info Drop Down -->
 

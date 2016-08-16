@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.exception.*;
 
@@ -136,6 +137,10 @@ import com.liferay.util.FileUtil;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
+
+    private final NotificationAPI notificationAPI;
+    private final ESContentletAPIHelper esContentletAPIHelper;
+
 	private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
 	
@@ -162,6 +167,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	 *
 	 */
     public ESContentletAPIImpl () {
+
         fAPI = APILocator.getFieldAPI();
         conFac = new ESContentFactoryImpl();
         perAPI = APILocator.getPermissionAPI();
@@ -170,6 +176,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         lanAPI = APILocator.getLanguageAPI();
         distAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
+        this.notificationAPI = APILocator.getNotificationAPI();
+        this.esContentletAPIHelper = ESContentletAPIHelper.INSTANCE;
     }
 
     @Override
@@ -1494,11 +1502,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	}
 				if(cannotDelete && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
 	            	logContentletActivity(con, "Error Deleting Content", user);
-					String errorMsg = "Contentlet with Inode " + con.getInode()
-							+ " cannot be deleted because it's not archived. Please archive it first before deleting it.";
-	                Logger.error(this, errorMsg);
-	            	APILocator.getNotificationAPI().generateNotification(errorMsg, NotificationLevel.INFO, user.getUserId());
-	            	throw new DotStateException(errorMsg);
+
+                    this.esContentletAPIHelper.generateNotificationCanNotDelete
+                            (this.notificationAPI, user.getLocale(), user.getUserId(), con.getInode());
 	            }
 				conFac.delete(perCons, false);
 				for (Contentlet contentlet : contentlets) {

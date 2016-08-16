@@ -147,7 +147,19 @@ THIS FILE AND ITS INCLUDES
 			mb.h=abs.h;
 			return mb;
 		};
-
+<%
+	if(UtilMethods.isSet(request.getParameter("in_frame")) && UtilMethods.isSet(request.getParameter("frame"))){
+		boolean inFrame = Boolean.valueOf(request.getParameter("in_frame"));
+		
+		if(inFrame){
+			  request.getSession().setAttribute("in_frame",inFrame);
+	    	  request.getSession().setAttribute("frame",request.getParameter("frame"));
+		}else{
+			  request.getSession().removeAttribute("in_frame");
+	  	      request.getSession().removeAttribute("frame");
+		}
+	}
+%>
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>
@@ -157,7 +169,7 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 
-<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || UtilMethods.isSet(request.getParameter("in_frame"))){ %>
+<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || (UtilMethods.isSet(request.getParameter("in_frame")) && "true".equals((String) request.getParameter("in_frame")))|| (UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"))){ %>
 	<body class="dmundra" style="background:white url()">
 <%}else{ %>
 	<body class="dmundra" style="visibility:hidden">
