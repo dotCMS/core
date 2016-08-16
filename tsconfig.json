@@ -104,6 +104,7 @@
     "./src/view/components/semantic/modules/restdropdown/demo.ts",
     "./src/view/components/semantic/modules/restdropdown/RestDropdown.ts",
     "./src/view/components/common/iframe-legacy/IframeLegacyComponent",
+    "./src/view/components/common/dropdown-component/dropdown-component.ts",
     "./src/view/components/app.ts",
     "./typings/main.d.ts"
   ]

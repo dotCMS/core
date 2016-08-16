@@ -1,0 +1,11 @@
+<button md-icon-button (click)="onToggle()" [disabled]="disabled" *ngIf="icon">
+    <i class="material-icons">{{icon}}</i>
+</button>
+
+<button md-button (click)="onToggle()" [disabled]="disabled" *ngIf="title">
+    <label>{{title}}</label><i class="material-icons">keyboard_arrow_down</i>
+</button>
+
+<div class="toolbar" *ngIf="show" [ngClass]="{alignRight: alignRight}">
+    <ng-content></ng-content>
+</div>

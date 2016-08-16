@@ -1,0 +1,28 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+  position: relative;
+
+  .toolbar {
+    @include box_shadow(2);
+    background-color: $white;
+    color: $black;
+    padding: 5px 10px 5px 10px;
+    z-index: 100;
+
+    position: absolute;
+    top: 25px;
+    left:0;
+    display: inline-block;
+  }
+
+
+  .alignRight{
+    right: 0;
+  }
+
+  i {
+    padding: 5px;
+  }
+}
