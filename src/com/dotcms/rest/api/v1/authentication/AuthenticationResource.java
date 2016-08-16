@@ -25,10 +25,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.RequiredLayoutException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
@@ -76,7 +73,6 @@ public class AuthenticationResource implements Serializable {
         this.authenticationHelper = authenticationHelper;
     }
 
-    // TODO: add the https annotation
     @POST
     @JSONP
     @NoCache
@@ -103,8 +99,12 @@ public class AuthenticationResource implements Serializable {
                 final HttpSession ses = request.getSession();
                 final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
                 res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
+            } else {
+
+                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+                        locale, userId, "authentication-failed");
             }
-        } catch (NoSuchUserException | UserEmailAddressException e) {
+        } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException e) {
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
         } catch (AuthException e) {
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
