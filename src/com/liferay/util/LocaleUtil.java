@@ -65,6 +65,12 @@ public class LocaleUtil {
 
 	private static CompanyAPI companyAPI = null;
 
+	private static JsonWebTokenUtils jsonWebTokenUtils = null;
+
+	public static void setJsonWebTokenUtils(JsonWebTokenUtils jsonWebTokenUtils) {
+		LocaleUtil.jsonWebTokenUtils = jsonWebTokenUtils;
+	}
+
 	public static void setEncryptor(Encryptor encryptor) {
 		LocaleUtil.encryptor = encryptor;
 	}
@@ -96,6 +102,20 @@ public class LocaleUtil {
 		return companyAPI;
 	}
 
+	private static JsonWebTokenUtils getJsonWebTokenUtils() {
+
+		if (null == jsonWebTokenUtils) {
+			synchronized (LocaleUtil.class) {
+
+				if (null == jsonWebTokenUtils) {
+					jsonWebTokenUtils =
+							JsonWebTokenUtils.getInstance();
+				}
+			}
+		}
+
+		return jsonWebTokenUtils;
+	}
 
 	private static Encryptor getEncryptor() {
 
@@ -320,7 +340,7 @@ public class LocaleUtil {
 
 					try {
 
-						uId = JsonWebTokenUtils.getUserIdFromJsonWebToken(cookieValue);
+						uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(cookieValue);
 					} catch (Exception e) {
 
 						_log.info("An invalid attempt to login as " + uId + " has been made from IP: "

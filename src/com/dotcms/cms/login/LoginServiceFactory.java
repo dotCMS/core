@@ -1,5 +1,6 @@
 package com.dotcms.cms.login;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
@@ -155,14 +156,18 @@ public class LoginServiceFactory implements Serializable {
 
         private final Log log = LogFactory.getLog(LoginService.class);
         private final UserWebAPI userWebAPI;
+        private final JsonWebTokenUtils jsonWebTokenUtils;
 
         @VisibleForTesting
-        public LoginServiceImpl(ApiProvider apiProvider){
-            this.userWebAPI = apiProvider.userWebAPI();
+        public LoginServiceImpl(final ApiProvider apiProvider,
+                                final JsonWebTokenUtils jsonWebTokenUtils){
+
+            this.userWebAPI        = apiProvider.userWebAPI();
+            this.jsonWebTokenUtils = jsonWebTokenUtils;
         }
 
         public LoginServiceImpl(){
-            this(new ApiProvider());
+            this(new ApiProvider(), JsonWebTokenUtils.getInstance());
         }
 
         @Override
@@ -291,10 +296,14 @@ public class LoginServiceFactory implements Serializable {
             final User user = UserLocalManagerUtil.getUserById(userId);
 
             //DOTCMS-4943
-            UserAPI userAPI = APILocator.getUserAPI();
-            boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
-            Locale userSelectedLocale = LanguageUtil.getDefaultLocale( req );
-            user.setLanguageId(userSelectedLocale.toString());
+            final UserAPI userAPI = APILocator.getUserAPI();
+            final boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
+            final Locale userSelectedLocale = LanguageUtil.getDefaultLocale(req);
+            if (null != userSelectedLocale) {
+
+                user.setLanguageId(userSelectedLocale.toString());
+            }
+
             userAPI.save(user, userAPI.getSystemUser(), respectFrontend);
 
             ses.setAttribute(WebKeys.USER_ID, userId);
@@ -366,30 +375,7 @@ public class LoginServiceFactory implements Serializable {
                                          final User user,
                                          final int maxAge) throws PortalException, SystemException {
 
-            final MarshalFactory marshalFactory =
-                    MarshalFactory.getInstance();
-            final MarshalUtils marshalUtils =
-                    marshalFactory.getMarshalUtils();
-            final JsonWebTokenService jsonWebTokenService =
-                    JsonWebTokenFactory.getInstance().getJsonWebTokenService();
-
-            // create the cookie with the token using the new classes
-            final String encryptUserId = UserManagerUtil.encryptUserId(user.getUserId());
-
-            final String jwtAccessToken =
-                    jsonWebTokenService.generateToken(
-                            new JWTBean(encryptUserId,
-                                    marshalUtils.marshal(
-                                            new DotCMSSubjectBean(user.getModificationDate(),
-                                                    encryptUserId,
-                                                    user.getCompanyId())),
-                                    encryptUserId,
-                                    (maxAge > 0)?
-                                            DateUtil.daysToMillis(maxAge):
-                                            maxAge
-                                    )
-                    );
-
+            final String jwtAccessToken = this.jsonWebTokenUtils.createToken(user, maxAge);
             createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
         }
 
