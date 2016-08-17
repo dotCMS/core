@@ -19,15 +19,5 @@ import {DropdownComponent} from "../dropdown-component/dropdown-component";
 })
 
 export class PatternLibrary {
-    constructor() {
-        console.log('PL')
-    }
 
-    public print(message:string, argument:any){
-        if (argument) {
-            console.log(message, argument);
-        }else{
-            console.log(message);
-        }
-    }
 }
