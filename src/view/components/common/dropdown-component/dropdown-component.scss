@@ -8,25 +8,22 @@
     @include box_shadow(2);
     background-color: $white;
     color: $black;
+    overflow: scroll;
     padding: 5px 10px 5px 10px;
-    z-index: 100;
-
     position: absolute;
     top: 25px;
-
-    overflow: scroll;
-
+    z-index: 100;
   }
 
-  .dropdown-content_align-right{
-    right: 0;
+  i {
+    padding: 5px;
   }
 
   .dropdown-content_align-left{
     left: 0;
   }
 
-  i {
-    padding: 5px;
+  .dropdown-content_align-right{
+    right: 0;
   }
 }
