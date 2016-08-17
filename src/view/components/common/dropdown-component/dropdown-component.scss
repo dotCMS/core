@@ -1,0 +1,29 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+  position: relative;
+
+  .dropdown-content {
+    @include box_shadow(2);
+    background-color: $white;
+    color: $black;
+    overflow: scroll;
+    padding: 5px 10px 5px 10px;
+    position: absolute;
+    top: 25px;
+    z-index: 100;
+  }
+
+  i {
+    padding: 5px;
+  }
+
+  .dropdown-content_align-left{
+    left: 0;
+  }
+
+  .dropdown-content_align-right{
+    right: 0;
+  }
+}
