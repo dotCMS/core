@@ -100,6 +100,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
+					REST_CLASSES.add(CreateJsonWebTokenResource.class);
 				}
 			}
 		}

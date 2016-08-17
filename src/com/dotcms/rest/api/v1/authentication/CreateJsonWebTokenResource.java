@@ -1,13 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -20,10 +13,9 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
@@ -36,18 +28,22 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Locale;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.util.Collections.EMPTY_MAP;
+
 /**
- * This resource does the authentication, if the authentication is successfully
- * returns the User Object as a Json, If there is a known error returns 500 and
- * the error messages related. Otherwise returns 500 and the exception as Json.
- * 
+ * Create a new Json Web Token
  * @author jsanca
- * @version 3.7
- * @since Jul 7, 2016
  */
-@SuppressWarnings("serial")
 @Path("/v1/authentication")
-public class AuthenticationResource implements Serializable {
+public class CreateJsonWebTokenResource implements Serializable {
 
     private final UserLocalManager userLocalManager;
     private final LoginService loginService;
@@ -56,60 +52,71 @@ public class AuthenticationResource implements Serializable {
     /**
      * Default constructor.
      */
-    public AuthenticationResource() {
+    public CreateJsonWebTokenResource() {
         this(LoginServiceFactory.getInstance().getLoginService(),
                 UserLocalManagerFactory.getManager(),
-                AuthenticationHelper.INSTANCE,
-                new WebResource(new ApiProvider()));
+                AuthenticationHelper.INSTANCE);
     }
 
     @VisibleForTesting
-    protected AuthenticationResource(final LoginService loginService,
+    protected CreateJsonWebTokenResource(final LoginService loginService,
                                      final UserLocalManager userLocalManager,
-                                     final AuthenticationHelper  authenticationHelper,
-                                     final WebResource webResource) {
+                                     final AuthenticationHelper  authenticationHelper
+                                     ) {
         this.loginService = loginService;
         this.userLocalManager = userLocalManager;
         this.authenticationHelper = authenticationHelper;
     }
 
     @POST
+    @Path("/api-token")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response authentication(@Context final HttpServletRequest request,
-                                   @Context final HttpServletResponse response,
-                                   final AuthenticationForm authenticationForm) {
+    public final Response getApiToken(@Context final HttpServletRequest request,
+                                         @Context final HttpServletResponse response,
+                                         final CreateTokenForm createTokenForm) {
 
+        final String userId = createTokenForm.getUser();
         Response res = null;
         boolean authenticated = false;
-        String userId = authenticationForm.getUserId();
-        final Locale locale = LocaleUtil.getLocale(request,
-                authenticationForm.getCountry(), authenticationForm.getLanguage());
+        Locale locale = LocaleUtil.getLocale(request);
 
         try {
 
             authenticated =
                     this.loginService.doActionLogin(userId,
-                            authenticationForm.getPassword(),
-                            authenticationForm.isRememberMe(), request, response);
+                            createTokenForm.getPassword(),
+                            false, request, response);
 
             if (authenticated) {
 
                 final HttpSession ses = request.getSession();
                 final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
-                res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
+                final int jwtMaxAge = createTokenForm.getExpirationDays() > 0 ? createTokenForm.getExpirationDays():
+                        Config.getIntProperty(
+                            LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE,
+                            LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
+
+                res = Response.ok(new ResponseEntityView(map("token",
+                        createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
             } else {
 
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                         locale, userId, "authentication-failed");
             }
         } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
+
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+                    locale, userId, "authentication-failed");
         } catch (AuthException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
+
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+                    locale, userId, "authentication-failed");
         } catch (RequiredLayoutException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
+
+            res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR,
+                    locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 
             try {
@@ -117,18 +124,33 @@ public class AuthenticationResource implements Serializable {
                 res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
                         (Arrays.asList(new ErrorEntity("your-account-is-not-active",
                                 LanguageUtil.format(locale,
-                                        "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", userId, "</i></b>")}, false)
+                                        "your-account-is-not-active",
+                                        new LanguageWrapper[] {new LanguageWrapper("<b><i>", userId, "</i></b>")},
+                                        false)
                         )))).build();
             } catch (LanguageException e1) {
                 // Quiet
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
-            SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as "
+                    + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return res;
     } // authentication
 
-} // E:O:F:AuthenticationResource.
+    /**
+     * Creates Json Web Token
+     * @param user {@link User}
+     * @param jwtMaxAge {@link Integer}
+     * @return String json web token
+     * @throws PortalException
+     * @throws SystemException
+     */
+    protected String createJsonWebToken (final User user, final int jwtMaxAge) throws PortalException, SystemException {
+
+        return JsonWebTokenUtils.createJsonWebToken(user, jwtMaxAge);
+    }
+} // E:O:F:CreateJsonWebTokenResource.

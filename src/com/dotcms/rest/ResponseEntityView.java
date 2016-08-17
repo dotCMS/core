@@ -18,13 +18,6 @@ public class ResponseEntityView implements Serializable {
     private final List<MessageEntity> messages;
     private final Map<String, String> i18nMessagesMap;
 
-    public ResponseEntityView(final Map<String, String> i18nMessagesMap) {
-
-        this.errors = Collections.EMPTY_LIST;
-        this.messages = Collections.EMPTY_LIST;
-        this.entity = EMPTY_ENTITY;
-        this.i18nMessagesMap = i18nMessagesMap;
-    }
 
     public ResponseEntityView(final List<ErrorEntity> errors) {
 
