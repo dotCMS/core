@@ -57,7 +57,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 	private static Structure transformToStruct(final ContentType type) throws DotStateException {
 
 		final Structure struct = new Structure();
-		struct.setDefaultStructure(type.defaultStructure());
+		struct.setDefaultStructure(type.defaultType());
 		struct.setDescription(type.description());
 		struct.setDetailPage(type.detailPage());
 		struct.setInode(type.inode());
@@ -74,7 +74,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 		struct.setStructureType(type.baseType().getType());
 		struct.setSystem(type.system());
 		struct.setUrlMapPattern(type.urlMapPattern());
-		struct.setVelocityVarName(type.velocityVarName());
+		struct.setVelocityVarName(type.variable());
 		return struct;
 
 	}
@@ -100,7 +100,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 			static final long serialVersionUID = 1L;
 
 			@Override
-			public String velocityVarName() {
+			public String variable() {
 				return struct.getVelocityVarName();
 			}
 
@@ -166,7 +166,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 			}
 
 			@Override
-			public boolean defaultStructure() {
+			public boolean defaultType() {
 				return struct.isDefaultStructure();
 			}
 

@@ -2,7 +2,7 @@ package com.dotcms.contenttype.exception;
 
 import com.dotmarketing.exception.DotDataException;
 
-public class InvalidSelectValuesException extends DataValidationException {
+public class InvalidSelectValuesException extends DotDataValidationException {
 
 
 	private static final long serialVersionUID = 1L;

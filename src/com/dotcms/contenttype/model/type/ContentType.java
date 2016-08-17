@@ -55,7 +55,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public abstract String description();
 
 	@Value.Default
-	public boolean defaultStructure() {
+	public boolean defaultType() {
 		return false;
 	}
 	
@@ -94,7 +94,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	}
 	
 	
-	public abstract String velocityVarName();
+	public abstract String variable();
 
 	@Nullable
 	public abstract String urlMapPattern();

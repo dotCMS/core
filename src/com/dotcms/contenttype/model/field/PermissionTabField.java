@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class PermissionTabField extends Field {
+public abstract class PermissionTabField extends Field implements OnePerContentType {
 
 	/**
 	 * 
@@ -31,8 +31,4 @@ public abstract class PermissionTabField extends Field {
 	};
 	public abstract static class Builder implements FieldBuilder {}
 	
-	@Override
-	public boolean onePerContentType() {
-		return true;
-	};
 }

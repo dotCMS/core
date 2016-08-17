@@ -43,7 +43,7 @@ public class ContentTypeBuilderTest {
 		
 		ContentType test = ImmutableWidgetContentType.builder()
 				.name("TEST Title")
-				.velocityVarName("formTitle")
+				.variable("formTitle")
 
 				.fixed(true)
 

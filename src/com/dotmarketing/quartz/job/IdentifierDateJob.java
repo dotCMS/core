@@ -58,7 +58,7 @@ public class IdentifierDateJob implements Job {
 		
 		try{
 			//Lucene query to be sure that I will get all fields of the contentlet
-			String luceneQuery = "+structureName:" + type.velocityVarName() +
+			String luceneQuery = "+structureName:" + type.variable() +
 								" +working:true" + 
 								" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			

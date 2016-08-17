@@ -10,7 +10,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.google.common.base.Preconditions;
 
 @Value.Immutable
-public abstract class TagField extends Field  {
+public abstract class TagField extends Field  implements OnePerContentType{
 
 
 	private static final long serialVersionUID = 1L;
@@ -24,14 +24,9 @@ public abstract class TagField extends Field  {
 		return LegacyFieldTypes.getLegacyName(TagField.class);
 	}
 
-	@Override
-	public boolean onePerContentType() {
-		return true;
-	};
 	@Value.Check
 	public void check() {
 		super.check();
-		Preconditions.checkArgument(onePerContentType(),"There can be only one Tag field per content");
 		if(iDate().after(legacyFieldDate)){
 			Preconditions.checkArgument(indexed(),"Tag Fields must be indexed");
 		}

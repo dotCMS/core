@@ -27,7 +27,7 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
     public void add(ContentType type){
 
 		cache.put(primaryGroup + type.inode(), type, primaryGroup);
-        cache.put(primaryGroup + type.velocityVarName().toLowerCase(), type, primaryGroup);
+        cache.put(primaryGroup + type.variable().toLowerCase(), type, primaryGroup);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
     @Override
 	public void remove(ContentType type) {
         cache.remove(primaryGroup + type.inode(),primaryGroup);
-        cache.remove(primaryGroup + type.velocityVarName(),primaryGroup);
+        cache.remove(primaryGroup + type.variable(),primaryGroup);
         clearURLMasterPattern();
 	}
 

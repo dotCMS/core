@@ -25,7 +25,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder description(String variable);
 
-	ContentTypeBuilder defaultStructure(boolean variable);
+	ContentTypeBuilder defaultType(boolean variable);
 
 	ContentTypeBuilder storageType(StorageType variable);
 
@@ -41,7 +41,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder multilingualable(boolean variable);
 
-	ContentTypeBuilder velocityVarName(String variable);
+	ContentTypeBuilder variable(String variable);
 
 	ContentTypeBuilder urlMapPattern(String variable);
 
@@ -86,7 +86,7 @@ public interface ContentTypeBuilder {
 	public static ContentType instanceOf(Class clazz) {
 		ContentTypeBuilder builder = builder(clazz);
 		builder.name("INSTANCETYPE");
-		builder.velocityVarName("INSTANCETYPE");
+		builder.variable("INSTANCETYPE");
 		builder.modDate(new Date(0));
 		builder.iDate(new Date(0));
 		return builder.build();

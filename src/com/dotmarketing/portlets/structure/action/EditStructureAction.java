@@ -192,7 +192,7 @@ public class EditStructureAction extends DotPortletAction {
 
 		if(!type.fixed()){//GIT-780
 			if(type.baseType() == BaseContentType.WIDGET
-					&& type.velocityVarName().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
+					&& type.variable().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
 						type = ContentTypeBuilder.builder(type).fixed(true).build();
 						APILocator.getContentTypeAPI2().save(type, user);
 			}

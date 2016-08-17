@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 
 @Value.Immutable
-public abstract class RelationshipsTabField extends Field {
+public abstract class RelationshipsTabField extends Field implements OnePerContentType{
 
 	/**
 	 * 
@@ -31,10 +31,6 @@ public abstract class RelationshipsTabField extends Field {
 		return DataTypes.SECTION_DIVIDER;
 	};
 
-	@Override
-	public boolean onePerContentType() {
-		return true;
-	};
 	
 	public abstract static class Builder implements FieldBuilder {}
 }

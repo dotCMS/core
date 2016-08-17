@@ -2,23 +2,23 @@ package com.dotcms.contenttype.exception;
 
 import com.dotmarketing.exception.DotDataException;
 
-public abstract class DataValidationException extends DotDataException {
+public class DotDataValidationException extends DotDataException {
 
 	final String i18nKey;
 	private static final long serialVersionUID = 1L;
 	
-	public DataValidationException(Throwable e) {
+	public DotDataValidationException(Throwable e) {
 		super(e.getMessage(), e);
 		this.i18nKey=e.getMessage();
 	}
 	
-	public DataValidationException(String message, String i18nKey) {
-		super(message);
+	public DotDataValidationException(String englishMessage, String i18nKey) {
+		super(englishMessage);
 		this.i18nKey=i18nKey;
 	}
 
-	public DataValidationException(String message, String i18nKey, Throwable e) {
-		super(message, e);
+	public DotDataValidationException(String englishMessage, String i18nKey, Throwable e) {
+		super(englishMessage, e);
 		this.i18nKey=i18nKey;
 	}
 	

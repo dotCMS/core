@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.sync.Exportable;
@@ -177,6 +179,9 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return FieldFactory.getFieldsByStructureSortedBySortOrder(inode);
 	}
 
+	public ContentType contentType(){
+		return new StructureTransformer(this).from();
+	}
 
 
 	public String getReviewerRole() {

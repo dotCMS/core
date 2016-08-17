@@ -21,6 +21,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.OnePerContentType;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -89,7 +90,7 @@ public class ContentTypeFactoryImplTest {
 		List<ContentType> types = factory.findAll();
 		for (ContentType type : types) {
 			ContentType contentType = factory.find(type.inode());
-			ContentType contentType2 = factory.findByVar(type.velocityVarName());
+			ContentType contentType2 = factory.findByVar(type.variable());
 			try {
 				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
@@ -220,7 +221,7 @@ public class ContentTypeFactoryImplTest {
 			Thread.sleep(1);
 			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base)).description("description" + time)
 					.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeTestingWithFields" + time).owner("owner")
-					.velocityVarName("velocityVarNameTesting" + time).build();
+					.variable("velocityVarNameTesting" + time).build();
 			type = factory.save(type);
 			addFields(type);
 		}
@@ -353,7 +354,7 @@ public class ContentTypeFactoryImplTest {
 				builder.publishDateVar("/asdsadsadsad/");
 			}
 			builder.description("new description");
-			builder.velocityVarName(type.velocityVarName() + "plus");
+			builder.variable(type.variable() + "plus");
 			
 			type=factory.save(builder.build());
 			
@@ -402,7 +403,7 @@ public class ContentTypeFactoryImplTest {
 				.host(Host.SYSTEM_HOST)
 				.name(baseType.name() + "Testing" + i)
 				.owner("owner")
-				.velocityVarName("velocityVarNameTesting" + i);
+				.variable("velocityVarNameTesting" + i);
 				
 		if(inode!=null){
 			builder.inode(inode);
@@ -422,17 +423,26 @@ public class ContentTypeFactoryImplTest {
 			throw t;
 		}
 		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
-		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").velocityVarName("rewarwa").build().requiredFields();
+		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
 		assertThat("fields are all added", fields.size() == baseTypeFields.size());
 
 		for (int j = 0; j < fields.size(); j++) {
 			Field field = fields.get(j);
-			Field baseField = baseTypeFields.get(j);
-			assertThat("fields are correct:", field.dataType().equals(baseField.dataType()));
-			assertThat("fields are correct:", field.variable().equals(baseField.variable()));
-			assertThat("fields are correct:", field.getClass().equals(baseField.getClass()));
-			assertThat("fields are correct:", field.name().equals(baseField.name()));
-			assertThat("fields are correct:", field.sortOrder() == baseField.sortOrder());
+			Field baseField = null;
+			try{
+              baseField = baseTypeFields.get(j);
+              assertThat("field datatypes are correct:", field.dataType().equals(baseField.dataType()));
+              assertThat("fields variable is correct:", field.variable().equals(baseField.variable()));
+              assertThat("field class is correct:", field.getClass().equals(baseField.getClass()));
+              assertThat("field name is  correct:", field.name().equals(baseField.name()));
+              assertThat("field sort order is correct", field.sortOrder() == baseField.sortOrder());
+			} 
+			catch(Throwable e){
+              System.out.println("Old and New Fields are NOT the same");
+              System.out.println(field);
+              System.out.println(baseField);
+              throw e;
+			}
 		}
 	}
 	
@@ -450,13 +460,13 @@ public class ContentTypeFactoryImplTest {
 	}
 	@Test
 	public void suggestVelocityVar() throws DotDataException {
-		String tryVar = "content" + System.currentTimeMillis();
+		String tryVar = "Content" + System.currentTimeMillis();
 		String newVar = factory.suggestVelocityVar(tryVar);
 		
 		assertThat("random velocity var works", newVar!=null);
 		assertThat("random velocity var works", newVar.equals(tryVar));
 		
-		tryVar = "news" ;
+		tryVar = "News" ;
 		newVar = factory.suggestVelocityVar(tryVar);
 		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
 
@@ -475,7 +485,7 @@ public class ContentTypeFactoryImplTest {
 		for(Class clazz : APILocator.getFieldAPI2().fieldTypes()){
 			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.inode()).build();
 			boolean save = true;
-			if(fakeField.onePerContentType()){
+			if(fakeField instanceof OnePerContentType){
 				for(Field field : type.fields()){
 					if(field.getClass().equals(fakeField.getClass())){
 						save = false;

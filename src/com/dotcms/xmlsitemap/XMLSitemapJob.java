@@ -221,7 +221,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				 * structure
 				 */
 				for (ContentType type : types) {
-					String stVelocityVarName = type.velocityVarName();
+					String stVelocityVarName = type.variable();
 					if (ignorableStructureIds.contains(stVelocityVarName.toLowerCase())) {
 						continue;
 					}

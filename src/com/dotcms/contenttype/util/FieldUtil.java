@@ -11,7 +11,4 @@ import com.liferay.util.StringUtil;
 public class FieldUtil {
 
 	
-	public void checkFieldValues(Field field) throws InvalidSelectValuesException{
-		// moved to SelectableValuesField
-	}
 }

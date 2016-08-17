@@ -13,7 +13,10 @@ public abstract class CategoryField extends Field {
 
 	private static final long serialVersionUID = 1L;
 
-	@Override
+	
+
+
+  @Override
 	public Class type() {
 		return CategoryField.class;
 	}

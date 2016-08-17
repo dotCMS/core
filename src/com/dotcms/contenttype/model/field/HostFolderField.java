@@ -10,12 +10,11 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.google.common.base.Preconditions;
 
 @Value.Immutable
-public abstract class HostFolderField extends Field {
+public abstract class HostFolderField extends Field implements OnePerContentType {
 
 	@Value.Check
 	public void check() {
 		super.check();
-		Preconditions.checkArgument(onePerContentType(),"There can be only one host/folder field per content");
 		if(iDate().before(legacyFieldDate))return;
 		Preconditions.checkArgument(indexed(),"Host Folder Fields must be indexed");
 	}
@@ -24,10 +23,7 @@ public abstract class HostFolderField extends Field {
 	public boolean indexed() {
 		return true;
 	};
-	@Override
-	public boolean onePerContentType() {
-		return true;
-	};
+
 	private static final long serialVersionUID = 1L;
 
 	@Override

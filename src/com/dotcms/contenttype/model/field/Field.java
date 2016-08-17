@@ -57,11 +57,6 @@ public abstract class Field implements FieldIf, Serializable {
 		return false;
 	}
 	
-	@Value.Default
-	public   boolean onePerContentType() {
-		return false;
-	}
-	
 	@Nullable
 	public abstract   String owner();
 
@@ -98,7 +93,7 @@ public abstract class Field implements FieldIf, Serializable {
 
 	@Value.Default
 	public   int sortOrder() {
-		return (int) (System.currentTimeMillis() / 1000);
+		return -1;
 	}
 
 	@Value.Lazy

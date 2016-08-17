@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.structure.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -27,38 +25,24 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
-import com.dotmarketing.services.ContentletMapServices;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.StructureServices;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
-import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 
 public class EditFieldAction extends DotPortletAction {
@@ -220,12 +204,11 @@ public class EditFieldAction extends DotPortletAction {
 	private boolean _saveField(FieldForm form, ActionRequest req, ActionResponse res, User user) {
 		try {
 			FieldForm fieldForm = (FieldForm) form;
-			Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
+			Field legacyield = (Field) req.getAttribute(WebKeys.Field.FIELD);
 			
-			ContentType type = tapi.find(field.getStructureInode(), user);
+			ContentType type = tapi.find(legacyield.getStructureInode(), user);
 			
-			boolean isNew = false;
-			boolean wasIndexed = field.isIndexed();
+
 
 
 			//http://jira.dotmarketing.net/browse/DOTCMS-5918
@@ -257,8 +240,13 @@ public class EditFieldAction extends DotPortletAction {
 				fieldForm.setIndexed(true);
 			}
 			 */
-			BeanUtils.copyProperties(field, fieldForm);
+			BeanUtils.copyProperties(legacyield, fieldForm);
 
+			
+			
+			
+			
+			
 			//To validate values entered for decimal/number type check box field
 			//http://jira.dotmarketing.net/browse/DOTCMS-5516
 

@@ -34,7 +34,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 		final ContentType type = new ContentType() {
 			static final long serialVersionUID = 1L;
 			@Override
-			public String velocityVarName() {
+			public String variable() {
 				return (String) map.get("velocity_var_name");
 			}
 
@@ -101,7 +101,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			}
 
 			@Override
-			public boolean defaultStructure() {
+			public boolean defaultType() {
 				return (Boolean) map.get("default_structure");
 			}
 

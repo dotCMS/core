@@ -215,7 +215,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 			.setSQL(this.contentTypeSql.UPDATE_ALL_DEFUALT)
 			.addParam(false)
 			.loadResult();
-		type = ContentTypeBuilder.builder(type).defaultStructure(true).build();
+		type = ContentTypeBuilder.builder(type).defaultType(true).build();
 		return save(type);
 
 
@@ -258,7 +258,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	public String suggestVelocityVar(final String tryVar) throws DotDataException{
 		
 		DotConnect dc = new DotConnect();
-		String var = VelocityUtil.convertToVelocityVariable(tryVar);
+		String var = VelocityUtil.convertToVelocityVariable(tryVar, true);
 		for(int i=1;i<100000;i++){
 			dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
 			dc.addParam(var);
@@ -363,12 +363,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.setSQL(this.contentTypeSql.UPDATE_TYPE);
 		dc.addParam(type.name());
 		dc.addParam(type.description());
-		dc.addParam(type.defaultStructure());
+		dc.addParam(type.defaultType());
 		dc.addParam(type.detailPage());
 		dc.addParam(type.baseType().getType());
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
-		dc.addParam(type.velocityVarName());
+		dc.addParam(type.variable());
 		dc.addParam(new CleanURLMap(type.urlMapPattern()).toString());
 		dc.addParam(type.host());
 		dc.addParam(type.folder());
@@ -390,12 +390,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.addParam(type.inode());
 		dc.addParam(type.name());
 		dc.addParam(type.description());
-		dc.addParam(type.defaultStructure());
+		dc.addParam(type.defaultType());
 		dc.addParam(type.detailPage());
 		dc.addParam(type.baseType().getType());
 		dc.addParam(type.system());
 		dc.addParam(type.fixed());
-		dc.addParam(type.velocityVarName());
+		dc.addParam(type.variable());
 		dc.addParam(new CleanURLMap(type.urlMapPattern()).toString());
 		dc.addParam(type.host());
 		dc.addParam(type.folder());
@@ -408,7 +408,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	private boolean dbDelete(ContentType type) throws DotDataException {
 
 		// default structure can't be deleted
-		if (type.defaultStructure()) {
+		if (type.defaultType()) {
 			throw new DotDataException("contenttype.delete.cannot.delete.default.type");
 		}
 		if(type.system()){
