@@ -69,11 +69,9 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 				|| UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
 			if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
 				languageId = httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE);
-			} 
-			else if(UtilMethods.isSet(httpRequest.getParameter("language_id"))) {
+			} else if(UtilMethods.isSet(httpRequest.getParameter("language_id"))) {
 				languageId = httpRequest.getParameter("language_id");
-			}
-			else if(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+			} else if(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
 			    languageId = (String)sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
 			}
 			//If languageId is not Long we will use the Default Language and log.
