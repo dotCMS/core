@@ -19,171 +19,164 @@
                 <h6>Heading 6</h6>
                 <p class="section_desc">12px / 18px - Regular</p>
             </article>
-        </div>
-        <div class="col-sm-6 col-md-offset-1 section-paragraph">
-            <h3 class="section__title">Paragraphs</h3>
-            <article>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!</p>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et.</p>
-                <p class="section_desc">16px / 24px - Regular</p>
-            </article>
+            <div class="section-paragraph">
+                <h3 class="section__title">Paragraphs</h3>
+                <article>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus dolor eius eos error et.</p>
+                    <p class="section_desc">16px / 24px - Regular</p>
+                </article>
 
-            <h3 class="section__title">Links</h3>
-            <article>
-                <p><a href="#">Link Normal</a></p>
-                <p><a href="#" class="link-secondary">Link Secondary</a></p>
-                <p class="section_desc">16px / 24px - Regular</p>
-            </article>
+                <h3 class="section__title">Links</h3>
+                <article>
+                    <p><a href="#">Link Normal</a></p>
+                    <p><a href="#" class="link-secondary">Link Secondary</a></p>
+                    <p class="section_desc">16px / 24px - Regular</p>
+                </article>
+            </div>
         </div>
-    </section>
 
-
-    <section class="row">
-        <div class="col-sm-5 section-buttons">
-            <h3 class="section__title">Buttons</h3>
-            <article>
-                <h4 class="section__subtitle">Flat buttons</h4>
-                <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                <button md-button color="primary">Normal</button>
-                <button md-button color="primary" disabled>Disabled</button>
-            </article>
-            <article>
-                <h4 class="section__subtitle">Normal buttons</h4>
-                <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                <button md-raised-button>Normal</button>
-                <button md-raised-button disabled>Disabled</button>
-            </article>
-            <article>
-                <h4 class="section__subtitle">Primary Button</h4>
-                <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                <button md-raised-button color="primary">Normal</button>
-                <button md-raised-button color="primary" disabled>Disabled</button>
-            </article>
-            <article>
-                <h4 class="section__subtitle">Negative Button</h4>
-                <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                <button md-raised-button color="accent">Normal</button>
-                <button md-raised-button color="accent" disabled>Disabled</button>
-            </article>
-        </div>
         <div class="col-sm-6 col-md-offset-1 section-fields">
-            <h3 class="section__title">TextFields</h3>
-            <article>
-                <md-input placeholder="Placeholder" floatingPlaceholder="false"></md-input>
-                <md-input placeholder="Disabled" floatingPlaceholder="false" disabled></md-input>
-            </article>
-            <article>
-                <md-input placeholder="Placeholder / Label"></md-input>
-                <md-input placeholder="Disabled" disabled></md-input>
-            </article>
+            <div class="section-buttons">
+                <h3 class="section__title">Buttons</h3>
+                <article>
+                    <h4 class="section__subtitle">Flat buttons</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button md-button color="primary">Normal</button>
+                    <button md-button color="primary" disabled>Disabled</button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Normal buttons</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button md-raised-button>Normal</button>
+                    <button md-raised-button disabled>Disabled</button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Primary Button</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button md-raised-button color="primary">Normal</button>
+                    <button md-raised-button color="primary" disabled>Disabled</button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Negative Button</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button md-raised-button color="accent">Normal</button>
+                    <button md-raised-button color="accent" disabled>Disabled</button>
+                </article>
+            </div>
+            <div class="section-fields">
+                <h3 class="section__title">TextFields</h3>
+                <article>
+                    <md-input placeholder="Placeholder" floatingPlaceholder="false"></md-input>
+                    <md-input placeholder="Disabled" floatingPlaceholder="false" disabled></md-input>
+                </article>
+                <article>
+                    <md-input placeholder="Placeholder / Label"></md-input>
+                    <md-input placeholder="Disabled" disabled></md-input>
+                </article>
 
-            <h3 class="section__title">Select</h3>
-            <article>
-                <dot-select name="select">
-                    <dot-option value="option1">Some Value</dot-option>
-                    <dot-option value="option2">Option 2</dot-option>
-                    <dot-option value="option3">A really long text to test</dot-option>
-                    <dot-option value="option4">Option 4</dot-option>
-                    <dot-option value="option5">Option 5</dot-option>
-                    <dot-option value="option6">Option 6</dot-option>
-                    <dot-option value="option7">Option 7</dot-option>
-                </dot-select>
-            </article>
+                <h3 class="section__title">Select</h3>
+                <article>
+                    <dot-select name="select">
+                        <dot-option value="option1">Some Value</dot-option>
+                        <dot-option value="option2">Option 2</dot-option>
+                        <dot-option value="option3">A really long text to test</dot-option>
+                        <dot-option value="option4">Option 4</dot-option>
+                        <dot-option value="option5">Option 5</dot-option>
+                        <dot-option value="option6">Option 6</dot-option>
+                        <dot-option value="option7">Option 7</dot-option>
+                    </dot-select>
+                </article>
 
-            <article>
-                <dot-select value="option2" name="selectDisabled" disabled>
-                    <dot-option value="option1">Option 1</dot-option>
-                    <dot-option value="option2">Selected Value</dot-option>
-                    <dot-option value="option3">Option 3</dot-option>
-                    <dot-option value="option4">Option 4</dot-option>
-                    <dot-option value="option5">Option 5</dot-option>
-                    <dot-option value="option6">Option 6</dot-option>
-                    <dot-option value="option7">Option 7</dot-option>
-                </dot-select>
-            </article>
+                <article>
+                    <dot-select value="option2" name="selectDisabled" disabled>
+                        <dot-option value="option1">Option 1</dot-option>
+                        <dot-option value="option2">Selected Value</dot-option>
+                        <dot-option value="option3">Option 3</dot-option>
+                        <dot-option value="option4">Option 4</dot-option>
+                        <dot-option value="option5">Option 5</dot-option>
+                        <dot-option value="option6">Option 6</dot-option>
+                        <dot-option value="option7">Option 7</dot-option>
+                    </dot-select>
+                </article>
 
-            <h3 class="section__title">Checkbox</h3>
-            <article>
-                <p><md-checkbox>Checkbox</md-checkbox></p>
-                <p><md-checkbox disabled="true">Disabled</md-checkbox></p>
-            </article>
+                <h3 class="section__title">Checkbox</h3>
+                <article>
+                    <p><md-checkbox>Checkbox</md-checkbox></p>
+                    <p><md-checkbox disabled="true">Disabled</md-checkbox></p>
+                </article>
 
-            <h3 class="section__title">Radio Buttons</h3>
-            <article>
-                <md-radio-group>
-                    <p><md-radio-button value="option_1">Option one</md-radio-button></p>
-                    <p><md-radio-button value="option_2">Option two</md-radio-button></p>
-                </md-radio-group>
-            </article>
-        </div>
-    </section>
+                <h3 class="section__title">Radio Buttons</h3>
+                <article>
+                    <md-radio-group>
+                        <p><md-radio-button value="option_1">Option one</md-radio-button></p>
+                        <p><md-radio-button value="option_2">Option two</md-radio-button></p>
+                    </md-radio-group>
+                </article>
 
-    <section class="row">
 
-        <div class="col-sm-5 section-dropdown">
-            <h3 class="section__title">Dropdowns (Left align)</h3>
-            <article>
-                <h4>Text Dropdowns</h4>
-
-                <dot-dropdown-component title="Dropdowns example">
-                    <div>
-                        <div style="width:500px">
-                            <p>Here you can add any HTML</p>
-                            <br/>
-                            <p>
-                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                                dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
-                            </p>
+                <h3 class="section__title">Dropdown Buttons</h3>
+                <article>
+                    <h4 class="section__subtitle">Right aligned</h4>
+                    <div class="row">
+                        <div class="col-sm-5">
+                            <dot-dropdown-component title="Dropdowns example" alignRight="true">
+                                <div style="width:500px">
+                                    <p>Here you can add any HTML</p>
+                                    <p>
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
+                                        dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                    </p>
+                                </div>
+                            </dot-dropdown-component>
+                        </div>
+                        <div class="col-sm-5">
+                            <dot-dropdown-component icon="add_circle" alignRight="true">
+                                <div style="width:200px">
+                                    <p>Here you can add any HTML</p>
+                                    <p>
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
+                                        dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                    </p>
+                                </div>
+                            </dot-dropdown-component>
                         </div>
                     </div>
-                </dot-dropdown-component>
-            </article>
-            <article>
-                <h4>Icon Dropdowns</h4>
-                <dot-dropdown-component icon="add_circle">
-                    <div style="width:200px">
-                        <p>Here you can add any HTML</p>
-                        <br/>
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                            dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
-                        </p>
-                    </div>
-                </dot-dropdown-component>
-            </article>
-        </div>
 
-        <div class="col-sm-5 section-dropdown">
-            <h3 class="section__title">Dropdowns (Right align)</h3>
-            <article>
-                <h4>Text Dropdowns</h4>
+                </article>
 
-                <dot-dropdown-component title="Dropdowns example"
-                                        alignRight="true">
-                    <div style="width:500px">
-                        <p>Here you can add any HTML</p>
-                        <br/>
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                            dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
-                        </p>
+                <article>
+                    <h4 class="section__subtitle">Left aligned</h4>
+                    <div class="row">
+                        <div class="col-sm-5">
+                            <dot-dropdown-component title="Dropdowns example">
+                                <div>
+                                    <div style="width:500px">
+                                        <p>Here you can add any HTML</p>
+                                        <br/>
+                                        <p>
+                                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
+                                            dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                        </p>
+                                    </div>
+                                </div>
+                            </dot-dropdown-component>
+                        </div>
+                        <div class="col-sm-5">
+                            <dot-dropdown-component icon="add_circle">
+                                <div style="width:200px">
+                                    <p>Here you can add any HTML</p>
+                                    <br/>
+                                    <p>
+                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
+                                        dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
+                                    </p>
+                                </div>
+                            </dot-dropdown-component>
+                        </div>
                     </div>
-                </dot-dropdown-component>
-            </article>
-            <article>
-                <h4>Icon Dropdowns</h4>
-                <dot-dropdown-component icon="add_circle"
-                                        alignRight="true">
-                    <div style="width:200px">
-                        <p>Here you can add any HTML</p>
-                        <br/>
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
-                            dolor eius eos error et ipsum labore laudantium libero magnam maiores nihil perspiciatis quas reprehenderit unde vel vitae!
-                        </p>
-                    </div>
-                </dot-dropdown-component>
-            </article>
+                </article>
+            </div>
         </div>
     </section>
 </div>
