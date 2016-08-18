@@ -1,0 +1,14 @@
+<div class="dot-select" [class.is-disabled]="disabled" [class.is-active]="isHover || isOpen" (click)="openClose()" (mouseover)="toggleHoverState()" (mouseout)="toggleHoverState()" #dotSelect>
+    <div class="dot-select__wrapper">
+        <div class="dot-select__text">
+            {{selectedText}}
+        </div>
+        <md-icon class="dot-select__icon">arrow_drop_down</md-icon>
+    </div>
+    <div class="md-underline">
+        <div class="md-underline-ripple" [class.md-focused]="isHover || isOpen"></div>
+    </div>
+</div>
+<div class="dot-select__options" [class.dot-select__options--is-open]="isOpen" #selectOptions>
+    <ng-content></ng-content>
+</div>

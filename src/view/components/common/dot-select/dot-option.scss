@@ -1,0 +1,19 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+    cursor: pointer;
+    display: block;
+    padding: 10px 16px;
+    transition: background-color $basic-speed;
+    white-space: nowrap;
+
+    &:hover {
+        background-color: $gray-lighter;
+    }
+
+    .is-selected {
+        color: $secondary;
+    }
+}
+

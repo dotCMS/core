@@ -1,0 +1,44 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+    display: inline-block;
+    position: relative;
+
+    .is-active {
+        .dot-select__icon {
+            color: $secondary;
+        }
+    }
+
+    .is-disabled {
+        cursor: not-allowed;
+        
+        .dot-select__text,
+        .dot-select__icon {
+            color: $gray-light;
+        }
+    }
+
+    .dot-select__options {
+        @include box_shadow(1);
+        background-color: $white;
+        position: absolute;
+        top: 0;
+        z-index: 1;
+        overflow: hidden;
+        max-height: 0;
+        transition: all $basic-speed;
+    }
+
+    .dot-select__options--is-open {
+        max-height: 1000px;
+    }
+
+    .dot-select__wrapper {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+    }
+}
+
