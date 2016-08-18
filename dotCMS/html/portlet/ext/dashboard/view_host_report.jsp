@@ -506,7 +506,7 @@ try {
 			str +=  ' ' + rightPageStr;
 		}
 		
-		var footer =  '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'content\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" href="javascript:donwloadToExcel(\'content\');"><img src="/icon?i=csv.xls" border="0" alt="export results" align="absbottom"></a></div>'+str;
+		var footer =  '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'content\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" href="javascript:donwloadToExcel(\'content\');"><img src="/html/images/icons/csv.png" border="0" alt="export results" align="absbottom"></a></div>'+str;
 		var title = '<b><%= LanguageUtil.get(pageContext, "Top-Content") %></b>';
 		var header  ='<tr><th nowrap width="50%"><a href="javascript:order(\'title\',\'desc\',\'content\');"><%= LanguageUtil.get(pageContext, "Title") %></a></th><th nowrap width="50%"><a href="javascript:order(\'sum(summaryContent.hits)\',\'desc\',\'content\');"><%= LanguageUtil.get(pageContext, "Hits") %></a> </th></tr>';
 		dojo.place(footer, 'footer', 'only');
@@ -582,7 +582,7 @@ try {
 		if(rightPageStr!=''){
 			str +=  ' ' + rightPageStr;
 		}
-		var footer =  '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'pages\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" style="margin-bottom:4px;" href="javascript:donwloadToExcel(\'pages\');"><img src="/icon?i=csv.xls" border="0" alt="export results" align="absbottom"></a></div>'+str;
+		var footer =  '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'pages\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" style="margin-bottom:4px;" href="javascript:donwloadToExcel(\'pages\');"><img src="/html/images/icons/csv.png" border="0" alt="export results" align="absbottom"></a></div>'+str;
 		var title = '<b><%= LanguageUtil.get(pageContext, "Top-Pages") %></b>';
 		var header  = '<tr><th nowrap width="50%"><a href="javascript:order(\'uri\',\'desc\',\'pages\');"><%= LanguageUtil.get(pageContext, "Uri") %></a></th><th nowrap width="50%"><a href="javascript:order(\'sum(summaryPage.hits)\',\'desc\',\'pages\');"><%= LanguageUtil.get(pageContext, "Hits") %></a> </th></tr>';
 		dojo.place(footer, 'footer', 'only');
@@ -653,7 +653,7 @@ try {
 		if(rightPageStr!=''){
 			str +=  ' ' + rightPageStr;
 		}
-		var footer = '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'referers\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" href="javascript:donwloadToExcel(\'referers\');"><img src="/icon?i=csv.xls" border="0" alt="export results" align="absbottom"></a></div>'+str;
+		var footer = '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'referers\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" href="javascript:donwloadToExcel(\'referers\');"><img src="/html/images/icons/csv.png" border="0" alt="export results" align="absbottom"></a></div>'+str;
 		var title = '<b><%= LanguageUtil.get(pageContext, "Top-Referers") %></b>';
 		var header ='<tr><th nowrap width="50%"><a href="javascript:order(\'uri\',\'desc\',\'referers\');"><%= LanguageUtil.get(pageContext, "Referer") %></a></th><th nowrap width="50%"><a href="javascript:order(\'sum(summaryRef.hits)\',\'desc\',\'referers\');"><%= LanguageUtil.get(pageContext, "Hits") %></a> </th></tr>';
 		dojo.place(footer, 'footer', 'only');
@@ -723,7 +723,7 @@ try {
 		if(rightPageStr!=''){
         	str +=  ' ' + rightPageStr;
 		}
-		var footer = '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'404\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" href="javascript:donwloadToExcel(\'404\');"><img src="/icon?i=csv.xls" border="0" alt="export results" align="absbottom"></a></div>'+str;
+		var footer = '<div style="padding-bottom:4px"><a align="center" href="javascript:donwloadToExcel(\'404\');"><%= LanguageUtil.get(pageContext, "Export") %></a>&nbsp;<a align="center" href="javascript:donwloadToExcel(\'404\');"><img src="/html/images/icons/csv.png" border="0" alt="export results" align="absbottom"></a></div>'+str;
 		var title = '<b><%= LanguageUtil.get(pageContext, "404") %></b>';
 		var header ='<tr><th nowrap width="40%"><a href="javascript:order(\'uri\',\'desc\',\'404\');"><%= LanguageUtil.get(pageContext, "Page/File") %></a></th><th nowrap width="50%"><a href="javascript:order(\'referer_uri\',\'desc\',\'404\');"><%= LanguageUtil.get(pageContext, "Referer") %></a> </th><th nowrap width="10%"><a href="javascript:order(\'userPreferences.ignored\',\'desc\',\'404\');"><%= LanguageUtil.get(pageContext, "Ignored") %></a></th></tr>';
 		dojo.place(footer, 'footer', 'only');
