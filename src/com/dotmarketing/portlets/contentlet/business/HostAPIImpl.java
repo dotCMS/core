@@ -643,6 +643,8 @@ public class HostAPIImpl implements HostAPI {
 				for (Structure structure : structures) {
 					List<Contentlet> structContent = contentAPI.findByStructure(structure, user, respectFrontendRoles, 0, 0);
 					for (Contentlet c : structContent) {
+						//We are deleting a site/host, we don't need to validate anything.
+						c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
 						contentAPI.delete(c, user, respectFrontendRoles);
 					}
 					StructureFactory.deleteStructure(structure);
