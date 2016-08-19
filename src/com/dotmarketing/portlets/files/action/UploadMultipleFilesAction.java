@@ -243,6 +243,9 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				contentlet.setStructureInode(selectedStructureInode);
 				contentlet.setHost(hostId);
 				contentlet.setFolder(folder.getInode());
+				if(UtilMethods.isSet(session.getAttribute("com.dotmarketing.content.selected.language"))){
+					contentlet.setLanguageId(Long.parseLong(session.getAttribute("com.dotmarketing.content.selected.language").toString()));
+				}
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
 
