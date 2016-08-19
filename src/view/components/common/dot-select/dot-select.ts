@@ -142,7 +142,6 @@ export class DotOption {
     }
 
     onClick() {
-        console.log('this.value', this.value);
         this.select.setOption({
             value: this.value,
             text: this.node.nativeElement.firstChild.innerHTML.trim()

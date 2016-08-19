@@ -114,7 +114,6 @@ export class RuleEngineContainer extends SiteChangeListener{
     })
 
     this.bundleService.loadPublishEnvironments().subscribe((environments) => this.environments = environments);
-    console.log('this.state', this.state);
     super( siteService );
   }
 

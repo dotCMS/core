@@ -37,6 +37,7 @@ export class SiteService  {
                 method: RequestMethod.Get,
                 url: this.allSiteUrl
             }).subscribe( response =>{
+                console.log('RESPONSE', response);
                 this.sites = response.entity.sites;
                 this.setCurrentSite( response.entity.currentSite );
 

@@ -4,6 +4,7 @@ import {DropdownComponent} from "../common/dropdown-component/dropdown-component
 import {Site} from "../../../api/services/site-service";
 import {DotSelect} from "../common/dot-select/dot-select";
 import {DotOption} from "../common/dot-select/dot-select";
+import {SiteService} from "../../../api/services/site-service";
 
 @Component({
     directives: [DropdownComponent, DotSelect, DotOption],
@@ -16,13 +17,24 @@ import {DotOption} from "../common/dot-select/dot-select";
     templateUrl: ['dot-site-selector-component.html'],
 })
 export class SiteSelectorComponent{
-    @Input() currentSite:string;
-    @Input() sites:Site[];
+    private currentSite:string;
+    private sites:Site[];
 
-    @Output() change = new EventEmitter<string>();
+    constructor(private siteService:SiteService){
 
-    switchSite(option){
-        this.change.emit( option.value );
+    }
+
+    ngOnInit(){
+        this.siteService.getAllSites().subscribe( response => {
+            this.currentSite = response.currentSite;
+            this.sites = response.sites;
+        }, error => alert( error.errorsMessages ));
+    }
+
+    switchSite(option:any){
+        this.siteService.switchSite( option.value ).subscribe( response => {
+
+        }, error => alert( error.errorsMessages ));
     }
 }
 
