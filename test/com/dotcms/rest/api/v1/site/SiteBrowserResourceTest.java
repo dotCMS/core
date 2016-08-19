@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import static com.dotcms.util.CollectionsUtils.*;
 import com.dotcms.util.I18NUtil;
@@ -26,6 +27,7 @@ import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.springframework.http.ResponseEntity;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -751,5 +753,118 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         assertTrue(sessionAttributes.containsKey(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
 
 
+    }
+
+    @Test
+    public void testCurrentSites() throws DotSecurityException, DotDataException {
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        RestUtilTest.initMockContext();
+        LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        User user = new User();
+        WebResource webResource = RestUtilTest.getMockWebResource( user, request );
+
+        List<Host> hosts = getHosts();
+
+        HostAPI hostAPI = mock(HostAPI.class);
+        when( hostAPI.findAll(user, Boolean.TRUE) ).thenReturn( hosts );
+
+        HttpSession session = request.getSession();
+        String currentSite = hosts.get(0).getIdentifier();
+        when( session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID ) )
+                .thenReturn( currentSite );
+
+        SiteBrowserResource siteBrowserResource =
+                new SiteBrowserResource(webResource, hostAPI, layoutAPI, I18NUtil.INSTANCE);
+
+        Response response = siteBrowserResource.currentSite(request);
+
+        RestUtilTest.verifySuccessResponse(response);
+        Map<String, Object> entity = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals( currentSite, entity.get("currentSite") );
+
+        List<Map<String, String>> sites = (List<Map<String, String>>) entity.get("sites");
+        assertEquals(1, sites.size());
+        assertEquals(hosts.get(0).getMap(), sites.get(0));
+    }
+
+    private List<Host> getHosts() {
+        return list(new Host(new Contentlet(mapAll(
+                map(
+                        "hostName", "demo.dotcms.com",
+                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
+                        "modDate", Integer.parseInt("125466"),
+                        "aliases", "",
+                        "keywords", "CMS, Web Content Management, Open Source, Java, J2EE",
+                        "description", "dotCMS starter site was designed to demonstrate what you can do with dotCMS.",
+                        "type", "host",
+                        "title", "demo.dotcms.com",
+                        "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
+                        "hostname", "demo.dotcms.com"),
+                map(
+                        "__DOTNAME__", "demo.dotcms.com",
+                        "addThis", "ra-4e02119211875e7b",
+                        "disabledWYSIWYG", new Object[]{},
+                        "host", "SYSTEM_HOST",
+                        "lastReview", 14503,
+                        "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380c",
+                        "owner", "dotcms.org.1",
+                        "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894797",
+                        "runDashboard", false,
+                        "languageId", 1
+
+                ),
+                map(
+                        "isDefault", true,
+                        "folder", "SYSTEM_FOLDER",
+                        "googleAnalytics", "UA-9877660-3",
+                        "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894797",
+                        "isSystemHost", false,
+                        "sortOrder", 0,
+                        "modUser", "dotcms.org.1"
+                )
+             ))) {
+                 @Override
+                 public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+                     return false;
+                 }
+             }, new Host(new Contentlet(mapAll(
+                map(
+                        "hostName", "system.dotcms.com",
+                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
+                        "modDate", Integer.parseInt("125466"),
+                        "aliases", "",
+                        "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
+                        "description", "dotCMS starter site was designed to demonstrate what you can do with dotCMS.",
+                        "type", "host",
+                        "title", "system.dotcms.com",
+                        "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
+                        "hostname", "system.dotcms.com"),
+                map(
+                        "__DOTNAME__", "system.dotcms.com",
+                        "addThis", "ra-4e02119211875e7b",
+                        "disabledWYSIWYG", new Object[]{},
+                        "host", "SYSTEM_HOST",
+                        "lastReview", 14503,
+                        "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
+                        "owner", "dotcms.org.1",
+                        "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
+                        "runDashboard", false,
+                        "languageId", 1
+                ),
+                map(
+                        "isDefault", true,
+                        "folder", "SYSTEM_FOLDER",
+                        "googleAnalytics", "UA-9877660-3",
+                        "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
+                        "isSystemHost", true,
+                        "sortOrder", 0,
+                        "modUser", "dotcms.org.1"
+                )))) {
+                 @Override
+                 public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+                     return false;
+                 }
+             }
+        );
     }
 }

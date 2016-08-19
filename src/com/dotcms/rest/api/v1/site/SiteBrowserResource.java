@@ -18,6 +18,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.util.HostNameComparator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -73,7 +75,34 @@ public class SiteBrowserResource implements Serializable {
         this.i18NUtil    = i18NUtil;
     }
 
+    @GET
+    @Path ("/currentSite")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response currentSite(@Context final HttpServletRequest req) {
+        final List<Map<String, Object>> hostResults;
+        Response response = null;
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+        final HttpSession session = req.getSession();
 
+        try {
+
+            Locale locale = LocaleUtil.getLocale(user, req);
+            hostResults = getOrderedHost(false, user, StringUtils.EMPTY);
+
+            String currentSite = (String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
+
+            response = Response.ok( new ResponseEntityView( map("sites", hostResults,
+                    "currentSite", currentSite))).build(); // 200
+        } catch (Exception e) { // this is an unknown error, so we report as a 500.
+
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return response;
+    }
 
     @GET
     @Path ("/filter/{filter}/archived/{archived}")
@@ -90,25 +119,17 @@ public class SiteBrowserResource implements Serializable {
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         final List<Map<String, Object>> hostResults;
         final User user = initData.getUser();
-        Locale locale = LocaleUtil.getLocale(req);
-        final String filter;
+         final String filter;
 
         try {
 
-            locale = (null != user && null == locale)?
-                    user.getLocale():locale;
+            Locale locale = LocaleUtil.getLocale(user, req);
 
             filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
                     filterParam.substring(0, filterParam.length() - 1):
                     (null != filterParam)? filterParam: StringUtils.EMPTY;
 
-            hostResults = this.hostAPI.findAll(user, Boolean.TRUE)
-                        .stream().sorted(HOST_NAME_COMPARATOR)
-                        .filter (host ->
-                                    !host.isSystemHost() && checkArchived(showArchived, host) &&
-                                    (host.getHostname().toLowerCase().startsWith(filter.toLowerCase())))
-                        .map    (host -> host.getMap())
-                        .collect(Collectors.toList());
+            hostResults = getOrderedHost(showArchived, user, filter);
 
             response = Response.ok(new ResponseEntityView
                     (map(   "result",         hostResults
@@ -125,6 +146,18 @@ public class SiteBrowserResource implements Serializable {
 
         return response;
     } // sites.
+
+    private List<Map<String, Object>> getOrderedHost(@PathParam("archived") boolean showArchived, User user, String filter) throws DotDataException, DotSecurityException {
+        List<Map<String, Object>> hostResults;
+        hostResults = this.hostAPI.findAll(user, Boolean.TRUE)
+                    .stream().sorted(HOST_NAME_COMPARATOR)
+                    .filter (host ->
+                                !host.isSystemHost() && checkArchived(showArchived, host) &&
+                                (host.getHostname().toLowerCase().startsWith(filter.toLowerCase())))
+                    .map    (host -> host.getMap())
+                    .collect(Collectors.toList());
+        return hostResults;
+    }
 
 
     @PUT
