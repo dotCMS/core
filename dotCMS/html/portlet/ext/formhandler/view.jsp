@@ -172,7 +172,7 @@ function downloadToExcel(structureInode){
   			</td>
             <td align="center">
             <a href="javascript:downloadToExcel('<%=structure.getInode()%>')">
-			<img src='/icon?i=csv.xls' border='0' alt='export results' align='absbottom'>
+			<img src='/html/images/icons/csv.png' border='0' alt='export results' align='absbottom'>
             </td>
             
   		</tr>
