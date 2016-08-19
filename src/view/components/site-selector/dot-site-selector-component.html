@@ -1,6 +1,6 @@
 <dot-select *ngIf="sites && sites.length > 1"
             [(ngModel)]="currentSite.identifier"
-
+            (change)="switchSite($event)"
             class="site-selector__title">
 
     <dot-option *ngFor="let site of sites"
