@@ -1,5 +1,5 @@
 import { DotcmsConfig } from './dotcms-config';
-import { IframeLegacyComponent } from '../../../view/components/common/iframe-legacy/IframeLegacyComponent';
+import { IframeLegacyComponent } from '../../../view/components/common/iframe-legacy/iframe-legacy-component';
 import { Observable } from 'rxjs/Rx';
 import { Routes } from '@ngrx/router';
 import { RuleEngineContainer } from '../../../view/components/rule-engine/rule-engine.container';

@@ -14,6 +14,9 @@ import {I18nService} from "../../../api/system/locale/I18n";
 import {Observable} from "rxjs/Observable";
 import {CwError} from "../../../api/system/http-response-util";
 import {BundleService, IPublishEnvironment} from "../../../api/services/bundle-service";
+import {SiteChangeListener} from "../../../api/util/site-change-listener";
+import {SiteService} from "../../../api/services/site-service";
+import {Site} from "../../../api/services/site-service";
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
@@ -84,7 +87,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
     ></cw-rule-engine>
 `
 })
-export class RuleEngineContainer {
+export class RuleEngineContainer extends SiteChangeListener{
 
   rules:RuleModel[] = []
 
@@ -102,16 +105,17 @@ export class RuleEngineContainer {
               private _conditionGroupService:ConditionGroupService,
               private _conditionService:ConditionService,
               private _resources:I18nService,
-              public bundleService:BundleService
+              public bundleService:BundleService,
+              siteService:SiteService
   ) {
-
     this.rules$.subscribe(( rules ) => {
       //console.log("RuleEngineContainer", "rules$.subscribe", rules)
       this.rules = rules
     })
 
     this.bundleService.loadPublishEnvironments().subscribe((environments) => this.environments = environments);
-    this.initRules()
+    console.log('this.state', this.state);
+    super( siteService );
   }
 
   private preCacheCommonResources(resources:I18nService) {
@@ -120,9 +124,9 @@ export class RuleEngineContainer {
     resources.get('api.system.ruleengine').subscribe((rsrc)=> {})
   }
 
-  private initRules() {
+  private initRules(site:Site) {
     this.state.loading = true
-    this._ruleService.loadRules().subscribe((rules:RuleModel[]) => {
+    this._ruleService.loadRules( site ).subscribe((rules:RuleModel[]) => {
       rules.sort(function (a, b) {
         return b.priority - a.priority;
       });
@@ -135,6 +139,10 @@ export class RuleEngineContainer {
         this._handle403Error(err)
       }
     })
+  }
+
+  changeSiteReload(site:Site) {
+    this.initRules( site );
   }
 
   alphaSort(key) {

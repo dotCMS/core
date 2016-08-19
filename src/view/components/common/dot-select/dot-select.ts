@@ -136,12 +136,13 @@ export class DotOption {
         this.node = myElement;
     }
 
-    ngOnInit() {
+    ngAfterViewInit() {
         this.select.addOption(this);
         this.text = this.node.nativeElement.firstChild.innerHTML.trim();
     }
 
     onClick() {
+        console.log('this.value', this.value);
         this.select.setOption({
             value: this.value,
             text: this.node.nativeElement.firstChild.innerHTML.trim()

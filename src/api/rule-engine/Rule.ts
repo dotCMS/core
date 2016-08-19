@@ -10,6 +10,7 @@ import {
 import {ServerSideFieldModel, ServerSideTypeModel} from "./ServerSideFieldModel";
 import {I18nService} from "../system/locale/I18n";
 import {CoreWebService} from "../services/core-web-service";
+import {Site} from "../services/site-service";
 
 
 export const RULE_CREATE = 'RULE_CREATE'
@@ -299,10 +300,10 @@ export class RuleService extends CoreWebService {
     });
   }
 
-  loadRules():Observable<RuleModel[]|CwError> {
+  loadRules( site:Site ):Observable<RuleModel[]|CwError> {
     return this.request({
       method: RequestMethod.Get,
-      url: this._rulesEndpointUrl
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${site.identifier}/ruleengine/rules`
     }).map(RuleService.fromServerRulesTransformFn);
   }
 

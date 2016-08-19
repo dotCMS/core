@@ -14,9 +14,11 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MdButton} from '@angular2-material/button/button';
 import {MdIcon, MdAnchor} from '@angular2-material/icon/icon';
 import { Router } from '@ngrx/router';
+import {SiteSelectorContainer} from "../../site-selector/dot-site-selector-container";
 
 @Component({
-    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdButton, MdIcon, GlobalSearch, MainNavigation, ToolbarNotifications],
+    directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdButton, MdIcon,
+        GlobalSearch, MainNavigation, ToolbarNotifications, SiteSelectorContainer],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [],

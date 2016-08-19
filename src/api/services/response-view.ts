@@ -16,8 +16,12 @@ export class ResponseView{
 
     private bodyJsonObject:any;
 
-    public constructor( public resp:Response ){
-        this.bodyJsonObject = JSON.parse(resp._body)
+    public constructor( private resp:Response ) {
+        try {
+            this.bodyJsonObject = JSON.parse(resp._body)
+        }catch(e){
+            this.bodyJsonObject = {};
+        }
     }
 
     get i18nMessagesMap():any{
@@ -30,13 +34,15 @@ export class ResponseView{
 
     get errorsMessages(): string {
         let errorMessages = '';
-        try {
+
+        if (this.bodyJsonObject.errors){
             this.bodyJsonObject.errors.forEach(e => {
                 errorMessages += e.message;
             });
-        }catch (ex) {
-            errorMessages = this.bodyJsonObject.error.split(':')[1];
+        }else{
+            errorMessages = this.response.statusText;
         }
+
         return errorMessages;
     }
 
