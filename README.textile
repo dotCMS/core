@@ -1,10 +1,10 @@
 h1. dotCMS
 
-h2. Open Source Enterprise Java Web Content Management System
+h2. Open Source Enterprise Java Content Management System
 
 h3. "http://dotcms.com":http://dotcms.com
 
-dotCMS is an open source web content management system (CMS), written in Java.  dotCMS has been designed from the ground up to deliver personalized, permission based content to multiple channels, from websites to mobile devices to XML/JSON/RSS feeds.
+dotCMS is an open source content management system (CMS), written in Java.  dotCMS has been designed from the ground up to deliver personalized, permission based content to multiple channels, from websites to mobile devices to CaaS (Content as a Service) consumners via XML/JSON/RSS feeds.
 
 dotCMS works hard to get out of the way of web developers, making editing content, custom templating, dynamic scripting and customization/integration surprisingly easy.  And all the tooling in dotCMS has been designed to assist web teams to quickly deliver world class, scaleable and manageable websites, mobile apps or content driven applications that can be managed by users with little to no web experience.
 
