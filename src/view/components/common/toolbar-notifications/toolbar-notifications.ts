@@ -7,9 +7,10 @@ import {MD_CARD_DIRECTIVES} from '@angular2-material/card/card';
 import {NotificationsList} from '../notifications/notifications';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
+import {DropdownComponent} from "../dropdown-component/dropdown-component";
 
 @Component({
-    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES],
+    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES, DropdownComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [DotcmsEventsService, NotificationsService],

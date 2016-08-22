@@ -1,9 +1,10 @@
-<button md-icon-button (click)="onToggle()" [disabled]="disabled" *ngIf="icon">
+<button [attr.md-icon-button]="icon ? true : null"
+        [attr.md-button]="title ? true : null"
+        (click)="onToggle()"
+        [disabled]="disabled"
+        *ngIf="icon">
     <i class="material-icons">{{icon}}</i>
-</button>
-
-<button md-button (click)="onToggle()" [disabled]="disabled" *ngIf="title">
-    <label>{{title}}</label><i class="material-icons">keyboard_arrow_down</i>
+    <ng-content select="header"></ng-content>
 </button>
 
 <div class="dropdown-content" *ngIf="show" [ngClass]="{'dropdown-content_align-right': alignRight, 'dropdown-content_align-left': !alignRight}">
