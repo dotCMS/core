@@ -22,12 +22,6 @@
     }
 
     .toolbar-notifications {
-        @include box_shadow(2);
-        background-color: $white;
-        color: $black;
-        position: absolute;
-        right: 0;
-        top: 45px;
         width: 350px;
 
         &:before {

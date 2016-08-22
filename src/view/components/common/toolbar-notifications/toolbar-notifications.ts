@@ -7,30 +7,28 @@ import {MD_CARD_DIRECTIVES} from '@angular2-material/card/card';
 import {NotificationsList} from '../notifications/notifications';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
+import {DropdownComponent} from '../dropdown-component/dropdown-component';
 
 @Component({
-    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES],
+    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES, DropdownComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [DotcmsEventsService, NotificationsService],
     selector: 'dot-toolbar-notifications',
     styleUrls: ['toolbar-notifications.css'],
-    templateUrl: ['toolbar-notifications.html'],
-    host: {
-        '(document:click)': 'handleClick($event)',
-    }
+    templateUrl: ['toolbar-notifications.html']
 })
 export class ToolbarNotifications {
-    private dotcmsEventsService:DotcmsEventsService;
+    private dotcmsEventsService: DotcmsEventsService;
     private elementRef;
-    private isNotificationsMarkedAsRead:boolean = false;
-    private notifications:Array<INotification> = [];
-    private notificationsUnreadCount:number = 0;
-    private notificationService:NotificationsService;
-    private showNotifications:boolean = false;
-    private i18nMessagesMap:string;
+    private isNotificationsMarkedAsRead: boolean = false;
+    private notifications: Array<INotification> = [];
+    private notificationsUnreadCount: number = 0;
+    private notificationService: NotificationsService;
+    private showNotifications: boolean = false;
+    private i18nMessagesMap: string;
 
-    constructor(@Inject('dotcmsConfig') private dotcmsConfig, _dotcmsEventsService:DotcmsEventsService, _notificationService:NotificationsService, myElement: ElementRef) {
+    constructor(@Inject('dotcmsConfig') private dotcmsConfig, _dotcmsEventsService: DotcmsEventsService, _notificationService: NotificationsService, myElement: ElementRef) {
         this.i18nMessagesMap = dotcmsConfig.configParams.config.i18nMessagesMap;
         this.dotcmsEventsService = _dotcmsEventsService;
         this.notificationService = _notificationService;
@@ -65,21 +63,6 @@ export class ToolbarNotifications {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
         });
-    }
-
-    private handleClick($event) {
-        let clickedComponent = $event.target;
-        let inside = false;
-        do {
-            if (clickedComponent === this.elementRef.nativeElement) {
-                inside = true;
-            }
-            clickedComponent = clickedComponent.parentNode;
-        } while (clickedComponent);
-
-        if (!inside) {
-            this.showNotifications = false;
-        }
     }
 
     private markAllAsRead():void {
