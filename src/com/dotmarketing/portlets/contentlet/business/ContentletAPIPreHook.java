@@ -134,6 +134,12 @@ public interface ContentletAPIPreHook {
      */
 	public boolean findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Pre Hook for {@link ContentletAPI#findContentletsByHostBaseType(Host, List, User, boolean)}
+     */
+	boolean findContentletsByHostBaseType(Host parentHost, List<Integer> includingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet

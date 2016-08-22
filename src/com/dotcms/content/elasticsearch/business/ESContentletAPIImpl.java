@@ -332,6 +332,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public List<Contentlet> findContentletsByHostBaseType(Host parentHost, List<Integer> includingBaseTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+
+            // Including content types
+            if(includingBaseTypes != null && !includingBaseTypes.isEmpty()) {
+                query.append(" +baseType:(").append(StringUtils.join(includingBaseTypes, " ")).append(")");
+            }
+
+            return perAPI.filterCollection(search(query.toString(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
         boolean localTransaction = false;
@@ -2637,7 +2655,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
 				WorkflowProcessor workflow=null;
 
-				if(contentlet.getMap().get("__disable_workflow__")==null) {
+				if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null) {
 				    workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
 				}
 
@@ -4782,7 +4800,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
-            newContentlet.getMap().put("__disable_workflow__", true);
+            newContentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
             // Use the generated identifier if one version of this contentlet  
             // has already been checked in
