@@ -54,12 +54,12 @@ export class SiteService  {
     }
 
     switchSite(siteId:String):Observable<any> {
-        return Observable.create(observer => {
-            this.coreWebService.requestView({
-                method: RequestMethod.Put,
-                url: `${this.switchSiteUrl}/${siteId}`
-            }).subscribe( response => this.setCurrentSiteIdentifier( siteId ),
-                error => observer.error( error ));
+        return this.coreWebService.requestView({
+            method: RequestMethod.Put,
+            url: `${this.switchSiteUrl}/${siteId}`
+        }).map(response => {
+            this.setCurrentSiteIdentifier(siteId);
+            return response;
         });
     }
 
