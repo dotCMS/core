@@ -1,50 +1,51 @@
 import {Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef} from '@angular/core';
-import { Router } from '@ngrx/router';
-import {LoginService} from '../../../../api/services/login-service';
-
 
 @Component({
     directives: [],
     encapsulation: ViewEncapsulation.Emulated,
+    host: {
+        '(document:click)': 'handleClick($event)',
+    },
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
     selector: 'dot-dropdown-component',
     styleUrls: ['dropdown-component.css'],
-    templateUrl: ['dropdown-component.html'],
-    host: {
-        '(document:click)': 'handleClick($event)',
-    }
+    templateUrl: ['dropdown-component.html']
 })
 
 export class DropdownComponent {
-    @Input() disabled:boolean = false;
-    @Input() icon:string = null;
-    @Input() title:string = null;
-    @Input() alignRight:boolean = false;
+    @Input() disabled: boolean = false;
+    @Input() icon: string = null;
+    @Input() title: string = null;
+    @Input() alignRight: boolean = false;
 
     @Output() open = new EventEmitter<>();
     @Output() toggle = new EventEmitter<boolean>();
     @Output() close = new EventEmitter<>();
 
-    private show:boolean = false;
+    private show: boolean = false;
 
-    constructor (private elementRef: ElementRef){}
+    constructor(private elementRef: ElementRef) {}
 
-    private onToggle():void{
-        this.show = !this.show;
-
-        if (this.show){
-            this.open.emit();
-        } else {
-            this.close.emit();
-        }
-
-        this.toggle.emit( this.show );
+    public closeIt(): void {
+        this.show = false;
     }
 
-    //TODO: we need doing this globally for all the components that need to detect if the click was outside it.
-    private handleClick($event) {
+    private onToggle(): void {
+        this.show = !this.show;
+
+        if (this.show) {
+            this.open.emit(null);
+        } else {
+            this.close.emit(null);
+        }
+
+        this.toggle.emit(this.show);
+    }
+
+    // TODO: we need doing this globally for all the components that need to detect if the click was outside it.
+    private handleClick($event): void {
         let clickedComponent = $event.target;
         let inside = false;
         do {

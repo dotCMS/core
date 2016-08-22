@@ -51,3 +51,9 @@
         border-left-width: 0;
     }
 }
+
+@mixin naked-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

@@ -1,9 +1,7 @@
-
-import {Component, EventEmitter, Inject, Input, Output, ViewEncapsulation} from '@angular/core';
+import {Component,ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../../api/services/login-service';
-import { Router } from '@ngrx/router';
+import {Router} from '@ngrx/router';
 import {LoginComponent} from './login-component';
-import {RoutingService} from '../../../../../api/services/routing-service';
 
 @Component({
     directives: [LoginComponent],

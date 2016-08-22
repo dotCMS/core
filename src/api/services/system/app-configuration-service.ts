@@ -1,19 +1,5 @@
-import { DotcmsConfig } from './dotcms-config';
-import { IframeLegacyComponent } from '../../../view/components/common/iframe-legacy/iframe-legacy-component';
-import { Observable } from 'rxjs/Rx';
-import { Routes } from '@ngrx/router';
-import { RuleEngineContainer } from '../../../view/components/rule-engine/rule-engine.container';
-
-
-import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
-import {IframeLegacyComponent} from '../../view/components/common/iframe-legacy/IframeLegacyComponent';
-import {MainComponent} from "../../../view/components/common/main-component/main-component";
-import {LoginPageComponent} from "../../../view/components/common/login/login-page-component";
-import {ForgotPasswordContainer} from "../../../view/components/common/login/forgot-password-component/forgot-password-container";
-import {LoginContainer} from "../../../view/components/common/login/login-component/login-container";
-import {ResetPasswordContainer} from "../../../view/components/common/login/reset-password-component/reset-password-container";
-
-
+import {DotcmsConfig} from './dotcms-config';
+import {Observable} from 'rxjs/Rx';
 
 export class AppConfigurationService {
 
@@ -35,7 +21,6 @@ export class AppConfigurationService {
    public getConfigProperties(): Observable<any> {
         return Observable.create(observer => {
             this.getConfig().subscribe((configurationItems) => {
-
                 observer.next({
                     dotcmsConfig: new DotcmsConfig(configurationItems.entity)
                 });

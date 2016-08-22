@@ -1,12 +1,10 @@
 import {Component, Inject, ViewEncapsulation} from '@angular/core';
-
-// Custom Components
+import {DotcmsConfig} from '../../api/services/system/dotcms-config';
 import {LoginPageComponent} from './common/login/login-page-component';
-import {MainComponent} from './common/main-component/main-component';
-import { Router } from '@ngrx/router';
 import {LoginService} from '../../api/services/login-service';
+import {MainComponent} from './common/main-component/main-component';
+import {Router} from '@ngrx/router';
 import {RoutingService} from '../../api/services/routing-service';
-import { DotcmsConfig } from '../../api/services/system/dotcms-config';
 
 @Component({
     directives: [MainComponent, LoginPageComponent],
@@ -32,19 +30,18 @@ export class AppComponent {
     }
 
     ngOnInit(): void {
-
         let queryParams: Map = this.getQueryParams();
 
         if (<boolean> queryParams.get('resetPassword')) {
             let token: string = queryParams.get('token');
             let userId: string = queryParams.get('userId');
-
             this.router.go(`public/resetPassword/${userId}?token=${token}`);
-        }else if ( this.dotcmsConfig.configParams.user ) {
-            this.routingService.setMenus( this.dotcmsConfig.configParams.menu );
-            this.loginService.setLogInUser( this.dotcmsConfig.configParams.user );
+        } else if (this.dotcmsConfig.configParams.user) {
+            this.routingService.setMenus(this.dotcmsConfig.configParams.menu);
+
+            this.loginService.setLogInUser(this.dotcmsConfig.configParams.loginAsUser || this.dotcmsConfig.configParams.user);
             this.router.go('dotCMS');
-        }else {
+        } else {
             this.router.go('public/login');
         }
     }

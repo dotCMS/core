@@ -1,0 +1,11 @@
+<dot-dropdown-component icon="account_circle" alignRight="true">
+    <ul class="user-menu">
+        <li class="user-menu__item">{{user.name || user.fullName}}</li>
+        <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!isLoggedAs">My Account</a></li>
+        <li class="user-menu__item"><a href="#" (click)="tooggleLoginAs($event)" *ngIf="!isLoggedAs">Login as</a></li>
+        <li class="user-menu__item"><a href="#" (click)="logout($event)" *ngIf="!isLoggedAs">Logout</a></li>
+        <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="isLoggedAs">Logout As</a></li>
+    </ul>
+</dot-dropdown-component>
+<dot-login-as *ngIf="showLoginAs" (cancel)="tooggleLoginAs($event)"></dot-login-as>
+<dot-my-account *ngIf="showMyAccount" (close)='toggleMyAccount()'></dot-my-account>

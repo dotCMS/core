@@ -1,0 +1,20 @@
+<!--TODO: overlay have to go when we use the digalog material 2 component-->
+<div class="login-as-overlay">
+    <div class="login-as">
+        <!--TODO: manage errors on required fields and errors messages -->
+        <form action="" #loginAsForm="ngForm" (submit)="dolLoginAs(loginAsForm.value)">
+            <div class="form-group">
+                <dot-select name="userId" id="user-list" (change)="userSelectedHandler($event)" ngModel required>
+                    <dot-option *ngFor="let user of userLists" value={{user.userId}}>{{user.fullName}}</dot-option>
+                </dot-select>
+            </div>
+            <div class="form-group" *ngIf="needPassword">
+                <md-input name="password" id="login-as-password" type="password" placeholder="Password" floatingPlaceholder="false"   [required]="needPassword" ngModel></md-input>
+            </div>
+            <div class="form-group">
+                <button md-raised-button [disabled]="!loginAsForm.valid">Change User</button>
+                <button md-button color="accent" (click)="close($event)">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
