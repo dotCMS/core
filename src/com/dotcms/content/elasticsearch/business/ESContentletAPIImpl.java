@@ -2633,7 +2633,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				WorkflowAPI wapi  = APILocator.getWorkflowAPI();
 				WorkflowProcessor workflow=null;
 
-				if(contentlet.getMap().get("__disable_workflow__")==null) {
+				if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null) {
 				    workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
 				}
 
@@ -4778,7 +4778,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
-            newContentlet.getMap().put("__disable_workflow__", true);
+            newContentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
             // Use the generated identifier if one version of this contentlet  
             // has already been checked in
