@@ -156,7 +156,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, hostAPI, layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
 
 
         Response response1 = siteBrowserResource.sites(request, null, false);
@@ -353,7 +353,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, hostAPI, layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
 
 
         Response response1 = siteBrowserResource.sites(request, "demo", false);
@@ -535,7 +535,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, hostAPI, layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
 
 
         Response response1 = siteBrowserResource.switchSite(request, null);
@@ -738,7 +738,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         );
 
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, hostAPI, layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
 
 
         Response response1 = siteBrowserResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
@@ -774,7 +774,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
                 .thenReturn( currentSite );
 
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, hostAPI, layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
 
         Response response = siteBrowserResource.currentSite(request);
 

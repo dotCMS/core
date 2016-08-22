@@ -37,8 +37,7 @@ import java.util.stream.Stream;
 import static com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections.sort;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.Logger.error;
-import static com.dotcms.rest.api.v1.site.SiteBrowserHelper.checkArchived;
-import static com.dotcms.rest.api.v1.site.SiteBrowserHelper.getHostManagerUrl;
+
 
 /**
  * Site Browser Resource, retrieve the sites and change sites.
@@ -47,30 +46,28 @@ import static com.dotcms.rest.api.v1.site.SiteBrowserHelper.getHostManagerUrl;
 @Path("/v1/site")
 public class SiteBrowserResource implements Serializable {
 
-    private final static HostNameComparator HOST_NAME_COMPARATOR =
-            new HostNameComparator();
     private static final String NO_FILTER = "*";
 
     private final WebResource webResource;
-    private final HostAPI hostAPI;
+    private final SiteBrowserHelper siteBrowserHelper;
     private final LayoutAPI layoutAPI;
     private final I18NUtil i18NUtil;
 
     public SiteBrowserResource() {
         this(new WebResource(),
-                APILocator.getHostAPI(),
+                SiteBrowserHelper.getInstance(),
                 APILocator.getLayoutAPI(),
                 I18NUtil.INSTANCE);
     }
 
     @VisibleForTesting
     public SiteBrowserResource(final WebResource webResource,
-                               final HostAPI hostAPI,
+                               final SiteBrowserHelper siteBrowserHelper,
                                final LayoutAPI layoutAPI,
                                final I18NUtil i18NUtil) {
 
         this.webResource = webResource;
-        this.hostAPI     = hostAPI;
+        this.siteBrowserHelper  = siteBrowserHelper;
         this.layoutAPI   = layoutAPI;
         this.i18NUtil    = i18NUtil;
     }
@@ -90,7 +87,10 @@ public class SiteBrowserResource implements Serializable {
         try {
 
             Locale locale = LocaleUtil.getLocale(user, req);
-            hostResults = getOrderedHost(false, user, StringUtils.EMPTY);
+            hostResults = siteBrowserHelper.getOrderedHost(false, user, StringUtils.EMPTY)
+                    .stream()
+                    .map(host -> host.getMap())
+                    .collect(Collectors.toList());
 
             String currentSite = (String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
 
@@ -129,7 +129,10 @@ public class SiteBrowserResource implements Serializable {
                     filterParam.substring(0, filterParam.length() - 1):
                     (null != filterParam)? filterParam: StringUtils.EMPTY;
 
-            hostResults = getOrderedHost(showArchived, user, filter);
+            hostResults = siteBrowserHelper.getOrderedHost(showArchived, user, filter)
+                    .stream()
+                    .map(host -> host.getMap())
+                    .collect(Collectors.toList());;
 
             response = Response.ok(new ResponseEntityView
                     (map(   "result",         hostResults
@@ -147,18 +150,6 @@ public class SiteBrowserResource implements Serializable {
         return response;
     } // sites.
 
-    private List<Map<String, Object>> getOrderedHost(@PathParam("archived") boolean showArchived, User user, String filter) throws DotDataException, DotSecurityException {
-        List<Map<String, Object>> hostResults;
-        hostResults = this.hostAPI.findAll(user, Boolean.TRUE)
-                    .stream().sorted(HOST_NAME_COMPARATOR)
-                    .filter (host ->
-                                !host.isSystemHost() && checkArchived(showArchived, host) &&
-                                (host.getHostname().toLowerCase().startsWith(filter.toLowerCase())))
-                    .map    (host -> host.getMap())
-                    .collect(Collectors.toList());
-        return hostResults;
-    }
-
 
     @PUT
     @Path ("/switch/{id}")
@@ -175,18 +166,16 @@ public class SiteBrowserResource implements Serializable {
         final HttpSession session = req.getSession();
         final User user = initData.getUser();
         boolean switchDone = false;
-        Optional<Host> hostFound = null;
+        Host hostFound = null;
 
         try {
 
             if (UtilMethods.isSet(hostId)) {
 
                 // we verified if the host id pass by parameter is one of the user's hosts
-                hostFound = this.hostAPI.findAll(user, Boolean.TRUE)
-                        .stream().filter (host -> !host.isSystemHost() && hostId.equals(host.getIdentifier()) )
-                        .findFirst();
+                hostFound = siteBrowserHelper.getHost( user, hostId);
 
-                if (hostFound.isPresent()) {
+                if (hostFound != null) {
 
                     session.setAttribute(
                             com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, hostId);
