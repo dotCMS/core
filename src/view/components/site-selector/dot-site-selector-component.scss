@@ -1,0 +1,20 @@
+@import "../../../scss/variables";
+
+:host {
+  .site-selector__title {
+    color: $white;
+    font-size: 20px;
+    margin: 0 0 0 10px;
+    align-self: center;
+
+    .site-selector__option {
+      color: $black;
+      font-size: 18px;
+    }
+  }
+
+  dot-select .dot-select__options{
+    margin-top: 50px;
+  }
+
+}

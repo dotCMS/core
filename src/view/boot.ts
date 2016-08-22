@@ -23,9 +23,10 @@ import {ResetPasswordContainer} from "./components/common/login/reset-password-c
 import {LoginContainer} from "./components/common/login/login-component/login-container";
 import {ForgotPasswordContainer} from "./components/common/login/forgot-password-component/forgot-password-container";
 import {LoginPageComponent} from "./components/common/login/login-page-component";
-import {IframeLegacyComponent} from "./components/common/iframe-legacy/IframeLegacyComponent";
+import {IframeLegacyComponent} from "./components/common/iframe-legacy/iframe-legacy-component";
 import {MainComponent} from "./components/common/main-component/main-component";
 import { Routes } from '@ngrx/router';
+import {SiteService} from "../api/services/site-service";
 
 new AppConfigurationService().getConfigProperties().subscribe(config => {
     
@@ -71,6 +72,7 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
         AppConfigurationService,
         RoutingService,
         LoginService,
+        SiteService,
         CoreWebService,
         HTTP_PROVIDERS,
         MdIconRegistry,

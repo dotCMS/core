@@ -38,6 +38,7 @@
     "./src/api/services/response-view.ts",
     "./src/api/services/login-service.ts",
     "./src/api/services/routing-service.ts",
+    "./src/api/services/site-service.ts",
     "./src/api/system/http-response-util.ts",
     "./src/api/system/locale/I18n.it-spec.ts",
     "./src/api/system/locale/I18n.ts",
@@ -50,6 +51,7 @@
     "./src/api/util/CwModel.ts",
     "./src/api/util/DevUtil.ts",
     "./src/api/util/ObservableHack.ts",
+    "./src/api/util/site-change-listener.ts",
     "./src/api/validation/Check.spec.ts",
     "./src/api/validation/Check.ts",
     "./src/api/validation/CustomValidators.ts",
@@ -103,8 +105,10 @@
     "./src/view/components/semantic/modules/restdropdown/boot.ts",
     "./src/view/components/semantic/modules/restdropdown/demo.ts",
     "./src/view/components/semantic/modules/restdropdown/RestDropdown.ts",
-    "./src/view/components/common/iframe-legacy/IframeLegacyComponent",
+    "./src/view/components/common/iframe-legacy/iframe-legacy-component",
     "./src/view/components/common/dropdown-component/dropdown-component.ts",
+    "./src/view/components/site-selector/dot-site-selector-component.ts",
+    "./src/view/components/site-selector/dot-site-selector-container.ts",
     "./src/view/components/app.ts",
     "./typings/main.d.ts"
   ]

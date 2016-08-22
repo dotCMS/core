@@ -1,4 +1,4 @@
-import { Response } from '@angular/http'
+import { Response } from '@angular/http';
 
 /**
  *
@@ -12,43 +12,49 @@ import { Response } from '@angular/http'
  * }
  * </code>
  */
-export class ResponseView{
+export class ResponseView {
 
-    private bodyJsonObject:any;
+    private bodyJsonObject: any;
 
-    public constructor( public resp:Response ){
-        this.bodyJsonObject = JSON.parse(resp._body)
+    public constructor( private resp: Response ) {
+        try {
+            this.bodyJsonObject = JSON.parse(resp._body);
+        }catch (e) {
+            this.bodyJsonObject = {};
+        }
     }
 
-    get i18nMessagesMap():any{
+    get i18nMessagesMap(): any{
         return this.bodyJsonObject.i18nMessagesMap;
     }
 
-    get entity():any{
+    get entity(): any{
         return this.bodyJsonObject.entity;
     }
 
     get errorsMessages(): string {
         let errorMessages = '';
-        try {
+
+        if (this.bodyJsonObject.errors) {
             this.bodyJsonObject.errors.forEach(e => {
                 errorMessages += e.message;
             });
-        }catch (ex) {
-            errorMessages = this.bodyJsonObject.error.split(':')[1];
+        } else {
+            errorMessages = this.response.statusText;
         }
+
         return errorMessages;
     }
 
-    get status() : number{
+    get status(): number{
         return this.resp.status;
     }
 
-    get response():Response{
+    get response(): Response{
         return this.resp;
     }
 
-    public existError(errorCode:string):boolean{
+    public existError(errorCode: string): boolean {
         return this.bodyJsonObject.errors &&
             this.bodyJsonObject.errors.filter( e => e.errorCode === errorCode).length > 0;
     }

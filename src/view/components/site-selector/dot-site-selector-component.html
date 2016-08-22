@@ -1,0 +1,12 @@
+<dot-select *ngIf="sites && sites.length > 1"
+            [(ngModel)]="currentSite.identifier"
+            (change)="switchSite($event)"
+            class="site-selector__title">
+
+    <dot-option *ngFor="let site of sites"
+                [value]="site.identifier"
+                class="site-selector__option">
+        {{site.hostName}}</dot-option>
+</dot-select>
+
+<h1 *ngIf="!sites || sites.length == 1" class="site-selector__title">{{currentSite ? currentSite.hostName : ''}}</h1>

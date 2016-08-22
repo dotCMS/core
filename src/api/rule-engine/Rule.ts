@@ -10,6 +10,8 @@ import {
 import {ServerSideFieldModel, ServerSideTypeModel} from "./ServerSideFieldModel";
 import {I18nService} from "../system/locale/I18n";
 import {CoreWebService} from "../services/core-web-service";
+import {Site} from "../services/site-service";
+import {SiteService} from "../services/site-service";
 
 
 export const RULE_CREATE = 'RULE_CREATE'
@@ -260,7 +262,7 @@ export class RuleService extends CoreWebService {
   _conditionTypes:{[key:string]:ServerSideTypeModel} = {}
   private _conditionTypesAry:ServerSideTypeModel[] = []
 
-  constructor(public _apiRoot:ApiRoot, _http:Http, private _resources:I18nService) {
+  constructor(public _apiRoot:ApiRoot, _http:Http, private _resources:I18nService, private siteService:SiteService) {
     super(_apiRoot, _http)
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
     this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
@@ -299,10 +301,10 @@ export class RuleService extends CoreWebService {
     });
   }
 
-  loadRules():Observable<RuleModel[]|CwError> {
+  loadRules( ):Observable<RuleModel[]|CwError> {
     return this.request({
       method: RequestMethod.Get,
-      url: this._rulesEndpointUrl
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.site.identifier}/ruleengine/rules`
     }).map(RuleService.fromServerRulesTransformFn);
   }
 

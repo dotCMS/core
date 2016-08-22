@@ -136,7 +136,7 @@ export class DotOption {
         this.node = myElement;
     }
 
-    ngOnInit() {
+    ngAfterViewInit() {
         this.select.addOption(this);
         this.text = this.node.nativeElement.firstChild.innerHTML.trim();
     }
