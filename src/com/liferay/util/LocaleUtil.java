@@ -199,6 +199,23 @@ public class LocaleUtil {
 	}
 
 	/**
+	 * If exists one {@link Locale} saved in the {@link HttpSession} then return it, if not exists any {@link Locale} link
+	 * in the {@link HttpSession} and user is not null then return {@link User#getLocale()}.<br>
+	 *
+	 * If user is null and not exists any {@link Locale} in the {@link HttpSession} then return null.
+	 *
+	 * @param user
+	 * @param req
+     * @return
+	 *
+	 * @see LocaleUtil#getLocale(HttpServletRequest)
+     */
+	public static Locale getLocale (User user, final HttpServletRequest req) {
+
+		return (null != user && null == LocaleUtil.getLocale(req)) ? user.getLocale() : LocaleUtil.getLocale(req);
+	}
+
+	/**
 	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
 	 * if the LOCALE_KEY is also null, will get the request default one.
 	 *

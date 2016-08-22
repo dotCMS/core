@@ -43,7 +43,7 @@ public abstract class RestUtilTest {
         return request;
     }
 
-    public static void verifyErrorResponse(Response response, int statusExpected, String errorCodeExpected) {
+    public static void verifyErrorResponse(final Response response, final int statusExpected, final String errorCodeExpected) {
         assertNotNull(response);
         assertEquals(response.getStatus(), statusExpected);
         assertNotNull(response.getEntity());
@@ -56,7 +56,7 @@ public abstract class RestUtilTest {
 
     }
 
-    public static void verifySuccessResponse(Response response) {
+    public static void verifySuccessResponse(final Response response) {
         assertNotNull(response);
         assertEquals(response.getStatus(), 200);
         assertNotNull(response.getEntity());
@@ -81,5 +81,15 @@ public abstract class RestUtilTest {
         when ( mockLogMapper.isLogEnabled( any() ) ).thenReturn( false );
 
         LogMapper.setLogMapper( mockLogMapper );
+    }
+
+    public static WebResource getMockWebResource(final User user, final HttpServletRequest req) {
+        WebResource webResource  = mock(WebResource.class);
+
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(null, true, req, true, null)).thenReturn(initDataObject);
+
+        return webResource;
     }
 }
