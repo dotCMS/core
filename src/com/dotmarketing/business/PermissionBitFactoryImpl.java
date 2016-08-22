@@ -997,6 +997,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" group by contentlet.identifier)";
 
 	/*
+	 * //TODO: We can improve this queries just like I did with Oracle.
+	 * 
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
 	 * does not already have a reference or individual permissions assigned
 	 *
@@ -1045,8 +1047,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		DbConnectionFactory.isOracle()?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
-				"	from identifier where identifier.id in (" +
-				"		" + selectChildrenContentByPathSQL + " and" +
+				"		from identifier where asset_type='contentlet' and identifier.id <> identifier.host_inode " +
+				"		and identifier.host_inode = ? and identifier.parent_path like ? and" +
 				"		identifier.id not in (" +
 				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 				"                                join identifier on (identifier.id=ref_folder.identifier) " +
@@ -1056,7 +1058,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
 				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +

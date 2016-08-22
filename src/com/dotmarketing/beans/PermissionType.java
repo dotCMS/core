@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 public enum PermissionType {
 
     TEMPLATE(Template.class.getCanonicalName(), ApplyTo.ONLY_HOST),
+    TEMPLATE_LAYOUT(TemplateLayout.class.getCanonicalName(), ApplyTo.ONLY_HOST),
     CONTAINER(Container.class.getCanonicalName(), ApplyTo.ONLY_HOST),
     FOLDER(Folder.class.getCanonicalName()),
     FILE(File.class.getCanonicalName()),
@@ -24,8 +25,7 @@ public enum PermissionType {
     LINK(Link.class.getCanonicalName()),
     CONTENTLET(Contentlet.class.getCanonicalName()),
     STRUCTURE(Structure.class.getCanonicalName()),
-    RULE(Rule.class.getCanonicalName()),
-    TEMPLATE_LAYOUT(TemplateLayout.class.getCanonicalName());
+    RULE(Rule.class.getCanonicalName());
 
     private final ApplyTo applyTo;
     private String key;
@@ -52,8 +52,8 @@ public enum PermissionType {
         return applyTo;
     }
 
-    public static enum ApplyTo{
+    public enum ApplyTo{
         ONLY_HOST, HOST_AND_FOLDER
-    };
+    }
 
 }

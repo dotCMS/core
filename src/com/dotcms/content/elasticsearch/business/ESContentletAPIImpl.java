@@ -16,6 +16,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.dotcms.notifications.business.NotificationAPI;
+
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.exception.*;
 
@@ -1451,9 +1453,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean deleteContentlets(List<Contentlet> contentlets, User user,
             boolean respectFrontendRoles, boolean isDeletingAHost) throws DotDataException,
             DotSecurityException {
+
         boolean noErrors = true;
 
-       if(contentlets == null || contentlets.size() == 0){
+        if(contentlets == null || contentlets.size() == 0){
             Logger.info(this, "No contents passed to delete so returning");
             noErrors = false;
             return noErrors;
@@ -1461,7 +1464,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
             if(contentlet.getInode().equals("")) {
-            	logContentletActivity(contentlet, "Error Deleting Content", user);
+                logContentletActivity(contentlet, "Error Deleting Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
             canLock(contentlet, user);
@@ -1469,54 +1472,68 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<Contentlet> perCons = perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
 
         if(perCons.size() != contentlets.size()){
-        	logContentletActivity(contentlets, "Error Deleting Content", user);
+            logContentletActivity(contentlets, "Error Deleting Content", user);
             throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown")
-            		+" does not have permission to delete some or all of the contentlets");
+                    +" does not have permission to delete some or all of the contentlets");
         }
 
         // Log contentlet identifiers that we are going to delete
-        HashSet<String> l = new HashSet<String>();
+        HashSet<String> l = new HashSet();
         for (Contentlet contentlet : contentlets) {
             l.add(contentlet.getIdentifier());
         }
         AdminLogger.log(this.getClass(), "delete", "User trying to delete the following contents: " + l.toString(), user);
 
+        HashSet<String> deletedIdentifiers = new HashSet();
+
         Iterator<Contentlet> itr = perCons.iterator();
-        while(itr.hasNext()) {
+        while( itr.hasNext() ) {
             Contentlet con = itr.next();
 
-            boolean cannotDelete = false;
-
-            // Find all multi-language working contentlets
-            List<Contentlet> otherLanguageCons = conFac.getContentletsByIdentifier(con.getIdentifier());
-            if (otherLanguageCons.size() == 1) {
-            	List<Contentlet> contentletList = new ArrayList<>();
-            	contentletList.add(con);
-            	destroyContentlets(contentletList, user, false);
-            	continue;
+            //If we are deleting a Site/Host, we can call directly the destroy method.
+            //No need to validate anything.
+            if ( isDeletingAHost ) {
+                //We need to make sure that we only destroy a identifier once.
+                //If the contentlet has several languages we could send same identifier several times.
+                if( !deletedIdentifiers.contains(con.getIdentifier()) ){
+                    con.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+                    destroyContentlets(Lists.newArrayList(con), user, false);
+                }
             } else {
-				if (!isDeletingAHost) {
-					if (!con.isArchived()) {
-						cannotDelete = true;
-					}
-            	}
-				if(cannotDelete && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
-	            	logContentletActivity(con, "Error Deleting Content", user);
+                //If we are not deleting a site, the course of action will depend
+                // on the amount of languages of each contentlet.
 
-                    this.esContentletAPIHelper.generateNotificationCanNotDelete
-                            (this.notificationAPI, user.getLocale(), user.getUserId(), con.getInode());
-	            }
-				conFac.delete(perCons, false);
-				for (Contentlet contentlet : contentlets) {
-		        	try {
-						PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier(), contentlet.getLanguageId());
-					} catch (DotPublisherException e) {
-						Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier());
-						Logger.debug(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier(), e);
-					}
-				}
+                // Find all multi-language working contentlets
+                List<Contentlet> otherLanguageCons = conFac.getContentletsByIdentifier(con.getIdentifier());
+                if (otherLanguageCons.size() == 1) {
+                    destroyContentlets(Lists.newArrayList(con), user, false);
+
+                } else if (otherLanguageCons.size() > 1) {
+                    if(!con.isArchived() && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
+                        logContentletActivity(con, "Error Deleting Content", user);
+                        String errorMsg = "Contentlet with Inode " + con.getInode()
+                            + " cannot be deleted because it's not archived. Please archive it first before deleting it.";
+                        Logger.error(this, errorMsg);
+                        APILocator.getNotificationAPI().generateNotification(errorMsg, NotificationLevel.INFO, user.getUserId());
+                        throw new DotStateException(errorMsg);
+                    }
+                    //TODO we still have several things that need cleaning here:
+                    //TODO https://github.com/dotCMS/core/issues/9146
+                    conFac.delete(perCons, false);
+
+                    for (Contentlet contentlet : contentlets) {
+                        try {
+                            PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier(), contentlet.getLanguageId());
+                        } catch (DotPublisherException e) {
+                            Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier());
+                            Logger.debug(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier(), e);
+                        }
+                    }
+                }
             }
+            deletedIdentifiers.add(con.getIdentifier());
         }
+
         return noErrors;
     }
 

@@ -268,10 +268,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( liveContentlet.getStructureInode() );
 
         if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
-        	if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
-                if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().after( new Date() ) ) {
-                    throw new PublishStateException( "message.contentlet.unpublish.expired" );
-                }
+        	if ( UtilMethods.isSet( structure.getExpireDateVar() ) &&
+                UtilMethods.isSet( ident.getSysExpireDate() ) &&
+                ident.getSysExpireDate().after( new Date() ) ) {//Verify if the structure have a Expire Date Field set
+
+                throw new PublishStateException(
+                    "Can't unpublish content that is scheduled to expire on a future date. Identifier: " + ident.getId() );
             }
         }
 
