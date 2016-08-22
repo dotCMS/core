@@ -11,7 +11,7 @@ export class SiteService  {
     private allSiteUrl:string;
     private switchSiteUrl:string;
 
-    private currentSite:Site;
+    private site:Site;
     private sites:Site[];
 
     private switchSiteObservable:Observable<Site>;
@@ -25,7 +25,7 @@ export class SiteService  {
             this.switchSiteObserver = observer;
 
             if ( this.currentSite ) {
-                this.switchSiteObserver.next(this.currentSite);
+                this.switchSiteObserver.next(this.site);
             }
         });
     }
@@ -38,7 +38,7 @@ export class SiteService  {
                 url: this.allSiteUrl
             }).subscribe( response =>{
                 this.sites = response.entity.sites;
-                this.setCurrentSite( response.entity.currentSite );
+                this.setCurrentSiteIdentifier( response.entity.currentSite );
 
                 observer.next({
                     currentSite: Object.assign( {}, this.currentSite ),
@@ -48,8 +48,8 @@ export class SiteService  {
         });
     }
 
-    private setCurrentSite(siteIdentifier:string){
-        this.currentSite = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
+    private setCurrentSiteIdentifier(siteIdentifier:string){
+        this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
 
         if (this.switchSiteObserver) {
             this.switchSiteObserver.next(this.currentSite);
@@ -61,13 +61,17 @@ export class SiteService  {
             this.coreWebService.requestView({
                 method: RequestMethod.Put,
                 url: `${this.switchSiteUrl}/${siteId}`
-            }).subscribe( response => this.setCurrentSite( siteId ),
+            }).subscribe( response => this.setCurrentSiteIdentifier( siteId ),
                 error => observer.error( error ));
         });
     }
 
     public subscribeSwitchSite():Observable<Site>{
         return this.switchSiteObservable;
+    }
+
+    get currentSite():Site{
+        return this.site;
     }
 }
 

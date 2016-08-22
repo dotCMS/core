@@ -123,9 +123,9 @@ export class RuleEngineContainer extends SiteChangeListener{
     resources.get('api.system.ruleengine').subscribe((rsrc)=> {})
   }
 
-  private initRules(site:Site) {
+  private initRules() {
     this.state.loading = true
-    this._ruleService.loadRules( site ).subscribe((rules:RuleModel[]) => {
+    this._ruleService.loadRules().subscribe((rules:RuleModel[]) => {
       rules.sort(function (a, b) {
         return b.priority - a.priority;
       });
@@ -140,8 +140,8 @@ export class RuleEngineContainer extends SiteChangeListener{
     })
   }
 
-  changeSiteReload(site:Site) {
-    this.initRules( site );
+  changeSiteReload() {
+    this.initRules();
   }
 
   alphaSort(key) {

@@ -24,7 +24,7 @@ export class SiteSelectorComponent{
 
     }
 
-    ngOnInit(){
+    ngOnInit() {
         this.siteService.getAllSites().subscribe( response => {
             this.currentSite = response.currentSite;
             this.sites = response.sites;

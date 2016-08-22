@@ -31,7 +31,7 @@ export class AppComponent {
 
     }
 
-    ngOnInit(){
+    ngOnInit() {
 
         let queryParams:Map = this.getQueryParams();
 
