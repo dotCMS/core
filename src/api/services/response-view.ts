@@ -39,7 +39,7 @@ export class ResponseView {
             this.bodyJsonObject.errors.forEach(e => {
                 errorMessages += e.message;
             });
-        }else{
+        }else {
             errorMessages = this.response.statusText;
         }
 
