@@ -37,12 +37,11 @@ export class SiteService  {
                 method: RequestMethod.Get,
                 url: this.allSiteUrl
             }).subscribe( response =>{
-                console.log('RESPONSE', response);
                 this.sites = response.entity.sites;
                 this.setCurrentSite( response.entity.currentSite );
 
                 observer.next({
-                    currentSite: this.currentSite,
+                    currentSite: Object.assign( {}, this.currentSite ),
                     sites: response.entity.sites
                 });
             }, error => observer.next( error ));
@@ -50,7 +49,7 @@ export class SiteService  {
     }
 
     private setCurrentSite(siteIdentifier:string){
-        this.currentSite = this.sites.filter( site => site.identifier === siteIdentifier)[0];
+        this.currentSite = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
 
         if (this.switchSiteObserver) {
             this.switchSiteObserver.next(this.currentSite);

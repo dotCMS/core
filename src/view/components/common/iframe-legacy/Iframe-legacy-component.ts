@@ -57,7 +57,9 @@ export class IframeLegacyComponent extends SiteChangeListener{
 
 
     changeSiteReload(){
-        this.loadingInProgress = true;
-        this.iframeElement.contentWindow.location.reload();
+        if (this.iframeElement && this.iframeElement.contentWindow) {
+            this.loadingInProgress = true;
+            this.iframeElement.contentWindow.location.reload();
+        }
     }
 }
