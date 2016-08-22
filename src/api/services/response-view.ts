@@ -19,7 +19,7 @@ export class ResponseView {
     public constructor( private resp: Response ) {
         try {
             this.bodyJsonObject = JSON.parse(resp._body);
-        }catch(e){
+        }catch (e) {
             this.bodyJsonObject = {};
         }
     }
@@ -39,7 +39,7 @@ export class ResponseView {
             this.bodyJsonObject.errors.forEach(e => {
                 errorMessages += e.message;
             });
-        }else {
+        } else {
             errorMessages = this.response.statusText;
         }
 
