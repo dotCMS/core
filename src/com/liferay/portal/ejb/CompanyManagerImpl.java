@@ -234,7 +234,8 @@ public class CompanyManagerImpl
 			CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
 	     try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL("update user_ set languageid = ?, timezoneid = ?, skinid = ?, dottedskins = " + rs + ", roundedskins = " + ds + ", resolution = ? where companyid = ?");
+			dc.setSQL("update user_ set languageid = ?, timezoneid = ?, skinid = ?, dottedskins = " + rs + ", roundedskins = " + ds + ", resolution = ? where companyid = ? " +
+				" and user_.delete_in_progress = " + DbConnectionFactory.getDBFalse());
 			dc.addParam(languageId);
 			dc.addParam(timeZoneId);
 			dc.addParam(skinId);

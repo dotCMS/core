@@ -138,11 +138,12 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	fileBrowserView: 'details',
 	onlyFiles: false,
 	allowFileUpload: true,
+	contentLanguage: 0,
 	
 	postCreate: function () {
 		
 		if(this.value != '') {
-			BrowserAjax.getFileInfo(this.value, dojo.hitch(this, this._setFile));
+			BrowserAjax.getFileInfo(this.value, this.contentLanguage, dojo.hitch(this, this._setFile));
 			dojo.style(this.removeFileButton.domNode, { display: '' });
 		}
 		
@@ -177,14 +178,13 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 			}
 
 			if(fileInfo.mimeType.indexOf('image/svg') <0 && fileInfo.mimeType.indexOf('image/x-icon')<0) {
-				this.thumbnailImage.src = "/contentAsset/image/" + fileInfo.identifier + "/fileAsset/filter/Thumbnail/thumbnail_w/" + this.thumbnailSize + "/rand/" + Math.random();
+				this.thumbnailImage.src = "/contentAsset/image/" + fileInfo.identifier + "/fileAsset/filter/Thumbnail/thumbnail_w/" + this.thumbnailSize + "/rand/" + Math.random()+"?language_id="+this.contentLanguage;
 				this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
 			}else{
-				this.thumbnailImage.src = '/contentAsset/image/' + fileInfo.identifier + '/fileAsset/'+fileInfo.inode;
+				this.thumbnailImage.src = '/contentAsset/image/' + fileInfo.identifier + '/fileAsset/'+fileInfo.inode+'?language_id='+this.contentLanguage;
 			}
 
-
-	        dojo.style(this.thumbnailWrapper, { display : "" });		
+	        dojo.style(this.thumbnailWrapper, { display : "" });
 		} else {
 	        dojo.style(this.thumbnailWrapper, { display : "none" });		
 		}
@@ -222,7 +222,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 		this.thumbnailSize = newValue;
 
 		if (this.thumbnailImage.src.indexOf("Thumbnail")>0) {
-			this.thumbnailImage.src = "/contentAsset/image/" + this.value + "/fileAsset/filter/Thumbnail/thumbnail_w/" + newValue + "/rand/" + Math.random();
+			this.thumbnailImage.src = "/contentAsset/image/" + this.value + "/fileAsset/filter/Thumbnail/thumbnail_w/" + newValue + "/rand/" + Math.random()+"?language_id="+this.contentLanguage;
 		}
 
 		dojo.cookie(this.id + '-thumbsize', new String(newValue));

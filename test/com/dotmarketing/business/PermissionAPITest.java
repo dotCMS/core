@@ -1,21 +1,8 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ajax.RoleAjax;
@@ -41,7 +28,23 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -105,17 +108,7 @@ public class PermissionAPITest extends TestBase {
 
     @Test
     public void doesRoleHavePermission() throws DotDataException, DotSecurityException {
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole");
-            nrole.setRoleKey("TestingRole");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole");
 
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
@@ -130,32 +123,9 @@ public class PermissionAPITest extends TestBase {
 
     @Test
     public void doesUserHavePermission() throws DotDataException, DotSecurityException {
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole2");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole2");
-            nrole.setRoleKey("TestingRole2");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 2");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole2");
 
-        User user=null;
-        try {
-            user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
-        }
-        catch(Exception ex) {
-            user=null;
-        }
-        finally {
-            if(user==null || !UtilMethods.isSet(user.getUserId())) {
-                user=APILocator.getUserAPI().createUser("useruser", "user@fake.org");
-                APILocator.getUserAPI().save(user, sysuser, false);
-                user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
-            }
-        }
+        User user= UserTestUtil.getUser("useruser", false, true);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -229,17 +199,7 @@ public class PermissionAPITest extends TestBase {
         Folder f1=APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
         Folder f2=APILocator.getFolderAPI().findFolderByPath("/f2/", host, sysuser, false);
 
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole3");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole3");
-            nrole.setRoleKey("TestingRole3");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 3");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole3");
 
         perm.permissionIndividually(host, f1, sysuser, false);
         perm.permissionIndividually(host, f2, sysuser, false);
@@ -267,17 +227,8 @@ public class PermissionAPITest extends TestBase {
 
     @Test
     public void getPermissions() throws DotDataException, DotSecurityException {
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole4");
-        if(!UtilMethods.isSet(nrole) || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole4");
-            nrole.setRoleKey("TestingRole4");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 4");
-            nrole = APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole4");
+
         APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
         perm.permissionIndividually(host, f, sysuser, false);
@@ -305,17 +256,8 @@ public class PermissionAPITest extends TestBase {
 
     @Test
     public void getRolesWithPermission() throws DotDataException, DotSecurityException {
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole6");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole6");
-            nrole.setRoleKey("TestingRole6");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 6");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole6");
+
         APILocator.getFolderAPI().createFolders("/f2/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f2/", host, sysuser, false);
         perm.permissionIndividually(host, f, sysuser, false);
@@ -340,32 +282,9 @@ public class PermissionAPITest extends TestBase {
 
     @Test
     public void getUsersWithPermission() throws DotDataException, DotSecurityException {
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole5");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole5");
-            nrole.setRoleKey("TestingRole5");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 5");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole5");
 
-        User user=null;
-        try {
-            user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
-        }
-        catch(Exception ex) {
-            user=null;
-        }
-        finally {
-            if(user==null || !UtilMethods.isSet(user.getUserId())) {
-                user=APILocator.getUserAPI().createUser("useruser", "user@fake.org");
-                APILocator.getUserAPI().save(user, sysuser, false);
-                user=APILocator.getUserAPI().loadUserById("useruser", sysuser, false);
-            }
-        }
+        User user= UserTestUtil.getUser("useruser", false, true);
 
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
@@ -394,17 +313,7 @@ public class PermissionAPITest extends TestBase {
 
     @Test
     public void save() throws DotStateException, DotDataException, DotSecurityException {
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole7");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole7");
-            nrole.setRoleKey("TestingRole7");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 7");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole7");
 
         APILocator.getFolderAPI().createFolders("/f4/", host, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", host, sysuser, false);
@@ -555,17 +464,7 @@ public class PermissionAPITest extends TestBase {
         hh.setHostname("issue781.demo.dotcms.com");
         hh=APILocator.getHostAPI().save(hh, sysuser, false);
 
-        Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole7");
-        if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-            nrole=new Role();
-            nrole.setName("TestingRole7");
-            nrole.setRoleKey("TestingRole7");
-            nrole.setEditUsers(true);
-            nrole.setEditPermissions(true);
-            nrole.setEditLayouts(true);
-            nrole.setDescription("Testing Role 7");
-            APILocator.getRoleAPI().save(nrole);
-        }
+        Role nrole=getRole("TestingRole7");
 
         try {
             Folder f1 = APILocator.getFolderAPI().createFolders("/f1/", hh, sysuser, false);
@@ -816,29 +715,9 @@ public class PermissionAPITest extends TestBase {
         hh.setHostname("issue560_"+System.currentTimeMillis()+".demo.dotcms.com");
         hh=APILocator.getHostAPI().save(hh, sysuser, false);
 
-        Role nrole1=APILocator.getRoleAPI().loadRoleByKey("TestingRole8");
-        if(nrole1==null || !UtilMethods.isSet(nrole1.getId())) {
-            nrole1=new Role();
-            nrole1.setName("TestingRole8");
-            nrole1.setRoleKey("TestingRole8");
-            nrole1.setEditUsers(true);
-            nrole1.setEditPermissions(true);
-            nrole1.setEditLayouts(true);
-            nrole1.setDescription("Testing Role 8");
-            nrole1 = APILocator.getRoleAPI().save(nrole1);
-        }
+        Role nrole1 = getRole("TestingRole8");
 
-        Role nrole2=APILocator.getRoleAPI().loadRoleByKey("TestingRole9");
-        if(nrole2==null || !UtilMethods.isSet(nrole2.getId())) {
-            nrole2=new Role();
-            nrole2.setName("TestingRole9");
-            nrole2.setRoleKey("TestingRole9");
-            nrole2.setEditUsers(true);
-            nrole2.setEditPermissions(true);
-            nrole2.setEditLayouts(true);
-            nrole2.setDescription("Testing Role 9");
-            nrole2 = APILocator.getRoleAPI().save(nrole2);
-        }
+        Role nrole2 = getRole("TestingRole9");
 
         Structure s=null;
         Contentlet cont1=null;
@@ -912,17 +791,7 @@ public class PermissionAPITest extends TestBase {
     	perm.permissionIndividually(perm.findParentPermissionable(m2), m2, sysuser, false);
     	perm.permissionIndividually(perm.findParentPermissionable(m3), m3, sysuser, false);
 
-    	Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole");
-    	if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-    		nrole=new Role();
-    		nrole.setName("TestingRole");
-    		nrole.setRoleKey("TestingRole");
-    		nrole.setEditUsers(true);
-    		nrole.setEditPermissions(true);
-    		nrole.setEditLayouts(true);
-    		nrole.setDescription("Testing Role");
-    		APILocator.getRoleAPI().save(nrole);
-    	}
+    	Role nrole=getRole("TestingRole");
 
     	Permission p=new Permission(m1.getInode(),nrole.getId(),PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,false);
     	perm.save(p, m1, sysuser, false);
@@ -938,17 +807,7 @@ public class PermissionAPITest extends TestBase {
          hh.setHostname("issue1112.demo.dotcms.com");
          hh=APILocator.getHostAPI().save(hh, sysuser, false);
 
-         Role nrole=APILocator.getRoleAPI().loadRoleByKey("TestingRole10");
-         if(nrole==null || !UtilMethods.isSet(nrole.getId())) {
-             nrole=new Role();
-             nrole.setName("TestingRole10");
-             nrole.setRoleKey("TestingRole10");
-             nrole.setEditUsers(true);
-             nrole.setEditPermissions(true);
-             nrole.setEditLayouts(true);
-             nrole.setDescription("Testing Role 10");
-             APILocator.getRoleAPI().save(nrole);
-         }
+         Role nrole=getRole("TestingRole10");
 
          Map<String,String> mm=new HashMap<String,String>();
          mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
@@ -994,6 +853,191 @@ public class PermissionAPITest extends TestBase {
              }
          }
 
+    }
+
+    @Test
+    public void testGetUsersWithoutFilter() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = UserTestUtil.getUser("useruser", false, true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, null, -1, -1);
+
+        assertNotNull(users);
+        assertTrue(users.size() > 0);
+        assertTrue(users.contains(user));
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersWithFilter() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = UserTestUtil.getUser("useruser", false, true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser", -1, -1);
+
+        assertNotNull(users);
+        assertTrue(users.size() == 1);
+        assertTrue(users.contains(user));
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersCountWithoutFilter() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = UserTestUtil.getUser("useruser", false, true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, null);
+
+        assertTrue(count > 0);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersCountWithFilter() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = UserTestUtil.getUser("useruser", false, true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "useruser");
+
+        assertTrue(count == 1);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersCountDeleted() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = UserTestUtil.getUser("deletedUser", true, true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        int count = perm.getUserCount(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser");
+
+        assertTrue(count == 0);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    @Test
+    public void testGetUsersDeleted() throws DotDataException, DotSecurityException {
+
+        Role nrole = getRole("TestingRole11");
+
+        User user = UserTestUtil.getUser("deletedUser", true, true);
+
+        if (!APILocator.getRoleAPI().doesUserHaveRole(user, nrole)) {
+            APILocator.getRoleAPI().addRoleToUser(nrole, user);
+        }
+
+        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(nrole.getId());
+        p1.setInode(f.getInode());
+        perm.save(p1, f, sysuser, false);
+
+        List<User> users = perm.getUsers(f.getInode(), PermissionAPI.PERMISSION_READ, "deletedUser", -1, -1);
+
+        assertNotNull(users);
+        assertTrue(users.size() == 0);
+
+        APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    /**
+     * Generate a new role with the given name
+     */
+    private Role getRole(String roleName) throws DotDataException {
+        Role nrole = APILocator.getRoleAPI().loadRoleByKey(roleName);
+        if (!UtilMethods.isSet(nrole) || !UtilMethods.isSet(nrole.getId())) {
+            nrole = new Role();
+            nrole.setName(roleName);
+            nrole.setRoleKey(roleName);
+            nrole.setEditUsers(true);
+            nrole.setEditPermissions(true);
+            nrole.setEditLayouts(true);
+            nrole.setDescription(roleName);
+            nrole = APILocator.getRoleAPI().save(nrole);
+        }
+        return nrole;
     }
 
 }

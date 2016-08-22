@@ -1,20 +1,14 @@
 package com.dotmarketing.business;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotmarketing.beans.*;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionReference;
+import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -51,6 +45,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.navigation.NavResult;
 import com.liferay.portal.model.User;
+
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -991,6 +997,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" group by contentlet.identifier)";
 
 	/*
+	 * //TODO: We can improve this queries just like I did with Oracle.
+	 * 
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
 	 * does not already have a reference or individual permissions assigned
 	 *
@@ -1039,8 +1047,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		DbConnectionFactory.isOracle()?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
-				"	from identifier where identifier.id in (" +
-				"		" + selectChildrenContentByPathSQL + " and" +
+				"		from identifier where asset_type='contentlet' and identifier.id <> identifier.host_inode " +
+				"		and identifier.host_inode = ? and identifier.parent_path like ? and" +
 				"		identifier.id not in (" +
 				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 				"                                join identifier on (identifier.id=ref_folder.identifier) " +
@@ -1050,7 +1058,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
 				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -2277,12 +2284,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			DotConnect dotConnect = new DotConnect();
 			String userFullName = DotConnect.concat(new String[] { "user_.firstName", "' '", "user_.lastName" });
 
-			StringBuffer baseSql = new StringBuffer("select distinct (user_.userid), user_.firstName || ' ' || user_.lastName ");
+			StringBuffer baseSql = new StringBuffer("select distinct (user_.userid), ");
+			baseSql.append(userFullName);
 			baseSql.append(" from user_, users_cms_roles where");
 			baseSql.append(" user_.companyid = ? and user_.userid <> 'system' ");
 			baseSql.append(" and users_cms_roles.role_id in (" + roleIdsSB.toString() + ")");
 			baseSql.append(" and user_.userId = users_cms_roles.user_id ");
-			baseSql.append(" and user_.delete_in_progress = false ");
+
+			baseSql.append(" and user_.delete_in_progress = ");
+			baseSql.append(DbConnectionFactory.getDBFalse());
 
 			boolean isFilteredByName = UtilMethods.isSet(filter);
 			if (isFilteredByName) {
@@ -2360,6 +2370,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			baseSql.append(" user_.companyid = ? and user_.userid <> 'system' ");
 			baseSql.append(" and users_cms_roles.role_id in (" + roleIdsSB.toString() + ") ");
 			baseSql.append(" and user_.userId = users_cms_roles.user_id ");
+			baseSql.append(" and user_.delete_in_progress = ");
+			baseSql.append(DbConnectionFactory.getDBFalse());
 
 			boolean isFilteredByName = UtilMethods.isSet(filter);
 			if (isFilteredByName) {

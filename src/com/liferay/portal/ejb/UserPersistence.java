@@ -33,6 +33,7 @@ import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
 import com.dotcms.repackage.net.sf.hibernate.Session;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
@@ -263,8 +264,11 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -307,13 +311,15 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-			query.append(" ");
+
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -402,13 +408,15 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-			query.append(" ");
+
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -498,8 +506,11 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("userId = ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -544,9 +555,10 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+			query.append(getPasswordCriteria());
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -591,14 +603,16 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
-			query.append(" ");
+			query.append(getPasswordCriteria());
+
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -689,14 +703,15 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
-			query.append(" ");
+			query.append(getPasswordCriteria());
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			if (obc != null) {
-				query.append("ORDER BY " + obc.getOrderBy());
+				query.append(" ORDER BY " + obc.getOrderBy());
 			}
 			else {
-				query.append("ORDER BY ");
+				query.append(" ORDER BY ");
 				query.append("firstName ASC").append(", ");
 				query.append("middleName ASC").append(", ");
 				query.append("lastName ASC");
@@ -783,8 +798,10 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -825,7 +842,9 @@ public class UserPersistence extends BasePersistence {
 
 			StringBuffer query = new StringBuffer();
 			query.append("FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM ");
-			query.append("ORDER BY ");
+			query.append(" WHERE delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -859,8 +878,9 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -907,9 +927,10 @@ public class UserPersistence extends BasePersistence {
 			query.append(" AND ");
 			query.append("userId = ?");
             query.append(" AND ");
-            query.append(" userId <> ? ");
-			query.append(" ");
-			query.append("ORDER BY ");
+            query.append(" userId <> ?");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -960,11 +981,12 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
+			query.append(getPasswordCriteria());
             query.append(" AND ");
             query.append("userId <> ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -1014,8 +1036,9 @@ public class UserPersistence extends BasePersistence {
 			query.append("emailAddress = ?");
             query.append(" AND ");
             query.append("userId <> ?");
-			query.append(" ");
-			query.append("ORDER BY ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
+			query.append(" ORDER BY ");
 			query.append("firstName ASC").append(", ");
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
@@ -1061,7 +1084,8 @@ public class UserPersistence extends BasePersistence {
 			query.append(
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
-			query.append(" ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1101,7 +1125,8 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("userId = ?");
-			query.append(" ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1141,8 +1166,11 @@ public class UserPersistence extends BasePersistence {
 				"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
 			query.append("companyId = ?");
 			query.append(" AND ");
-			query.append("password_ = ?");
-			query.append(" ");
+
+			query.append(getPasswordCriteria());
+
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1183,7 +1211,8 @@ public class UserPersistence extends BasePersistence {
 			query.append("companyId = ?");
 			query.append(" AND ");
 			query.append("emailAddress = ?");
-			query.append(" ");
+			query.append(" AND delete_in_progress = ");
+			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
 			int queryPos = 0;
@@ -1207,6 +1236,16 @@ public class UserPersistence extends BasePersistence {
 		}
 		finally {
 			HibernateUtil.closeSession(session);
+		}
+	}
+
+	private String getPasswordCriteria(){
+		if (DbConnectionFactory.isOracle()){
+			return "dbms_lob.compare(password_, ?) = 0";
+		}else if (DbConnectionFactory.isMsSql()){
+			return "cast(password_ AS varchar(max)) = ?";
+		} else{
+			return "password_ = ?";
 		}
 	}
 }

@@ -114,6 +114,7 @@ public class PluginLoader {
 				PluginDeployer deployer=null;
 				if (deployClass!=null && deployClass.length()>0) {
 					try {
+					    deployClass = deployClass.trim();
 						Object o=Class.forName(deployClass).newInstance();
 						if (o instanceof PluginDeployer) {
 							deployer=(PluginDeployer)o;

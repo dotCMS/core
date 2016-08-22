@@ -92,6 +92,9 @@ public final class SubmitWebFormAction extends DispatchAction {
 		String captcha = request.getParameter("captcha");
 		if (useCaptcha) {
 		    Captcha captchaObj = (Captcha) session.getAttribute(Captcha.NAME);
+			//We need to remove the captcha info from the session.
+			session.removeAttribute(Captcha.NAME);
+
             String captchaSession=captchaObj!=null ? captchaObj.getAnswer() : null;
             
 			if(captcha ==null && Config.getBooleanProperty("FORCE_CAPTCHA",true)){

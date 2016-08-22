@@ -403,7 +403,7 @@
     //IMAGE kind of field rendering
     else if (field.getFieldType().equals(
             Field.FieldType.IMAGE.toString())) {%>
-        <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails"
+        <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" contentLanguage="<%=contentLanguage%>"
                         value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>"/>
 
 <%
@@ -412,7 +412,7 @@
     //FILE kind of field rendering
     } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
  %>
-    <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details"
+    <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details" contentLanguage="<%=contentLanguage%>"
                     value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"/>
 
  <%
@@ -458,7 +458,7 @@
                         <%
                             String src = null;
                             if(!fileName.toLowerCase().endsWith("svg")){
-                                src = String.format("/contentAsset/image/%1%s/%2%s/?language_id=%4%s&filter=Thumbnail&thumbnail_w=%3%d&thumbnail_h=%3%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, contentlet.getLanguageId());
+                                src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
                             }else{
                                 src = String.format("/contentAsset/image/%s/%s", contentlet.getIdentifier(), field.getVelocityVarName());
                             }

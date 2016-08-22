@@ -216,7 +216,8 @@ public final class WebKeys {
 	public static final String HTMLPAGE_INODE = "com.dotmarketing.htmlpage.inode";
 	public static final String REDIRECT_PREVIEW_PAGE = "com.dotmarketing.htmlpage.redirect.preview";
 	public static final String HTMLPAGE_LANGUAGE = "com.dotmarketing.htmlpage.language";
-	public static final String Globals_FRONTEND_LOCALE_KEY = "com.dotmarketing.frontend.locale";
+    public static final String CONTENT_SELECTED_LANGUAGE = "com.dotmarketing.content.selected.language";
+    public static final String Globals_FRONTEND_LOCALE_KEY = "com.dotmarketing.frontend.locale";
 
 	public static final String HTMLPAGE_ID = "pageId";
 	public static final String HTMLPAGE_TITLE = "pageTitle";
