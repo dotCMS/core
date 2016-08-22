@@ -1718,9 +1718,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		workingContentlet.setModUser(modUser.getUserId());
         	}
 
-        	// If the user calling this method is System, no other condition is 
-        	// required
-        	if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId()) || user.getUserId().equals(systemUser.getUserId())) {
+        	// If the user calling this method is System, no other condition is required.
+            // Note: no need to validate this on DELETE SITE/HOST.
+            if (workingContentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
+                user == null ||
+                !workingContentlet.isLocked() ||
+                workingContentlet.getModUser().equals(user.getUserId()) ||
+                user.getUserId().equals(systemUser.getUserId())) {
 
         		if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
         			APILocator.getVersionableAPI().removeLive(liveContentlet);
