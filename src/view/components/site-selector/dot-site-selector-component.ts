@@ -1,10 +1,10 @@
 
 import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angular/core';
-import {DropdownComponent} from "../common/dropdown-component/dropdown-component";
-import {Site} from "../../../api/services/site-service";
-import {DotSelect} from "../common/dot-select/dot-select";
-import {DotOption} from "../common/dot-select/dot-select";
-import {SiteService} from "../../../api/services/site-service";
+import {DropdownComponent} from '../common/dropdown-component/dropdown-component';
+import {Site} from '../../../api/services/site-service';
+import {DotSelect} from '../common/dot-select/dot-select';
+import {DotOption} from '../common/dot-select/dot-select';
+import {SiteService} from '../../../api/services/site-service';
 
 @Component({
     directives: [DropdownComponent, DotSelect, DotOption],
@@ -16,22 +16,22 @@ import {SiteService} from "../../../api/services/site-service";
     styleUrls: ['dot-site-selector-component.css'],
     templateUrl: ['dot-site-selector-component.html'],
 })
-export class SiteSelectorComponent{
-    private currentSite:string;
-    private sites:Site[];
+export class SiteSelectorComponent {
+    private currentSite: string;
+    private sites: Site[];
 
-    constructor(private siteService:SiteService){
+    constructor(private siteService: SiteService) {
 
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.siteService.getAllSites().subscribe( response => {
             this.currentSite = response.currentSite;
             this.sites = response.sites;
         }, error => alert( error.errorsMessages ));
     }
 
-    switchSite(option:any) {
+    switchSite(option: any): void {
         this.siteService.switchSite(option.value).subscribe( response => {
 
         }, error => alert( error.errorsMessages ));

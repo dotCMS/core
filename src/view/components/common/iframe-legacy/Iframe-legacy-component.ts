@@ -4,10 +4,10 @@ import { SafeResourceUrl, DomSanitizationService } from '@angular/platform-brows
 import { RouteParams } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx';
 
-import {RoutingService} from "../../../../api/services/routing-service";
+import {RoutingService} from '../../../../api/services/routing-service';
 import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
-import {SiteService} from "../../../../api/services/site-service";
-import {SiteChangeListener} from "../../../../api/util/site-change-listener";
+import {SiteService} from '../../../../api/services/site-service';
+import {SiteChangeListener} from '../../../../api/util/site-change-listener';
 
 
 @Component({
@@ -23,15 +23,15 @@ import {SiteChangeListener} from "../../../../api/util/site-change-listener";
 export class IframeLegacyComponent extends SiteChangeListener{
     iframe: Observable<SafeResourceUrl>;
     iframeElement;
-    private menuIdUrlMatch:Map<string, string>;
-    private loadingInProgress:boolean = true;
+    private menuIdUrlMatch: Map<string, string>;
+    private loadingInProgress: boolean = true;
 
     constructor(private params$: RouteParams, private routingService: RoutingService,
-                private sanitizer: DomSanitizationService, private element: ElementRef, private siteService:SiteService) {
+                private sanitizer: DomSanitizationService, private element: ElementRef, private siteService: SiteService) {
         super(siteService);
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.iframeElement = this.element.nativeElement.querySelector('iframe');
 
         this.iframe = this.params$.pluck<string>('id')
@@ -55,8 +55,7 @@ export class IframeLegacyComponent extends SiteChangeListener{
         };
     }
 
-
-    changeSiteReload(){
+    changeSiteReload(): void {
         if (this.iframeElement && this.iframeElement.contentWindow) {
             this.loadingInProgress = true;
             this.iframeElement.contentWindow.location.reload();

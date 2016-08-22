@@ -140,7 +140,7 @@ export class RuleEngineContainer extends SiteChangeListener{
     })
   }
 
-  changeSiteReload() {
+  changeSiteReload(): void {
     this.initRules();
   }
 
