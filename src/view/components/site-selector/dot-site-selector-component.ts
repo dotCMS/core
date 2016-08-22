@@ -31,8 +31,8 @@ export class SiteSelectorComponent{
         }, error => alert( error.errorsMessages ));
     }
 
-    switchSite(option:any){
-        this.siteService.switchSite( option.value ).subscribe( response => {
+    switchSite(option:any) {
+        this.siteService.switchSite(option.value).subscribe( response => {
 
         }, error => alert( error.errorsMessages ));
     }

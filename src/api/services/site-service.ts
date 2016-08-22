@@ -24,27 +24,24 @@ export class SiteService  {
         this.switchSiteObservable = Observable.create( observer => {
             this.switchSiteObserver = observer;
 
-            if ( this.currentSite ) {
+            if (this.currentSite) {
                 this.switchSiteObserver.next(this.site);
             }
         });
     }
 
-    public getAllSites(): Observable<{currentSite:Site, sites:Site[]}> {
+    public getAllSites(): Observable<any> {
 
-        return Observable.create(observer => {
-            this.coreWebService.requestView({
-                method: RequestMethod.Get,
-                url: this.allSiteUrl
-            }).subscribe( response =>{
-                this.sites = response.entity.sites;
-                this.setCurrentSiteIdentifier( response.entity.currentSite );
-
-                observer.next({
-                    currentSite: Object.assign( {}, this.currentSite ),
-                    sites: response.entity.sites
-                });
-            }, error => observer.next( error ));
+        return this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: this.allSiteUrl
+        }).map(response =>{
+            this.sites = response.entity.sites;
+            this.setCurrentSiteIdentifier( response.entity.currentSite );
+            return {
+                currentSite: Object.assign( {}, this.currentSite ),
+                sites: response.entity.sites
+            };
         });
     }
 
