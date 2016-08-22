@@ -16,10 +16,7 @@ import {DropdownComponent} from "../dropdown-component/dropdown-component";
     providers: [DotcmsEventsService, NotificationsService],
     selector: 'dot-toolbar-notifications',
     styleUrls: ['toolbar-notifications.css'],
-    templateUrl: ['toolbar-notifications.html'],
-    host: {
-        '(document:click)': 'handleClick($event)',
-    }
+    templateUrl: ['toolbar-notifications.html']
 })
 export class ToolbarNotifications {
     private dotcmsEventsService:DotcmsEventsService;
@@ -66,21 +63,6 @@ export class ToolbarNotifications {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
         });
-    }
-
-    private handleClick($event) {
-        let clickedComponent = $event.target;
-        let inside = false;
-        do {
-            if (clickedComponent === this.elementRef.nativeElement) {
-                inside = true;
-            }
-            clickedComponent = clickedComponent.parentNode;
-        } while (clickedComponent);
-
-        if (!inside) {
-            this.showNotifications = false;
-        }
     }
 
     private markAllAsRead():void {
