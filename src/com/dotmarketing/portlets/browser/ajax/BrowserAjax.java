@@ -458,10 +458,23 @@ public class BrowserAjax {
         for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
             Map<String, Object> contentMap = iterator.next();
 
-            if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true)
-                && contentMap.containsKey("type")
-                && "file_asset".equals(contentMap.get("type"))
-                && !contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
+			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true we need to remove all the file_asset
+			// that are not in the same language or in default language.
+			if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
+				contentMap.containsKey("type") &&
+				"file_asset".equals(contentMap.get("type")) &&
+				!contentMap.get("languageId").toString().equals(String.valueOf(languageId)) &&
+				!contentMap.get("languageId").toString().equals(String.valueOf(languageAPI.getDefaultLanguage().getId()))) {
+
+				iterator.remove();
+			}
+
+			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false we need to remove all the file_asset
+			// that are not in the same language (including default language).
+			if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
+				contentMap.containsKey("type") &&
+				"file_asset".equals(contentMap.get("type")) &&
+				!contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
 
                 iterator.remove();
             }
@@ -471,8 +484,8 @@ public class BrowserAjax {
 	}
 
 	/**
-	 * Removes all other pages from the given list that ARE NOT associated to
-	 * the specified language ID. In the end, the list will contain one page per
+	 * Removes all other contents from the given list that ARE NOT associated to
+	 * the specified language ID. In the end, the list will contain one content per
 	 * identifier with either the default language ID or the next available
 	 * language.
 	 * 
@@ -489,13 +502,14 @@ public class BrowserAjax {
 	 */
 	private boolean removeAdditionalLanguages(String identifier,
 			List<Map<String, Object>> resultList, long languageId) {
+
 		boolean removeOtherLangs = false;
-		for (int i = 0; i < resultList.size(); i++) {
-			Map<String, Object> pageInfo = resultList.get(i);
-			if ((boolean) pageInfo.get("isContentlet")) {
-				String ident = (String) pageInfo.get("identifier");
+
+		for (Map<String, Object> contentInfo : resultList) {
+			if ((boolean) contentInfo.get("isContentlet")) {
+				String ident = (String) contentInfo.get("identifier");
 				if (identifier.equals(ident)) {
-					long langId = (long) pageInfo.get("languageId");
+					long langId = (long) contentInfo.get("languageId");
 					// If specified language is found, remove all others
 					if (languageId == langId) {
 						removeOtherLangs = true;
@@ -504,9 +518,11 @@ public class BrowserAjax {
 				}
 			}
 		}
+
 		if (removeOtherLangs) {
 			removeLangOtherThan(resultList, identifier, languageId);
 		}
+
 		return removeOtherLangs;
 	}
 
