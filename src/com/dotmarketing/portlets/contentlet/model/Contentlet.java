@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -43,6 +35,18 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -569,9 +573,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBinary(String velocityVarName, File newFile)throws IOException{
 		map.put(velocityVarName, newFile);
 	}
-	public java.io.File getBinary(String velocityVarName)throws IOException {
-		File f = (File) map.get(velocityVarName);
-		if((f==null || !f.exists()) ){
+
+	public java.io.File getBinary(String velocityVarName) throws IOException {
+		File f = null;
+		if (map.get(velocityVarName) instanceof File) {
+			f = (File) map.get(velocityVarName);
+		}
+		if (f == null || !f.exists()) {
 			f=null;
 			map.remove(velocityVarName);
             if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
