@@ -397,7 +397,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
    		if (asset.type == 'file_asset') {
    			name = asset.fileName;
-   			assetIcon = '/icon?i=' + asset.extension;
+            assetIcon = '/html/images/icons/' + asset.extension + '.png';
 
    			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
 
