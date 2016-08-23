@@ -916,6 +916,29 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
+	public List<Contentlet> findContentletsByHostBaseType(Host parentHost,
+												  List<Integer> includingBaseTypes, User user,
+												  boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletsByHostBaseType(parentHost, includingBaseTypes,
+				user, respectFrontendRoles);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+					+ pre.getClass().getName());
+			}
+		}
+
+		List<Contentlet> c = conAPI.findContentletsByHostBaseType(parentHost, includingBaseTypes,
+			user, respectFrontendRoles);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletsByHostBaseType(parentHost, includingBaseTypes,
+				user, respectFrontendRoles);
+		}
+		return c;
+	}
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletsByIdentifiers(java.lang.String[], boolean, long, com.liferay.portal.model.User, boolean)
 	 */
