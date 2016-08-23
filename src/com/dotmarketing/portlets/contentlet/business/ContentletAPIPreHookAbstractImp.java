@@ -600,6 +600,11 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 		return true;
 	}
 
+	@Override
+	public boolean findContentletsByHostBaseType(Host parentHost, List<Integer> includingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return true;
+	}
+
 	public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles) {
 		return true;
 	}

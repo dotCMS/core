@@ -472,6 +472,10 @@ public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 	public void findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 	}
 
+	@Override
+	public void findContentletsByHostBaseType(Host parentHost, List<Integer> includingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	}
+
 	public void deleteByHost(Host host, User user, boolean respectFrontendRoles) {
 	}
 

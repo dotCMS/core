@@ -419,8 +419,8 @@ public class HostAPIImpl implements HostAPI {
 					otherHost.setDefault(false);
 					if(host.getMap().containsKey(Contentlet.DONT_VALIDATE_ME))
 					    otherHost.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-					if(host.getMap().containsKey("__disable_workflow__"))
-					    otherHost.setProperty("__disable_workflow__",true);
+					if(host.getMap().containsKey(Contentlet.DISABLE_WORKFLOW))
+					    otherHost.setProperty(Contentlet.DISABLE_WORKFLOW,true);
 
 					Contentlet cont = conAPI.checkin(otherHost, user, respectFrontendRoles);
 					if(isHostRunning) {
