@@ -112,7 +112,7 @@ public class TranslationActionletTest {
         List<Contentlet> translatedContents = getTranslatedContents();
 
         for (Contentlet translatedContent : translatedContents) {
-            verify(translatedContent).setProperty("__disable_workflow__", true);
+            verify(translatedContent).setProperty(Contentlet.DISABLE_WORKFLOW, true);
             verify(contentletAPI)
                 .checkin(translatedContent, conRel, cats,
                     perms, systemUser,
@@ -160,7 +160,7 @@ public class TranslationActionletTest {
         List<Contentlet> translatedContents = getTranslatedContents();
 
         for (Contentlet translatedContent : translatedContents) {
-            verify(translatedContent).setProperty("__disable_workflow__", true);
+            verify(translatedContent).setProperty(Contentlet.DISABLE_WORKFLOW, true);
             verify(contentletAPI)
                 .checkin(translatedContent, conRel, cats,
                     perms, systemUser,

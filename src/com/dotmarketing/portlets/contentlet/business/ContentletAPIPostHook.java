@@ -141,6 +141,11 @@ public interface ContentletAPIPostHook {
     public void findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Post Hook for {@link ContentletAPI#findContentletsByHostBaseType(Host, List, User, boolean)}
+     */
+	void findContentletsByHostBaseType(Host parentHost, List<Integer> includingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
 	 * @param returnValue - value returned by primary API Method
