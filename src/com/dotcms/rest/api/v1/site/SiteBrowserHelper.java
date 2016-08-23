@@ -23,6 +23,7 @@ import static com.dotmarketing.util.Logger.error;
 
 /**
  * Just a helper {@link SiteBrowserResource}
+ *
  * @author jsanca
  */
 public class SiteBrowserHelper implements Serializable {
@@ -45,6 +46,7 @@ public class SiteBrowserHelper implements Serializable {
     private static class SingletonHolder {
         private static final SiteBrowserHelper INSTANCE = new SiteBrowserHelper();
     }
+
     /**
      * Get the instance.
      * @return JsonWebTokenFactory
@@ -93,7 +95,17 @@ public class SiteBrowserHelper implements Serializable {
         return null;
     } // getHostManagerUrl.
 
-    public List<Host> getOrderedHost(@PathParam("archived") boolean showArchived, User user, String filter) throws DotDataException, DotSecurityException {
+    /**
+     * Return the list of host that the given user has permissions to see.
+     *
+     * @param showArchived if it is false the archived host aren't returned
+     * @param user
+     * @param filter if it is not a empty String then just the hosts with a hostName starting by 'filter' are returned
+     * @return List of host that the given user has permissions to see and filter by filter
+     * @throws DotDataException if one is thrown when the sites are search
+     * @throws DotSecurityException if one is thrown when the sites are search
+     */
+    public List<Host> getOrderedHost(boolean showArchived, User user, String filter) throws DotDataException, DotSecurityException {
         return this.hostAPI.findAll(user, Boolean.TRUE)
                 .stream().sorted(HOST_NAME_COMPARATOR)
                 .filter (host ->
@@ -102,6 +114,15 @@ public class SiteBrowserHelper implements Serializable {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Return a host by user and host's id
+     *
+     * @param user User to filter the host to return
+     * @param hostId Id to filter the host to return
+     * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
+     * @throws DotSecurityException if one is thrown when the sites are search
+     * @throws DotDataException if one is thrown when the sites are search
+     */
     public Host getHost(User user, String hostId) throws DotSecurityException, DotDataException {
         Optional<Host> hostOptional = this.hostAPI.findAll(user, Boolean.TRUE)
                 .stream().filter(host -> !host.isSystemHost() && hostId.equals(host.getIdentifier()))
