@@ -1,16 +1,5 @@
 package com.dotmarketing.portlets.files.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -48,6 +37,17 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 
 /**
  * @author Maria
@@ -243,8 +243,8 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				contentlet.setStructureInode(selectedStructureInode);
 				contentlet.setHost(hostId);
 				contentlet.setFolder(folder.getInode());
-				if(UtilMethods.isSet(session.getAttribute("com.dotmarketing.content.selected.language"))){
-					contentlet.setLanguageId(Long.parseLong(session.getAttribute("com.dotmarketing.content.selected.language").toString()));
+				if(UtilMethods.isSet(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE))){
+					contentlet.setLanguageId(Long.parseLong(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE).toString()));
 				}
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
@@ -293,6 +293,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                         }
 
                         HibernateUtil.commitTransaction();
+						APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 
                     }
 
