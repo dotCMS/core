@@ -286,7 +286,9 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                         // Now that we know that the host+folder+fileName+language doesn't exist, we need to find if
                         // we have an identifier with host+folder+fileName in order to create a new language.
                         Identifier folderId = APILocator.getIdentifierAPI().find(folder);
-                        String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+fileName:folderId.getPath()+fileName;
+                        String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ?
+                            java.io.File.separator + fileName :
+                            folderId.getPath() + fileName;
                         Identifier identifier = APILocator.getIdentifierAPI().find(host, path);
 
                         // If we the identifier is found then the new FileAsset will be a new language
