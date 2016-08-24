@@ -28,6 +28,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -235,26 +236,47 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	}
 
-
-
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException{
-		if(!UtilMethods.isSet(fileName)){
+		return this.fileNameExists(host, folder, fileName, identifier, -1);
+	}
+
+	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException{
+		if( !UtilMethods.isSet(fileName) ){
 			return true;
 		}
-		if(folder==null)
-			return false;
 
-		if(host==null)
+		if( folder == null || host == null ) {
 			return false;
+		}
 
-		boolean ret = false;
+		boolean exist = false;
+
 		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
 		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+fileName:folderId.getPath()+fileName;
 		Identifier fileAsset = APILocator.getIdentifierAPI().find(host, path);
+
 		if(fileAsset!=null && InodeUtils.isSet(fileAsset.getId()) && !identifier.equals(fileAsset.getId()) && !fileAsset.getAssetType().equals("folder")){
-			ret = true;
+			// Let's not break old logic. ie calling fileNameExists method without languageId parameter.
+			if (languageId == -1){
+				exist = true;
+			} else { // New logic.
+				//We need to make sure that the contentlets for this identifier have the same language.
+				try {
+					contAPI.findContentletByIdentifier(fileAsset.getId(), false, languageId,
+						APILocator.getUserAPI().getSystemUser(), false);
+					exist = true;
+				} catch (DotSecurityException dse) {
+					// Something could failed, lets log and assume true to not break anything.
+					Logger.error(FileAssetAPIImpl.class,
+						"Error trying to find contentlet from identifier:" + fileAsset.getId(), dse);
+					exist = true;
+				} catch (DotContentletStateException dcse){
+					// DotContentletStateException is thrown when content is not found.
+					exist = false;
+				}
+			}
 		}
-		return ret;
+		return exist;
     }
 
 	public String getRelativeAssetPath(FileAsset fa) {
