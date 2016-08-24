@@ -3804,7 +3804,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(UtilMethods.isSet(contentlet.getStringProperty("fileName")))//DOTCMS-7093
                 	fileName = contentlet.getStringProperty("fileName");
                 if(UtilMethods.isSet(fileName)){
-                    fileNameExists = APILocator.getFileAssetAPI().fileNameExists(host,folder,fileName,contentlet.getIdentifier());
+                    fileNameExists = APILocator.getFileAssetAPI().fileNameExists(host,folder,fileName,contentlet.getIdentifier(), contentlet.getLanguageId());
                     if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
                         DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
                         cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));

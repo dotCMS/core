@@ -16,32 +16,32 @@ import com.liferay.portal.model.User;
 
 
 public interface FileAssetAPI {
-	public static final String TITLE_FIELD = "title";
-	public static final String FILE_NAME_FIELD = "fileName";
-	public static final String DESCRIPTION = "description";
-	public static final String SIZE_FIELD = "fileSize";
-	public static final String BINARY_FIELD = "fileAsset";
-	public static final String MIMETYPE_FIELD = "mimeType";
-	public static final String HOST_FOLDER_FIELD = "hostFolder";
-	public static final String SORT_ORDER = "sortOrder";
-	public static final String SHOW_ON_MENU = "showOnMenu";
-	public static final String META_DATA_FIELD = "metaData";
-	public static final String CONTENT_FIELD = "content";
-	public static final String TITLE_FIELD_NAME = "Title";
-	public static final String FILE_NAME_FIELD_NAME = "File Name";
-	public static final String DESCRIPTION_NAME = "Description";
-	public static final String BINARY_FIELD_NAME = "File Asset";
-	public static final String HOST_FOLDER_FIELD_NAME = "Host Or Folder";
-	public static final String SORT_ORDER_NAME = "Sort Order";
-	public static final String SHOW_ON_MENU_NAME = "Show On Menu";
-	public static final String META_DATA_FIELD_NAME = "Metadata";
-	public static final String META_DATA_TAB_NAME = "Metadata";
-	public static final String DEFAULT_FILE_ASSET_STRUCTURE_NAME = "File Asset";
-	public static final String DEFAULT_FILE_ASSET_STRUCTURE_DESCRIPTION = "Default structure for all uploaded files";
-	public static final String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
-	public static final String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
+	String TITLE_FIELD = "title";
+	String FILE_NAME_FIELD = "fileName";
+	String DESCRIPTION = "description";
+	String SIZE_FIELD = "fileSize";
+	String BINARY_FIELD = "fileAsset";
+	String MIMETYPE_FIELD = "mimeType";
+	String HOST_FOLDER_FIELD = "hostFolder";
+	String SORT_ORDER = "sortOrder";
+	String SHOW_ON_MENU = "showOnMenu";
+	String META_DATA_FIELD = "metaData";
+	String CONTENT_FIELD = "content";
+	String TITLE_FIELD_NAME = "Title";
+	String FILE_NAME_FIELD_NAME = "File Name";
+	String DESCRIPTION_NAME = "Description";
+	String BINARY_FIELD_NAME = "File Asset";
+	String HOST_FOLDER_FIELD_NAME = "Host Or Folder";
+	String SORT_ORDER_NAME = "Sort Order";
+	String SHOW_ON_MENU_NAME = "Show On Menu";
+	String META_DATA_FIELD_NAME = "Metadata";
+	String META_DATA_TAB_NAME = "Metadata";
+	String DEFAULT_FILE_ASSET_STRUCTURE_NAME = "File Asset";
+	String DEFAULT_FILE_ASSET_STRUCTURE_DESCRIPTION = "Default structure for all uploaded files";
+	String DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME = "FileAsset";
+	String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
 
-	public void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
+	void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
 
     /**
      *
@@ -49,7 +49,7 @@ public interface FileAssetAPI {
      * @return
      * @throws DotStateException
      */
-	public FileAsset fromContentlet(Contentlet con) throws DotStateException;
+	FileAsset fromContentlet(Contentlet con) throws DotStateException;
 
 	/**
 	 *
@@ -57,7 +57,7 @@ public interface FileAssetAPI {
 	 * @return
 	 * @throws DotStateException
 	 */
-	public List<FileAsset> fromContentlets(List<Contentlet> cons) throws DotStateException;
+	List<FileAsset> fromContentlets(List<Contentlet> cons) throws DotStateException;
 
 	/**
 	 *
@@ -65,23 +65,24 @@ public interface FileAssetAPI {
 	 * @return
 	 * @throws DotStateException
 	 */
-	public List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException;
+	List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException;
 
 	/**
 	 *
 	 * @param c
 	 * @return
 	 */
-	public boolean isFileAsset(Contentlet c);
+	boolean isFileAsset(Contentlet c);
 
 	/**
 	 * Returns a map with the given binary file's meta data
 	 * @param binFile
 	 * @return
 	 */
-	public Map<String, String> getMetaDataMap(Contentlet con, File binFile);
+	Map<String, String> getMetaDataMap(Contentlet con, File binFile);
 
 	/**
+	 * Checks if the File Name already exists. Important: This method doesn't check for language of the File Asset.
 	 *
 	 * @param host
 	 * @param folder
@@ -90,24 +91,27 @@ public interface FileAssetAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
+	boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException;
 
 	/**
+	 * Checks if the File Name already exists. I verifies that the FileAsset found has the same language.
 	 *
 	 * @param host
 	 * @param folder
 	 * @param fileName
 	 * @param identifier
+	 * @param languageId
 	 * @return
-	 * @throws DotDataException
-	 */
-	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException;
+     * @throws DotDataException
+     */
+    boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException;
 
 	/**
 	 *
 	 * @param fa
 	 * @return
 	 */
-	public String getRelativeAssetPath(FileAsset fa);
+	String getRelativeAssetPath(FileAsset fa);
 
 	/**
 	 *
@@ -118,7 +122,7 @@ public interface FileAssetAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
+	List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
 
 
 	/**
@@ -130,7 +134,7 @@ public interface FileAssetAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 *
@@ -144,7 +148,7 @@ public interface FileAssetAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean live, boolean working, boolean archived, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean live, boolean working, boolean archived, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
 	/**
