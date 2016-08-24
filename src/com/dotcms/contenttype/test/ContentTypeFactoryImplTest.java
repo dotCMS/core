@@ -34,15 +34,12 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.repackage.org.hibernate.validator.constraints.URL;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 
 public class ContentTypeFactoryImplTest {
 

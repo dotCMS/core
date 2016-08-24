@@ -14,7 +14,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotmarketing.db.test.DataSourceForTesting;
+import com.dotmarketing.db.test.DataSourcesForTesting;
 
 public class ContentTypeBuilderTest {
 

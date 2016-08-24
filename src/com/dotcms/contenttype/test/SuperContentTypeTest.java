@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import javax.servlet.ServletContext;
+import javax.sql.DataSource;
 
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -14,7 +15,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.test.DataSourceForTesting;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.test.DataSourcesForTesting;
 import com.dotmarketing.util.Config;
 import com.google.common.io.Files;
 
@@ -27,14 +29,14 @@ import com.google.common.io.Files;
 		FieldFactoryImplTest.class, 
 		FieldBuilderTest.class 
 	})
-	
+
 
 	public class SuperContentTypeTest   {
 		public interface Application {
 			  public String myFunction(String abc);
-		
+			  
 		}
-		
+	    final static String dbFile = "/Users/will/git/META-INF/context.xml";
 		static boolean inited=false;
 		@BeforeClass
 		public static void SetUpTests() throws FileNotFoundException, Exception {
@@ -44,8 +46,8 @@ import com.google.common.io.Files;
 			inited=true;
 			
 			
-			new DataSourceForTesting().setup();
-			
+			DataSource ds = new DataSourcesForTesting(new File(dbFile)).dataSources().get(0);
+			DbConnectionFactory.overrideDefaultDatasource(ds);
 			
 			
 			ServletContext context = Mockito.mock(ServletContext.class);

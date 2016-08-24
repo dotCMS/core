@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import org.junit.BeforeClass;
@@ -13,7 +12,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -33,12 +31,9 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.test.DataSourceForTesting;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableList;
-import com.google.common.reflect.ClassPath;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FieldFactoryImplTest {

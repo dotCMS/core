@@ -6,16 +6,8 @@ import java.util.List;
 import org.immutables.value.Value;
 
 import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableCheckboxField;
-import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
-import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
-import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.google.common.base.Preconditions;
 
 @Value.Immutable
 public abstract class FileAssetContentType extends ContentType implements UrlMapable{

@@ -21,7 +21,6 @@ import com.google.common.base.Preconditions;
 
 public abstract class Field implements FieldIf, Serializable {
 
-	
 	@Value.Check
 	public void check() {
 		if(iDate().after(legacyFieldDate)){

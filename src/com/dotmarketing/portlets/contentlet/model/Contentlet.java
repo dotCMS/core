@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -702,11 +703,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     public Boolean isHTMLPage() {
-        return getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
+        return getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType();
     }
 
 	public boolean isFileAsset() {
-		return getStructure().getStructureType() == Structure.Type.FILEASSET.getType();
+		return getStructure().getStructureType() == BaseContentType.FILEASSET.getType();
 	}
 
     public boolean isHost() {
