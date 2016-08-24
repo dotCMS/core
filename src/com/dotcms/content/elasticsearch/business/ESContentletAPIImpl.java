@@ -1729,7 +1729,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         	// If the user calling this method is System, no other condition is required.
             // Note: no need to validate this on DELETE SITE/HOST.
-            if (workingContentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
+            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
                 user == null ||
                 !workingContentlet.isLocked() ||
                 workingContentlet.getModUser().equals(user.getUserId()) ||
