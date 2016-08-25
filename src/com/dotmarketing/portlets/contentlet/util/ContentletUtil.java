@@ -75,33 +75,37 @@ public class ContentletUtil {
 	}
 
 	/**
-	 * This method will retrieve the values of a special field, for example Binary, Categories and Tags.
-	 * That information will be placed under the same Contentlet.
+	 * Returns a {@link Map} that includes original content's map entries and also special entries for string
+	 * representation of the values of binary and category field. It also set the tags to the contentlet's map for them
+	 * to be included in the resulting map. This map can be used to return a string representation of the given content
+	 * (e.g. REST, ES portlet)
 	 *
 	 * @param user User from Front End with permission to read Special Fields.
-	 * @param contentlet Contentlet that needs the special fields set.
+	 * @param c the contentlet to generate the printable map from
 	 *
 	 * @return Contentlet with the values in place.
 	 *
 	 * @throws DotDataException
      */
-	public static Contentlet setSpecialFieldValues(User user, Contentlet contentlet) throws DotDataException{
+	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException {
 		Map<String, Object> m = new HashMap<>();
-		Structure s = contentlet.getStructure();
+
+		c.setTags();
+
+		m.putAll(c.getMap());
+
+		Structure s = c.getStructure();
 
 		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
 			if(f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  contentlet.getIdentifier() + "/" + f.getVelocityVarName());
-				m.put(f.getVelocityVarName() + "ContentAsset", contentlet.getIdentifier() + "/" +f.getVelocityVarName());
-
+				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
+				m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
 			} else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
 				List<Category> cats = null;
-
 				try {
-					cats = APILocator.getCategoryAPI().getParents(contentlet, user, true);
+					cats = APILocator.getCategoryAPI().getParents(c, user, true);
 				} catch (Exception e) {
-					Logger.error(ContentletUtil.class,
-							String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
+					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
 				}
 
 				if(cats!=null && !cats.isEmpty()) {
@@ -111,10 +115,7 @@ public class ContentletUtil {
 			}
 		}
 
-		contentlet.getMap().putAll(m);
-		contentlet.setTags();
-
-		return contentlet;
+		return m;
 	}
 	
 }

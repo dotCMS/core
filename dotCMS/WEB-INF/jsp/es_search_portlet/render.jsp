@@ -319,7 +319,7 @@ if(query == null){
 				<% for (Object x : cons){%>
 					<%
 						Contentlet c =(Contentlet) x;
-						c = ContentletUtil.setSpecialFieldValues(user, c);
+						String mapStr = ContentletUtil.getContentPrintableMap(user, c).toString();
 					%>
 
 						<tr>
@@ -347,7 +347,7 @@ if(query == null){
 						<tr >
 							<td>&nbsp;</td>
 							<td colspan=2>
-								<div style="padding:20px;"><%= UtilMethods.makeHtmlSafe(c.getMap().toString()) %></div>
+								<div style="padding:20px;"><%= UtilMethods.makeHtmlSafe(mapStr) %></div>
 							</td>
 						</tr>
 						<%	counter++;%>
