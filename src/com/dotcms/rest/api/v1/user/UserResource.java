@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -76,7 +77,7 @@ public class UserResource implements Serializable {
 	 */
 	public UserResource() {
 		this(new WebResource(new ApiProvider()), WebAPILocator.getUserWebAPI(), APILocator.getUserAPI(), APILocator
-				.getPermissionAPI(), APILocator.getUserProxyAPI(), UserResourceHelper.INSTANCE, ErrorResponseHelper.INSTANCE);
+				.getPermissionAPI(), APILocator.getUserProxyAPI(), UserResourceHelper.getInstance(), ErrorResponseHelper.INSTANCE);
 	}
 
 	@VisibleForTesting
@@ -439,6 +440,44 @@ public class UserResource implements Serializable {
 		SecurityLogger.logInfo(UserResource.class,
 				"User (" + principalUserId + ") has sucessfully logged out as " + currentLoginAsUser.getFullName() + "("
 						+ currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+		return response;
+	}
+
+	/**
+	 * Return all the user without the anonymous and default users, also add extra login as information,
+	 * with the follow json format:<br>
+	 *
+	 * <pre>
+	 * {
+	 *   "name":"Admin User",
+	 *   "emailaddress":"admin@dotcms.com",
+	 *   "id":"dotcms.org.1",
+	 *   "type":"user",
+	 *   "requestPassword": true
+	 * }
+	 * </pre>
+	 *
+	 * This service return a 500 HTTP code if anything go wrong
+	 *
+	 * @return
+     */
+	@GET
+	@Path("/loginAsData")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public final Response loginAsData() {
+
+		Response response = null;
+
+		try {
+			List<Map<String, Object>> loginAsUser = helper.getLoginAsUser();
+			response = Response.ok(new ResponseEntityView(map("users", loginAsUser))).build();
+		} catch (Exception e) {
+			Logger.error(this, "An error occurred when processing the request.", e);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
 		return response;
 	}
 

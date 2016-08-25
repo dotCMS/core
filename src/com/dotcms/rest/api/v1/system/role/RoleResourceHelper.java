@@ -55,31 +55,6 @@ public class RoleResourceHelper implements Serializable {
 	 *         {@code true}. Otherwise, returns {@code false}.
 	 */
 	public boolean userHasRoles(String userId, List<String> roleIds) {
-		if (!UtilMethods.isSet(userId) || roleIds == null || roleIds.size() == 0) {
-			return false;
-		}
-		User user;
-		try {
-			user = this.userAPI.loadUserById(userId, this.userAPI.getSystemUser(), false);
-		} catch (Exception e) {
-			Logger.error(this, "An error occurred when retrieving information of user ID [" + userId + "]", e);
-			return false;
-		}
-		String currentRoleId = null;
-		for (String roleId : roleIds) {
-			if (UtilMethods.isSet(roleId.trim())) {
-				currentRoleId = roleId;
-				try {
-					if (this.roleAPI.doesUserHaveRole(user, roleId)) {
-						return true;
-					}
-				} catch (DotDataException e) {
-					Logger.error(UserAjax.class, "An error occurred when checking role [" + currentRoleId + "] on user ID ["
-							+ userId + "]", e);
-					return false;
-				}
-			}
-		}
 		return false;
 	}
 
