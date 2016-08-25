@@ -33,8 +33,10 @@
         'object-assign': 'n:object-assign',
 
         // angular-material
-        '@angular2-material': 'n:@angular2-material'
+        '@angular2-material': 'n:@angular2-material',
 
+        // Other libraries
+        'moment': 'n:moment'
     };
 
     // packages tells the System loader how to load when no filename and/or no extension
@@ -86,6 +88,10 @@
         },
         'object-assign': {
             main: 'index.js',
+            defaultExtension: 'js'
+        },
+        'moment': {
+            main: 'moment.js',
             defaultExtension: 'js'
         }
     };

@@ -5,6 +5,11 @@ $close-button-size: 16px;
 :host {
     display: block;
 
+    custom-time {
+        color: $gray;
+        display: block;
+    }
+
     a {
         color: $black;
     }
@@ -16,11 +21,6 @@ $close-button-size: 16px;
 
     .notification-item__content {
         margin-left: rem-cal(5px);
-    }
-
-    .notification-item__date {
-        color: $gray;
-        display: block;
     }
 
     .notification-item__close {
