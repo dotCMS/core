@@ -1,30 +1,26 @@
 package com.dotcms.rest.api.v1.user;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.api.system.user.UserService;
+import com.dotcms.rest.*;
+import com.dotmarketing.business.*;
+import com.dotmarketing.business.web.HostWebAPI;
 import org.junit.Test;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.rest.ErrorResponseHelper;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.site.SiteBrowserResource;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -151,4 +147,59 @@ public class UserResourceTest extends BaseMessageResources {
         System.out.println(response.getEntity());
     }
 
+    @Test
+    public void testLoginAsData() throws Exception {
+        final UserService userService = mock(UserService.class);
+        final RoleAPI roleAPI  = mock( RoleAPI.class );
+        final UserAPI userAPI  = mock( UserAPI.class );
+        final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
+        final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
+
+        final WebResource webResource = mock(WebResource.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
+        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI);
+        final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
+
+        List<Map<String, Object>> users = list(
+                map( "name", "user1", "emailaddress", "a@a.com", "id", "dotcms.org.1", "type", "user" ),
+                map( "name", "user1", "emailaddress", "a@a.com", "id", "dotcms.org.2", "type", "user" )
+        );
+        Map<String, Object> usersMap = map("total", 2, "data", users);
+
+        when (userService.getUsersList(null, "1", map(
+                "start", "0",
+                "limit", "30",
+                "includeAnonymous", "false",
+                "includeDefault", "false")))
+            .thenReturn( usersMap );
+
+        List<String> rolesId = new ArrayList<>();
+        rolesId.add( "admin.role.id" );
+        rolesId.add( "login.as.id" );
+
+        Role adminRole = mock(Role.class);
+        Role loginAsRole = mock(Role.class);
+
+        when( adminRole.getId() ).thenReturn( "admin.role.id" );
+        when( loginAsRole.getId() ).thenReturn( "login.as.id" );
+
+        when( roleAPI.loadRoleByKey(Role.ADMINISTRATOR) ).thenReturn( adminRole );
+        when( roleAPI.loadCMSAdminRole() ).thenReturn( loginAsRole );
+        when( roleAPI.doesUserHaveRoles(users.get(0).get("id").toString(), rolesId) ).thenReturn( true ) ;
+        when( roleAPI.doesUserHaveRoles(users.get(1).get("id").toString(), rolesId) ).thenReturn( false ) ;
+
+        UserResource userResource =
+                new UserResource(webResource, userWebAPI, userAPI, permissionAPI,
+                        userProxyAPI, userHelper, errorHelper);
+
+        Response response = userResource.loginAsData();
+
+        RestUtilTest.verifySuccessResponse( response );
+
+        List<Map<String,Object>> responseUsers = (List<Map<String, Object>>) ((Map) ((ResponseEntityView) response.getEntity()).getEntity()).get("users");
+        assertEquals(2, responseUsers.size());
+
+    }
 }

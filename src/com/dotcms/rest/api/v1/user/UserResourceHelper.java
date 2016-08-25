@@ -1,13 +1,16 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.getMapValue;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotmarketing.beans.Host;
@@ -23,6 +26,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -47,7 +51,29 @@ public class UserResourceHelper implements Serializable {
 	private final LayoutAPI layoutAPI;
 	private final HostWebAPI hostWebAPI;
 
-	public static final UserResourceHelper INSTANCE = new UserResourceHelper();
+
+	@VisibleForTesting
+	public UserResourceHelper (	final UserService userService,
+			 final RoleAPI roleAPI,
+			 final UserAPI userAPI,
+			 final LayoutAPI layoutAPI,
+			 final HostWebAPI hostWebAPI) {
+
+		this.userService = userService;
+		this.roleAPI = roleAPI;
+		this.userAPI = userAPI;
+		this.layoutAPI = layoutAPI;
+		this.hostWebAPI = hostWebAPI;
+	}
+
+	private static class SingletonHolder {
+		private static final UserResourceHelper INSTANCE = new UserResourceHelper();
+	}
+
+	public static UserResourceHelper getInstance() {
+
+		return UserResourceHelper.SingletonHolder.INSTANCE;
+	}
 
 	/**
 	 * Private constructor that initializes all APIs and services.
@@ -235,4 +261,45 @@ public class UserResourceHelper implements Serializable {
 		return sessionData;
 	}
 
+	/**
+	 * Return all the user without the anonymous and default users, also add extra login as information.<br>
+	 * If you are a Admin user you can use the "Login As" feature, with this you can login as a another user,
+	 * but if that user has the "Admin" role or the "Login As" then you would need the another user password to login
+	 * as that user.<br>
+	 *
+	 * Each user is represent by a Map&lt;String, String&gt; with the follow keys:<br>
+	 *     <lu>
+	 *         <li>name: User's name</li>
+	 *         <li>emailaddress: User's email</li>
+	 *         <li>id: User's ID</li>
+	 *         <li>type:</li>
+	 *         <li>requestPassword: if you need password to login as this user</li>
+	 *     </lu>
+	 *
+	 * @return A list of Map, each Map represent a {@link User}
+	 * @throws Exception if anything if wrong
+     */
+	public List<Map<String, Object>> getLoginAsUser() throws Exception {
+		final Map<String, String> filterParams = map(
+				"start", "0",
+				"limit", "30",
+				"includeAnonymous", "false",
+				"includeDefault", "false");
+
+		List<Map<String, Object>> userList = (List) this.getUserList(null, "1", filterParams).get("data");
+		List<String> rolesId = new ArrayList<>();
+		rolesId.add( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId() ); //Admin Roles
+		rolesId.add( roleAPI.loadCMSAdminRole().getId() ); //Login As Roles
+
+		for (Map<String, Object> user : userList) {
+			String id = user.get("id").toString();
+			boolean hasPermissions = roleAPI.doesUserHaveRoles(id, rolesId);
+
+			if ( hasPermissions ){
+				user.put("requestPassword", true);
+			}
+		}
+
+		return userList;
+	}
 }

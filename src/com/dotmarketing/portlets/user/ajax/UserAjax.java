@@ -15,7 +15,6 @@ import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.rest.api.v1.system.role.RoleResourceHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -1417,7 +1416,8 @@ public class UserAjax {
 	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
 		// Make sure the DWR request calling this method is authenticated
 		getLoggedInUser();
-		return RoleResourceHelper.INSTANCE.userHasRoles(userId, Arrays.asList(roles));
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
 	}
 
 	/**

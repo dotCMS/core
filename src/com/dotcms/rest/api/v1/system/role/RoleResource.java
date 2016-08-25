@@ -17,7 +17,9 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -36,19 +38,19 @@ public class RoleResource implements Serializable {
 	private static final String ROLE_ID_SEPARATOR = ",";
 
 	private final WebResource webResource;
-	private final RoleResourceHelper helper;
+	private final RoleAPI roleAPI;
 
 	/**
 	 * Default class constructor.
 	 */
 	public RoleResource() {
-		this(new WebResource(new ApiProvider()), RoleResourceHelper.INSTANCE);
+		this(new WebResource(new ApiProvider()), APILocator.getRoleAPI());
 	}
 
 	@VisibleForTesting
-	public RoleResource(WebResource webResource, RoleResourceHelper helper) {
+	public RoleResource(WebResource webResource, RoleAPI roleAPI) {
 		this.webResource = webResource;
-		this.helper = helper;
+		this.roleAPI = roleAPI;
 	}
 
 	/**
@@ -82,7 +84,7 @@ public class RoleResource implements Serializable {
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);
-			hasUserRole = this.helper.userHasRoles(userId, list(roles));
+			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles));
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			Logger.error(this, "An error occurred when processing the request.", e);
