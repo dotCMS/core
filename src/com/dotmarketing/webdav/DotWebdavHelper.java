@@ -1501,7 +1501,7 @@ public class DotWebdavHelper {
 			if (r.startsWith("/autopub")) {
 				r = r.substring(8, r.length());
 			}
-		}else{
+		} else {
 			String[] splitUri = uri.split("/");
 
 			//""
@@ -1510,8 +1510,8 @@ public class DotWebdavHelper {
 			//[languageId]
 			// etc ie "demo.dotcms.com/..."
 			if( splitUri.length >= 4 &&
-				splitUri[1].equals("webdav") &&
-				(splitUri[2].equals("working") || splitUri[2].equals("live")) &&
+				"webdav".equals(splitUri[1]) &&
+				("working".equals(splitUri[2]) || "live".equals(splitUri[2])) &&
 				StringUtils.isNumeric(splitUri[3])) {
 
 				// Validate that the language exists.
@@ -1519,6 +1519,8 @@ public class DotWebdavHelper {
 				if(languageAPI.getLanguages().contains(languageAPI.getLanguage(uriLangId))){
 					defaultLang = uriLangId;
 				} else {
+					Logger.error(DotWebdavHelper.class,
+						"The language id specified in the path does not exists: " + uriLangId);
 					throw new IOException("The language id specified in the path does not exists");
 				}
 

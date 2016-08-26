@@ -3,41 +3,19 @@
  */
 package com.dotcms.content.elasticsearch.business;
 
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Calendar;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotmarketing.exception.*;
-
-import org.springframework.beans.BeanUtils;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.gson.Gson;
 import com.dotcms.repackage.com.google.gson.GsonBuilder;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-
 import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -63,6 +41,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -126,6 +109,34 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
+
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -475,12 +486,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // DOTCMS - 4393
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-        Language defaultLang=APILocator.getLanguageAPI().getDefaultLanguage();
+        Language defaultLang = lanAPI.getDefaultLanguage();
         User systemUser = APILocator.getUserAPI().getSystemUser();
 
         for (Field field : fields) {
-            if (field.getFieldType().equals(Field.FieldType.IMAGE.toString()) ||
-                field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+            if (Field.FieldType.IMAGE.toString().equals(field.getFieldType()) ||
+                Field.FieldType.FILE.toString().equals(field.getFieldType())) {
 
                 // I know! You already saw the nested try/catch blocks below,
                 // please don't shoot the messenger, let me explain.
@@ -489,7 +500,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try {
                     // We need to get the Identifier from the field. (Image or File)
                     String fieldValue = UtilMethods.isSet(getFieldValue(contentlet, field)) ?
-                        getFieldValue(contentlet, field).toString() : "";
+                        getFieldValue(contentlet, field).toString() : StringUtils.EMPTY;
                     Identifier id = APILocator.getIdentifierAPI().find(fieldValue);
 
                     // If this is a new File Asset (Contentlet).
