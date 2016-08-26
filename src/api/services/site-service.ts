@@ -1,79 +1,84 @@
 import {Injectable} from '@angular/core';
-import {ApiRoot} from "../persistence/ApiRoot";
-import {CoreWebService} from "./core-web-service";
+import {ApiRoot} from '../persistence/ApiRoot';
+import {CoreWebService} from './core-web-service';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
-import {Observer} from "rxjs/Observer";
+import {Observer} from 'rxjs/Observer';
+import {Subject} from 'rxjs/Subject';
+import {LoginService} from './login-service';
+import {Http} from '@angular/http';
 
 @Injectable()
-export class SiteService  {
+export class SiteService extends CoreWebService {
 
-    private allSiteUrl:string;
-    private switchSiteUrl:string;
+    private allSiteUrl: string;
+    private switchSiteUrl: string;
 
-    private site:Site;
-    private sites:Site[];
+    private site: Site;
+    private sites: Site[];
 
-    private switchSiteObservable:Observable<Site>;
-    private switchSiteObserver:Observer<Site>;
+    private switchSiteSubject: Subject<Site> = new Subject();
+    private sitesSubject: Subject<Site[]> = new Subject();
 
-    constructor(_apiRoot: ApiRoot, private coreWebService: CoreWebService) {
-        this.allSiteUrl = `${_apiRoot.baseUrl}api/v1/site/currentSite`;
-        this.switchSiteUrl = `${_apiRoot.baseUrl}api/v1/site/switch`;
+    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService) {
+        super(apiRoot, http);
 
-        this.switchSiteObservable = Observable.create( observer => {
-            this.switchSiteObserver = observer;
+        this.allSiteUrl = `${apiRoot.baseUrl}api/v1/site/currentSite`;
+        this.switchSiteUrl = `${apiRoot.baseUrl}api/v1/site/switch`;
 
-            if (this.currentSite) {
-                this.switchSiteObserver.next(this.site);
-            }
-        });
-    }
-
-    public getAllSites(): Observable<any> {
-
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: this.allSiteUrl
-        }).map(response =>{
-            this.sites = response.entity.sites;
-            this.setCurrentSiteIdentifier( response.entity.currentSite );
-            return {
-                currentSite: Object.assign( {}, this.currentSite ),
-                sites: response.entity.sites
-            };
-        });
-    }
-
-    private setCurrentSiteIdentifier(siteIdentifier:string){
-        this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
-
-        if (this.switchSiteObserver) {
-            this.switchSiteObserver.next(this.currentSite);
+        if (loginService.loginUser) {
+            this.loadSites();
         }
+
+        loginService.$loginUser.subscribe( user => this.loadSites());
     }
 
-    switchSite(siteId:String):Observable<any> {
-        return this.coreWebService.requestView({
+    switchSite(siteId: String): Observable<any> {
+        return this.requestView({
             method: RequestMethod.Put,
-            url: `${this.switchSiteUrl}/${siteId}`
+            url: `${this.switchSiteUrl}/${siteId}`,
         }).map(response => {
             this.setCurrentSiteIdentifier(siteId);
             return response;
         });
     }
 
-    public subscribeSwitchSite():Observable<Site>{
-        return this.switchSiteObservable;
+    get $switchSite(): Observable<Site> {
+        return this.switchSiteSubject.asObservable();
     }
 
-    get currentSite():Site{
+    get $sites(): Observable<Site[]> {
+        return this.sitesSubject.asObservable();
+    }
+
+    private setCurrentSiteIdentifier(siteIdentifier: string): void {
+        this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
+        this.switchSiteSubject.next( this.site );
+    }
+
+    private loadSites(): void {
+
+        this.requestView({
+            method: RequestMethod.Get,
+            url: this.allSiteUrl,
+        }).subscribe(response => {
+            this.setSites( response.entity.sites );
+            this.setCurrentSiteIdentifier( response.entity.currentSite );
+        });
+    }
+
+    private setSites( sites: Site[] ): void {
+        this.sites = sites;
+        this.sitesSubject.next( this.sites );
+    }
+
+    get currentSite(): Site{
         return this.site;
     }
 }
 
-export interface Site{
-    hostName:string
-    type:string
-    identifier:string
+export interface Site {
+    hostName: string;
+    type: string;
+    identifier: string;
 }
