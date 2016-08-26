@@ -30,7 +30,7 @@ export class DotcmsEventsService {
         this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
 
         if (loginService.loginUser) {
-            this.connectWithSocket( this.loginService.loginUser );
+            this.connectWithSocket(this.loginService.loginUser);
         }
 
         this.loginService.loginUser$.subscribe(user => this.connectWithSocket(user));
