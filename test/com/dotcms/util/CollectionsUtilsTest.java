@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,5 +158,22 @@ public class CollectionsUtilsTest {
         assertEquals(new Integer(4), map6.get("four"));
         assertEquals(new Integer(5), map6.get("five"));
 
+    }
+
+    @Test
+    public void testRemoveKey(){
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        CollectionsUtils.renameKey( map, "key1", "key2");
+        assertEquals( map.get("key1"), null);
+        assertEquals( map.get("key2"), "value1");
+    }
+
+    @Test
+    public void testRemoveDontExistKey(){
+        Map<String, String> map = new HashMap<>();
+        CollectionsUtils.renameKey( map, "key1", "key2");
+        assertEquals( map.get("key1"), null);
+        assertEquals( map.get("key2"), null);
     }
 }
