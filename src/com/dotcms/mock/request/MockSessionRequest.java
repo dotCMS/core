@@ -29,7 +29,7 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 
 	@Override
 	public HttpSession getSession(boolean create) {
-		return (create) ? getSession() : null;
+		return (create || session!=null) ? getSession() : null;
 	}
 	
  
