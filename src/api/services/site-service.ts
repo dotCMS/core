@@ -17,8 +17,8 @@ export class SiteService extends CoreWebService {
     private site: Site;
     private sites: Site[];
 
-    private switchSiteSubject: Subject<Site> = new Subject();
-    private sitesSubject: Subject<Site[]> = new Subject();
+    private _switchSite$: Subject<Site> = new Subject();
+    private _sites$: Subject<Site[]> = new Subject();
 
     constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService) {
         super(apiRoot, http);
@@ -30,7 +30,7 @@ export class SiteService extends CoreWebService {
             this.loadSites();
         }
 
-        loginService.$loginUser.subscribe( user => this.loadSites());
+        loginService.loginUser$.subscribe(user => this.loadSites());
     }
 
     switchSite(siteId: String): Observable<any> {
@@ -43,17 +43,17 @@ export class SiteService extends CoreWebService {
         });
     }
 
-    get $switchSite(): Observable<Site> {
-        return this.switchSiteSubject.asObservable();
+    get switchSite$(): Observable<Site> {
+        return this._switchSite$.asObservable();
     }
 
-    get $sites(): Observable<Site[]> {
-        return this.sitesSubject.asObservable();
+    get sites$(): Observable<Site[]> {
+        return this._sites$.asObservable();
     }
 
     private setCurrentSiteIdentifier(siteIdentifier: string): void {
         this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
-        this.switchSiteSubject.next( this.site );
+        this._switchSite$.next(this.site);
     }
 
     private loadSites(): void {
@@ -62,14 +62,14 @@ export class SiteService extends CoreWebService {
             method: RequestMethod.Get,
             url: this.allSiteUrl,
         }).subscribe(response => {
-            this.setSites( response.entity.sites );
-            this.setCurrentSiteIdentifier( response.entity.currentSite );
+            this.setSites(response.entity.sites);
+            this.setCurrentSiteIdentifier(response.entity.currentSite);
         });
     }
 
-    private setSites( sites: Site[] ): void {
+    private setSites(sites: Site[]): void {
         this.sites = sites;
-        this.sitesSubject.next( this.sites );
+        this._sites$.next(this.sites);
     }
 
     get currentSite(): Site{

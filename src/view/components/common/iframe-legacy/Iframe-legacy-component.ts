@@ -39,7 +39,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
             this.initComponent( this.routingService.currentMenu );
         }
 
-        this.routingService.$menusChange.subscribe( menus => this.initComponent( menus ));
+        this.routingService.menusChange$.subscribe(menus => this.initComponent(menus));
 
         this.iframeElement.onload = () => {
             this.loadingInProgress = false;
@@ -51,14 +51,14 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
         menus.forEach(menu => menu.menuItems.forEach(
             menuItem => {
-                this.menuIdUrlMatch.set( menuItem.id, menuItem.url );
+                this.menuIdUrlMatch.set(menuItem.id, menuItem.url);
             }
         ));
 
         this.iframe = this.params$.pluck<string>('id')
             .distinctUntilChanged()
             .map(id => {
-                return this.sanitizer.bypassSecurityTrustResourceUrl( this.menuIdUrlMatch.get( id ) );
+                return this.sanitizer.bypassSecurityTrustResourceUrl(this.menuIdUrlMatch.get(id));
             });
     }
 

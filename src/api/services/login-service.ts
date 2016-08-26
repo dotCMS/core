@@ -29,7 +29,7 @@ export class LoginService extends CoreWebService {
     private lang: string = '';
     private country: string = '';
 
-    private loginUserSubject: Subject<User> = new Subject<User>();
+    private _loginUser$: Subject<User> = new Subject<User>();
 
     constructor(apiRoot: ApiRoot, http: Http, public coreWebService: CoreWebService, private router: Router) {
         super(apiRoot, http);
@@ -68,7 +68,7 @@ export class LoginService extends CoreWebService {
      * @returns an array with the user if the user loggedIn successfully or the error message
      */
     public logInUser(login: string, password: string, rememberMe: boolean, language: string): Observable<User> {
-         this.setLanguage(language);
+        this.setLanguage(language);
 
         let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
@@ -84,7 +84,7 @@ export class LoginService extends CoreWebService {
 
     public setLogInUser( user: User ): void {
         this.user = user;
-        this.loginUserSubject.next( user );
+        this._loginUser$.next( user );
     }
 
     /**
@@ -128,13 +128,8 @@ export class LoginService extends CoreWebService {
         });
     }
 
-    get $loginUser(): Observable<User> {
-        setTimeout( () => {
-            if (this.user) {
-                this.loginUserSubject.next(this.user);
-            }
-        });
-        return this.loginUserSubject.asObservable();
+    get loginUser$(): Observable<User> {
+        return this._loginUser$.asObservable();
     }
 
     get loginUser(): User {
@@ -155,27 +150,27 @@ export class LoginService extends CoreWebService {
 }
 
 export interface User {
-    birthday: number; // Timestamp
-    lastName: string;
-    comments: string;
-    timeZoneId: string;
-    languageId: string;
-    active: boolean;
-    fullName: string;
-    lastLoginDate: number; // Timestamp
-    failedLoginAttempts: number;
-    userId: string;
-    lastLoginIP: string;
+    active?: boolean;
+    actualCompanyId?: string;
+    birthday?: number; // Timestamp
+    comments?: string;
+    companyId?: string;
+    createDate?: number; // Timestamp
+    deleteDate?: number; // Timestamp
+    deleteInProgress?: boolean;
+    failedLoginAttempts?: number;
+    female?: boolean;
     firstName: string;
-    companyId: string;
-    modificationDate: number; // Timestamp
+    fullName?: string;
     emailAddress: string;
-    deleteInProgress: boolean;
-    nickname: string;
-    middleName: string;
-    female: boolean;
-    actualCompanyId: string;
-    male: boolean;
-    createDate: number; // Timestamp
-    deleteDate: number; // Timestamp
+    languageId?: string;
+    lastLoginDate?: number; // Timestamp
+    lastLoginIP?: string;
+    lastName: string;
+    male?: boolean;
+    middleName?: string;
+    modificationDate?: number; // Timestamp
+    nickname?: string;
+    timeZoneId?: string;
+    userId: string;
 }

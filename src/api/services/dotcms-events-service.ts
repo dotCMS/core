@@ -2,9 +2,9 @@ import {DotcmsConfig} from './system/dotcms-config';
 import {Inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
-import {User} from "./login-service";
-import {LoginService} from "./login-service";
-import {Subject} from "rxjs/Subject";
+import {User} from './login-service';
+import {LoginService} from './login-service';
+import {Subject} from 'rxjs/Subject';
 
 @Injectable()
 export class DotcmsEventsService {
@@ -33,7 +33,7 @@ export class DotcmsEventsService {
             this.connectWithSocket( this.loginService.loginUser );
         }
 
-        this.loginService.$loginUser.subscribe( user => this.connectWithSocket(user));
+        this.loginService.loginUser$.subscribe(user => this.connectWithSocket(user));
     }
 
     /**
@@ -47,10 +47,10 @@ export class DotcmsEventsService {
             res => {
                 let data = (JSON.parse(res.data));
 
-                if ( !this.subjects[ data.event ] ) {
-                    this.subjects[ data.event ] = new Subject();
+                if (!this.subjects[data.event]) {
+                    this.subjects[data.event] = new Subject();
                 }
-                this.subjects[ data.event ].next( data.payload );
+                this.subjects[data.event].next(data.payload);
             },
             function(e): void { console.log('Error in the System Events service: ' + e.message); },
             function(): void { console.log('Completed'); }

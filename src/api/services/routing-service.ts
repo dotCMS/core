@@ -8,12 +8,12 @@ import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
 import {CoreWebService} from './core-web-service';
 import {RequestMethod, Http} from '@angular/http';
-import {ApiRoot} from "../persistence/ApiRoot";
+import {ApiRoot} from '../persistence/ApiRoot';
 
 @Injectable()
 export class RoutingService extends CoreWebService{
 
-    private menusChangeSubject: Subject<Menu[]> = new Subject();
+    private _menusChange$: Subject<Menu[]> = new Subject();
     private menus: Menu[];
 
     private urlMenus: string;
@@ -32,11 +32,11 @@ export class RoutingService extends CoreWebService{
             this.loadMenus();
         }
 
-        loginService.$loginUser.subscribe( user => this.loadMenus());
+        loginService.loginUser$.subscribe(user => this.loadMenus());
     }
 
-    get $menusChange(): Observable<Menu[]> {
-        return this.menusChangeSubject.asObservable();
+    get menusChange$(): Observable<Menu[]> {
+        return this._menusChange$.asObservable();
     }
 
     public setMenus( menus: Menu[] ): void {
@@ -73,7 +73,7 @@ export class RoutingService extends CoreWebService{
                 }
             }
 
-            this.menusChangeSubject.next(this.menus);
+            this._menusChange$.next(this.menus);
         }
     }
 
@@ -81,8 +81,8 @@ export class RoutingService extends CoreWebService{
         this.requestView({
             method: RequestMethod.Get,
             url: this.urlMenus,
-        }).subscribe(response => this.setMenus( response.entity.menu ),
-            error => this.menusChangeSubject.error( error ));
+        }).subscribe(response => this.setMenus(response.entity.menu),
+            error => this._menusChange$.error(error));
     }
 
     get currentMenu(): Menu[]{
