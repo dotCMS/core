@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.user;
 
 import static com.dotcms.util.CollectionsUtils.getMapValue;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.renameKey;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -298,6 +299,8 @@ public class UserResourceHelper implements Serializable {
 			if ( hasPermissions ){
 				user.put("requestPassword", true);
 			}
+
+			renameKey( user, "emailaddress", "emailAddress");
 		}
 
 		return userList;
