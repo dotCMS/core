@@ -68,11 +68,11 @@ export class DotcmsEventsService {
      * @returns {any} The system events that a client will receive.
      */
     subscribeTo(clientEventType: string): Observable<any> {
-        if ( !this.subjects[ clientEventType ] ) {
-            this.subjects[ clientEventType ] = new Subject();
+        if (!this.subjects[clientEventType]) {
+            this.subjects[clientEventType] = new Subject();
         }
 
-        return this.subjects[ clientEventType].asObservable();
+        return this.subjects[clientEventType].asObservable();
     }
 
 }
