@@ -298,6 +298,10 @@ public class UserResourceHelper implements Serializable {
 			if ( hasPermissions ){
 				user.put("requestPassword", true);
 			}
+
+			Object emailaddress = user.get( "emailaddress" );
+			user.remove( "emailaddress" );
+			user.put( "emailAddress", emailaddress);
 		}
 
 		return userList;
