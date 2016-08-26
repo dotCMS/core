@@ -1,38 +1,45 @@
 import { Routes } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx';
-import { Observer } from "rxjs/Observer";
+import { Observer } from 'rxjs/Observer';
 import { RuleEngineContainer } from '../../view/components/rule-engine/rule-engine.container';
 import { Injectable, Inject } from '@angular/core';
 import { PatternLibrary } from '../../view/components/common/pattern-library/pattern-library';
-
+import {Subject} from 'rxjs/Subject';
+import {LoginService} from './login-service';
+import {CoreWebService} from './core-web-service';
+import {RequestMethod, Http} from '@angular/http';
+import {ApiRoot} from '../persistence/ApiRoot';
 
 @Injectable()
-export class RoutingService{
+export class RoutingService extends CoreWebService{
 
-    private menusChangeObservable:Observable<any>;
-    private menusChangeObserver:Observer<any>;
-    private menus:any[];
+    private _menusChange$: Subject<Menu[]> = new Subject();
+    private menus: Menu[];
+
+    private urlMenus: string;
 
     private mapComponents = {
         'RULES_ENGINE_PORTLET': RuleEngineContainer,
         'PL': PatternLibrary
     };
 
-    constructor(@Inject('routes') private routes: Routes[ ]){
-        this.menusChangeObservable = Observable.create(observer => {
-            this.menusChangeObserver = observer;
+    constructor(apiRoot: ApiRoot, http: Http, @Inject('routes') private routes: Routes[ ],  loginService: LoginService) {
+        super(apiRoot, http);
 
-            if (this.menus){
-                this.menusChangeObserver.next(this.menus);
-            }
-        });
+        this.urlMenus = `${apiRoot.baseUrl}api/v1/appconfiguration`;
+
+        if (loginService.loginUser) {
+            this.loadMenus();
+        }
+
+        loginService.loginUser$.subscribe(user => this.loadMenus());
     }
 
-    public subscribeMenusChange():Observable<any>{
-        return this.menusChangeObservable;
+    get menusChange$(): Observable<Menu[]> {
+        return this._menusChange$.asObservable();
     }
 
-    public setMenus( menus:any[] ):void{
+    public setMenus(menus: Menu[]): void {
         this.menus = menus;
 
         if (this.menus.length) {
@@ -43,10 +50,10 @@ export class RoutingService{
 
             this.menus[0].menuItems.unshift({
                 ajax: false,
-                angular: true
-                id: "PL"
-                name: "Pattern Library"
-                url: "/pl"
+                angular: true,
+                id: 'PL',
+                name: 'Pattern Library',
+                url: '/pl',
             });
 
             for (let i = 0; i < this.menus.length; i++) {
@@ -66,52 +73,34 @@ export class RoutingService{
                 }
             }
 
-            if (this.menusChangeObserver) {
-                this.menusChangeObserver.next(this.menus);
-            }
+            this._menusChange$.next(this.menus);
         }
     }
 
-    public getMenus():any[]{
+    private loadMenus(): void {
+        this.requestView({
+            method: RequestMethod.Get,
+            url: this.urlMenus,
+        }).subscribe(response => this.setMenus(response.entity.menu),
+            error => this._menusChange$.error(error));
+    }
+
+    get currentMenu(): Menu[]{
         return this.menus;
     }
+}
 
-    public loadMenus():Observable<any>{
-        return Observable.create( observer => {
-            this.getConfig().subscribe((menuConfig) => {
+export interface Menu{
+    tabDescription: string;
+    tabName: string;
+    url: string;
+    menuItems: MenuItem[];
+}
 
-                if (menuConfig.errors.length) {
-                    console.log(menuConfig.errors[0].message);
-                    observer.error(menuConfig.errors);
-
-                } else {
-
-                    this.setMenus( menuConfig.entity.menu );
-                    observer.next(this.menus);
-                }
-            });
-        });
-    }
-
-    private getConfig(): Observable<any> {
-
-        return Observable.create(observer => {
-            let oReq = new XMLHttpRequest();
-
-            oReq.onreadystatechange = (() => {
-                if (oReq.status === 401) {
-                    // if the user is not loggedIn will be here ;
-                    observer.next(JSON.parse('{"errors":[],"entity":[]}'));
-                    observer.complete();
-                }else if (oReq.status === 400 || oReq.status === 500) {
-                    console.log('Error ' + oReq.status + ': ' + oReq.statusText);
-                }else if (oReq.readyState === XMLHttpRequest.DONE) {
-                    observer.next(JSON.parse(oReq.response));
-                    observer.complete();
-                }
-            });
-            oReq.open('GET', '/api/v1/appconfiguration');
-            oReq.send();
-        });
-    }
+export interface MenuItem{
+    ajax: boolean;
+    angular: boolean;
+    id: string;
+    name: string;
+    url: string;
 }

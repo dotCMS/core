@@ -304,7 +304,7 @@ export class RuleService extends CoreWebService {
   loadRules( ):Observable<RuleModel[]|CwError> {
     return this.request({
       method: RequestMethod.Get,
-      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.site.identifier}/ruleengine/rules`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}/ruleengine/rules`
     }).map(RuleService.fromServerRulesTransformFn);
   }
 

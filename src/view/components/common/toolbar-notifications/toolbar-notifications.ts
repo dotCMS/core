@@ -95,7 +95,7 @@ export class ToolbarNotifications {
         });
     }
 
-    private subscribeToNotifications():void {
+    private subscribeToNotifications(): void {
         this.dotcmsEventsService.subscribeTo('NOTIFICATION').subscribe((res) => {
             this.notifications.unshift(res.data);
             this.notificationsUnreadCount++;
@@ -103,7 +103,7 @@ export class ToolbarNotifications {
         });
     }
 
-    private toggleNotifications():void {
+    private toggleNotifications(): void {
         this.showNotifications = !this.showNotifications;
 
         if (this.showNotifications && !this.isNotificationsMarkedAsRead) {

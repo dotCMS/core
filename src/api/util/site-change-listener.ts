@@ -3,7 +3,7 @@ import {Site} from '../services/site-service';
 export abstract class SiteChangeListener {
 
     constructor(private siteService: SiteService) {
-        siteService.subscribeSwitchSite().subscribe(
+        siteService.switchSite$.subscribe(
             site => this.changeSiteReload( site )
         );
     }

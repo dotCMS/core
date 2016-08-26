@@ -17,7 +17,7 @@ import {SiteService} from '../../../api/services/site-service';
     templateUrl: ['dot-site-selector-component.html'],
 })
 export class SiteSelectorComponent {
-    private currentSite: string;
+    private currentSite: Site;
     private sites: Site[];
 
     constructor(private siteService: SiteService) {
@@ -25,16 +25,13 @@ export class SiteSelectorComponent {
     }
 
     ngOnInit(): void {
-        this.siteService.getAllSites().subscribe( response => {
-            this.currentSite = response.currentSite;
-            this.sites = response.sites;
-        }, error => alert( error.errorsMessages ));
+        this.siteService.switchSite$.subscribe(site => this.currentSite = site);
+        this.siteService.sites$.subscribe(sites => this.sites = sites);
     }
 
     switchSite(option: any): void {
-        this.siteService.switchSite(option.value).subscribe( response => {
+        this.siteService.switchSite(option.value).subscribe(response => {
 
-        }, error => alert( error.errorsMessages ));
+        }, error => alert(error.errorsMessages));
     }
 }
-

@@ -7,21 +7,19 @@ import {ApiRoot} from '../persistence/ApiRoot';
 import {RequestMethod} from '@angular/http';
 import {CoreWebService} from '../services/core-web-service';
 import { Router } from '@ngrx/router';
-import {Observer} from "rxjs/Observer";
-import {RoutingService} from "./routing-service";
-
+import {Observer} from 'rxjs/Observer';
+import {RoutingService} from './routing-service';
+import {Subject} from 'rxjs/Subject';
+import {Http} from '@angular/http';
 
 /**
  * This Service get the server configuration to display in the login component
  * and execute the login and forgot password routines
  */
 @Injectable()
-export class LoginService  {
+export class LoginService extends CoreWebService {
 
-    private static const LOGIN_USER_SESSION_STORAGE_KEY = "user";
-
-    private user:User;
-    private serverInfo: Array<any>;
+    private user: User;
     private userAuthURL: string;
     private serverInfoURL: string;
     private recoverPasswordURL: string;
@@ -31,12 +29,16 @@ export class LoginService  {
     private lang: string = '';
     private country: string = '';
 
-    constructor(_apiRoot: ApiRoot, public coreWebService: CoreWebService, private router: Router, private routingService: RoutingService) {
-        this.userAuthURL = `${_apiRoot.baseUrl}api/v1/authentication`;
-        this.serverInfoURL = `${_apiRoot.baseUrl}api/v1/loginform`;
-        this.recoverPasswordURL = `${_apiRoot.baseUrl}api/v1/forgotpassword`;
-        this.logoutURL = `${_apiRoot.baseUrl}api/v1/logout`;
-        this.changePasswordURL = `${_apiRoot.baseUrl}api/v1/changePassword`;
+    private _loginUser$: Subject<User> = new Subject<User>();
+
+    constructor(apiRoot: ApiRoot, http: Http, public coreWebService: CoreWebService, private router: Router) {
+        super(apiRoot, http);
+
+        this.userAuthURL = `${apiRoot.baseUrl}api/v1/authentication`;
+        this.serverInfoURL = `${apiRoot.baseUrl}api/v1/loginform`;
+        this.recoverPasswordURL = `${apiRoot.baseUrl}api/v1/forgotpassword`;
+        this.logoutURL = `${apiRoot.baseUrl}api/v1/logout`;
+        this.changePasswordURL = `${apiRoot.baseUrl}api/v1/changePassword`;
     }
 
     /**
@@ -70,25 +72,19 @@ export class LoginService  {
 
         let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
 
-        return  Observable.create(observer => {
-            this.coreWebService.requestView({
-                body: body,
-                method: RequestMethod.Post,
-                url: this.userAuthURL
-            }).subscribe(response =>{
-                this.user = response.entity;
-                window.sessionStorage.setItem(LoginService.LOGIN_USER_SESSION_STORAGE_KEY, response.entity);
-
-                this.routingService.loadMenus().subscribe( (menu) => observer.next(this.user),
-                    error => observer.error(error)
-                );
-
-            }, error => observer.error(error));
+        return this.requestView({
+            body: body,
+            method: RequestMethod.Post,
+            url: this.userAuthURL,
+        }).map(response => {
+            this.setLogInUser( response.entity );
+            return response.entity;
         });
     }
 
-    public setLogInUser( user:User ){
+    public setLogInUser( user: User ): void {
         this.user = user;
+        this._loginUser$.next( user );
     }
 
     /**
@@ -97,13 +93,13 @@ export class LoginService  {
      */
     public logOutUser(): Observable<any> {
         this.router.go('/public/login');
-        window.sessionStorage.removeItem(LoginService.LOGIN_USER_SESSION_STORAGE_KEY);
 
-        return this.coreWebService.requestView({
+        return this.requestView({
             method: RequestMethod.Get,
             url: this.logoutURL,
+        }).map( response => {
+            this.setLogInUser( null );
         });
-
     }
 
     /**
@@ -122,6 +118,24 @@ export class LoginService  {
         });
     }
 
+    public changePassword(login: string, password: string, token: string): Observable<any> {
+        let body = JSON.stringify({'userId': login, 'password': password, 'token': token});
+
+        return this.coreWebService.requestView({
+            body: body,
+            method: RequestMethod.Post,
+            url: this.changePasswordURL,
+        });
+    }
+
+    get loginUser$(): Observable<User> {
+        return this._loginUser$.asObservable();
+    }
+
+    get loginUser(): User {
+        return this.user;
+    }
+
     /**
      * update the language and country variables from the string
      * @param language string containing the languag and country
@@ -133,47 +147,30 @@ export class LoginService  {
             this.country = languageDesc[1];
         }
     }
-
-    public changePassword(login:string, password:string, token:string): Observable<any> {
-        let body = JSON.stringify({'userId': login, 'password': password, 'token': token});
-
-        return this.coreWebService.requestView({
-            body: body,
-            method: RequestMethod.Post,
-            url: this.changePasswordURL,
-        });
-    }
-    public getLoginUser():User{
-        if ( !this.user ){
-            this.user = window.sessionStorage.getItem( LoginService.LOGIN_USER_SESSION_STORAGE_KEY );
-        }
-
-        return this.user;
-    }
 }
 
-export interface User{
-    birthday:number //Timestamp
-    lastName:string
-    comments:string
-    timeZoneId:string
-    languageId:string
-    active:boolean
-    fullName:string
-    lastLoginDate:number //Timestamp
-    failedLoginAttempts:number
-    userId:string
-    lastLoginIP:string
-    firstName:string
-    companyId:string
-    modificationDate:number //Timestamp
-    emailAddress:string
-    deleteInProgress:boolean
-    nickname:string
-    middleName:string
-    female:boolean
-    actualCompanyId:string
-    male:boolean
-    createDate:number //Timestamp
-    deleteDate:number //Timestamp
+export interface User {
+    active?: boolean;
+    actualCompanyId?: string;
+    birthday?: number; // Timestamp
+    comments?: string;
+    companyId?: string;
+    createDate?: number; // Timestamp
+    deleteDate?: number; // Timestamp
+    deleteInProgress?: boolean;
+    failedLoginAttempts?: number;
+    female?: boolean;
+    firstName: string;
+    fullName?: string;
+    emailAddress: string;
+    languageId?: string;
+    lastLoginDate?: number; // Timestamp
+    lastLoginIP?: string;
+    lastName: string;
+    male?: boolean;
+    middleName?: string;
+    modificationDate?: number; // Timestamp
+    nickname?: string;
+    timeZoneId?: string;
+    userId: string;
 }
