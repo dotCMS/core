@@ -2,11 +2,10 @@ import {Injectable} from '@angular/core';
 import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {Observable} from 'rxjs/Rx';
-import {RequestMethod} from '@angular/http';
+import {RequestMethod, Http} from '@angular/http';
 import {Observer} from 'rxjs/Observer';
 import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
-import {Http} from '@angular/http';
 
 @Injectable()
 export class SiteService extends CoreWebService {

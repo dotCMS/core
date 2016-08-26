@@ -39,7 +39,7 @@ export class RoutingService extends CoreWebService{
         return this._menusChange$.asObservable();
     }
 
-    public setMenus( menus: Menu[] ): void {
+    public setMenus(menus: Menu[]): void {
         this.menus = menus;
 
         if (this.menus.length) {

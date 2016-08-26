@@ -8,8 +8,7 @@ import {RoutingService} from '../../../../api/services/routing-service';
 import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
 import {SiteService} from '../../../../api/services/site-service';
 import {SiteChangeListener} from '../../../../api/util/site-change-listener';
-import {Menu} from "../../../../api/services/routing-service";
-
+import {Menu} from '../../../../api/services/routing-service';
 
 @Component({
     directives: [MD_PROGRESS_CIRCLE_DIRECTIVES],
