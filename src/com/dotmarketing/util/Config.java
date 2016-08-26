@@ -2,6 +2,8 @@ package com.dotmarketing.util;
 
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -10,6 +12,13 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import javax.servlet.ServletContext;
+
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class Config {
 
@@ -329,5 +338,25 @@ public class Config {
 
 	}
 
+	public static void _setupFakeTestingContext() throws Exception{
+	    // if we need a fake ServletContext
+	    if(CONTEXT ==null){
+            ServletContext context = Mockito.mock(ServletContext.class);
+            final String topPath= Files.createTempDir().getCanonicalPath();
+            Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
+                @Override
+                public String answer(InvocationOnMock invocation) throws Throwable {
+                    String path = (String) invocation.getArguments()[0];
+                    path = topPath + path.replaceAll("/", File.separator);
+    
+                    return path;
+                }
+            });
+            Config.CONTEXT = context;
+	    }
+	}
+	
+	
+	
 
 }
