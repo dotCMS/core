@@ -498,4 +498,27 @@ public class CollectionsUtils implements Serializable {
         return new AbstractMap.SimpleEntry<K, V>(key, value);
     } // entry
 
+    /**
+     * Rename key1 by key2 in map, for example, if We have the follow code:<br>
+     *     <pre>
+     *         Map<Strin, String> map = new HashMap<>();
+     *         map.put("key1", "value1");
+     *         CollectionsUtils.renameKey( map, "key1", "key2");
+     *         System.out.println( map.get("key1") + " " + map.get("key2"));
+     *     </pre>
+     *
+     * The output will be <pre>value1 null</pre>
+     * 
+     * @param map map where the key have to be replace
+     * @param key1 key to replace
+     * @param key2 new key
+     * @param <K>
+     * @param <V>
+     */
+    public static <K, V> void renameKey (Map<K, V> map, K key1, K key2){
+        V emailaddress = map.get( key1 );
+        map.remove( key1 );
+        map.put( key2, emailaddress);
+    }
+
 } // E:O:F:CollectionsUtils.
