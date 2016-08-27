@@ -495,18 +495,7 @@ public class VelocityUtil {
 	}
 
 	public static long getLanguageId(HttpServletRequest request) {
-		long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-		try {
-			if(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE)!=null)
-				languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
-			else if (request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)!=null)
-				languageId = Long.parseLong((String) request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
-		} catch(NumberFormatException e) {
-			Logger.info(VelocityServlet.class, "Bad languageId passed in");
-		}
-
-		return languageId;
+		return WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 	}
 
 	/**

@@ -106,6 +106,10 @@ public abstract class VelocityServlet extends HttpServlet {
 	
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
+	private static VelocityServlet me;
+	public static VelocityServlet me(){
+	    return me;
+	}
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(
@@ -206,8 +210,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 			// ### END VALIDATE ARCHIVE ###
 
-			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
-			langWebAPI.checkSessionLocale(request);
+
 
 			// we will always need a visitor in admin mode
 			if(ADMIN_MODE){
@@ -311,7 +314,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		Config.initializeConfig();
 		CHARSET = Config.getStringProperty("CHARSET");
 		VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-
+		me=this;
 	}
 
 	protected void doAdminMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
