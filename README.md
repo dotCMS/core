@@ -1,6 +1,5 @@
 # dotCMS
 
-## About
 dotCMS is a java based open source content management system (CMS) that powers thousands of web sites across the internet.  dotCMS has been designed from the ground up to deliver personalized, permission based content to multiple channels, from websites to mobile devices to applications that consume content via dotCMSs' RESTful APIs (Content as a Service).
 
 Download dotCMS: https://dotcms.com/download
