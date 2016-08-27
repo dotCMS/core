@@ -232,7 +232,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         //Search by field name
         //Field foundField = FieldFactory.getFieldByName( structure.getInode(), field.getFieldName() );
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundField = FieldFactory.getFieldByName( structure.getName(), field.getFieldName() );
+        Field foundField = FieldFactory.getFieldByVariableName( structure.getName(), field.getFieldName() );
 
         //Start with the validations
         assertNotNull( foundField );
