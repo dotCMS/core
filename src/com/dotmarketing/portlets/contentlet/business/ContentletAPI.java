@@ -1578,7 +1578,7 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 * @throws DotStateException
 	 */
-	public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+	void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.

@@ -490,10 +490,9 @@ public class ContentResource {
 
 		for(Contentlet c : cons){
 			Map<String, Object> m = new HashMap<>();
-			m.putAll(c.getMap());
 			Structure s = c.getStructure();
 
-			c = ContentletUtil.setSpecialFieldValues(user, c);
+			m.putAll(ContentletUtil.getContentPrintableMap(user, c));
 
 			if(s.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET && "true".equals(render)) {
 				m.put("parsedCode",  WidgetResource.parseWidget(request, response, c));
@@ -540,7 +539,7 @@ public class ContentResource {
 		return json.toString();
 	}
 
-	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws IOException{
+	private String getJSON(List<Contentlet> cons, HttpServletRequest request, HttpServletResponse response, String render, User user) throws IOException, DotDataException{
 		JSONObject json = new JSONObject();
 		JSONArray jsonCons = new JSONArray();
 
@@ -571,14 +570,10 @@ public class ContentResource {
 		return jsonFields;
 	}
 
-	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user)
-			throws DotDataException, JSONException, IOException{
-
+	public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request, HttpServletResponse response, String render, User user) throws JSONException, IOException, DotDataException{
 		JSONObject jo = new JSONObject();
 		Structure s = con.getStructure();
-		con = ContentletUtil.setSpecialFieldValues(user, con);
-
-		Map<String,Object> map = con.getMap();
+		Map<String,Object> map = ContentletUtil.getContentPrintableMap(user, con);
 
 		Set<String> jsonFields=getJSONFields(s);
 
