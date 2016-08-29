@@ -22,7 +22,8 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
             if (DbConnectionFactory.isPostgres()) {
-                String statement = "CREATE OR REPLACE FUNCTION container_versions_check() RETURNS trigger AS '\n" +
+                String statement = "DROP TRIGGER IF EXISTS container_versions_check_trigger on dot_containers;\n " +
+                    "CREATE OR REPLACE FUNCTION container_versions_check() RETURNS trigger AS '\n" +
                     "DECLARE\n" +
                     "versionsCount integer;\n" +
                     "BEGIN\n" +
