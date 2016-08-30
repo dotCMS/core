@@ -56,6 +56,8 @@ public class ConfigurationHelper implements Serializable {
 	 * @return A {@link Map} with all the required system properties.
 	 */
 	public Map<String, Object> getConfigProperties(final HttpServletRequest request, final Locale locale) throws LanguageException {
+
+
 		return map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
 				Config.getStringProperty(DOTCMS_WEBSOCKET_PROTOCOL, "ws"),
@@ -67,29 +69,44 @@ public class ConfigurationHelper implements Serializable {
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				I18N_MESSAGES_MAP,
-				mapEntries(message("notifications_title", locale), // Notifications
-					message("notifications_dismiss", locale), // Dismiss
-					message("notifications_dismissall", locale), // Dismiss all
-					message("relativetime.future", locale),
-					message("relativetime.past", locale),
-					message("relativetime.s", locale),
-					message("relativetime.m", locale),
-					message("relativetime.mm", locale),
-					message("relativetime.h", locale),
-					message("relativetime.hh", locale),
-					message("relativetime.d", locale),
-					message("relativetime.dd", locale),
-					message("relativetime.M", locale),
-					message("relativetime.MM", locale),
-					message("relativetime.y", locale),
-					message("relativetime.yy", locale)
-				));
+				mapEntries(
+						message("notifications_title", locale), // Notifications
+						message("notifications_dismiss", locale), // Dismiss
+						message("notifications_dismissall", locale), // Dismiss all
+						this.getRelativeTimeEntry(locale)
+				)
+				);
 	}
 
+	private Map.Entry<String, Object> getRelativeTimeEntry(final Locale locale) throws LanguageException {
 
-	private static Map.Entry<String, String> message (final String message, final Locale locale) throws LanguageException {
+		return entry("relativeTime",
+				mapEntries(
+						message("future", "relativetime.future", locale),
+						message("past", "relativetime.past", locale),
+						message("s", "relativetime.s", locale),
+						message("m", "relativetime.m", locale),
+						message("mm", "relativetime.mm", locale),
+						message("h", "relativetime.h", locale),
+						message("hh", "relativetime.hh", locale),
+						message("d", "relativetime.d", locale),
+						message("dd", "relativetime.dd", locale),
+						message("M", "relativetime.M", locale),
+						message("MM", "relativetime.MM", locale),
+						message("y", "relativetime.y", locale),
+						message("yy", "relativetime.yy", locale)
+				));
 
-		return entry(message, LanguageUtil.get(locale, message));
+	}
+
+	private static Map.Entry<String, Object> message (final String key, final String message, final Locale locale) throws LanguageException {
+
+		return entry(key, LanguageUtil.get(locale, message));
+	}
+
+	private static Map.Entry<String, Object> message (final String message, final Locale locale) throws LanguageException {
+
+		return message(message, message, locale);
 	}
 
 
