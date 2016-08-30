@@ -81,7 +81,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 			}
 			
 			if(!Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)){
-				actualPath = actualPath.substring(2);
+				actualPath = actualPath.substring(String.valueOf(dotDavHelper.getLanguage()).length()+1);
 			}
 			
 			String[] splitPath = actualPath.split("/");
