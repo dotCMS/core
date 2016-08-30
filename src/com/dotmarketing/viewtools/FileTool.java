@@ -1,25 +1,33 @@
 package com.dotmarketing.viewtools;
 
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class FileTool implements ViewTool {
 
 	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
+	private static final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+	private static final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
 	public void init(Object initData) {
 
@@ -28,16 +36,20 @@ public class FileTool implements ViewTool {
 	public File getNewFile(){
 		return new File();
 	}
-	
+
 	public IFileAsset getFile(String identifier, boolean live){
+		return getFile(identifier, live, -1);
+	}
+
+	public IFileAsset getFile(String identifier, boolean live, long languageId){
 		Identifier id;
 		String p = null;
 		try {
-			id = APILocator.getIdentifierAPI().find(identifier);
+			id = identifierAPI.find(identifier);
 		    if(live){
-			  p = LiveCache.getPathFromCache(id.getURI(), id.getHostId());
+			  p = LiveCache.getPathFromCache(id.getURI(), id.getHostId(), languageId != -1 ? languageId : null);
 		    }else{
-			  p = WorkingCache.getPathFromCache(id.getURI(), id.getHostId());
+			  p = WorkingCache.getPathFromCache(id.getURI(), id.getHostId(), languageId != -1 ? languageId : null);
 		    }
 		} catch (Exception e1) {
 			Logger.error(FileTool.class,e1.getMessage(),e1);
@@ -47,9 +59,14 @@ public class FileTool implements ViewTool {
         IFileAsset file = null;
 		try {
 			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-				Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+				Contentlet cont = contentletAPI.findContentletByIdentifier(
+					id.getId(),
+					live,
+					languageId != -1 ? languageId : languageAPI.getDefaultLanguage().getId(),
+					userAPI.getSystemUser(),
+					false);
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
-					file = APILocator.getFileAssetAPI().fromContentlet(cont);
+					file = fileAssetAPI.fromContentlet(cont);
 				}
 			}else{
 				file = fileAPI.find(p, userAPI.getSystemUser(), false);
