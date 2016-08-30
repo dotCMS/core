@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,19 +23,21 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
 
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         DotConnect dc = new DotConnect();
+        List<String> statements = new ArrayList<>();
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
             if (DbConnectionFactory.isPostgres()) {
-                dc.executeStatement(getPostgresStatement());
-            } else if (DbConnectionFactory.isMySql()){
-                for(String statement: getMySQLStatement()){
-                    dc.executeStatement(statement);
-                }
-                return;
-            } else if (DbConnectionFactory.isOracle()){
-                dc.executeStatement(getOracleStatement());
-            } else if (DbConnectionFactory.isMsSql()){
-                dc.executeStatement(getMSSQLStatement());
+                statements = getPostgresStatement();
+            } else if (DbConnectionFactory.isMySql()) {
+                statements = getMySQLStatement();
+            } else if (DbConnectionFactory.isOracle()) {
+                statements = getOracleStatement();
+            } else if (DbConnectionFactory.isMsSql()) {
+                statements = getMSSQLStatement();
+            }
+
+            for (String statement : statements) {
+                dc.executeStatement(statement);
             }
 
         } catch (SQLException e) {
@@ -42,36 +45,37 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
         }
     }
 
-    private String getPostgresStatement(){
-            return  "DROP TRIGGER IF EXISTS container_versions_check_trigger on " +
-                Inode.Type.CONTAINERS.getTableName() +
-                ";\n " +
-                "CREATE OR REPLACE FUNCTION container_versions_check() RETURNS trigger AS '\n" +
-                "DECLARE\n" +
-                "versionsCount integer;\n" +
-                "BEGIN\n" +
-                "IF (tg_op = ''DELETE'') THEN\n" +
-                "select count(*) into versionsCount from " +
-                Inode.Type.CONTAINERS.getTableName() +
-                " where identifier = OLD.identifier;\n" +
-                "IF (versionsCount = 0)THEN\n" +
-                "DELETE from identifier where id = OLD.identifier;\n" +
-                "ELSE\n" +
-                "RETURN OLD;\n" +
-                "END IF;\n" +
-                "END IF;\n" +
-                "RETURN NULL;\n" +
-                "END\n" +
-                "' LANGUAGE plpgsql;\n" +
-                "CREATE TRIGGER container_versions_check_trigger AFTER DELETE\n" +
-                "ON " +
-                Inode.Type.CONTAINERS.getTableName() +
-                " FOR EACH ROW\n" +
-                "EXECUTE PROCEDURE container_versions_check();\n";
+    private List<String> getPostgresStatement() {
+        String statement = "DROP TRIGGER IF EXISTS container_versions_check_trigger on " +
+            Inode.Type.CONTAINERS.getTableName() +
+            ";\n " +
+            "CREATE OR REPLACE FUNCTION container_versions_check() RETURNS trigger AS '\n" +
+            "DECLARE\n" +
+            "versionsCount integer;\n" +
+            "BEGIN\n" +
+            "IF (tg_op = ''DELETE'') THEN\n" +
+            "select count(*) into versionsCount from " +
+            Inode.Type.CONTAINERS.getTableName() +
+            " where identifier = OLD.identifier;\n" +
+            "IF (versionsCount = 0)THEN\n" +
+            "DELETE from identifier where id = OLD.identifier;\n" +
+            "ELSE\n" +
+            "RETURN OLD;\n" +
+            "END IF;\n" +
+            "END IF;\n" +
+            "RETURN NULL;\n" +
+            "END\n" +
+            "' LANGUAGE plpgsql;\n" +
+            "CREATE TRIGGER container_versions_check_trigger AFTER DELETE\n" +
+            "ON " +
+            Inode.Type.CONTAINERS.getTableName() +
+            " FOR EACH ROW\n" +
+            "EXECUTE PROCEDURE container_versions_check();\n";
+
     }
 
-    private List<String> getMySQLStatement(){
-        String statement =  "DROP PROCEDURE IF EXISTS checkVersions;\n" +
+    private List<String> getMySQLStatement() {
+        String statement = "DROP PROCEDURE IF EXISTS checkVersions;\n" +
             "CREATE PROCEDURE checkVersions(IN ident varchar(36),IN tableName VARCHAR(20),OUT versionsCount INT)\n" +
             "BEGIN\n" +
             "SET versionsCount := 0;\n" +
@@ -118,14 +122,14 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
             "IF(count = 0)THEN\n" +
             "delete from identifier where id = OLD.identifier;\n" +
             "END IF;\n" +
-            "END\n"+
+            "END\n" +
             "#\n";
 
         return SQLUtil.tokenize(statement);
     }
 
-    private String getOracleStatement(){
-        return "CREATE OR REPLACE PACKAGE container_pkg as\n" +
+    private List<String> getOracleStatement() {
+        String statement = "CREATE OR REPLACE PACKAGE container_pkg as\n" +
             "type array is table of " +
             Inode.Type.CONTAINERS.getTableName() +
             "%rowtype index by binary_integer;\n" +
@@ -134,7 +138,7 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
             "END;\n" +
             "/\n" +
             "CREATE OR REPLACE TRIGGER container_versions_bd\n" +
-            "BEFORE DELETE ON "+
+            "BEFORE DELETE ON " +
             Inode.Type.CONTAINERS.getTableName() +
             "\n" +
             "BEGIN\n" +
@@ -167,13 +171,13 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
             "END LOOP;\n" +
             "END;\n" +
             "/\n";
-
+        return SQLUtil.tokenize(statement);
     }
 
-    private String getMSSQLStatement(){
-        return "drop trigger check_container_versions;\n" +
+    private List<String> getMSSQLStatement() {
+        String statement = "drop trigger check_container_versions;\n" +
             "CREATE Trigger check_container_versions\n" +
-            "ON "  +
+            "ON " +
             Inode.Type.CONTAINERS.getTableName() +
             "\n" +
             "FOR DELETE AS\n" +
@@ -196,6 +200,8 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
             "END\n" +
             "fetch next from container_cur_Deleted into @identifier\n" +
             "END;\n";
+
+        return SQLUtil.tokenize(statement);
     }
 
 }
