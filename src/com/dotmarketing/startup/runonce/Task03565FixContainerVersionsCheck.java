@@ -71,7 +71,7 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
             Inode.Type.CONTAINERS.getTableName() +
             " FOR EACH ROW\n" +
             "EXECUTE PROCEDURE container_versions_check();\n";
-
+        return SQLUtil.tokenize(statement);
     }
 
     private List<String> getMySQLStatement() {
