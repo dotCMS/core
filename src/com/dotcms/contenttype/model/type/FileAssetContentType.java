@@ -30,7 +30,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableHostFolderField.builder()
 				.name("Site or Folder")
 				.dataType(DataTypes.SYSTEM)
-				.variable("hostFolder")
+				.variable("siteOrFolder")
 				.sortOrder(fields.size())
 				.required(true)
 				.fixed(true)
@@ -81,7 +81,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableTabDividerField.builder()
 				.name("Metadata")
 				.dataType(DataTypes.SECTION_DIVIDER)
-				.variable("MetadataTab")
+				.variable("metadataTab")
 				.sortOrder(fields.size())
 				.build()
 		);

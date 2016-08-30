@@ -31,6 +31,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.VelocityUtil;
 
 public class FieldFactoryImpl implements FieldFactory {
@@ -138,8 +139,12 @@ public class FieldFactoryImpl implements FieldFactory {
         //move to the end of the line
         builder.sortOrder((int) ((System.currentTimeMillis()* ((fieldsAlreadyAdded.size()+1))) / 1000L));
       }
+      
       //normalize our velocityvar
-      builder.variable(suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded));
+            String tryVar = (throwAwayField.variable() == null)
+                    ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) 
+                    : throwAwayField.variable();
+      builder.variable(tryVar);
     }
     
     
@@ -452,8 +457,8 @@ public class FieldFactoryImpl implements FieldFactory {
   @Override
   public String suggestVelocityVar(final String tryVar, List<Field> takenFields) throws DotDataException{
 
-      String var = VelocityUtil.convertToVelocityVariable(tryVar);
 
+      String var = StringUtils.camelCaseLower(tryVar);
       for(Field f : takenFields){
         if(var.equalsIgnoreCase(f.variable())){
           var=null;
@@ -463,9 +468,9 @@ public class FieldFactoryImpl implements FieldFactory {
       if(var!=null) return var;
       
       for(int i=1;i<100000;i++){
-        var = VelocityUtil.convertToVelocityVariable(tryVar) + i;
+        var = StringUtils.camelCaseLower(tryVar) + i;
         for(Field f : takenFields){
-          if(var.equals(f.variable())){
+          if(var.equalsIgnoreCase(f.variable())){
             var=null;
             break;
           }

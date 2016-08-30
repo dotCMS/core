@@ -219,7 +219,7 @@ public class TikaUtils {
 	private String[] translateKey(String key) {
 		String[] x = getTranslationMap().get(key);
 		if (x == null) {
-			x = new String[] { StringUtils.sanitizeCamelCase(key) };
+			x = new String[] { StringUtils.camelCaseLower(key) };
 		}
 		return x;
 	}

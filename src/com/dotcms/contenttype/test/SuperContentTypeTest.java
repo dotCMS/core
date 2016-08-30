@@ -14,9 +14,11 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.dotmarketing.business.web.LanguageWebAPIImpl;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.test.DataSourcesForTesting;
+import com.dotmarketing.db.test.TestingJndiDatasource;
 import com.dotmarketing.util.Config;
 import com.google.common.io.Files;
 
@@ -44,26 +46,11 @@ import com.google.common.io.Files;
 				return;
 			}
 			inited=true;
-			
-			
-			DataSource ds = new DataSourcesForTesting(new File(dbFile)).dataSources().get(0);
-			DbConnectionFactory.overrideDefaultDatasource(ds);
-			
-			
-			ServletContext context = Mockito.mock(ServletContext.class);
-			final String topPath= Files.createTempDir().getCanonicalPath();
-			Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
-				@Override
-				public String answer(InvocationOnMock invocation) throws Throwable {
-					String path = (String) invocation.getArguments()[0];
-					path = topPath + path.replaceAll("/", File.separator);
-	
-					return path;
-				}
-			});
 
-			Config.CONTEXT = context;
 
+		    new TestingJndiDatasource().init();
+		    Config._setupFakeTestingContext();
+		    
 
 			DotConnect dc = new DotConnect();
 			String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";

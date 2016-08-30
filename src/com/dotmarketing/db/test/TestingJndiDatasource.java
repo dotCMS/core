@@ -1,5 +1,7 @@
 package com.dotmarketing.db.test;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Hashtable;
 
 import javax.naming.Context;
@@ -11,6 +13,7 @@ import javax.naming.spi.NamingManager;
 import javax.sql.DataSource;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
+import com.dotmarketing.exception.DotRuntimeException;
 
 public class TestingJndiDatasource {
 
@@ -70,8 +73,19 @@ public class TestingJndiDatasource {
                                     dataSource.setUsername(username);
                                     dataSource.setPassword(password);
                                     dataSource.setMaxActive(100);
+                                    
+                                    try(Connection c = dataSource.getConnection()) {
+                                        c.prepareStatement("select 1").executeQuery();
+                                        c.close();
+                                    } catch (SQLException e) {
+                                        throw new DotRuntimeException(e);
+                                    }finally{
+
+                                    }
+                                    
                                     dataSources.put("jdbc/dotCMSPool", dataSource);
 
+                                    
                                 }
 
                                 if (dataSources.containsKey(name)) {

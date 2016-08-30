@@ -421,24 +421,26 @@ public class ContentTypeFactoryImplTest {
 		}
 		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
 		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
-		assertThat("fields are all added", fields.size() == baseTypeFields.size());
+		assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
 
 		for (int j = 0; j < fields.size(); j++) {
 			Field field = fields.get(j);
 			Field baseField = null;
 			try{
               baseField = baseTypeFields.get(j);
-              assertThat("field datatypes are correct:", field.dataType().equals(baseField.dataType()));
-              assertThat("fields variable is correct:", field.variable().equals(baseField.variable()));
-              assertThat("field class is correct:", field.getClass().equals(baseField.getClass()));
-              assertThat("field name is  correct:", field.name().equals(baseField.name()));
-              assertThat("field sort order is correct", field.sortOrder() == baseField.sortOrder());
+              assertThat("field datatypes are not correct:", field.dataType().equals(baseField.dataType()));
+              assertThat("fields variable is not correct:", field.variable().equals(baseField.variable()));
+              assertThat("field class is not correct:", field.getClass().equals(baseField.getClass()));
+              assertThat("field name is  not correct:", field.name().equals(baseField.name()));
+              assertThat("field sort order is not correct", field.sortOrder() == baseField.sortOrder());
 			} 
 			catch(Throwable e){
-              System.out.println("Old and New Fields are NOT the same");
-              System.out.println(field);
-              System.out.println(baseField);
+              System.out.println(e.getMessage());
+              System.out.println("Saved  db: " + field);
+              System.out.println("not saved: " + baseField);
+              System.out.println("\n");
               throw e;
+              
 			}
 		}
 	}
@@ -461,7 +463,7 @@ public class ContentTypeFactoryImplTest {
 		String newVar = factory.suggestVelocityVar(tryVar);
 		
 		assertThat("random velocity var works", newVar!=null);
-		assertThat("random velocity var works", newVar.equals(tryVar));
+		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
 		
 		tryVar = "News" ;
 		newVar = factory.suggestVelocityVar(tryVar);
