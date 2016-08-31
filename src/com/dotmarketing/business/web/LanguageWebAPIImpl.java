@@ -64,9 +64,11 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 		boolean validLang = true;
 		
 		// update page language
-		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
-				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))
-				|| UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE)) ||
+			UtilMethods.isSet(httpRequest.getParameter("language_id")) ||
+			UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) ||
+			(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) ) {
+
 			if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
 				languageId = httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE);
 			} else if(UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
