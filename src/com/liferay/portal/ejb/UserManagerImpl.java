@@ -775,7 +775,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		String[] stratParams = delayStrat.split(":");
 		DelayStrategy strategy;
 		try {
-			strategy = DelayStrategy.valueOf(stratParams[0]);
+			strategy = (UtilMethods.isSet(stratParams[0]))?
+					DelayStrategy.valueOf(stratParams[0]):DelayStrategy.POW;
 			if (stratParams.length > 1) {
 				seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
 			}
