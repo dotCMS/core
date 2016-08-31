@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -14,10 +15,10 @@ import com.dotcms.rest.api.v1.menu.Menu;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.system.AppConfigurationHelper;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
+import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LoginAsAPI;
-import com.dotmarketing.business.web.WebContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
@@ -26,7 +27,6 @@ import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,20 +51,19 @@ public class AppContextInitResourceTest {
 		LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
 
 		MenuResource menuResource = mock(MenuResource.class);
-		ConfigurationResource configurationResource = mock(ConfigurationResource.class);
+		ConfigurationHelper configurationHelper = mock(ConfigurationHelper.class);
 
 		when(menuResource.getMenus( MenuResource.App.CORE_WEB.name(), mockHttpRequest )).thenReturn(
 				Response.ok(new ResponseEntityView(menuData)).build() );
 
-		when(configurationResource.list( mockHttpRequest )).thenReturn(
-				Response.ok(new ResponseEntityView(configData)).build());
+		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);
 
 		LoginService loginService = mock( LoginService.class );
 
 		User user = UserUtilTest.createUser();
 		when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( user );
 
-		AppConfigurationHelper helper = new AppConfigurationHelper(loginAsAPI, loginService, menuResource, configurationResource);
+		AppConfigurationHelper helper = new AppConfigurationHelper(loginAsAPI, loginService, menuResource, configurationHelper);
 
 		final AppContextInitResource resource = new AppContextInitResource( helper );
 		Response responseEntityView = resource.list(mockHttpRequest);
@@ -91,13 +90,12 @@ public class AppContextInitResourceTest {
 		LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
 
 		MenuResource menuResource = mock(MenuResource.class);
-		ConfigurationResource configurationResource = mock(ConfigurationResource.class);
+		ConfigurationHelper configurationHelper = mock(ConfigurationHelper.class);
 
 		when(menuResource.getMenus( MenuResource.App.CORE_WEB.name(), mockHttpRequest )).thenReturn(
 				Response.ok(new ResponseEntityView(menuData)).build() );
 
-		when(configurationResource.list( mockHttpRequest )).thenReturn(
-				Response.ok(new ResponseEntityView(configData)).build());
+		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);
 
 		LoginService loginService = mock( LoginService.class );
 
@@ -105,9 +103,9 @@ public class AppContextInitResourceTest {
 		User loginAsUser = UserUtilTest.createUser();
 
 		when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
-		when(loginAsAPI.getPrincipalUser(WebContext.getInstance(mockHttpRequest))).thenReturn(user);
+		when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest))).thenReturn(user);
 
-		AppConfigurationHelper helper = new AppConfigurationHelper(loginAsAPI, loginService, menuResource, configurationResource);
+		AppConfigurationHelper helper = new AppConfigurationHelper(loginAsAPI, loginService, menuResource, configurationHelper);
 
 		final AppContextInitResource resource = new AppContextInitResource( helper );
 		Response responseEntityView = resource.list(mockHttpRequest);

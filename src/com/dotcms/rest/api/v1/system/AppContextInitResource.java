@@ -5,8 +5,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -21,10 +19,6 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LoginAsAPI;
-import com.dotmarketing.business.web.WebContext;
-import com.liferay.portal.model.User;
 
 /**
  * This Jersey end-point provides access to configuration parameters that are

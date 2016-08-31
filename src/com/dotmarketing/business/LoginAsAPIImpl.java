@@ -1,13 +1,12 @@
 package com.dotmarketing.business;
 
-import com.dotcms.AppContext;
+import com.dotcms.system.AppContext;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-
-import javax.servlet.http.HttpServletRequest;
+import jnr.ffi.Runtime;
 
 /**
  * Default implementation of {@link LoginAsAPI}
@@ -39,18 +38,21 @@ public class LoginAsAPIImpl implements LoginAsAPI {
      *
      * @param appContext
      * @return if a user is LoginAs then return it, in otherwise return null
-     * @throws DotSecurityException if one is thrown when the user is search
-     * @throws DotDataException if one is thrown when the user is search
+     * @throws  if one is thrown when the user is search
      */
-    public User getPrincipalUser(AppContext appContext) throws DotSecurityException, DotDataException {
-        String principalUserId = appContext.getAttribute(WebKeys.PRINCIPAL_USER_ID);
-        User loginAsUser = null;
+    public User getPrincipalUser(AppContext appContext) {
+        try {
+            String principalUserId = appContext.getAttribute(WebKeys.PRINCIPAL_USER_ID);
+            User loginAsUser = null;
 
-        if (principalUserId != null){
-             loginAsUser = userAPI.loadUserById(principalUserId);
+            if (principalUserId != null) {
+                loginAsUser = userAPI.loadUserById(principalUserId);
+            }
+
+            return loginAsUser;
+        }catch(DotSecurityException|DotDataException e){
+            throw new LoginAsRuntimeException(e);
         }
-
-        return loginAsUser;
     }
 
     public boolean isLoginAsUser(AppContext appContext){

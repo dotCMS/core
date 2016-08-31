@@ -1,23 +1,23 @@
-package com.dotmarketing.business.web;
+package com.dotcms.api.web;
 
-import com.dotcms.AppContext;
+import com.dotcms.system.AppContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- * Created by freddyrodriguez on 31/8/16.
+ * Wrapper to HttpSession
  */
-public class WebContext implements AppContext {
+public final class WebSessionContext implements AppContext {
 
     private HttpSession session;
 
-    private WebContext(HttpServletRequest request){
+    private WebSessionContext(HttpServletRequest request){
         this.session = request.getSession();
     }
 
-    public static WebContext getInstance(HttpServletRequest request){
-        return new WebContext(request);
+    public static WebSessionContext getInstance(HttpServletRequest request){
+        return new WebSessionContext(request);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class WebContext implements AppContext {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        WebContext that = (WebContext) o;
+        WebSessionContext that = (WebSessionContext) o;
 
         return session != null ? session.equals(that.session) : that.session == null;
 

@@ -1,9 +1,5 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.renameKey;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +30,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
+
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -286,9 +284,7 @@ public class UserResourceHelper implements Serializable {
 		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(StringPool.BLANK, 1, 30, false, false);
 
 		List<Map<String, Object>> userList = new ArrayList<>();
-		List<String> rolesId = new ArrayList<>();
-		rolesId.add( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId() ); //Admin Roles
-		rolesId.add( roleAPI.loadCMSAdminRole().getId() ); //Login As Roles
+		List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
 
 		for (User user : users) {
 			Map<String, Object> userMap = user.toMap();

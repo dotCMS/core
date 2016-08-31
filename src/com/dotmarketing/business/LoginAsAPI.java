@@ -1,11 +1,9 @@
 package com.dotmarketing.business;
 
-import com.dotcms.AppContext;
+import com.dotcms.system.AppContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * It is intended to be a helper to the LoginAs feature
@@ -20,7 +18,7 @@ public interface LoginAsAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public User getPrincipalUser(AppContext context) throws DotSecurityException, DotDataException;
+    public User getPrincipalUser(AppContext context);
 
     /**
      * Return true if exists a LoginAs user

@@ -1,4 +1,4 @@
-package com.dotcms;
+package com.dotcms.system;
 
 import java.util.Enumeration;
 

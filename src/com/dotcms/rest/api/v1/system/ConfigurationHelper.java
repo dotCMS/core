@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.LocaleUtil;
 
 /**
  * A utility class that provides the required dotCMS configuration properties to
@@ -76,6 +77,20 @@ public class ConfigurationHelper implements Serializable {
 						this.getRelativeTimeEntry(locale)
 				)
 				);
+	}
+
+	/**
+	 * Reads the required configuration properties from the dotCMS configuration
+	 * files and also from the {@link HttpServletRequest} object. New properties
+	 * can be added as they are needed.
+	 *
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @return A {@link Map} with all the required system properties.
+	 */
+	public Map<String, Object> getConfigProperties(final HttpServletRequest request) throws LanguageException {
+		final Locale locale = LocaleUtil.getLocale(request);
+		return getConfigProperties(request, locale);
 	}
 
 	private Map.Entry<String, Object> getRelativeTimeEntry(final Locale locale) throws LanguageException {

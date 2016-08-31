@@ -14,12 +14,12 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.WebContext;
+import com.dotcms.api.web.WebSessionContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageRuntimeException;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -38,12 +38,10 @@ import static com.dotcms.util.CollectionsUtils.map;
 @SuppressWarnings("serial")
 public class AppConfigurationHelper implements Serializable {
 
-
-
 	private final LoginAsAPI loginAsAPI;
 	private final LoginService loginService;
 	private final MenuResource menuResource;
-	private final ConfigurationResource configurationResource;
+	private final ConfigurationHelper configurationHelper;
 
 	private static class SingletonHolder {
 		private static final AppConfigurationHelper INSTANCE = new AppConfigurationHelper();
@@ -55,16 +53,16 @@ public class AppConfigurationHelper implements Serializable {
 
 	public AppConfigurationHelper() {
 		this( APILocator.getLoginAsAPI(), LoginServiceFactory.getInstance().getLoginService(),
-				new MenuResource(), new ConfigurationResource());
+				new MenuResource(), ConfigurationHelper.INSTANCE);
 	}
 
 	@VisibleForTesting
 	public AppConfigurationHelper(LoginAsAPI loginAsAPI, LoginService loginService, MenuResource menuResource,
-								  ConfigurationResource configurationResource) {
+								  ConfigurationHelper configurationHelper) {
 		this.loginAsAPI = loginAsAPI;
 		this.loginService = loginService;
 		this.menuResource = menuResource;
-		this.configurationResource = configurationResource;
+		this.configurationHelper = configurationHelper;
 	}
 
 	/**
@@ -96,10 +94,12 @@ public class AppConfigurationHelper implements Serializable {
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The list of required system properties.
 	 */
-	public Object getConfigurationData(final HttpServletRequest request) {
-		final Response configurationResponse = configurationResource.list(request);
-		final Object entity = ResponseEntityView.class.cast(configurationResponse.getEntity()).getEntity();
-		return entity;
+	public Map<String, Object> getConfigurationData(final HttpServletRequest request)  {
+		try {
+			return configurationHelper.getConfigProperties(request);
+		} catch (LanguageException e) {
+			throw new LanguageRuntimeException(e);
+		}
 	}
 
 	/**
@@ -117,7 +117,7 @@ public class AppConfigurationHelper implements Serializable {
      */
 	public Map<String, Map> getUsers(final HttpServletRequest request) throws DotDataException, DotSecurityException,
 			IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-		User principalUser = loginAsAPI.getPrincipalUser( WebContext.getInstance( request ));
+		User principalUser = loginAsAPI.getPrincipalUser( WebSessionContext.getInstance( request ));
 		User loginAsUser = null;
 
 		if (principalUser == null){
