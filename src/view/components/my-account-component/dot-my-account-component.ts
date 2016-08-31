@@ -63,7 +63,7 @@ export class MyAccountComponent {
         }
 
         this.accountService.updateUser(this.accountUser).subscribe(response => {
-            console.log('response', response);
+            // TODO: replace the alert with a Angular components
             alert(this.successMessage);
             this.close.emit();
 
@@ -82,20 +82,20 @@ export class MyAccountComponent {
             // Translate labels and messages
             let dataI18n = data.i18nMessagesMap;
 
-            this.saveButtonLabel = dataI18n[ 'save' ];
-            this.closeButtonLabel = dataI18n[ 'modes.Close' ];
+            this.saveButtonLabel = dataI18n['save'];
+            this.closeButtonLabel = dataI18n['modes.Close'];
 
             let mandatoryFieldError: string = dataI18n['error.form.mandatory'];
-            this.firstNameLabel = dataI18n[ 'First-Name' ];
-            this.lastNameLabel = dataI18n[ 'Last-Name' ];
-            this.emailLabel = dataI18n[ 'email-address' ];
-            this.passwordLabel = dataI18n[ 'password' ];
-            this.confirmPasswordLabel = dataI18n[ 're-enter-password' ];
+            this.firstNameLabel = dataI18n['First-Name'];
+            this.lastNameLabel = dataI18n['Last-Name'];
+            this.emailLabel = dataI18n['email-address'];
+            this.passwordLabel = dataI18n['password'];
+            this.confirmPasswordLabel = dataI18n['re-enter-password'];
 
             this.firsNameErrorMessage = (mandatoryFieldError).replace('{0}', this.firstNameLabel);
             this.lastNameErrorMessage = (mandatoryFieldError).replace('{0}', this.lastNameLabel);
             this.mandatoryEmailErrorMessage = (mandatoryFieldError).replace('{0}', this.emailLabel);
-            this.invalidEmailErrorFormat = dataI18n[ 'errors.email' ];
+            this.invalidEmailErrorFormat = dataI18n['errors.email'];
             this.passwordErrorMessage = (mandatoryFieldError).replace('{0}', this.passwordLabel);
             this.confirmPasswordErrorMessage =  dataI18n['error.forgot.password.passwords.dont.match'];
 
