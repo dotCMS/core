@@ -33,6 +33,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.StringPool;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -281,13 +282,8 @@ public class UserResourceHelper implements Serializable {
 	 * @throws Exception if anything if wrong
      */
 	public List<Map<String, Object>> getLoginAsUser() throws Exception {
-		final Map<String, String> filterParams = map(
-				"start", "0",
-				"limit", "30",
-				"includeAnonymous", "false",
-				"includeDefault", "false");
 
-		List<User> users = userAPI.getUsersByNameOrEmailOrUserID("", 1, 30, false, false);
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(StringPool.BLANK, 1, 30, false, false);
 
 		List<Map<String, Object>> userList = new ArrayList<>();
 		List<String> rolesId = new ArrayList<>();
