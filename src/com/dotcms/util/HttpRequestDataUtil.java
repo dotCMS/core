@@ -33,6 +33,18 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class HttpRequestDataUtil {
 
+	public static final String DEFAULT_REMOTE_ADDRESS = "0.0.0.0";
+
+	/**
+	 * Get the remote address, if the request is null will return 0.0.0.0.
+	 * @param request {@link HttpServletRequest}
+	 * @return String
+     */
+	public static String getRemoteAddress (final HttpServletRequest request) {
+
+		return null != request?request.getRemoteAddr(): DEFAULT_REMOTE_ADDRESS;
+	} // getRemoteAddress.
+
 	/**
 	 * Retrieves the client's IP address from the {@link HttpServletRequest}
 	 * object based on the different available approaches. It's worth noting

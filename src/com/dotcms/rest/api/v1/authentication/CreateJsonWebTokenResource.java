@@ -10,11 +10,15 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.HttpRequestDataUtil;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
@@ -45,10 +49,11 @@ import static java.util.Collections.EMPTY_MAP;
 @Path("/v1/authentication")
 public class CreateJsonWebTokenResource implements Serializable {
 
-    private final UserLocalManager      userLocalManager;
-    private final LoginService          loginService;
-    private final AuthenticationHelper  authenticationHelper;
-    private final JsonWebTokenUtils     jsonWebTokenUtils;
+    private final UserLocalManager         userLocalManager;
+    private final LoginService             loginService;
+    private final AuthenticationHelper     authenticationHelper;
+    private final JsonWebTokenUtils        jsonWebTokenUtils;
+    private final SecurityLoggerServiceAPI securityLoggerServiceAPI;
 
     /**
      * Default constructor.
@@ -57,20 +62,24 @@ public class CreateJsonWebTokenResource implements Serializable {
         this(LoginServiceFactory.getInstance().getLoginService(),
                 UserLocalManagerFactory.getManager(),
                 AuthenticationHelper.INSTANCE,
-                JsonWebTokenUtils.getInstance());
+                JsonWebTokenUtils.getInstance(),
+                APILocator.getSecurityLogger()
+                );
     }
 
     @VisibleForTesting
     protected CreateJsonWebTokenResource(final LoginService loginService,
                                      final UserLocalManager userLocalManager,
                                      final AuthenticationHelper  authenticationHelper,
-                                     final JsonWebTokenUtils     jsonWebTokenUtils
+                                     final JsonWebTokenUtils     jsonWebTokenUtils,
+                                     final SecurityLoggerServiceAPI securityLoggerServiceAPI
                                      ) {
 
-        this.loginService         = loginService;
-        this.userLocalManager     = userLocalManager;
-        this.authenticationHelper = authenticationHelper;
-        this.jsonWebTokenUtils    = jsonWebTokenUtils;
+        this.loginService               = loginService;
+        this.userLocalManager           = userLocalManager;
+        this.authenticationHelper       = authenticationHelper;
+        this.jsonWebTokenUtils          = jsonWebTokenUtils;
+        this.securityLoggerServiceAPI   = securityLoggerServiceAPI;
     }
 
     @POST
@@ -103,6 +112,9 @@ public class CreateJsonWebTokenResource implements Serializable {
                             LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE,
                             LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
 
+                this.securityLoggerServiceAPI.logInfo(this.getClass(),
+                        "A Json Web Token " + userId.toLowerCase() + " has been created from IP: " +
+                                HttpRequestDataUtil.getRemoteAddress(request));
                 res = Response.ok(new ResponseEntityView(map("token",
                         createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
             } else {

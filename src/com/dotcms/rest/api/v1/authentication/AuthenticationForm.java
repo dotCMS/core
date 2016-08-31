@@ -7,6 +7,7 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.util.SecurityLogger;
 
 @JsonDeserialize(builder = AuthenticationForm.Builder.class)
@@ -55,7 +56,8 @@ public class AuthenticationForm extends Validated {
         	checkValid();
         }catch(ValidationException ve){
         	HttpServletRequestThreadLocal threadLocal = HttpServletRequestThreadLocal.INSTANCE;
-        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + (null != userId?userId.toLowerCase():"") + " has been made from IP: " + (null != threadLocal.getRequest()?threadLocal.getRequest().getRemoteAddr():"0.0.0.0"));
+        	SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + (null != userId?userId.toLowerCase():"") + " has been made from IP: " +
+                    HttpRequestDataUtil.getRemoteAddress(threadLocal.getRequest()));
         	throw ve;
         }
     }
