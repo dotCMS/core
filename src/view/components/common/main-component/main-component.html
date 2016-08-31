@@ -10,7 +10,7 @@
     <div class="toolbar__actions">
         <dot-toolbar-notifications></dot-toolbar-notifications>
         <a (click)='logout()' class="toolbar__logout">{{logoutLabel}}</a>
-        <a (click)='showMyAccount()' class="toolbar__logout">My Account</a>
+        <a (click)='toggleMyAccount()' class="toolbar__logout">My Account</a>
     </div>
 </md-toolbar>
 <md-sidenav-layout fullscreen>
@@ -19,3 +19,5 @@
     </md-sidenav>
     <route-view></route-view>
 </md-sidenav-layout>
+
+<dot-my-account-component *ngIf="showMyAccount" (close)='toggleMyAccount()'></dot-my-account-component>

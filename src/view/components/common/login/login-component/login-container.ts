@@ -58,9 +58,9 @@ export class LoginContainer{
     }
 }
 
-export interface LoginData{
-    login:string,
-    password:string,
-    remenberMe:boolean,
-    language:string
+export interface LoginData {
+    login: string;
+    password: string;
+    remenberMe: boolean;
+    language: string;
 }

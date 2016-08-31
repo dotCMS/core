@@ -62,21 +62,19 @@ export class LoginComponent {
 
     isCommunityLicense: boolean = true;
 
-
-   private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
+    private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
        'get-new-password', 'cancel', 'Server', 'error.form.mandatory',
        'angular.login.component.community.licence.message'];
 
     constructor(private loginService: LoginService, private ngZone: NgZone) {
+        this.language = '';
         this.renderPageData();
-
     }
 
-    ngAfterViewInit() {
-
+    ngAfterViewInit(): void {
         this.ngZone.runOutsideAngular(() =>
             setTimeout(() => document.getElementById('login-component-login-input').getElementsByClassName('md-input-element')[0].focus()
-        );
+        ));
     }
 
     /**
@@ -172,11 +170,12 @@ export class LoginComponent {
 
                 this.language = currentLanguage.language + '_' + currentLanguage.country;
             }
+
+            console.log('this.language2', this.language);
         }, (error) => {
              console.log(error);
         });
     }
-
 
     /**
      * Display the forgot password card

@@ -50,10 +50,8 @@ export class LoginService extends CoreWebService {
     public getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<any> {
         this.setLanguage(language);
 
-        let body = JSON.stringify({'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country});
-
         return this.coreWebService.requestView({
-            body: body,
+            body: {'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country},
             method: RequestMethod.Post,
             url: this.serverInfoURL,
         });
@@ -70,10 +68,8 @@ export class LoginService extends CoreWebService {
     public logInUser(login: string, password: string, rememberMe: boolean, language: string): Observable<User> {
         this.setLanguage(language);
 
-        let body = JSON.stringify({'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country});
-
         return this.requestView({
-            body: body,
+            body: {'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country},
             method: RequestMethod.Post,
             url: this.userAuthURL,
         }).map(response => {
@@ -173,4 +169,5 @@ export interface User {
     nickname?: string;
     timeZoneId?: string;
     userId: string;
+    password?: string;
 }
