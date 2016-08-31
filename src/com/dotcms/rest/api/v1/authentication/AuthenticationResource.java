@@ -17,6 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
@@ -99,6 +100,7 @@ public class AuthenticationResource implements Serializable {
                 final HttpSession ses = request.getSession();
                 final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
                 res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
+                request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
             } else {
 
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
