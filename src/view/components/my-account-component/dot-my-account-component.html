@@ -1,7 +1,7 @@
 <div class="my-account-overlay">
     <div class="my-account">
 
-        <div class="error-message" [innerHTML]="message"></div>
+        <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
 
         <form #myAccountForm="ngForm" (ngSubmit)="save()">
             <md-input id="my-account-component-first-name-input"

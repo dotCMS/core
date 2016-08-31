@@ -28,6 +28,7 @@ export class MyAccountComponent {
         userId: '',
     };
 
+    private message: string;
     private password: string;
     private confirmPassword: string;
     private confirmPasswordIsValid: boolean = true;
@@ -35,7 +36,7 @@ export class MyAccountComponent {
     // TODO: change when new FE internationalization is done
     private i18nMessages: Array<string> = [ 'modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
         'Last-Name', 'email-address', 'password', 're-enter-password', 'error.forgot.password.passwords.dont.match',
-        'message.createaccount.success'];
+        'message.createaccount.success', 'Error-communicating-with-server-Please-try-again'];
 
     private saveButtonLabel: string;
     private closeButtonLabel: string;
@@ -53,6 +54,7 @@ export class MyAccountComponent {
     private invalidEmailErrorFormat: string;
     private invalidEmailErrorMessage: string;
     private successMessage: string;
+    private errorCommunicatingWithServer: string;
 
     constructor(private loginService: LoginService, private accountService: AccountService, private router: Router) {}
 
@@ -72,7 +74,11 @@ export class MyAccountComponent {
             } else {
                 this.loginService.setLogInUser(response.entity.user);
             }
-        }, response => console.log(response.errorsMessages));
+        }, response => {
+            // TODO: We have to define how must be the user feedback in case of error
+            console.log(response.errorsMessages);
+            this.message = '';
+        });
     }
 
     ngOnInit(): void {
@@ -98,8 +104,8 @@ export class MyAccountComponent {
             this.invalidEmailErrorFormat = dataI18n['errors.email'];
             this.passwordErrorMessage = (mandatoryFieldError).replace('{0}', this.passwordLabel);
             this.confirmPasswordErrorMessage =  dataI18n['error.forgot.password.passwords.dont.match'];
-
             this.successMessage = dataI18n['message.createaccount.success'];
+            this.errorCommunicatingWithServer = dataI18n['Error-communicating-with-server-Please-try-again'];
         });
 
         if (this.loginService.loginUser) {
