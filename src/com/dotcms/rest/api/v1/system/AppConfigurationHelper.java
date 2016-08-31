@@ -1,23 +1,30 @@
 package com.dotcms.rest.api.v1.system;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 /**
- * This utility class assists the {@link AppConfigurationResource} in merging
+ * This utility class assists the {@link AppContextInitResource} in merging
  * all the configuration-related information into one single response. In case a
  * specific property value requires authentication, and the user is not logged
  * in yet (for example, retrieving the list of navigation menu items), an empty
@@ -31,16 +38,33 @@ import com.liferay.portal.util.WebKeys;
 @SuppressWarnings("serial")
 public class AppConfigurationHelper implements Serializable {
 
-	public static final AppConfigurationHelper INSTANCE = new AppConfigurationHelper();
-	private UserAPI userAPI;
 
-	private AppConfigurationHelper() {
-		userAPI = APILocator.getUserAPI();
+
+	private final LoginAsAPI loginAsAPI;
+	private final LoginService loginService;
+	private final MenuResource menuResource;
+	private final ConfigurationResource configurationResource;
+
+	private static class SingletonHolder {
+		private static final AppConfigurationHelper INSTANCE = new AppConfigurationHelper();
+	}
+
+	public static AppConfigurationHelper getInstance() {
+		return AppConfigurationHelper.SingletonHolder.INSTANCE;
+	}
+
+	public AppConfigurationHelper() {
+		this( APILocator.getLoginAsAPI(), LoginServiceFactory.getInstance().getLoginService(),
+				new MenuResource(), new ConfigurationResource());
 	}
 
 	@VisibleForTesting
-	private AppConfigurationHelper(UserAPI userAPI) {
-		this.userAPI = userAPI;
+	public AppConfigurationHelper(LoginAsAPI loginAsAPI, LoginService loginService, MenuResource menuResource,
+								  ConfigurationResource configurationResource) {
+		this.loginAsAPI = loginAsAPI;
+		this.loginService = loginService;
+		this.menuResource = menuResource;
+		this.configurationResource = configurationResource;
 	}
 
 	/**
@@ -52,8 +76,8 @@ public class AppConfigurationHelper implements Serializable {
 	 * @return The navigation menu items.
 	 */
 	public Object getMenuData(final HttpServletRequest request) {
-		final MenuResource menuResource = new MenuResource();
-		Object entity = new Object();
+
+		Object entity = null;
 		try {
 			final Response menuResponse = menuResource.getMenus(MenuResource.App.CORE_WEB.name(), request);
 			entity = ResponseEntityView.class.cast(menuResponse.getEntity()).getEntity();
@@ -73,28 +97,36 @@ public class AppConfigurationHelper implements Serializable {
 	 * @return The list of required system properties.
 	 */
 	public Object getConfigurationData(final HttpServletRequest request) {
-		final ConfigurationResource configurationResource = new ConfigurationResource();
 		final Response configurationResponse = configurationResource.list(request);
 		final Object entity = ResponseEntityView.class.cast(configurationResponse.getEntity()).getEntity();
 		return entity;
 	}
 
 	/**
-	 * Return the LoginAs user
+	 * Return a map with the Principal and LoginAs user, the map content the follows keys:
+	 *
+	 * <ul>
+	 *     <li>{@link AppContextInitResource#USER} for the principal user</li>
+	 *     <li>{@link AppContextInitResource#LOGIN_AS_USER} for the login as user</li>
+	 * </ul>
 	 *
 	 * @param request
-	 * @return if a user is LoginAs then return it, in otherwise return null
-	 * @throws DotSecurityException if one is thrown when the user is search
-	 * @throws DotDataException if one is thrown when the user is search
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
      */
-	public User getLoginAsUser(HttpServletRequest request) throws DotSecurityException, DotDataException {
-		String principalUserId = (String) request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID);
+	public Map<String, Map> getUsers(final HttpServletRequest request) throws DotDataException, DotSecurityException,
+			IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+		User principalUser = loginAsAPI.getPrincipalUser( WebContext.getInstance( request ));
 		User loginAsUser = null;
 
-		if (principalUserId != null){
-			loginAsUser = userAPI.loadUserById(principalUserId);
+		if (principalUser == null){
+			principalUser = this.loginService.getLogInUser( request );
+		}else{
+			loginAsUser = this.loginService.getLogInUser( request );
 		}
 
-		return loginAsUser;
+		return map(AppContextInitResource.USER, principalUser.toMap(), AppContextInitResource.LOGIN_AS_USER,
+				loginAsUser != null ? loginAsUser.toMap() : null);
 	}
 }
