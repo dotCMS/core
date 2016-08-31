@@ -112,8 +112,7 @@ export class CoreWebService {
       headers.set(key, tempHeaders[key]);
     });
 
-    if (options.body) {
-      if (typeof options.body !== 'string') {
+    if (options.body && typeof options.body !== 'string')
         options.body = JSON.stringify(options.body);
       }
     }
