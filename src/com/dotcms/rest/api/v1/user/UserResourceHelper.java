@@ -287,20 +287,22 @@ public class UserResourceHelper implements Serializable {
 				"includeAnonymous", "false",
 				"includeDefault", "false");
 
-		List<Map<String, Object>> userList = (List) this.getUserList(null, "1", filterParams).get("data");
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID("", 1, 30, false, false);
+
+		List<Map<String, Object>> userList = new ArrayList<>();
 		List<String> rolesId = new ArrayList<>();
 		rolesId.add( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId() ); //Admin Roles
 		rolesId.add( roleAPI.loadCMSAdminRole().getId() ); //Login As Roles
 
-		for (Map<String, Object> user : userList) {
-			String id = user.get("id").toString();
+		for (User user : users) {
+			Map<String, Object> userMap = user.toMap();
+			String id = user.getUserId();
 			boolean hasPermissions = roleAPI.doesUserHaveRoles(id, rolesId);
 
 			if ( hasPermissions ){
-				user.put("requestPassword", true);
+				userMap.put("requestPassword", true);
 			}
-
-			renameKey( user, "emailaddress", "emailAddress");
+			userList.add(userMap);
 		}
 
 		return userList;

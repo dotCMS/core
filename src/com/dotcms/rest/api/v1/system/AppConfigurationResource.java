@@ -53,6 +53,7 @@ public class AppConfigurationResource implements Serializable {
 	private static final String MENU = "menu";
 	private static final String CONFIG = "config";
 	private static final String USER = "user";
+	private static final String LOGIN_AS_USER = "loginAsUser";
 
 	private final AppConfigurationHelper helper;
 	private final LoginService loginService;
@@ -86,12 +87,13 @@ public class AppConfigurationResource implements Serializable {
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
 			User user = this.loginService.getLogInUser( request );
+			User loginAsUser = helper.getLoginAsUser(request);
 
 			final Object menuData = this.helper.getMenuData(request);
 			final Object configData = this.helper.getConfigurationData(request);
 			// Return all configuration parameters in one response
 			final Map<String, Object> configMap = CollectionsUtils.map(MENU, menuData, CONFIG, configData,
-					USER, user != null ? user.toMap() : null);
+					USER, user != null ? user.toMap() : null, LOGIN_AS_USER, loginAsUser != null ? loginAsUser.toMap() : null);
 			return Response.ok(new ResponseEntityView(configMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500

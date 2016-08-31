@@ -162,18 +162,18 @@ public class UserResourceTest extends BaseMessageResources {
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
 
-        List<Map<String, Object>> users = list(
-                map( "name", "user1", "emailaddress", "a@a.com", "id", "dotcms.org.1", "type", "user" ),
-                map( "name", "user1", "emailaddress", "a@a.com", "id", "dotcms.org.2", "type", "user" )
-        );
-        Map<String, Object> usersMap = map("total", 2, "data", users);
+        String userId1 = "admin.role.id";
+        String userId2 = "login.as.id";
 
-        when (userService.getUsersList(null, "1", map(
-                "start", "0",
-                "limit", "30",
-                "includeAnonymous", "false",
-                "includeDefault", "false")))
-            .thenReturn( usersMap );
+        User user1 = mock(User.class);
+        when( user1.getUserId() ).thenReturn( userId1 );
+
+        User user2 = mock(User.class);
+        when( user2.getUserId() ).thenReturn( userId2 );
+
+        List<User> users = list(user1, user2);
+
+        when(userAPI.getUsersByNameOrEmailOrUserID("", 1, 30, false, false)).thenReturn( users );
 
         List<String> rolesId = new ArrayList<>();
         rolesId.add( "admin.role.id" );
@@ -187,8 +187,8 @@ public class UserResourceTest extends BaseMessageResources {
 
         when( roleAPI.loadRoleByKey(Role.ADMINISTRATOR) ).thenReturn( adminRole );
         when( roleAPI.loadCMSAdminRole() ).thenReturn( loginAsRole );
-        when( roleAPI.doesUserHaveRoles(users.get(0).get("id").toString(), rolesId) ).thenReturn( true ) ;
-        when( roleAPI.doesUserHaveRoles(users.get(1).get("id").toString(), rolesId) ).thenReturn( false ) ;
+        when( roleAPI.doesUserHaveRoles(userId1, rolesId) ).thenReturn( true ) ;
+        when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
 
         UserResource userResource =
                 new UserResource(webResource, userWebAPI, userAPI, permissionAPI,

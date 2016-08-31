@@ -5,9 +5,16 @@ import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.menu.MenuResource;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 
 /**
  * This utility class assists the {@link AppConfigurationResource} in merging
@@ -25,6 +32,16 @@ import com.dotcms.rest.api.v1.menu.MenuResource;
 public class AppConfigurationHelper implements Serializable {
 
 	public static final AppConfigurationHelper INSTANCE = new AppConfigurationHelper();
+	private UserAPI userAPI;
+
+	private AppConfigurationHelper() {
+		userAPI = APILocator.getUserAPI();
+	}
+
+	@VisibleForTesting
+	private AppConfigurationHelper(UserAPI userAPI) {
+		this.userAPI = userAPI;
+	}
 
 	/**
 	 * Returns the list of menu items and sub-items for the main navigation bar
@@ -62,4 +79,22 @@ public class AppConfigurationHelper implements Serializable {
 		return entity;
 	}
 
+	/**
+	 * Return the LoginAs user
+	 *
+	 * @param request
+	 * @return if a user is LoginAs then return it, in otherwise return null
+	 * @throws DotSecurityException if one is thrown when the user is search
+	 * @throws DotDataException if one is thrown when the user is search
+     */
+	public User getLoginAsUser(HttpServletRequest request) throws DotSecurityException, DotDataException {
+		String principalUserId = (String) request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID);
+		User loginAsUser = null;
+
+		if (principalUserId != null){
+			loginAsUser = userAPI.loadUserById(principalUserId);
+		}
+
+		return loginAsUser;
+	}
 }
