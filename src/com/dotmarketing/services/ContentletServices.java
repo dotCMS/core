@@ -266,7 +266,7 @@ public class ContentletServices {
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageWidth=$" ).append( field.getVelocityVarName() ).append( "Object.getWidth() )");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageHeight=$" ).append( field.getVelocityVarName() ).append( "Object.getHeight() )");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageExtension=$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object))");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object, ").append(content.getLanguageId()).append(" ))");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageTitle=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getTitle()) )");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageFriendlyName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName()) )");
 
@@ -296,9 +296,9 @@ public class ContentletServices {
 				String identifierValue= content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
 					if (EDIT_MODE){
-						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',false))");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',false,").append(content.getLanguageId()).append(" ))");
 					}else{
-						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',true))");
+						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',true,").append(content.getLanguageId()).append(" ))");
 					}
 				}else{
 					sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getNewFile())");
@@ -307,7 +307,7 @@ public class ContentletServices {
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileInode=$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileIdentifier=$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileExtension=$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object))");
+				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object, ").append(content.getLanguageId()).append(" ))");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileTitle=$" ).append( field.getVelocityVarName() ).append( "Object.getTitle() )");
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileFriendlyName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName() ))");
 

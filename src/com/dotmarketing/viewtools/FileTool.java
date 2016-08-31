@@ -74,13 +74,13 @@ public class FileTool implements ViewTool {
 
 		} catch (Exception e) {
 			Logger.error(FileTool.class,e.getMessage(),e);
-		} 
+		}
 		if(file == null){
 			file = new File();
 		}
 		return file;
 	}
-	
+
 	public String getURI(File file){
 		if(file != null && InodeUtils.isSet(file.getIdentifier())){
 			return UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + file.getIdentifier() + "/fileAsset");
@@ -88,13 +88,19 @@ public class FileTool implements ViewTool {
 			return "";
 		}
 	}
-	
+
 	public String getURI(FileAsset file){
+		return getURI(file, -1);
+	}
+
+	public String getURI(FileAsset file, long languageId){
+		String langStr = languageId>0?"?language_id="+languageId:"";
+
 		if(file != null && InodeUtils.isSet(file.getIdentifier())){
-			return UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + file.getIdentifier() + "/fileAsset");
-		}else{
+            return UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + file.getIdentifier() + "/fileAsset" + langStr);
+        }else{
 			return "";
 		}
 	}
-	
+
 }
