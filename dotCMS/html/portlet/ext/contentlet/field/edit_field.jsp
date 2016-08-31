@@ -553,11 +553,9 @@
 						  	}
 						  	resourceLinkUri = identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 						  	resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri));
-						  	if(defaultLang != contentlet.getLanguageId()){
-						  		//resourceLinkUri.concat("?language_id="+contentlet.getLanguageId());
-						  		resourceLinkUri+="?language_id="+contentlet.getLanguageId();
-						  		resourceLink.append("?language_id="+contentlet.getLanguageId());
-						  	}
+                            //resourceLinkUri.concat("?language_id="+contentlet.getLanguageId());
+                            resourceLinkUri+="?language_id="+contentlet.getLanguageId();
+                            resourceLink.append("?language_id="+contentlet.getLanguageId());
 						  }
 
 						  com.dotmarketing.portlets.fileassets.business.FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(contentlet);

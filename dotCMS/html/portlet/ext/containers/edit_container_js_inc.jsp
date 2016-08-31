@@ -178,13 +178,13 @@
 
 
 	function addBinaryResize(velocityVarName) {
-		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/resize-image/${ContentIdentifier}/" + velocityVarName + "?w=150&h=100\" />\n#end \n";
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/resize-image/${ContentIdentifier}/" + velocityVarName + "?w=150&h=100&language_id=${language}\" />\n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addBinaryThumbnail(velocityVarName) {
-		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/image-thumbnail/${ContentIdentifier}/" + velocityVarName + "?w=150&h=150\" />\n#end \n";
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/image-thumbnail/${ContentIdentifier}/" + velocityVarName + "?w=150&h=150&language_id=${language}\" />\n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
