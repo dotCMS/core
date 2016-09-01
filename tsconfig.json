@@ -34,7 +34,6 @@
     "./src/api/services/bundle-service.it-spec.ts",
     "./src/api/services/bundle-service.ts",
     "./src/api/services/core-web-service.ts",
-    "./src/api/services/http/dotcms-http-service.ts",
     "./src/api/services/response-view.ts",
     "./src/api/services/login-service.ts",
     "./src/api/services/routing-service.ts",
@@ -57,7 +56,6 @@
     "./src/api/validation/Check.ts",
     "./src/api/validation/CustomValidators.ts",
     "./src/api/validation/Verify.ts",
-    "./src/api/validation/equal-to-validator.ts",
     "./src/e2e/CwProtractor.ts",
     "./src/e2e/view/rule-engine/rule-engine-page.ts",
     "./src/view/boot.ts",
@@ -110,7 +108,6 @@
     "./src/view/components/common/iframe-legacy/iframe-legacy-component",
     "./src/view/components/common/dropdown-component/dropdown-component.ts",
     "./src/view/components/site-selector/dot-site-selector-component.ts",
-    "./src/view/components/site-selector/dot-site-selector-container.ts",
     "./src/view/components/app.ts",
     "./typings/main.d.ts"
   ]

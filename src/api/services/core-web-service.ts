@@ -105,17 +105,17 @@ export class CoreWebService {
     });
   }
 
-  private getRequestOpts(options: any): Request{
+  private getRequestOpts(options: any): Request {
     let headers: Headers = this._apiRoot.getDefaultRequestHeaders();
     let tempHeaders = options.headers ? options.headers : {'Content-Type': 'application/json'};
     Object.keys(tempHeaders).forEach((key) => {
       headers.set(key, tempHeaders[key]);
     });
 
-    if (options.body && typeof options.body !== 'string')
+    if (options.body && typeof options.body !== 'string') {
         options.body = JSON.stringify(options.body);
-      }
     }
+
     options.headers = headers;
 
     return new Request(options);
