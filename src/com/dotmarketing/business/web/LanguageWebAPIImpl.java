@@ -51,28 +51,22 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 		Locale locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 		HttpSession sessionOpt = httpRequest.getSession(false);
 
-		if(sessionOpt !=null){
-			// set default page language
-			if (UtilMethods.isSet((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))) {
-	
-				languageId = (String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-				currentLang = langAPI.getLanguage(languageId);
-				locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-			}
-		}
-
 		boolean validLang = true;
 		
 		// update page language
-		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
-				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))
-				|| UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
-			if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
+		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE)) ||
+			UtilMethods.isSet(httpRequest.getParameter("language_id")) ||
+			UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) ||
+			(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) ) {
+
+			if(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+				languageId = (String)sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+			} else if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
 				languageId = httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE);
+			} else if(UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+				languageId = httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString();
 			} else if(UtilMethods.isSet(httpRequest.getParameter("language_id"))) {
 				languageId = httpRequest.getParameter("language_id");
-			} else if(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
-			    languageId = (String)sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
 			}
 			//If languageId is not Long we will use the Default Language and log.
 			long languageIdLong = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -87,7 +81,6 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			}
 			currentLang = langAPI.getLanguage(languageIdLong);
 			locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-
 		}
 		
 		// if we are changing the language, we NEED a session
