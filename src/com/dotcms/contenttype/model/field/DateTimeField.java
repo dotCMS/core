@@ -6,7 +6,9 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
+import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 
 @Value.Immutable
 public abstract class DateTimeField extends Field {
@@ -28,4 +30,12 @@ public abstract class DateTimeField extends Field {
 		return ImmutableList.of(DataTypes.DATE);
 	}
 	public abstract static class Builder implements FieldBuilder {}
+	
+    @Value.Check
+    public void check() {
+        super.check();
+
+        Preconditions.checkArgument(new FieldUtil().validDateTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
+
+    }
 }

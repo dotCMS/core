@@ -14,6 +14,8 @@ import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.StringUtils;
+
 
 public class DbFieldTransformer implements FieldTransformer {
 
@@ -42,12 +44,12 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String variable() {
-				return (String) map.get("velocity_var_name");
+				return StringUtils.nullEmptyStr((String) map.get("velocity_var_name"));
 			}
 
 			@Override
 			public String values() {
-				return (String) map.get("field_values");
+				return StringUtils.nullEmptyStr((String) map.get("field_values"));
 			}
 
 			@Override
@@ -58,37 +60,38 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String contentTypeId() {
-				return (String) map.get("structure_inode");
+				return StringUtils.nullEmptyStr((String) map.get("structure_inode"));
 			}
 
 			@Override
 			public String regexCheck() {
-				return (String) map.get("regex_check");
+				return StringUtils.nullEmptyStr((String) map.get("regex_check"));
 			}
 
 			@Override
 			public String owner() {
-				return (String) map.get("owner");
+				return StringUtils.nullEmptyStr((String) map.get("owner"));
 			}
 
 			@Override
 			public String name() {
-				return (String) map.get("field_name");
+				return StringUtils.nullEmptyStr((String) map.get("field_name"));
 			}
 
 			@Override
 			public String inode() {
-				return (String) map.get("inode");
+				return StringUtils.nullEmptyStr((String) map.get("inode"));
 			}
 
 			@Override
 			public String hint() {
-				return (String) map.get("hint");
+				return StringUtils.nullEmptyStr((String) map.get("hint"));
 			}
 
 			@Override
 			public String defaultValue() {
-				return (String) map.get("default_value");
+			    return StringUtils.nullEmptyStr((String) map.get("default_value"));
+		
 			}
 
 			@Override
@@ -99,7 +102,7 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String dbColumn() {
-				return (String) map.get("field_contentlet");
+				return StringUtils.nullEmptyStr((String) map.get("field_contentlet"));
 
 			}
 

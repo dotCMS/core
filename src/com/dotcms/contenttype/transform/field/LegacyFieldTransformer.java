@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableList;
 
 public class LegacyFieldTransformer implements FieldTransformer {
@@ -100,12 +101,12 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String variable() {
-				return oldField.getVelocityVarName();
+				return StringUtils.nullEmptyStr(oldField.getVelocityVarName());
 			}
 
 			@Override
 			public String values() {
-				return oldField.getValues();
+				return StringUtils.nullEmptyStr(oldField.getValues());
 			}
 
 			@Override
@@ -116,37 +117,37 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String contentTypeId() {
-				return oldField.getStructureInode();
+				return StringUtils.nullEmptyStr(oldField.getStructureInode());
 			}
 
 			@Override
 			public String regexCheck() {
-				return oldField.getRegexCheck();
+				return StringUtils.nullEmptyStr(oldField.getRegexCheck());
 			}
 
 			@Override
 			public String owner() {
-				return oldField.getOwner();
+				return StringUtils.nullEmptyStr(oldField.getOwner());
 			}
 
 			@Override
 			public String name() {
-				return oldField.getFieldName();
+				return StringUtils.nullEmptyStr(oldField.getFieldName());
 			}
 
 			@Override
 			public String inode() {
-				return oldField.getInode();
+				return StringUtils.nullEmptyStr(oldField.getInode());
 			}
 
 			@Override
 			public String hint() {
-				return oldField.getHint();
+				return StringUtils.nullEmptyStr(oldField.getHint());
 			}
 
 			@Override
 			public String defaultValue() {
-				return oldField.getDefaultValue();
+				return StringUtils.nullEmptyStr(oldField.getDefaultValue());
 			}
 
 			@Override
@@ -157,7 +158,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String dbColumn() {
-				return oldField.getFieldContentlet();
+				return StringUtils.nullEmptyStr(oldField.getFieldContentlet());
 
 			}
 

@@ -6,7 +6,9 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
+import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.base.Preconditions;
 
 @Value.Immutable
 public abstract class TimeField extends Field {
@@ -30,4 +32,12 @@ public abstract class TimeField extends Field {
 		return DataTypes.DATE;
 	};
 	public abstract static class Builder implements FieldBuilder {}
+	
+    @Value.Check
+    public void check() {
+        super.check();
+
+        Preconditions.checkArgument(new FieldUtil().validTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
+
+    }
 }
