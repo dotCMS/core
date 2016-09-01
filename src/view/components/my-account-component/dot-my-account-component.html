@@ -1,0 +1,71 @@
+<div class="my-account-overlay">
+    <div class="my-account">
+
+        <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
+
+        <form #myAccountForm="ngForm" (ngSubmit)="save()">
+            <md-input id="my-account-component-first-name-input"
+                      #firstNameInput="ngModel"
+                      placeholder="{{firstNameLabel}}"
+                      name="givenName"
+                      [(ngModel)]="accountUser.givenName"
+                      floatingPlaceholder="false"
+                      required>
+            </md-input>
+            <p class="error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{firsNameErrorMessage}}</p>
+
+            <md-input id="my-account-component-last-name-input"
+                      #lastNameInput="ngModel"
+                      placeholder="{{lastNameLabel}}"
+                      name="surname"
+                      [(ngModel)]="accountUser.surname"
+                      floatingPlaceholder="false"
+                      required>
+            </md-input>
+            <p class="error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{lastNameErrorMessage}}</p>
+
+            <md-input id="my-account-component-email-input"
+                      #emailInput="ngModel"
+                      placeholder="{{emailLabel}}"
+                      name="email"
+                      [(ngModel)]="accountUser.email"
+                      floatingPlaceholder="false"
+                      type="email"
+                      required
+                      pattern="^[a-zA-Z0–9_.+-]+@[a-zA-Z0–9_.+-]+\.[a-zA-Z0–9_.+-]+$"
+                      (keyup)="changingEmail()">
+            </md-input>
+            <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">
+                <p *ngIf="emailInput.errors && emailInput.errors.required">{{mandatoryEmailErrorMessage}}</p>
+                <p *ngIf="emailInput.errors && emailInput.errors.pattern">{{invalidEmailErrorMessage}}</p>
+            </div>
+
+            <md-input id="my-account-component-password-input"
+                      #passwordInput="ngModel"
+                      (keyup)="validateConfirmPassword()"
+                      placeholder="{{passwordLabel}}"
+                      name="password"
+                      [(ngModel)]="password"
+                      floatingPlaceholder="false"
+                      type="password">
+            </md-input>
+
+            <md-input id="my-account-component-confirm-password-input"
+                      #confirmPasswordInput="ngModel"
+                      (keyup)="validateConfirmPassword()"
+                      placeholder="{{confirmPasswordLabel}}"
+                      name="confirmPassword"
+                      [(ngModel)]="confirmPassword"
+                      floatingPlaceholder="false"
+                      type="password">
+            </md-input>
+            <p class="error-message" [hidden]="confirmPasswordIsValid">{{confirmPasswordErrorMessage}}</p>
+
+            <div class="col-sm-12">
+                <button id="my-account-component-ok-button" md-button md-raised-button type="submit"
+                        [disabled]="!myAccountForm.form.valid || !confirmPasswordIsValid">{{saveButtonLabel}}</button>
+                <button id="my-account-component-close-button" md-button md-flat-button (click)="close.emit()" type="button">{{closeButtonLabel}}</button>
+            </div>
+        </form>
+    </div>
+</div>

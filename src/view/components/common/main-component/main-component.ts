@@ -15,11 +15,12 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MdButton} from '@angular2-material/button/button';
 import {MdIcon} from '@angular2-material/icon/icon';
 import { Router } from '@ngrx/router';
-import {SiteSelectorComponent} from "../../site-selector/dot-site-selector-component";
+import {SiteSelectorComponent} from '../../site-selector/dot-site-selector-component';
+import {MyAccountComponent} from '../../my-account-component/dot-my-account-component';
 
 @Component({
     directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdButton, MdIcon,
-        GlobalSearch, MainNavigation, ToolbarNotifications, SiteSelectorComponent],
+        GlobalSearch, MainNavigation, ToolbarNotifications, SiteSelectorComponent, MyAccountComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [FormatDate],
@@ -29,6 +30,7 @@ import {SiteSelectorComponent} from "../../site-selector/dot-site-selector-compo
 })
 export class MainComponent {
     private logoutLabel: string;
+    private showMyAccount: boolean = false;
 
     constructor(private loginService: LoginService, private router: Router, private formatDate: FormatDate) {
         // TODO need to use internationalization
@@ -75,4 +77,7 @@ export class MainComponent {
 
     }
 
+    toggleMyAccount(): void {
+        this.showMyAccount = !this.showMyAccount;
+    }
 }

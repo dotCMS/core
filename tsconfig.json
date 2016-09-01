@@ -34,11 +34,11 @@
     "./src/api/services/bundle-service.it-spec.ts",
     "./src/api/services/bundle-service.ts",
     "./src/api/services/core-web-service.ts",
-    "./src/api/services/http/dotcms-http-service.ts",
     "./src/api/services/response-view.ts",
     "./src/api/services/login-service.ts",
     "./src/api/services/routing-service.ts",
     "./src/api/services/site-service.ts",
+    "./src/api/services/account-service.ts",
     "./src/api/system/http-response-util.ts",
     "./src/api/system/locale/I18n.it-spec.ts",
     "./src/api/system/locale/I18n.ts",
@@ -108,7 +108,6 @@
     "./src/view/components/common/iframe-legacy/iframe-legacy-component",
     "./src/view/components/common/dropdown-component/dropdown-component.ts",
     "./src/view/components/site-selector/dot-site-selector-component.ts",
-    "./src/view/components/site-selector/dot-site-selector-container.ts",
     "./src/view/components/app.ts",
     "./typings/main.d.ts"
   ]
