@@ -126,7 +126,7 @@ public class AppConfigurationHelper implements Serializable {
 			loginAsUser = this.loginService.getLogInUser( request );
 		}
 
-		return map(AppContextInitResource.USER, principalUser.toMap(), AppContextInitResource.LOGIN_AS_USER,
+		return map(AppContextInitResource.USER, principalUser != null ? principalUser.toMap() : null, AppContextInitResource.LOGIN_AS_USER,
 				loginAsUser != null ? loginAsUser.toMap() : null);
 	}
 }
