@@ -7,40 +7,40 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 
 public class StringUtils {
-	public static String formatPhoneNumber(String phoneNumber) {
-		try {
-			String s = phoneNumber.replaceAll("\\(|\\)|:|-|\\.", "");
-			;
-			s = s.replaceAll("(\\d{3})(\\d{3})(\\d{4})(\\d{3})*", "($1) $2-$3x$4");
+    public static String formatPhoneNumber(String phoneNumber) {
+        try {
+            String s = phoneNumber.replaceAll("\\(|\\)|:|-|\\.", "");
+            ;
+            s = s.replaceAll("(\\d{3})(\\d{3})(\\d{4})(\\d{3})*", "($1) $2-$3x$4");
 
-			if (s.endsWith("x"))
-				s = s.substring(0, s.length() - 1);
-			return s;
-		} catch (Exception ex) {
-			return "";
-		}
-	}
-
-
+            if (s.endsWith("x"))
+                s = s.substring(0, s.length() - 1);
+            return s;
+        } catch (Exception ex) {
+            return "";
+        }
+    }
 
 
-	public static boolean isJson(String jsonString) {
-		if(jsonString.indexOf("{") <0 || jsonString.indexOf("}") <0){
-			return false;
-		}
-		try {
-			if (jsonString.startsWith("{"))
-				new JSONObject(jsonString);
-			else if (jsonString.startsWith("["))
-				new JSONArray(jsonString);
 
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
-	}
 
-	   // Pattern is threadsafe
+    public static boolean isJson(String jsonString) {
+        if(jsonString.indexOf("{") <0 || jsonString.indexOf("}") <0){
+            return false;
+        }
+        try {
+            if (jsonString.startsWith("{"))
+                new JSONObject(jsonString);
+            else if (jsonString.startsWith("["))
+                new JSONArray(jsonString);
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+       // Pattern is threadsafe
     private static Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]+([A-Z][a-z0-9]+)+");
     private static Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]+([A-Z][a-z0-9]+)+");
     
@@ -67,6 +67,13 @@ public class StringUtils {
         
         return firtChar.toUpperCase() + ret.substring(1,ret.length());
     }
-	
-	
+    
+    public static boolean isSet(String test){
+        return UtilMethods.isSet(test);
+    }
+    
+    public static String nullEmptyStr(String test){
+        return isSet(test) ? test : null;
+    }
+    
 }
