@@ -359,11 +359,21 @@ public class PermissionAjax {
 			ArrayList assetResult = dc.loadResults();
 			
 			if(assetResult.size()>0){
-				assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
+                // It could be:
+                //
+                // 1. folder
+                // 2. contentlet
+                // 3. htmlpage
+                // 4. template
+                // 5. links
+                // 6. containers: table has different name: dot_containers
+                assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
 			}
 			
 			if(UtilMethods.isSet(assetType)){
-				dc.setSQL("select i.inode, type from inode i,"+assetType+" a where i.inode = a.inode and a.identifier = ?");
+				dc.setSQL("select i.inode, type from inode i," +
+                    Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
+                    " a where i.inode = a.inode and a.identifier = ?");
 				dc.addParam(assetId);
 				results = dc.loadResults();
 			}
