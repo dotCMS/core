@@ -29,6 +29,7 @@
         overflow: hidden;
         max-height: 0;
         transition: all $basic-speed;
+        z-index: 2;
     }
 
     .dot-select__options--is-open {

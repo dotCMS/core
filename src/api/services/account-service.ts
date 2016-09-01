@@ -1,16 +1,16 @@
 import {ApiRoot} from '../persistence/ApiRoot';
-import {User} from './login-service';
+import {AppConfigurationService} from '../services/system/app-configuration-service';
 import {CoreWebService} from './core-web-service';
+import {Http} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
-import {Http} from '@angular/http';
 import {ResponseView} from './response-view';
 
 export class AccountService extends CoreWebService {
 
     private updateAccountURL: string;
 
-    constructor(apiRoot: ApiRoot, http: Http) {
+    constructor(apiRoot: ApiRoot, http: Http, private appConfigurationService: AppConfigurationService) {
         super(apiRoot, http);
 
         this.updateAccountURL = `${apiRoot.baseUrl}api/v1/users/current`;

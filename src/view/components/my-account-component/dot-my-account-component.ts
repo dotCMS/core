@@ -13,7 +13,7 @@ import {Observable} from 'rxjs/Rx';
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [AccountService],
-    selector: 'dot-my-account-component',
+    selector: 'dot-my-account',
     styleUrls: ['dot-my-account-component.css'],
     templateUrl: ['dot-my-account-component.html'],
 })
