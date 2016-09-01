@@ -51,29 +51,35 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 		Locale locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 		HttpSession sessionOpt = httpRequest.getSession(false);
 
-		if(sessionOpt !=null){
-			// set default page language
-			if (UtilMethods.isSet((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))) {
-	
-				languageId = (String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-				currentLang = langAPI.getLanguage(languageId);
-				locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-			}
-		}
-
 		boolean validLang = true;
 		
-		// update page language
-		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
-				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))
-				|| UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+		// Priority:
+		// 1. request.getParameter(WebKeys.HTMLPAGE_LANGUAGE)
+		// 2. request.getParameter("language_id")
+		// 4. request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE)
+		// 3. request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)
+		//
+		// Note: For now we can't ignore request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE) because there
+		// are a lot of places still using it. For example the Site Search.
+		//
+		// Another Note: VTL_INCLUDE -> widgetCode's hidden code sets 1 as request attribute
+		// that is the reason why we check the session value first, in order to not break:
+		// https://github.com/dotCMS/core/issues/9576
+		if ((UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE)) ||
+			UtilMethods.isSet(httpRequest.getParameter("language_id")) ||
+			(sessionOpt != null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)))) ||
+			UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+
 			if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
 				languageId = httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE);
 			} else if(UtilMethods.isSet(httpRequest.getParameter("language_id"))) {
 				languageId = httpRequest.getParameter("language_id");
 			} else if(sessionOpt!= null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
-			    languageId = (String)sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+				languageId = (String)sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+			} else if(UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+				languageId = httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString();
 			}
+
 			//If languageId is not Long we will use the Default Language and log.
 			long languageIdLong = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			try{
@@ -85,17 +91,18 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 								"We will use Default Language. " +
 								"Value from request: " + languageId, e);
 			}
+
 			currentLang = langAPI.getLanguage(languageIdLong);
 			locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-
 		}
 		
 		// if we are changing the language, we NEED a session
 		boolean changeLang = false;
-		if (validLang && (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
-				|| UtilMethods.isSet(httpRequest.getParameter("language_id")))){
+		if (validLang &&
+			(UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE)) ||
+				UtilMethods.isSet(httpRequest.getParameter("language_id")))){
+
 			changeLang=true;
-		
 		}
 		
 		if(validLang) {
@@ -103,17 +110,18 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			httpRequest.setAttribute(WebKeys.LOCALE, locale);
 		}
 
-		if(sessionOpt!=null || changeLang){
+		if(sessionOpt != null || changeLang){
 			sessionOpt= httpRequest.getSession(true);
 			sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
 			boolean ADMIN_MODE = (sessionOpt.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
+
 			if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
 				sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
 				httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
 			}
+
 			sessionOpt.setAttribute(WebKeys.LOCALE, locale);
 		}
-
 	}
 	
 	@Override
