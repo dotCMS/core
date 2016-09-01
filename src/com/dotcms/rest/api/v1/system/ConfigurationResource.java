@@ -56,7 +56,7 @@ public class ConfigurationResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response list(@Context final HttpServletRequest request) {
+	public Response list(@Context final HttpServletRequest request) {
 		try {
 
 			final Locale locale = LocaleUtil.getLocale(request);

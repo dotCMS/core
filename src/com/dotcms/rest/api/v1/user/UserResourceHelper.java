@@ -1,9 +1,5 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.renameKey;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +29,9 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.StringPool;
+
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -281,26 +280,21 @@ public class UserResourceHelper implements Serializable {
 	 * @throws Exception if anything if wrong
      */
 	public List<Map<String, Object>> getLoginAsUser() throws Exception {
-		final Map<String, String> filterParams = map(
-				"start", "0",
-				"limit", "30",
-				"includeAnonymous", "false",
-				"includeDefault", "false");
 
-		List<Map<String, Object>> userList = (List) this.getUserList(null, "1", filterParams).get("data");
-		List<String> rolesId = new ArrayList<>();
-		rolesId.add( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId() ); //Admin Roles
-		rolesId.add( roleAPI.loadCMSAdminRole().getId() ); //Login As Roles
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(StringPool.BLANK, 1, 30, false, false);
 
-		for (Map<String, Object> user : userList) {
-			String id = user.get("id").toString();
+		List<Map<String, Object>> userList = new ArrayList<>();
+		List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
+
+		for (User user : users) {
+			Map<String, Object> userMap = user.toMap();
+			String id = user.getUserId();
 			boolean hasPermissions = roleAPI.doesUserHaveRoles(id, rolesId);
 
 			if ( hasPermissions ){
-				user.put("requestPassword", true);
+				userMap.put("requestPassword", true);
 			}
-
-			renameKey( user, "emailaddress", "emailAddress");
+			userList.add(userMap);
 		}
 
 		return userList;

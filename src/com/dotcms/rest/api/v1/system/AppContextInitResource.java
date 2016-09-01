@@ -4,10 +4,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -22,12 +19,6 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.liferay.portal.ejb.UserLocalManager;
-import com.liferay.portal.ejb.UserLocalManagerFactory;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
 
 /**
  * This Jersey end-point provides access to configuration parameters that are
@@ -48,26 +39,25 @@ import com.liferay.portal.util.WebKeys;
  */
 @Path("/v1/appconfiguration")
 @SuppressWarnings("serial")
-public class AppConfigurationResource implements Serializable {
+public class AppContextInitResource implements Serializable {
 
+	static final String USER = "user";
+	static final String LOGIN_AS_USER = "loginAsUser";
 	private static final String MENU = "menu";
 	private static final String CONFIG = "config";
-	private static final String USER = "user";
 
 	private final AppConfigurationHelper helper;
-	private final LoginService loginService;
 
 	/**
 	 * Default constructor.
 	 */
-	public AppConfigurationResource() {
-		this( AppConfigurationHelper.INSTANCE, LoginServiceFactory.getInstance().getLoginService());
+	public AppContextInitResource() {
+		this( AppConfigurationHelper.getInstance());
 	}
 
 	@VisibleForTesting
-	public AppConfigurationResource(AppConfigurationHelper helper, LoginService loginService) {
+	public AppContextInitResource(AppConfigurationHelper helper) {
 		this.helper = helper;
-		this.loginService = loginService;
 	}
 
 	/**
@@ -85,13 +75,14 @@ public class AppConfigurationResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-			User user = this.loginService.getLogInUser( request );
+			Map<String, Map> users = helper.getUsers(request);
 
 			final Object menuData = this.helper.getMenuData(request);
 			final Object configData = this.helper.getConfigurationData(request);
 			// Return all configuration parameters in one response
-			final Map<String, Object> configMap = CollectionsUtils.map(MENU, menuData, CONFIG, configData,
-					USER, user != null ? user.toMap() : null);
+			final Map<String, Object> configMap = CollectionsUtils.map(MENU, menuData, CONFIG, configData);
+			configMap.putAll(users);
+
 			return Response.ok(new ResponseEntityView(configMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500

@@ -183,6 +183,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link LoginAsAPI} class.
+	 *
+	 * @return The {@link LoginAsAPI} class.
+	 */
+	public static LoginAsAPI getLoginAsAPI() {
+		return (LoginAsAPI) getInstance(APIIndex.LOGIN_AS_USER_API);
+	}
+
+	/**
 	 * Creates a single instance of the {@link EventAPI} class.
 	 * 
 	 * @return The {@link EventAPI} class.
@@ -763,6 +772,7 @@ enum APIIndex
 	PERMISSION_API,
 	ROLE_API,
 	USER_API,
+	LOGIN_AS_USER_API,
 	RELATIONSHIP_API,
 	FIELD_API,
 	IDENTIFIER_API,
@@ -822,6 +832,7 @@ enum APIIndex
 		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
 		case ROLE_API: return new RoleAPIImpl();
 		case USER_API: return new UserAPIImpl();
+		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
 		case EVENT_API: return new EventAPIImpl();
 		case CATEGORY_API: return new CategoryAPIImpl();
 		case CONTENTLET_API: return new  ESContentletAPIImpl();
