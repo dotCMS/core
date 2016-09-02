@@ -26,9 +26,19 @@
   .toolbar__actions,
   .toolbar__host {
     display: flex;
-    flex: 1;
     flex-direction: row;
     align-items: center;
     min-width: 200px;
+  }
+
+  .toolbar__host {
+    .md-underline {
+      display: none;
+    }
+
+    // TODO: should we add a param for not hover state in the dot-select?
+    .dot-select.is-active .dot-select__icon {
+      color: $white;
+    }
   }
 }

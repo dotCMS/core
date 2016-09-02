@@ -23,12 +23,12 @@
     .dot-select__options {
         @include box_shadow(1);
         background-color: $white;
+        max-height: 0;
+        overflow: hidden;
         position: absolute;
         top: 0;
-        z-index: 1;
-        overflow: hidden;
-        max-height: 0;
         transition: all $basic-speed;
+        z-index: 1;
         z-index: 2;
     }
 
@@ -37,9 +37,11 @@
     }
 
     .dot-select__wrapper {
-        position: relative;
+        align-items: center;
+        cursor: pointer;
         display: flex;
         justify-content: space-between;
+        position: relative;
     }
 }
 
