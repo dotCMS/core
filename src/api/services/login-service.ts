@@ -207,12 +207,11 @@ export class LoginService extends CoreWebService {
      * @returns {Observable<any>}
      */
     public logOutUser(): Observable<any> {
-        this.router.go('/public/login');
-
         return this.requestView({
             method: RequestMethod.Get,
             url: this.logoutURL,
-        }).map(response => {
+        }).map( response => {
+            this.router.go('/public/login');
             this.setLogInUser(null);
         });
     }
@@ -251,6 +250,9 @@ export class LoginService extends CoreWebService {
             let languageDesc = language.split('_');
             this.lang = languageDesc[0];
             this.country = languageDesc[1];
+        } else {
+            this.lang = '';
+            this.country = '';
         }
     }
 }
