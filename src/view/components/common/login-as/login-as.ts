@@ -33,6 +33,7 @@ export class LoginAsComponent {
 
     close(): void {
         this.cancel.emit(true);
+        return false;
     }
 
     dolLoginAs(options: any): void {
