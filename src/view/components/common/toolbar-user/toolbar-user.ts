@@ -43,11 +43,10 @@ export class ToolbarUserComponent {
     logout(): void {
         this.loginService.logOutUser().subscribe(data => {
             this.router.go('/public/login');
-            return;
         }, (error) => {
             console.log(error);
         });
-
+        return false;
     }
 
     logoutAs($event): void {
