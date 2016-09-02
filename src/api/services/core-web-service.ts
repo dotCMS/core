@@ -36,8 +36,7 @@ export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR';
 @Injectable()
 export class CoreWebService {
 
-  constructor( private _apiRoot: ApiRoot, private _http: Http){
-
+  constructor(private _apiRoot:ApiRoot, private _http:Http){
   }
 
   request(options: any): Observable<any> {
@@ -89,12 +88,12 @@ export class CoreWebService {
   public requestView(options: RequestOptionsArgs ): Observable<ResponseView> {
     let request = this.getRequestOpts( options );
 
-    return   Observable.create(observer => {
+    return Observable.create(observer => {
       this._http.request(request).subscribe(
           resp => {
             if (resp._body.errors && resp._body.errors.length > 0){
               observer.error(new ResponseView(resp));
-            }else {
+            } else {
               observer.next(new ResponseView(resp));
             }
           },

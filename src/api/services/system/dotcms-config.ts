@@ -1,4 +1,5 @@
 import {Injectable} from '@angular/core';
+import {User} from "../login-service";
 
 /**
  * Created by josecastro on 7/29/16.
@@ -59,5 +60,13 @@ export class DotcmsConfig {
     getNavigationMenu(): Array<any> {
         return this.configParams.menu;
     }
+
+    setUser(user: User) {
+        this.configParams.user = user;
+    }
+    setLoginAsUser(user: User) {
+        this.configParams.loginAsUser = user;
+    }
+
 
 }

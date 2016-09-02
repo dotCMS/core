@@ -11,13 +11,13 @@
             "check-space"
         ],
         "curly": true,
-        "eofline": true,
+        "eofline": false,
         "forin": true,
         "indent": [
             true,
             "spaces"
         ],
-        "interface-name": true,
+        "interface-name": false,
         "jsdoc-format": true,
         "label-position": true,
         "label-undefined": true,
@@ -79,7 +79,7 @@
         "semicolon": true,
         "switch-default": true,
         "trailing-comma": [
-            true,
+            false,
             {
                 "multiline": "always",
                 "singleline": "never"

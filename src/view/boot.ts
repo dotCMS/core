@@ -30,7 +30,6 @@ import { Routes } from '@ngrx/router';
 import {SiteService} from '../api/services/site-service';
 
 new AppConfigurationService().getConfigProperties().subscribe(config => {
-    
     let routes: Routes = [
         {
             path: 'dotCMS',
@@ -80,6 +79,7 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
         MdIconRegistry,
         provide('dotcmsConfig', {useValue: config.dotcmsConfig}),
         provide('routes', {useValue: routes}),
+        provide('user', {useValue: config.dotcmsConfig.configParams.user}),
         provideRouter(routes),
         // Form controls use the new @angular/forms package. To make migration easier, you can alternatively install
         // alpha.5-3, which is the same as alpha.6 without the new forms package.

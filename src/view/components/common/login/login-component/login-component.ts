@@ -1,5 +1,4 @@
-
-import {Component, EventEmitter, Inject, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
+import {Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
 
 
 // angular material imports
@@ -9,7 +8,6 @@ import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {DotCMSHttpResponse} from '../../../../../api/services/dotcms-http-response';
 import {LoginData} from './login-container';
 import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
-import {MdToolbar} from '@angular2-material/toolbar';
 import {LoginService} from '../../../../../api/services/login-service';
 import {CapitalizePipe} from '../../../../../api/pipes/capitalize-pipe';
 
@@ -170,8 +168,6 @@ export class LoginComponent {
 
                 this.language = currentLanguage.language + '_' + currentLanguage.country;
             }
-
-            console.log('this.language2', this.language);
         }, (error) => {
              console.log(error);
         });

@@ -1,7 +1,4 @@
-import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angular/core';
-
-
-import { Router } from '@ngrx/router';
+import {Component, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
 
 @Component({
