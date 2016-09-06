@@ -14,7 +14,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  * @version 3.7
  * @since Jul 11, 2016
  */
-public class Task03700AddingSystemEventTable extends AbstractJDBCStartupTask {
+public class Task03705AddingSystemEventTable extends AbstractJDBCStartupTask {
 
 	@Override
 	public boolean forceRun() {
