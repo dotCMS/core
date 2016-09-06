@@ -35,7 +35,7 @@ import com.dotmarketing.util.WebKeys;
  * scheduled content publishing and expiration dates. It also allows a user to
  * take a snapshot, or static copy, of selected hosts and save it as a "bundle"
  * in dotCMS.
- * 
+ *
  * @author michele.mastrogiovanni@gmail.com
  * @version 1.0
  * @since May 31, 2012
@@ -50,9 +50,9 @@ public class TimeMachineFilter implements Filter {
     public static final String TM_HOST_VAR="tm_host";
 
     private static final String ERROR_404 = "/html/portlet/ext/timemachine/timemachine_404.jsp";
-    
+
     CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
-    
+
     @Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
@@ -75,7 +75,7 @@ public class TimeMachineFilter implements Filter {
 		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
 				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			com.liferay.portal.model.User user = null;
-			
+
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
 				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("TIMEMACHINE", user)){
@@ -94,7 +94,7 @@ public class TimeMachineFilter implements Filter {
 		        resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
 		        return;
 		    }
-		    
+
 		    String langid=(String) req.getSession().getAttribute("tm_lang");
 		    // future date. Lets handle in other places
 		    if(date.after(new Date())) {
@@ -143,7 +143,7 @@ public class TimeMachineFilter implements Filter {
 	 * Reads the a file from a specific Site in a given language. Viewing a Site
 	 * from the Time Machine portlet will load all the required files from the
 	 * bundled site.
-	 * 
+	 *
 	 * @param host
 	 *            - The Site that users want to inspect.
 	 * @param uri
@@ -183,7 +183,7 @@ public class TimeMachineFilter implements Filter {
 	/**
 	 * Returns an error to the user in order to indicate that something went
 	 * wrong when displaying the page.
-	 * 
+	 *
 	 * @param request
 	 *            - The HTTP Request object.
 	 * @param response
@@ -213,7 +213,7 @@ public class TimeMachineFilter implements Filter {
 	/**
 	 * Takes the contents of the file in the bundle and serves them back to the
 	 * user in the Time Machine portlet.
-	 * 
+	 *
 	 * @param file
 	 *            - The {@link File} with the contents to display.
 	 * @param response
@@ -224,6 +224,11 @@ public class TimeMachineFilter implements Filter {
 		String mimeType = APILocator.getFileAPI().getMimeType(file.getName());
 		if (mimeType == null) {
 			mimeType = "application/octet-stream";
+		}
+		// if the file is an index page be sure to render correctly as html and not
+		// send it as a file
+		if(file.getName().equals(CMSFilter.CMS_INDEX_PAGE)){
+			mimeType = "unknown";
 		}
 		resp.setContentType(mimeType);
 		resp.setContentLength((int) file.length());

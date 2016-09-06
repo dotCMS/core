@@ -165,6 +165,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03550RenameContainersTable.class);
 		ret.add(Task03555AddFlagToDeleteUsers.class);
 		ret.add(Task03560TemplateLayoutCanonicalName.class);
+		ret.add(Task03565FixContainerVersionsCheck.class);
         ret.add(Task03565ModificationDateColumnAddedToUserTable.class);
         ret.add(Task03700AddingSystemEventTable.class);
         return ret;
