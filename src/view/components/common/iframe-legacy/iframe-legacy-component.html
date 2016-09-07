@@ -1,2 +1,9 @@
 <md-spinner color="accent" *ngIf="loadingInProgress" class="iframe-spinner"></md-spinner>
-<iframe  [hidden]="loadingInProgress"  width="100%" height="100%" id="detailFrame" [src]="iframe | async" frameborder="0"></iframe>
+<iframe   width="100%"
+          height="100%"
+          id="detailFrame"
+          [src]="iframe | async"
+          frameborder="0"
+          [class.iframe--loading-in-progress]="loadingInProgress">
+
+</iframe>

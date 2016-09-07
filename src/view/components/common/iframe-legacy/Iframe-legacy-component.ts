@@ -40,9 +40,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
         this.routingService.menusChange$.subscribe(menus => this.initComponent(menus));
 
-        this.iframeElement.onload = () => {
-            this.loadingInProgress = false;
-        };
+        console.log('this.iframeElement.onload', this.iframeElement.onload);
+        this.iframeElement.onload = () => this.loadingInProgress = false;
     }
 
     initComponent(menus: Menu[]): void {
@@ -57,6 +56,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
         this.iframe = this.params$.pluck<string>('id')
             .distinctUntilChanged()
             .map(id => {
+                console.log('MAP------');
+                this.loadingInProgress = true;
                 return this.sanitizer.bypassSecurityTrustResourceUrl(this.menuIdUrlMatch.get(id));
             });
     }
