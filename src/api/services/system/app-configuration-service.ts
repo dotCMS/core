@@ -7,7 +7,6 @@ export class AppConfigurationService {
      * Default constructor of the service.
      */
     constructor() {
-
     }
 
     /**
