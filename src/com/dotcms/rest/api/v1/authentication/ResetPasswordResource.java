@@ -31,7 +31,7 @@ import java.util.Locale;
 public class ResetPasswordResource {
 
     private final UserManager userManager;
-    private final ResponseUtil authenticationHelper;
+    private final ResponseUtil responseUtil;
 
     public ResetPasswordResource(){
         this ( UserManagerFactory.getManager(),
@@ -41,7 +41,7 @@ public class ResetPasswordResource {
     @VisibleForTesting
     public ResetPasswordResource(UserManager userManager, ResponseUtil authenticationHelper) {
         this.userManager = userManager;
-        this.authenticationHelper = authenticationHelper;
+        this.responseUtil = authenticationHelper;
     }
 
     @POST
@@ -66,20 +66,20 @@ public class ResetPasswordResource {
                     String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
             res = Response.ok(new ResponseEntityView( userId )).build();
         } catch (NoSuchUserException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "please-enter-a-valid-login");
         } catch (DotSecurityException e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         } catch (DotInvalidTokenException e) {
             if (e.isExpired()){
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
+                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset_token_expired");
             }else{
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+                res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "reset-password-token-invalid");
             }
         } catch (DotInvalidPasswordException e){
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "reset-password-invalid-password");
         }catch (Exception  e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

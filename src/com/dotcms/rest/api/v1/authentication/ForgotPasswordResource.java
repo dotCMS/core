@@ -46,7 +46,7 @@ public class ForgotPasswordResource implements Serializable {
     private final UserLocalManager userLocalManager;
     private final UserManager userManager;
     private final CompanyAPI  companyAPI;
-    private final ResponseUtil authenticationHelper;
+    private final ResponseUtil responseUtil;
 
     public ForgotPasswordResource() {
 
@@ -61,12 +61,12 @@ public class ForgotPasswordResource implements Serializable {
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
                                   final UserManager userManager,
                                   final CompanyAPI  companyAPI,
-                                  final ResponseUtil authenticationHelper) {
+                                  final ResponseUtil responseUtil) {
 
         this.userLocalManager = userLocalManager;
         this.userManager      = userManager;
         this.companyAPI       = companyAPI;
-        this.authenticationHelper = authenticationHelper;
+        this.responseUtil = responseUtil;
     }
 
     @POST
@@ -104,7 +104,7 @@ public class ForgotPasswordResource implements Serializable {
 
             if (displayNotSuchUserError) {
 
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+                res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "the-email-address-you-requested-is-not-registered-in-our-database");
             } else {
 
@@ -124,11 +124,11 @@ public class ForgotPasswordResource implements Serializable {
             }
         } catch (SendPasswordException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                       "a-new-password-can-only-be-sent-to-an-external-email-address");
         } catch (UserEmailAddressException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "please-enter-a-valid-email-address");
         } catch (Exception e) {
 
