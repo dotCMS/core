@@ -103,7 +103,6 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         final ContentTypeHelper contentletHelper  = mock(ContentTypeHelper.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
-        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final List<Structure> structures = new ArrayList();
         final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);

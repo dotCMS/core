@@ -39,9 +39,9 @@ public class ResetPasswordResource {
     }
 
     @VisibleForTesting
-    public ResetPasswordResource(UserManager userManager, ResponseUtil authenticationHelper) {
+    public ResetPasswordResource(UserManager userManager, ResponseUtil responseUtil) {
         this.userManager = userManager;
-        this.responseUtil = authenticationHelper;
+        this.responseUtil = responseUtil;
     }
 
     @POST

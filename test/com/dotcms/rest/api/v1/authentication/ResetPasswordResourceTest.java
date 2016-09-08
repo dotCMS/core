@@ -20,14 +20,14 @@ import static org.mockito.Mockito.mock;
 public class ResetPasswordResourceTest {
 
     HttpServletRequest request;
-    ResponseUtil authenticationHelper;
+    ResponseUtil responseUtil;
     ResetPasswordForm  resetPasswordForm;
 
     @Before
     public void initTest(){
         request = RestUtilTest.getMockHttpRequest();
         RestUtilTest.initMockContext();
-        authenticationHelper = ResponseUtil.INSTANCE;
+        responseUtil = ResponseUtil.INSTANCE;
         resetPasswordForm = this.getForm();
 
     }
@@ -58,7 +58,7 @@ public class ResetPasswordResourceTest {
     public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -71,7 +71,7 @@ public class ResetPasswordResourceTest {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -83,7 +83,7 @@ public class ResetPasswordResourceTest {
     public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -94,7 +94,7 @@ public class ResetPasswordResourceTest {
     public void testDotInvalidPasswordException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidPasswordException("") );
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -104,7 +104,7 @@ public class ResetPasswordResourceTest {
     @Test
     public void testOk() {
         UserManager userManager = mock( UserManager.class );
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 

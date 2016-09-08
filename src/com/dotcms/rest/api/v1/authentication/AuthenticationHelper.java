@@ -19,7 +19,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 /**
  * {@link AuthenticationResource}'s helper
  */
-public class AuthenticationHelper {
+class AuthenticationHelper {
 
     private final LoginAsAPI loginAsAPI;
     private final LoginService loginService;
@@ -32,12 +32,12 @@ public class AuthenticationHelper {
         return AuthenticationHelper.SingletonHolder.INSTANCE;
     }
 
-    public AuthenticationHelper() {
+    private AuthenticationHelper() {
         this( APILocator.getLoginAsAPI(), LoginServiceFactory.getInstance().getLoginService() );
     }
 
     @VisibleForTesting
-    public AuthenticationHelper(LoginAsAPI loginAsAPI, LoginService loginService) {
+    protected AuthenticationHelper(LoginAsAPI loginAsAPI, LoginService loginService) {
         this.loginAsAPI = loginAsAPI;
         this.loginService = loginService;
     }

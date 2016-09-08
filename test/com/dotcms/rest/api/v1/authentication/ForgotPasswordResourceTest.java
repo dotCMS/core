@@ -78,7 +78,7 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
@@ -115,7 +115,7 @@ public class ForgotPasswordResourceTest {
 
         final ForgotPasswordResource authenticationResource =
                 new ForgotPasswordResource(userLocalManager, userManager,
-                        companyAPI, authenticationHelper);
+                        companyAPI, responseUtil);
 
 
         final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
