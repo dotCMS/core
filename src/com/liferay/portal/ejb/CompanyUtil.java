@@ -119,7 +119,7 @@ public class CompanyUtil {
 		return company;
 	}
 
-	protected static com.liferay.portal.model.Company findByPrimaryKey(
+	public static com.liferay.portal.model.Company findByPrimaryKey(
 		java.lang.String companyId)
 		throws com.liferay.portal.NoSuchCompanyException, 
 			com.liferay.portal.SystemException {

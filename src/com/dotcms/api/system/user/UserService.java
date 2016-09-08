@@ -1,9 +1,15 @@
 package com.dotcms.api.system.user;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Map;
 
+import com.dotcms.rest.api.v1.authentication.url.AngularResetPasswordUrlStrategy;
+import com.dotcms.rest.api.v1.authentication.url.DefaultResetPasswordUrlStrategy;
+import com.dotcms.rest.api.v1.authentication.url.ResetPasswordUrlStrategy;
 import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.model.User;
 
 /**
  * Provides useful methods to interact with {@link User} objects in dotCMS. Most
@@ -19,6 +25,19 @@ import com.dotmarketing.business.UserAPI;
  *
  */
 public interface UserService extends Serializable {
+
+	/**
+	 * {@link ResetPasswordUrlStrategy} for Angular.
+	 */
+	public static final ResetPasswordUrlStrategy ANGULAR_RESET_PASSWORD_URL_STRATEGY =
+			new AngularResetPasswordUrlStrategy();
+
+	/**
+	 * {@link ResetPasswordUrlStrategy} for the default.
+	 */
+	public static final ResetPasswordUrlStrategy DEFAULT_RESET_PASSWORD_URL_STRATEGY =
+			new DefaultResetPasswordUrlStrategy();
+
 
 	/**
 	 * Returns a list of dotCMS users based on the specified search criteria.
@@ -63,4 +82,36 @@ public interface UserService extends Serializable {
 	public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params)
 			throws Exception;
 
-}
+	/**
+	 * Finds an user by company and email
+	 * @param companyId
+	 * @param emailAddress
+     * @return User
+     */
+	public User findUserByCompanyAndEmail(String companyId,
+										  String emailAddress);
+
+	/**
+	 * Updates an user and returns the updated user.
+	 * @param user {@link User}
+	 * @return User
+     */
+	User update(User user);
+	/**
+	 * Sends a reset password and stores the token on the user data.
+	 * The {@link ResetPasswordUrlStrategy} used is the angular's one.
+	 * @param companyId String
+	 * @param emailAddress String
+	 * @param locale Locale
+     */
+	public void sendResetPassword(String companyId, String emailAddress, Locale locale) throws UserEmailAddressException;
+
+	/**
+	 * Sends a reset password and stores the token on the user data.
+	 * @param companyId String
+	 * @param emailAddress String
+	 * @param locale Locale
+	 * @param resetPasswordUrlStrategy {@link ResetPasswordUrlStrategy}
+	 */
+	public void sendResetPassword(String companyId, String emailAddress, Locale locale, ResetPasswordUrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException;
+} // E:O:F:UserService.

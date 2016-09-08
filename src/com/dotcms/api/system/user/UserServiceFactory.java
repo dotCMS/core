@@ -6,22 +6,35 @@ import static com.dotcms.util.ConversionUtils.toBoolean;
 import static com.dotcms.util.ConversionUtils.toInt;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.rest.api.v1.authentication.url.ResetPasswordUrlStrategy;
+import com.dotcms.util.UrlUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
+import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.ejb.CompanyUtil;
+import com.liferay.portal.ejb.UserPersistence;
+import com.liferay.portal.ejb.UserUtil;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.ModelListener;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.InstancePool;
+import com.liferay.util.Validator;
 
 /**
  * This factory creates a singleton instance of the {@link UserService} class.
@@ -79,6 +92,10 @@ public class UserServiceFactory implements Serializable {
 	private final class UserServiceImpl implements UserService {
 
 		private static final String USER_TYPE_VALUE = "user";
+		private static final String TOKEN_SPLITTER = ":";
+		private static final String LIFERAY_PORTAL_MODEL_USER = "value.object.persistence.com.liferay.portal.model.User";
+		private static final String LIFERAY_PORTAL_EJB_USER_PERSISTENCE = "com.liferay.portal.ejb.UserPersistence";
+		private static final String LISTENER_LIFERAY_PORTAL_MODEL_USER = "value.object.listener.com.liferay.portal.model.User";
 
 		private final UserAPI userAPI;
 		private final PermissionAPI permissionAPI;
@@ -87,9 +104,11 @@ public class UserServiceFactory implements Serializable {
 		 * Private class constructor.
 		 */
 		private UserServiceImpl() {
-			this.userAPI = APILocator.getUserAPI();
-			this.permissionAPI = APILocator.getPermissionAPI();
+
+			this.userAPI 			= APILocator.getUserAPI();
+			this.permissionAPI 		= APILocator.getPermissionAPI();
 		}
+
 
 		/**
 		 * This inner class is used to process the information related to
@@ -258,6 +277,121 @@ public class UserServiceFactory implements Serializable {
 			}
 			return results;
 		}
+
+		@Override
+		public User findUserByCompanyAndEmail(final String companyId,
+											  final  String emailAddress) {
+
+			User user = null;
+
+			if (!UtilMethods.isSet(companyId) || !UtilMethods.isSet(emailAddress)) {
+
+				throw new UserException("User can not be null");
+			}
+
+			try {
+
+				if (Logger.isDebugEnabled(this.getClass())) {
+
+					Logger.debug(this, "Finding an user by companyId: " + companyId +
+							", emailAddress: " + emailAddress);
+				}
+
+				user = UserUtil.findByC_EA(companyId, emailAddress);
+			} catch (NoSuchUserException | SystemException e) {
+
+				Logger.error(this, e.getMessage(), e);
+				throw new UserException(e);
+			}
+
+			return user;
+		} // findUserByCompanyAndEmail.
+
+		@Override
+		public User update(final User user) {
+
+			User userUpdated = null;
+
+			if (!UtilMethods.isSet(user)) {
+
+				throw new UserException("User can not be null");
+			}
+
+			try {
+
+				if (Logger.isDebugEnabled(this.getClass())) {
+
+					Logger.debug(this, "Updating the user: " + user.getUserId());
+				}
+
+				userUpdated = UserUtil.update(user);
+			} catch (SystemException e) {
+
+				Logger.error(this, e.getMessage(), e);
+				throw new UserException(e);
+			}
+
+			return userUpdated;
+		} // update.
+
+		@Override
+		public void sendResetPassword(final String companyId,
+									  final String emailAddress,
+									  final Locale locale) throws UserEmailAddressException {
+
+			this.sendResetPassword(companyId, emailAddress, locale, ANGULAR_RESET_PASSWORD_URL_STRATEGY);
+		} // sendResetPassword.
+
+		@Override
+		public void sendResetPassword(final String companyId,
+									  final String emailAddressParam,
+									  final Locale locale,
+									  final ResetPasswordUrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException {
+
+			final User user;
+			final String emailAddress;
+			final String token;
+			final Company company;
+
+			if (!UtilMethods.isSet(emailAddressParam)) {
+
+				throw new UserEmailAddressException();
+			}
+
+			emailAddress = emailAddressParam.trim().toLowerCase();
+
+			if (!Validator.isEmailAddress(emailAddress)) {
+
+				throw new UserEmailAddressException();
+			}
+
+			try {
+
+				user = this.findUserByCompanyAndEmail(companyId, emailAddress);
+
+				// we use the ICQ field to store the token:timestamp of the
+				// password reset request we put in the email
+				// the timestamp is used to set an expiration on the token
+				token = ResetPasswordTokenUtil.createToken();
+				user.setIcqId(new StringBuilder(token)
+						.append(TOKEN_SPLITTER).append(new Date().getTime()).toString());
+
+				this.update(user);
+
+				// Send new password
+				company = CompanyUtil.findByPrimaryKey(companyId);
+
+				String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, resetPasswordUrlStrategy);
+
+				String body    = LanguageUtil.format(locale, "reset-password-email-body", url, false);
+				String subject = LanguageUtil.get(locale, "reset-password-email-subject");
+				EmailUtils.sendMail(user, company, subject, body);
+			} catch (Exception ioe) {
+
+				Logger.error(this, ioe.getMessage(), ioe);
+				throw new UserEmailAddressException(ioe);
+			}
+		} // sendResetPassword.
 
 		/**
 		 * Returns a {@link Map} containing a list of dotCMS {@link User}

@@ -54,7 +54,7 @@ public class ResetPasswordResource {
                                         final ResetPasswordForm resetPasswordForm) {
 
         Response res = null;
-
+        // todo: check here the token, if it is valid get the token and userId
         String userId = resetPasswordForm.getUserId();
         String password = resetPasswordForm.getPassword();
         String token = resetPasswordForm.getToken();
