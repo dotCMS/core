@@ -51,8 +51,6 @@ public class LanguageWebApiTest {
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        Language lang1 = lapi.getLanguage(pageRequest);
-        assertEquals(lang1.getId(), 1);
         
         // test passing in a parameter
         ImmutableMap<String, String> map =
@@ -69,10 +67,6 @@ public class LanguageWebApiTest {
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        Language lang1 = lapi.getLanguage(pageRequest);
-        assertEquals(lang1.getId(), 1);
-        
-        
         
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -93,10 +87,6 @@ public class LanguageWebApiTest {
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        Language lang1 = lapi.getLanguage(pageRequest);
-        assertEquals(lang1.getId(), 1);
-        
-        
         
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -116,9 +106,6 @@ public class LanguageWebApiTest {
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
         
-        
-        Language lang1 = lapi.getLanguage(pageRequest);
-        assertEquals(lang1.getId(), 1);
         assertEquals(pageRequest.getSession(false), null);
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         
@@ -134,6 +121,32 @@ public class LanguageWebApiTest {
 
     }
     
+    @Test
+    public void testLangInTimeMachine() {
+        HttpServletRequest pageRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        .request();
+        
+        
+        Language lang1 = lapi.getLanguage(pageRequest);
+        assertEquals(lang1.getId(), 1);
+        assertEquals(pageRequest.getSession(true), pageRequest.getSession(false));
+        pageRequest.getSession().setAttribute("tm_lang", "2");
+        
+        
+        Language lang = lapi.getLanguage(pageRequest);
+        assertEquals(lang.getId(), 2);
+        assert(pageRequest.getSession(false) !=null);
+        
+        
+        
+        pageRequest.getSession().setAttribute("tm_lang", null);
+        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, null);
+        // this should still be 1 because we have removed the tm_lang
+        lang = lapi.getLanguage(pageRequest);
+        assertEquals(lang.getId(), 1);
+
+    }
     
     @Test
     public void testBadLangWebKeyParameter() {
