@@ -7,12 +7,10 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
-import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.*;
-import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.model.Company;
@@ -80,11 +78,10 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
-        final WebResource webResource       = new WebResource(apiProvider);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
@@ -144,11 +141,10 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
-        final WebResource webResource       = new WebResource(apiProvider);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
@@ -208,11 +204,10 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
-        final WebResource webResource       = new WebResource(apiProvider);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {

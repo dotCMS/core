@@ -13,7 +13,6 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
@@ -47,14 +46,14 @@ public class ForgotPasswordResource implements Serializable {
     private final UserLocalManager userLocalManager;
     private final UserManager userManager;
     private final CompanyAPI  companyAPI;
-    private final AuthenticationHelper  authenticationHelper;
+    private final ResponseUtil authenticationHelper;
 
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
                 UserManagerFactory.getManager(),
                 APILocator.getCompanyAPI(),
-                AuthenticationHelper.INSTANCE
+                ResponseUtil.INSTANCE
                 );
     }
 
@@ -62,7 +61,7 @@ public class ForgotPasswordResource implements Serializable {
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
                                   final UserManager userManager,
                                   final CompanyAPI  companyAPI,
-                                  final AuthenticationHelper  authenticationHelper) {
+                                  final ResponseUtil authenticationHelper) {
 
         this.userLocalManager = userLocalManager;
         this.userManager      = userManager;

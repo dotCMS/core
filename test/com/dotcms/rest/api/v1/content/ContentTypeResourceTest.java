@@ -5,7 +5,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.authentication.AuthenticationHelper;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -48,7 +48,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         final ContentTypeHelper contentletHelper  = mock(ContentTypeHelper.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
 
@@ -103,7 +103,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         final ContentTypeHelper contentletHelper  = mock(ContentTypeHelper.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final List<Structure> structures = new ArrayList();
         final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         final LanguageAPI languageAPI = mock(LanguageAPI.class);

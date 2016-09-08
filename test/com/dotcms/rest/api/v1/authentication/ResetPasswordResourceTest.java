@@ -2,11 +2,9 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.RestUtilTest;
-import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.logConsole.model.LogMapper;
 import com.liferay.portal.ejb.UserManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,14 +20,14 @@ import static org.mockito.Mockito.mock;
 public class ResetPasswordResourceTest {
 
     HttpServletRequest request;
-    AuthenticationHelper authenticationHelper;
+    ResponseUtil authenticationHelper;
     ResetPasswordForm  resetPasswordForm;
 
     @Before
     public void initTest(){
         request = RestUtilTest.getMockHttpRequest();
         RestUtilTest.initMockContext();
-        authenticationHelper = AuthenticationHelper.INSTANCE;
+        authenticationHelper = ResponseUtil.INSTANCE;
         resetPasswordForm = this.getForm();
 
     }

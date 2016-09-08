@@ -11,8 +11,6 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -33,15 +31,15 @@ import java.util.Locale;
 public class ResetPasswordResource {
 
     private final UserManager userManager;
-    private final AuthenticationHelper  authenticationHelper;
+    private final ResponseUtil authenticationHelper;
 
     public ResetPasswordResource(){
         this ( UserManagerFactory.getManager(),
-                AuthenticationHelper.INSTANCE);
+                ResponseUtil.INSTANCE);
     }
 
     @VisibleForTesting
-    public ResetPasswordResource(UserManager userManager, AuthenticationHelper authenticationHelper) {
+    public ResetPasswordResource(UserManager userManager, ResponseUtil authenticationHelper) {
         this.userManager = userManager;
         this.authenticationHelper = authenticationHelper;
     }

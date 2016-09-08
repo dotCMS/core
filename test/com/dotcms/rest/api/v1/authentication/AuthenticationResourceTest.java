@@ -1,14 +1,21 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.util.UserUtilTest;
+import com.dotmarketing.business.LoginAsAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -19,9 +26,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import java.lang.reflect.InvocationTargetException;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.util.Map;
 
 public class AuthenticationResourceTest {
 
@@ -73,8 +83,9 @@ public class AuthenticationResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
-        final WebResource webResource       = null;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -100,7 +111,7 @@ public class AuthenticationResourceTest {
 
 
         final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, authenticationHelper, webResource);
+                new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
         final AuthenticationForm authenticationForm =
                 new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
@@ -124,8 +135,9 @@ public class AuthenticationResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
-        final WebResource webResource       = null;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -145,7 +157,7 @@ public class AuthenticationResourceTest {
 
 
         final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, authenticationHelper, webResource);
+                new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
         final AuthenticationForm authenticationForm =
                 new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
@@ -169,7 +181,8 @@ public class AuthenticationResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final WebResource webResource       = null;
+        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -189,7 +202,7 @@ public class AuthenticationResourceTest {
 
 
         final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE,  webResource);
+                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
         final AuthenticationForm authenticationForm =
                 new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
@@ -213,7 +226,8 @@ public class AuthenticationResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final WebResource webResource       = null;
+        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -233,7 +247,7 @@ public class AuthenticationResourceTest {
 
 
         final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE,  webResource);
+                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
         final AuthenticationForm authenticationForm =
                 new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
@@ -257,7 +271,8 @@ public class AuthenticationResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final WebResource webResource       = null;
+        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -277,7 +292,7 @@ public class AuthenticationResourceTest {
 
 
         final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE,  webResource);
+                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
         final AuthenticationForm authenticationForm =
                 new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
@@ -302,7 +317,8 @@ public class AuthenticationResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final WebResource webResource       = null;
+        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -322,7 +338,7 @@ public class AuthenticationResourceTest {
 
 
         final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE,  webResource);
+                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
         final AuthenticationForm authenticationForm =
                 new AuthenticationForm.Builder().userId(userId).password(pass).language("en").country("US").build();
 
@@ -339,6 +355,61 @@ public class AuthenticationResourceTest {
         System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
     }
 
+    @Test
+    public void testgetUsersWithoutLoginAs() throws DotSecurityException, DotDataException, IllegalAccessException,
+            NoSuchMethodException, InvocationTargetException, LanguageException, ClassNotFoundException {
 
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
+
+        LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
+        LoginService loginService = mock( LoginService.class );
+
+        User user = UserUtilTest.createUser();
+        when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( user );
+
+        AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
+
+        final AuthenticationResource resource = new AuthenticationResource( loginService, userLocalManager, ResponseUtil.INSTANCE, helper );
+        Response responseEntityView = resource.getLoginUser(mockHttpRequest);
+
+        RestUtilTest.verifySuccessResponse( responseEntityView );
+        Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
+        assertTrue(entity instanceof Map);
+
+        Map map = ( Map ) entity;
+        assertEquals(user.toMap(), map.get( "user" ));
+        assertNull(map.get( "loginAsUser" ));
+    }
+
+    @Test
+    public void testgetUsersWithLoginAs() throws DotSecurityException, DotDataException, IllegalAccessException,
+            NoSuchMethodException, InvocationTargetException, LanguageException, ClassNotFoundException {
+
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
+        LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
+
+        LoginService loginService = mock( LoginService.class );
+
+        User user = UserUtilTest.createUser();
+        User loginAsUser = UserUtilTest.createUser();
+
+        when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
+        when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest))).thenReturn(user);
+
+        AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
+
+        final AuthenticationResource resource = new AuthenticationResource( loginService, userLocalManager, ResponseUtil.INSTANCE, helper );
+        Response responseEntityView = resource.getLoginUser(mockHttpRequest);
+
+        RestUtilTest.verifySuccessResponse( responseEntityView );
+        Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
+        assertTrue(entity instanceof Map);
+
+        Map map = ( Map ) entity;
+        assertEquals(user.toMap(), map.get( "user" ));
+        assertEquals(loginAsUser.toMap(), map.get( "loginAsUser" ));
+    }
 
 }

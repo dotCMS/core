@@ -41,9 +41,6 @@ import com.dotcms.util.CollectionsUtils;
 @SuppressWarnings("serial")
 public class AppContextInitResource implements Serializable {
 
-	static final String USER = "user";
-	static final String LOGIN_AS_USER = "loginAsUser";
-	private static final String MENU = "menu";
 	private static final String CONFIG = "config";
 
 	private final AppConfigurationHelper helper;
@@ -75,13 +72,9 @@ public class AppContextInitResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-			Map<String, Map> users = helper.getUsers(request);
-
-			final Object menuData = this.helper.getMenuData(request);
 			final Object configData = this.helper.getConfigurationData(request);
 			// Return all configuration parameters in one response
-			final Map<String, Object> configMap = CollectionsUtils.map(MENU, menuData, CONFIG, configData);
-			configMap.putAll(users);
+			final Map<String, Object> configMap = CollectionsUtils.map(CONFIG, configData);
 
 			return Response.ok(new ResponseEntityView(configMap)).build();
 		} catch (Exception e) {
