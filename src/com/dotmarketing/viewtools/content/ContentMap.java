@@ -7,6 +7,7 @@ import java.io.StringWriter;
 import java.util.*;
 
 import com.dotmarketing.tag.model.Tag;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -260,8 +261,8 @@ public class ContentMap {
 
 				StringBuilder tags = new StringBuilder();
 
-				//Search for the list of tags related to this contentlet
-				List<Tag> foundTags = APILocator.getTagAPI().getTagsByInode(content.getInode());
+                //Search for the list of tags related to this contentlet and according to the requested Field
+                List<Tag> foundTags = APILocator.getTagAPI().getTagsByInodeAndFieldVarName(content.getInode(), f.getVelocityVarName());
 				if ( foundTags != null && !foundTags.isEmpty() ) {
 
 					Iterator<Tag> iterator = foundTags.iterator();
