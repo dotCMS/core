@@ -1,5 +1,5 @@
-import {Component, ViewEncapsulation, Input, Inject} from '@angular/core';
-import {FormatDate} from "../../../../api/services/format-date-service";
+import {Component, ViewEncapsulation, Input} from '@angular/core';
+import {FormatDateService} from "../../../../api/services/format-date-service";
 import {Subject} from 'rxjs/Subject';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
@@ -8,7 +8,7 @@ import {BehaviorSubject} from 'rxjs/BehaviorSubject';
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
     pipes: [],
-    providers: [FormatDate],
+    providers: [],
     selector: 'custom-time',
     styleUrls: ['custom-time.css'],
     templateUrl: ['custom-time.html'],
@@ -19,16 +19,17 @@ export class CustomTimeComponent {
 
     private formattedTime:Subject<string> = new BehaviorSubject('');
 
-    constructor(private formatDate: FormatDate) {
+    constructor(private formatDateService: FormatDateService) {
 
     }
 
     ngOnInit(): void {
-        this.formattedTime.next(this.formatDate.getRelative(this.time));
+        this.formattedTime.next(this.formatDateService.getRelative(this.time));
     }
 
+    // TODO: this it's running every time the UI changes no matter where, need to fix it, should only run when custom-time shows
     ngAfterViewChecked() {
         // TODO: this is triggering even when open other dropdown component instance, need to check that.
-        this.formattedTime.next(this.formatDate.getRelative(this.time));
+        this.formattedTime.next(this.formatDateService.getRelative(this.time));
     }
 }

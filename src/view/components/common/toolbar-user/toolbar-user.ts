@@ -1,12 +1,9 @@
-import {Component, ViewChild, Inject} from '@angular/core';
+import {Component, ViewChild} from '@angular/core';
 import {Router} from '@ngrx/router';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginAsComponent} from '../login-as/login-as';
-import {LoginService, User} from '../../../../api/services/login-service';
+import {LoginService, Auth} from '../../../../api/services/login-service';
 import {MyAccountComponent} from '../../my-account-component/dot-my-account-component';
-import {DotcmsConfig} from '../../../../api/services/system/dotcms-config';
-
-
 
 @Component({
     directives: [DropdownComponent, LoginAsComponent, MyAccountComponent],
@@ -18,29 +15,26 @@ import {DotcmsConfig} from '../../../../api/services/system/dotcms-config';
 })
 export class ToolbarUserComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
-    private isLoggedAs: boolean = false;
     private showLoginAs: boolean = false;
-    private user: User;
+    private auth: Auth;
     private showMyAccount: boolean = false;
 
-    constructor(private router: Router, private loginService: LoginService,
-                @Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig) {}
+    constructor(private router: Router, private loginService: LoginService) {}
 
     ngOnInit(): void {
-        this.user = this.loginService.loginUser;
-        this.loginService.loginUser$.subscribe((user) => {
-            this.user = user;
+        this.loginService.watchUser((auth: Auth) => {
+            this.auth = auth;
         });
-        this.isLoggedAs = this.dotcmsConfig.configParams.loginAsUser ? true : false;
-        this.loginService.isLoginAs$.subscribe(data => {
-            this.isLoggedAs = data;
-        });
+        // this.auth = this.loginService.auth;
+        // this.loginService.auth$.subscribe((auth) => {
+        //     this.auth = auth;
+        // });
     }
 
     /**
      * Call the logout service
      */
-    logout(): void {
+    logout(): boolean {
         this.loginService.logOutUser().subscribe(data => {
             this.router.go('/public/login');
         }, (error) => {
@@ -66,7 +60,7 @@ export class ToolbarUserComponent {
         return false;
     }
 
-    toggleMyAccount(): void {
+    toggleMyAccount(): boolean {
         this.showMyAccount = !this.showMyAccount;
         return false;
     }

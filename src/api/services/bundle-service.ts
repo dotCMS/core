@@ -25,26 +25,24 @@ export interface IPublishEnvironment {
 
 @Injectable()
 export class BundleService extends CoreWebService {
-  private _bundleStoreUrl:string
-  private _loggedUserUrl:string
-  private _addToBundleUrl:string
-  private _pushEnvironementsUrl:string
-  private _pushRuleUrl:string
+  private _bundleStoreUrl: string;
+  private _loggedUserUrl: string;
+  private _addToBundleUrl: string;
+  private _pushEnvironementsUrl: string;
+  private _pushRuleUrl: string;
 
   bundles$:BehaviorSubject<IBundle[]> = new BehaviorSubject([]);
   environments$:BehaviorSubject<IDBEnvironment[]> = new BehaviorSubject([]);
-  private _bundlesAry:IBundle[] = []
-  private _environmentsAry:IDBEnvironment[] = []
+  private _bundlesAry:IBundle[] = [];
+  private _environmentsAry:IDBEnvironment[] = [];
 
-  constructor(public _apiRoot:ApiRoot, _http:Http, private _resources:I18nService) {
-    super(_apiRoot, _http)
-    this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid`
-    this._loggedUserUrl = `${this._apiRoot.baseUrl}api/v1/users/current/`
-    this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`
-    this._pushEnvironementsUrl = `${this._apiRoot.baseUrl}api/environment/loadenvironments/roleId`
-    this._pushRuleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`
-
-
+  constructor(public _apiRoot:ApiRoot, _http:Http) {
+    super(_apiRoot, _http);
+    this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid`;
+    this._loggedUserUrl = `${this._apiRoot.baseUrl}api/v1/users/current/`;
+    this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
+    this._pushEnvironementsUrl = `${this._apiRoot.baseUrl}api/environment/loadenvironments/roleId`;
+    this._pushRuleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
   }
 
   getLoggedUser():Observable<IUser> {
@@ -57,13 +55,13 @@ export class BundleService extends CoreWebService {
 
 
   loadBundleStores(){
-    let obs
+    let obs;
     if (this._bundlesAry.length) {
       obs = Observable.from(this._bundlesAry)
     } else {
       obs = this._doLoadBundleStores().map((bundles:IBundle[])=> {
-        this._bundlesAry = bundles
-        return bundles
+        this._bundlesAry = bundles;
+        return bundles;
       })
     }
     obs.subscribe((bundles) => this.bundles$.next(bundles))
@@ -79,12 +77,12 @@ export class BundleService extends CoreWebService {
   }
 
   loadPublishEnvironments() {
-    let obs
+    let obs;
     if (this._environmentsAry.length) {
       obs = Observable.from(this._environmentsAry)
     } else {
       obs = this._doLoadPublishEnvironments().map((environments:IDBEnvironment[])=> {
-        this._environmentsAry = environments
+        this._environmentsAry = environments;
         return environments
       })
     }
@@ -122,16 +120,16 @@ export class BundleService extends CoreWebService {
 
   private getPublishRuleData(ruleId:string, environmentId:string) {
     let resul:string = "";
-    resul += `assetIdentifier=${ruleId}`
-    resul += `&remotePublishDate=${this.getFormattedDate(new Date())}`
-    resul += "&remotePublishTime=00-00"
-    resul += `&remotePublishExpireDate=${this.getFormattedDate(new Date())}`
-    resul += "&remotePublishExpireTime=00-00"
-    resul += "&iWantTo=publish"
-    resul += `&whoToSend=${environmentId}`
-    resul += "&bundleName="
-    resul += "&bundleSelect="
-    resul += "&forcePush=false"
+    resul += `assetIdentifier=${ruleId}`;
+    resul += `&remotePublishDate=${this.getFormattedDate(new Date())}`;
+    resul += "&remotePublishTime=00-00";
+    resul += `&remotePublishExpireDate=${this.getFormattedDate(new Date())}`;
+    resul += "&remotePublishExpireTime=00-00";
+    resul += "&iWantTo=publish";
+    resul += `&whoToSend=${environmentId}`;
+    resul += "&bundleName=";
+    resul += "&bundleSelect=";
+    resul += "&forcePush=false";
     return resul
   }
 
@@ -152,7 +150,7 @@ export class BundleService extends CoreWebService {
 
   static fromServerEnvironmentTransformFn(data):IPublishEnvironment[] {
     // Endpoint return extra empty environment
-    data.shift()
+    data.shift();
     return data
   }
 

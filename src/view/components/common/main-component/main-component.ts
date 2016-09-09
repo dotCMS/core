@@ -29,6 +29,9 @@ import {ToolbarAddContenletComponent} from '../../toolbar-add-contentlet/toolbar
     templateUrl: ['main-component.html'],
 })
 export class MainComponent {
+    private messages:any = {};
+    private label:string = '';
+    private subs;
 
     constructor() {
     }
@@ -38,24 +41,8 @@ export class MainComponent {
         document.body.style.backgroundImage = '';
     }
 
-    setGlobalLang(): void {
-        // TODO: this strings of date information will come from the rest API base on user language.
-        this.formatDate.setLang('es', {
-            relativeTime : {
-                d : 'un jour',
-                dd : '%d jours',
-                future : 'dans %s',
-                h : 'une heure',
-                hh : '%d heures',
-                M : 'un mois',
-                m : 'une minute',
-                mm : '%d minutes',
-                MM : '%d mois',
-                past : 'il y a %s',
-                s : 'quelques secondes',
-                y : 'une année',
-                yy : '%d années'
-            },
-        })
+    ngOnDestroy() {
+        this.messages = null;
+        this.label = null;
     }
 }

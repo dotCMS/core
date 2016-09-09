@@ -1,17 +1,17 @@
-<dot-dropdown-component icon="notifications" (toggle)="toggleNotifications()" [disabled]="!notifications.length" alignRight="true">
+<dot-dropdown-component id="dot-toolbar-notifications" icon="notifications" (toggle)="toggleNotifications()" [disabled]="!notifications.length" alignRight="true">
     <extra-content>
-        <span *ngIf="notificationsUnreadCount" class="badge">{{notificationsUnreadCount}}</span>
+        <span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{notificationsUnreadCount}}</span>
     </extra-content>
 
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">
-            <h3 class="toolbar-notifications__title">{{i18nMessagesMap.notifications_title}}</h3>
-            <button md-icon-button (click)="dismissAllNotifications()" title={{i18nMessagesMap.notifications_dismissall}}>
+            <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">{{i18nMessages['notifications_title']}}</h3>
+            <button md-icon-button id="dot-toolbar-notifications-button-dismiss-all" (click)="dismissAllNotifications()" title="{{i18nMessages['notifications_dismissall']}}">
                 <md-icon class="md-24">clear_all</md-icon>
             </button>
         </div>
-        <div class="toolbar-notifications__content">
-            <dot-notifications-list [notifications]="notifications" (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>
+        <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
+            <dot-notifications-list id="dot-notifications-list" [notifications]="notifications" (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>
         </div>
     </div>
 </dot-dropdown-component>

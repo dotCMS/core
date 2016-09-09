@@ -1,10 +1,10 @@
-<dot-dropdown-component icon="account_circle" alignRight="true">
-    <ul class="user-menu">
-        <li class="user-menu__item">{{user.name || user.fullName}}</li>
-        <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!isLoggedAs">My Account</a></li>
-        <li class="user-menu__item"><a href="#" (click)="tooggleLoginAs($event)" *ngIf="!isLoggedAs">Login as</a></li>
-        <li class="user-menu__item"><a href="#" (click)="logout($event)" *ngIf="!isLoggedAs">Logout</a></li>
-        <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="isLoggedAs">Logout As</a></li>
+<dot-dropdown-component icon="account_circle" alignRight="true" *ngIf="auth.user" id="dot-toolbar-user">
+    <ul class="user-menu" id="dot-toolbar-user-menu">
+        <li class="user-menu__item" id="dot-toolbar-user-name">{{auth.loginAsUser ? auth.loginAsUser.name || auth.loginAsUser.fullName : auth.user.name || auth.user.fullName}}</li>
+        <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-my-account" messagekey>my-account</a></li>
+        <li class="user-menu__item"><a href="#" (click)="tooggleLoginAs($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-login-as" messagekey>login-as</a></li>
+        <li class="user-menu__item"><a href="#" (click)="logout($event)" *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-logout" messagekey>Logout</a></li>
+        <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="auth.loginAsUser" id="dot-toolbar-user-link-logout-as" messagekey>logout-as</a></li>
     </ul>
 </dot-dropdown-component>
 <dot-login-as *ngIf="showLoginAs" (cancel)="tooggleLoginAs($event)"></dot-login-as>

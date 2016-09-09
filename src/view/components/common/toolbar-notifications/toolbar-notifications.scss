@@ -6,7 +6,6 @@
 
     dot-notifications-list {
         font-size: rem-cal(14px);
-        margin: 0 1rem;
     }
 
     .badge {
@@ -38,14 +37,12 @@
 
     .toolbar-notifications__content {
         height: 320px;
-        overflow: scroll;
     }
 
     .toolbar-notifications__heading {
         display: flex;
         margin-bottom: rem-cal(10px);
         justify-content: space-between;
-        padding: rem-cal(12px) 1rem 0;
     }
 
     .toolbar-notifications__title {

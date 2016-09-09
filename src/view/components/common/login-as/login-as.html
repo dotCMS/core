@@ -4,16 +4,16 @@
         <!--TODO: manage errors on required fields and errors messages -->
         <form action="" #loginAsForm="ngForm" (submit)="dolLoginAs(loginAsForm.value)">
             <div class="form-group">
-                <dot-select name="userId" id="user-list" (change)="userSelectedHandler($event)" ngModel required>
+                <dot-select name="userId" id="user-list" (change)="userSelectedHandler($event)" ngModel required id="dot-login-as-select">
                     <dot-option *ngFor="let user of userLists" value={{user.userId}}>{{user.fullName}}</dot-option>
                 </dot-select>
             </div>
             <div class="form-group" *ngIf="needPassword">
-                <md-input name="password" id="login-as-password" type="password" placeholder="Password" floatingPlaceholder="false"   [required]="needPassword" ngModel></md-input>
+                <md-input name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel></md-input>
             </div>
             <div class="form-group">
-                <button md-raised-button [disabled]="!loginAsForm.valid">Change User</button>
-                <button md-button color="accent" (click)="close($event)">Cancel</button>
+                <button md-raised-button id="dot-login-as-button-change" [disabled]="!loginAsForm.valid">{{i18nMessages['change']}}</button>
+                <button md-button color="accent" id="dot-login-as-button-cancel" (click)="close($event)">{{i18nMessages['cancel']}}</button>
             </div>
         </form>
     </div>
