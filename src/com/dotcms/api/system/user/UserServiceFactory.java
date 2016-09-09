@@ -352,6 +352,7 @@ public class UserServiceFactory implements Serializable {
 			final String emailAddress;
 			final String token;
 			final Company company;
+			final String url;
 
 			if (!UtilMethods.isSet(emailAddressParam)) {
 
@@ -381,8 +382,7 @@ public class UserServiceFactory implements Serializable {
 				// Send new password
 				company = CompanyUtil.findByPrimaryKey(companyId);
 
-				String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, resetPasswordUrlStrategy);
-
+				url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, resetPasswordUrlStrategy);
 				String body    = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 				String subject = LanguageUtil.get(locale, "reset-password-email-subject");
 				EmailUtils.sendMail(user, company, subject, body);

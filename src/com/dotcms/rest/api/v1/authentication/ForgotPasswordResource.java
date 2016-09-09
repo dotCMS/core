@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.api.system.user.UserService;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -45,14 +47,14 @@ import java.util.Locale;
 public class ForgotPasswordResource implements Serializable {
 
     private final UserLocalManager userLocalManager;
-    private final UserManager userManager;
     private final CompanyAPI  companyAPI;
+    private final UserService userService;
     private final AuthenticationHelper  authenticationHelper;
 
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
-                UserManagerFactory.getManager(),
+                UserServiceFactory.getInstance().getUserService(),
                 APILocator.getCompanyAPI(),
                 AuthenticationHelper.INSTANCE
                 );
@@ -60,12 +62,12 @@ public class ForgotPasswordResource implements Serializable {
 
     @VisibleForTesting
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
-                                  final UserManager userManager,
+                                  final UserService userService,
                                   final CompanyAPI  companyAPI,
                                   final AuthenticationHelper  authenticationHelper) {
 
         this.userLocalManager = userLocalManager;
-        this.userManager      = userManager;
+        this.userService      = userService;
         this.companyAPI       = companyAPI;
         this.authenticationHelper = authenticationHelper;
     }
@@ -91,8 +93,8 @@ public class ForgotPasswordResource implements Serializable {
                                 (forgotPasswordForm.getUserId()).getEmailAddress():
                         forgotPasswordForm.getUserId();
 
-            this.userManager.sendPassword(
-                    this.companyAPI.getCompanyId(request), emailAddress, locale, true);
+            this.userService.sendResetPassword(
+                    this.companyAPI.getCompanyId(request), emailAddress, locale);
 
             res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
             SecurityLogger.logInfo(this.getClass(),
