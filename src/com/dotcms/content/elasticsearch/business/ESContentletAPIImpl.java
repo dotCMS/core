@@ -9,35 +9,42 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotmarketing.exception.*;
-
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.gson.Gson;
 import com.dotcms.repackage.com.google.gson.GsonBuilder;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-
 import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -63,6 +70,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -137,6 +149,10 @@ import com.liferay.util.FileUtil;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
+
+    private final NotificationAPI notificationAPI;
+    private final ESContentletAPIHelper esContentletAPIHelper;
+
 	private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
 	
@@ -163,6 +179,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	 *
 	 */
     public ESContentletAPIImpl () {
+
         fAPI = APILocator.getFieldAPI();
         conFac = new ESContentFactoryImpl();
         perAPI = APILocator.getPermissionAPI();
@@ -171,6 +188,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         lanAPI = APILocator.getLanguageAPI();
         distAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
+        this.notificationAPI = APILocator.getNotificationAPI();
+        this.esContentletAPIHelper = ESContentletAPIHelper.INSTANCE;
     }
 
     @Override
@@ -463,8 +482,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException,
-    DotContentletStateException, DotStateException {
+    public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws
+        DotSecurityException, DotDataException, DotStateException {
 
         if (!contentlet.isWorking())
             throw new DotContentletStateException("Only the working version can be published");
@@ -472,35 +491,66 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // writes the contentlet object to a file
         indexAPI.addContentToIndex(contentlet, true, true);
 
-        User user = APILocator.getUserAPI().getSystemUser();
-
         // DOTCMS - 4393
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-        Language defaultLang=APILocator.getLanguageAPI().getDefaultLanguage();
+        Language defaultLang = lanAPI.getDefaultLanguage();
+        User systemUser = APILocator.getUserAPI().getSystemUser();
+
         for (Field field : fields) {
-            if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
-                    || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+            if (Field.FieldType.IMAGE.toString().equals(field.getFieldType()) ||
+                Field.FieldType.FILE.toString().equals(field.getFieldType())) {
 
+                // I know! You already saw the nested try/catch blocks below,
+                // please don't shoot the messenger, let me explain.
+                // NOTE: Keep in mind that at this moment the FILE ASSET could be in the same language or
+                // default lang (DEFAULT_FILE_TO_DEFAULT_LANGUAGE=true)
                 try {
-                    String value = "";
-                    if(UtilMethods.isSet(getFieldValue(contentlet, field))){
-                        value = getFieldValue(contentlet, field).toString();
-                    }
-                    Identifier id = APILocator.getIdentifierAPI().find(value);
-                    if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+                    // We need to get the Identifier from the field. (Image or File)
+                    String fieldValue = UtilMethods.isSet(getFieldValue(contentlet, field)) ?
+                        getFieldValue(contentlet, field).toString() : StringUtils.EMPTY;
+                    Identifier id = APILocator.getIdentifierAPI().find(fieldValue);
 
-                        //Find the contentlet and try to publish it only if it does not have a live version
+                    // If this is a new File Asset (Contentlet).
+                    if (InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")) {
                         Contentlet fileAssetCont;
+
+                        // First we want to find the LIVE File Asset with same language of the parent Contentlet.
                         try {
-                            findContentletByIdentifier( id.getId(), true, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false );
-                        } catch ( DotContentletStateException se ) {
-                            fileAssetCont = findContentletByIdentifier( id.getId(), false, defaultLang.getId(), APILocator.getUserAPI().getSystemUser(), false );
-                            publish( fileAssetCont, APILocator.getUserAPI().getSystemUser(), false );
+                            findContentletByIdentifier( id.getId(), true, contentlet.getLanguageId(),
+                                systemUser, false );
+                        } catch ( DotContentletStateException seLive ) {
+                            // If we don't have results, we try to find the WORKING File Asset
+                            // with same language of the parent Contentlet.
+                            try{
+                                fileAssetCont = findContentletByIdentifier( id.getId(), false, contentlet.getLanguageId(),
+                                    systemUser, false );
+                                publish( fileAssetCont, systemUser, false );
+                            } catch ( DotContentletStateException seWorking ) {
+                                // Now, if we still don't have resutls we should try to find de LIVE File Asset but
+                                // with DEFAULT language. Note: no need to do repeat this is the language previously
+                                // serched was already the default.
+                                if ( defaultLang.getId() != contentlet.getLanguageId() ){
+                                    try {
+                                        findContentletByIdentifier( id.getId(), true, defaultLang.getId(),
+                                            systemUser, false );
+                                    } catch ( DotContentletStateException se ) {
+                                        // Again, if we don't find anything LIVE, we try WORKING File Asset + DEFAULT lang.
+                                        fileAssetCont = findContentletByIdentifier( id.getId(), false, defaultLang.getId(),
+                                            systemUser, false );
+                                        publish( fileAssetCont, systemUser, false );
+                                    }
+                                } else {
+                                    // If we already were using the default language we need to throw
+                                    // the DotContentletStateException.
+                                    throw seWorking;
+                                }
+                            }
+
                         }
-                    }else if(InodeUtils.isSet(id.getInode())){
-                        File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-                        PublishFactory.publishAsset(file, user, false, isNewVersion);
+                    } else if(InodeUtils.isSet(id.getInode())){ // If this is a Legacy File.
+                        File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, systemUser, false);
+                        PublishFactory.publishAsset(file, systemUser, false, isNewVersion);
                     }
                 } catch ( Exception ex ) {
                     Logger.debug( this, ex.getMessage(), ex );
@@ -510,11 +560,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // gets all not live file children
-        List<File> files = getRelatedFiles(contentlet, user, false);
+        List<File> files = getRelatedFiles(contentlet, systemUser, false);
         for (File file : files) {
             Logger.debug(this, "*****I'm a Contentlet -- Publishing my File Child=" + file.getInode());
             try {
-                PublishFactory.publishAsset(file, user, false, isNewVersion);
+                PublishFactory.publishAsset(file, systemUser, false, isNewVersion);
             } catch (DotSecurityException e) {
                 Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
                         + " but not the related file = " + file.getIdentifier());
@@ -525,11 +575,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // gets all not live link children
         Logger.debug(this, "IM HERE BEFORE PUBLISHING LINKS FOR A CONTENTLET!!!!!!!");
-        List<Link> links = getRelatedLinks(contentlet, user, false);
+        List<Link> links = getRelatedLinks(contentlet, systemUser, false);
         for (Link link : links) {
             Logger.debug(this, "*****I'm a Contentlet -- Publishing my Link Child=" + link.getInode());
             try {
-                PublishFactory.publishAsset(link, user, false, isNewVersion);
+                PublishFactory.publishAsset(link, systemUser, false, isNewVersion);
             } catch (DotSecurityException e) {
                 Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
                         + " but not the related link = " + link.getIdentifier());
@@ -1729,7 +1779,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         	// If the user calling this method is System, no other condition is required.
             // Note: no need to validate this on DELETE SITE/HOST.
-            if (workingContentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
+            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null ||
                 user == null ||
                 !workingContentlet.isLocked() ||
                 workingContentlet.getModUser().equals(user.getUserId()) ||

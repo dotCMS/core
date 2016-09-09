@@ -54,7 +54,7 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMSSQLScript () {
-        return "ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;\n" +
+        return "ALTER TABLE user_ ADD delete_in_progress TINYINT NOT NULL DEFAULT '0';\n" +
                 "ALTER TABLE user_ ADD delete_date DATETIME NULL;";
     }
 
