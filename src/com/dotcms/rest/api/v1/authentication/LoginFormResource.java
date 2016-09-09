@@ -12,16 +12,16 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
-import static com.dotcms.util.CollectionsUtils.*;
 
 import com.dotcms.rest.api.LanguageView;
+import com.dotcms.rest.api.v1.I18NForm;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
@@ -30,7 +30,6 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -74,9 +73,10 @@ public class LoginFormResource implements Serializable {
     @POST
     @JSONP
     @NoCache
+    @InitRequestRequired
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response loginForm(@Context final HttpServletRequest request,
-                                         final  LoginForm loginForm) {
+                                         final I18NForm i18nForm) {
 
         Response res = null;
 
@@ -99,12 +99,12 @@ public class LoginFormResource implements Serializable {
             final Map<String, String> messagesMap =
                     this.i18NUtil.getMessagesMap(
                             // if the user set's a switch, it overrides the session too.
-                            loginForm.getCountry(), loginForm.getLanguage(),
-                            loginForm.getMessagesKey(), request,
+                            i18nForm.getCountry(), i18nForm.getLanguage(),
+                            i18nForm.getMessagesKey(), request,
                             true); // want to create a session to store the locale.
 
             final Locale userLocale = LocaleUtil.getLocale(request,
-                    loginForm.getCountry(), loginForm.getLanguage());
+                    i18nForm.getCountry(), i18nForm.getLanguage());
 
             builder.serverId(LicenseUtil.getDisplayServerId())
                 .levelName(LicenseUtil.getLevelName())
