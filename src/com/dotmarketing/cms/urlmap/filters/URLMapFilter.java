@@ -37,6 +37,8 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -305,6 +307,9 @@ public class URLMapFilter implements Filter {
 			}
 
 		}
+		
+		closeDbSilently();
+		
 		chain.doFilter(req, res);
 	}
 
@@ -435,5 +440,19 @@ public class URLMapFilter implements Filter {
 			}
 		}
 		return ret;
+	}
+	
+	private void closeDbSilently() {
+	    try {
+	        HibernateUtil.closeSession();
+	    } catch (Exception e) {
+	        Logger.error(URLMapFilter.class, e.getMessage(), e);
+	    } finally {
+	        try {
+	            DbConnectionFactory.closeConnection();
+	        } catch (Exception e) {
+	            Logger.error(URLMapFilter.class, e.getMessage(), e);
+	        }
+	    }
 	}
 }
