@@ -5,7 +5,9 @@
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <script language="Javascript">
-// view_folders.js
+    var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"))?true:false%>;
+    
+    // view_folders.js
 	var previousRedFolder = '';
 	var previousOpenFolder = '';
 
@@ -555,27 +557,43 @@
 			else {
 				loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&userId=' + userId + '&referer=' + encodeURIComponent(referer);
 			}
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
 	function editTemplate (objId, userId, referer, live, working, write) {
 		var loc = '';
 		loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-		top.location = loc;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function editContainer (objId, userId, referer, live, working, write) {
 		var loc = '';
 		loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-		top.location = loc;
+		if(inFrame){
+			window.location = loc;
+		}else{
+			top.location = loc;
+		}
 	}
 
 	function editContentlet (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -584,7 +602,11 @@
 			var loc = '';
 			referer += "&selected_lang=" + getSelectedLanguageId();
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&publishInode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -592,7 +614,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -600,7 +626,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -609,7 +639,11 @@
 			var loc = '';
 			referer += "&selected_lang=" + getSelectedLanguageId();
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -617,7 +651,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -625,7 +663,11 @@
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.confirm.delete")) %>')){
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&structure_id='+ structure_id + '&contentStructureType=' + contentStructureType + '&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		}
 	}
 
@@ -633,7 +675,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&parent=' + parentId + "&inode=" + objId + '&referer=' + encodeURIComponent(referer);
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -646,7 +692,11 @@
 			else {
 				loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + encodeURIComponent(referer);
 			}
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -656,7 +706,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -664,7 +718,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -672,7 +730,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -680,7 +742,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -688,7 +754,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -696,7 +766,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 
@@ -704,7 +778,11 @@
 		//if (write=="1") {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
-			top.location = loc;
+			if(inFrame){
+				window.location = loc;
+			}else{
+				top.location = loc;
+			}
 		//}
 	}
 

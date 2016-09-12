@@ -1,5 +1,15 @@
 package com;
 
+import com.dotcms.rest.api.v1.authentication.AuthenticationResourceTest;
+import com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceTest;
+import com.dotcms.rest.api.v1.authentication.LogoutResource;
+import com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest;
+
+import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceTest;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
@@ -7,6 +17,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
+import com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptorTest;
 import com.dotcms.notification.business.NotificationAPITest;
 import com.dotcms.publisher.ajax.RemotePublishAjaxActionTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
@@ -17,6 +28,9 @@ import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotcms.util.CollectionsUtilsTest;
+import com.dotcms.util.ReflectionUtilsTest;
+import com.dotcms.util.marshal.MarshalUtilsTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -69,10 +83,6 @@ import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
 import com.liferay.portal.ejb.UserUtilTest;
-
-import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 /**
  * @author Jonathan Gamba.
@@ -127,11 +137,22 @@ import org.junit.runners.Suite;
     ActionResourceFTest.class,
     TagAPITest.class,
     FileAssetTest.class,
+    ReflectionUtilsTest.class,
+    CollectionsUtilsTest.class,
+    MarshalUtilsTest.class,
+    JsonWebTokenServiceTest.class,
+    JsonWebTokenInterceptorTest.class,
+
 
     //Rules.
     RulesAPIFTest.class, //Needs Enterprise License.
     RulesCacheFTest.class, //Needs Enterprise License.
     RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
+
+    // Authentication
+    AuthenticationResourceTest.class,
+    LogoutResource.class,
+    ForgotPasswordResourceTest.class,
 
     //Rules:Actionlets.
     ActionletResourceFTest.class, //Needs Enterprise License.
@@ -162,7 +183,10 @@ import org.junit.runners.Suite;
     UserAPITest.class, //Needs Enterprise License.
     UserLocalManagerTest.class,
     UserUtilTest.class,
-    UserProxyFactoryTest.class
+    UserProxyFactoryTest.class,
+
+    // REST end-points
+    ConfigurationResourceTest.class
 })
 
 public class AllTestsSuite {}

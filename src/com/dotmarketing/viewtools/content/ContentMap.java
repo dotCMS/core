@@ -132,7 +132,7 @@ public class ContentMap {
 					}
 				}else if(fieldVariableName.equalsIgnoreCase("title")){
 					ret =  getContentletsTitle();
-				}else if(fieldVariableName.equalsIgnoreCase("structure")){
+				}else if(fieldVariableName.equalsIgnoreCase("structure") || fieldVariableName.equalsIgnoreCase("contenttype")){
 					return getStructure();
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033
 				}else if(fieldVariableName.contains("FileURI")){
