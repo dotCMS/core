@@ -189,10 +189,14 @@ public class VersionableAPIImpl implements VersionableAPI {
     }
 
     public boolean isLocked(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId()))
+        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId())) {
             return false;
+        }
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());
-        if(ident.getAssetType().equals("contentlet")) {
+        if(ident==null || !UtilMethods.isSet(ident.getId()) || !UtilMethods.isSet(ident.getAssetType())) {
+            return false;
+        }
+        if("contentlet".equals(ident.getAssetType())) {
             Contentlet cont=(Contentlet)ver;
             ContentletVersionInfo info = vfac.getContentletVersionInfo(cont.getIdentifier(),cont.getLanguageId());
             if(!UtilMethods.isSet(info.getIdentifier()))
