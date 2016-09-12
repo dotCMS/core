@@ -5,7 +5,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.rest.api.Validated;
 
 /**
- *
+ * Encapsulates the minimal information for the RestUser
  * @author Geoff M. Granum
  */
 @JsonDeserialize(builder = RestUser.Builder.class)
@@ -13,15 +13,18 @@ public final class RestUser extends Validated  {
 
     public final String userId;
     public final String givenName;
+    public final String email;
     public final String surname;
     public final String roleId;
 
 
-    private RestUser(Builder builder) {
-        userId = builder.userId;
+    private RestUser(RestUser.Builder builder) {
+        userId    = builder.userId;
         givenName = builder.givenName;
-        surname = builder.surname;
-        roleId = builder.roleId;
+        surname   = builder.surname;
+        roleId    = builder.roleId;
+        email     = builder.email;
+
         checkValid();
     }
 
@@ -30,27 +33,33 @@ public final class RestUser extends Validated  {
         @JsonProperty private String givenName;
         @JsonProperty private String surname;
         @JsonProperty private String roleId;
+        @JsonProperty private String email;
 
         public Builder() {
         }
 
-        public Builder userId(String userId) {
+        public RestUser.Builder userId(String userId) {
             this.userId = userId;
             return this;
         }
 
-        public Builder givenName(String givenName) {
+        public RestUser.Builder givenName(String givenName) {
             this.givenName = givenName;
             return this;
         }
 
-        public Builder surname(String surname) {
+        public RestUser.Builder surname(String surname) {
             this.surname = surname;
             return this;
         }
 
-        public Builder roleId(String roleId) {
+        public RestUser.Builder roleId(String roleId) {
             this.roleId = roleId;
+            return this;
+        }
+
+        public RestUser.Builder email(String email) {
+            this.email = email;
             return this;
         }
 

@@ -155,7 +155,16 @@
         <Logger name="com.liferay.portal.action.LoginAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
+        <Logger name="com.dotcms.cms.login" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.dotcms.rest.api.v1.authentication" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
         <Logger name="com.liferay.portal.action.LogoutAction" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.dotcms.rest.api.v1.authentication.LogoutResource" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
         <Logger name="com.liferay.portal.action.LoginAsAction" level="info" additivity="false">

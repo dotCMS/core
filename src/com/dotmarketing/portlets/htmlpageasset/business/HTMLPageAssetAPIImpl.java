@@ -13,6 +13,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.notifications.bean.NotificationType;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -432,7 +433,16 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     					}
 
     				//Create a new notification to inform the pages were migrated
-    				APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ), NotificationLevel.INFO, user.getUserId() );
+                    APILocator.getNotificationAPI().generateNotification(
+                            LanguageUtil.get(user.getLocale(), "notification.htmlpageassets.migration.info.title"), // title = HTML Pages Migration
+                            LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ),
+                            null, // no actions
+                            NotificationLevel.INFO,
+                            NotificationType.GENERIC,
+                            user.getUserId(),
+                            user.getLocale()
+                    );
+
     				Logger.info(this, LanguageUtil.get( user.getLocale(), "htmlpages-were-succesfully-converted" ));
     				result = true;
     			}
