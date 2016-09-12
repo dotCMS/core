@@ -32,9 +32,14 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
 
                 Portlet portlet = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(0));
                 Object object = Class.forName(portlet.getPortletClass()).newInstance();
-                if(object instanceof BaseRestPortlet){
-                    tabHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(0) + "/', '" + l + "');";
-            	}
+                try {
+                        Object object = Class.forName(portlet.getPortletClass()).newInstance();
+                        if(object instanceof BaseRestPortlet){
+                            tabHREF = "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(0) + "/', '" + l + "');";
+                        }
+                } catch(Exception e) {
+                        com.dotmarketing.util.Logger.error(this.getClass(), "Exception on portlet: " + (portlet == null ? "[null]" : portlet.getPortletClass()), e);
+                }
 
                 %>
 
