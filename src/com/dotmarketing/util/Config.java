@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
@@ -498,6 +499,13 @@ public class Config {
 		lastRefreshTime = new Date(0);
 	}
 
+	/**
+	 * This method will set up a dummy ServletContext needed for testing. The main purpose here
+	 * is to be able to run the integration tests without the web app container i.e. Tomcat.
+	 *
+	 * @throws Exception
+     */
+	@VisibleForTesting
 	public static void _setupFakeTestingContext() throws Exception{
 		// if we need a fake ServletContext
 		if(CONTEXT ==null){
