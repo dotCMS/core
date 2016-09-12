@@ -1,17 +1,16 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
-import static org.junit.Assert.assertEquals;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.unittest.TestUtil;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,19 +19,23 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.unittest.TestUtil;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-
+@RunWith(DataProviderRunner.class)
 public class VisitorsCurrentURLConditionletTest {
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
@@ -136,7 +139,8 @@ public class VisitorsCurrentURLConditionletTest {
         }
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -145,23 +149,23 @@ public class VisitorsCurrentURLConditionletTest {
         return aCase.conditionlet.evaluate(aCase.request, aCase.conditionlet.instanceFrom(aCase.params), aCase.uri,aCase.pattern);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing() throws Exception {
         new TestCase("").conditionlet.instanceFrom(null);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonIsNull() throws Exception {
         TestCase aCase = new TestCase("Empty parameter list should throw IAE.").withComparison(null);
         new TestCase("").conditionlet.instanceFrom(aCase.params);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonNotSet() throws Exception {
         new TestCase("").conditionlet.instanceFrom(Maps.newHashMap());
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         public final VisitorsCurrentUrlConditionlet conditionlet;
 

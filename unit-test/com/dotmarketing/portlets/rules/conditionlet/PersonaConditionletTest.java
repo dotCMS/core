@@ -2,9 +2,7 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.unittest.TestUtil;
-import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.UserAPI;
@@ -17,30 +15,35 @@ import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.liferay.portal.model.User;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.dotmarketing.portlets.rules.actionlet.PersonaActionlet.PERSONA_ID_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.*;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EXISTS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(DataProviderRunner.class)
 public class PersonaConditionletTest {
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
@@ -91,7 +94,8 @@ public class PersonaConditionletTest {
         }
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -101,28 +105,28 @@ public class PersonaConditionletTest {
         return conditionlet.evaluate(aCase.request, aCase.response, conditionlet.instanceFrom(aCase.params));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing() throws Exception {
         TestCase test = new TestCase();
         PersonaConditionlet conditionlet = new PersonaConditionlet(test.personaAPI, test.userAPI, test.visitorAPI);
         conditionlet.instanceFrom(null);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonIsNull() throws Exception {
         TestCase aCase = new TestCase().withComparison(null);
         PersonaConditionlet conditionlet = new PersonaConditionlet(aCase.personaAPI, aCase.userAPI, aCase.visitorAPI);
         conditionlet.instanceFrom(aCase.params);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonNotSet() throws Exception {
         TestCase test = new TestCase();
         PersonaConditionlet conditionlet = new PersonaConditionlet(test.personaAPI, test.userAPI, test.visitorAPI);
         conditionlet.instanceFrom(Maps.newHashMap());
     }
 
-    @Test(expectedExceptions = ComparisonNotSupportedException.class)
+    @Test(expected = ComparisonNotSupportedException.class)
     public void testUnsupportedComparisonThrowsException() throws Exception {
         TestCase aCase = new TestCase();
         Persona any = new Persona(new Contentlet());
