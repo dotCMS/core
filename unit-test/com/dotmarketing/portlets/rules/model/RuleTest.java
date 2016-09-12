@@ -2,22 +2,29 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.mockito.Mockito;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(DataProviderRunner.class)
 public class RuleTest {
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() {
+    @DataProvider
+    public static Object[][] cases() {
         try {
 
             List<TestCase> data = Lists.newArrayList();
@@ -252,7 +259,8 @@ public class RuleTest {
     }
 
 
-    @Test(dataProvider = "cases", invocationCount = 1)
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -262,7 +270,7 @@ public class RuleTest {
         return rule.evaluateConditions(aCase.request, aCase.response, aCase.groups);
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         private final HttpServletRequest request;
         private final HttpServletResponse response;
