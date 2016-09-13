@@ -1,0 +1,25 @@
+<dot-dropdown-component
+        icon="add"
+        alignRight="true"
+        [disabled]="!types">
+
+    <div class="toolbar-add-contentlet__head">
+        <span class="toolbar-add-contentlet__head--button"
+              *ngFor="let structureTypeView of types">
+
+            <button md-icon-button (click) = "select(structureTypeView)"
+                    [class.toolbar-add-contentlet__head--selected]="selected === structureTypeView">
+                <img [src]="'images/' + structureTypeView.name.toLowerCase() + '.png'"/>
+            </button>
+
+            <label>{{structureTypeView.label}}</label>
+
+        </span>
+    </div>
+
+    <toolbar-add-contentlet-body
+            [structureTypeView] = "selected"
+            (select) = "close()">
+
+    </toolbar-add-contentlet-body>
+</dot-dropdown-component>
