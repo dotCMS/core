@@ -3,12 +3,10 @@ package com.dotmarketing.common.reindex;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.timemachine.ajax.TimeMachineAjaxAction;
+import com.dotcms.rest.RestUtilTest;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -18,9 +16,7 @@ import javax.servlet.ServletContext;
 import java.util.Locale;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test for {@link ReindexThread}
@@ -44,7 +40,7 @@ public class ReindexThreadTest extends BaseMessageResources {
         this.initMessages();
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
         doAnswer(new Answer<Void>() { // if this method is called, should fail
 

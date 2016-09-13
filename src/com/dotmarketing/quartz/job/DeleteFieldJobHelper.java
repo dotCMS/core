@@ -79,7 +79,7 @@ public class DeleteFieldJobHelper implements Serializable {
                 LanguageUtil.get(locale, "notification.deletefieldjob.delete.info.title"), // title = Delete Field
                 LanguageUtil.get(locale,
                         "notification.deletefieldjob.enddelete.info.message",
-                        velocityVarName, iFieldNode, iStructureNode), // message = Field {0} was deleted succesfully. Field Inode: {1}, Structure Inode: {2}
+                        velocityVarName, iFieldNode, iStructureNode), // message = Field {0} was deleted successfully. Field Inode: {1}, Structure Inode: {2}
                 null, // no actions
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,

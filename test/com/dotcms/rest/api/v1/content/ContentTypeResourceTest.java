@@ -4,6 +4,7 @@ import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationHelper;
 import com.dotmarketing.business.LayoutAPI;
@@ -62,7 +63,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         user.setLocale(new Locale.Builder().setLanguage("en").setRegion("US").build());
 
         Config.CONTEXT = context;
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         this.initMessages();
 
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
@@ -117,7 +118,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         user.setLocale(new Locale.Builder().setLanguage("en").setRegion("US").build());
 
         Config.CONTEXT = context;
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         this.initMessages();
 
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
