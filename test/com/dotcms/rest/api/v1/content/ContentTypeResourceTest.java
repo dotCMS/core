@@ -53,7 +53,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
 
         RestUtilTest.verifySuccessResponse(response);
 
-        List<StructureTypeView> entity = (List<StructureTypeView>) ((ResponseEntityView) response.getEntity()).getEntity();
+        List<BaseContentTypesView> entity = (List<BaseContentTypesView>) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(4, entity.size());
 
         compare(structures.get(0), entity.get(0), 0);
@@ -63,13 +63,13 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         compare(structures.get(4), entity.get(3), 1);
     }
 
-    private void compare(Structure structure, StructureTypeView structureTypeView, int index){
-        assertEquals(Structure.Type.getType(structure.getStructureType()).name(), structureTypeView.getName());
-        assertEquals(structure.getInode(), structureTypeView.getTypes().get(index).getInode());
-        assertEquals(structure.getName(), structureTypeView.getTypes().get(index).getName());
-        assertNotNull(structureTypeView.getLabel());
+    private void compare(Structure structure, BaseContentTypesView baseContentTypesView, int index){
+        assertEquals(Structure.Type.getType(structure.getStructureType()).name(), baseContentTypesView.getName());
+        assertEquals(structure.getInode(), baseContentTypesView.getTypes().get(index).getInode());
+        assertEquals(structure.getName(), baseContentTypesView.getTypes().get(index).getName());
+        assertNotNull(baseContentTypesView.getLabel());
         assertEquals(Structure.Type.getType(structure.getStructureType()).name(),
-                structureTypeView.getTypes().get(index).getType());
+                baseContentTypesView.getTypes().get(index).getType());
     }
 
     private List<Structure> getStructures() {

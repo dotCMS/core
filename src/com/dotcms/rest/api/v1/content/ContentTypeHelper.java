@@ -141,34 +141,34 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
-     * Return  a {@link List} of StructureTypeView
+     * Return  a {@link List} of BaseContentTypesView
      *
      * @param request
      * @return
      * @throws DotDataException
      * @throws LanguageException
      */
-    public List<StructureTypeView> getTypes(HttpServletRequest request ) throws DotDataException, LanguageException {
+    public List<BaseContentTypesView> getTypes(HttpServletRequest request ) throws DotDataException, LanguageException {
         final InitDataObject initData = this.webResource.init(null, true, request, true, null); // should logged in
         final User user = initData.getUser();
 
         List<Structure> structures = this.structureAPI.find(user, false, true);
-        List<StructureTypeView> result = list();
+        List<BaseContentTypesView> result = list();
 
         if (null != structures) {
             Locale locale = LocaleUtil.getLocale(request);
             Map<String, String> strTypeNames = this.getStrTypeNames(locale);
-            StructureTypeViewCollection structureTypeViewCollection = new StructureTypeViewCollection();
+            BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
 
             structures.stream()
                     .forEach(structure -> {
-                        structureTypeViewCollection.add(structure, new ContentTypeView(
+                        baseContentTypesViewCollection.add(structure, new ContentTypeView(
                                 Structure.Type.getType(structure.getStructureType()).name(),
                                 structure.getName(), structure.getInode(),
                                 this.getActionUrl(request, structure, user)));
                     });
 
-            result = structureTypeViewCollection.getStructureTypeView(strTypeNames);
+            result = baseContentTypesViewCollection.getStructureTypeView(strTypeNames);
         }
 
         return result;

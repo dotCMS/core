@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * Collection of {@link ContentTypeView}
  */
-public class StructureTypeViewCollection {
+public class BaseContentTypesViewCollection {
 
     private Map<String, List<ContentTypeView>> contentTypeViews = new LinkedHashMap<>();
 
@@ -25,14 +25,14 @@ public class StructureTypeViewCollection {
         contentTypeViews.add(contentTypeView);
     }
 
-    public List<StructureTypeView> getStructureTypeView(Map<String, String> strTypeNames){
-        List<StructureTypeView> result = new ArrayList<>();
+    public List<BaseContentTypesView> getStructureTypeView(Map<String, String> strTypeNames){
+        List<BaseContentTypesView> result = new ArrayList<>();
 
         for (Map.Entry<String, List<ContentTypeView>> contentTypeViewsEntry : contentTypeViews.entrySet()) {
             String name = contentTypeViewsEntry.getKey();
             List<ContentTypeView> types = contentTypeViewsEntry.getValue();
             String label = strTypeNames.get(name);
-            result.add(new StructureTypeView(name, label, types));
+            result.add(new BaseContentTypesView(name, label, types));
         }
 
         return result;
