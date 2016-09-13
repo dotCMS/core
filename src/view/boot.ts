@@ -51,7 +51,7 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
                     component: LoginContainer
                 },
                 {
-                    path: 'resetPassword/:userId',
+                    path: 'resetPassword',
                     component: ResetPasswordContainer
                 }
             ]

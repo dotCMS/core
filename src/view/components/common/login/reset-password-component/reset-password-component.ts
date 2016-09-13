@@ -23,7 +23,6 @@ import {ChangePasswordData} from './reset-password-container';
 
 export class ResetPasswordComponent {
 
-    @Input() login:string = '';
     @Input() private token:string = '';
     @Input()  message: string = '';
 
@@ -80,7 +79,6 @@ export class ResetPasswordComponent {
     public ok():void{
         if (this.password == this.confirmPassword) {
             this.changePassword.emit({
-                login: this.login,
                 password: this.password,
                 token: this.token
             });

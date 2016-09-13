@@ -78,15 +78,14 @@ export class LoginService extends CoreWebService {
 
     /**
      * Change password
-     * @param login
      * @param password
      * @param token
      * @returns {Observable<any>}
      */
     // TODO: is a common practice in JavaScript that when there is more than 2 params change it to a Object:
     // params.login, params.password and params.token in this case.
-    public changePassword(login: string, password: string, token: string): Observable<any> {
-        let body = JSON.stringify({'userId': login, 'password': password, 'token': token});
+    public changePassword(password: string, token: string): Observable<any> {
+        let body = JSON.stringify({'password': password, 'token': token});
 
         return this.coreWebService.requestView({
             body: body,
