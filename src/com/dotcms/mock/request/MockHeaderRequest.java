@@ -8,6 +8,12 @@ import java.util.Vector;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+/**
+ * Mock {@link HttpServletRequest} with a {@link Map} as part of the class
+ * that will contain the Headers.
+ *
+ * See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
+ */
 public class MockHeaderRequest extends HttpServletRequestWrapper implements MockRequest {
     final Map<String, String> headers = new HashMap<String, String>();
 
