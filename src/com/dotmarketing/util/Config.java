@@ -510,6 +510,8 @@ public class Config {
 		// if we need a fake ServletContext
 		if(CONTEXT ==null){
 			ServletContext context = Mockito.mock(ServletContext.class);
+			Mockito.when(context.getInitParameter("company_id")).thenReturn("dotcms.org");
+
 			final String topPath= Files.createTempDir().getCanonicalPath();
 			Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
 				@Override
@@ -522,5 +524,8 @@ public class Config {
 			});
 			Config.CONTEXT = context;
 		}
+
+		dotmarketingPropertiesUrl = new File("test-resources/it-dotmarketing-config.properties").toURI().toURL();
+		clusterPropertiesUrl = new File("test-resources/it-dotcms-config-cluster.properties").toURI().toURL();
 	}
 }
