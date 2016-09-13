@@ -1,12 +1,17 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletURL;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
@@ -19,9 +24,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
+import java.util.Map;
 
 /**
  * Contentlet helper.
@@ -29,38 +35,46 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class ContentTypeHelper implements Serializable {
 
-    public static final ContentTypeHelper INSTANCE = new ContentTypeHelper();
+    private static class SingletonHolder {
+        private static final ContentTypeHelper INSTANCE = new ContentTypeHelper();
+    }
 
-    /**
-     * Get Str Type Names
-     * @param locale {@link Locale}
-     * @return Map (type Id -> i18n value)
-     * @throws LanguageException
-     */
-    public final Map<Integer, String> getStrTypeNames(final Locale locale) throws LanguageException {
+    public static ContentTypeHelper getInstance() {
 
-        return map(
-                1, LanguageUtil.get(locale, "Content"),
-                2, LanguageUtil.get(locale, "Widget"),
-                3, LanguageUtil.get(locale, "Form"),
-                4, LanguageUtil.get(locale, "File"),
-                5, LanguageUtil.get(locale, "HTMLPage"),
-                6, LanguageUtil.get(locale, "Persona")
-        );
-    } // getStrTypeNames.
+        return ContentTypeHelper.SingletonHolder.INSTANCE;
+    }
+
+    private final WebResource webResource;
+    private final StructureAPI structureAPI;
+    private final LayoutAPI layoutAPI;
+    private final LanguageAPI languageAPI;
+
+    public ContentTypeHelper() {
+        this(new WebResource(),
+                APILocator.getStructureAPI(),
+                APILocator.getLayoutAPI(),
+                APILocator.getLanguageAPI());
+    }
+
+    @VisibleForTesting
+    protected ContentTypeHelper(WebResource webResource,
+                                StructureAPI structureAPI,
+                                LayoutAPI layoutAPI,
+                                LanguageAPI languageAPI) {
+        this.webResource = webResource;
+        this.structureAPI = structureAPI;
+        this.layoutAPI = layoutAPI;
+        this.languageAPI = languageAPI;
+    }
 
     /**
      * Get the action url for the structure
      * @param request
-     * @param layoutAPI
      * @param structure
      * @param user
-     * @param languageAPI
      * @return String
      */
     public String getActionUrl(final HttpServletRequest request,
-                                      final LayoutAPI layoutAPI,
-                                      final LanguageAPI languageAPI,
                                       final Structure structure,
                                       final User user
                                       ) {
@@ -125,5 +139,57 @@ public class ContentTypeHelper implements Serializable {
 
         return languageId;
     }
+
+    /**
+     * Return  a {@link List} of StructureTypeView
+     *
+     * @param request
+     * @return
+     * @throws DotDataException
+     * @throws LanguageException
+     */
+    public List<StructureTypeView> getTypes(HttpServletRequest request ) throws DotDataException, LanguageException {
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null); // should logged in
+        final User user = initData.getUser();
+
+        List<Structure> structures = this.structureAPI.find(user, false, true);
+        List<StructureTypeView> result = list();
+
+        if (null != structures) {
+            Locale locale = LocaleUtil.getLocale(request);
+            Map<String, String> strTypeNames = this.getStrTypeNames(locale);
+            StructureTypeViewCollection structureTypeViewCollection = new StructureTypeViewCollection();
+
+            structures.stream()
+                    .forEach(structure -> {
+                        structureTypeViewCollection.add(structure, new ContentTypeView(
+                                Structure.Type.getType(structure.getStructureType()).name(),
+                                structure.getName(), structure.getInode(),
+                                this.getActionUrl(request, structure, user)));
+                    });
+
+            result = structureTypeViewCollection.getStructureTypeView(strTypeNames);
+        }
+
+        return result;
+    }
+
+    /**
+     * Get Str Type Names
+     * @param locale {@link Locale}
+     * @return Map (type Id -> i18n value)
+     * @throws LanguageException
+     */
+    public final Map<String, String> getStrTypeNames(final Locale locale) throws LanguageException {
+
+        return map(
+                Structure.Type.getType(Structure.Type.CONTENT.getType()).name(), LanguageUtil.get(locale, "Content"),
+                Structure.Type.getType(Structure.Type.WIDGET.getType()).name(), LanguageUtil.get(locale, "Widget"),
+                Structure.Type.getType(Structure.Type.FORM.getType()).name(), LanguageUtil.get(locale, "Form"),
+                Structure.Type.getType(Structure.Type.FILEASSET.getType()).name(), LanguageUtil.get(locale, "File"),
+                Structure.Type.getType(Structure.Type.HTMLPAGE.getType()).name(), LanguageUtil.get(locale, "HTMLPage"),
+                Structure.Type.getType(Structure.Type.PERSONA.getType()).name(), LanguageUtil.get(locale, "Persona")
+        );
+    } // getStrTypeNames.
 
 } // E:O:F:ContentTypeHelper.
