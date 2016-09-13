@@ -37,7 +37,7 @@ public class ReflectionUtilsTest {
 
         final Object o3 =
                 ReflectionUtils.newInstance
-                        ("com.dotmarketing.util.ReflectionUtilsTest");
+                        ("com.dotcms.util.ReflectionUtilsTest");
 
         assertNotNull(o3);
 

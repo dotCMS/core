@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import org.junit.Test;
 
 /**
  * Unit test for validating the information returned by the
@@ -31,6 +32,7 @@ public class ConfigurationResourceTest {
 	protected static final String HOST_NAME = "localhost:8080";
 	
 	@SuppressWarnings("unchecked")
+	@Test
 	public void testVerifyConfigurationData() {
 		final ConfigurationResource resource = new ConfigurationResource();
 		final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -40,8 +42,8 @@ public class ConfigurationResourceTest {
 		assertEquals(response.getStatus(), 200);
 		assertNotNull(response.getEntity());
 		assertTrue(response.getEntity() instanceof ResponseEntityView);
-		assertTrue(ResponseEntityView.class.cast(response.getEntity()).getErrors() == null);
-		Map<String, Object> responseEntity = (Map<String, Object>) response.getEntity();
+		assertTrue(ResponseEntityView.class.cast(response.getEntity()).getErrors().isEmpty());
+		Map<String, Object> responseEntity = (Map<String, Object>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
 		assertNotNull(responseEntity.get(DOTCMS_WEBSOCKET_PROTOCOL));
 		assertNotNull(responseEntity.get(DOTCMS_WEBSOCKET_BASEURL));
 		assertTrue(HOST_NAME.equals(responseEntity.get(DOTCMS_WEBSOCKET_BASEURL)));

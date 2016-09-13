@@ -451,6 +451,7 @@ public class JsonWebTokenInterceptorTest {
         jsonWebTokenInterceptor.setCompanyLocalManager(companyLocalManager);
         jsonWebTokenInterceptor.setEncryptor(encryptor);
         jsonWebTokenInterceptor.setLoginService(loginService);
+        jsonWebTokenInterceptor.setUserAPI(userAPI);
 
         jsonWebTokenInterceptor.init();
 

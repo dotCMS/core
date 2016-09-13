@@ -63,19 +63,20 @@ public class NotificationAPITest extends TestBase  {
 
 	@Test
 	public void testNewNotificationsCount() throws Exception {
+
 		User sysuser=APILocator.getUserAPI().getSystemUser();
+
+        //Cleaning up the notifications in order to prepare them for the test
 		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
 		
 		try {
 			HibernateUtil.startTransaction();
 			for(int i=0; i<10; i++) {
-				//Notification n = new Notification("NotificationTest"+i, NotificationLevel.ERROR, sysuser.getUserId());
-				APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
-				//Notification n = new Notification("NotificationTest1", NotificationLevel.ERROR, sysuser.getUserId());
+				//Creating the new notification
 				NotificationDTO notificationDTO = new NotificationDTO(UUID.randomUUID().toString(), "Notification message #" + i,
 						NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), sysuser.getUserId(), new Date(),
 						Boolean.FALSE);
-				//n.setId(UUID.randomUUID().toString());
+				//Saving it
 				FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
 			}
 			assertTrue(APILocator.getNotificationAPI().getNewNotificationsCount(sysuser.getUserId())==10);
@@ -97,18 +98,21 @@ public class NotificationAPITest extends TestBase  {
 
 	@Test
 	public void testGetPaginatedNotifications() throws Exception {
-		User sysuser=APILocator.getUserAPI().getSystemUser();
+
+	    User sysuser=APILocator.getUserAPI().getSystemUser();
+
+        //Cleaning up the notifications in order to prepare them for the test
 		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
 		
 		try {
 			HibernateUtil.startTransaction();
 
 			for(int i=0; i<10; i++) {
-				//Notification n = new Notification("NotificationTest"+i, NotificationLevel.ERROR, sysuser.getUserId());
+                //Creating the new notification
 				NotificationDTO notificationDTO = new NotificationDTO(UUID.randomUUID().toString(), "Notification message #" + i,
 						NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), sysuser.getUserId(), new Date(),
 						Boolean.FALSE);
-				//n.setId(UUID.randomUUID().toString());
+                //Saving it
 				FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
 			}
 

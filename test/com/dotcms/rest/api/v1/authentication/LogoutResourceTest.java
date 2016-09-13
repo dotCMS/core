@@ -3,17 +3,11 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.*;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.ejb.UserLocalManager;
-import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +38,7 @@ public class LogoutResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
 
         Mockito.doNothing().when(loginService).doActionLogout(
