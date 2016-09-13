@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.dotcms.rest.api.v1.authentication.url.AngularResetPasswordUrlStrategy;
 import com.dotcms.rest.api.v1.authentication.url.DefaultResetPasswordUrlStrategy;
-import com.dotcms.rest.api.v1.authentication.url.ResetPasswordUrlStrategy;
+import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.dotmarketing.business.UserAPI;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.model.User;
@@ -23,19 +23,19 @@ import com.liferay.portal.model.User;
  * @version 3.7
  * @since Aug 8, 2016
  *
- */
+ */ // todo: Should we rename to UserAPI since it already exits
 public interface UserService extends Serializable {
 
 	/**
-	 * {@link ResetPasswordUrlStrategy} for Angular.
+	 * {@link UrlStrategy} for Angular.
 	 */
-	public static final ResetPasswordUrlStrategy ANGULAR_RESET_PASSWORD_URL_STRATEGY =
+	public static final UrlStrategy ANGULAR_RESET_PASSWORD_URL_STRATEGY =
 			new AngularResetPasswordUrlStrategy();
 
 	/**
-	 * {@link ResetPasswordUrlStrategy} for the default.
+	 * {@link UrlStrategy} for the default.
 	 */
-	public static final ResetPasswordUrlStrategy DEFAULT_RESET_PASSWORD_URL_STRATEGY =
+	public static final UrlStrategy DEFAULT_RESET_PASSWORD_URL_STRATEGY =
 			new DefaultResetPasswordUrlStrategy();
 
 
@@ -99,7 +99,7 @@ public interface UserService extends Serializable {
 	User update(User user);
 	/**
 	 * Sends a reset password and stores the token on the user data.
-	 * The {@link ResetPasswordUrlStrategy} used is the angular's one.
+	 * The {@link UrlStrategy} used is the angular's one.
 	 * @param companyId String
 	 * @param emailAddress String
 	 * @param locale Locale
@@ -107,11 +107,11 @@ public interface UserService extends Serializable {
 	public void sendResetPassword(String companyId, String emailAddress, Locale locale) throws UserEmailAddressException;
 
 	/**
-	 * Sends a reset password and stores the token on the user data.
+	 * Sends a reset password to the user and stores the token on the user data.
 	 * @param companyId String
 	 * @param emailAddress String
 	 * @param locale Locale
-	 * @param resetPasswordUrlStrategy {@link ResetPasswordUrlStrategy}
+	 * @param resetPasswordUrlStrategy {@link UrlStrategy}
 	 */
-	public void sendResetPassword(String companyId, String emailAddress, Locale locale, ResetPasswordUrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException;
+	public void sendResetPassword(String companyId, String emailAddress, Locale locale, UrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException;
 } // E:O:F:UserService.

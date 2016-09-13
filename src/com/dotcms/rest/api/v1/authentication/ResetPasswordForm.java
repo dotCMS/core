@@ -11,18 +11,10 @@ import com.dotmarketing.util.Config;
 public class ResetPasswordForm extends Validated {
 
     @NotNull
-    @Length(min = 2, max = 100)
-    private final String userId;
-
-    @NotNull
     private final String token;
 
     @NotNull
     private final String password;
-
-    public String getUserId() {
-        return userId;
-    }
 
     public String getToken() {
         return token;
@@ -33,7 +25,6 @@ public class ResetPasswordForm extends Validated {
     }
 
     private ResetPasswordForm(Builder builder) {
-        userId = builder.userId;
         token = builder.token;
         password = builder.password;
 
@@ -41,14 +32,9 @@ public class ResetPasswordForm extends Validated {
     }
 
     public static final class Builder {
-        @JsonProperty(required = true) private String userId;
         @JsonProperty(required = true) private String token;
         @JsonProperty(required = true) private String password;
 
-        public Builder userId(String userId) {
-            this.userId = userId;
-            return this;
-        }
 
         public Builder password(String password) {
             this.password = password;

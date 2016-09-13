@@ -5,12 +5,14 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 import java.util.Locale;
+import java.util.Map;
 
 
 /**
- * Created by freddyrodriguez on 8/5/16.
+ * This {@link UrlStrategy} is the default one for the web site legacy site.
+ * @author jsanca
  */
-public class DefaultResetPasswordUrlStrategy implements ResetPasswordUrlStrategy {
+public class DefaultResetPasswordUrlStrategy implements UrlStrategy {
 
     private static final String C_PORTAL_PUBLIC_LOGIN_MY_ACCOUNT_CMD_ERESET_MY_USER_ID = "/c/portal_public/login?my_account_cmd=ereset&my_user_id=";
     private static final String TOKEN = "&token=";
@@ -18,7 +20,11 @@ public class DefaultResetPasswordUrlStrategy implements ResetPasswordUrlStrategy
     private static final String UNDERSCORE = "_";
 
     @Override
-    public String getResetUserPasswordRelativeURL(final User user, final String token, final Locale locale, final Company company) {
+    public String getURL(final Map<String, Object> params) {
+
+        final User user       = (User)    params.get(USER);
+        final String token    = (String)  params.get(TOKEN);
+        final Locale locale   = (Locale)  params.get(LOCALE);
 
         return new StringBuilder(C_PORTAL_PUBLIC_LOGIN_MY_ACCOUNT_CMD_ERESET_MY_USER_ID).append(user.getUserId())
                 .append(TOKEN).append(token).append(SWITCH_LOCALE).append(locale.getLanguage())

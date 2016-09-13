@@ -1,23 +1,16 @@
 package com.dotcms.api.system.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toBoolean;
-import static com.dotcms.util.ConversionUtils.toInt;
-
-import java.io.Serializable;
-import java.util.*;
-
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
-import com.dotcms.rest.api.v1.authentication.url.ResetPasswordUrlStrategy;
-import com.dotcms.util.UrlUtil;
+import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
+import com.dotcms.util.MessageAPI;
+import com.dotcms.util.MessageAPIFactory;
+import com.dotcms.util.UrlStrategyUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
-import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -25,16 +18,19 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.ejb.CompanyUtil;
-import com.liferay.portal.ejb.UserPersistence;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
-import com.liferay.portal.model.ModelListener;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.InstancePool;
 import com.liferay.util.Validator;
+
+import java.io.Serializable;
+import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toBoolean;
+import static com.dotcms.util.ConversionUtils.toInt;
 
 /**
  * This factory creates a singleton instance of the {@link UserService} class.
@@ -93,12 +89,10 @@ public class UserServiceFactory implements Serializable {
 
 		private static final String USER_TYPE_VALUE = "user";
 		private static final String TOKEN_SPLITTER = ":";
-		private static final String LIFERAY_PORTAL_MODEL_USER = "value.object.persistence.com.liferay.portal.model.User";
-		private static final String LIFERAY_PORTAL_EJB_USER_PERSISTENCE = "com.liferay.portal.ejb.UserPersistence";
-		private static final String LISTENER_LIFERAY_PORTAL_MODEL_USER = "value.object.listener.com.liferay.portal.model.User";
 
 		private final UserAPI userAPI;
 		private final PermissionAPI permissionAPI;
+		private final MessageAPI messageService;
 
 		/**
 		 * Private class constructor.
@@ -107,6 +101,7 @@ public class UserServiceFactory implements Serializable {
 
 			this.userAPI 			= APILocator.getUserAPI();
 			this.permissionAPI 		= APILocator.getPermissionAPI();
+			this.messageService     = MessageAPIFactory.getInstance().getMessageService();
 		}
 
 
@@ -346,13 +341,15 @@ public class UserServiceFactory implements Serializable {
 		public void sendResetPassword(final String companyId,
 									  final String emailAddressParam,
 									  final Locale locale,
-									  final ResetPasswordUrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException {
+									  final UrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException {
 
 			final User user;
 			final String emailAddress;
 			final String token;
 			final Company company;
 			final String url;
+			final String body;
+			final String subject;
 
 			if (!UtilMethods.isSet(emailAddressParam)) {
 
@@ -373,6 +370,11 @@ public class UserServiceFactory implements Serializable {
 				// we use the ICQ field to store the token:timestamp of the
 				// password reset request we put in the email
 				// the timestamp is used to set an expiration on the token
+				if (Logger.isDebugEnabled(UserServiceFactory.class)) {
+
+					Logger.debug(UserServiceFactory.class, "Generating the token for reset password");
+				}
+
 				token = ResetPasswordTokenUtil.createToken();
 				user.setIcqId(new StringBuilder(token)
 						.append(TOKEN_SPLITTER).append(new Date().getTime()).toString());
@@ -382,10 +384,12 @@ public class UserServiceFactory implements Serializable {
 				// Send new password
 				company = CompanyUtil.findByPrimaryKey(companyId);
 
-				url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, resetPasswordUrlStrategy);
-				String body    = LanguageUtil.format(locale, "reset-password-email-body", url, false);
-				String subject = LanguageUtil.get(locale, "reset-password-email-subject");
-				EmailUtils.sendMail(user, company, subject, body);
+				url = UrlStrategyUtil.getURL(company,
+						map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
+						resetPasswordUrlStrategy);
+				body    = LanguageUtil.format(locale, "reset-password-email-body", url, false);
+				subject = LanguageUtil.get(locale, "reset-password-email-subject");
+				this.messageService.sendMail(user, company, subject, body);
 			} catch (Exception ioe) {
 
 				Logger.error(this, ioe.getMessage(), ioe);
