@@ -162,7 +162,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	 * @param hostId The hostId to set.
 	 */
 	public void setHostId(String hostId) {
-		if(!InodeUtils.isSet(hostId)){
+		if(!InodeUtils.isSet(hostId) && UtilMethods.isSet(this.identifier)){
 			try {
 				hostId = APILocator.getIdentifierAPI().find(this.identifier).getHostId();
 			} catch (Exception e) {

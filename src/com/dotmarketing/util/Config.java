@@ -1,5 +1,16 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.base.Supplier;
+import com.dotcms.repackage.com.google.common.io.Files;
+import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotmarketing.db.DbConnectionFactory;
+
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -9,9 +20,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import com.dotcms.repackage.com.google.common.base.Supplier;
-import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
-import com.dotmarketing.db.DbConnectionFactory;
+import javax.servlet.ServletContext;
 
 /**
  * This class provides access to the system configuration parameters that are
@@ -23,6 +32,7 @@ import com.dotmarketing.db.DbConnectionFactory;
  * @since Mar 22, 2012
  *
  */
+
 public class Config {
 
 	private static final String BLANK = "";
@@ -489,4 +499,28 @@ public class Config {
 		lastRefreshTime = new Date(0);
 	}
 
+	/**
+	 * This method will set up a dummy ServletContext needed for testing. The main purpose here
+	 * is to be able to run the integration tests without the web app container i.e. Tomcat.
+	 *
+	 * @throws Exception
+     */
+	@VisibleForTesting
+	public static void _setupFakeTestingContext() throws Exception{
+		// if we need a fake ServletContext
+		if(CONTEXT ==null){
+			ServletContext context = Mockito.mock(ServletContext.class);
+			final String topPath= Files.createTempDir().getCanonicalPath();
+			Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
+				@Override
+				public String answer(InvocationOnMock invocation) throws Throwable {
+					String path = (String) invocation.getArguments()[0];
+					path = topPath + path.replaceAll("/", File.separator);
+
+					return path;
+				}
+			});
+			Config.CONTEXT = context;
+		}
+	}
 }
