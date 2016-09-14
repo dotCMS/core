@@ -22,9 +22,8 @@ import {Menu} from '../../../../api/services/routing-service';
     templateUrl: ['iframe-legacy-component.html']
 })
 export class IframeLegacyComponent extends SiteChangeListener {
-    iframe: Observable<SafeResourceUrl>;
+    iframe: SafeResourceUrl;
     iframeElement;
-    private menuIdUrlMatch: Map<string, string>;
     private loadingInProgress: boolean = true;
 
     constructor(private params$: RouteParams, private routingService: RoutingService,
@@ -44,19 +43,13 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     initComponent(menus: Menu[]): void {
-        this.menuIdUrlMatch = new Map();
 
-        menus.forEach(menu => menu.menuItems.forEach(
-            menuItem => {
-                this.menuIdUrlMatch.set(menuItem.id, menuItem.url);
-            }
-        ));
-
-        this.iframe = this.params$.pluck<string>('id')
+        this.params$.pluck<string>('id')
             .distinctUntilChanged()
-            .map(id => {
-                this.loadingInProgress = true;
-                return this.sanitizer.bypassSecurityTrustResourceUrl(this.menuIdUrlMatch.get(id));
+            .forEach(id => {
+                if (id) {
+                    this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
+                }
             });
     }
 
@@ -65,6 +58,11 @@ export class IframeLegacyComponent extends SiteChangeListener {
             this.loadingInProgress = true;
             this.iframeElement.contentWindow.location.reload();
         }
+    }
+
+    loadURL(url: string): SafeResourceUrl {
+        this.loadingInProgress = true;
+        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
 
     /**
