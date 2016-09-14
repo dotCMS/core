@@ -4,7 +4,7 @@
 </div>
 <div class="toolbar-add-contentlet-body__links" *ngIf="structureTypeView && structureTypeView.types">
     <span *ngFor="let type of structureTypeView.types">
-        <a href="" (click)="go(type)">
+        <a href="" (click)="goToAddContent(type)">
             {{type.name}}
         </a>
     </span>

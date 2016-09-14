@@ -19,7 +19,7 @@ export class ToolbarAddContenletBodyComponent {
 
     constructor(private routingService: RoutingService) {}
 
-    go(contentTypeView: ContentTypeView): boolean {
+    goToAddContent(contentTypeView: ContentTypeView): boolean {
         this.routingService.goToPortlet(contentTypeView.name);
         this.select.emit();
         return false;
@@ -57,11 +57,7 @@ export class ToolbarAddContenletComponent {
     ngOnInit(): void {
         this.loginService.getLoginFormInfo('', this.i18nMessages).subscribe((data) => {
 
-            this.messages.content = data.i18nMessagesMap.content;
-            this.messages.file = data.i18nMessagesMap.file;
-            this.messages.page = data.i18nMessagesMap.page;
-            this.messages.widget = data.i18nMessagesMap.widget;
-            this.messages.persona = data.i18nMessagesMap.persona;
+            this.messages = data.i18nMessagesMap;
         });
 
         this.contentletService.getContentTypes().subscribe(strcutures => {
