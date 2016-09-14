@@ -36,7 +36,7 @@ export class MyAccountComponent {
     // TODO: change when new FE internationalization is done
     private i18nMessages: Array<string> = [ 'modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
         'Last-Name', 'email-address', 'password', 're-enter-password', 'error.forgot.password.passwords.dont.match',
-        'message.createaccount.success', 'Error-communicating-with-server-Please-try-again'];
+        'message.createaccount.success', 'Error-communicating-with-server-Please-try-again','User-Info-Save-Password-Failed'];
 
     private saveButtonLabel: string;
     private closeButtonLabel: string;
@@ -51,6 +51,7 @@ export class MyAccountComponent {
     private mandatoryEmailErrorMessage: string;
     private passwordErrorMessage: string;
     private confirmPasswordErrorMessage: string;
+    private invalidPasswordPatternErrorMessage: string;
     private invalidEmailErrorFormat: string;
     private invalidEmailErrorMessage: string;
     private successMessage: string;
@@ -77,7 +78,7 @@ export class MyAccountComponent {
         }, response => {
             // TODO: We have to define how must be the user feedback in case of error
             console.log(response.errorsMessages);
-            this.message = '';
+            this.message = response.errorsMessages;
         });
     }
 
@@ -104,6 +105,7 @@ export class MyAccountComponent {
             this.invalidEmailErrorFormat = dataI18n['errors.email'];
             this.passwordErrorMessage = (mandatoryFieldError).replace('{0}', this.passwordLabel);
             this.confirmPasswordErrorMessage =  dataI18n['error.forgot.password.passwords.dont.match'];
+            this.invalidPasswordPatternErrorMessage =  dataI18n['User-Info-Save-Password-Failed'];
             this.successMessage = dataI18n['message.createaccount.success'];
             this.errorCommunicatingWithServer = dataI18n['Error-communicating-with-server-Please-try-again'];
         });
