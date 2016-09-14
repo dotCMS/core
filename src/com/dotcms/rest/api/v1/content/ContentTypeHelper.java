@@ -157,7 +157,7 @@ public class ContentTypeHelper implements Serializable {
 
         if (null != structures) {
             Locale locale = LocaleUtil.getLocale(request);
-            Map<String, String> strTypeNames = this.getStrTypeNames(locale);
+            Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
             BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
 
             structures.stream()
@@ -168,7 +168,7 @@ public class ContentTypeHelper implements Serializable {
                                 this.getActionUrl(request, structure, user)));
                     });
 
-            result = baseContentTypesViewCollection.getStructureTypeView(strTypeNames);
+            result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
         }
 
         return result;
@@ -180,7 +180,7 @@ public class ContentTypeHelper implements Serializable {
      * @return Map (type Id -> i18n value)
      * @throws LanguageException
      */
-    public final Map<String, String> getStrTypeNames(final Locale locale) throws LanguageException {
+    public final Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
         return map(
                 Structure.Type.getType(Structure.Type.CONTENT.getType()).name(), LanguageUtil.get(locale, "Content"),
@@ -190,6 +190,6 @@ public class ContentTypeHelper implements Serializable {
                 Structure.Type.getType(Structure.Type.HTMLPAGE.getType()).name(), LanguageUtil.get(locale, "HTMLPage"),
                 Structure.Type.getType(Structure.Type.PERSONA.getType()).name(), LanguageUtil.get(locale, "Persona")
         );
-    } // getStrTypeNames.
+    } // getBaseContentTypeNames.
 
 } // E:O:F:ContentTypeHelper.
