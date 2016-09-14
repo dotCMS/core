@@ -1,9 +1,11 @@
 package com.dotmarketing.exception;
 
+import com.dotcms.exception.BaseInternationalizationException;
+
 /**
  * @todo remove the setMessage method, replace uses with 'throw new WhateverException(message, oldException)'
  */
-public class DotDataException extends Exception {
+public class DotDataException extends BaseInternationalizationException {
 
 	/**
 	 * 
@@ -29,4 +31,12 @@ public class DotDataException extends Exception {
 	public void setMessage(String message) {
 		this.message = message;
 	}
+	public DotDataException(String message, String messageKey, Object... messageArguments) {
+		super(message, messageKey, messageArguments);
+	}
+	public DotDataException(String message, Throwable cause, String messageKey, Object... messageArguments) {
+		super(message, cause, messageKey, messageArguments);
+	}
+	
+	
 }
