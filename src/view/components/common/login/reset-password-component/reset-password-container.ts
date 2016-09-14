@@ -14,7 +14,6 @@ import {ResetPasswordComponent} from './reset-password-component';
     template: `
         <dot-reset-password-component
             [token]="token"
-            [login]="login"
             [message]="message"
             (changePassword)="changePassword($event)">
         </dot-reset-password-component>
@@ -37,9 +36,6 @@ export class ResetPasswordContainer{
          this.queryParams.pluck<string>('token').distinctUntilChanged()
             .forEach(token => this.token = token);
 
-        this.routeParams.pluck<string>('userId').distinctUntilChanged()
-            .forEach(login => this.login = login);
-
         this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
             let entity = data.entity;
@@ -51,7 +47,7 @@ export class ResetPasswordContainer{
     }
 
     public changePassword(changePasswordData:ChangePasswordData):void{
-        this.loginService.changePassword(changePasswordData.login, changePasswordData.password, changePasswordData.token)
+        this.loginService.changePassword(changePasswordData.password, changePasswordData.token)
             .subscribe( result =>{
                 //alert(this.resetPasswordSuccessMessage);
                 // TODO need to use internationalization
@@ -66,7 +62,6 @@ export class ResetPasswordContainer{
 }
 
 export interface ChangePasswordData{
-    login:string,
     token:string,
     password:string
 }

@@ -34,8 +34,7 @@ export class AppComponent {
 
         if (<boolean> queryParams.get('resetPassword')) {
             let token: string = queryParams.get('token');
-            let userId: string = queryParams.get('userId');
-            this.router.go(`public/resetPassword/${userId}?token=${token}`);
+            this.router.go(`public/resetPassword?token=${token}`);
         } else if (this.dotcmsConfig.configParams.user) {
             this.routingService.setMenus(this.dotcmsConfig.configParams.menu);
 
