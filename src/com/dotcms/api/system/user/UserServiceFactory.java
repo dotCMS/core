@@ -360,7 +360,7 @@ public class UserServiceFactory implements Serializable {
 
 			if (!Validator.isEmailAddress(emailAddress)) {
 
-				throw new UserEmailAddressException("Email is not set");
+				throw new UserEmailAddressException("Invalid email format");
 			}
 
 			try {
