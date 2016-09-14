@@ -51,7 +51,6 @@ export class MyAccountComponent {
     private mandatoryEmailErrorMessage: string;
     private passwordErrorMessage: string;
     private confirmPasswordErrorMessage: string;
-    private invalidPasswordPatternErrorMessage: string;
     private invalidEmailErrorFormat: string;
     private invalidEmailErrorMessage: string;
     private successMessage: string;
