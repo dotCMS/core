@@ -104,7 +104,6 @@ export class MyAccountComponent {
             this.invalidEmailErrorFormat = dataI18n['errors.email'];
             this.passwordErrorMessage = (mandatoryFieldError).replace('{0}', this.passwordLabel);
             this.confirmPasswordErrorMessage =  dataI18n['error.forgot.password.passwords.dont.match'];
-            this.invalidPasswordPatternErrorMessage =  dataI18n['User-Info-Save-Password-Failed'];
             this.successMessage = dataI18n['message.createaccount.success'];
             this.errorCommunicatingWithServer = dataI18n['Error-communicating-with-server-Please-try-again'];
         });
