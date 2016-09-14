@@ -27,6 +27,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
@@ -298,5 +300,27 @@ public class UserResourceHelper implements Serializable {
 		}
 
 		return userList;
+	}
+	
+	/**
+	 * Return the password format error string
+	 * @return A string with the User-Info-Save-Password-Failed error
+	 * @throws DotDataException
+	 * @throws LanguageException
+	 */
+	public String getPasswordFormatErrorMessage() throws DotDataException, LanguageException {
+		User systemUser = userAPI.getSystemUser();
+		return LanguageUtil.get(systemUser, "User-Info-Save-Password-Failed");
+	}
+	
+	/**
+	 * Return the password recycle failed error string
+	 * @return A string with the User-Info-Save-Password-Recycle-Failed error
+	 * @throws DotDataException
+	 * @throws LanguageException
+	 */
+	public String getPasswordRecycleFailedErrorMessage() throws DotDataException, LanguageException {
+		User systemUser = userAPI.getSystemUser();
+		return LanguageUtil.get(systemUser, "User-Info-Save-Password-Recycle-Failed");
 	}
 }
