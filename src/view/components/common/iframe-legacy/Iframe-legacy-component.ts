@@ -60,7 +60,6 @@ export class IframeLegacyComponent extends SiteChangeListener {
         }
     }
 
-
     loadURL(url: string): SafeResourceUrl {
         this.loadingInProgress = true;
         return this.sanitizer.bypassSecurityTrustResourceUrl(url);
