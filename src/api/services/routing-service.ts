@@ -80,7 +80,6 @@ export class RoutingService extends CoreWebService{
             }
 
             this._menusChange$.next(this.menus);
-            console.log('routes', this.routes);
         }
     }
 

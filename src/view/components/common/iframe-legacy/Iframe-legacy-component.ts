@@ -47,7 +47,6 @@ export class IframeLegacyComponent extends SiteChangeListener {
         this.params$.pluck<string>('id')
             .distinctUntilChanged()
             .forEach(id => {
-                console.log('ID', id);
                 if (id) {
                     this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
                 }

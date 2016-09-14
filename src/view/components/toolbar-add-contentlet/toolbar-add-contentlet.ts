@@ -66,12 +66,10 @@ export class ToolbarAddContenletComponent {
 
         this.contentletService.getContentTypes().subscribe(strcutures => {
             this.types = strcutures;
-            console.log('strcutures', strcutures);
+
             this.types.forEach(strcuture => {
-                    console.log('strcuture', strcuture);
                     strcuture.types.forEach(type => {
                         this.routingService.addPortletURL(type.name, type.action);
-                        console.log('type', type);
                     });
                 }
             );
