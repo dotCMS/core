@@ -33,9 +33,11 @@ public class DotDataException extends BaseInternationalizationException {
 	}
 	public DotDataException(String message, String messageKey, Object... messageArguments) {
 		super(message, messageKey, messageArguments);
+		this.message = message;
 	}
 	public DotDataException(String message, Throwable cause, String messageKey, Object... messageArguments) {
 		super(message, cause, messageKey, messageArguments);
+		this.message = message;
 	}
 	
 	
