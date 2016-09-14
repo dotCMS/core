@@ -7,12 +7,12 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
-import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.*;
-import com.liferay.portal.auth.AuthException;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.SendPasswordException;
+import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.model.Company;
@@ -26,7 +26,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
 import java.util.Locale;
 
 import static org.junit.Assert.*;
@@ -100,7 +99,7 @@ public class ForgotPasswordResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession(false)).thenReturn(session); //
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
         when(companyAPI.getCompany(request)).thenReturn(company);
@@ -164,7 +163,7 @@ public class ForgotPasswordResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession(false)).thenReturn(session); //
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
         when(companyAPI.getCompany(request)).thenReturn(company);
@@ -228,7 +227,7 @@ public class ForgotPasswordResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession(false)).thenReturn(session); //
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
         when(companyAPI.getCompany(request)).thenReturn(company);
