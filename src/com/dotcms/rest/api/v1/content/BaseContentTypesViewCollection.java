@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class BaseContentTypesViewCollection {
 
-    private Map<String, List<ContentTypeView>> contentTypeViews = new LinkedHashMap<>();
+    private final Map<String, List<ContentTypeView>> contentTypeViews = new LinkedHashMap<>();
 
     public void add (Structure structure, ContentTypeView contentTypeView){
         String structureName = Structure.Type.getType(structure.getStructureType()).name();

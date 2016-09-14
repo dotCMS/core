@@ -7,9 +7,9 @@ import java.util.List;
  */
 public class BaseContentTypesView {
 
-    private String name;
-    private String label;
-    private List<ContentTypeView> types;
+    private final String name;
+    private final String label;
+    private final List<ContentTypeView> types;
 
     BaseContentTypesView(String name, String label, List<ContentTypeView> types){
         this.name = name;

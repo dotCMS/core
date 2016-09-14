@@ -183,12 +183,12 @@ public class ContentTypeHelper implements Serializable {
     public final Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
         return map(
-                Structure.Type.getType(Structure.Type.CONTENT.getType()).name(), LanguageUtil.get(locale, "Content"),
-                Structure.Type.getType(Structure.Type.WIDGET.getType()).name(), LanguageUtil.get(locale, "Widget"),
-                Structure.Type.getType(Structure.Type.FORM.getType()).name(), LanguageUtil.get(locale, "Form"),
-                Structure.Type.getType(Structure.Type.FILEASSET.getType()).name(), LanguageUtil.get(locale, "File"),
-                Structure.Type.getType(Structure.Type.HTMLPAGE.getType()).name(), LanguageUtil.get(locale, "HTMLPage"),
-                Structure.Type.getType(Structure.Type.PERSONA.getType()).name(), LanguageUtil.get(locale, "Persona")
+                Structure.Type.CONTENT.name(), LanguageUtil.get(locale, "Content"),
+                Structure.Type.WIDGET.name(), LanguageUtil.get(locale, "Widget"),
+                Structure.Type.FORM.name(), LanguageUtil.get(locale, "Form"),
+                Structure.Type.FILEASSET.name(), LanguageUtil.get(locale, "File"),
+                Structure.Type.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
+                Structure.Type.PERSONA.name(), LanguageUtil.get(locale, "Persona")
         );
     } // getBaseContentTypeNames.
 
