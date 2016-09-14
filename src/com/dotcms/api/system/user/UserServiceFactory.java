@@ -353,14 +353,14 @@ public class UserServiceFactory implements Serializable {
 
 			if (!UtilMethods.isSet(emailAddressParam)) {
 
-				throw new UserEmailAddressException();
+				throw new UserEmailAddressException("Email is not set");
 			}
 
 			emailAddress = emailAddressParam.trim().toLowerCase();
 
 			if (!Validator.isEmailAddress(emailAddress)) {
 
-				throw new UserEmailAddressException();
+				throw new UserEmailAddressException("Email is not set");
 			}
 
 			try {
