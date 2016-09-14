@@ -1,11 +1,10 @@
 import {Component, ViewEncapsulation, Input, Inject} from '@angular/core';
 import {FormatDate} from "../../../../api/services/format-date-service";
-
-// Angular Material components
-import {MdIcon} from '@angular2-material/icon/icon';
+import {Subject} from 'rxjs/Subject';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 @Component({
-    directives: [MdIcon],
+    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
     pipes: [],
@@ -18,17 +17,18 @@ import {MdIcon} from '@angular2-material/icon/icon';
 export class CustomTimeComponent {
     @Input() time;
 
-    private formattedTime: string;
+    private formattedTime:Subject<string> = new BehaviorSubject('');
 
-    constructor(@Inject('dotcmsConfig') private dotcmsConfig, private formatDate: FormatDate) {
+    constructor(private formatDate: FormatDate) {
+
     }
 
     ngOnInit(): void {
-        this.formattedTime = this.formatDate.getRelative(this.time);
+        this.formattedTime.next(this.formatDate.getRelative(this.time));
     }
 
-    // This will trigger every time this component shows or hide
-    ngAfterViewChecked(): void {
-        this.formattedTime = this.formatDate.getRelative(this.time);
+    ngAfterViewChecked() {
+        // TODO: this is triggering even when open other dropdown component instance, need to check that.
+        this.formattedTime.next(this.formatDate.getRelative(this.time));
     }
 }

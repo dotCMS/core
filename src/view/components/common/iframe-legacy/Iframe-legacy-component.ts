@@ -5,6 +5,7 @@ import { RouteParams } from '@ngrx/router';
 import { Observable } from 'rxjs/Rx';
 
 import {RoutingService} from '../../../../api/services/routing-service';
+import {LoginService} from '../../../../api/services/login-service';
 import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
 import {SiteService} from '../../../../api/services/site-service';
 import {SiteChangeListener} from '../../../../api/util/site-change-listener';
@@ -26,8 +27,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
     private loadingInProgress: boolean = true;
 
     constructor(private params$: RouteParams, private routingService: RoutingService,
-                private sanitizer: DomSanitizationService, private element: ElementRef,
-                private siteService: SiteService) {
+                private sanitizer: DomSanitizationService, private element: ElementRef, private siteService: SiteService, private loginService: LoginService) {
         super(siteService);
     }
 
@@ -60,9 +60,26 @@ export class IframeLegacyComponent extends SiteChangeListener {
         }
     }
 
+
     loadURL(url: string): SafeResourceUrl {
         this.loadingInProgress = true;
         return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
 
+    /**
+     * Validate if the iframe window is send to the login page after jsessionid expired
+     * then logout the user from angular session
+     */
+    checkSessionExpired(): void {
+        if (this.iframeElement && this.iframeElement.contentWindow) {
+            let currentPath = this.iframeElement.contentWindow.location.pathname;
+
+            if (currentPath.indexOf('/c/portal_public/login') != -1) {
+                this.loginService.logOutUser().subscribe(data => {
+                }, (error) => {
+                    console.log(error);
+                });
+            }
+        }
     }
 }

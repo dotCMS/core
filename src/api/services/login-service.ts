@@ -3,9 +3,10 @@
  */
 
 import {ApiRoot} from '../persistence/ApiRoot';
-import {AppConfigurationService} from '../services/system/app-configuration-service';
 import {CoreWebService} from '../services/core-web-service';
 import {DotcmsConfig} from '../services/system/dotcms-config';
+import {AppConfigurationService} from '../services/system/app-configuration-service';
+import {FormatDate} from '../services/format-date-service';
 import {Http} from '@angular/http';
 import {Inject, Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
@@ -37,9 +38,9 @@ export class LoginService extends CoreWebService {
     private userListUrl: string;
     private _loginAsUsers$: Subject<User[]>;
 
-    constructor(private appConfigurationService: AppConfigurationService, apiRoot: ApiRoot, http: Http,
-                public coreWebService: CoreWebService, private router: Router,
-                @Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig) {
+    constructor(apiRoot: ApiRoot, http: Http, public coreWebService: CoreWebService, private router: Router,
+                @Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig, private  formatDate: FormatDate,
+                private appConfigurationService: AppConfigurationService) {
         super(apiRoot, http);
 
         this._isLoginAs$ = <Subject<boolean>>new Subject();
@@ -179,6 +180,14 @@ export class LoginService extends CoreWebService {
         }).map(response => {
             this.setLogInUser(response.entity);
             this.dotcmsConfig.setUser(response.entity);
+
+            // TODO: we need to refactor the appconfig because it's not updating after login/logout
+            this.appConfigurationService.getConfigProperties().subscribe(res => {
+                let langCode = res.dotcmsConfig.configParams.user.languageId.split('_')[0];
+                let relativeDate = res.dotcmsConfig.configParams.config.i18nMessagesMap.relativeTime;
+                this.formatDate.setLang(langCode, relativeDate)
+            });
+
             return response.entity;
         });
     }

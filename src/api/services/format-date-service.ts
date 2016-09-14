@@ -5,14 +5,15 @@ import moment from 'moment';
 // TODO: probably a good idea to create a interface for this, will revisit this when we defined the architecture for the lang
 export class FormatDate {
 
-    constructor() {}
-
-    setLang(lang:string, messages:Object):void {
-        moment.locale(lang, messages || {});
+    constructor() {
     }
 
-    getLang() {
-        return moment.locale();
+    setLang(lang: string, messages: Object):void {
+        // Only "creating" the language once
+        if (moment.locale(lang) !== lang) {
+            moment.defineLocale(lang, {relativeTime: messages} || {});
+        }
+        moment.locale(lang);
     }
 
     getRelative(time):string {
@@ -20,3 +21,4 @@ export class FormatDate {
     }
 
 }
+
