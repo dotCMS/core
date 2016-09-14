@@ -9,6 +9,7 @@ import {LoginService} from './login-service';
 import {CoreWebService} from './core-web-service';
 import {RequestMethod, Http} from '@angular/http';
 import {ApiRoot} from '../persistence/ApiRoot';
+import {Router} from '@ngrx/router';
 
 @Injectable()
 export class RoutingService extends CoreWebService{
@@ -18,12 +19,15 @@ export class RoutingService extends CoreWebService{
 
     private urlMenus: string;
 
+    private portlets: Map<string, string>;
+
     private mapComponents = {
         'RULES_ENGINE_PORTLET': RuleEngineContainer,
         'PL': PatternLibrary
     };
 
-    constructor(apiRoot: ApiRoot, http: Http, @Inject('routes') private routes: Routes[ ],  loginService: LoginService) {
+    constructor(apiRoot: ApiRoot, http: Http, @Inject('routes') private routes: Routes[ ],  loginService: LoginService,
+                private router: Router) {
         super(apiRoot, http);
 
         this.urlMenus = `${apiRoot.baseUrl}api/v1/appconfiguration`;
@@ -33,6 +37,8 @@ export class RoutingService extends CoreWebService{
         }
 
         loginService.loginUser$.subscribe(user => this.loadMenus());
+
+        this.portlets = new Map();
     }
 
     get menusChange$(): Observable<Menu[]> {
@@ -66,15 +72,28 @@ export class RoutingService extends CoreWebService{
                             component: this.mapComponents[subMenuItem.id],
                             path: subMenuItem.url,
                         });
-                        subMenuItem.url = 'dotCMS' + subMenuItem.url
+                        subMenuItem.url = 'dotCMS' + subMenuItem.url;
                     } else {
-                        subMenuItem.url = subMenuItem.url + '&in_frame=true&frame=detailFrame';
+                        this.portlets.set(subMenuItem.id, subMenuItem.url);
                     }
                 }
             }
 
             this._menusChange$.next(this.menus);
+            console.log('routes', this.routes);
         }
+    }
+
+    public getPortletURL(portletId: string): string {
+        return this.portlets.get(portletId);
+    }
+
+    public addPortletURL(portletId: string, url: string): void {
+        this.portlets.set(portletId.replace(' ', '_'), url);
+    }
+
+    public goToPortlet(portletId: string): void {
+        this.router.go(`dotCMS/portlet/${portletId.replace(' ', '_')}`);
     }
 
     private loadMenus(): void {
@@ -90,14 +109,14 @@ export class RoutingService extends CoreWebService{
     }
 }
 
-export interface Menu{
+export interface Menu {
     tabDescription: string;
     tabName: string;
     url: string;
     menuItems: MenuItem[];
 }
 
-export interface MenuItem{
+export interface MenuItem {
     ajax: boolean;
     angular: boolean;
     id: string;

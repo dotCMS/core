@@ -15,11 +15,12 @@ import {MD_SIDENAV_DIRECTIVES} from '@angular2-material/sidenav/sidenav';
 import {MdButton} from '@angular2-material/button/button';
 import {MdIcon} from '@angular2-material/icon/icon';
 import {MdToolbar} from '@angular2-material/toolbar/toolbar';
+import {ToolbarAddContenletComponent} from '../../toolbar-add-contentlet/toolbar-add-contentlet';
 
 @Component({
     directives: [MdToolbar, MD_SIDENAV_DIRECTIVES, MD_INPUT_DIRECTIVES, FORM_DIRECTIVES, MdButton, MdIcon,
         GlobalSearch, MainNavigation, ToolbarNotifications, SiteSelectorComponent, ToolbarUserComponent,
-        DropdownComponent],
+        DropdownComponent, ToolbarAddContenletComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [],
