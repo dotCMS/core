@@ -29,6 +29,8 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
+import com.dotcms.api.system.user.UserService;
+import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -42,7 +44,7 @@ import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
-import com.dotcms.util.UrlUtil;
+import com.dotcms.util.UrlStrategyUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -80,6 +82,8 @@ import com.liferay.util.KeyValuePair;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.mail.MailMessage;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This manager provides interaction with {@link User} objects in terms of 
@@ -439,7 +443,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		String url = UrlUtil.getAbsoluteResetPasswordURL(company, user, token, locale, fromAngular);
+		String url = UrlStrategyUtil.getURL(company,
+				map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
+				(fromAngular)? UserService.ANGULAR_RESET_PASSWORD_URL_STRATEGY: UserService.DEFAULT_RESET_PASSWORD_URL_STRATEGY);
 
 		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 		String subject = LanguageUtil.get(locale, "reset-password-email-subject");
@@ -776,7 +782,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		DelayStrategy strategy;
 		try {
 			strategy = (UtilMethods.isSet(stratParams[0]))?
-					DelayStrategy.valueOf(stratParams[0]):DelayStrategy.POW;
+					DelayStrategy.valueOf(stratParams[0].toUpperCase()):DelayStrategy.POW;
 			if (stratParams.length > 1) {
 				seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
 			}

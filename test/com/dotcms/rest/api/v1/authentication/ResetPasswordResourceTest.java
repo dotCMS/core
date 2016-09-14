@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.api.system.user.UserService;
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.SecurityLoggerServiceAPI;
@@ -16,8 +19,10 @@ import javax.servlet.http.HttpServletRequest;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ResetPasswordResourceTest {
 
@@ -48,7 +53,7 @@ public class ResetPasswordResourceTest {
     @Test
     public void testWrongParameter() {
         try {
-            new ResetPasswordForm.Builder().userId("").build();
+            new ResetPasswordForm.Builder().password("").build();
 
             fail ("Should throw a ValidationException");
         } catch (Exception e) {
@@ -59,8 +64,13 @@ public class ResetPasswordResourceTest {
     @Test
     public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
+                "token",
+                "dotcms.org.1", 100000);
+        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -72,8 +82,13 @@ public class ResetPasswordResourceTest {
     public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
+                "token",
+                "dotcms.org.1", 100000);
+        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -84,8 +99,13 @@ public class ResetPasswordResourceTest {
     @Test
     public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
+                "token",
+                "dotcms.org.1", 100000);
+        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -96,7 +116,13 @@ public class ResetPasswordResourceTest {
     public void testDotInvalidPasswordException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidPasswordException("") );
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
+                "token",
+                "dotcms.org.1", 100000);
+        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -106,7 +132,12 @@ public class ResetPasswordResourceTest {
     @Test
     public void testOk() {
         UserManager userManager = mock( UserManager.class );
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper);
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
+        final JWTBean jwtBean = new JWTBean("dotcms.org.1",
+                "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJkb3RjbXMub3JnLjEiLCJpYXQiOjE0NzM3MTE1OTIsInN1YiI6IlhJazdsUENYUkxWQmlQWWNJOTJpY01MbXVET1ZLeTE0NzM3MTE1OTI5MTIiLCJpc3MiOiJkb3RjbXMub3JnLjEiLCJleHAiOjE0NzM3MTI3OTJ9.65fqPIKHUdfk35uVPy4x9mzhvh2A1EW_UOF2oEc9DUM",
+                "dotcms.org.1", 100000);
+        when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -116,7 +147,7 @@ public class ResetPasswordResourceTest {
     private UserManager getUserManagerThrowingException(Exception e)
             throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
         UserManager userManager = mock( UserManager.class );
-        doThrow( e ).when( userManager ).resetPassword(resetPasswordForm.getUserId(),
+        doThrow( e ).when( userManager ).resetPassword("dotcms.org.1",
                 resetPasswordForm.getToken(), resetPasswordForm.getPassword());
         return userManager;
     }
@@ -129,7 +160,6 @@ public class ResetPasswordResourceTest {
         final String token = "token";
 
         return new ResetPasswordForm.Builder()
-                .userId(userId)
                 .password(password)
                 .token(token)
                 .build();

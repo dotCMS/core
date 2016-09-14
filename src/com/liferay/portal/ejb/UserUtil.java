@@ -81,7 +81,7 @@ public class UserUtil {
 		return user;
 	}
 
-	protected static com.liferay.portal.model.User update(
+	public static com.liferay.portal.model.User update(
 		com.liferay.portal.model.User user)
 		throws com.liferay.portal.SystemException {
 		UserPersistence persistence = (UserPersistence)InstancePool.get(PERSISTENCE);
@@ -254,7 +254,7 @@ public class UserUtil {
 			obc);
 	}
 
-	protected static com.liferay.portal.model.User findByC_EA(
+	public static com.liferay.portal.model.User findByC_EA(
 		java.lang.String companyId, java.lang.String emailAddress)
 		throws com.liferay.portal.NoSuchUserException, 
 			com.liferay.portal.SystemException {
