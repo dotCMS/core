@@ -36,7 +36,7 @@ export class MyAccountComponent {
     // TODO: change when new FE internationalization is done
     private i18nMessages: Array<string> = [ 'modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
         'Last-Name', 'email-address', 'password', 're-enter-password', 'error.forgot.password.passwords.dont.match',
-        'message.createaccount.success', 'Error-communicating-with-server-Please-try-again','User-Info-Save-Password-Failed'];
+        'message.createaccount.success', 'Error-communicating-with-server-Please-try-again'];
 
     private saveButtonLabel: string;
     private closeButtonLabel: string;
