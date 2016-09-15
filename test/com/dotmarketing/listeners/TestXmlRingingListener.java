@@ -205,7 +205,7 @@ public class TestXmlRingingListener extends RunListener {
 
         name = aClass.getName();
         this.fileName = "TEST-" + name + ".xml";
-        System.out.print("Generating XML report file: " + this.fileName);//Debug code for the catalina.out
+        System.out.println("Generating XML report file: " + this.fileName);//Debug code for the catalina.out
     }
 
     public void closeFile () {
