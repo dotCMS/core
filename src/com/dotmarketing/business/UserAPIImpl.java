@@ -288,7 +288,7 @@ public class UserAPIImpl implements UserAPI {
 						pwd)) {
 					// Get the first validation error and display it
 					throw new DotDataException(passwordTracker
-							.getValidationErrors().get(0).toString());
+							.getValidationErrors().get(0).toString(),"User-Info-Save-Password-Failed");
 				}
 			} catch (PortalException | SystemException e) {
 				throw new DotDataException(

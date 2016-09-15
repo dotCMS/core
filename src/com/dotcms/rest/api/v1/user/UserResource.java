@@ -150,6 +150,7 @@ public class UserResource implements Serializable {
         boolean reAuthenticationRequired = false;
         boolean validatePassword = false;
         Locale locale = LocaleUtil.getLocale(request);
+        Locale systemLocale = this.userAPI.getSystemUser().getLocale();
         Map<String, Object> userMap = Collections.EMPTY_MAP;
 
         this.helper.log("Updating User", "Date: " + date + "; "
@@ -214,17 +215,23 @@ public class UserResource implements Serializable {
             response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-Last-Name-Failed");
         } catch (DotSecurityException  e) {
 
-            this.helper.log("Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+            this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
             response = this.errorHelper.getErrorResponse(Response.Status.UNAUTHORIZED, locale, "User-Doesnot-Have-Permission");
         } catch (NoSuchUserException  e) {
 
-            this.helper.log("Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+            this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
             response = this.errorHelper.getErrorResponse(Response.Status.NOT_FOUND, locale, "User-Not-Found");
-        } catch (Exception  e) {
-
-            this.helper.log("Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-            e.printStackTrace();
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (DotDataException e) {
+        	if(null != e.getMessageKey()){
+        		this.helper.log("Error Updating User. "+e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+        		response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, e.getMessageKey());
+        	} else{
+        		this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+        		response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        	}
+    	} catch (Exception  e) {
+        	this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+        	response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return response;
