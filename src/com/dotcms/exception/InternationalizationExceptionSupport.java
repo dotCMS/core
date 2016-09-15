@@ -26,7 +26,7 @@ public interface InternationalizationExceptionSupport {
 	 * or into the default user locale
 	 * @return a string with the messagekey translated into the correct language
 	 */
-	default String getFormattedMessage (){
+	default String getFormattedMessage(){
 		String message;
 		try {
 
@@ -43,6 +43,25 @@ public interface InternationalizationExceptionSupport {
 		}	
 	}
 	
+	/**
+	 * Format the messagekey into the specified locale parameter 
+	 * or into the default user locale
+	 * @return a string with the messagekey translated into the specified language
+	 */
+	default String getFormattedMessage(Locale locale){
+		String message;
+		try {
+
+			message =(UtilMethods.isSet(locale))? 
+					LanguageUtil.get(locale, this.getMessageKey()):
+						LanguageUtil.get((User)null, this.getMessageKey());
+
+					return MessageFormat.format(message, this.getMessageArguments());
+		} catch (LanguageException e) {
+			Logger.error(InternationalizationExceptionSupport.class, e.getMessage(), e);
+			throw new RuntimeException(e);
+		}	
+	}
 	String getMessageKey();
 	Object[] getMessageArguments();
 

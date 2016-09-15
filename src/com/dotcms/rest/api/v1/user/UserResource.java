@@ -150,6 +150,7 @@ public class UserResource implements Serializable {
         boolean reAuthenticationRequired = false;
         boolean validatePassword = false;
         Locale locale = LocaleUtil.getLocale(request);
+        Locale systemLocale = this.userAPI.getSystemUser().getLocale();
         Map<String, Object> userMap = Collections.EMPTY_MAP;
 
         this.helper.log("Updating User", "Date: " + date + "; "
@@ -222,7 +223,7 @@ public class UserResource implements Serializable {
             response = this.errorHelper.getErrorResponse(Response.Status.NOT_FOUND, locale, "User-Not-Found");
         } catch (DotDataException e) {
         	if(null != e.getMessageKey()){
-        		this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+        		this.helper.log("Error Updating User. "+e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
         		response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, e.getMessageKey());
         	} else{
         		this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
