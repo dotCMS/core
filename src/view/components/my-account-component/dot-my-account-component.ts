@@ -77,7 +77,7 @@ export class MyAccountComponent {
         }, response => {
             // TODO: We have to define how must be the user feedback in case of error
             console.log(response.errorsMessages);
-            this.message = '';
+            this.message = response.errorsMessages;
         });
     }
 
