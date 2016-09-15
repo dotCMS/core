@@ -117,6 +117,7 @@ public class ServletTestRunner extends HttpServlet {
         reportDirectory.mkdirs();
 
         Logger.info( "Generating XML report in " + reportDirectory.getAbsolutePath() );
+        System.out.print("Generating XML report in: " + reportDirectory.getAbsolutePath());//Debug code for the catalina.out
 
         //Adding a listener for the running test
         TestXmlRingingListener testXmlRingingListener = new TestXmlRingingListener( reportDirectory );
