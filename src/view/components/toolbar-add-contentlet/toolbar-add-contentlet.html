@@ -9,7 +9,6 @@
 
             <button md-icon-button (click) = "select(structureTypeView)"
                     [class.toolbar-add-contentlet__head--selected]="selected === structureTypeView">
-                <img [src]="'images/' + structureTypeView.name.toLowerCase() + '.png'"/>
             </button>
 
             <label>{{structureTypeView.label}}</label>
