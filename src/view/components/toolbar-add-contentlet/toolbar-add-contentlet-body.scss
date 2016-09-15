@@ -1,0 +1,32 @@
+@import "../../../scss/mixins";
+@import "../../../scss/variables";
+
+:host {
+
+  .toolbar-add-contentlet-body__title{
+    display: flex;
+    flex-direction: row;
+  }
+
+  .toolbar-add-contentlet-body__title label{
+    font-size: 16px;
+    margin-top: 5%;
+  }
+
+  .toolbar-add-contentlet-body__links{
+    padding-left: 2.5%;
+    padding-right: 2.5%;
+  }
+
+  .toolbar-add-contentlet-body__links span{
+    display: inline-block;
+    margin-left: 2.5%;
+    margin-right: 2.5%;
+    width: 45%;
+  }
+
+  .toolbar-add-contentlet-body__links span a{
+    font-size: 12px;
+  }
+}
+

@@ -1,0 +1,41 @@
+@import "../../../scss/mixins";
+@import "../../../scss/variables";
+
+:host {
+
+  .toolbar-add-contentlet__head{
+    align-items: center;
+    border-bottom: lightgray 1px solid;
+    display: flex;
+    flex-direction: row;
+    padding:5px;
+    padding-bottom: 10px;
+  }
+
+  .toolbar-add-contentlet__head--button{
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+    padding: 2px;
+    position: relative;
+  }
+
+  .toolbar-add-contentlet__head--selected{
+    background-color: #00ACED;
+  }
+
+  .toolbar-add-contentlet__head--button button{
+    margin: auto;
+  }
+
+  .toolbar-add-contentlet__head--button label{
+    font-size: 12px;
+    margin: 2px;
+  }
+
+  .toolbar-add-contentlet__head--button button img{
+    margin: auto;
+    width: 30px;
+  }
+}
+
