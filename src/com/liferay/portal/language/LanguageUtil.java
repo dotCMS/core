@@ -25,6 +25,7 @@ package com.liferay.portal.language;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
@@ -37,13 +38,16 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Time;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+
 import javax.servlet.jsp.PageContext;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -83,7 +87,11 @@ public class LanguageUtil {
 	public static String get(Locale locale, String key) throws LanguageException {
 		return get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
 	}
-	
+	   public static String get(String key)
+	         throws LanguageException {
+	         return get(PublicCompanyFactory.getDefaultCompany(),key);
+	      
+	   }
 	public static String get(Company company, String key)
 	throws LanguageException {
 		if(company ==null){
