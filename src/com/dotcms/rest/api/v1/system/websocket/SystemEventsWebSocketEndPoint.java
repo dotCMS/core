@@ -165,7 +165,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 					if (null != SessionWrapper.class.cast(session).getUser()) {
 
-						if (payload.getVisibility() == Visibility.USER) {
+							if (payload.getVisibility() == Visibility.USER) {
 							// if the session user is the same of the event, them it apply to be sent
 							apply = SessionWrapper.class.cast(session).getUser().getUserId()
 										.equals(payload.getVisibilityId());

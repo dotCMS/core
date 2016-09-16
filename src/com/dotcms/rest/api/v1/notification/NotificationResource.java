@@ -240,7 +240,7 @@ public class NotificationResource {
 
             if (null != notificationId && null != user) {
 
-                this.notificationAPI.deleteNotification(notificationId);
+                this.notificationAPI.deleteNotification(user.getUserId(), notificationId); // todo: include the user id, in order to remove by id.
             }
 
             return Response.ok(new ResponseEntityView(Boolean.TRUE,
@@ -280,7 +280,8 @@ public class NotificationResource {
 
             if (null != deleteForm.getItems() && null != user) {
 
-                this.notificationAPI.deleteNotifications(deleteForm.getItems().toArray(new String [] {}));
+                this.notificationAPI.deleteNotifications(user.getUserId(),
+                        deleteForm.getItems().toArray(new String [] {}));  // todo: include the user id, in order to remove by id.
             }
 
             response =  Response.ok(new ResponseEntityView(Boolean.TRUE,
