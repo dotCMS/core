@@ -1,5 +1,4 @@
 <div class="toolbar-add-contentlet-body__title" *ngIf="structureTypeView">
-    <img [src]="structureTypeView &&  'images/' + structureTypeView.name.toLowerCase() + '.png'"/>
     <label>{{structureTypeView && structureTypeView.label}}</label>
 </div>
 <div class="toolbar-add-contentlet-body__links" *ngIf="structureTypeView && structureTypeView.types">
