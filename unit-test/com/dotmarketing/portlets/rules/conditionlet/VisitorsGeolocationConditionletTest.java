@@ -8,23 +8,35 @@ import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.*;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.LATITUDE_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.LONGITUDE_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.RADIUS_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.RADIUS_UNIT_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionlet.UnitOfDistance;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EXISTS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.NOT_WITHIN_DISTANCE;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.WITHIN_DISTANCE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(DataProviderRunner.class)
 public class VisitorsGeolocationConditionletTest {
 
     private static final String MOCK_IP_ADDRESS = "190.74.5.100";
@@ -33,8 +45,8 @@ public class VisitorsGeolocationConditionletTest {
     private static final double VISITORS_LATITUDE = 8.0;
     private static final double VISITORS_LONGITUDE = -66.0;
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
@@ -95,7 +107,8 @@ public class VisitorsGeolocationConditionletTest {
         }
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -104,23 +117,23 @@ public class VisitorsGeolocationConditionletTest {
         return aCase.conditionlet.evaluate(aCase.request, aCase.response, aCase.conditionlet.instanceFrom(aCase.params));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing() throws Exception {
         new TestCase("").conditionlet.instanceFrom(null);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonIsNull() throws Exception {
         TestCase aCase = new TestCase("Empty parameter list should throw IAE.").withComparison(null);
         new TestCase("").conditionlet.instanceFrom(aCase.params);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonNotSet() throws Exception {
         new TestCase("").conditionlet.instanceFrom(Maps.newHashMap());
     }
 
-    @Test(expectedExceptions = ComparisonNotSupportedException.class)
+    @Test(expected = ComparisonNotSupportedException.class)
     public void testUnsupportedComparisonThrowsException() throws Exception {
         TestCase aCase = new TestCase("Exists: Unsupported comparison should throw.")
                 .withComparison(EXISTS)
@@ -132,7 +145,7 @@ public class VisitorsGeolocationConditionletTest {
         runCase(aCase);
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         public final VisitorsGeolocationConditionlet conditionlet;
         public final GeoIp2CityDbUtil geoIp2Util = mock(GeoIp2CityDbUtil.class);

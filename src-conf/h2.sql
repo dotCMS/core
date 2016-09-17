@@ -170,6 +170,7 @@ create table User_ (
 	userId varchar(100) not null primary key,
 	companyId varchar(100) not null,
 	createDate timestamp null,
+	mod_date timestamp null,
 	password_ text null,
 	passwordEncrypted bit,
 	passwordExpirationDate timestamp null,
@@ -2345,3 +2346,12 @@ create index idx_rules_fire_on on dot_rule (fire_on);
 -- Delete User
 ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;
 ALTER TABLE user_ ADD delete_date TIMESTAMP;
+
+CREATE TABLE system_event (
+    identifier VARCHAR(36) NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    payload TEXT NOT NULL,
+    created BIGINT NOT NULL,
+    PRIMARY KEY (identifier)
+);
+CREATE INDEX idx_system_event ON system_event (created);

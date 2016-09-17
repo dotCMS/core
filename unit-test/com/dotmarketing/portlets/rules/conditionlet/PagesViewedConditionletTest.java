@@ -6,15 +6,19 @@ import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import java.util.HashMap;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY;
@@ -24,13 +28,14 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GR
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN_OR_EQUAL;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * Created by freddyrodriguez on 10/3/16.
  */
+@RunWith(DataProviderRunner.class)
 public class PagesViewedConditionletTest {
 
     private HttpServletRequest request;
@@ -39,8 +44,8 @@ public class PagesViewedConditionletTest {
     private PagesViewedConditionlet conditionlet = new PagesViewedConditionlet();
 
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
@@ -144,7 +149,8 @@ public class PagesViewedConditionletTest {
         }
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.toString(), runCase(aCase), is(aCase.expect));
     }
@@ -153,7 +159,7 @@ public class PagesViewedConditionletTest {
         return aCase.conditionlet.evaluate(aCase.request, aCase.response, aCase.conditionlet.instanceFrom(aCase.params));
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         public final PagesViewedConditionlet conditionlet;
         public final Clickstream clickstream = mock(Clickstream.class);

@@ -138,6 +138,7 @@ create table User_ (
 	userId varchar(100) not null primary key,
 	companyId varchar(100) not null,
 	createDate datetime null,
+	mod_date   datetime null,
 	password_ text null,
 	passwordEncrypted bit,
 	passwordExpirationDate datetime null,
@@ -2758,7 +2759,15 @@ create table rule_action (id varchar(36) primary key,rule_id varchar(36) referen
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
+CREATE TABLE system_event (
+    identifier VARCHAR(36) NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    payload TEXT NOT NULL,
+    created BIGINT NOT NULL,
+    PRIMARY KEY (identifier)
+);
+CREATE INDEX idx_system_event ON system_event (created);
 
--- Delete User
-ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;
-ALTER TABLE user_ ADD delete_date DATETIME NULL;
+  -- Delete User
+  ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;
+  ALTER TABLE user_ ADD delete_date DATETIME NULL;

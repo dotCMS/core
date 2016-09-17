@@ -89,6 +89,20 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		public int getType() {
 			return type;
 		}
+
+		public static Type getType(int index){
+			Type result = null;
+			Type[] values = Type.values();
+
+			for (Type type : values){
+				if (type.getType() == index){
+					result = type;
+					break;
+				}
+			}
+
+			return result;
+		}
 	}
 			
 	private static final long serialVersionUID = 1L;

@@ -2,19 +2,28 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletResponse;
-import org.mockito.Mockito;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 
+@RunWith(DataProviderRunner.class)
 public class SendRedirectActionletTest {
 
     private static final String URL_KEY = "URL";
@@ -27,7 +36,8 @@ public class SendRedirectActionletTest {
         assertThat(actionlet.getId(), is("SendRedirectActionlet"));
     }
 
-    @Test(dataProvider = "urlCases")
+    @Test
+    @UseDataProvider("urlCases")
     public void testValidateParameters(SimpleUrlCase theCase) throws Exception {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
         ParameterModel param = new ParameterModel(URL_KEY, theCase.url);
@@ -66,11 +76,11 @@ public class SendRedirectActionletTest {
     }
 
     /**
-     * Define some test cases for validating the URL. TestNG will run each of these cases as a separate test.
+     * Define some test cases for validating the URL. JUnit will run each of these cases as a separate test.
      * This is a great way to test a large number of allowed inputs... and also helps makes your test count look amazing.
      */
-    @DataProvider(name = "urlCases")
-    public Object[][] noConditionCases() {
+    @DataProvider
+    public static Object[][] urlCases() {
 
         return new SimpleUrlCase[][]{
             {new SimpleUrlCase("Absolute url is valid", "https://www.google.com", true)},

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
@@ -551,7 +552,17 @@ public class HostAPIImpl implements HostAPI {
 					try {
 						String errorMessage = LanguageUtil.format(user.getLocale(), "notifications_host_deletion_error",new String[]{host.getHostname()},false);
 						errorMessage += e.getMessage();
-						APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+						//APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+
+						APILocator.getNotificationAPI().generateNotification(
+								LanguageUtil.get(user.getLocale(), "notification.hostapi.delete.error.title"), // title = Host Notification
+								errorMessage,
+								null, // no actions
+								NotificationLevel.ERROR,
+								NotificationType.GENERIC,
+								user.getUserId(),
+								user.getLocale()
+						);
 
 					} catch (LanguageException e1) {
 						Logger.error(HostAPIImpl.class, "error formating notification", e);

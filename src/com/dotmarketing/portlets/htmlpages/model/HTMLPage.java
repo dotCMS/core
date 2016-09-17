@@ -62,7 +62,7 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
     
     private String templateId;
     
-    private long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+    private long languageId =-1;
    
     public long getCacheTTL() {
 		return cacheTTL;
@@ -90,6 +90,7 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
 
 	/** default constructor */
     public HTMLPage() {
+    	
     	super.setType("htmlpage");	
     	startDate = new java.util.Date();
     	endDate = new java.util.Date();
@@ -373,7 +374,7 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
 
 	@Override
 	public long getLanguageId() {
-		return languageId;
+		return (languageId>0) ? languageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	}
     
 	

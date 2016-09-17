@@ -9,9 +9,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.generic.SortTool;
+
+import com.dotcms.api.system.user.UserServiceFactory;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -53,14 +56,31 @@ import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
-
+/**
+ * Provides utility methods that are accessed via DWR to build up the UI of the
+ * dotCMS back-end. Most of user-related widgets use these services to display 
+ * data.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class UserAjax {
 
 	// Constants for internal use only
 	private static final String USER_TYPE_VALUE = "user";
 	private static final String ROLE_TYPE_VALUE = "role";
 
+	/**
+	 * 
+	 * @param userId
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws PortalException
+	 * @throws SystemException
+	 */
 	public Map<String, Object> getUserById(String userId) throws DotDataException,DotSecurityException, PortalException, SystemException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -294,6 +314,15 @@ public class UserAjax {
 
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @return
+	 * @throws DotHibernateException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException, DotSecurityException {
 		
 		//auth
@@ -380,6 +409,12 @@ public class UserAjax {
 		return true;
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @return
+	 * @throws Exception
+	 */
 	public List<Map<String, Object>> getUserRoles (String userId) throws Exception {
 		//auth
 		User modUser = getAdminUser();
@@ -412,6 +447,13 @@ public class UserAjax {
 		return roleMaps;
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param hostIdentifier
+	 * @return
+	 * @throws Exception
+	 */
 	public Map<String, Boolean> getUserRolesValues (String userId, String hostIdentifier) throws Exception {
 		//auth
 		User modUser = getLoggedInUser();
@@ -441,6 +483,17 @@ public class UserAjax {
 		return userPerms;
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param roleIds
+	 * @throws DotDataException
+	 * @throws NoSuchUserException
+	 * @throws DotRuntimeException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public void updateUserRoles (String userId, List<String> roleIds) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		String date = DateUtil.getCurrentDate();
@@ -504,6 +557,15 @@ public class UserAjax {
 
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @return
+	 * @throws DotDataException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public List<Map<String, String>> loadUserAddresses(String userId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -543,6 +605,25 @@ public class UserAjax {
 		return addressesToReturn;
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param addressDescription
+	 * @param street1
+	 * @param street2
+	 * @param city
+	 * @param state
+	 * @param zip
+	 * @param country
+	 * @param phone
+	 * @param fax
+	 * @param cell
+	 * @return
+	 * @throws DotDataException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
 			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
@@ -606,6 +687,26 @@ public class UserAjax {
 
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param addressId
+	 * @param addressDescription
+	 * @param street1
+	 * @param street2
+	 * @param city
+	 * @param state
+	 * @param zip
+	 * @param country
+	 * @param phone
+	 * @param fax
+	 * @param cell
+	 * @return
+	 * @throws DotDataException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state,
 			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
@@ -662,6 +763,16 @@ public class UserAjax {
 
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param addressId
+	 * @return
+	 * @throws DotDataException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public String deleteAddress(String userId, String addressId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -691,6 +802,21 @@ public class UserAjax {
 		return addressId;
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param active
+	 * @param prefix
+	 * @param suffix
+	 * @param title
+	 * @param company
+	 * @param website
+	 * @param additionalVars
+	 * @throws DotDataException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
 	 	throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
@@ -747,11 +873,12 @@ public class UserAjax {
 		}
 	}
 
-	private void setActive(boolean active) {
-		// TODO Auto-generated method stub
-
-	}
-
+	/**
+	 * 
+	 * @param roleId
+	 * @return
+	 * @throws Exception
+	 */
 	public Map<String, Object> getRoleById(String roleId) throws Exception {
 		//auth
 		User modUser = getLoggedInUser();
@@ -776,6 +903,14 @@ public class UserAjax {
 		return aRecord;
 	}
 
+	/**
+	 * 
+	 * @param assetInode
+	 * @param permission
+	 * @param params
+	 * @return
+	 * @throws Exception
+	 */
 	public Map<String, Object> getUsersAndRolesList(String assetInode, String permission, Map<String, String> params) throws Exception {
 
 		//auth
@@ -808,7 +943,14 @@ public class UserAjax {
 		return results;
 	}
 
-
+	/**
+	 * 
+	 * @param assetInode
+	 * @param permission
+	 * @param params
+	 * @return
+	 * @throws Exception
+	 */
 	public Map<String, Object> getRolesList(String assetInode, String permission, Map<String, String> params) throws Exception {
 
 		//auth
@@ -843,36 +985,60 @@ public class UserAjax {
 		return results;
 	}
 
-
-
+	/**
+	 * Returns a list of dotCMS users based on the specified search criteria.
+	 * Two types of result can be obtained by calling this method:
+	 * <ul>
+	 * <li>If both the {@code assetInode} and the {@code permission} values
+	 * <b>are set</b>, this method will return the list of users that have the
+	 * specified permission type on the specified Inode.</li>
+	 * <li>If the {@code assetInode} or the {@code permission} value <b>is NOT
+	 * set</b>, this method will return a list of users based on the criteria
+	 * specified in the {@code params} Map:
+	 * <ul>
+	 * <li>{@code query}: The String or characters that can match the first
+	 * name, last name, or e-mail of a user. This is the same value that would
+	 * be passed to the {@code LIKE} keyword in SQL. This value will be
+	 * automatically sanitized to strip off malicious code.</li>
+	 * <li>{@code start}: For pagination purposes. The bottom range of records
+	 * to include in the result.</li>
+	 * <li>{@code end}: For pagination purposes. The top range of records to
+	 * include in the result.</li>
+	 * <li>{@code includeAnonymous}: Set to {@code true} if anonymous users will
+	 * be included in the result list. Otherwise, set to {@code false}.</li>
+	 * <li>{@code includeDefault}: Set to {@code true} if the default user will
+	 * be included in the result list. Otherwise, set to {@code false}.</li>
+	 * </ul>
+	 * </li>
+	 * </ul>
+	 * 
+	 * @param assetInode
+	 *            - (Optional) The Inode of the asset that one or more users
+	 *            have permission on.
+	 * @param permission
+	 *            - (Optional) The type of permission assigned to the specified
+	 *            asset.
+	 * @param params
+	 *            - Additional parameters for more specific queries.
+	 * @return A {@code Map} containing the dotCMS users that match the filter
+	 *         criteria.
+	 * @throws Exception
+	 *             An error occurred when retrieving the user list.
+	 */
 	public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params) throws Exception {
-
-		//auth
-		User modUser = getLoggedInUser();
-
-		int start = 0;
-		if(params.containsKey("start"))
-			start = Integer.parseInt((String)params.get("start"));
-
-		int limit = -1;
-		if(params.containsKey("limit"))
-			limit = Integer.parseInt((String)params.get("limit"));
-
-		String query = "";
-		if(params.containsKey("query"))
-			query = (String) params.get("query");
-
-		Map<String, Object> results;
-
-		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
-			results = processUserListWithPermissionOnInode(assetInode, permission, query, start, limit);
-		} else {
-			results = processUserList(query, start, limit);
-		}
-
-		return results;
+		// Make sure the DWR request calling this method is authenticated
+		getLoggedInUser();
+		return UserServiceFactory.getInstance().getUserService().getUsersList(assetInode, permission, params);
 	}
 
+	/**
+	 * 
+	 * @param assetInode
+	 * @param permission
+	 * @param params
+	 * @return
+	 * @throws Exception
+	 */
 	public List getUsersList2(String assetInode, String permission, Map<String, String> params) throws Exception {
 
 		//auth
@@ -900,6 +1066,16 @@ public class UserAjax {
 		return (List) results.get("data");
 	}
 
+	/**
+	 * 
+	 * @param assetInode
+	 * @param permission
+	 * @param query
+	 * @param start
+	 * @param limit
+	 * @param hideSystemRoles
+	 * @return
+	 */
 	private Map<String, Object> processRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit,
 			boolean hideSystemRoles) {
 
@@ -945,7 +1121,15 @@ public class UserAjax {
 
 	}
 
-private Map<String, Object> processRoleList(String query, int start, int limit, boolean hideSystemRoles) {
+	/**
+	 * 
+	 * @param query
+	 * @param start
+	 * @param limit
+	 * @param hideSystemRoles
+	 * @return
+	 */
+	private Map<String, Object> processRoleList(String query, int start, int limit, boolean hideSystemRoles) {
 
 		Map<String, Object> results = new RolesListTemplate("", 0, query, start, limit, hideSystemRoles)
 		{
@@ -995,10 +1179,16 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 	}
 
-
-
-
-
+	/**
+	 * 
+	 * @param assetInode
+	 * @param permission
+	 * @param query
+	 * @param start
+	 * @param limit
+	 * @param hideSystemRoles
+	 * @return
+	 */
 	private Map<String, Object> processUserAndRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit,
 			boolean hideSystemRoles) {
 
@@ -1052,6 +1242,14 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 	}
 
+	/**
+	 * 
+	 * @param query
+	 * @param start
+	 * @param limit
+	 * @param hideSystemRoles
+	 * @return
+	 */
 	private Map<String, Object> processUserAndRoleList(String query, int start, int limit, boolean hideSystemRoles) {
 
 		Map<String, Object> results = new UsersAndRolesListTemplate("", 0, query, start, limit, hideSystemRoles)
@@ -1120,6 +1318,15 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 	}
 
+	/**
+	 * 
+	 * @param assetInode
+	 * @param permission
+	 * @param query
+	 * @param start
+	 * @param limit
+	 * @return
+	 */
 	private Map<String, Object> processUserListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit) {
 
 		Map<String, Object> results;
@@ -1150,6 +1357,22 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		return results;
 	}
 
+	/**
+	 * Returns a {@link Map} containing a list of dotCMS {@link User}
+	 * objects based on the specified search criteria.
+	 * 
+	 * @param query
+	 *            - The string or characters that are part of the first
+	 *            name, last name, or e-mail of the user.
+	 * @param start
+	 *            - For pagination purposes. Lower range of the set to
+	 *            include in the query result.
+	 * @param limit
+	 *            - For pagination purposes. Upper range of the set to
+	 *            include in the query result.
+	 * @return A Map containing the user list and additional query
+	 *         information.
+	 */
 	private Map<String, Object> processUserList(String query, int start, int limit) {
 
 		Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit)
@@ -1183,29 +1406,29 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		return results;
 	}
 
-
+	/**
+	 * Verifies 
+	 * @param userId
+	 * @param roles
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-		//auth
-		User modUser = getLoggedInUser();
-		User user;
-		try {
-			user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return false;
-		}
-		for(String roleName : roles) {
-			try {
-				if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName))
-					return true;
-			} catch (DotDataException e) {
-				Logger.error(UserAjax.class,e.getMessage(),e);
-				return false;
-			}
-		}
-		return false;
+		// Make sure the DWR request calling this method is authenticated
+		getLoggedInUser();
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @return
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public List<Map<String, Object>> getUserCategories(String userId) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -1226,6 +1449,15 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		return toReturn;
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param categories
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public void updateUserCategories(String userId, String[] categories) throws PortalException, SystemException, DotSecurityException, DotDataException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -1259,6 +1491,16 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		HibernateUtil.commitTransaction();
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param timeZoneId
+	 * @param languageId
+	 * @throws DotDataException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	public void updateUserLocale(String userId, String timeZoneId, String languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -1277,6 +1519,15 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 	}
 
+	/**
+	 * 
+	 * @param userId
+	 * @param disabled
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	public void disableUserClicktracking(String userId, boolean disabled) throws PortalException, SystemException, DotSecurityException, DotDataException {
 		//auth
 		User modUser = getLoggedInUser();
@@ -1295,7 +1546,6 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		HibernateUtil.commitTransaction();
 
 	}
-
 
 	// Helper classes. They implement the template method design pattern.
 	@SuppressWarnings("unused")
@@ -1598,7 +1848,16 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		}
 	}
 
-
+	/**
+	 * This inner class is used to process the information related to
+	 * internal queries that ultimately generate a final useful result for
+	 * the services using this functionality.
+	 * 
+	 * @author root
+	 * @version 1.0
+	 * @since Mar 22, 2012
+	 *
+	 */
 	private abstract class UsersListTemplate {
 
 		protected String inode;
@@ -1607,9 +1866,41 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		protected int start;
 		protected int limit;
 
+		/**
+		 * Returns the official count of {@link User} objects that make up
+		 * the user list.
+		 * 
+		 * @return The number of users in the list.
+		 */
 		public abstract int getUserCount();
+
+		/**
+		 * Returns the list of {@link User} objects that will be returned
+		 * according the the specified filtering criteria.
+		 * 
+		 * @return The user list.
+		 */
 		public abstract List<User> getUsers();
 
+		/**
+		 * Creates an instance of this class.
+		 * 
+		 * @param inode
+		 *            - The Inode of a given asset in order to get the list
+		 *            of users that have access to it.
+		 * @param permissionType
+		 *            - The permission type that users with access to the
+		 *            asset Inode must have.
+		 * @param filter
+		 *            - The string or characters that are part of the first
+		 *            name, last name, or e-mail of the user.
+		 * @param start
+		 *            - For pagination purposes. Lower range of the set to
+		 *            include in the query result.
+		 * @param limit
+		 *            - For pagination purposes. Upper range of the set to
+		 *            include in the query result.
+		 */
 		public UsersListTemplate(String inode, int permissionType, String filter, int start, int limit) {
 			this.inode = inode;
 			this.permissionType = permissionType;
@@ -1618,6 +1909,12 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 			this.limit = limit;
 		}
 
+		/**
+		 * Executes this filtering template based on the specified search
+		 * criteria.
+		 * 
+		 * @return A {@link Map} with the result of the filtering query.
+		 */
 		public Map<String, Object> perform() {
 
 			ArrayList<Map<String, String>> list = null;						// Keeps a list of users
@@ -1674,6 +1971,13 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 	}
 
+	/**
+	 * 
+	 * @return
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	private User getLoggedInUser() throws PortalException, SystemException, DotSecurityException {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -1691,6 +1995,13 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
         return loggedInUser;
 	}
 
+	/**
+	 * 
+	 * @return
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 */
 	private User getAdminUser() throws PortalException, SystemException, DotSecurityException {
 		User loggedInUser = getLoggedInUser();
 		String remoteIp = WebContextFactory.get().getHttpServletRequest().getRemoteHost();

@@ -2,6 +2,8 @@ package com.dotcms.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
@@ -30,6 +32,18 @@ import com.dotmarketing.util.UtilMethods;
  *
  */
 public class HttpRequestDataUtil {
+
+	public static final String DEFAULT_REMOTE_ADDRESS = "0.0.0.0";
+
+	/**
+	 * Get the remote address, if the request is null will return 0.0.0.0.
+	 * @param request {@link HttpServletRequest}
+	 * @return String
+     */
+	public static String getRemoteAddress (final HttpServletRequest request) {
+
+		return null != request?request.getRemoteAddr(): DEFAULT_REMOTE_ADDRESS;
+	} // getRemoteAddress.
 
 	/**
 	 * Retrieves the client's IP address from the {@link HttpServletRequest}
@@ -160,6 +174,26 @@ public class HttpRequestDataUtil {
 		}
 		String value = request.getParameter(name);
 		return value;
+	}
+
+	/**
+	 * Returns the host name in the specified {@link HttpServletRequest} object.
+	 * <b>Important:</b> This method retrieves the authority part of the URL in
+	 * order to get the host name.
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The host name, or an empty String if it could not be retrieved.
+	 */
+	public static String getHostname(final HttpServletRequest request) {
+		String hostName = StringUtils.EMPTY;
+		try {
+			URL requestUrl = new URL(request.getRequestURL().toString());
+			hostName = requestUrl.getAuthority();
+		} catch (MalformedURLException e) {
+			// URL is not valid, just return an empty String
+		}
+		return hostName;
 	}
 
 }
