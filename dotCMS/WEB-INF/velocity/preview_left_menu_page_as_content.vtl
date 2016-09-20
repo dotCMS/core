@@ -172,7 +172,19 @@
 	    	//console.log("changing url:" + newUrl);
 	    	_lastUrl=newUrl;
 	    	 #if(${isAngularFrame})
-	    		window.top.${angularFrame}.frameMain.location  = newUrl;
+	    	    if(window.top.${angularFrame} != undefined){
+	    	    	if(window.top.${angularFrame}.frameMain != undefined ){
+	    	    		window.top.${angularFrame}.frameMain.location  = newUrl;
+	    	    	}else{
+	    	    		window.top.${angularFrame}.contentWindow.frameMain.location  = newUrl;
+	    	    	}
+	    	    }else{
+	    			if(window.${angularFrame}.frameMain != undefined ){
+	    				window.${angularFrame}.frameMain.location  = newUrl;
+	    			}else{
+	    				window.${angularFrame}.contentWindow.frameMain.location  = newUrl;
+	    			}	    			
+	    		}
 	    	#else
 	    		window.top.frameMain.location  = newUrl;
 	    	#end

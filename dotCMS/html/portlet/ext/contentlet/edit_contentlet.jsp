@@ -166,6 +166,11 @@
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
 	Integer catCounter = 0;
 
+	String targetFrame="_top";
+	boolean isAngularFrame = UtilMethods.isSet(request.getSession().getAttribute("in_frame"));
+	if(isAngularFrame){
+	   targetFrame = (String)request.getSession().getAttribute("frame");
+	}
 %>
 
 
@@ -180,7 +185,7 @@ var editButtonRow="editContentletButtonRow";
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
 
-<html:form action="<%= formAction %>" styleId="fm" onsubmit="return false;">
+<html:form action="<%= formAction %>" styleId="fm" target="<%= targetFrame %>" onsubmit="return false;">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
