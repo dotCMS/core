@@ -123,6 +123,7 @@ export class MyAccountComponent {
 
     validateConfirmPassword(): void {
         this.confirmPasswordIsValid = this.password === this.confirmPassword;
+        this.message = '';
     }
 
     private loadUser(user: User): void {
