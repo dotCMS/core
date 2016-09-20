@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.SecurityLoggerServiceAPI;
@@ -57,6 +58,7 @@ public class ResetPasswordResource {
 
     @POST
     @JSONP
+    @InitRequestRequired
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response resetPassword(@Context final HttpServletRequest request,
