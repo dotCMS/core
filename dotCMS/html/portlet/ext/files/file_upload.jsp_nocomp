@@ -11,9 +11,9 @@
 			opener.setImage('<%=  myFile.getInode()%>','<%= myFile.getFileName()%>');
 		} catch () { }
 <%
-		if(request.getParameter("popup")) {
+		if(request.getParameter(WebKeys.POPUP)) {
 %>
-		opener.callback<%=request.getParameter("popup")%>('<%=  myFile.getInode()%>', '<%=  myFile.getIdentifier()%>', '<%= myFile.getFileName()%>', '<%= myFile.getURI() %>');
+		opener.callback<%=request.getParameter(WebKeys.POPUP)%>('<%=  myFile.getInode()%>', '<%=  myFile.getIdentifier()%>', '<%= myFile.getFileName()%>', '<%= myFile.getURI() %>');
 <%
 		}
 %>
@@ -28,7 +28,7 @@
 <%
 // variable that is set to make page a popup
 boolean popup = false;
-if(request.getParameter("popup")!=null){
+if(request.getParameter(WebKeys.POPUP)!=null){
 	popup = true;
 }
 
@@ -224,7 +224,7 @@ java.util.Date publishDate = (file.getPublishDate()!=null) ? file.getPublishDate
 						<table width="100%" cellspacing="1" cellpadding="4" align="center">
 							 <html:form action='/ext/files/upload_file' method="POST"  styleId="fm" enctype="multipart/form-data" onsubmit="return false;">
 							 <input type="hidden" name="inode" value="<%=file.getInode()%>">
-							 <input type="hidden" name="popup" value="<%=request.getParameter("popup")!=null?request.getParameter("parentCallbackId"):""%>">
+							 <input type="hidden" name="popup" value="<%=request.getParameter(WebKeys.POPUP)!=null?request.getParameter("parentCallbackId"):""%>">
 							 <input type="hidden" name="inode_version" value="<%=request.getParameter("inode_version")%>">
 							 <input type="hidden" name="cmd" value="<%=Constants.ADD%>">
 							 <input type="hidden" name="fileName" value="">

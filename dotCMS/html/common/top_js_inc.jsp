@@ -39,8 +39,8 @@
 	var CTX_PATH = '<%= application.getAttribute(WebKeys.CTX_PATH)%>';
 
 	<%
-	boolean inFrame = ParamUtil.get(request, "in_frame", false);
-	inFrame = (request.getAttribute("in_frame") != null) ? true : inFrame;
+	boolean inFrame = ParamUtil.get(request, WebKeys.IN_FRAME, false);
+	inFrame = (request.getAttribute(WebKeys.IN_FRAME) != null) ? true : inFrame;
 	%>
 
 <%-- 

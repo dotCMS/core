@@ -3,6 +3,7 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
+<%@ page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -45,7 +46,7 @@
 	<%
 	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
 	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
-	String frameName = (String)request.getSession().getAttribute("frame");
+	String frameName = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	String frametarget=(UtilMethods.isSet(frameName)?"target=\\'"+frameName+"\\'":"");
 	%>
 
