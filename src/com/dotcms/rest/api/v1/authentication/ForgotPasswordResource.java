@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.api.system.user.UserService;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -11,6 +13,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
@@ -44,14 +47,14 @@ import java.util.Locale;
 public class ForgotPasswordResource implements Serializable {
 
     private final UserLocalManager userLocalManager;
-    private final UserManager userManager;
     private final CompanyAPI  companyAPI;
     private final ResponseUtil responseUtil;
+    private final UserService userService;
 
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
-                UserManagerFactory.getManager(),
+                UserServiceFactory.getInstance().getUserService(),
                 APILocator.getCompanyAPI(),
                 ResponseUtil.INSTANCE
                 );
@@ -59,12 +62,12 @@ public class ForgotPasswordResource implements Serializable {
 
     @VisibleForTesting
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
-                                  final UserManager userManager,
+                                  final UserService userService,
                                   final CompanyAPI  companyAPI,
                                   final ResponseUtil responseUtil) {
 
         this.userLocalManager = userLocalManager;
-        this.userManager      = userManager;
+        this.userService      = userService;
         this.companyAPI       = companyAPI;
         this.responseUtil = responseUtil;
     }
@@ -72,6 +75,7 @@ public class ForgotPasswordResource implements Serializable {
     @POST
     @JSONP
     @NoCache
+    @InitRequestRequired
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response forgotPassword(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
@@ -90,8 +94,8 @@ public class ForgotPasswordResource implements Serializable {
                                 (forgotPasswordForm.getUserId()).getEmailAddress():
                         forgotPasswordForm.getUserId();
 
-            this.userManager.sendPassword(
-                    this.companyAPI.getCompanyId(request), emailAddress, locale, true);
+            this.userService.sendResetPassword(
+                    this.companyAPI.getCompanyId(request), emailAddress, locale);
 
             res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
             SecurityLogger.logInfo(this.getClass(),

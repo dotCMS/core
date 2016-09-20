@@ -105,7 +105,7 @@ public class CreateJsonWebTokenResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(
                 userId,
@@ -157,7 +157,7 @@ public class CreateJsonWebTokenResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -202,7 +202,7 @@ public class CreateJsonWebTokenResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -247,7 +247,7 @@ public class CreateJsonWebTokenResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -292,7 +292,7 @@ public class CreateJsonWebTokenResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -341,7 +341,7 @@ public class CreateJsonWebTokenResourceTest {
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
         user.setLocale(locale);
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getLocale()).thenReturn(locale); //
         when(request.getSession(false)).thenReturn(session); //
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
@@ -393,7 +393,7 @@ public class CreateJsonWebTokenResourceTest {
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
         user.setLocale(locale);
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getLocale()).thenReturn(locale); //
         when(request.getSession(false)).thenReturn(session); //
         when(request.getSession()).thenReturn(session); //
@@ -441,7 +441,7 @@ public class CreateJsonWebTokenResourceTest {
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
         user.setLocale(locale);
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getLocale()).thenReturn(locale); //
         when(request.getSession(false)).thenReturn(session); //
         when(request.getSession()).thenReturn(session); //

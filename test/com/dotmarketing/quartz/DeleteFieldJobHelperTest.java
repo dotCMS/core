@@ -3,10 +3,10 @@ package com.dotmarketing.quartz;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.rest.RestUtilTest;
 import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
-import com.liferay.portal.model.User;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -38,7 +38,7 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
         this.initMessages();
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
         doAnswer(new Answer<Void>() { // if this method is called, should fail
 
@@ -54,7 +54,8 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
                 null,
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                "admin@dotcms.com"
+                "admin@dotcms.com",
+                Locale.US
                 );
 
         deleteFieldJobHelper.generateNotificationStartDeleting
@@ -76,7 +77,7 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
         this.initMessages();
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
         doAnswer(new Answer<Void>() { // if this method is called, should fail
 
@@ -88,11 +89,12 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
             }
         }).when(notificationAPI).generateNotification(
                 "Delete Field",
-                "Field velocityVar was deleted succesfully. Field Inode: iFieldNode1, Structure Inode: iStructureNode1",
+                "Field velocityVar was deleted successfully. Field Inode: iFieldNode1, Structure Inode: iStructureNode1",
                 null,
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                "admin@dotcms.com"
+                "admin@dotcms.com",
+                Locale.US
         );
 
         deleteFieldJobHelper.generateNotificationEndDeleting
@@ -114,7 +116,7 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
         this.initMessages();
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
         doAnswer(new Answer<Void>() { // if this method is called, should fail
 
@@ -130,7 +132,8 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
                 null,
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,
-                "admin@dotcms.com"
+                "admin@dotcms.com",
+                Locale.US
         );
 
         deleteFieldJobHelper.generateNotificationUnableDelete

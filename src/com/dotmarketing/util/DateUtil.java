@@ -25,6 +25,7 @@ public class DateUtil {
 
 	public static final long SECOND_MILLIS = 1000;
 	public static final long MINUTE_MILLIS = 60 * SECOND_MILLIS;
+	public static final long HOUR_MILLIS   = 60 * MINUTE_MILLIS;
 
 	public static final String DIFF_YEARS = "diffYears";
 	public static final String DIFF_MONTHS = "diffMonths";

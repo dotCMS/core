@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +26,12 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
-
-import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -54,10 +54,10 @@ public class UserResourceHelper implements Serializable {
 
 	@VisibleForTesting
 	public UserResourceHelper (	final UserService userService,
-			 final RoleAPI roleAPI,
-			 final UserAPI userAPI,
-			 final LayoutAPI layoutAPI,
-			 final HostWebAPI hostWebAPI) {
+			final RoleAPI roleAPI,
+			final UserAPI userAPI,
+			final LayoutAPI layoutAPI,
+			final HostWebAPI hostWebAPI) {
 
 		this.userService = userService;
 		this.roleAPI = roleAPI;
@@ -182,7 +182,7 @@ public class UserResourceHelper implements Serializable {
 			// Potential hacking attempt
 			SecurityUtils.delayRequest(10, DelayStrategy.TIME_SEC);
 			throw new DotDataException("Current user [" + currentUser.getUserId()
-					+ "] does not have the proper 'Login As' role.");
+			+ "] does not have the proper 'Login As' role.");
 		}
 		final User systemUser = this.userAPI.getSystemUser();
 		final User loginAsUser = this.userAPI.loadUserById(loginAsUserId, systemUser, false);
@@ -242,7 +242,7 @@ public class UserResourceHelper implements Serializable {
 			final String serverName) throws DotDataException, DotSecurityException {
 		if (!UtilMethods.isSet(principalUserId)) {
 			throw new DotDataException("Current user [" + currentLoginAsUser.getUserId()
-					+ "] is not logged in as a different user.");
+			+ "] is not logged in as a different user.");
 		}
 		final User systemUser = this.userAPI.getSystemUser();
 		Host host = null;
@@ -278,7 +278,7 @@ public class UserResourceHelper implements Serializable {
 	 *
 	 * @return A list of Map, each Map represent a {@link User}
 	 * @throws Exception if anything if wrong
-     */
+	 */
 	public List<Map<String, Object>> getLoginAsUser() throws Exception {
 
 		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(StringPool.BLANK, 1, 30, false, false);
@@ -299,4 +299,5 @@ public class UserResourceHelper implements Serializable {
 
 		return userList;
 	}
+
 }

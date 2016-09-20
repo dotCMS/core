@@ -73,7 +73,7 @@ public class MarshalFactory implements Serializable {
      * @return MarshalUtils
      */
     public MarshalUtils getMarshalUtils () {
-
+        // todo: see the possibility to use ServiceProvider to include GsonConfigurator's implementations.
         String marshalFactoryClass = null;
 
         if (null == this.marshalUtils) {

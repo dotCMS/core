@@ -6,6 +6,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 
+/**
+ * Mock {@link HttpServletRequest} with a {@link MockSession} as part of
+ * the class, when getting the session this will return the session object of the class or
+ * create a new one with new {@link UUID} as ID.
+ *
+ * See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
+ */
 public class MockSessionRequest extends HttpServletRequestWrapper implements MockRequest {
 
 	MockSession session = null;
@@ -29,7 +36,11 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 
 	@Override
 	public HttpSession getSession(boolean create) {
-		return (create) ? getSession() : null;
+		return (create) 
+		        ? getSession() 
+		        : session!=null 
+		            ? session 
+		                    : null;
 	}
 	
  

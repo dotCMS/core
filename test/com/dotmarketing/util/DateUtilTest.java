@@ -1,19 +1,16 @@
 package com.dotmarketing.util;
 
-import com.liferay.portal.model.User;
-import com.liferay.util.LocaleUtil;
+import com.dotcms.rest.RestUtilTest;
 import org.junit.Test;
 
 import javax.servlet.ServletContext;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.Calendar;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -111,7 +108,7 @@ public class DateUtilTest extends BaseMessageResources {
         this.initMessages();
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
         final SimpleDateFormat format = new SimpleDateFormat("yyyy/MMM/dd");
 

@@ -1,5 +1,16 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.base.Supplier;
+import com.dotcms.repackage.com.google.common.io.Files;
+import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotmarketing.db.DbConnectionFactory;
+
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -9,9 +20,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import com.dotcms.repackage.com.google.common.base.Supplier;
-import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
-import com.dotmarketing.db.DbConnectionFactory;
+import javax.servlet.ServletContext;
 
 /**
  * This class provides access to the system configuration parameters that are
@@ -23,6 +32,7 @@ import com.dotmarketing.db.DbConnectionFactory;
  * @since Mar 22, 2012
  *
  */
+
 public class Config {
 
 	private static final String BLANK = "";
@@ -46,8 +56,8 @@ public class Config {
 	private static Date lastRefreshTime = new Date ();
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
-    private static URL dotmarketingPropertiesUrl = null;
-    private static URL clusterPropertiesUrl = null;
+    protected static URL dotmarketingPropertiesUrl = null;
+    protected static URL clusterPropertiesUrl = null;
     private static int prevInterval = Integer.MIN_VALUE;
 
     private static final String syncMe = "esSync";

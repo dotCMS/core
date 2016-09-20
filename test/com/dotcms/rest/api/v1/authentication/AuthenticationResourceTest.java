@@ -92,7 +92,7 @@ public class AuthenticationResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(
                 userId,
@@ -144,7 +144,7 @@ public class AuthenticationResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -189,7 +189,7 @@ public class AuthenticationResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -234,7 +234,7 @@ public class AuthenticationResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -279,7 +279,7 @@ public class AuthenticationResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
@@ -325,7 +325,7 @@ public class AuthenticationResourceTest {
 
         Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(User.DEFAULT);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
