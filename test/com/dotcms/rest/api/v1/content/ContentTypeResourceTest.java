@@ -68,10 +68,10 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
-        final ContentTypeResource contentletResource =
-                new ContentTypeResource(webResource, contentletHelper, structureAPI, layoutAPI, languageAPI);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI, layoutAPI, languageAPI);
+        ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
-        final Response response1 = contentletResource.getTypes(request);
+        final Response response1 = contentTypeResource.getTypes(request);
         System.out.println(response1);
 
         assertNotNull(response1);
@@ -142,10 +142,10 @@ public class ContentTypeResourceTest extends BaseMessageResources {
 
         when(structureAPI.find(user, false, true)).thenReturn(structures);
 
-        final ContentTypeResource contentletResource =
-                new ContentTypeResource(webResource, contentletHelper, structureAPI, layoutAPI, languageAPI);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI, layoutAPI, languageAPI);
+        ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
-        final Response response1 = contentletResource.getTypes(request);
+        final Response response1 = contentTypeResource.getTypes(request);
         System.out.println(response1);
 
         assertNotNull(response1);
