@@ -55,7 +55,7 @@ if(request.getParameter("popup")!=null){
 	popup = true;
 }
 boolean inFrame = false;
-if(request.getParameter("in_frame")!=null){
+if(request.getParameter(WebKeys.IN_FRAME)!=null){
 	inFrame = true;
 }
 //gets file object
@@ -461,7 +461,7 @@ function editImage(inode, callingImg){
 			<input name="popup" type="hidden" value="<%= request.getParameter("popup") %>">
 		<% } %>
 		<% if(inFrame){ %>
-			<input name="in_frame" type="hidden" value="<%= request.getParameter("in_frame") %>">
+			<input name="in_frame" type="hidden" value="<%= request.getParameter(WebKeys.IN_FRAME) %>">
 		<% } %>
 		<input name="<portlet:namespace />referer" type="hidden" value="<%= referer %>">
 

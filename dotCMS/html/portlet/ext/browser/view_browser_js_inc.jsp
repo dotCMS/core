@@ -1,3 +1,4 @@
+<%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
@@ -1407,7 +1408,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
    //---------------------------------------------------------------------------------------------------------
    //Asset Actions
-   var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"))?true:false%>;
+   var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
 	//Host Actions
 	function editHost(id, referer) {
 		var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + id + '&referer=' + escape(referer);
@@ -1903,7 +1904,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function addMultipleFile(parentId, selectedStructure, referer) {
-        var url = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>&cmd=edit&in_frame=true&parent=' + parentId + '&selectedStructure=' + selectedStructure +'&inode=\'\'&referer=' + referer;
+        var url = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>&cmd=edit&<%=WebKeys.IN_FRAME%>=true&parent=' + parentId + '&selectedStructure=' + selectedStructure +'&inode=\'\'&referer=' + referer;
         if(dijit.byId('addFileDialog')){
         	var uploadDlg = dijit.byId('addFileDialog');
         	uploadDlg.set('href',url);

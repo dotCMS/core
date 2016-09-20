@@ -167,9 +167,9 @@
 	Integer catCounter = 0;
 
 	String targetFrame="_top";
-	boolean isAngularFrame = UtilMethods.isSet(request.getSession().getAttribute("in_frame"));
+	boolean isAngularFrame = UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME));
 	if(isAngularFrame){
-	   targetFrame = (String)request.getSession().getAttribute("frame");
+	   targetFrame = (String)request.getSession().getAttribute(WebKeys.FRAME);
 	}
 %>
 
