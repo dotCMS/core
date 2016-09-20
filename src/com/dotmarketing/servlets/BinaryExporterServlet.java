@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.servlet.ServletException;
@@ -32,6 +33,9 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
 import com.dotcms.util.DownloadUtil;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdApiImpl;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -148,7 +152,11 @@ public class BinaryExporterServlet extends HttpServlet {
 		String[] uriPieces = uri.split("/");
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
-
+		Optional<ShortyId> shortOpt = new ShortyIdApiImpl().getShorty(uuid);
+		ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : new ShortyIdApiImpl().noShorty(uuid);
+		if(shortOpt.isPresent()){
+		    uuid = shorty.longId;
+		}
 		Map<String, String[]> params = new HashMap<String, String[]>();
 		params.putAll(req.getParameterMap());
 		// only set uri params if they are not set in the query string - meaning
@@ -163,7 +171,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		String assetInode = null;
 		String assetIdentifier = null;
-		boolean byInode = params.containsKey("byInode") ;
+		boolean byInode = params.containsKey("byInode") || shorty.type == ShortType.INODE ;
 		if (byInode){
 			assetInode = uuid;
 		}
@@ -171,7 +179,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			assetIdentifier = uuid;
 		}
 
-		String fieldVarName = uriPieces.length > 3?uriPieces[3]:null;
+		String fieldVarName = uriPieces.length > 3?uriPieces[3]:"fileAsset";
 		BinaryContentExporter exporter = exportersByPathMapping.get(exporterPath);
 		if(exporter == null) {
 			Logger.warn(this, "No exporter for path " + exporterPath + " is registered. Requested url = " + uri);
