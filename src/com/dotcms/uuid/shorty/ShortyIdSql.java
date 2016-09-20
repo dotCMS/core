@@ -14,7 +14,7 @@ public class ShortyIdSql {
     }
 
 
-    static String SELECT_SHORTY_SQL="select inode as id, 'inode' as type, type as subtype from inode where inode like ? union select id,'identifier', asset_type from identifier where id like ? limit 1";
+    static String SELECT_SHORTY_SQL="select inode as id, 'inode' as type, type as subtype from inode where inode like ? union select id,'identifier', asset_type from identifier where id like ?";
     
     
 
