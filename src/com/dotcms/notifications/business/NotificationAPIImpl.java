@@ -134,6 +134,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 				}
 
 				this.newNotificationCache.remove(userId);
+
 				// Adding notification to System Events table
 				final Notification n = new Notification(level, userId, data);
 				final Payload payload = new Payload(n, Visibility.USER, userId);
@@ -156,7 +157,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 					}
 				}
 		});
-	}
+	} // generateNotification.
 
 	@Override
 	public Notification findNotification(final String notificationId) throws DotDataException {
@@ -192,9 +193,9 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 			this.notificationFactory.deleteNotification(notificationId);
 			this.newNotificationCache.removeNotification(notificationId);
-			// this.newNotificationCache.remove();todo: remove user
+			this.newNotificationCache.remove(userId);
 		}
-	}
+	} // deleteNotification.
 
 
 	@Override
@@ -203,19 +204,25 @@ public class NotificationAPIImpl implements NotificationAPI {
 		synchronized (this) {
 
 			this.notificationFactory.deleteNotification(notificationsId);
+
 			for (String notificationId : notificationsId) {
 
 				this.newNotificationCache.removeNotification(notificationId);
 			}
-			// this.newNotificationCache.remove(); todo: remove user
+
+			this.newNotificationCache.remove(userId);
 		}
-	}
+	} // deleteNotifications.
 
 	@Override
-	public void deleteNotifications(String userId) throws DotDataException {
-		// todo: adds cache
-		notificationFactory.deleteNotifications(userId);
-	}
+	public void deleteNotifications(final String userId) throws DotDataException {
+
+		synchronized (this) {
+
+			this.notificationFactory.deleteNotifications(userId);
+			this.newNotificationCache.remove(userId);
+		}
+	} // deleteNotifications.
 
 	@Override
 	public List<Notification> getNotifications(final long offset,
@@ -284,24 +291,54 @@ public class NotificationAPIImpl implements NotificationAPI {
 	} // getNotificationsCount.
 
 	@Override
-	public List<Notification> getAllNotifications(String userId) throws DotDataException {
-		// todo: adds cache
-		List<NotificationDTO> dtos = this.notificationFactory.getAllNotifications(userId);
-		return this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
-			return convertNotificationDTO(record);
-		});
-	}
+	public List<Notification> getAllNotifications(final String userId) throws DotDataException {
+
+		List<Notification> notifications =
+				this.newNotificationCache.getAllNotifications(userId);
+
+		if (null == notifications) {
+
+			synchronized (this) {
+
+				if (null == notifications) {
+
+					final List<NotificationDTO> dtos = this.notificationFactory.getAllNotifications(userId);
+					notifications = this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
+						return convertNotificationDTO(record);
+					});
+
+					this.newNotificationCache.addAllNotifications(userId, notifications);
+				}
+			}
+		}
+
+		return notifications;
+	} // getAllNotifications.
 
 	@Override
 	public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
 
-// todo: adds cache
+		List<Notification> notifications =
+				this.newNotificationCache.getNotifications(userId, offset, limit);
 
-		List<NotificationDTO> dtos = this.notificationFactory.getNotifications(userId, offset, limit);
-		return this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
-			return convertNotificationDTO(record);
-		});
-	}
+		if (null == notifications) {
+
+			synchronized (this) {
+
+				if (null == notifications) {
+
+					final List<NotificationDTO> dtos = this.notificationFactory.getNotifications(userId, offset, limit);
+					notifications = this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
+						return convertNotificationDTO(record);
+					});
+
+					this.newNotificationCache.addNotifications(userId, offset, limit, notifications);
+				}
+			}
+		}
+
+		return notifications;
+	} // getNotifications.
 
 	@Override
 	public Long getNewNotificationsCount(final String userId) throws DotDataException {
@@ -324,10 +361,13 @@ public class NotificationAPIImpl implements NotificationAPI {
 	} // getNewNotificationsCount.
 
 	@Override
-	public void markNotificationsAsRead(String userId) throws DotDataException {
-		notificationFactory.markNotificationsAsRead(userId);
-		this.newNotificationCache.remove(userId);
-	}
+	public void markNotificationsAsRead(final String userId) throws DotDataException {
+
+		synchronized (this) {
+			this.notificationFactory.markNotificationsAsRead(userId);
+			this.newNotificationCache.remove(userId);
+		}
+	} // markNotificationsAsRead.
 
 	/**
 	 * Converts the physical representation of a Notification (i.e., the

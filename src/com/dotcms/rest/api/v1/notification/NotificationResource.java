@@ -1,14 +1,18 @@
 package com.dotcms.rest.api.v1.notification;
 
-import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.*;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.*;
+import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import static com.dotcms.util.ConversionUtils.toLong;
+
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -16,12 +20,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import static com.dotmarketing.util.DateUtil.prettyDateSince;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.elasticsearch.common.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +47,8 @@ public class NotificationResource {
     public static final String COMMA = ",";
     private final WebResource webResource;
     private final NotificationAPI notificationAPI;
+    private final ConversionUtils conversionUtils;
+    private final NotificationConverter notificationConverter;
 
 
     public NotificationResource() {
@@ -51,8 +59,10 @@ public class NotificationResource {
     public NotificationResource(final NotificationAPI notificationAPI,
                                 final WebResource webResource) {
 
-        this.notificationAPI = notificationAPI;
-        this.webResource = webResource;
+        this.notificationAPI        = notificationAPI;
+        this.webResource            = webResource;
+        this.conversionUtils        = ConversionUtils.INSTANCE;
+        this.notificationConverter  = new NotificationConverter();
     }
 
     /**
@@ -75,6 +85,7 @@ public class NotificationResource {
      * @throws JSONException
      */
     @GET
+    @InitRequestRequired
     @Path ("/getNotifications/{params:.*}")
     @Produces ("application/json")
     public Response getNotifications (@Context final HttpServletRequest request,
@@ -83,7 +94,7 @@ public class NotificationResource {
                                       @HeaderParam("Range") final String range ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
+        final InitDataObject initData = webResource.init(params, true, request, true, null);
 
         try {
 
@@ -116,24 +127,28 @@ public class NotificationResource {
                     this.notificationAPI.getNotifications(offset, limit) :
                     this.notificationAPI.getNotifications(user.getUserId(), offset, limit);
 
-            // figure out the pretty message
+            final List<Notification> notificationsResult = list();
+
+            // copy and doing some treatment.
             if (null != notifications) {
 
                 notifications.forEach(notification -> {
 
-                    notification.setPrettyDate
-                            (prettyDateSince(notification.getTimeSent(), user.getLocale()));
+                    final Notification notificationResult = this.conversionUtils.convert(
+                            new UserNotificationPair(user, notification), this.notificationConverter);
+
+                    notificationsResult.add(notificationResult);
                 });
             }
 
-            return Response.ok(new ResponseEntityView(map("count", total, "notifications", notifications)))
+            return Response.ok(new ResponseEntityView(map("count", total, "notifications", notificationsResult)))
                     .header("Content-Range", "items " + offset + "-" + limit + "/" + total)
                     .build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-    }
+    } // getNotifications.
 
     /**
      * Returns whether there are new Notifications or not for the given User

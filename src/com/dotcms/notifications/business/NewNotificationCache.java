@@ -54,10 +54,10 @@ public abstract class NewNotificationCache implements Cachable {
 	abstract public void clearCache();
 
 	/**
-	 * Remove a cache by using a key.
-	 * @param key {@link String}
+	 * Remove a cache by using a userId, count and collections.
+	 * @param userId {@link String}
      */
-	abstract public void remove(String key);
+	abstract public void remove(String userId);
 
 	/**
 	 * Adds a notification
@@ -96,4 +96,36 @@ public abstract class NewNotificationCache implements Cachable {
 	 * @param count {@link Long}
      */
 	protected abstract void addUserCount(String userId, Long count);
+
+	/**
+	 * Get all notifications for an user
+	 * @param userId {@link String}
+	 * @return List
+     */
+	public abstract List<Notification> getAllNotifications(String userId);
+
+	/**
+	 * Add all notification for an user
+	 * @param userId {@link String}
+	 * @param notifications {@link List}
+     */
+	public abstract void addAllNotifications(String userId, List<Notification> notifications);
+
+	/**
+	 * Get a segment of user notifications
+	 * @param userId {@link String}
+	 * @param offset {@link Long}
+	 * @param limit {@link Long}
+     * @return List
+     */
+	public abstract List<Notification> getNotifications(String userId, long offset, long limit);
+
+	/**
+	 * Adds a segment of user notifications
+	 * @param userId {@link String}
+	 * @param offset {@link Long}
+	 * @param limit {@link Long}
+	 * @param notifications {@link List}
+     */
+	public abstract void addNotifications(String userId, long offset, long limit, List<Notification> notifications);
 } // E:O:F:NewNotificationCache.
