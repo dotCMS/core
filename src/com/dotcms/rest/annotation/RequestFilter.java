@@ -7,10 +7,15 @@ import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestFilter;
 import com.dotcms.repackage.javax.ws.rs.container.ResourceInfo;
 import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.repackage.org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.util.PropsUtil;
+import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
 
 import javax.servlet.ServletContext;
@@ -68,6 +73,19 @@ public class RequestFilter implements ContainerRequestFilter {
                         }
 
                         request.setAttribute(WebKeys.CTX_PATH, ctxPath);
+
+                        // company
+                        final String companyId = (UtilMethods.isSet(ctx.getInitParameter("company_id")))?
+                                ctx.getInitParameter("company_id"): PublicCompanyFactory.getDefaultCompanyId();
+
+                        ctx.setAttribute(WebKeys.COMPANY_ID, companyId);
+
+                        // messages
+                        final MultiMessageResources messageResources =
+                                (MultiMessageResources) ctx.getAttribute(Globals.MESSAGES_KEY);
+
+                        messageResources.setServletContext(ctx);
+                        WebAppPool.put(companyId, Globals.MESSAGES_KEY, messageResources);
                     }
             );
 
