@@ -343,7 +343,8 @@ public class WebKeys {
 
 	public static final String WSRP_REGISTER_PRODUCER = "WSRP_REGISTER_PRODUCER";
 	
-	//NG Iframe
+	//POPUP, IN_FRAME and NG Iframe
 	public static final String IN_FRAME = "in_frame";
 	public static final String FRAME = "frame";
+	public static final String POPUP = "popup";
 }

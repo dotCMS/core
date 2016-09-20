@@ -16,7 +16,7 @@
 	params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
 		
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-	String popup = request.getParameter ("popup");
+	String popup = request.getParameter (WebKeys.POPUP);
 
 %>
 

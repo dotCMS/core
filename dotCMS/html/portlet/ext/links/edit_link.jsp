@@ -28,7 +28,7 @@
 
 	// variable that is set to make page a popup
 	boolean popup = false;
-	if(UtilMethods.isSet(request.getParameter("popup"))){
+	if(UtilMethods.isSet(request.getParameter(WebKeys.POPUP))){
 		popup = true;
 	}
 

@@ -35,9 +35,9 @@
 			try {
 				opener.setImage('<%=myFile.getInode()%>','<%=myFile.getFileName()%>');
 			} catch (e) { }
-	<%if(request.getParameter("popup") != null) {%>
+	<%if(request.getParameter(WebKeys.POPUP) != null) {%>
 			try {
-				opener.callback<%=request.getParameter("popup")%>('<%=myFile.getInode()%>', '<%=myFile.getIdentifier()%>', '<%=myFile.getFileName()%>', '<%=myFile.getURI()%>');
+				opener.callback<%=request.getParameter(WebKeys.POPUP)%>('<%=myFile.getInode()%>', '<%=myFile.getIdentifier()%>', '<%=myFile.getFileName()%>', '<%=myFile.getURI()%>');
 			} catch (e) { }
 	<%}%>
 			window.close();
@@ -51,7 +51,7 @@
 <%
 	// variable that is set to make page a popup
 boolean popup = false;
-if(request.getParameter("popup")!=null){
+if(request.getParameter(WebKeys.POPUP)!=null){
 	popup = true;
 }
 boolean inFrame = false;
@@ -458,7 +458,7 @@ function editImage(inode, callingImg){
 	 	<input type="hidden" name="_imageToolSaveFile" id="_imageToolSaveFile" value="">
 		<input type="hidden" name="userId" value="<%= user.getUserId() %>">
 		<% if(popup){ %>
-			<input name="popup" type="hidden" value="<%= request.getParameter("popup") %>">
+			<input name="popup" type="hidden" value="<%= request.getParameter(WebKeys.POPUP) %>">
 		<% } %>
 		<% if(inFrame){ %>
 			<input name="in_frame" type="hidden" value="<%= request.getParameter(WebKeys.IN_FRAME) %>">

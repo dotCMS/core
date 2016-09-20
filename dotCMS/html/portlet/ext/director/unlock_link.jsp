@@ -19,7 +19,7 @@ String referer = (request.getParameter("referer") != null ) ? java.net.URLDecode
 <form action="<portlet:actionURL><portlet:param name="struts_action" value="/ext/director/direct" /></portlet:actionURL>" method="post" id="fm">
 <input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="editLink">
 <input name="<portlet:namespace />subcmd" type="hidden" value="unlockLink">
-<input name="popup" type="hidden" value="<%=request.getParameter("popup")%>">
+<input name="popup" type="hidden" value="<%=request.getParameter(WebKeys.POPUP)%>">
 <input name="child" type="hidden" value="<%=request.getParameter("child")%>">
 <input name="browse" type="hidden" value="<%=request.getParameter("browse")%>">
 <input name="referer" type="hidden" value="<%=referer%>">
