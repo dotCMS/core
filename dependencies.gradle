@@ -249,6 +249,13 @@ dependencies {
     compile 'junit:junit:4.12'
     compile "org.mockito:mockito-core:1.+"
     compile "com.tngtech.java:junit-dataprovider:1.11.0"
+    compile ("org.powermock:powermock-api-mockito:1.6.5" ){
+        exclude group: 'org.hamcrest'
+        exclude group: 'org.objenesis'
+        exclude group: 'cglib'
+
+    }
+    compile "org.powermock:powermock-module-junit4:1.6.5"
 
     /**
      * Order matters here: OSGI-Core must come after felix.
