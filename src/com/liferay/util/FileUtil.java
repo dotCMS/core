@@ -502,8 +502,8 @@ public class FileUtil {
 				
 				//Both files checked. 
 				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
-					Logger.info(FileUtil.class, "Move method: Source equal to Destination, no need to move.");
-					return true;
+					//Logger.info(FileUtil.class, "Move method: Source equal to Destination, no need to move.");
+					return source.delete();
 				}
 			}
 		} catch (Exception e) {
