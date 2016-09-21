@@ -44,7 +44,7 @@ public class SpeedyAssetServlet2 extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    final static String NOT_FOUND="NOT_FOUND";
+    final static String NOT_FOUND="fileAsset";
 
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

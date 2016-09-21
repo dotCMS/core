@@ -11,4 +11,6 @@ public interface ShortyIdApi {
         return  new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS, ShortType.CACHE_MISS);
     }
 
+    String shortify(String shorty);
+
 }
