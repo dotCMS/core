@@ -32,6 +32,8 @@ import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
+import com.dotcms.uuid.shorty.ShortyIdApi;
+import com.dotcms.uuid.shorty.ShortyIdApiImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
@@ -330,6 +332,16 @@ public class APILocator extends Locator<APIIndex>{
 	public static PushedAssetsAPI getPushedAssetsAPI() {
 		return (PushedAssetsAPI)getInstance(APIIndex.PUSHED_ASSETS_API);
 	}
+
+	/**
+	 *
+	 * gets an instance of ShortyApi
+	 *
+	 * @return The {@link ShortyApi} class.
+	 */
+    public static ShortyIdApi getShortyAPI() {
+        return new ShortyIdApiImpl();
+    }
 
 	public static ServerAPI getServerAPI() {
 		return (ServerAPI)getInstance(APIIndex.SERVER_API);
