@@ -78,7 +78,7 @@ public class ResetPasswordResource {
             if (null == jwtBean) {
 
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
-                        "reset_token_expired");
+                        "reset-password-token-expired");
             } else {
                 userId = jwtBean.getId();
                 token = jwtBean.getSubject();
@@ -97,7 +97,7 @@ public class ResetPasswordResource {
         } catch (DotInvalidTokenException e) {
             if (e.isExpired()){
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
-                        "reset_token_expired");
+                        "reset-password-token-expired");
             }else{
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "reset-password-token-invalid");
