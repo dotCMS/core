@@ -47,17 +47,24 @@ export class ResetPasswordContainer{
     }
 
     public changePassword(changePasswordData:ChangePasswordData):void{
+        this.cleanMessage();
         this.loginService.changePassword(changePasswordData.password, changePasswordData.token)
             .subscribe( result =>{
                 //alert(this.resetPasswordSuccessMessage);
                 // TODO need to use internationalization
                 alert( this.changePasswordSuccessfully );
                 this.goToLogin();
-            }, error => this.message = error.errorsMessages);
+            }, (error) => {
+                this.message = error.errorsMessages;
+            });
     }
 
     private goToLogin():void{
         this.router.go('/public/login');
+    }
+
+    private cleanMessage():void{
+        this.message = '';
     }
 }
 
