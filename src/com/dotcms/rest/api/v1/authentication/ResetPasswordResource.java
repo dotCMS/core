@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.SecurityLoggerServiceAPI;
@@ -57,6 +58,7 @@ public class ResetPasswordResource {
 
     @POST
     @JSONP
+    @InitRequestRequired
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response resetPassword(@Context final HttpServletRequest request,
@@ -76,7 +78,7 @@ public class ResetPasswordResource {
             if (null == jwtBean) {
 
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
-                        "reset_token_expired");
+                        "reset-password-token-expired");
             } else {
                 userId = jwtBean.getId();
                 token = jwtBean.getSubject();
@@ -95,7 +97,7 @@ public class ResetPasswordResource {
         } catch (DotInvalidTokenException e) {
             if (e.isExpired()){
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
-                        "reset_token_expired");
+                        "reset-password-token-expired");
             }else{
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "reset-password-token-invalid");
