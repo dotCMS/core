@@ -15,12 +15,9 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
@@ -76,7 +73,7 @@ public class ResetPasswordResource {
 
             jwtBean = this.jsonWebTokenService.parseToken(jwtToken);
             if (null == jwtBean) {
-
+            	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error reseting password. "+this.authenticationHelper.getFormattedMessage(null,"reset-password-token-expired"));
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset-password-token-expired");
             } else {
@@ -85,27 +82,33 @@ public class ResetPasswordResource {
 
                 this.userManager.resetPassword(userId, token, password);
 
-                SecurityLogger.logInfo(this.getClass(),
-                        String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
+                this.authenticationHelper.securityLog(ResetPasswordResource.class,
+                		String.format("User %s successful changed his password from IP: %s", userId, request.getRemoteAddr()));
                 res = Response.ok(new ResponseEntityView(userId)).build();
             }
         } catch (NoSuchUserException e) {
+        	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error resetting password. "+this.authenticationHelper.getFormattedMessage(null,"please-enter-a-valid-login"));
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "please-enter-a-valid-login");
         } catch (DotSecurityException e) {
+        	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error resetting password. "+e.getMessage());
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         } catch (DotInvalidTokenException e) {
             if (e.isExpired()){
+            	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error resetting password. "+this.authenticationHelper.getFormattedMessage(null,"reset-password-token-expired"));
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset-password-token-expired");
             }else{
+            	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error resetting password. "+this.authenticationHelper.getFormattedMessage(null,"reset-password-token-invalid"));
                 res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "reset-password-token-invalid");
             }
         } catch (DotInvalidPasswordException e){
+        	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error resetting password. "+this.authenticationHelper.getFormattedMessage(null,"reset-password-invalid-password"));
             res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "reset-password-invalid-password");
         }catch (Exception  e) {
+        	this.authenticationHelper.securityLog(ResetPasswordResource.class,"Error resetting password. "+e.getMessage());
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
