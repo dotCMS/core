@@ -1230,11 +1230,11 @@ public class ImportUtil {
 								Host host = null;
 								String hostId = "";
 								if(headersIncludeHostField){
-									//the csv has a Host Or Field Column, with a valid value
+									//the CSV File has a Host Or Field Column, with a valid value
 									try{
 										host = APILocator.getHostAPI().find(cont.getHost(), user, true);
 									}catch(Exception e){
-										Logger.error(ImportUtil.class, "Unable to get host from content");
+										Logger.error(ImportUtil.class, "Unable to get host from content: " + e.getMessage());
 									}
 									if(UtilMethods.isSet(host)){
 										if(host.getIdentifier().equals(Host.SYSTEM_HOST))
@@ -1245,8 +1245,14 @@ public class ImportUtil {
 									else{
 										hostId = Host.SYSTEM_HOST;
 									}
-									for (String tag : tags) {
-										APILocator.getTagAPI().addContentletTagInode(tag.trim(), cont.getInode(), hostId, field.getVelocityVarName());
+									for (String tagName : tags) {
+									    try {
+                                            if ( tagName != null && !tagName.trim().isEmpty() ) {
+                                                APILocator.getTagAPI().addContentletTagInode(tagName.trim(), cont.getInode(), hostId, field.getVelocityVarName());
+                                            }
+                                        } catch (Exception e) {
+                                            Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
+                                        }
 									}
 								}
 								else {
@@ -1256,7 +1262,7 @@ public class ImportUtil {
 												APILocator.getTagAPI().addContentletTagInode( tagName.trim(), cont.getInode(), Host.SYSTEM_HOST, field.getVelocityVarName() );
                                             }
                                         } catch (Exception e) {
-											e.printStackTrace();
+                                            Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
 										}
 								}
 							}
