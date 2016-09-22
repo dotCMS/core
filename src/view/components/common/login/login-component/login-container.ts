@@ -33,7 +33,7 @@ export class LoginContainer{
         this.isLoginInProgress = true;
         this.message = '';
 
-        this.loginService.logInUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result:any) => {
+        this.loginService.loginUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result: any) => {
             this.message = '';
             this.router.go('/dotCMS');
          }, (error) => {

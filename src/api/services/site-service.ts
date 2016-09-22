@@ -3,39 +3,31 @@ import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod, Http} from '@angular/http';
-import {Observer} from 'rxjs/Observer';
 import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
 
 @Injectable()
 export class SiteService extends CoreWebService {
-
-    private allSiteUrl: string;
-    private switchSiteUrl: string;
-
+    private _sites$: Subject<Site[]> = new Subject();
+    private _switchSite$: Subject<Site> = new Subject();
     private site: Site;
     private sites: Site[];
-
-    private _switchSite$: Subject<Site> = new Subject();
-    private _sites$: Subject<Site[]> = new Subject();
+    private urls: any;
 
     constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService) {
         super(apiRoot, http);
+        this.urls = {
+            allSiteUrl: 'v1/site/currentSite',
+            switchSiteUrl: 'v1/site/switch'
+        };
 
-        this.allSiteUrl = `${apiRoot.baseUrl}api/v1/site/currentSite`;
-        this.switchSiteUrl = `${apiRoot.baseUrl}api/v1/site/switch`;
-
-        if (loginService.loginUser) {
-            this.loadSites();
-        }
-
-        loginService.loginUser$.subscribe(user => this.loadSites());
+        loginService.watchUser(this.loadSites.bind(this));
     }
 
     switchSite(siteId: String): Observable<any> {
         return this.requestView({
             method: RequestMethod.Put,
-            url: `${this.switchSiteUrl}/${siteId}`,
+            url: `${this.urls.switchSiteUrl}/${siteId}`,
         }).map(response => {
             this.setCurrentSiteIdentifier(siteId);
             return response;
@@ -56,10 +48,9 @@ export class SiteService extends CoreWebService {
     }
 
     private loadSites(): void {
-
         this.requestView({
             method: RequestMethod.Get,
-            url: this.allSiteUrl,
+            url: this.urls.allSiteUrl,
         }).subscribe(response => {
             this.setSites(response.entity.sites);
             this.setCurrentSiteIdentifier(response.entity.currentSite);

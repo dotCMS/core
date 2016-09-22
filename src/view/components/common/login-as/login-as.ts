@@ -1,9 +1,10 @@
-import {Component, Output, EventEmitter, Inject} from '@angular/core';
-import {DotcmsConfig} from '../../../../api/services/system/dotcms-config';
+import {BaseComponent} from '../_base/base-component';
+import {Component, Output, EventEmitter} from '@angular/core';
 import {DotSelect, DotOption} from '../dot-select/dot-select';
 import {LoginService, User} from '../../../../api/services/login-service';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MdButton} from '@angular2-material/button';
+import {MessageService} from '../../../../api/services/messages-service';
 import {Router} from '@ngrx/router';
 
 @Component({
@@ -14,19 +15,18 @@ import {Router} from '@ngrx/router';
     styleUrls: ['login-as.css'],
     templateUrl: ['login-as.html']
 })
-export class LoginAsComponent {
+export class LoginAsComponent extends BaseComponent {
     @Output() cancel = new EventEmitter<>();
 
-    private userLists: Array<User>;
     private needPassword: boolean = false;
+    private userLists: Array<User>;
 
-    constructor(private loginService: LoginService, private router: Router,
-                @Inject('dotcmsConfig') private dotcmsConfig: DotcmsConfig) {
+    constructor(private loginService: LoginService, private router: Router, private messageService: MessageService) {
+        super(['change', 'cancel', 'password'], messageService);
     }
 
     ngOnInit(): void {
-        this.loginService.loadLoginAsUsers();
-        this.loginService.loginAsUsers$.subscribe(data => {
+        this.loginService.getLoginAsUsersList().subscribe(data => {
             this.userLists = data;
         });
     }

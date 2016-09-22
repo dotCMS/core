@@ -1,5 +1,4 @@
 import {ApiRoot} from '../persistence/ApiRoot';
-import {AppConfigurationService} from '../services/system/app-configuration-service';
 import {CoreWebService} from './core-web-service';
 import {Http} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
@@ -10,10 +9,9 @@ export class AccountService extends CoreWebService {
 
     private updateAccountURL: string;
 
-    constructor(apiRoot: ApiRoot, http: Http, private appConfigurationService: AppConfigurationService) {
+    constructor(apiRoot: ApiRoot, http: Http) {
         super(apiRoot, http);
-
-        this.updateAccountURL = `${apiRoot.baseUrl}api/v1/users/current`;
+        this.updateAccountURL = 'v1/users/current';
     }
 
     public updateUser(user: AccountUser): Observable<ResponseView> {

@@ -15,6 +15,7 @@
 
     // map tells the System loader where to look for things
     var map = {
+        'lodash': 'n:lodash/lodash.js',
         'build': 'build',
         'rxjs': 'n:rxjs',
         '@angular': 'n:@angular',

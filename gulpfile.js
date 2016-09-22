@@ -74,6 +74,7 @@ var project = {
   copyModules: function(cb) {
     gulp.src([
         '@angular/**/*.js',
+        'lodash/lodash.js',
         '@angular2-material/**/*.js',
         '@ngrx/**/*.js',
         'rxjs/**',

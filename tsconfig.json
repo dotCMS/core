@@ -110,7 +110,6 @@
     "./src/view/components/common/dropdown-component/dropdown-component.ts",
     "./src/view/components/site-selector/dot-site-selector-component.ts",
     "./src/view/components/toolbar-add-contentlet/toolbar-add-contentlet.ts",
-    "./src/view/components/app.ts",
-    "./typings/main.d.ts"
+    "./src/view/components/app.ts"
   ]
 }

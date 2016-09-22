@@ -1,5 +1,4 @@
 import {Injectable} from '@angular/core';
-import {Observable} from '@rxjs/Observable';
 import {isString, isFunction} from '@angular/platform-browser-dynamic/src/facade/lang';
 import {Subject} from 'rxjs/Subject';
 

@@ -1,13 +1,10 @@
-import {Component, ViewEncapsulation, Input, Output, EventEmitter, Inject} from '@angular/core';
-import {INotification} from '../../../../api/services/notifications-service';
-
-import {CustomTimeComponent} from '../custom-time/custom-time';
-
-// Pipes
+import {BaseComponent} from '../_base/base-component';
 import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
-
-// Angular Material components
+import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
+import {CustomTimeComponent} from '../custom-time/custom-time';
+import {INotification} from '../../../../api/services/notifications-service';
 import {MdIcon} from '@angular2-material/icon/icon';
+import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
     directives: [MdIcon, CustomTimeComponent],
@@ -20,21 +17,20 @@ import {MdIcon} from '@angular2-material/icon/icon';
     templateUrl: ['notifications-item.html'],
 
 })
-export class NotificationsItem {
+export class NotificationsItem extends BaseComponent{
     @Input() data;
     @Output() clear = new EventEmitter<Object>();
 
-    private showLinkAction:boolean = false;
-    private showTitleLinked:boolean = false;
-    private i18nMessagesMap;
-    private notificationIcons:Object = {
+    private notificationIcons: Object = {
         'WARNING': 'cancel',
         'ERROR': 'warning',
         'INFO': 'info'
     };
+    private showLinkAction: boolean = false;
+    private showTitleLinked: boolean = false;
 
-    constructor(@Inject('dotcmsConfig') private dotcmsConfig) {
-        this.i18nMessagesMap = dotcmsConfig.configParams.config.i18nMessagesMap;
+    constructor(private messageService: MessageService) {
+        super(['notifications_dismiss'], messageService);
     }
 
     ngOnInit():void {
@@ -65,8 +61,8 @@ export class NotificationsItem {
     templateUrl: ['notifications-list.html'],
 })
 export class NotificationsList {
-    @Input() notifications:INotification;
-    @Output() dismissNotification = new EventEmitter<Object>()
+    @Input() notifications: INotification;
+    @Output() dismissNotification = new EventEmitter<Object>();
 
     constructor() {}
 

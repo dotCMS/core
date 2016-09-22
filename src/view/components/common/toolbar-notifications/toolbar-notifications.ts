@@ -1,13 +1,13 @@
-import {Component, ViewEncapsulation, ElementRef, Inject} from '@angular/core';
-
-
-import {MdIcon} from '@angular2-material/icon/icon';
-import {MdButton} from '@angular2-material/button/button';
-import {MD_CARD_DIRECTIVES} from '@angular2-material/card/card';
-import {NotificationsList} from '../notifications/notifications';
+import {BaseComponent} from '../_base/base-component';
+import {Component, ViewEncapsulation, ElementRef} from '@angular/core';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
-import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
+import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
+import {MD_CARD_DIRECTIVES} from '@angular2-material/card/card';
+import {MdButton} from '@angular2-material/button/button';
+import {MdIcon} from '@angular2-material/icon/icon';
+import {MessageService} from '../../../../api/services/messages-service';
+import {NotificationsList} from '../notifications/notifications';
 
 @Component({
     directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES, DropdownComponent],
@@ -18,21 +18,22 @@ import {DropdownComponent} from '../dropdown-component/dropdown-component';
     styleUrls: ['toolbar-notifications.css'],
     templateUrl: ['toolbar-notifications.html']
 })
-export class ToolbarNotifications {
+export class ToolbarNotifications extends BaseComponent{
     private dotcmsEventsService: DotcmsEventsService;
     private elementRef;
     private isNotificationsMarkedAsRead: boolean = false;
     private notifications: Array<INotification> = [];
-    private notificationsUnreadCount: number = 0;
     private notificationService: NotificationsService;
+    private notificationsUnreadCount: number = 0;
     private showNotifications: boolean = false;
-    private i18nMessagesMap: string;
 
-    constructor(@Inject('dotcmsConfig') private dotcmsConfig, _dotcmsEventsService: DotcmsEventsService, _notificationService: NotificationsService, myElement: ElementRef) {
-        this.i18nMessagesMap = dotcmsConfig.configParams.config.i18nMessagesMap;
+
+    constructor(_dotcmsEventsService: DotcmsEventsService, _notificationService: NotificationsService,
+                myElement: ElementRef, private messageService: MessageService) {
+        super(['notifications_dismissall', 'notifications_title'], messageService);
         this.dotcmsEventsService = _dotcmsEventsService;
-        this.notificationService = _notificationService;
         this.elementRef = myElement;
+        this.notificationService = _notificationService;
     }
 
     ngOnInit() {
