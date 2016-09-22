@@ -44,23 +44,20 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @ServerEndpoint(value = "/api/v1/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
-	public static final String ID = "id";
+	public static final String ID = "userId";
 	private final Queue<Session> queue;
 	private final UserAPI userAPI;
-	private final RoleAPI roleAPI;
+
 
 	public SystemEventsWebSocketEndPoint() {
-		this(new ConcurrentLinkedQueue<Session>(),
-				APILocator.getUserAPI(), APILocator.getRoleAPI());
+		this(new ConcurrentLinkedQueue<Session>(), APILocator.getUserAPI());
 	}
 
 	@VisibleForTesting
 	public SystemEventsWebSocketEndPoint(final Queue<Session> queue,
-										 final UserAPI userAPI,
-										 final RoleAPI roleAPI) {
+										 final UserAPI userAPI) {
 		this.queue   = queue;
 		this.userAPI = userAPI;
-		this.roleAPI = roleAPI;
 	}
 
 	@OnOpen
@@ -164,16 +161,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				if (session instanceof SessionWrapper) {
 
 					if (null != SessionWrapper.class.cast(session).getUser()) {
-
-						if (payload.getVisibility() == Visibility.USER) {
-							// if the session user is the same of the event, them it apply to be sent
-							apply = SessionWrapper.class.cast(session).getUser().getUserId()
-										.equals(payload.getVisibilityId());
-						} else if (payload.getVisibility() == Visibility.ROLE) {
-							// if the session user match the event role, them it apply to be sent
-							apply = this.checkRoles(SessionWrapper.class.cast(session).getUser(),
-									payload.getVisibilityId());
-						}
+						apply = payload.verified((SessionWrapper) session);
 					}
 				}
 			}
@@ -185,9 +173,6 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 		return apply;
 	} // apply.
 
-	private boolean checkRoles(final User user, final String roleId) throws DotDataException {
 
-		return this.roleAPI.doesUserHaveRole(user, roleId);
-	}
 
 } // E:O:F:SystemEventsWebSocketEndPoint.

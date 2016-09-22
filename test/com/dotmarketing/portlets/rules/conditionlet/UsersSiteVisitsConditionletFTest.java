@@ -5,7 +5,6 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.CookieUtilTest;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.Http;
 import org.junit.After;

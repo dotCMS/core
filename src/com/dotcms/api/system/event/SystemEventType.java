@@ -20,7 +20,11 @@ package com.dotcms.api.system.event;
  */
 public enum SystemEventType {
 
-	NOTIFICATION("notification");
+	NOTIFICATION("notification"),
+	SAVE_SITE("save_site_testing"),
+	UPDATE_SITE("update_site_testing"),
+	ARCHIVE_SITE("archive_site"),
+	UN_ARCHIVE_SITE("un_archive_site");
 
 	private final String eventName;
 

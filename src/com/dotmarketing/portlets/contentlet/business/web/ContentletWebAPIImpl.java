@@ -14,6 +14,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -134,6 +135,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 
 		Contentlet cont;
+		boolean isNew = isNew(contentletFormData);
 
 		try {
 			Logger.debug(this, "Calling Save Method");
@@ -183,10 +185,17 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(autocommit)
 		    HibernateUtil.commitTransaction();
 
+		ContentletSystemEventUtil.getInstance().pushSaveEvent(user, cont, isNew);
+
 		contentletFormData.put("cache_control", "0");
 
 
 		return ((cont!=null) ? cont.getInode() : null);
+	}
+
+	private boolean isNew(Map<String, Object> contentletFormData) {
+		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+		return !InodeUtils.isSet(currentContentlet.getInode());
 	}
 
 	/**

@@ -37,10 +37,12 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 	@Override
 	public void executeDelegate(final JobDelegateDataBean data) throws DotDataException {
 		final List<SystemEvent> newEvents = (List<SystemEvent>) this.systemEventsAPI.getEventsSince(data.getLastCallback());
+		System.out.println("---------newEvents = " + newEvents);
 		if (!newEvents.isEmpty()) {
 			final SystemEventsWebSocketEndPoint webSocketEndPoint = this.webSocketContainerAPI
 					.getEndpointInstance(SystemEventsWebSocketEndPoint.class);
 			for (SystemEvent event : newEvents) {
+				System.out.println("---------event = " + event.getPayload());
 				webSocketEndPoint.sendSystemEvent(event);
 			}
 		}

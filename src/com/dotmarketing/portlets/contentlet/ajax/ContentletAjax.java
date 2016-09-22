@@ -1604,6 +1604,7 @@ public class ContentletAjax {
             return callbackData;
         }
         catch ( Exception e ) {
+			e.printStackTrace();
             Logger.error( this, e.getMessage(), e );
             saveContentErrors.add( e.getMessage() );
             callbackData.put( "saveContentErrors", saveContentErrors );
@@ -1611,6 +1612,7 @@ public class ContentletAjax {
             return callbackData;
         }
         catch (Throwable t) {
+			t.printStackTrace();
 			Logger.error(this, t.toString());
 			saveContentErrors.add(t.toString());
 			callbackData.put("saveContentErrors", saveContentErrors);

@@ -316,4 +316,11 @@ public class MarshalFactory implements Serializable {
         }
     } // GsonMarshalUtils.
 
+
+    public static void main(String[] args){
+        MarshalFactory marshalFactory = new MarshalFactory();
+        String content = "{\"type\":\"com.dotmarketing.portlets.contentlet.model.Contentlet\",\"data\":{\"map\":{\"hostName\":\"VVVVV\",\"modDate\":1474294147320,\"wfActionAssign\":\"\",\"type\":\"host\",\"wfActionComments\":\"\",\"inode\":\"f68fe8fd-5e0b-4410-9ee5-659ad5e33d0a\",\"hostname\":\"VVVVV\",\"disabledWYSIWYG\":[],\"host\":\"SYSTEM_HOST\",\"lastReview\":1474294147291,\"wfPublishTime\":\"\",\"stInode\":\"855a2d72-f2f3-4169-8b04-ac5157c4380c\",\"owner\":\"dotcms.org.1\",\"wfExpireDate\":\"\",\"identifier\":\"0c6584b2-3e39-40a2-8971-4436b1d879d1\",\"wfPublishDate\":\"\",\"runDashboard\":false,\"languageId\":1,\"whereToSend\":\"\",\"isDefault\":false,\"wfNeverExpire\":\"\",\"folder\":\"SYSTEM_FOLDER\",\"tagStorage\":\"120ecde4-1259-4d8e-ba08-65083b7b91f1\",\"isSystemHost\":false,\"sortOrder\":0,\"modUser\":\"dotcms.org.1\",\"wfExpireTime\":\"\"},\"lowIndexPriority\":false},\"visibility\":\"PERMISSION\",\"visibilityId\":1}";
+        marshalFactory.getMarshalUtils().unmarshal(content, com.dotcms.api.system.event.Payload.class);
+    }
+
 } // E:O:F:MarshalFactory.
