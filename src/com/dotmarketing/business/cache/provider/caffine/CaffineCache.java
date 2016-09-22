@@ -265,7 +265,7 @@ public class CaffineCache extends CacheProvider {
                         cache = Caffeine.newBuilder()
                                 .maximumSize(size)
                                 .recordStats()
-                                .softValues()
+                                //.softValues()
                                 .build();
 
 
