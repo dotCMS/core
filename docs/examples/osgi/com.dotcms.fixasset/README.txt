@@ -11,7 +11,6 @@ Example use cases:
 * to clean up permission references
 * to add missing version_info records
 
-
 How to build this example
 -------------------------
 
