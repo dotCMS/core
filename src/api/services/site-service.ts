@@ -20,7 +20,8 @@ export class SiteService extends CoreWebService {
     private _archivedCurrentSite$: Subject<Site> = new Subject();
     private urls: any;
 
-    constructor(apiRoot: ApiRoot, http: Http, private loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
+    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
+
         super(apiRoot, http);
         this.urls = {
             allSiteUrl: 'v1/site/currentSite',
@@ -40,7 +41,7 @@ export class SiteService extends CoreWebService {
             if (this.site.identifier === updatedSite.identifier) {
                 this.site = updatedSite;
 
-                if (this.loginService.loginUser.userId !== payload.userId) {
+                if (loginService.auth.user.userId !== payload.userId) {
                     this._updatedCurrentSite$.next(updatedSite);
                 }
             }
@@ -53,7 +54,7 @@ export class SiteService extends CoreWebService {
 
             if (this.site.identifier === archivedSite.identifier) {
 
-                if (this.loginService.loginUser.userId !== payload.userId) {
+                if (loginService.auth.user.userId !== payload.userId) {
                     this._archivedCurrentSite$.next(archivedSite);
                 }
 

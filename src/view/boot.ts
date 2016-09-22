@@ -74,7 +74,7 @@ bootstrap(AppComponent, [
     HTTP_PROVIDERS,
     I18nService,
     LoginService,
-    DotcmsEventsService
+    DotcmsEventsService,
     MdIconRegistry,
     MessageService,
     RoutingService,

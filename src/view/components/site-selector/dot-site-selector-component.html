@@ -11,8 +11,14 @@
 
 <h1 *ngIf="!sites || sites.length == 1" class="site-selector__title">{{currentSite ? currentSite.hostName : ''}}</h1>
 
-<!--<div class="site-selector-overlay">
+<div class="site-selector-overlay" [hidden]="!message">
     <div class="site-selector-modal">
         {{message}}
+
+        <div>
+            <button md-button md-flat-button (click)="message=''" type="button">{{i18nMessages['modes.Close']}}</button>
+        </div>
     </div>
-</div>-->
+
+
+</div>

@@ -41,7 +41,6 @@ export class DotSelect implements ControlValueAccessor {
     }
 
     set innerValue(val) {
-        console.log('VAL');
         this._innerValue = val;
         let selectedOption = this.options.filter((option) => option.value === val)[0];
         this.selectedText = selectedOption ? selectedOption.text : '';
