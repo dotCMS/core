@@ -12,7 +12,6 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.db.test.TestingJndiDatasource;
 import com.dotmarketing.util.ConfigTestHelper;
 
 public class TestShortyIdApi {
@@ -60,7 +59,7 @@ public class TestShortyIdApi {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        new TestingJndiDatasource().init();
+        new com.dotmarketing.util.TestingJndiDatasource().init();
         ConfigTestHelper._setupFakeTestingContext();
         APILocator.getBundleAPI();
         CacheLocator.init();
