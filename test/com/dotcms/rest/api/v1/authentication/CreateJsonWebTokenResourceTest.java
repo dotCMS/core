@@ -96,7 +96,7 @@ public class CreateJsonWebTokenResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -124,7 +124,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, authenticationHelper, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, responseUtil, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 
@@ -148,7 +148,7 @@ public class CreateJsonWebTokenResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -215,7 +215,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 
@@ -260,7 +260,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 
@@ -305,7 +305,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 
@@ -357,7 +357,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 
@@ -403,7 +403,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 
@@ -451,7 +451,7 @@ public class CreateJsonWebTokenResourceTest {
 
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
-                new CreateJsonWebTokenResource(loginService, userLocalManager, AuthenticationHelper.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
+                new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
         final CreateTokenForm createTokenForm =
                 new CreateTokenForm.Builder().user(userId).password(pass).build();
 

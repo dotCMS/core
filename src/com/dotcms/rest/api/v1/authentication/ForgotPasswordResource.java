@@ -16,7 +16,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
@@ -49,15 +48,15 @@ public class ForgotPasswordResource implements Serializable {
 
     private final UserLocalManager userLocalManager;
     private final CompanyAPI  companyAPI;
+    private final ResponseUtil responseUtil;
     private final UserService userService;
-    private final AuthenticationHelper  authenticationHelper;
 
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
                 UserServiceFactory.getInstance().getUserService(),
                 APILocator.getCompanyAPI(),
-                AuthenticationHelper.INSTANCE
+                ResponseUtil.INSTANCE
                 );
     }
 
@@ -65,12 +64,12 @@ public class ForgotPasswordResource implements Serializable {
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
                                   final UserService userService,
                                   final CompanyAPI  companyAPI,
-                                  final AuthenticationHelper  authenticationHelper) {
+                                  final ResponseUtil responseUtil) {
 
         this.userLocalManager = userLocalManager;
         this.userService      = userService;
         this.companyAPI       = companyAPI;
-        this.authenticationHelper = authenticationHelper;
+        this.responseUtil = responseUtil;
     }
 
     @POST
@@ -109,7 +108,7 @@ public class ForgotPasswordResource implements Serializable {
 
             if (displayNotSuchUserError) {
 
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+                res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "the-email-address-you-requested-is-not-registered-in-our-database");
             } else {
 
@@ -129,11 +128,11 @@ public class ForgotPasswordResource implements Serializable {
             }
         } catch (SendPasswordException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                       "a-new-password-can-only-be-sent-to-an-external-email-address");
         } catch (UserEmailAddressException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "please-enter-a-valid-email-address");
         } catch (Exception e) {
 

@@ -1,8 +1,10 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,6 +14,7 @@ import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -25,6 +28,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
@@ -50,9 +55,14 @@ import com.liferay.util.LocaleUtil;
 @Path("/v1/authentication")
 public class AuthenticationResource implements Serializable {
 
+    static final String USER = "user";
+    static final String LOGIN_AS_USER = "loginAsUser";
+
     private final UserLocalManager userLocalManager;
     private final LoginService loginService;
-    private final AuthenticationHelper  authenticationHelper;
+    private final ResponseUtil responseUtil;
+
+    private final AuthenticationHelper authenticationHelper;
 
     /**
      * Default constructor.
@@ -60,17 +70,18 @@ public class AuthenticationResource implements Serializable {
     public AuthenticationResource() {
         this(LoginServiceFactory.getInstance().getLoginService(),
                 UserLocalManagerFactory.getManager(),
-                AuthenticationHelper.INSTANCE,
-                new WebResource(new ApiProvider()));
+                ResponseUtil.INSTANCE,
+                AuthenticationHelper.getInstance());
     }
 
     @VisibleForTesting
     protected AuthenticationResource(final LoginService loginService,
                                      final UserLocalManager userLocalManager,
-                                     final AuthenticationHelper  authenticationHelper,
-                                     final WebResource webResource) {
+                                     final ResponseUtil responseUtil,
+                                     AuthenticationHelper authenticationHelper) {
         this.loginService = loginService;
         this.userLocalManager = userLocalManager;
+        this.responseUtil = responseUtil;
         this.authenticationHelper = authenticationHelper;
     }
 
@@ -103,15 +114,15 @@ public class AuthenticationResource implements Serializable {
                 request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
             } else {
 
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                         locale, userId, "authentication-failed");
             }
         } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
+            res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
         } catch (AuthException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
+            res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
         } catch (RequiredLayoutException e) {
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
+            res = this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 
             try {
@@ -132,5 +143,23 @@ public class AuthenticationResource implements Serializable {
 
         return res;
     } // authentication
+
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("logInUser")
+    public final Response getLoginUser(@Context final HttpServletRequest request){
+        Response res = null;
+
+        try {
+            Map<String, Map> users = authenticationHelper.getUsers(request);
+            res = Response.ok(new ResponseEntityView(users)).build();
+        } catch (Exception e) {
+            res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return res;
+    }
 
 } // E:O:F:AuthenticationResource.

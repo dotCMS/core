@@ -1,32 +1,12 @@
 package com.dotcms.concurrent;
 
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.authentication.AuthenticationForm;
-import com.dotcms.rest.api.v1.authentication.AuthenticationHelper;
-import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.*;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.ejb.UserLocalManager;
-import com.liferay.portal.model.User;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DotConcurrentFactoryTest {
 

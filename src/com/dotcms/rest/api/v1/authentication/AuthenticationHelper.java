@@ -1,73 +1,71 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import java.io.Serializable;
-import java.text.MessageFormat;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.ErrorResponseHelper;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
+import com.dotcms.api.web.WebSessionContext;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LoginAsAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
+
 /**
- * Just a helper to encapsulate AuthenticationResource functionality.
- * @author jsanca
+ * {@link AuthenticationResource}'s helper
  */
-public class AuthenticationHelper implements Serializable {
+class AuthenticationHelper {
 
-	public static AuthenticationHelper INSTANCE =
-			new AuthenticationHelper();
+    private final LoginAsAPI loginAsAPI;
+    private final LoginService loginService;
 
+    private static class SingletonHolder {
+        private static final AuthenticationHelper INSTANCE = new AuthenticationHelper();
+    }
 
-	private AuthenticationHelper () {
+    public static AuthenticationHelper getInstance() {
+        return AuthenticationHelper.SingletonHolder.INSTANCE;
+    }
 
-	}
+    private AuthenticationHelper() {
+        this( APILocator.getLoginAsAPI(), LoginServiceFactory.getInstance().getLoginService() );
+    }
 
-	/**
-	 * Get Error response based on a status and message key
-	 * This support is a single message
-	 *
-	 * @param request
-	 * @param status
-	 * @param userId
-	 * @param messageKey
-	 * @return Response
-	 */
-	public Response getErrorResponse(final HttpServletRequest request,
-			final Response.Status status,
-			final Locale locale,
-			final String userId,
-			final String messageKey) {
+    @VisibleForTesting
+    protected AuthenticationHelper(LoginAsAPI loginAsAPI, LoginService loginService) {
+        this.loginAsAPI = loginAsAPI;
+        this.loginService = loginService;
+    }
 
-		return ErrorResponseHelper.INSTANCE.getErrorResponse(status, locale, messageKey);
-	}
+    /** 
+    * Return a map with the Principal and LoginAs user, the map content the follows keys: 
+    * <ul> 
+    *   <li>{@link AuthenticationResource#USER} for the principal user</li> 
+    *   <li>{@link AuthenticationResource#LOGIN_AS_USER} for the login as user</li>
+    *</ul>
+    *
+    * @param request 
+    * @return
+    * @throws DotDataException
+    * @throws DotSecurityException
+    */
+    public Map<String, Map> getUsers(final HttpServletRequest request) throws DotDataException, DotSecurityException,
+            IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        User principalUser = loginAsAPI.getPrincipalUser( WebSessionContext.getInstance( request ));
+        User loginAsUser = null;
 
+        if (principalUser == null){
+            principalUser = this.loginService.getLogInUser( request );
+        }else{
+            loginAsUser = this.loginService.getLogInUser( request );
+        }
 
-	/**
-	 * Get the translation of the message key in the specified locale, if the locale is null
-	 * then the message is translated into the default user language
-	 * @param locale Current user language
-	 * @param messageKey Message key to be translated
-	 * @param messageArguments (Optional) if the message require some argument
-	 * @return
-	 */
-	public String getFormattedMessage(Locale locale, String messageKey, Object... messageArguments){
-		String message;
-		try {
-			message = (UtilMethods.isSet(locale))?
-					LanguageUtil.get(locale, messageKey):
-						LanguageUtil.get((User)null, messageKey);
-
-					return MessageFormat.format(message, messageArguments);
-		} catch (LanguageException e) {
-			Logger.error(AuthenticationHelper.class, e.getMessage(), e);
-			throw new RuntimeException(e);
-		}	
-	}
-
-} // E:O:F:AuthenticationHelper.
+        return map(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null, AuthenticationResource.LOGIN_AS_USER,
+                loginAsUser != null ? loginAsUser.toMap() : null);
+    }
+}

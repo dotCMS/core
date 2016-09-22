@@ -27,14 +27,14 @@ import static org.mockito.Mockito.when;
 public class ResetPasswordResourceTest {
 
     HttpServletRequest request;
-    AuthenticationHelper authenticationHelper;
+    ResponseUtil responseUtil;
     ResetPasswordForm  resetPasswordForm;
 
     @Before
     public void initTest(){
         request = RestUtilTest.getMockHttpRequest();
         RestUtilTest.initMockContext();
-        authenticationHelper = AuthenticationHelper.INSTANCE;
+        responseUtil = ResponseUtil.INSTANCE;
         resetPasswordForm = this.getForm();
 
     }
@@ -70,7 +70,7 @@ public class ResetPasswordResourceTest {
                 "dotcms.org.1", 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -88,7 +88,7 @@ public class ResetPasswordResourceTest {
                 "dotcms.org.1", 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -105,7 +105,7 @@ public class ResetPasswordResourceTest {
                 "dotcms.org.1", 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -122,7 +122,7 @@ public class ResetPasswordResourceTest {
                 "dotcms.org.1", 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -133,7 +133,7 @@ public class ResetPasswordResourceTest {
     public void testOk() {
         UserManager userManager = mock( UserManager.class );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, authenticationHelper, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJkb3RjbXMub3JnLjEiLCJpYXQiOjE0NzM3MTE1OTIsInN1YiI6IlhJazdsUENYUkxWQmlQWWNJOTJpY01MbXVET1ZLeTE0NzM3MTE1OTI5MTIiLCJpc3MiOiJkb3RjbXMub3JnLjEiLCJleHAiOjE0NzM3MTI3OTJ9.65fqPIKHUdfk35uVPy4x9mzhvh2A1EW_UOF2oEc9DUM",
                 "dotcms.org.1", 100000);

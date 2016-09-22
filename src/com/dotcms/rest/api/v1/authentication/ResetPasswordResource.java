@@ -35,22 +35,22 @@ import java.util.Locale;
 public class ResetPasswordResource {
 
     private final UserManager userManager;
-    private final AuthenticationHelper  authenticationHelper;
+    private final ResponseUtil responseUtil;
     private final JsonWebTokenService   jsonWebTokenService;
 
     public ResetPasswordResource(){
         this ( UserManagerFactory.getManager(),
-                AuthenticationHelper.INSTANCE,
+                ResponseUtil.INSTANCE,
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService());
     }
 
     @VisibleForTesting
     public ResetPasswordResource(final UserManager userManager,
-                                 final AuthenticationHelper authenticationHelper,
+                                 final ResponseUtil responseUtil,
                                  final JsonWebTokenService   jsonWebTokenService) {
 
         this.userManager = userManager;
-        this.authenticationHelper = authenticationHelper;
+        this.responseUtil = responseUtil;
         this.jsonWebTokenService  = jsonWebTokenService;
     }
 
@@ -76,8 +76,8 @@ public class ResetPasswordResource {
             if (null == jwtBean) {
             	SecurityLogger.logInfo(ResetPasswordResource.class,
             			"Error reseting password. "
-            	        + this.authenticationHelper.getFormattedMessage(null,"reset-password-token-expired"));
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
+            	        + this.responseUtil.getFormattedMessage(null,"reset-password-token-expired"));
+                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset-password-token-expired");
             } else {
                 userId = jwtBean.getId();
@@ -92,8 +92,8 @@ public class ResetPasswordResource {
         } catch (NoSuchUserException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,
         			"Error resetting password. "
-        	        + this.authenticationHelper.getFormattedMessage(null,"please-enter-a-valid-login"));
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+        	        + this.responseUtil.getFormattedMessage(null,"please-enter-a-valid-login"));
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "please-enter-a-valid-login");
         } catch (DotSecurityException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,"Error resetting password. "+e.getMessage());
@@ -102,21 +102,21 @@ public class ResetPasswordResource {
             if (e.isExpired()){
             	SecurityLogger.logInfo(ResetPasswordResource.class,
             			"Error resetting password. "
-            	        + this.authenticationHelper.getFormattedMessage(null,"reset-password-token-expired"));
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
+            	        + this.responseUtil.getFormattedMessage(null,"reset-password-token-expired"));
+                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
                         "reset-password-token-expired");
             }else{
             	SecurityLogger.logInfo(ResetPasswordResource.class,
             			"Error resetting password. "
-            	        + this.authenticationHelper.getFormattedMessage(null,"reset-password-token-invalid"));
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+            	        + this.responseUtil.getFormattedMessage(null,"reset-password-token-invalid"));
+                res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                         "reset-password-token-invalid");
             }
         } catch (DotInvalidPasswordException e){
         	SecurityLogger.logInfo(ResetPasswordResource.class,
         			"Error resetting password. "
-        	        + this.authenticationHelper.getFormattedMessage(null,"reset-password-invalid-password"));
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+        	        + this.responseUtil.getFormattedMessage(null,"reset-password-invalid-password"));
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
                     "reset-password-invalid-password");
         }catch (Exception  e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,"Error resetting password. "+e.getMessage());
