@@ -256,7 +256,7 @@ dependencies {
 
     }
     compile "org.powermock:powermock-module-junit4:1.6.5"
-
+    compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
     /**
      * Order matters here: OSGI-Core must come after felix.
      */
