@@ -316,14 +316,26 @@
 	dojo.connect(window, 'onresize', this, hideCurrentMenu);
 
 	function backToCMS(){
+		#if(${isAngularFrame})
+	    window.top.${angularFrame}.location  = "${viewFoldersURL}";
+		#else
 		window.location  = "${viewFoldersURL}";
+		#end
 	}
 
 	function livePage(){
+		#if(${isAngularFrame})
+	    window.top.${angularFrame}.location  = "${VTLSERVLET_URI}?livePage=1";
+		#else
 		window.location  = "${VTLSERVLET_URI}?livePage=1";
+		#end
 	}
 	function previewPage(){
+		#if(${isAngularFrame})
+	    window.top.${angularFrame}.location  = "${VTLSERVLET_URI}?previewPage=1";
+		#else
 		window.location  = "${VTLSERVLET_URI}?previewPage=1";
+		#end
 	}
 
 	function popBrowser(x){

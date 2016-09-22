@@ -109,7 +109,7 @@ public class ResetPasswordResourceTest {
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset_token_expired");
+        RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");
     }
 
     @Test
