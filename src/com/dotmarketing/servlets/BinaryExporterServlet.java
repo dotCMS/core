@@ -154,9 +154,9 @@ public class BinaryExporterServlet extends HttpServlet {
 		String uuid = uriPieces[2];
 		Optional<ShortyId> shortOpt = new ShortyIdApiImpl().getShorty(uuid);
 		ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : new ShortyIdApiImpl().noShorty(uuid);
-		if(shortOpt.isPresent()){
-		    uuid = shorty.longId;
-		}
+		boolean isContent= (shorty.subType == ShortType.CONTENTLET);
+		uuid = shorty.longId;
+
 		Map<String, String[]> params = new HashMap<String, String[]>();
 		params.putAll(req.getParameterMap());
 		// only set uri params if they are not set in the query string - meaning
@@ -231,14 +231,6 @@ public class BinaryExporterServlet extends HttpServlet {
 			String downloadName = "file_asset";
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
-
-			boolean isContent = false;
-			try {
-				isContent = isContent(uuid, byInode, lang, respectFrontendRoles);
-			}catch (DotStateException e) {
-				resp.sendError(404);
-				return;
-			}
 
 			if (isContent){
 				Contentlet content = null;
