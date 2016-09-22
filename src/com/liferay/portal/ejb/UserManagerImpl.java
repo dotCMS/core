@@ -637,18 +637,26 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		login = login.trim().toLowerCase();
 
+		Logger.debug(this, "Doing authentication for: " + login);
+
 		if (byEmailAddress) {
 			if (!Validator.isEmailAddress(login)) {
+
+				Logger.error(this, "Invalid email throwing a UserEmailAddressException: " + login);
 				throw new UserEmailAddressException();
 			}
 		}
 		else {
 			if (Validator.isNull(login)) {
+
+				Logger.error(this, "User can not be null, throwing UserIdException: " + login);
 				throw new UserIdException();
 			}
 		}
 
 		if (Validator.isNull(password)) {
+
+			Logger.error(this, "Password can not be null, throwing UserPasswordException");
 			throw new UserPasswordException(
 				UserPasswordException.PASSWORD_INVALID);
 		}
@@ -656,11 +664,17 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		int authResult = Authenticator.FAILURE;
 
 		if (byEmailAddress) {
+
+			Logger.debug(this, "Doing PRE authentication by email address for: " + login);
+
 			authResult = AuthPipeProxy.authenticateByEmailAddress(
 				PropsUtil.getArray(
 					PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
 		}
 		else {
+
+			Logger.debug(this, "Doing PRE authentication by userId for: " + login);
+
 			authResult = AuthPipeProxy.authenticateByUserId(
 				PropsUtil.getArray(
 					PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
@@ -677,10 +691,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			}
 		}
 		catch (NoSuchUserException nsue) {
+
+			Logger.error(this, "Could not find the user: " + nsue.getMessage() + ", return DNE");
+
 			return Authenticator.DNE;
 		}
 
 		if (user.isPasswordExpired()) {
+
+			Logger.debug(this, "The Password expired for: " + login);
+
 			user.setPasswordReset(true);
 
 			UserUtil.update(user);
@@ -688,25 +708,37 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		if (authResult == Authenticator.SUCCESS) {
 			if (LoginFactory.passwordMatch(password, user)) {
+
+				Logger.debug(this, "The Password match for: " + login);
 				authResult = Authenticator.SUCCESS;
 			}
 			else {
+
+				Logger.debug(this, "The Password does not match for: " + login);
 				authResult = Authenticator.FAILURE;
 			}
 		}
 
 		if (authResult == Authenticator.SUCCESS) {
 			if(!user.getActive()){
+
+				Logger.error(this, "Login was success but user is not active, throwing UserActiveException");
 				throw new UserActiveException();
 			}
 			
 			if (byEmailAddress) {
+
+				Logger.debug(this, "Doing POST authentication by email address for: " + login);
+
 				authResult = AuthPipeProxy.authenticateByEmailAddress(
 					PropsUtil.getArray(
 						PropsUtil.AUTH_PIPELINE_POST), companyId, login,
 						password);
 			}
 			else {
+
+				Logger.debug(this, "Doing POST authentication by userId for: " + login);
+
 				authResult = AuthPipeProxy.authenticateByUserId(
 					PropsUtil.getArray(
 						PropsUtil.AUTH_PIPELINE_POST), companyId, login,
@@ -714,12 +746,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			}
 			if (authResult == Authenticator.SUCCESS) {
 				// User authenticated, reset failed attempts
+				Logger.debug(this, "Setting the user: " + user.getUserId() + ", failed login attempts: 0");
 				user.setFailedLoginAttempts(0);
 				UserUtil.update(user);
 			}
 		}
 
 		if (authResult == Authenticator.FAILURE) {
+
+			Logger.debug(this, "Authenticated failed for: " + login);
+
 			try {
 				if (byEmailAddress) {
 					AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(
@@ -731,25 +767,41 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 				}
 
 				int failedLoginAttempts = user.getFailedLoginAttempts();
+				Logger.debug(this, "Current failed login attempts for: " + login + ", is: " + failedLoginAttempts);
+
 				if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
+
+					Logger.debug(this, "Making a delay request for failed login attempts for: " + login + ", with: " + failedLoginAttempts);
 					delayRequest(failedLoginAttempts);
 				}
+
 				user.setFailedLoginAttempts(++failedLoginAttempts);
+				Logger.debug(this, "Increasing failed login attempts for: " + login + ", with: " + user.getFailedLoginAttempts());
 
 				UserUtil.update(user);
 
 				int maxFailures = GetterUtil.get(PropsUtil.get(
 					PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
 
+				Logger.debug(this, "Max failures: " + maxFailures);
+
 				if ((failedLoginAttempts >= maxFailures) &&
 					(maxFailures != 0)) {
 
 					if (byEmailAddress) {
+
+						Logger.debug(this, "Reporting Max failures by email, maxFailures: " + maxFailures +
+									", failed login attemps: " + failedLoginAttempts);
+
 						AuthPipeProxy.onMaxFailuresByEmailAddress(
 							PropsUtil.getArray(
 								PropsUtil.AUTH_MAX_FAILURES), companyId, login);
 					}
 					else {
+
+						Logger.debug(this, "Reporting Max failures by userId, maxFailures: " + maxFailures +
+								", failed login attemps: " + failedLoginAttempts);
+
 						AuthPipeProxy.onMaxFailuresByUserId(
 							PropsUtil.getArray(
 								PropsUtil.AUTH_MAX_FAILURES), companyId, login);
@@ -786,10 +838,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			if (stratParams.length > 1) {
 				seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
 			}
+
+			Logger.debug(this, "Doing a delay request, with seed: " + seed
+					+ ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
 		} catch (Exception e) {
 			Logger.error(this, "The specified delay strategy is invalid. Defaults to POW strategy.", e);
 			strategy = DelayStrategy.POW;
 		}
+
 		SecurityUtils.delayRequest(seed, strategy);
 	}
 
