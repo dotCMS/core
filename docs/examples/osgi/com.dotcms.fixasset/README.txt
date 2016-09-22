@@ -2,16 +2,14 @@
 README
 ------
 
-This bundle plugin is an example of how to add dotcms content hooks via OSGi. Content hooks work like interceptors and can be called before content has been modified (pre-hooks) or after the content has been checked in (post-hooks).
+This bundle plugin is an example of how to add a dotcms fix tasks OSGi. FixTasks are run from the CMS Maintenance scree and can be used to fix corrupt data or other issues where the dotCMS store gets wonky.
 
 Example use cases:  
 
-* To apply extra or richer validation on a content object before checkin.
-* To modify or auto-assign values to specific fields on a content object on checkin
-* To perform an action once a content object has been checked in, i.e. synchronize content that has been checked in with a 3rd party system
-
-
-To see all the methods that can be overridden, see the interfaces:
+* To prep legacy data in anticipation of an upgrade
+* To remove orphaned files on the file system
+* to clean up permission references
+* to add missing version_info records
 
 
 How to build this example
