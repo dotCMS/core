@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-
 import com.dotmarketing.util.CookieTestUtil;
 import com.dotmarketing.util.WebKeys;
 
