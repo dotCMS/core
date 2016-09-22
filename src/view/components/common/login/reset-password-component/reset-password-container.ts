@@ -19,24 +19,24 @@ import {ResetPasswordComponent} from './reset-password-component';
         </dot-reset-password-component>
     `
 })
-export class ResetPasswordContainer{
+export class ResetPasswordContainer {
 
-    private message:string = '';
-    private login:string = '';
-    private token:string = '';
+    private message: string = '';
+    private login: string = '';
+    private token: string = '';
 
-    private changePasswordSuccessfully:string;
+    private changePasswordSuccessfully: string;
 
     constructor( private loginService: LoginService, private router: Router,
                  private queryParams: QueryParams, private routeParams: RouteParams) {
 
     }
 
-    ngOnInit(){
+    ngOnInit() {
          this.queryParams.pluck<string>('token').distinctUntilChanged()
             .forEach(token => this.token = token);
 
-        this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
+         this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
             let entity = data.entity;
 
@@ -46,22 +46,29 @@ export class ResetPasswordContainer{
         });
     }
 
-    public changePassword(changePasswordData:ChangePasswordData):void{
+    public changePassword(changePasswordData: ChangePasswordData): void {
+        this.cleanMessage();
         this.loginService.changePassword(changePasswordData.password, changePasswordData.token)
             .subscribe( result =>{
                 //alert(this.resetPasswordSuccessMessage);
                 // TODO need to use internationalization
                 alert( this.changePasswordSuccessfully );
                 this.goToLogin();
-            }, error => this.message = error.errorsMessages);
+            }, (error) => {
+                this.message = error.errorsMessages;
+            });
     }
 
-    private goToLogin():void{
+    private goToLogin(): void {
         this.router.go('/public/login');
+    }
+
+    private cleanMessage(): void {
+        this.message = '';
     }
 }
 
 export interface ChangePasswordData{
-    token:string,
-    password:string
+    token: string,
+    password: string
 }
