@@ -3,17 +3,14 @@ import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod, Http} from '@angular/http';
-import {Observer} from 'rxjs/Observer';
 import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
 import {DotcmsEventsService} from './dotcms-events-service';
 
 @Injectable()
 export class SiteService extends CoreWebService {
-
-    private allSiteUrl: string;
-    private switchSiteUrl: string;
-
+    private _sites$: Subject<Site[]> = new Subject();
+    private _switchSite$: Subject<Site> = new Subject();
     private site: Site;
     private sites: Site[];
 
@@ -21,18 +18,14 @@ export class SiteService extends CoreWebService {
     private _sites$: Subject<Site[]> = new Subject();
     private _updatedCurrentSite$: Subject<Site> = new Subject();
     private _archivedCurrentSite$: Subject<Site> = new Subject();
+    private urls: any;
 
     constructor(apiRoot: ApiRoot, http: Http, private loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
         super(apiRoot, http);
-
-        this.allSiteUrl = `${apiRoot.baseUrl}api/v1/site/currentSite`;
-        this.switchSiteUrl = `${apiRoot.baseUrl}api/v1/site/switch`;
-
-        if (loginService.loginUser) {
-            this.loadSites();
-        }
-
-        loginService.loginUser$.subscribe(user => this.loadSites());
+        this.urls = {
+            allSiteUrl: 'v1/site/currentSite',
+            switchSiteUrl: 'v1/site/switch'
+        };
 
         dotcmsEventsService.subscribeTo('SAVE_SITE').pluck('data').subscribe( site => {
             this.sites.push(site);
@@ -73,12 +66,14 @@ export class SiteService extends CoreWebService {
             this.sites.push(site);
             this._sites$.next(this.sites);
         });
+
+        loginService.watchUser(this.loadSites.bind(this));
     }
 
     switchSite(siteId: String): Observable<any> {
         return this.requestView({
             method: RequestMethod.Put,
-            url: `${this.switchSiteUrl}/${siteId}`,
+            url: `${this.urls.switchSiteUrl}/${siteId}`,
         }).map(response => {
             this.setCurrentSiteIdentifier(siteId);
             return response;
@@ -107,10 +102,9 @@ export class SiteService extends CoreWebService {
     }
 
     private loadSites(): void {
-
         this.requestView({
             method: RequestMethod.Get,
-            url: this.allSiteUrl,
+            url: this.urls.allSiteUrl,
         }).subscribe(response => {
             this.setSites(response.entity.sites);
             this.setCurrentSiteIdentifier(response.entity.currentSite);

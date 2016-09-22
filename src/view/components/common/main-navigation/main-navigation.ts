@@ -1,9 +1,6 @@
-import {Component, Inject} from '@angular/core';
 import {Accordion, AccordionGroup} from '../accordion/accordion';
-import {AppConfigurationService} from '../../../../api/services/system/app-configuration-service';
+import {Component} from '@angular/core';
 import {RoutingService, Menu} from '../../../../api/services/routing-service';
-import {provideRouter, ROUTES} from '@ngrx/router';
-import {provide} from '@angular/core';
 
 // Angular Material
 import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
@@ -20,15 +17,10 @@ import {MD_LIST_DIRECTIVES} from '@angular2-material/list/list';
 export class MainNavigation {
 
     private menuItems: Menu[];
-    private message: string = 'error';
 
     constructor(routingService: RoutingService) {
-        this.menuItems = routingService.currentMenu;
-
         routingService.menusChange$.subscribe(menu => {
             this.menuItems = menu;
         });
-
-        this.message = 'success';
     }
 }

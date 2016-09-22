@@ -1,17 +1,19 @@
 <li class="notification-item {{data.level | lowercase}}">
-    <button md-icon-button (click)="onClear()" class="notification-item__close" title="{{i18nMessagesMap.notifications_dismiss}}">
+    <button md-icon-button (click)="onClear()" class="notification-item__close" title="{{i18nMessages['notifications_dismiss']}}" id="{{'notification-item-button-close-' + data.id}}">
         <md-icon class="md-24">close</md-icon>
     </button>
 
     <div class="notification-item__wrapper">
         <md-icon class="notification-item__icon">{{getIconName(data.level)}}</md-icon>
         <div class="notification-item__content">
-            <h4 *ngIf="showTitleLinked" class="notification-item__title"><a [href]="data.notificationData.actions[0].action">{{data.notificationData.title}}</a></h4>
-            <h4 *ngIf="!showTitleLinked" class="notification-item__title">{{data.notificationData.title}}</h4>
-            <p class="notification-item__message">
+            <h4 *ngIf="showTitleLinked" class="notification-item__title" id="{{'notification-item-title-' + data.id}}">
+                <a [href]="data.notificationData.actions[0].action" id="{{'notification-item-link-' + data.id}}">{{data.notificationData.title}}</a>
+            </h4>
+            <h4 *ngIf="!showTitleLinked" class="notification-item__title" id="{{'notification-item-title-' + data.id}}">{{data.notificationData.title}}</h4>
+            <p class="notification-item__message"  id="{{'notification-item-message-' + data.id}}">
                 {{data.notificationData.message}}
-                <a *ngIf="showLinkAction" [href]="data.notificationData.actions[0].action" class="notification-item__link">{{data.notificationData.actions[0].text}}</a>
-                <custom-time time="{{data.timeSent}}"></custom-time>
+                <a *ngIf="showLinkAction" [href]="data.notificationData.actions[0].action" class="notification-item__link"  id="{{'notification-item-link-action' + data.id}}">{{data.notificationData.actions[0].text}}</a>
+                <custom-time time="{{data.timeSent}}" id="{{'notification-item-date-' + data.id}}"></custom-time>
             </p>
             <!--TODO: handle more than one action-->
         </div>

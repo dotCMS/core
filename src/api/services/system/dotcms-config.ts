@@ -1,5 +1,7 @@
+import {ApiRoot} from '../../persistence/ApiRoot';
+import {CoreWebService} from "../core-web-service";
+import {Http, RequestMethod} from '@angular/http';
 import {Injectable} from '@angular/core';
-import {User} from "../login-service";
 
 /**
  * Created by josecastro on 7/29/16.
@@ -9,17 +11,30 @@ import {User} from "../login-service";
  *
  */
 @Injectable()
-export class DotcmsConfig {
+export class DotcmsConfig extends CoreWebService {
 
     private configParams: any;
+    private configUrl: string;
 
     /**
      * Initializes this class with the dotCMS core configuration parameters.
      *
      * @param configParams - The configuration properties for the current instance.
      */
-    constructor(configParams: any) {
-        this.configParams = configParams;
+    constructor(apiRoot: ApiRoot, http: Http) {
+        super(apiRoot, http);
+        this.configUrl = 'v1/appconfiguration';
+        this.getConfig();
+    }
+
+    getConfig() {
+        this.requestView({
+            method: RequestMethod.Get,
+            url: this.configUrl
+        }).pluck('entity').subscribe(res => {
+            this.configParams = res;
+            return res;
+        });
     }
 
     /**
@@ -60,13 +75,4 @@ export class DotcmsConfig {
     getNavigationMenu(): Array<any> {
         return this.configParams.menu;
     }
-
-    setUser(user: User) {
-        this.configParams.user = user;
-    }
-    setLoginAsUser(user: User) {
-        this.configParams.loginAsUser = user;
-    }
-
-
 }

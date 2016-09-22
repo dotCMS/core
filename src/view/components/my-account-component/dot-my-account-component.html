@@ -1,70 +1,68 @@
 <div class="my-account-overlay">
     <div class="my-account">
 
-        <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
+        <div class="error-message" [innerHTML]="message" *ngIf="message" id="dot-my-account-general-error-message"></div>
 
         <form #myAccountForm="ngForm" (ngSubmit)="save()">
-            <md-input id="my-account-component-first-name-input"
+            <md-input id="dot-my-account-first-name-input"
                       #firstNameInput="ngModel"
-                      placeholder="{{firstNameLabel}}"
+                      placeholder="{{i18nMessages['First-Name']}}"
                       name="givenName"
                       [(ngModel)]="accountUser.givenName"
                       floatingPlaceholder="false"
                       required>
             </md-input>
-            <p class="error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{firsNameErrorMessage}}</p>
+            <p class="error-message" id="dot-my-account-first-name-error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{getRequiredMessage(i18nMessages['First-Name'])}}</p>
 
-            <md-input id="my-account-component-last-name-input"
+            <md-input id="dot-my-account-last-name-input"
                       #lastNameInput="ngModel"
-                      placeholder="{{lastNameLabel}}"
+                      placeholder="{{i18nMessages['Last-Name']}}"
                       name="surname"
                       [(ngModel)]="accountUser.surname"
                       floatingPlaceholder="false"
                       required>
             </md-input>
-            <p class="error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{lastNameErrorMessage}}</p>
+            <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{getRequiredMessage(i18nMessages['Last-Name'])}}</p>
 
-            <md-input id="my-account-component-email-input"
+            <md-input id="dot-my-account-email-input"
                       #emailInput="ngModel"
-                      placeholder="{{emailLabel}}"
+                      placeholder="{{i18nMessages['email-address']}}"
                       name="email"
                       [(ngModel)]="accountUser.email"
                       floatingPlaceholder="false"
                       type="email"
                       required
-                      pattern="^[a-zA-Z0–9_.+-]+@[a-zA-Z0–9_.+-]+\.[a-zA-Z0–9_.+-]+$"
-                      (keyup)="changingEmail()">
+                      pattern="^[a-zA-Z0–9_.+-]+@[a-zA-Z0–9_.+-]+\.[a-zA-Z0–9_.+-]+$">
             </md-input>
             <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">
-                <p *ngIf="emailInput.errors && emailInput.errors.required">{{mandatoryEmailErrorMessage}}</p>
-                <p *ngIf="emailInput.errors && emailInput.errors.pattern">{{invalidEmailErrorMessage}}</p>
+                <p *ngIf="emailInput.errors && emailInput.errors.required" id="dot-my-account-email-required-error-message">{{getRequiredMessage(i18nMessages['email-address'])}}</p>
+                <p *ngIf="emailInput.errors && emailInput.errors.pattern" id="dot-my-account-email-invalid-error-message">{{stringFormat.formatMessage(i18nMessages['errors.email'], i18nMessages['email-address'])}}</p>
             </div>
 
-            <md-input id="my-account-component-password-input"
+            <md-input id="dot-my-account-password-input"
                       #passwordInput="ngModel"
-                      (keyup)="validateConfirmPassword()"
-                      placeholder="{{passwordLabel}}"
+                      placeholder="{{i18nMessages['password']}}"
                       name="password"
                       [(ngModel)]="password"
                       floatingPlaceholder="false"
+                      (keyup)="checkPasswords()"
                       type="password">
             </md-input>
-
-            <md-input id="my-account-component-confirm-password-input"
+            <md-input id="dot-my-account-confirm-password-input"
                       #confirmPasswordInput="ngModel"
-                      (keyup)="validateConfirmPassword()"
-                      placeholder="{{confirmPasswordLabel}}"
+                      placeholder="{{i18nMessages['re-enter-password']}}"
                       name="confirmPassword"
-                      [(ngModel)]="confirmPassword"
+                      [(ngModel)]="passwordConfirm"
                       floatingPlaceholder="false"
+                      (keyup)="checkPasswords()"
                       type="password">
             </md-input>
-            <p class="error-message" [hidden]="confirmPasswordIsValid">{{confirmPasswordErrorMessage}}</p>
+            <p class="error-message" [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch">{{i18nMessages['error.forgot.password.passwords.dont.match']}}</p>
 
             <div class="col-sm-12">
-                <button id="my-account-component-ok-button" md-button md-raised-button type="submit"
-                        [disabled]="!myAccountForm.form.valid || !confirmPasswordIsValid">{{saveButtonLabel}}</button>
-                <button id="my-account-component-close-button" md-button md-flat-button (click)="close.emit()" type="button">{{closeButtonLabel}}</button>
+                <button id="dot-my-account-ok-button" md-button md-raised-button type="submit"
+                        [disabled]="!passwordMatch || !myAccountForm.form.valid">{{i18nMessages['save']}}</button>
+                <button id="dot-my-account-close-button" md-button md-flat-button (click)="close.emit()" type="button">{{i18nMessages['modes.Close']}}</button>
             </div>
         </form>
     </div>

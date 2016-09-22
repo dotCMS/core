@@ -1,18 +1,16 @@
-import { Routes } from '@ngrx/router';
-import { Observable } from 'rxjs/Rx';
-import { Observer } from 'rxjs/Observer';
-import { RuleEngineContainer } from '../../view/components/rule-engine/rule-engine.container';
-import { Injectable, Inject } from '@angular/core';
-import { PatternLibrary } from '../../view/components/common/pattern-library/pattern-library';
-import {Subject} from 'rxjs/Subject';
-import {LoginService} from './login-service';
-import {CoreWebService} from './core-web-service';
-import {RequestMethod, Http} from '@angular/http';
 import {ApiRoot} from '../persistence/ApiRoot';
-import {Router} from '@ngrx/router';
+import {CoreWebService} from './core-web-service';
+import {Injectable, Inject} from '@angular/core';
+import {LoginService} from './login-service';
+import {Observable} from 'rxjs/Rx';
+import {PatternLibrary} from '../../view/components/common/pattern-library/pattern-library';
+import {RequestMethod, Http} from '@angular/http';
+import {Router, Routes} from '@ngrx/router';
+import {RuleEngineContainer} from '../../view/components/rule-engine/rule-engine.container';
+import {Subject} from 'rxjs/Subject';
 
 @Injectable()
-export class RoutingService extends CoreWebService{
+export class RoutingService extends CoreWebService {
 
     private _menusChange$: Subject<Menu[]> = new Subject();
     private menus: Menu[];
@@ -26,19 +24,16 @@ export class RoutingService extends CoreWebService{
         'PL': PatternLibrary
     };
 
-    constructor(apiRoot: ApiRoot, http: Http, @Inject('routes') private routes: Routes[ ],  loginService: LoginService,
-                private router: Router) {
+    // TODO: I think we should be able to remove the routing injection
+    constructor(apiRoot: ApiRoot, http: Http, @Inject('routes') private routes: Routes[], loginService: LoginService,
+            private router: Router) {
         super(apiRoot, http);
 
-        this.urlMenus = `${apiRoot.baseUrl}api/v1/appconfiguration`;
-
-        if (loginService.loginUser) {
-            this.loadMenus();
-        }
-
-        loginService.loginUser$.subscribe(user => this.loadMenus());
+        this.urlMenus = 'v1/CORE_WEB/menu';
 
         this.portlets = new Map();
+
+        loginService.watchUser(this.loadMenus.bind(this));
     }
 
     get menusChange$(): Observable<Menu[]> {
@@ -99,8 +94,9 @@ export class RoutingService extends CoreWebService{
         this.requestView({
             method: RequestMethod.Get,
             url: this.urlMenus,
-        }).subscribe(response => this.setMenus(response.entity.menu),
-            error => this._menusChange$.error(error));
+        }).subscribe(response => {
+            this.setMenus(response.entity)
+        }, error => this._menusChange$.error(error));
     }
 
     get currentMenu(): Menu[]{

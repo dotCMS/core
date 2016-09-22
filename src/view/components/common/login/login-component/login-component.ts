@@ -38,7 +38,7 @@ export class LoginComponent {
     private myAccountRememberMe: boolean = false;
     private language: string = '';
 
-    languages: Array<string> = [];
+    languages: Array<any> = [];
 
     // labels
     loginLabel: string = '';
@@ -127,12 +127,7 @@ export class LoginComponent {
             let entity = data.entity;
 
             this.loginLabel = dataI18n.Login;
-            this.emailAddressLabel = dataI18n['email-address'];
-            if ('emailAddress' === entity.authorizationType) {
-                this.userIdOrEmailLabel = dataI18n['email-address'];
-            } else {
-                this.userIdOrEmailLabel = dataI18n['user-id'];
-            }
+            this.emailAddressLabel = 'emailAddress' === entity.authorizationType ? this.userIdOrEmailLabel = dataI18n['email-address']: this.userIdOrEmailLabel = dataI18n['user-id'];
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
             this.loginButton = dataI18n['sign-in'].toUpperCase();
