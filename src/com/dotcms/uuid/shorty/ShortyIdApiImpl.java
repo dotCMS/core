@@ -157,7 +157,7 @@ public class ShortyIdApiImpl implements ShortyIdApi {
     }
     
     void validShorty(final String test) {
-        if (test == null || test.length() < minLength || test.length()>36) {
+        if (test == null || test.length() < 8 || test.length()>36) {
             throw new ShortyException(
                     "shorty " + test+" is not a short id.  Short Ids should be " +minLength + " chars in length");
         }
@@ -165,7 +165,7 @@ public class ShortyIdApiImpl implements ShortyIdApi {
         for (char c : test.toCharArray()) {
             if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='-')) {
                 throw new ShortyException(
-                        "shorty " + test+" is not an alpha numeric id.  Short Ids should be 8 alpha/numeric chars in length");
+                        "shorty " + test+" is not an alpha numeric id.  Short Ids should be " + minLength+ " alpha/numeric chars in length");
             }
         }
     }
