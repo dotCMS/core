@@ -41,7 +41,7 @@
 	} catch (NumberFormatException e) {	}
 	List structures = StructureFactory.getStructures();
 	
-	String popup = request.getParameter ("popup");
+	String popup = request.getParameter (WebKeys.POPUP);
 	String view = java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " and deleted = " + com.dotmarketing.db.DbConnectionFactory.getDBFalse() + ")","UTF-8");
 %>
 

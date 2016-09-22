@@ -10,15 +10,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import com.dotcms.repackage.com.google.gson.Gson;
-import com.dotcms.repackage.com.google.gson.GsonBuilder;
-import com.dotcms.repackage.com.google.gson.JsonDeserializationContext;
-import com.dotcms.repackage.com.google.gson.JsonDeserializer;
-import com.dotcms.repackage.com.google.gson.JsonElement;
-import com.dotcms.repackage.com.google.gson.JsonParseException;
-import com.dotcms.repackage.com.google.gson.JsonPrimitive;
-import com.dotcms.repackage.com.google.gson.JsonSerializationContext;
-import com.dotcms.repackage.com.google.gson.JsonSerializer;
+import com.dotcms.repackage.com.google.gson.*;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -195,6 +187,24 @@ public class MarshalFactory implements Serializable {
 
             // java.sql.Time
             this.addTimeAdapter(gsonBuilder);
+
+            // Add the exclusion strategy using annotation, see Exclude annotation.
+            this.addExclusionStrategy (gsonBuilder);
+        }
+
+        private void addExclusionStrategy(final GsonBuilder gsonBuilder) {
+
+            gsonBuilder.setExclusionStrategies(new ExclusionStrategy() {
+                @Override
+                public boolean shouldSkipField(final FieldAttributes fieldAttributes) {
+                    return fieldAttributes.getAnnotation(Exclude.class) != null;
+                }
+
+                @Override
+                public boolean shouldSkipClass(Class<?> aClass) {
+                    return false;
+                }
+            });
         }
 
         private void addTimeAdapter(final GsonBuilder gsonBuilder) {

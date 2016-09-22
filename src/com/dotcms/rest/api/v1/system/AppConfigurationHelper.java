@@ -38,9 +38,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 @SuppressWarnings("serial")
 public class AppConfigurationHelper implements Serializable {
 
-	private final LoginAsAPI loginAsAPI;
-	private final LoginService loginService;
-	private final MenuResource menuResource;
 	private final ConfigurationHelper configurationHelper;
 
 	private static class SingletonHolder {
@@ -52,38 +49,13 @@ public class AppConfigurationHelper implements Serializable {
 	}
 
 	public AppConfigurationHelper() {
-		this( APILocator.getLoginAsAPI(), LoginServiceFactory.getInstance().getLoginService(),
-				new MenuResource(), ConfigurationHelper.INSTANCE);
+		this( ConfigurationHelper.INSTANCE);
 	}
 
 	@VisibleForTesting
-	public AppConfigurationHelper(LoginAsAPI loginAsAPI, LoginService loginService, MenuResource menuResource,
-								  ConfigurationHelper configurationHelper) {
-		this.loginAsAPI = loginAsAPI;
-		this.loginService = loginService;
-		this.menuResource = menuResource;
+	public AppConfigurationHelper(ConfigurationHelper configurationHelper) {
+
 		this.configurationHelper = configurationHelper;
-	}
-
-	/**
-	 * Returns the list of menu items and sub-items for the main navigation bar
-	 * displayed when users log into the dotCMS back-end.
-	 * 
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @return The navigation menu items.
-	 */
-	public Object getMenuData(final HttpServletRequest request) {
-
-		Object entity = null;
-		try {
-			final Response menuResponse = menuResource.getMenus(MenuResource.App.CORE_WEB.name(), request);
-			entity = ResponseEntityView.class.cast(menuResponse.getEntity()).getEntity();
-		} catch (Exception e) {
-			// If not authenticated, return an empty response
-			entity = new ArrayList<Object>();
-		}
-		return entity;
 	}
 
 	/**
@@ -100,33 +72,5 @@ public class AppConfigurationHelper implements Serializable {
 		} catch (LanguageException e) {
 			throw new LanguageRuntimeException(e);
 		}
-	}
-
-	/**
-	 * Return a map with the Principal and LoginAs user, the map content the follows keys:
-	 *
-	 * <ul>
-	 *     <li>{@link AppContextInitResource#USER} for the principal user</li>
-	 *     <li>{@link AppContextInitResource#LOGIN_AS_USER} for the login as user</li>
-	 * </ul>
-	 *
-	 * @param request
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-     */
-	public Map<String, Map> getUsers(final HttpServletRequest request) throws DotDataException, DotSecurityException,
-			IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-		User principalUser = loginAsAPI.getPrincipalUser( WebSessionContext.getInstance( request ));
-		User loginAsUser = null;
-
-		if (principalUser == null){
-			principalUser = this.loginService.getLogInUser( request );
-		}else{
-			loginAsUser = this.loginService.getLogInUser( request );
-		}
-
-		return map(AppContextInitResource.USER, principalUser != null ? principalUser.toMap() : null, AppContextInitResource.LOGIN_AS_USER,
-				loginAsUser != null ? loginAsUser.toMap() : null);
 	}
 }

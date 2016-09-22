@@ -10,7 +10,6 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
@@ -51,7 +50,7 @@ public class CreateJsonWebTokenResource implements Serializable {
 
     private final UserLocalManager         userLocalManager;
     private final LoginService             loginService;
-    private final AuthenticationHelper     authenticationHelper;
+    private final ResponseUtil responseUtil;
     private final JsonWebTokenUtils        jsonWebTokenUtils;
     private final SecurityLoggerServiceAPI securityLoggerServiceAPI;
 
@@ -61,7 +60,7 @@ public class CreateJsonWebTokenResource implements Serializable {
     public CreateJsonWebTokenResource() {
         this(LoginServiceFactory.getInstance().getLoginService(),
                 UserLocalManagerFactory.getManager(),
-                AuthenticationHelper.INSTANCE,
+                ResponseUtil.INSTANCE,
                 JsonWebTokenUtils.getInstance(),
                 APILocator.getSecurityLogger()
                 );
@@ -70,14 +69,14 @@ public class CreateJsonWebTokenResource implements Serializable {
     @VisibleForTesting
     protected CreateJsonWebTokenResource(final LoginService loginService,
                                      final UserLocalManager userLocalManager,
-                                     final AuthenticationHelper  authenticationHelper,
+                                     final ResponseUtil responseUtil,
                                      final JsonWebTokenUtils     jsonWebTokenUtils,
                                      final SecurityLoggerServiceAPI securityLoggerServiceAPI
                                      ) {
 
         this.loginService               = loginService;
         this.userLocalManager           = userLocalManager;
-        this.authenticationHelper       = authenticationHelper;
+        this.responseUtil       = responseUtil;
         this.jsonWebTokenUtils          = jsonWebTokenUtils;
         this.securityLoggerServiceAPI   = securityLoggerServiceAPI;
     }
@@ -119,20 +118,20 @@ public class CreateJsonWebTokenResource implements Serializable {
                         createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
             } else {
 
-                res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+                res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                         locale, userId, "authentication-failed");
             }
         } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                     locale, userId, "authentication-failed");
         } catch (AuthException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.UNAUTHORIZED,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                     locale, userId, "authentication-failed");
         } catch (RequiredLayoutException e) {
 
-            res = this.authenticationHelper.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR,
+            res = this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR,
                     locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 

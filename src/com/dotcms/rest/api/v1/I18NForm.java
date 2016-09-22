@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.authentication;
+package com.dotcms.rest.api.v1;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -6,8 +6,8 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import java.io.Serializable;
 import java.util.List;
 
-@JsonDeserialize(builder = LoginForm.Builder.class)
-public class LoginForm implements Serializable {
+@JsonDeserialize(builder = I18NForm.Builder.class)
+public class I18NForm implements Serializable {
 
     private final String language;
 
@@ -27,7 +27,7 @@ public class LoginForm implements Serializable {
         return messagesKey;
     }
 
-    private LoginForm(Builder builder) {
+    private I18NForm(Builder builder) {
 
         this.language = builder.language;
         this.country  = builder.country;
@@ -39,23 +39,23 @@ public class LoginForm implements Serializable {
         @JsonProperty private String country;
         @JsonProperty private List<String> messagesKey;
 
-        public LoginForm.Builder language(String language) {
+        public I18NForm.Builder language(String language) {
             this.language = language;
             return this;
         }
 
-        public LoginForm.Builder country(String country) {
+        public I18NForm.Builder country(String country) {
             this.country = country;
             return this;
         }
 
-        public LoginForm.Builder messagesKey(List<String> messagesKey) {
+        public I18NForm.Builder messagesKey(List<String> messagesKey) {
             this.messagesKey = messagesKey;
             return this;
         }
 
-        public LoginForm build() {
-            return new LoginForm(this);
+        public I18NForm build() {
+            return new I18NForm(this);
         }
     }
-} // E:O:F:LoginForm.
+} // E:O:F:I18NForm.

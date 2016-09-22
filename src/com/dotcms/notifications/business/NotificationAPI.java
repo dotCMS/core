@@ -145,24 +145,27 @@ public interface NotificationAPI extends Serializable {
 	/**
 	 * Deletes a notification based on its ID.
 	 * 
+	 *
+	 * @param userId
 	 * @param notificationId
 	 *            - The ID of the notification.
 	 * @throws DotDataException
 	 *             An error occurred when deleting the notification in the
 	 *             database.
 	 */
-	void deleteNotification(String notificationId) throws DotDataException;
+	void deleteNotification(String userId, String notificationId) throws DotDataException;
 
 	/**
 	 * Deletes a notification based on its ID.
 	 *
+	 * @param userId String
 	 * @param notificationId
 	 *            - The ID of the notification.
 	 * @throws DotDataException
 	 *             An error occurred when deleting the notification in the
 	 *             database.
 	 */
-	void deleteNotifications(String... notificationId) throws DotDataException;
+	void deleteNotifications(String userId, String... notificationId) throws DotDataException;
 
 	/**
 	 * Deletes all the notifications associated to a specific user ID.
