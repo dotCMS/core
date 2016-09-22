@@ -16,7 +16,7 @@ import java.util.List;
  *
  */
 @SuppressWarnings("serial")
-public class Notification implements Serializable {
+public class Notification implements Serializable, Cloneable {
 
 	private String id;
 	private NotificationData notificationData;

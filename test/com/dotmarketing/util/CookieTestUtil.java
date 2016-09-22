@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Created by freddyrodriguez on 10/3/16.
  */
-public abstract class CookieUtilTest {
+public abstract class CookieTestUtil {
 
     private static final String RESPONSE_COOKIES_HEADER = "Set-Cookie";
     private static final String REQUEST_COOKIES_HEADER = "Cookie";

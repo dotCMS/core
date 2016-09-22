@@ -50,7 +50,7 @@
 
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
-var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute("in_frame")) && (boolean)request.getSession().getAttribute("in_frame"))?true:false%>;
+var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
 
 function resetSearch() {
 	form = document.getElementById('fm');

@@ -76,18 +76,18 @@
 
     function backToCMS(){
        #if(${isAngularFrame})
-        	#if($UtilMethods.isSet(${viewBrowserURL}))
-	            window.top.${angularFrame}.location  = "${viewBrowserURL}";
-	        #else
-	            window.top.${angularFrame}.location  = "/c/";
-	        #end
-        #else
-	        #if($UtilMethods.isSet(${viewBrowserURL}))
-	            window.top.location  = "${viewBrowserURL}";
-	        #else
-	            window.top.location  = "/c/";
-	        #end
-        #end
+        #if($UtilMethods.isSet(${viewBrowserURL}))
+	    window.top.${angularFrame}.location  = "${viewBrowserURL}";
+	    #else
+	    window.top.${angularFrame}.location  = "/c/";
+	    #end
+       #else
+	    #if($UtilMethods.isSet(${viewBrowserURL}))
+	    window.top.location  = "${viewBrowserURL}";
+	    #else
+	    window.top.location  = "/c/";
+	    #end
+       #end
     }
 
     function livePage(){

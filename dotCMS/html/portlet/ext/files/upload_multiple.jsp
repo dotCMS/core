@@ -70,7 +70,7 @@ boolean canUserWriteToFile = ownerHasWritePermission || hasAdminRole || perAPI.d
 boolean canUserPublishFile = ownerHasPubPermission || hasAdminRole || perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_PUBLISH, user, false) || perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, false);
 
 boolean inFrame = false;
-if(request.getParameter("in_frame")!=null){
+if(request.getParameter(WebKeys.IN_FRAME)!=null){
 	inFrame = true;
 }
 %>
