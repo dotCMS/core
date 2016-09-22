@@ -27,6 +27,8 @@ export class SiteSelectorComponent {
     ngOnInit(): void {
         this.siteService.switchSite$.subscribe(site => this.currentSite = site);
         this.siteService.sites$.subscribe(sites => this.sites = sites);
+        this.siteService.archivedCurrentSite$.subscribe(site => alert('SITE ARCHIVED'));
+        this.siteService.updatedCurrentSite$.subscribe(site => alert('UPDATE SITE'));
     }
 
     switchSite(option: any): void {

@@ -25,6 +25,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
     iframe: SafeResourceUrl;
     iframeElement;
     private loadingInProgress: boolean = true;
+    private currentId: string;
 
     constructor(private params$: RouteParams, private routingService: RoutingService,
                 private sanitizer: DomSanitizationService, private element: ElementRef, private siteService: SiteService, private loginService: LoginService) {
@@ -48,13 +49,16 @@ export class IframeLegacyComponent extends SiteChangeListener {
             .distinctUntilChanged()
             .forEach(id => {
                 if (id) {
+                    this.currentId = id;
                     this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
                 }
             });
     }
 
     changeSiteReload(): void {
-        if (this.iframeElement && this.iframeElement.contentWindow) {
+        if (this.iframeElement && this.iframeElement.contentWindow
+            && this.currentId !== 'EXT_HOSTADMIN') {
+
             this.loadingInProgress = true;
             this.iframeElement.contentWindow.location.reload();
         }
@@ -73,7 +77,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
         if (this.iframeElement && this.iframeElement.contentWindow) {
             let currentPath = this.iframeElement.contentWindow.location.pathname;
 
-            if (currentPath.indexOf('/c/portal_public/login') != -1) {
+            if (currentPath.indexOf('/c/portal_public/login') !== -1) {
                 this.loginService.logOutUser().subscribe(data => {
                 }, (error) => {
                     console.log(error);

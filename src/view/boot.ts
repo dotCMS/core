@@ -26,6 +26,7 @@ import {ResetPasswordContainer} from './components/common/login/reset-password-c
 import {RoutingService} from '../api/services/routing-service';
 import {RuleService} from '../api/rule-engine/Rule';
 import {SiteService} from '../api/services/site-service';
+import {DotcmsEventsService} from '../api/services/dotcms-events-service';
 import {UserModel} from '../api/auth/UserModel';
 
 new AppConfigurationService().getConfigProperties().subscribe(config => {
@@ -72,6 +73,7 @@ new AppConfigurationService().getConfigProperties().subscribe(config => {
         AppConfigurationService,
         RoutingService,
         LoginService,
+        DotcmsEventsService,
         SiteService,
         CoreWebService,
         HTTP_PROVIDERS,

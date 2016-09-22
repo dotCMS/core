@@ -6,6 +6,7 @@ import {RequestMethod, Http} from '@angular/http';
 import {Observer} from 'rxjs/Observer';
 import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
+import {DotcmsEventsService} from './dotcms-events-service';
 
 @Injectable()
 export class SiteService extends CoreWebService {
@@ -18,8 +19,10 @@ export class SiteService extends CoreWebService {
 
     private _switchSite$: Subject<Site> = new Subject();
     private _sites$: Subject<Site[]> = new Subject();
+    private _updatedCurrentSite$: Subject<Site> = new Subject();
+    private _archivedCurrentSite$: Subject<Site> = new Subject();
 
-    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService) {
+    constructor(apiRoot: ApiRoot, http: Http, private loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
         super(apiRoot, http);
 
         this.allSiteUrl = `${apiRoot.baseUrl}api/v1/site/currentSite`;
@@ -30,6 +33,46 @@ export class SiteService extends CoreWebService {
         }
 
         loginService.loginUser$.subscribe(user => this.loadSites());
+
+        dotcmsEventsService.subscribeTo('SAVE_SITE').pluck('data').subscribe( site => {
+            this.sites.push(site);
+            this._sites$.next(this.sites);
+        });
+
+        dotcmsEventsService.subscribeTo('UPDATE_SITE').subscribe( payload => {
+            let updatedSite: Site = payload.data;
+            this.sites = this.sites.map(site => site.identifier === updatedSite.identifier ? updatedSite : site);
+            this._sites$.next(this.sites);
+
+            if (this.site.identifier === updatedSite.identifier) {
+                this.site = updatedSite;
+
+                if (this.loginService.loginUser.userId !== payload.userId) {
+                    this._updatedCurrentSite$.next(updatedSite);
+                }
+            }
+        });
+
+        dotcmsEventsService.subscribeTo('ARCHIVE_SITE').subscribe( payload => {
+            let archivedSite: Site = payload.data;
+            this.sites = this.sites.filter(site => site.identifier !== archivedSite.identifier);
+            this._sites$.next(this.sites);
+
+            if (this.site.identifier === archivedSite.identifier) {
+
+                if (this.loginService.loginUser.userId !== payload.userId) {
+                    this._archivedCurrentSite$.next(archivedSite);
+                }
+
+                this.site = this.sites[0];
+                this._switchSite$.next(this.site);
+            }
+        });
+
+        dotcmsEventsService.subscribeTo('UN_ARCHIVE_SITE').pluck('data').subscribe( site => {
+            this.sites.push(site);
+            this._sites$.next(this.sites);
+        });
     }
 
     switchSite(siteId: String): Observable<any> {
@@ -48,6 +91,14 @@ export class SiteService extends CoreWebService {
 
     get sites$(): Observable<Site[]> {
         return this._sites$.asObservable();
+    }
+
+    get updatedCurrentSite$(): Observable<Site> {
+        return this._updatedCurrentSite$.asObservable();
+    }
+
+    get archivedCurrentSite$(): Observable<Site> {
+        return this._archivedCurrentSite$.asObservable();
     }
 
     private setCurrentSiteIdentifier(siteIdentifier: string): void {
