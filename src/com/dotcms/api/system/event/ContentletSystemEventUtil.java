@@ -52,13 +52,12 @@ public class ContentletSystemEventUtil {
         SystemEventType systemEventType = getSystemEventType(contentlet, isNew);
 
         if (systemEventType != null) {
-            Payload payload = new Payload(contentlet, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ),
-                    user.getUserId());
+            Payload payload = new Payload(contentlet, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ));
 
             try {
                 systemEventsAPI.push(new SystemEvent(systemEventType, payload));
             } catch (DotDataException e) {
-                throw new BaseRuntimeInternationalizationException(e);
+                throw new CanNotPushSystemEventException(e);
             }
         }
     }

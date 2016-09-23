@@ -739,7 +739,7 @@ public class HostAPIImpl implements HostAPI {
 		hostCache.clearAliasCache();
 
 		systemEventsAPI.push(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ), user.getUserId()));
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	public void unarchive(Host host, User user, boolean respectFrontendRoles)
@@ -754,7 +754,7 @@ public class HostAPIImpl implements HostAPI {
 		hostCache.clearAliasCache();
 
 		systemEventsAPI.push(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ), user.getUserId()));
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	private synchronized Host createDefaultHost() throws DotDataException,

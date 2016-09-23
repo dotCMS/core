@@ -46,14 +46,6 @@ public class Payload implements Serializable {
 				   final Visibility visibility,
 				   final String visibilityId) {
 
-		this(data, visibility, visibilityId, null);
-	}
-
-	public Payload(final Object data,
-				   final Visibility visibility,
-				   final String visibilityId,
-				   final String userId) {
-
 		this.type = data.getClass().getName();
 		this.data = data;
 		this.visibility = visibility;

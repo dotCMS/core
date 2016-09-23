@@ -19,7 +19,6 @@ public class PayloadDeserializer implements JsonDeserializer {
     public static final String VISIBILITY = "visibility";
     public static final String VISIBILITY_ID = "visibilityId";
     public static final String DATA = "data";
-    public static final String USER_ID = "userId";
 
     @Override
     public Object deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
@@ -51,10 +50,6 @@ public class PayloadDeserializer implements JsonDeserializer {
                             (VISIBILITY_ID).getAsString();
                 }
 
-                if(jsonObject.has(USER_ID)) {
-                    userId = jsonObject.getAsJsonPrimitive
-                            (USER_ID).getAsString();
-                }
                 if (null != visibilityName) {
 
                     visibility =
@@ -63,7 +58,7 @@ public class PayloadDeserializer implements JsonDeserializer {
 
                 clazz = getClassFor(payloadType);
                 payloadData = context.deserialize(jsonObject.get(DATA), clazz);
-                payload = new Payload(payloadData, visibility, visibilityId, userId);
+                payload = new Payload(payloadData, visibility, visibilityId);
             }
         }
 
