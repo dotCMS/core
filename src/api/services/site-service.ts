@@ -33,28 +33,26 @@ export class SiteService extends CoreWebService {
             this._sites$.next(this.sites);
         });
 
-        dotcmsEventsService.subscribeTo('UPDATE_SITE').subscribe( payload => {
-            let updatedSite: Site = payload.data;
+        dotcmsEventsService.subscribeTo('UPDATE_SITE').pluck('data').subscribe( updatedSite => {
             this.sites = this.sites.map(site => site.identifier === updatedSite.identifier ? updatedSite : site);
             this._sites$.next(this.sites);
 
             if (this.site.identifier === updatedSite.identifier) {
                 this.site = updatedSite;
 
-                if (loginService.auth.user.userId !== payload.userId) {
+                if (loginService.auth.user.userId !== updatedSite.modUser) {
                     this._updatedCurrentSite$.next(updatedSite);
                 }
             }
         });
 
-        dotcmsEventsService.subscribeTo('ARCHIVE_SITE').subscribe( payload => {
-            let archivedSite: Site = payload.data;
+        dotcmsEventsService.subscribeTo('ARCHIVE_SITE').pluck('data').subscribe( archivedSite => {
             this.sites = this.sites.filter(site => site.identifier !== archivedSite.identifier);
             this._sites$.next(this.sites);
 
             if (this.site.identifier === archivedSite.identifier) {
 
-                if (loginService.auth.user.userId !== payload.userId) {
+                if (loginService.auth.user.userId !== archivedSite.modUser) {
                     this._archivedCurrentSite$.next(archivedSite);
                 }
 
