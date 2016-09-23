@@ -374,8 +374,8 @@ public class UserResource implements Serializable {
 					"An error occurred when processing the request." + e.getMessage());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-		SecurityLogger.logInfo(UserResource.class, "User  (" + currentUser.getUserId()
-				+ "), has sucessfully login as " + loginAsUserId + ". Remote IP: " + request.getRemoteAddr());
+		SecurityLogger.logInfo(UserResource.class, "User ID (" + currentUser.getUserId()
+				+ "), has sucessfully login as (" + loginAsUserId + "). Remote IP: " + request.getRemoteAddr());
 		return response;
 	}
 
