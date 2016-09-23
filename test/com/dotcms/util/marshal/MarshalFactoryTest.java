@@ -46,7 +46,6 @@ public class MarshalFactoryTest {
         contentlet.setProperty("hostName", "WWWWW");
 
         String json = marshalUtils.marshal(contentlet);
-        System.out.println(json);
 
         Contentlet contentlet1 = marshalUtils.unmarshal(json, Contentlet.class);
         assertEquals("1", contentlet.getIdentifier());
