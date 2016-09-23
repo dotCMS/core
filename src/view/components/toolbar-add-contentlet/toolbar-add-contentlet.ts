@@ -69,6 +69,8 @@ export class ToolbarAddContenletComponent {
                     });
                 }
             );
+
+            this.selected = this.types && this.types.length > 1 ? this.types[0] : null;
         });
     }
 

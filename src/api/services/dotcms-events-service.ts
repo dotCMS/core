@@ -36,22 +36,28 @@ export class DotcmsEventsService {
      * Opens the Websocket connection with the System Events end-point.
      */
     connectWithSocket(auth: Auth): void {
-        let user: User = auth.user;
-        this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${user.userId}`);
-        this.ws.connect();
+        if (!this.ws) {
+            let user: User = auth.user;
+            this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${user.userId}`);
+            this.ws.connect();
 
-        this.ws.getDataStream().subscribe(
-            res => {
-                let data = (JSON.parse(res.data));
+            this.ws.getDataStream().subscribe(
+                res => {
+                    let data = (JSON.parse(res.data));
 
-                if (!this.subjects[data.event]) {
-                    this.subjects[data.event] = new Subject();
+                    if (!this.subjects[data.event]) {
+                        this.subjects[data.event] = new Subject();
+                    }
+                    this.subjects[data.event].next(data.payload);
+                },
+                function (e): void {
+                    console.log('Error in the System Events service: ' + e.message);
+                },
+                function (): void {
+                    console.log('Completed');
                 }
-                this.subjects[data.event].next(data.payload);
-            },
-            function(e): void { console.log('Error in the System Events service: ' + e.message); },
-            function(): void { console.log('Completed'); }
-        );
+            );
+        }
     }
 
     /**

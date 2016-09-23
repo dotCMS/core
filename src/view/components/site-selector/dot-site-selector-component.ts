@@ -5,6 +5,8 @@ import {Site} from '../../../api/services/site-service';
 import {DotSelect} from '../common/dot-select/dot-select';
 import {DotOption} from '../common/dot-select/dot-select';
 import {SiteService} from '../../../api/services/site-service';
+import {MessageService} from '../../../api/services/messages-service';
+import {BaseComponent} from '../common/_base/base-component';
 
 @Component({
     directives: [DropdownComponent, DotSelect, DotOption],
@@ -16,17 +18,24 @@ import {SiteService} from '../../../api/services/site-service';
     styleUrls: ['dot-site-selector-component.css'],
     templateUrl: ['dot-site-selector-component.html'],
 })
-export class SiteSelectorComponent {
+export class SiteSelectorComponent extends BaseComponent {
     private currentSite: Site;
     private sites: Site[];
+    private message: string;
 
-    constructor(private siteService: SiteService) {
-
+    constructor(private siteService: SiteService, messageService: MessageService) {
+        super(['updated-current-site-message', 'archived-current-site-message', 'modes.Close'], messageService);
     }
 
     ngOnInit(): void {
         this.siteService.switchSite$.subscribe(site => this.currentSite = site);
         this.siteService.sites$.subscribe(sites => this.sites = sites);
+        this.siteService.archivedCurrentSite$.subscribe(site => {
+            this.message = this.i18nMessages['archived-current-site-message'];
+        });
+        this.siteService.updatedCurrentSite$.subscribe(site => {
+            this.message = this.i18nMessages['updated-current-site-message'];
+        });
     }
 
     switchSite(option: any): void {

@@ -42,7 +42,8 @@ export class DotSelect implements ControlValueAccessor {
 
     set innerValue(val) {
         this._innerValue = val;
-        this.selectedText = this.options.filter((option) => option.value === val)[0].text || '';
+        let selectedOption = this.options.filter((option) => option.value === val)[0];
+        this.selectedText = selectedOption ? selectedOption.text : '';
         this.propagateChange(val);
     }
 
@@ -60,6 +61,10 @@ export class DotSelect implements ControlValueAccessor {
 
     addOption(option: DotOption): void {
         this.options.push(option);
+
+        if (this._innerValue && option.value === this._innerValue) {
+           this.selectedText = option.text;
+        }
     }
 
     openClose(): void {
@@ -116,7 +121,6 @@ export class DotSelect implements ControlValueAccessor {
             this.isOpen = false;
         }
     }
-
 }
 
 @Component({
@@ -140,8 +144,8 @@ export class DotOption {
     }
 
     ngAfterViewInit(): void {
-        this.select.addOption(this);
         this.text = this.node.nativeElement.firstChild.innerHTML.trim();
+        this.select.addOption(this);
     }
 
     onClick(): void {
