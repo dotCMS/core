@@ -1,5 +1,7 @@
 package com.dotcms.api.system.event;
 
+import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+
 import java.io.Serializable;
 
 /**
@@ -17,7 +19,7 @@ public class Payload implements Serializable {
 	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-	private final String  visibilityId; // user id or role uid, if it is global, this is not need
+	private final String  visibilityId; // user id, role uid or permission, if it is global, this is not need
 
 	/**
 	 * Creates a payload object.
@@ -27,7 +29,7 @@ public class Payload implements Serializable {
 	 */
 	public Payload(final Object data) {
 
-		this(data, Visibility.GLOBAL, null);
+		this(data, Visibility.GLOBAL, (String) null);
 	}
 
 	/**
@@ -80,9 +82,13 @@ public class Payload implements Serializable {
 
 	/**
 	 * Returns the visibility id
-	 * @return String
+	 * @return Object
      */
 	public String getVisibilityId() {
 		return visibilityId;
+	}
+
+	public boolean verified(SessionWrapper session) {
+		return visibility.verified(session, this);
 	}
 } // E:O:F:Payload.
