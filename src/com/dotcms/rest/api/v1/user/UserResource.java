@@ -359,27 +359,23 @@ public class UserResource implements Serializable {
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (NoSuchUserException | DotSecurityException e) {
-			SecurityLogger.logInfo(
-					UserResource.class,
-					"An attempt to login as a different user was made by " + currentUser.getFullName() + " ("
+			SecurityLogger.logInfo(UserResource.class,
+					"An attempt to login as a different user was made by user ID ("
 							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
-			Logger.error(this, "An error occurred when retrieving information of 'Login As' user ID [" + loginAsUserId
-					+ "].", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
 		} catch (DotDataException e) {
-			SecurityLogger.logInfo(
-					UserResource.class,
-					"An attempt to login as a different user was made by " + currentUser.getFullName() + " ("
+			SecurityLogger.logInfo(UserResource.class,
+					"An attempt to login as a different user was made by user ID ("
 							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
-			Logger.error(this, "An error occurred when processing the 'Login As' user data.", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
-			Logger.error(this, "An error occurred when processing the request.", e);
+			SecurityLogger.logInfo(UserResource.class,
+					"An error occurred when processing the request." + e.getMessage());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-		SecurityLogger.logInfo(UserResource.class, "User " + currentUser.getFullName() + " (" + currentUser.getUserId()
-				+ "), has sucessfully login as " + loginAsUserId + ". Remote IP: " + request.getRemoteAddr());
+		SecurityLogger.logInfo(UserResource.class, "User ID (" + currentUser.getUserId()
+				+ "), has sucessfully login as (" + loginAsUserId + "). Remote IP: " + request.getRemoteAddr());
 		return response;
 	}
 
@@ -425,28 +421,23 @@ public class UserResource implements Serializable {
 			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
 		} catch (DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class,
-					"An attempt to logout as a different user was made by " + currentLoginAsUser.getFullName() + " ("
+					"An attempt to logout as a different user was made by user ID ("
 							+ currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
-			Logger.error(this,
-					"An error occurred when retrieving information of 'Login As' user ID [" + currentLoginAsUser.getUserId()
-							+ "].", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class,
-					"An attempt to logout as a different user was made by " + currentLoginAsUser.getFullName() + " ("
+					"An attempt to logout as a different user was made by user ID ("
 							+ currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
-			Logger.error(this,
-					"An error occurred when retrieving information of 'Login As' user ID [" + currentLoginAsUser.getUserId()
-							+ "].", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
-			Logger.error(this, "An error occurred when processing the request.", e);
+			SecurityLogger.logInfo(UserResource.class, 
+					"An error occurred when processing the request."+e.getMessage());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 		SecurityLogger.logInfo(UserResource.class,
-				"User (" + principalUserId + ") has sucessfully logged out as " + currentLoginAsUser.getFullName() + "("
-						+ currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+				"User (" + principalUserId + ") has sucessfully logged out as (" 
+		        + currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
 		return response;
 	}
 
@@ -481,7 +472,8 @@ public class UserResource implements Serializable {
 			List<Map<String, Object>> loginAsUser = helper.getLoginAsUser();
 			response = Response.ok(new ResponseEntityView(map("users", loginAsUser))).build();
 		} catch (Exception e) {
-			Logger.error(this, "An error occurred when processing the request.", e);
+			SecurityLogger.logInfo(UserResource.class, 
+					"An error occurred when processing the request." + e.getMessage());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
