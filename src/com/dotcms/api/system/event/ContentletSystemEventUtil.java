@@ -24,10 +24,15 @@ import java.util.Map;
  */
 public class ContentletSystemEventUtil {
 
+    private static final String SAVE_EVENT_PREFIX = "SAVE";
+    private static final String UPDATE_EVENT_PREFIX = "UPDATE";
+
+    private static final String SITE_EVENT_SUFFIX= "SITE";
+
     private final SystemEventsAPI systemEventsAPI;
 
     @VisibleForTesting
-    public ContentletSystemEventUtil(SystemEventsAPI systemEventsAPI){
+    protected ContentletSystemEventUtil(SystemEventsAPI systemEventsAPI){
         this.systemEventsAPI = systemEventsAPI;
     }
 
@@ -45,31 +50,34 @@ public class ContentletSystemEventUtil {
 
     public void pushSaveEvent(User user, Contentlet contentlet, boolean isNew){
         SystemEventType systemEventType = getSystemEventType(contentlet, isNew);
-        Payload payload = new Payload(contentlet, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ),
-                user.getUserId());
 
-        try {
-            systemEventsAPI.push(new SystemEvent(systemEventType, payload));
-        } catch (DotDataException e) {
-            throw new BaseRuntimeInternationalizationException(e);
+        if (systemEventType != null) {
+            Payload payload = new Payload(contentlet, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ),
+                    user.getUserId());
+
+            try {
+                systemEventsAPI.push(new SystemEvent(systemEventType, payload));
+            } catch (DotDataException e) {
+                throw new BaseRuntimeInternationalizationException(e);
+            }
         }
     }
 
     private SystemEventType getSystemEventType(Contentlet contentlet, boolean isNew) {
 
-        String methodName = isNew ? "SAVE" : "UPDATE";
+        String methodName = isNew ? SAVE_EVENT_PREFIX : UPDATE_EVENT_PREFIX;
         String contentType = getType(contentlet);
         String eventName = String.format("%s_%s", methodName, contentType);
 
         try {
-            return SystemEventType.valueOf(eventName);
+            return SystemEventType.valueOf(eventName.toUpperCase());
         }catch(IllegalArgumentException e){
             return null;
         }
     }
 
     private String getType(Contentlet contentlet) {
-        return contentlet.isHost() ? "SITE" : contentlet.getStructure().getName();
+        return contentlet != null && contentlet.isHost() ? SITE_EVENT_SUFFIX : contentlet.getStructure().getName();
     }
 
 }

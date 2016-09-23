@@ -10,15 +10,13 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 
-/**
- * Created by freddyrodriguez on 16/9/16.
- */
-public class PermissionVerifier implements PayloadVerifier<Integer>{
 
-    private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+public class PermissionVerifier implements PayloadVerifier{
+
+    private final PermissionAPI permissionAPI;
 
     public PermissionVerifier(){
-
+        permissionAPI = APILocator.getPermissionAPI();
     }
 
     @Override
@@ -28,7 +26,7 @@ public class PermissionVerifier implements PayloadVerifier<Integer>{
                     Integer.parseInt(payload.getVisibilityId()),
                     session.getUser(), false);
         } catch (DotDataException e) {
-            throw new BaseRuntimeInternationalizationException(e);
+            throw new VerifierException(e);
         }
     }
 }

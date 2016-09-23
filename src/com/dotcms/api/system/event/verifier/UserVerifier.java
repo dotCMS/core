@@ -5,7 +5,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 
-public class UserVerifier implements  PayloadVerifier<String>{
+public class UserVerifier implements  PayloadVerifier{
 
     public UserVerifier(){}
 

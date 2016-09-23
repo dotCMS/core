@@ -96,6 +96,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
 
+	private final ContentletSystemEventUtil contentletSystemEventUtil;
+
 	public ContentletWebAPIImpl() {
 		catAPI = APILocator.getCategoryAPI();
 		perAPI = APILocator.getPermissionAPI();
@@ -106,6 +108,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
+
+		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
 	/*
 	 * 	(non-Javadoc)
@@ -185,7 +189,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(autocommit)
 		    HibernateUtil.commitTransaction();
 
-		ContentletSystemEventUtil.getInstance().pushSaveEvent(user, cont, isNew);
+		contentletSystemEventUtil.pushSaveEvent(user, cont, isNew);
 
 		contentletFormData.put("cache_control", "0");
 

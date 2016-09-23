@@ -16,7 +16,7 @@ import javax.websocket.Session;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class RoleVerifier implements PayloadVerifier<String> {
+public class RoleVerifier implements PayloadVerifier {
 
     private final RoleAPI roleAPI;
 
@@ -34,7 +34,7 @@ public class RoleVerifier implements PayloadVerifier<String> {
         try {
             return this.checkRoles(SessionWrapper.class.cast(session).getUser(), (String) payload.getVisibilityId());
         } catch (DotDataException e) {
-            throw new BaseRuntimeInternationalizationException(e);
+            throw new VerifierException(e);
         }
     }
 

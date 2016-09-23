@@ -19,8 +19,8 @@ public class Payload implements Serializable {
 	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-	private final String  visibilityId; // user id or role uid, if it is global, this is not need
-	private final String userId;
+	private final String  visibilityId; // user id, role uid or permission, if it is global, this is not need
+
 	/**
 	 * Creates a payload object.
 	 *
@@ -58,7 +58,6 @@ public class Payload implements Serializable {
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityId = visibilityId;
-		this.userId = userId;
 	}
 
 	/**
@@ -99,9 +98,5 @@ public class Payload implements Serializable {
 
 	public boolean verified(SessionWrapper session) {
 		return visibility.verified(session, this);
-	}
-
-	public String getUserId() {
-		return userId;
 	}
 } // E:O:F:Payload.

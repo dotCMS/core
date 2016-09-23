@@ -214,7 +214,6 @@ public class SystemEventsFactory implements Serializable {
 			final String id = record.getId();
 			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
 			final String payloadStr = record.getPayload();
-			System.out.println("------ payloadStr = " + payloadStr);
 			final Payload payload = marshalUtils.unmarshal(payloadStr, Payload.class);
 			final Date created = new Date(record.getCreationDate());
 			return new SystemEvent(id, eventType, payload, created);

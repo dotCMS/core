@@ -20,31 +20,10 @@ package com.dotcms.api.system.event;
  */
 public enum SystemEventType {
 
-	NOTIFICATION("notification"),
-	SAVE_SITE("save_site_testing"),
-	UPDATE_SITE("update_site_testing"),
-	ARCHIVE_SITE("archive_site"),
-	UN_ARCHIVE_SITE("un_archive_site");
-
-	private final String eventName;
-
-	/**
-	 * Creates an instance of this class.
-	 * 
-	 * @param eventName
-	 *            - The name of the event type.
-	 */
-	private SystemEventType(String eventName) {
-		this.eventName = eventName;
-	}
-
-	/**
-	 * Returns the name of this event type.
-	 * 
-	 * @return The name of the event type.
-	 */
-	public String getName() {
-		return this.eventName;
-	}
+	NOTIFICATION,
+	SAVE_SITE,
+	UPDATE_SITE,
+	ARCHIVE_SITE,
+	UN_ARCHIVE_SITE;
 
 }
