@@ -6,13 +6,14 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -36,7 +37,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 
 		String orderBy = req.getParameter("orderBy");
 		User user = _getUser(req);
-		orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "name");
+		orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc");
 		_loadStructures(req, user, WebKeys.STRUCTURES_VIEW_COUNT, WebKeys.Structure.STRUCTURES, WebKeys.STRUCTURE_QUERY);
 		if (req.getWindowState().equals(WindowState.NORMAL)) {
 			return mapping.findForward("portlet.ext.formhandler.view");
@@ -69,11 +70,11 @@ public class ViewFormHandlerAction extends DotPortletAction {
 		try {
 			String orderby = req.getParameter("orderBy");
 			if (!UtilMethods.isSet(orderby)) {
-				orderby = "upper(name)";
+				orderby = "mod_date";
 			}
 			String direction = req.getParameter("direction");
 			if (!UtilMethods.isSet(direction)) {
-				direction = "asc";
+				direction = "desc";
 			}
 
 			int pageNumber = 1;
@@ -115,7 +116,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 			}
 
 			structures = StructureFactory.getStructuresByUser(user,queryCondition, orderby, limit, offset, direction);
-			count = (int) ((PaginatedArrayList<Structure>)structures).getTotalResults();
+			count = APILocator.getContentTypeAPI2().count(queryCondition,user);
 			req.setAttribute(countWebKey, new Integer(count));
 			req.setAttribute(viewWebKey, structures);
 		} catch (Exception e) {

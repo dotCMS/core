@@ -277,6 +277,8 @@ public class FieldForm extends ValidatorForm {
 		        }
 		    }
 		}
+		/*
+		 * Logic Moved to Field
 		
 		if(dataType!=null && dataType.equals(Field.DataType.DATE.toString()) && !defaultValue.isEmpty() && !defaultValue.equals("now")) {
 		    DateFormat df=null;
@@ -294,6 +296,7 @@ public class FieldForm extends ValidatorForm {
                 }
 		    }
 		}
+		 */
 		return ae;
 	}
 

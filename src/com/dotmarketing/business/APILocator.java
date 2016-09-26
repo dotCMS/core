@@ -9,6 +9,10 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeApiImpl;
+import com.dotcms.contenttype.business.FieldApi;
+import com.dotcms.contenttype.business.FieldApiImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.priv.ESSearchProxy;
@@ -34,12 +38,14 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
 import com.dotmarketing.cms.polls.business.PollsAPILiferayImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
@@ -99,6 +105,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAuditAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 
 /**
@@ -363,8 +370,22 @@ public class APILocator extends Locator<APIIndex>{
     public static VisitorAPI getVisitorAPI () {
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
+    public static ContentTypeApi getContentTypeAPI2 () {
+		return new ContentTypeApiImpl();
+	}
 
-
+    public static FieldApi getFieldAPI2() {
+		return new FieldApiImpl();
+	}
+    public static User systemUser() throws DotDataException {
+		return getUserAPI().getSystemUser();
+	}
+    
+    public static Host systemHost() throws DotDataException {
+		return getHostAPI().findSystemHost();
+	}
+    
+    
 	private static Object getInstance(APIIndex index) {
 
 		if(instance == null){

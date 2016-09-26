@@ -1,10 +1,6 @@
 package com.dotmarketing.cache;
 
-import java.util.List;
-
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.business.Cachable;
-import com.dotmarketing.business.DotCacheException;
+import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotmarketing.portlets.structure.model.Structure;
 
 /**
@@ -12,8 +8,8 @@ import com.dotmarketing.portlets.structure.model.Structure;
  * @author rogelioblanco
  *
  */
-public abstract class ContentTypeCache implements Cachable {
-    public abstract String getContainerStructureGroup();
+public abstract class ContentTypeCache extends ContentTypeCache2Impl {
+
 
     public abstract void add(Structure st);
 
@@ -38,28 +34,7 @@ public abstract class ContentTypeCache implements Cachable {
 
     public abstract void remove(Structure st);
 
-    public abstract String getURLMasterPattern() throws DotCacheException;
 
-    public abstract void clearURLMasterPattern();
 
-    public abstract void addURLMasterPattern(String pattern);
 
-    public abstract void addContainerStructures(
-            List<ContainerStructure> containerStructures,
-            String containerIdentifier, String containerInode);
-
-    public abstract List<ContainerStructure> getContainerStructures(
-            String containerIdentifier, String containerInode);
-
-    public abstract void removeContainerStructures(String containerIdentifier,
-            String containerInode);
-    
-    public abstract String getStructuresByTypeGroup();
-    
-    public abstract List<Structure> getStructuresByType(int structureType);
-    
-    public abstract void addStructuresByType(List<Structure> structures, int structureType);
-    
-    public abstract void removeStructuresByType(int structureType);
-    
 }

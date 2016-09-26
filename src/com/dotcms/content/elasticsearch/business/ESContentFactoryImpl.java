@@ -102,7 +102,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	private static final Contentlet cache404Content= new Contentlet();
-	private static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
+	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
 
 	/**
 	 * Default factory constructor that initializes the connection with the

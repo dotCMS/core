@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -681,7 +682,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
+        Field foundWysiwygField = FieldFactory.getFieldByVariableName(structure.getName(), "jUnitTestWysiwyg" );
 
         //Getting the current value for this field
         Object value = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
@@ -848,7 +849,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg-" + identifier );
+        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getName(), "jUnitTestWysiwyg-" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -1154,7 +1155,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void getAllLanguages () throws DotSecurityException, DotDataException {
 
         Structure st=new Structure();
-        st.setStructureType(Structure.Type.CONTENT.getType());
+        st.setStructureType(BaseContentType.CONTENT.getType());
         st.setName("JUNIT-test-getAllLanguages"+System.currentTimeMillis());
         st.setVelocityVarName("testAllLanguages"+System.currentTimeMillis());
         st.setHost(defaultHost.getIdentifier());
@@ -2119,7 +2120,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         testStructure.setName( "structure2709" );
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
-        testStructure.setStructureType( Structure.Type.CONTENT.getType() );
+        testStructure.setStructureType( BaseContentType.CONTENT.getType() );
         testStructure.setType( "structure" );
         testStructure.setVelocityVarName( "structure2709" );
 

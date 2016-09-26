@@ -337,7 +337,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private void indexContentletList(BulkRequestBuilder req, List<Contentlet> contentToIndex, boolean reindexOnly) throws DotStateException, DotDataException, DotSecurityException, DotMappingException {
 
 		if(contentToIndex !=null && ! contentToIndex.isEmpty()){
-		    Logger.debug(this.getClass(), "Indexing " + contentToIndex.size()  + " contents, starting with: " + contentToIndex.get(0).getTitle());
+		    Logger.debug(this.getClass(), "Indexing " + contentToIndex.size()  + " contents, starting with: " + contentToIndex.get(0).getIdentifier());
 		}
 
 		for(Contentlet con : contentToIndex) {

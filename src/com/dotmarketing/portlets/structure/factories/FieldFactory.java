@@ -87,12 +87,6 @@ public class FieldFactory {
         return (Field) InodeFactory.getInodeOfClassByCondition(Field.class,condition);
     }
 
-    public static Field getFieldByName(String structureType, String fieldName)
-    {
-        Structure st = StructureFactory.getStructureByType(structureType);
-        String condition = "structure_inode = '" + st.getInode() + "' and field_name = '" + fieldName + "'";
-        return (Field) InodeFactory.getInodeOfClassByCondition(Field.class,condition);
-    }
 
 	//### CREATE AND UPDATE ###
 	public static void saveField(Field field) throws DotHibernateException

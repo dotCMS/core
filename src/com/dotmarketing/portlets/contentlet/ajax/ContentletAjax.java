@@ -54,6 +54,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
@@ -665,7 +666,7 @@ public class ContentletAjax {
 									for(int x=0;x< splitter.length-1;x++){
 										metakey+= splitter[x];
 									}
-									metakey = VelocityUtil.convertToVelocityVariable(metakey);
+									metakey = StringUtils.camelCaseLower(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
 									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscape, "\\\\$1") + " ");

@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.contenttype.model.field.LegacyFieldTypes"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -607,7 +608,7 @@ function disableFormFields(){
 							<%=field.getFieldName()%>
 						</div>
 						<div class="item_cell fieldTypeCell" style="width:100px;">
-							<%=field.getFieldType()%>
+							<%=LegacyFieldTypes.getLegacyName(field.getFieldType())%>
 						</div>
 						<div class="item_cell" style="width:120px;">
 							<%=(field.getVelocityVarName()!=null) ? field.getVelocityVarName() : "&nbsp;"%>

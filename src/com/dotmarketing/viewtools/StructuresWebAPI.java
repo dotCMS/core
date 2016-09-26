@@ -138,7 +138,7 @@ public class StructuresWebAPI implements ViewTool {
      * structure name can be changed by the user, use getStructureByVelocityVarName
 	 */
 	public Structure findStructureByName(String structureName) {
-		Structure structure =CacheLocator.getContentTypeCache().getStructureByType(structureName);
+		Structure structure =StructureFactory.getStructureByType(structureName);
 		//http://jira.dotmarketing.net/browse/DOTCMS-6282
 		if(!UtilMethods.isSet(structure.getInode())){
 			return findStructureByVelocityVarName(structureName);

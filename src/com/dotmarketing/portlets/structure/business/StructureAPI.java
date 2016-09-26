@@ -167,4 +167,6 @@ public interface StructureAPI {
      */
     int countStructures(String condition);
 
+	void save(Structure st, User user) throws DotSecurityException, DotDataException;
+
 }

@@ -849,6 +849,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				Object value = contentletFormData.get(field.getFieldContentlet());
 				String typeField = field.getFieldType();
 
+				if(field.getFieldType().equals(Field.FieldType.TAG.toString())){
+					contentlet.setStringProperty(field.getVelocityVarName(), (String) contentletFormData.get(field.getVelocityVarName()));
+				}
+
 				//http://jira.dotmarketing.net/browse/DOTCMS-5334
 				if(field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 					if(field.getFieldContentlet().startsWith("float")
@@ -898,7 +902,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString()))
 						&& APILocator.getFieldAPI().valueSettable(field)
-						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
+						&& !field.getFieldContentlet().startsWith("system")) {
 					conAPI.setContentletProperty(contentlet, field, value);
 				}
 			}

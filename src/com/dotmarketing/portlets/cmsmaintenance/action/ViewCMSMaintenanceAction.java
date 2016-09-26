@@ -175,7 +175,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			{
 				Logger.info(this, "Running Contents Index Cache");
 				if(defaultStructure.equals("Rebuild Whole Index")){
-					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
+					//structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
 				}else
 					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
 				if(!InodeUtils.isSet(structure.getInode()))
