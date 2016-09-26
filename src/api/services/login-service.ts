@@ -44,7 +44,7 @@ export class LoginService extends CoreWebService {
         }
     }
 
-    get loginAsUsersList$(): Subject<User[]> {
+    get loginAsUsersList$(): Observable<User[]> {
         return this._loginAsUsersList$.asObservable();
     }
 
@@ -55,7 +55,6 @@ export class LoginService extends CoreWebService {
     get auth(): Auth {
         return this._auth;
     }
-
 
     /**
      * Load _auth information.
@@ -113,9 +112,9 @@ export class LoginService extends CoreWebService {
                 let loginAsUsersListSub = this._loginAsUsersList$.subscribe(res => {
                     observer.next(res);
                     loginAsUsersListSub.unsubscribe();
-                })
+                });
             }
-        })
+        });
     }
 
     /**
@@ -169,8 +168,8 @@ export class LoginService extends CoreWebService {
         }).map((res) => {
             let loginAsUser = this.getLoginAsUser(options.userId);
             this.setAuth({
-                user: this._auth.user,
-                loginAsUser: loginAsUser
+                loginAsUser: loginAsUser,
+                user: this._auth.user
             });
             return res;
         }).pluck('entity', 'loginAs');
@@ -193,8 +192,8 @@ export class LoginService extends CoreWebService {
             url: this.urls.userAuth,
         }).map(response => {
             let auth = {
-                user: response.entity,
-                loginAsUser: null
+                loginAsUser: null,
+                user: response.entity
             };
             this.setAuth(auth);
             return response.entity;
@@ -211,8 +210,8 @@ export class LoginService extends CoreWebService {
             url: `${this.urls.logoutAs}`
         }).map((res) => {
             this.setAuth({
-                user: this._auth.user,
-                loginAsUser: null
+                loginAsUser: null,
+                user: this._auth.user
             });
             return res;
         });
@@ -228,8 +227,8 @@ export class LoginService extends CoreWebService {
             url: this.urls.logout,
         }).map(response => {
             let nullAuth = {
-                user: null,
-                loginAsUser: null
+                loginAsUser: null,
+                user: null
             };
             this.setAuth(nullAuth);
             this.router.go('/public/login');

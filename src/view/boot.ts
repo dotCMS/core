@@ -27,6 +27,7 @@ import {Routes} from '@ngrx/router';
 import {RoutingService} from '../api/services/routing-service';
 import {RuleService} from '../api/rule-engine/Rule';
 import {SiteService} from '../api/services/site-service';
+import {DotcmsEventsService} from '../api/services/dotcms-events-service';
 import {UserModel} from '../api/auth/UserModel';
 import {MessageKeyDirective} from "./directives/message-keys";
 
@@ -73,6 +74,7 @@ bootstrap(AppComponent, [
     HTTP_PROVIDERS,
     I18nService,
     LoginService,
+    DotcmsEventsService,
     MdIconRegistry,
     MessageService,
     RoutingService,
@@ -88,3 +90,4 @@ bootstrap(AppComponent, [
     disableDeprecatedForms(),
     provideForms()
 ]);
+
