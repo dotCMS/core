@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.HashMap;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertEquals;
+
 
 
 public class MarshalFactoryTest {
