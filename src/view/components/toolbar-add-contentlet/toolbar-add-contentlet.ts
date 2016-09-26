@@ -38,29 +38,16 @@ export class ToolbarAddContenletBodyComponent {
 export class ToolbarAddContenletComponent {
 
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
-    private i18nMessages: Array<string> = [ 'content', 'file', 'page', 'widget', 'persona'];
-
-    private messages: any = {
-        content: '',
-        file: '',
-        page: '',
-        persona: '',
-        widget: '',
-    };
 
     private types: StructureTypeView[];
     private selected: StructureTypeView;
 
-    constructor(private loginService: LoginService, private contentletService: ContentletService,
-                private routingService: RoutingService) {}
+    constructor(private contentletService: ContentletService,
+                private routingService: RoutingService) {
+    }
 
     ngOnInit(): void {
-        this.loginService.getLoginFormInfo('', this.i18nMessages).subscribe((data) => {
-
-            this.messages = data.i18nMessagesMap;
-        });
-
-        this.contentletService.getContentTypes().subscribe(strcutures => {
+        this.contentletService.structureTypeView$.subscribe(strcutures => {
             this.types = strcutures;
 
             this.types.forEach(strcuture => {
