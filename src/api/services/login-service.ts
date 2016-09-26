@@ -11,7 +11,6 @@ import {RequestMethod} from '@angular/http';
 import {Router} from '@ngrx/router';
 import {Subject} from 'rxjs/Subject';
 
-
 /**
  * This Service get the server configuration to display in the login component
  * and execute the login and forgot password routines

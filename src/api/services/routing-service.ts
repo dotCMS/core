@@ -95,7 +95,7 @@ export class RoutingService extends CoreWebService {
             method: RequestMethod.Get,
             url: this.urlMenus,
         }).subscribe(response => {
-            this.setMenus(response.entity)
+            this.setMenus(response.entity);
         }, error => this._menusChange$.error(error));
     }
 

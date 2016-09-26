@@ -18,7 +18,8 @@
                     (keyup.enter)="logInUser()"
                     placeholder="{{userIdOrEmailLabel}}"
                     [(ngModel)]="myAccountLogin"
-                    floatingPlaceholder="false">
+                    floatingPlaceholder="false"
+                    [disabled]="isLoginInProgress">
             </md-input>
             <md-input id="login-component-password-input"
                     (keyup)="message=''"
@@ -26,16 +27,20 @@
                     placeholder="{{passwordLabel}}"
                     [(ngModel)]="password"
                     type="password"
-                    floatingPlaceholder="false"></md-input>
+                    floatingPlaceholder="false"
+                    [disabled]="isLoginInProgress"></md-input>
             <div class="row login__form-line">
                 <div class="col-sm-6">
-                    <md-checkbox [(ngModel)]="myAccountRememberMe" id="login-component-remenberme-checkbox">{{rememberMeLabel}}</md-checkbox>
+                    <md-checkbox [(ngModel)]="myAccountRememberMe"
+                                 id="login-component-remenberme-checkbox"
+                                 [disabled]="isLoginInProgress">{{rememberMeLabel}}</md-checkbox>
                 </div>
                 <div class="col-sm-6">
                     <select class="singin__language"
                             id="login-component-language-select"
                             [(ngModel)]="language"
-                            (change)="changeLanguage($event.target.value)">
+                            (change)="changeLanguage($event.target.value)"
+                            [disabled]="isLoginInProgress">
                         <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label | capitalize}}</option>
                     </select>
                 </div>
