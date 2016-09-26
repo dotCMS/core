@@ -5,13 +5,13 @@
                 <accordion-group [heading]="menu.tabName">
                     <div class="md-nav-list__submenu">
                         <template ngFor let-menuItem [ngForOf]="menu.menuItems">
-                            <a linkTo="/dotCMS/portlet/{{menuItem.id}}" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
+                            <a routerLink="/dotCMS/portlet/{{menuItem.id}}" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
                                 {{menuItem.name}}
                             </a>
-                            <a linkTo="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
+                            <a routerLink="{{menuItem.url}}" *ngIf="menuItem.angular && !menuItem.ajax">
                                 {{menuItem.name}}
                             </a>
-                            <a linkTo="/dotCMS/portlet/{{menuItem.id}}"  *ngIf="menuItem.url && menuItem.ajax">
+                            <a routerLink="/dotCMS/portlet/{{menuItem.url}}" *ngIf="menuItem.ajax">
                                 {{menuItem.name}}
                             </a>
                         </template>

@@ -1,14 +1,11 @@
 import {BaseComponent} from '../_base/base-component';
 import {Component, Output, EventEmitter} from '@angular/core';
-import {DotSelect, DotOption} from '../dot-select/dot-select';
 import {LoginService, User} from '../../../../api/services/login-service';
-import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {MdButton} from '@angular2-material/button';
 import {MessageService} from '../../../../api/services/messages-service';
-import {Router} from '@ngrx/router';
+import {Router} from '@angular/router';
 
 @Component({
-    directives: [DotSelect, DotOption, MD_INPUT_DIRECTIVES, MdButton],
+    directives: [],
     moduleId: __moduleName,
     providers: [],
     selector: 'dot-login-as',
@@ -39,7 +36,7 @@ export class LoginAsComponent extends BaseComponent {
     dolLoginAs(options: any): void {
         this.loginService.loginAs(options).subscribe(data => {
             if (data) {
-                this.router.go('/dotCMS');
+                this.router.navigate(['dotCMS']);
                 this.close();
             }
         });

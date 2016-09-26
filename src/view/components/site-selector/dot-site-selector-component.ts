@@ -1,5 +1,4 @@
-
-import {Component, EventEmitter, Input, Output, ViewEncapsulation} from '@angular/core';
+import {Component, ViewEncapsulation} from '@angular/core';
 import {DropdownComponent} from '../common/dropdown-component/dropdown-component';
 import {Site} from '../../../api/services/site-service';
 import {DotSelect} from '../common/dot-select/dot-select';

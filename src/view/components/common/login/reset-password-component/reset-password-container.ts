@@ -1,6 +1,6 @@
+import {Router, ActivatedRoute} from '@angular/router';
 import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../../api/services/login-service';
-import { Router, QueryParams, RouteParams } from '@ngrx/router';
 import {ResetPasswordComponent} from './reset-password-component';
 
 @Component({
@@ -27,16 +27,12 @@ export class ResetPasswordContainer {
 
     private changePasswordSuccessfully: string;
 
-    constructor( private loginService: LoginService, private router: Router,
-                 private queryParams: QueryParams, private routeParams: RouteParams) {
+    constructor(private loginService: LoginService, private router: Router, private route: ActivatedRoute) {
+        this.route.params.pluck('token').subscribe(token => {
+            this.token = token;
+        });
 
-    }
-
-    ngOnInit() {
-         this.queryParams.pluck<string>('token').distinctUntilChanged()
-            .forEach(token => this.token = token);
-
-         this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
+        this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
             let entity = data.entity;
 
@@ -60,7 +56,7 @@ export class ResetPasswordContainer {
     }
 
     private goToLogin(): void {
-        this.router.go('/public/login',{ 'changedPassword': true });
+        this.router.navigate(['/public/login',{ 'changedPassword': true }]);
     }
 
     private cleanMessage(): void {

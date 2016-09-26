@@ -1,7 +1,12 @@
 @import "../../../../scss/variables";
 @import "../../../../scss/mixins";
 
-:host {
+.login {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+
   md-input {
     overflow: inherit;
     width: 100%;
@@ -20,13 +25,6 @@
 
   .cms-info__logo {
     width: 200px;
-  }
-
-  .login {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    justify-content: center;
   }
 
   .login__container {

@@ -8,7 +8,6 @@ import {Http} from '@angular/http';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
-import {Router} from '@ngrx/router';
 import {Subject} from 'rxjs/Subject';
 
 /**
@@ -26,7 +25,7 @@ export class LoginService extends CoreWebService {
     private loginAsUserList: User[];
     private urls: any;
 
-    constructor(apiRoot: ApiRoot, http: Http, private router: Router) {
+    constructor(apiRoot: ApiRoot, http: Http) {
         super(apiRoot, http);
 
         this._loginAsUsersList$ = <Subject<User[]>>new Subject();
@@ -232,8 +231,7 @@ export class LoginService extends CoreWebService {
                 user: null
             };
             this.setAuth(nullAuth);
-            this.router.go('/public/login');
-            return response;
+            // this.router.go('/public/login');
         });
     }
 

@@ -11,9 +11,6 @@ export interface INotification {
 @Injectable()
 export class NotificationsService extends CoreWebService {
     private urls: any;
-    private getNotificationsUrl:string;
-    private dismissNotificationsUrl:string;
-    private markAsReadNotificationsUrl:string;
 
     constructor(_apiRoot: ApiRoot, _http: Http) {
         super(_apiRoot, _http);

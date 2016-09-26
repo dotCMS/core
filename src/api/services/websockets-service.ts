@@ -1,5 +1,5 @@
+import _ from 'lodash';
 import {Injectable} from '@angular/core';
-import {isString, isFunction} from '@angular/platform-browser-dynamic/src/facade/lang';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
@@ -103,9 +103,9 @@ export class $WebSocket {
             var data = this.sendQueue.shift();
 
             this.socket.send(
-                isString(data.message) ? data.message : JSON.stringify(data.message)
+                _.isString(data.message) ? data.message : JSON.stringify(data.message)
             );
-            // data.deferred.resolve();
+            data.deferred.resolve();
         }
     }
 
@@ -137,7 +137,7 @@ export class $WebSocket {
     }
 
     onMessage(callback, options) {
-        if (!isFunction(callback)) {
+        if (!_.isFunction(callback)) {
             throw new Error('Callback must be a function');
         }
 

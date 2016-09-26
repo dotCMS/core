@@ -16,7 +16,7 @@
     "typings/main",
     "typings/main.d.ts"
   ],
-  "files":[
+  "files": [
     "./src/api/auth/UserModel.ts",
     "./src/api/maps/GoogleMapService.ts",
     "./src/api/persistence/ApiRoot.spec.ts",
@@ -60,6 +60,7 @@
     "./src/e2e/CwProtractor.ts",
     "./src/e2e/view/rule-engine/rule-engine-page.ts",
     "./src/view/boot.ts",
+    "./src/view/main.ts",
     "./src/view/components/common/google-map/area-picker-dialog.component.ts",
     "./src/view/components/common/google-map/boot.ts",
     "./src/view/components/common/google-map/demo.ts",
@@ -110,6 +111,7 @@
     "./src/view/components/common/dropdown-component/dropdown-component.ts",
     "./src/view/components/site-selector/dot-site-selector-component.ts",
     "./src/view/components/toolbar-add-contentlet/toolbar-add-contentlet.ts",
-    "./src/view/components/app.ts"
+    "./src/view/components/app.ts",
+    "typings/main/ambient/core-js/index.d.ts"
   ]
 }

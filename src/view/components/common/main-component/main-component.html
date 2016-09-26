@@ -13,9 +13,9 @@
         <toolbar-add-contentlet></toolbar-add-contentlet>
     </div>
 </md-toolbar>
-<md-sidenav-layout fullscreen>
+<md-sidenav-layout class="layout" fullscreen>
     <md-sidenav #sideNav mode="side" opened="true">
         <dot-main-nav></dot-main-nav>
     </md-sidenav>
-    <route-view></route-view>
+    <router-outlet></router-outlet>
 </md-sidenav-layout>

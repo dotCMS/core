@@ -1,8 +1,8 @@
 import {Component, ViewEncapsulation} from '@angular/core';
-import {LoginService} from '../../../../../api/services/login-service';
 import {ForgotPasswordComponent} from './forgot-password-component';
-import { Router } from '@ngrx/router';
+import {LoginService} from '../../../../../api/services/login-service';
 import {ResponseView} from '../../../../../api/services/response-view';
+import {Router} from '@angular/router';
 
 @Component({
     directives: [ForgotPasswordComponent],
@@ -20,7 +20,7 @@ import {ResponseView} from '../../../../../api/services/response-view';
         ></dot-forgot-password-component>
     `,
 })
-export class ForgotPasswordContainer{
+export class ForgotPasswordContainer {
 
     private message: string = '';
     private email: string = '';
@@ -33,7 +33,7 @@ export class ForgotPasswordContainer{
         this.message = '';
         this.email = forgotPasswordLogin;
 
-        this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:ResponseView) => {
+        this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp: ResponseView) => {
             this.goToLogin();
         }, (resp:ResponseView) => {
             if (!resp.existError('a-new-password-has-been-sent-to-x')){
@@ -45,6 +45,6 @@ export class ForgotPasswordContainer{
     }
 
     goToLogin(): void {
-        this.router.go('/public/login', { 'resetEmailSent': true, 'resetEmail': this.email});
+        this.router.navigate(['/public/login', {'resetEmailSent': true, 'resetEmail': this.email}]);
     }
 }

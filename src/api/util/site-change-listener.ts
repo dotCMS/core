@@ -1,5 +1,6 @@
 import {SiteService} from '../services/site-service';
 import {Site} from '../services/site-service';
+
 export abstract class SiteChangeListener {
 
     constructor(private siteService: SiteService) {

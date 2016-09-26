@@ -2,11 +2,8 @@ import {Component, EventEmitter, Output, ViewEncapsulation} from '@angular/core'
 import {LoginService} from '../../../../api/services/login-service';
 
 @Component({
-    directives: [],
-    encapsulation: ViewEncapsulation.Emulated,
+    encapsulation: ViewEncapsulation.None,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
-    providers: [],
     selector: 'dot-login-page-component',
     styleUrls: ['login-page.css'],
     templateUrl: ['login-page-component.html'],

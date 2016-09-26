@@ -76,13 +76,7 @@ var project = {
         '@angular/**/*.js',
         'lodash/lodash.js',
         '@angular2-material/**/*.js',
-        '@ngrx/**/*.js',
         'rxjs/**',
-        'query-string/*.js',
-        'path-to-regexp/index.js',
-        'strict-uri-encode/index.js',
-        'object-assign/index.js',
-        'isarray/index.js',
         'moment/moment.js'
         ], {cwd: 'node_modules/**'}) /* Glob required here. */
       .pipe(gulp.dest('build/thirdparty')).on('finish', cb);

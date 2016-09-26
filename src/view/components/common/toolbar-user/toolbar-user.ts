@@ -1,12 +1,11 @@
 import {Component, ViewChild} from '@angular/core';
-import {Router} from '@ngrx/router';
+import {Router} from '@angular/router';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
-import {LoginAsComponent} from '../login-as/login-as';
 import {LoginService, Auth} from '../../../../api/services/login-service';
 import {MyAccountComponent} from '../../my-account-component/dot-my-account-component';
 
 @Component({
-    directives: [DropdownComponent, LoginAsComponent, MyAccountComponent],
+    directives: [],
     moduleId: __moduleName,
     selector: 'toolbar-user',
     styleUrls: ['toolbar-user.css'],
@@ -25,10 +24,6 @@ export class ToolbarUserComponent {
         this.loginService.watchUser((auth: Auth) => {
             this.auth = auth;
         });
-        // this.auth = this.loginService.auth;
-        // this.loginService.auth$.subscribe((auth) => {
-        //     this.auth = auth;
-        // });
     }
 
     /**
@@ -36,7 +31,7 @@ export class ToolbarUserComponent {
      */
     logout(): boolean {
         this.loginService.logOutUser().subscribe(data => {
-            this.router.go('/public/login');
+            this.router.navigate(['public/login']);
         }, (error) => {
             console.log(error);
         });
@@ -46,7 +41,7 @@ export class ToolbarUserComponent {
     logoutAs($event): void {
         $event.preventDefault();
         this.loginService.logoutAs().subscribe(data => {
-            this.router.go('/dotCMS');
+            this.router.navigate(['dotCMS']);
             this.dropdown.closeIt();
         }, (error) => {
             console.log(error);

@@ -33,7 +33,7 @@ export class SiteService extends CoreWebService {
             this._sites$.next(this.sites);
         });
 
-        dotcmsEventsService.subscribeTo('UPDATE_SITE').pluck('data').subscribe( updatedSite => {
+        dotcmsEventsService.subscribeTo('UPDATE_SITE').pluck('data').subscribe(updatedSite => {
             this.sites = this.sites.map(site => site.identifier === updatedSite.identifier ? updatedSite : site);
             this._sites$.next(this.sites);
 

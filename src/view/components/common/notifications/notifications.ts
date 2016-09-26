@@ -3,11 +3,10 @@ import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
 import {CustomTimeComponent} from '../custom-time/custom-time';
 import {INotification} from '../../../../api/services/notifications-service';
-import {MdIcon} from '@angular2-material/icon/icon';
 import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
-    directives: [MdIcon, CustomTimeComponent],
+    directives: [CustomTimeComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
     pipes: [CapitalizePipe],

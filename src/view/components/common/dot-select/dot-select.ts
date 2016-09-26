@@ -1,9 +1,8 @@
 import {Component, Input, Output, EventEmitter, ElementRef, ViewChild, forwardRef} from '@angular/core';
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
-import {MdIcon} from '@angular2-material/icon/icon';
 
 @Component({
-    directives: [MdIcon],
+    directives: [],
     host: {
         '(document:click)': 'handleClick($event)',
     },

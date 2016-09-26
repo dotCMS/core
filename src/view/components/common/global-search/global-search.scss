@@ -1,13 +1,12 @@
 @import "../../../../scss/variables";
 @import "../../../../scss/mixins";
 
-:host {
-    flex: 7;
-    margin: 0 rem-cal(50px);
+dot-global-search {
+    flex: 1;
+    margin: 0 50px;
 
     md-input {
         width: 100%;
-        display: block;
 
         .md-input-placeholder {
             color: rgba($white, 0.5);
@@ -28,3 +27,4 @@
         }
     }
 }
+

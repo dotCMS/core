@@ -1,7 +1,5 @@
 <dot-dropdown-component id="dot-toolbar-notifications" icon="notifications" (toggle)="toggleNotifications()" [disabled]="!notifications.length" alignRight="true">
-    <extra-content>
-        <span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{notificationsUnreadCount}}</span>
-    </extra-content>
+    <span id="badge" *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{notificationsUnreadCount}}</span>
 
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">

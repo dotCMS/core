@@ -1,7 +1,6 @@
-import {Component, ViewChild, Inject, Input, Output, EventEmitter} from '@angular/core';
+import {Component, ViewChild, Input, Output, EventEmitter} from '@angular/core';
 import {DropdownComponent} from '../common/dropdown-component/dropdown-component';
-import {ContentletService, StructureType, StructureTypeView, ContentTypeView} from '../../../api/services/contentlet-service';
-import {LoginService} from '../../../api/services/login-service';
+import {ContentletService, StructureTypeView, ContentTypeView} from '../../../api/services/contentlet-service';
 import {RoutingService} from '../../../api/services/routing-service';
 
 @Component({
@@ -44,7 +43,6 @@ export class ToolbarAddContenletBodyComponent {
 
 })
 export class ToolbarAddContenletComponent {
-
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
     private types: StructureTypeView[];
@@ -56,8 +54,7 @@ export class ToolbarAddContenletComponent {
     private currentPage: number = -1;
     private selectedName: string = '';
 
-    constructor(private contentletService: ContentletService,
-                private routingService: RoutingService) {
+    constructor(private contentletService: ContentletService, private routingService: RoutingService) {
     }
 
     ngOnInit(): void {
