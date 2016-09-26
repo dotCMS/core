@@ -1,97 +1,174 @@
 configurations {
     compile
-    antLibs
+    starter
     coreWeb
     provided
-    ext.dotcmsFolder = "dotCMS"
-    ext.rulesEngineFolder ="dotCMS/html/ng"
-    ext.libsFolder = "dotCMS/WEB-INF/lib"
-    ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
-    ext.testLibsFolder = "libs/test"
+    felix
+    junit
 }
-//Import and apply the dependencies from the dependencies scripts
+
+// Apply the java plugin to add support for Java.
+apply plugin: 'java'
+apply plugin: 'war'
+
+// Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
-configurations.all({
-    // dynamic: e.g. 'version: 2.0+'
-    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
-    // changing: e.g. 'version 2.0.0-SNAPSHOT'
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-})
-
+// In this section you declare where to find the dependencies of your project.
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
-//Syncing the dotCMS/WEB-INF/lib folder
-task webinfLibs(type: Sync) {
-    from configurations.compile
-    into configurations.libsFolder
+// By default the war task compiles everything under src/main/java into WEB-INF/classes/
+// but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
+war {
+    classpath = classpath - sourceSets.main.output.classesDir
+    from (jar) {
+        into 'WEB-INF/lib'
+    }
 
-    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-    exclude '**/dot.org.apache.felix.fileinstall*.jar'
-    exclude '**/dot.org.apache.felix.gogo.*.jar'
-    exclude '**/junit-*.jar'
-    exclude '**/powermock-*.jar'
-    exclude '**/javassist-*.jar'
-    exclude '**/*.zip'
-}
-webinfLibs.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/lib folder'
+    from (configurations.felix) {
+        into felixFolder
+    }
 
-task copyToLib {
-    copy {
-        from configurations.compile
-        into configurations.felixFolder
-
-        include '**/dot.org.apache.felix.bundlerepository*.jar'
-        include '**/dot.org.apache.felix.fileinstall*.jar'
-        include '**/dot.org.apache.felix.gogo.*.jar'
+    from (configurations.compile) {
+        into felixFolder
         include '**/dot.org.apache.felix.http.bundle*.jar'
     }
 
-    copy {
-        from configurations.compile
-        into configurations.testLibsFolder
-
-        include '**/junit-*.jar'
-        include '**/powermock-*.jar'
+    from (configurations.junit) {
+        into testLibsFolder
     }
 
-    copy {
-        from configurations.compile
-        into configurations.dotcmsFolder
-
-        include '**/starter*.zip'
+    from (configurations.starter) {
+        into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
     }
 
-    doLast {
-        copy {
-            from(zipTree(configurations.coreWeb.files.toArray()[0]))
-            into configurations.rulesEngineFolder
-        }
+    from (zipTree(configurations.coreWeb.files.toArray()[0])) {
+        into rulesEngineFolder
     }
 }
 
-copyToLib.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/felix/bundle folder, copies the starter.zip and the core-web project files'
+// Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
+// If the tomcat folder exists: git pull, if not: git clone.
+task gitClonePull(type: Exec) {
+    description 'Pulls git.'
 
-dependencies {
-    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
-    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+    def folder = new File( tomcatInstallLocation )
+    if( !folder.exists() ) {
+        commandLine "git", "clone", "-b", tomcatInstallVersion, tomcatInstallRepo, tomcatInstallLocation
+    } else {
+        workingDir tomcatInstallLocation
+        commandLine "git", "pull"
+    }
 }
 
-ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
-configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
-
-//Moving dependencies
-tasks.webinfLibs.execute()
-tasks.copyToLib.execute()
-
-ant.importBuild 'build.xml'
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.9'
+task deployWarTomcat(type: Copy) {
+    dependsOn 'gitClonePull', 'deleteRoot'
+    into tomcatInstallLocation + webAppRootFolder
+    with war
 }
 
-defaultTasks 'help', 'tasks'
+task deleteRoot(type: Delete) {
+  delete tomcatInstallLocation + webAppRootFolder
+  followSymlinks = true
+}
+//configurations {
+//    compile
+//    antLibs
+//    coreWeb
+//    provided
+//    ext.dotcmsFolder = "dotCMS"
+//    ext.rulesEngineFolder ="dotCMS/html/ng"
+//    ext.libsFolder = "dotCMS/WEB-INF/lib"
+//    ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
+//    ext.testLibsFolder = "libs/test"
+//}
+////Import and apply the dependencies from the dependencies scripts
+//apply from: "$rootDir/dependencies.gradle"
+//
+//configurations.all({
+//    // dynamic: e.g. 'version: 2.0+'
+//    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+//    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+//    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+//})
+//
+//repositories {
+//    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+//    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+//}
+//
+////Syncing the dotCMS/WEB-INF/lib folder
+//task webinfLibs(type: Sync) {
+//    from configurations.compile
+//    into configurations.libsFolder
+//
+//    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
+//    exclude '**/dot.org.apache.felix.fileinstall*.jar'
+//    exclude '**/dot.org.apache.felix.gogo.*.jar'
+//    exclude '**/junit-*.jar'
+//    exclude '**/powermock-*.jar'
+//    exclude '**/javassist-*.jar'
+//    exclude '**/*.zip'
+//}
+//webinfLibs.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/lib folder'
+//
+//task copyToLib {
+//    copy {
+//        from configurations.compile
+//        into configurations.felixFolder
+//
+//        include '**/dot.org.apache.felix.bundlerepository*.jar'
+//        include '**/dot.org.apache.felix.fileinstall*.jar'
+//        include '**/dot.org.apache.felix.gogo.*.jar'
+//        include '**/dot.org.apache.felix.http.bundle*.jar'
+//    }
+//
+//    copy {
+//        from configurations.compile
+//        into configurations.testLibsFolder
+//
+//        include '**/junit-*.jar'
+//        include '**/powermock-*.jar'
+//    }
+//
+//    copy {
+//        from configurations.compile
+//        into configurations.dotcmsFolder
+//
+//        include '**/starter*.zip'
+//        rename ( /starter(.+)\.zip/, "starter.zip" )
+//    }
+//
+//    doLast {
+//        copy {
+//            from(zipTree(configurations.coreWeb.files.toArray()[0]))
+//            into configurations.rulesEngineFolder
+//        }
+//    }
+//}
+//
+//copyToLib.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/felix/bundle folder, copies the starter.zip and the core-web project files'
+//
+//dependencies {
+//    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
+//    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+//}
+//
+//ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
+//configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
+//
+////Moving dependencies
+//tasks.webinfLibs.execute()
+//tasks.copyToLib.execute()
+//
+//ant.importBuild 'build.xml'
+//
+//task wrapper(type: Wrapper) {
+//    gradleVersion = '2.9'
+//}
+//
+//defaultTasks 'help', 'tasks'

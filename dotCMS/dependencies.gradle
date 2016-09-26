@@ -278,8 +278,7 @@ dependencies {
     compile group: 'com.dotcms', name: 'starter', version: '20160902', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.7.0-SNAPSHOT', ext: 'zip', changing: true
 
-    provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
-    provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+    compile fileTree("../libs/buildlibs").include('**/*.jar')
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
