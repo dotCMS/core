@@ -1,35 +1,12 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -37,6 +14,8 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -45,7 +24,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -82,11 +60,46 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.apache.velocity.tools.struts.StrutsUtils;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by Jonathan Gamba.
  * Date: 3/20/12
  * Time: 12:12 PM
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({StrutsUtils.class})
 public class ContentletAPITest extends ContentletBaseTest {
 
     /**
@@ -682,7 +695,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByVariableName(structure.getName(), "jUnitTestWysiwyg" );
+        Field foundWysiwygField = null;//FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
 
         //Getting the current value for this field
         Object value = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
@@ -849,7 +862,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getName(), "jUnitTestWysiwyg-" + identifier );
+        Field foundWysiwygField = null;//FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg-" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -2039,6 +2052,16 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void widgetInvalidateAllLang() throws Exception {
 
+        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
+        MessageResources messageResources = mock(MessageResources.class);
+        HttpServletRequest requestProxy = new MockInternalRequest().request();
+        HttpServletResponse responseProxy = new BaseResponse().response();
+
+        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
+        PowerMockito.mockStatic(StrutsUtils.class);
+
+        PowerMockito.when(StrutsUtils.getMessageResources(Mockito.any(), Mockito.any())).thenReturn(messageResources);
+
         Structure sw=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
         Language def=APILocator.getLanguageAPI().getDefaultLanguage();
         Contentlet w = new Contentlet();
@@ -2060,9 +2083,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
 
         contentTester.init(null, null);
-
-        HttpServletRequest requestProxy = new MockInternalRequest().request();
-        HttpServletResponse responseProxy = new BaseResponse().response();
 
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
@@ -2106,7 +2126,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
     }
-
     @Test
     public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
 
@@ -2247,5 +2266,4 @@ public class ContentletAPITest extends ContentletBaseTest {
     	
     	fileAssetDataGen.remove(resultSpanish);
     }
-
 }

@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import com.dotcms.notifications.bean.NotificationType;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -125,9 +126,16 @@ public class IdentifierDateJob implements Job {
 				contenletSearchList = contentletAPI.searchIndex(luceneQuery, limit, offset, "random", user, false);
 			}
 			//Send Notification
-			String notificationMessage = LanguageUtil.get(user.getLocale(), "notifications_structure_identifiers_updated");
-			APILocator.getNotificationAPI().generateNotification(notificationMessage, NotificationLevel.INFO, user.getUserId());
-			
+			String notificationMessage = LanguageUtil.get(user.getLocale(), "notifications_structure_identifiers_updated"); // All Identifiers were succesfully updated.
+			APILocator.getNotificationAPI().generateNotification(
+					LanguageUtil.get(user.getLocale(), "notification.identifier.datejob.info.title"), // title = Identifier Notification
+					notificationMessage,
+					null, // no actions
+					NotificationLevel.INFO,
+					NotificationType.GENERIC,
+					user.getUserId(),
+					user.getLocale()
+			);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -152,7 +160,9 @@ public class IdentifierDateJob implements Job {
 	/**
 	 * Setup the job and trigger it immediately
 	 * 
-	 * @param ContentType
+	 * @param ContentType {@link ContentType}
+	 * @param user      {@link User}
+
 	 */
 	public static void triggerJobImmediately (ContentType type, User user) {
 

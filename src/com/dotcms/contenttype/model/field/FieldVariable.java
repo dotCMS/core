@@ -7,7 +7,7 @@ import java.util.Date;
 import org.immutables.value.Value;
 
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 @Value.Immutable
 public interface FieldVariable extends Serializable {

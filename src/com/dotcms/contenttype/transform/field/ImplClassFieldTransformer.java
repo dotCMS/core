@@ -5,8 +5,9 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
-import com.google.common.collect.ImmutableList;
+
 
 public class ImplClassFieldTransformer implements FieldTransformer{
 	

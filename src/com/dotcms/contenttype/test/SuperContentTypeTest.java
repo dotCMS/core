@@ -1,26 +1,14 @@
 package com.dotcms.contenttype.test;
-import java.io.File;
 import java.io.FileNotFoundException;
-
-import javax.servlet.ServletContext;
-import javax.sql.DataSource;
 
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
-import com.dotmarketing.business.web.LanguageWebAPIImpl;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.test.DataSourcesForTesting;
-import com.dotmarketing.db.test.TestingJndiDatasource;
-import com.dotmarketing.util.Config;
-import com.google.common.io.Files;
+import com.dotmarketing.util.ConfigTestHelper;
+
 
 
 
@@ -48,8 +36,8 @@ import com.google.common.io.Files;
 			inited=true;
 
 
-		    new TestingJndiDatasource().init();
-		    Config._setupFakeTestingContext();
+		    new com.dotmarketing.util.TestingJndiDatasource().init();
+		    ConfigTestHelper._setupFakeTestingContext();
 		    
 
 			DotConnect dc = new DotConnect();

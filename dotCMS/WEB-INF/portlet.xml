@@ -3502,7 +3502,7 @@
 	<portlet>
 		<portlet-name>RULES_ENGINE_PORTLET</portlet-name>
 		<display-name>Rules Editor</display-name>
-		<portlet-class>com.dotcms.rest.RulesEnginePortlet</portlet-class>
+		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
 	
 	<portlet>

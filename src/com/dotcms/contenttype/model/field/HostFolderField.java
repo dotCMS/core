@@ -7,7 +7,7 @@ import java.util.List;
 import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 @Value.Immutable
 public abstract class HostFolderField extends Field implements OnePerContentType {

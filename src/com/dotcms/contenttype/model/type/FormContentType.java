@@ -9,7 +9,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 
 @Value.Immutable

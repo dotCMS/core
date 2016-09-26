@@ -127,6 +127,8 @@ public class UserPersistence extends BasePersistence {
 							user.getFailedLoginAttempts(),
 							user.getAgreedToTermsOfUse(), user.getActive(),
 							user.getDeleteInProgress(), user.getDeleteDate());
+
+                    userHBM.setModDate(user.getModificationDate());
 					session.save(userHBM);
 					session.flush();
 				}
@@ -176,6 +178,7 @@ public class UserPersistence extends BasePersistence {
 						userHBM.setActive(user.getActive());
 						userHBM.setDeleteInProgress(user.getDeleteInProgress());
 						userHBM.setDeleteDate(user.getDeleteDate());
+						userHBM.setModDate(user.getModificationDate());
 						session.flush();
 					}
 					catch (ObjectNotFoundException onfe) {
@@ -204,6 +207,8 @@ public class UserPersistence extends BasePersistence {
 								user.getFailedLoginAttempts(),
 								user.getAgreedToTermsOfUse(), user.getActive(),
 								user.getDeleteInProgress(), user.getDeleteDate());
+
+						userHBM.setModDate(user.getModificationDate());
 						session.save(userHBM);
 						session.flush();
 					}

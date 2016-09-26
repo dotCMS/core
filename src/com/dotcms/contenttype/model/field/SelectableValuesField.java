@@ -5,12 +5,9 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
-import com.dotcms.contenttype.exception.InvalidSelectValuesException;
-import com.dotcms.contenttype.util.FieldUtil;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.BooleanUtils;
 import com.dotmarketing.business.DotStateException;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringUtil;
 
 public abstract class SelectableValuesField extends Field{

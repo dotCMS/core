@@ -6,11 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+
 import com.dotcms.sync.Exportable;
 import com.dotcms.sync.Importable;
 import com.dotcms.sync.exception.DotDependencyException;
@@ -36,40 +35,40 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
     public static final String STRUCTURE_TYPE_ALL       = "_all";
 
 	/**
-	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#CONTENT}
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#CONTENT}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_CONTENT 		= BaseContentType.CONTENT.getType();
+	public static final int STRUCTURE_TYPE_CONTENT 		= 1;
 
 	/**
-	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#WIDGET}
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#WIDGET}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_WIDGET 		= BaseContentType.WIDGET.getType();
+	public static final int STRUCTURE_TYPE_WIDGET 		= 2;
 
 	/**
-	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#FORM}
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#FORM}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_FORM 		= BaseContentType.FORM.getType();
+	public static final int STRUCTURE_TYPE_FORM 		= 3;
 
 	/**
-	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#FILEASSET}
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#FILEASSET}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_FILEASSET 	= BaseContentType.FILEASSET.getType();
+	public static final int STRUCTURE_TYPE_FILEASSET 	= 4;
 
 	/**
-	 * @deprecated As of 2016-05-16, replaced by {@link BaseContentType#HTMLPAGE}
+	 * @deprecated As of 2016-05-16, replaced by {@link Type#HTMLPAGE}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_HTMLPAGE     = BaseContentType.HTMLPAGE.getType();
+	public static final int STRUCTURE_TYPE_HTMLPAGE     = 5;
 
 	/**
-	 * @deprecated As of 2016-07-28, replaced by  {@link BaseContentType#PERSONA}
+	 * @deprecated As of 2016-05-16, replaced by  {@link Type#PERSONA}
 	 */
 	@Deprecated
-	public static final int STRUCTURE_TYPE_PERSONA		= BaseContentType.PERSONA.getType();
+	public static final int STRUCTURE_TYPE_PERSONA		= 6;
 
 			
 	private static final long serialVersionUID = 1L;
@@ -79,7 +78,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	private String reviewInterval;
 	private String reviewerRole;
 	private String pagedetail;
-	private int structureType =  BaseContentType.CONTENT.getType();
+	private int structureType = BaseContentType.CONTENT.getType();
 	private boolean fixed;
 	private boolean system;
 	private String velocityVarName;
@@ -179,9 +178,6 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return FieldFactory.getFieldsByStructureSortedBySortOrder(inode);
 	}
 
-	public ContentType contentType(){
-		return new StructureTransformer(this).from();
-	}
 
 
 	public String getReviewerRole() {

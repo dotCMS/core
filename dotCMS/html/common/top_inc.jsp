@@ -6,6 +6,7 @@ PLEASE KEEP ALL PORTAL SPECIFIC CODE, JS AND MARKUP OUT OF
 THIS FILE AND ITS INCLUDES
 
 --%>
+<%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%
@@ -147,7 +148,19 @@ THIS FILE AND ITS INCLUDES
 			mb.h=abs.h;
 			return mb;
 		};
-
+<%
+	if(UtilMethods.isSet(request.getParameter(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getParameter(WebKeys.FRAME))){
+		boolean inFrame = Boolean.valueOf(request.getParameter(WebKeys.IN_FRAME));
+		
+		if(inFrame){
+			  request.getSession().setAttribute(WebKeys.IN_FRAME,inFrame);
+	    	  request.getSession().setAttribute(WebKeys.FRAME,request.getParameter(WebKeys.FRAME));
+		}else{
+			  request.getSession().removeAttribute(WebKeys.IN_FRAME);
+	  	      request.getSession().removeAttribute(WebKeys.FRAME);
+		}
+	}
+%>
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>
@@ -157,7 +170,7 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 
-<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || UtilMethods.isSet(request.getParameter("in_frame"))){ %>
+<%if(UtilMethods.isSet(request.getParameter(WebKeys.POPUP)) || UtilMethods.isSet(request.getAttribute(WebKeys.POPUP)) || (UtilMethods.isSet(request.getParameter(WebKeys.IN_FRAME)) && "true".equals((String) request.getParameter(WebKeys.IN_FRAME)))|| (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))){ %>
 	<body class="dmundra" style="background:white url()">
 <%}else{ %>
 	<body class="dmundra" style="visibility:hidden">

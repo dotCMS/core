@@ -41,7 +41,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 

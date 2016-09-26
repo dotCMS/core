@@ -53,6 +53,12 @@
 	<property name="release.build" value="${dotcms.release.build}"/>
 
     <tstamp>
+        <format property="CURRENT_YEAR" pattern="yyyy" locale="en,GB"/>
+    </tstamp>
+    <property name="javadoc.title" value="&lt;h1&gt;dotCMS ${dotcms.release.version} API Specification&lt;/h1&gt;" />
+    <property name="javadoc.bottom" value="&lt;i&gt;Copyright &#169; ${CURRENT_YEAR} dotCMS Inc. All Rights Reserved.&lt;/i&gt;" />
+
+    <tstamp>
         <format property="TODAY_FORMATTED" pattern="MMM dd, yyyy"/>
     </tstamp>
 
@@ -494,12 +500,11 @@
         <javadoc maxmemory="1024m" packagenames="com.dotmarketing.*,com.dotcms.*" classpath="lib.app" sourcepath="${src.dir}" excludepackagenames="com.dummy.test.doc-files.*" defaultexcludes="yes" destdir="dotCMS/api" author="true" version="true" use="true" windowtitle="dotCMS API">
             <classpath refid="files-classpath" />
             <doctitle>
-                <![CDATA[
-                        <h1>dotCMS 3.2 API Specification</h1>
-                        ]]>
+                ${javadoc.title}
             </doctitle>
             <bottom>
-                <![CDATA[<i>Copyright &#169; 2015 dotCMS Inc. All Rights Reserved.</i>]]></bottom>
+                ${javadoc.bottom}
+            </bottom>
             <tag name="todo" scope="all" description="To do:" />
         </javadoc>
 

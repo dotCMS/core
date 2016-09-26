@@ -6,6 +6,8 @@
 	#parse("/preview_left_menu_page_as_content.vtl")
 	#stop 
 #end
+#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
+#set($angularFrame = "$!request.getSession().getAttribute('frame')")
 
 #if($request.getAttribute('archive'))
     #set($archive = $request.getAttribute('archive'))
@@ -73,37 +75,69 @@
     }
 
     function backToCMS(){
+       #if(${isAngularFrame})
         #if($UtilMethods.isSet(${viewBrowserURL}))
-            window.top.location  = "${viewBrowserURL}";
-        #else
-            window.top.location  = "/c/";
-        #end
+	    window.top.${angularFrame}.location  = "${viewBrowserURL}";
+	    #else
+	    window.top.${angularFrame}.location  = "/c/";
+	    #end
+       #else
+	    #if($UtilMethods.isSet(${viewBrowserURL}))
+	    window.top.location  = "${viewBrowserURL}";
+	    #else
+	    window.top.location  = "/c/";
+	    #end
+       #end
     }
 
     function livePage(){
+       #if(${isAngularFrame})
+       window.top.${angularFrame}.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&livePage=1&host_id=${host.identifier}";
+       #else
        window.top.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&livePage=1&host_id=${host.identifier}";
+       #end
     }
 
     function changeLanguage(lang){
         if(lang != $language){
             #if($livePage=="1")
-                window.top.frameMain.location  = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&livePage=1&host_id=${host.identifier}";
+            	#if(${isAngularFrame})
+       				window.top.${angularFrame}.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&livePage=1&host_id=${host.identifier}";
+       			#else
+                	window.top.frameMain.location  = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&livePage=1&host_id=${host.identifier}";
+                #end
             #else
                 #if($previewPage=="1")
-                    window.top.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=1&host_id=${host.identifier}";
+                	#if(${isAngularFrame})
+       					window.top.${angularFrame}.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=1&host_id=${host.identifier}";
+       				#else
+                    	window.top.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=1&host_id=${host.identifier}";
+                    #end
                 #else
-                    window.top.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=2&host_id=${host.identifier}";
+                    #if(${isAngularFrame})
+       					window.top.${angularFrame}.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=2&host_id=${host.identifier}";
+       				#else
+                    	window.top.frameMain.location = "${VTLSERVLET_URI}?com.dotmarketing.htmlpage.language="+lang+"&previewPage=2&host_id=${host.identifier}";
+                    #end
                 #end
             #end
         }
     }
 
     function previewPage(){
+       #if(${isAngularFrame})
+       window.top.${angularFrame}.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&previewPage=2&host_id=${host.identifier}";
+       #else	
        window.top.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&previewPage=2&host_id=${host.identifier}";
+       #end
     }
 
     function editingPage(){
+    	#if(${isAngularFrame})
+       	window.top.${angularFrame}.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&previewPage=1&host_id=${host.identifier}";
+       	#else
         window.top.frameMain.location  = "${VTLSERVLET_URI}?mainFrame=1&previewPage=1&host_id=${host.identifier}";
+        #end
     }
 
     function popBrowser(x){
@@ -489,7 +523,7 @@
 </div>
 
 <div style="display:none">
-<form action="${directorURL}" id="submitParent" method="post" target="_top">
+<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="${angularFrame}" #else target="_top" #end >
     <input type="hidden" name="referer" id="referer" value="$referer"><BR>
     <input type="hidden" name="taskInode" id="taskInode" value=""><BR>
     <input type="hidden" name="cmd" id="cmd" value="addChild"><BR>

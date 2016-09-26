@@ -25,7 +25,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 
 public abstract class ContentType implements Serializable, Permissionable,ContentTypeIf {

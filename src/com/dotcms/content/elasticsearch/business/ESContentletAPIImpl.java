@@ -3,9 +3,38 @@
  */
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.com.google.common.collect.Lists;
@@ -110,34 +139,6 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.springframework.beans.BeanUtils;
-
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * Implementation class for the {@link ContentletAPI} interface.
  *
@@ -147,6 +148,10 @@ import java.util.regex.Pattern;
  *
  */
 public class ESContentletAPIImpl implements ContentletAPI {
+
+
+    private final NotificationAPI notificationAPI;
+    private final ESContentletAPIHelper esContentletAPIHelper;
 
 	private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
@@ -174,6 +179,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	 *
 	 */
     public ESContentletAPIImpl () {
+
         fAPI = APILocator.getFieldAPI();
         conFac = new ESContentFactoryImpl();
         perAPI = APILocator.getPermissionAPI();
@@ -182,6 +188,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         lanAPI = APILocator.getLanguageAPI();
         distAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
+        this.notificationAPI = APILocator.getNotificationAPI();
+        this.esContentletAPIHelper = ESContentletAPIHelper.INSTANCE;
     }
 
     @Override

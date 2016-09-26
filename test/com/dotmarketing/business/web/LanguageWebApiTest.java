@@ -14,12 +14,15 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.test.TestingJndiDatasource;
+
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigTestHelper;
+import com.dotmarketing.util.TestingJndiDatasource;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableMap;
+
 
 public class LanguageWebApiTest {
 
@@ -27,7 +30,8 @@ public class LanguageWebApiTest {
     public static void setUpBeforeClass() throws Exception {
 
         new TestingJndiDatasource().init();
-        Config._setupFakeTestingContext();
+        ConfigTestHelper._setupFakeTestingContext();
+
     }
 
     LanguageWebAPIImpl lapi = new LanguageWebAPIImpl();

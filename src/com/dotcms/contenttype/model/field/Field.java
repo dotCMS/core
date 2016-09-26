@@ -16,7 +16,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 
 public abstract class Field implements FieldIf, Serializable {

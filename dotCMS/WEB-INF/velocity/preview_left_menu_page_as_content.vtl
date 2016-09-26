@@ -21,7 +21,8 @@
     #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.wiki.contentlet.url"))
 #end
 
-
+#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
+#set($angularFrame = "$!request.getSession().getAttribute('frame')")
 
 #set($wfScheme = $workflowtool.findSchemeForStruct($dotPageContent.structure))
 
@@ -108,10 +109,18 @@
     }
 
     function backToCMS(){
-        #if($UtilMethods.isSet(${viewBrowserURL}))
-            window.top.location  = "${viewBrowserURL}";
+        #if(${isAngularFrame})
+        	#if($UtilMethods.isSet(${viewBrowserURL}))
+	            window.top.${angularFrame}.location  = "${viewBrowserURL}";
+	        #else
+	            window.top.${angularFrame}.location  = "/c/";
+	        #end
         #else
-            window.top.location  = "/c/";
+	        #if($UtilMethods.isSet(${viewBrowserURL}))
+	            window.top.location  = "${viewBrowserURL}";
+	        #else
+	            window.top.location  = "/c/";
+	        #end
         #end
     }
 
@@ -162,7 +171,23 @@
     	if(_lastUrl!=newUrl){
 	    	//console.log("changing url:" + newUrl);
 	    	_lastUrl=newUrl;
-	    	window.top.frameMain.location  = newUrl;
+	    	 #if(${isAngularFrame})
+	    	    if(window.top.${angularFrame} != undefined){
+	    	    	if(window.top.${angularFrame}.frameMain != undefined ){
+	    	    		window.top.${angularFrame}.frameMain.location  = newUrl;
+	    	    	}else{
+	    	    		window.top.${angularFrame}.contentWindow.frameMain.location  = newUrl;
+	    	    	}
+	    	    }else{
+	    			if(window.${angularFrame}.frameMain != undefined ){
+	    				window.${angularFrame}.frameMain.location  = newUrl;
+	    			}else{
+	    				window.${angularFrame}.contentWindow.frameMain.location  = newUrl;
+	    			}	    			
+	    		}
+	    	#else
+	    		window.top.frameMain.location  = newUrl;
+	    	#end
    	 	}
     }
     
@@ -688,7 +713,7 @@
 </div>
 
 <div style="display:none">
-<form action="${directorURL}" id="submitParent" method="post" target="_top">
+<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="${angularFrame}" #else target="_top" #end >
     <input type="hidden" name="referer" id="referer" value="$referer">
     <input type="hidden" name="taskInode" id="taskInode" value="">
     <input type="hidden" name="cmd" id="cmd" value="addChild">

@@ -8,7 +8,7 @@ import org.immutables.value.Value;
 
 import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 @Value.Immutable
 public abstract class DateField extends Field {
@@ -39,7 +39,7 @@ public abstract class DateField extends Field {
     @Value.Check
     public void check() {
         super.check();
-
+        
         Preconditions.checkArgument(new FieldUtil().validDate(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
 
     }

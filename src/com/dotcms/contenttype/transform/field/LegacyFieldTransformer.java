@@ -11,10 +11,11 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
-import com.google.common.collect.ImmutableList;
+
 
 public class LegacyFieldTransformer implements FieldTransformer {
 

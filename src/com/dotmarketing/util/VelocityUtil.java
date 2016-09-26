@@ -47,7 +47,6 @@ import com.dotmarketing.viewtools.RequestWrapper;
 import com.liferay.portal.model.Company;
 import com.liferay.util.SystemProperties;
 
-import bsh.util.Util;
 
 public class VelocityUtil {
 
@@ -262,7 +261,7 @@ public class VelocityUtil {
         if ( toolboxManager == null ) {
             synchronized ( VelocityUtil.class ) {
                 if ( toolboxManager == null ) {
-                    toolboxManager = ServletToolboxManager.getInstance( Config.CONTEXT, "/WEB-INF/toolbox.xml" );
+                    toolboxManager = ServletToolboxManager.getInstance( Config.CONTEXT, Config.getStringProperty("TOOLBOX_MANAGER_PATH", "/WEB-INF/toolbox.xml"));
                 }
             }
 

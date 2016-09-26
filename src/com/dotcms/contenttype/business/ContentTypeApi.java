@@ -10,7 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
-import com.google.common.collect.ImmutableSet;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 
 

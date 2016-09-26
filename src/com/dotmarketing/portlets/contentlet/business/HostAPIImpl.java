@@ -9,7 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
@@ -62,8 +67,10 @@ public class HostAPIImpl implements HostAPI {
 	private ContentletFactory conFac = FactoryLocator.getContentletFactory();
 	private HostCache hostCache = CacheLocator.getHostCache();
 	private Host systemHost;
+	private final SystemEventsAPI systemEventsAPI;
 
 	public HostAPIImpl() {
+		this.systemEventsAPI = APILocator.getSystemEventsAPI();
 	}
 
 	/**
@@ -551,7 +558,17 @@ public class HostAPIImpl implements HostAPI {
 					try {
 						String errorMessage = LanguageUtil.format(user.getLocale(), "notifications_host_deletion_error",new String[]{host.getHostname()},false);
 						errorMessage += e.getMessage();
-						APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+						//APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+
+						APILocator.getNotificationAPI().generateNotification(
+								LanguageUtil.get(user.getLocale(), "notification.hostapi.delete.error.title"), // title = Host Notification
+								errorMessage,
+								null, // no actions
+								NotificationLevel.ERROR,
+								NotificationType.GENERIC,
+								user.getUserId(),
+								user.getLocale()
+						);
 
 					} catch (LanguageException e1) {
 						Logger.error(HostAPIImpl.class, "error formating notification", e);
@@ -720,6 +737,9 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().archive(c, user, respectFrontendRoles);
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
+
+		systemEventsAPI.push(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	public void unarchive(Host host, User user, boolean respectFrontendRoles)
@@ -733,6 +753,8 @@ public class HostAPIImpl implements HostAPI {
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
 
+		systemEventsAPI.push(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	private synchronized Host createDefaultHost() throws DotDataException,

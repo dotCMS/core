@@ -4,12 +4,11 @@ import java.util.List;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 
 public interface FieldApi {
