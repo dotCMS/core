@@ -19,6 +19,13 @@ repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
+// Expand the release properties.
+processResources {
+    filesMatching("release.properties") {
+        expand( project.properties )
+    }
+}
+
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
 war {
