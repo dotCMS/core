@@ -31,6 +31,8 @@ export class LoginComponent {
     @Input() isLoginInProgress: boolean = false;
     @Input()  message: string = '';
     @Input() passwordChanged: boolean = false;
+    @Input() resetEmailSent: boolean = false;
+    @Input() resetEmail: string = '';
 
     @Output() recoverPassword  = new EventEmitter<>();
     @Output() login  = new EventEmitter<LoginData>();
@@ -59,11 +61,14 @@ export class LoginComponent {
     mandatoryFieldError: string = '';
     communityLicenseInfoMessage: string = '';
     resetPasswordSuccess: string = '';
+    resetEmailMessage: string ='';
+
     isCommunityLicense: boolean = true;
 
     private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
        'get-new-password', 'cancel', 'Server', 'error.form.mandatory',
-       'angular.login.component.community.licence.message', 'reset-password-success'];
+       'angular.login.component.community.licence.message', 'reset-password-success',
+       'a-new-password-has-been-sent-to-x'];
 
     constructor(private loginService: LoginService, private ngZone: NgZone) {
         this.language = '';
@@ -138,6 +143,7 @@ export class LoginComponent {
             this.mandatoryFieldError = dataI18n['error.form.mandatory'];
             this.communityLicenseInfoMessage = dataI18n['angular.login.component.community.licence.message'];
             this.resetPasswordSuccess = dataI18n['reset-password-success'];
+            this.resetEmailMessage = dataI18n['a-new-password-has-been-sent-to-x'];
 
 
             // Set dotCMS Info
@@ -168,6 +174,9 @@ export class LoginComponent {
 
             if (this.passwordChanged) {
                 this.message = this.resetPasswordSuccess;
+            }
+            if (this.resetEmailSent) {
+                this.message = this.resetEmailMessage.replace('{0}', this.resetEmail);
             }
         }, (error) => {
              console.log(error);

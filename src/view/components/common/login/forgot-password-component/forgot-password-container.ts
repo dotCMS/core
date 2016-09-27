@@ -22,7 +22,8 @@ import {ResponseView} from '../../../../../api/services/response-view';
 })
 export class ForgotPasswordContainer{
 
-    private message:string = '';
+    private message: string = '';
+    private email: string = '';
 
     constructor( private loginService: LoginService, private router: Router) {
 
@@ -30,11 +31,12 @@ export class ForgotPasswordContainer{
 
     recoverPassword(forgotPasswordLogin:string): void {
         this.message = '';
+        this.email = forgotPasswordLogin;
 
         this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:ResponseView) => {
             this.goToLogin();
         }, (resp:ResponseView) => {
-            if (!resp.existError("a-new-password-has-been-sent-to-x")){
+            if (!resp.existError('a-new-password-has-been-sent-to-x')){
                 this.message = resp.errorsMessages;
             }else{
                 this.goToLogin();
@@ -42,7 +44,7 @@ export class ForgotPasswordContainer{
         });
     }
 
-    goToLogin():void{
-        this.router.go('/public/login');
+    goToLogin(): void {
+        this.router.go('/public/login', { 'resetEmailSent': true, 'resetEmail': this.email});
     }
 }
