@@ -29,6 +29,7 @@ export class LoginContainer{
     private passwordChanged: boolean = false;
 
     constructor(private loginService: LoginService, private router: Router, private httprequestUtils: HttpRequestUtils) {
+        // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
         let queryParams: Map = this.httprequestUtils.getQueryParams();
         if (<boolean> queryParams.get('changedPassword')) {
             this.passwordChanged = queryParams.get('changedPassword');

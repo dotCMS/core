@@ -29,6 +29,7 @@ export class AppComponent {
     constructor(private router: Router, private loginService: LoginService, dotcmsConfig: DotcmsConfig, private httpRequestUtils: HttpRequestUtils) {}
 
     ngOnInit(): void {
+        // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
         let queryParams: Map = this.httpRequestUtils.getQueryParams();
 
         if (<boolean> queryParams.get('resetPassword')) {

@@ -8,6 +8,7 @@ export class HttpRequestUtils {
      * Get a map with the url querystring parameters
      * @returns {Map<string, string>}
      */
+     // TODO: change the getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
      getQueryParams(): Map<string, string> {
         let split: string[] = window.location.search.substring(1).split('&');
         let map: Map<string, string> = new Map();
