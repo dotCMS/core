@@ -60,7 +60,7 @@ export class ResetPasswordContainer {
     }
 
     private goToLogin(): void {
-        this.router.go('/public/login');
+        this.router.go('/public/login',{ 'changedPassword': true });
     }
 
     private cleanMessage(): void {

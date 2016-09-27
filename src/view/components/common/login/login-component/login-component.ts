@@ -30,6 +30,7 @@ export class LoginComponent {
 
     @Input() isLoginInProgress: boolean = false;
     @Input()  message: string = '';
+    @Input() passwordChanged: boolean = false;
 
     @Output() recoverPassword  = new EventEmitter<>();
     @Output() login  = new EventEmitter<LoginData>();
@@ -57,12 +58,12 @@ export class LoginComponent {
     dotcmsBuildDateString: string = '';
     mandatoryFieldError: string = '';
     communityLicenseInfoMessage: string = '';
-
+    resetPasswordSuccess: string = '';
     isCommunityLicense: boolean = true;
 
     private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
        'get-new-password', 'cancel', 'Server', 'error.form.mandatory',
-       'angular.login.component.community.licence.message'];
+       'angular.login.component.community.licence.message', 'reset-password-success'];
 
     constructor(private loginService: LoginService, private ngZone: NgZone) {
         this.language = '';
@@ -136,6 +137,7 @@ export class LoginComponent {
             this.serverLabel = dataI18n.Server;
             this.mandatoryFieldError = dataI18n['error.form.mandatory'];
             this.communityLicenseInfoMessage = dataI18n['angular.login.component.community.licence.message'];
+            this.resetPasswordSuccess = dataI18n['reset-password-success'];
 
 
             // Set dotCMS Info
@@ -162,6 +164,10 @@ export class LoginComponent {
                 });
 
                 this.language = currentLanguage.language + '_' + currentLanguage.country;
+            }
+
+            if (this.passwordChanged) {
+                this.message = this.resetPasswordSuccess;
             }
         }, (error) => {
              console.log(error);
