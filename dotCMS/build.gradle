@@ -1,5 +1,6 @@
 configurations {
     compile
+    buildlibs
     starter
     coreWeb
     provided
@@ -17,6 +18,12 @@ apply from: "$rootDir/dependencies.gradle"
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+// Compile Java.
+compileJava {
+    targetCompatibility = 1.8
+    sourceCompatibility = 1.8
 }
 
 // Expand the release properties.
@@ -67,15 +74,29 @@ task gitClonePull(type: Exec) {
     }
 }
 
-task deployWarTomcat(type: Copy) {
-    dependsOn 'gitClonePull', 'deleteRoot'
-    into tomcatInstallLocation + webAppRootFolder
-    with war
+// Copying libs/buildlibs under tomcat8/lib.
+task copyBuildLibs(type: Copy) {
+    from '../libs/buildlibs'
+    into tomcatInstallLocation + '/lib'
+    include 'mail.jar'
+    include 'sqljdbc42.jar'
+    include 'mysql-connector-java-5.1.37-bin.jar'
+    include 'postgresql-9.0-801.jdbc3.jar'
+    include 'ojdbc5.jar'
+    include 'jtds-1.2.2.jar'
 }
+copyBuildLibs.mustRunAfter gitClonePull
 
+// Delete ROOT under tomcat8/webapps
 task deleteRoot(type: Delete) {
   delete tomcatInstallLocation + webAppRootFolder
   followSymlinks = true
+}
+
+task deployWarTomcat(type: Copy) {
+    dependsOn 'gitClonePull', 'deleteRoot', 'copyBuildLibs'
+    into tomcatInstallLocation + webAppRootFolder
+    with war
 }
 //configurations {
 //    compile
