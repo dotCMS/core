@@ -10,11 +10,15 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
@@ -26,7 +30,8 @@ import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.rest.ESIndexResource;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -140,7 +145,7 @@ public class IndexAjaxAction extends AjaxAction {
             if(ufile!=null) {
                 ESIndexResource.restoreIndex(ufile, aliasToRestore, indexToRestore, clearBeforeRestore);
             }
-            
+
             PrintWriter out=response.getWriter();
             if(isFlash) {
                 out.println("response=ok");
@@ -149,7 +154,7 @@ public class IndexAjaxAction extends AjaxAction {
                 response.setContentType("application/json");
                 out.println("{\"response\":1}");
             }
-            
+
 	    }
 	    catch(FileUploadException fue) {
 	        Logger.error(this, "Error uploading file", fue);
@@ -157,14 +162,13 @@ public class IndexAjaxAction extends AjaxAction {
 	    }
 	}
 
-	
 	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
-		
+
 		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
 		if(!UtilMethods.isSet(indexName)) return;
-		
+
 		File f=ESIndexResource.downloadIndex(indexName);
 		response.setContentLength((int) f.length());
 		OutputStream out = response.getOutputStream();
@@ -178,6 +182,85 @@ public class IndexAjaxAction extends AjaxAction {
 		f.delete();
 	}
 
+	/**
+	 * Creates a snapshot zipped file. The zip file contains the repository information.
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 * @throws DotDataException
+	 */
+	public void snapshotIndex(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException, DotDataException {
+		// parameters from map
+		Map<String, String> map = getURIParams();
+		String indexName = ESIndexResource.getIndexNameOrAlias(map, "indexName", "indexAlias");
+		// index should be part of the params on the map
+		if (!UtilMethods.isSet(indexName))
+			throw new DotDataException("Invalid index name");
+		// zipped repository file
+		File indexFile = APILocator.getESIndexAPI().createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, indexName, indexName);
+
+		OutputStream out = response.getOutputStream();
+		InputStream in = new FileInputStream(indexFile);
+		IOUtils.copyLarge(in, out);
+
+		response.setContentType("application/zip");
+		response.setHeader("Content-Type", "application/zip");
+		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
+
+		// clean up
+		APILocator.getESIndexAPI().deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
+		indexFile.delete();
+	}
+
+	/**
+	 * Restores a snapshot. Requires a zip file with format <index_name>.zip.
+	 *
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 * @throws DotDataException
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public void restoreSnapshot(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException, DotDataException, InterruptedException, ExecutionException {
+		try {
+			FileItemFactory factory = new DiskFileItemFactory();
+			ServletFileUpload upload = new ServletFileUpload(factory);
+			List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
+
+			for (FileItem it : items) {
+				File tempFile = File.createTempFile("indexToRestore", null);
+				InputStream in = it.getInputStream();
+				FileOutputStream out = new FileOutputStream(tempFile);
+				IOUtils.copyLarge(in, out);
+				IOUtils.closeQuietly(out);
+				IOUtils.closeQuietly(in);
+
+				// filename should end with .zip to be able to process the index
+				// name from the filename
+				String extensionPattern = "\\.[zZ][iI][pP]$";
+				String filePattern = ".*" + extensionPattern;
+
+				if (!it.getName().matches(filePattern)) {
+					throw new ZipException(
+							"Invalid file name '" + tempFile.getName() + "',  does not have a zip extension.");
+				}
+				APILocator.getESIndexAPI().uploadSnapshot(new FileInputStream(tempFile),
+						it.getName().replaceAll(extensionPattern, ""));
+			}
+
+			PrintWriter out = response.getWriter();
+			response.setContentType("application/json");
+			out.println("{\"response\":1}");
+		} catch (FileUploadException fue) {
+			Logger.error(this, "Error uploading file", fue);
+			throw new IOException(fue);
+		}
+	}
 
 
 	public void createIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
@@ -196,7 +279,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		boolean live = map.get("live") != null;
 		String indexName = map.get("indexName");
-		
+
 		ESIndexResource.create(indexName, shards, live);
 	}
 
@@ -316,7 +399,7 @@ public class IndexAjaxAction extends AjaxAction {
 	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
-		
+
 		response.getWriter().println(ESIndexResource.indexDocumentCount(indexName));
 	}
 
@@ -351,6 +434,6 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-        response.getWriter().println(idxApi.listDotCMSIndices());        
+        response.getWriter().println(idxApi.listDotCMSIndices());
     }
 }
