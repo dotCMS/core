@@ -4,12 +4,13 @@ import {LoginPageComponent} from './common/login/login-page-component';
 import {LoginService} from '../../api/services/login-service';
 import {MainComponent} from './common/main-component/main-component';
 import {Router} from '@ngrx/router';
+import {HttpRequestUtils} from '../../api/util/httpRequestUtils';
 
 @Component({
     directives: [MainComponent, LoginPageComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    providers: [],
+    providers: [HttpRequestUtils],
     selector: 'app',
     styleUrls: ['app.css'],
     templateUrl: ['app.html']
@@ -25,10 +26,10 @@ export class AppComponent {
 
     // We are initializing dotcmsConfig in this component because it's the entry point and we need it
     // ready for main-component, maybe we can do the request if the login it's success
-    constructor(private router: Router, private loginService: LoginService, dotcmsConfig: DotcmsConfig) {}
+    constructor(private router: Router, private loginService: LoginService, dotcmsConfig: DotcmsConfig, private httpRequestUtils: HttpRequestUtils) {}
 
     ngOnInit(): void {
-        let queryParams: Map = this.getQueryParams();
+        let queryParams: Map = this.httpRequestUtils.getQueryParams();
 
         if (<boolean> queryParams.get('resetPassword')) {
             let token: string = queryParams.get('token');
@@ -48,17 +49,5 @@ export class AppComponent {
 
     toggleMain(change: boolean): void {
         this.login = change;
-    }
-
-    private getQueryParams(): Map<string, string> {
-        let split: string[] = window.location.search.substring(1).split('&');
-        let map: Map<string, string> = new Map();
-
-        split.forEach(param => {
-            let paramSplit: string[] = param.split('=');
-            map.set(paramSplit[0], paramSplit[1]);
-        });
-
-        return map;
     }
 }

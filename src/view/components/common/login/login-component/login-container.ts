@@ -2,13 +2,14 @@ import {Component,ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../../api/services/login-service';
 import {Router} from '@ngrx/router';
 import {LoginComponent} from './login-component';
+import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
 
 @Component({
     directives: [LoginComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
-    providers: [],
+    providers: [HttpRequestUtils],
     selector: 'dot-login-container',
     styleUrls: [],
     template: `
@@ -17,6 +18,7 @@ import {LoginComponent} from './login-component';
             [isLoginInProgress] = "isLoginInProgress"
             (login)="logInUser($event)"
             (recoverPassword)="showForgotPassword()"
+            [passwordChanged]="passwordChanged"
         >
         </dot-login-component>
     `,
@@ -24,9 +26,13 @@ import {LoginComponent} from './login-component';
 export class LoginContainer{
     private message:string;
     private isLoginInProgress: boolean = false;
+    private passwordChanged: boolean = false;
 
-    constructor(private loginService: LoginService, private router: Router) {
-
+    constructor(private loginService: LoginService, private router: Router, private httprequestUtils: HttpRequestUtils) {
+        let queryParams: Map = this.httprequestUtils.getQueryParams();
+        if (<boolean> queryParams.get('changedPassword')) {
+            this.passwordChanged = queryParams.get('changedPassword');
+        }
     }
 
     logInUser(loginData:LoginData): void {
@@ -54,6 +60,7 @@ export class LoginContainer{
     showForgotPassword(): void {
         this.router.go('/public/forgotPassword');
     }
+
 }
 
 export interface LoginData {
