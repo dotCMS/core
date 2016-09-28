@@ -62,7 +62,7 @@ war {
 
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
 // If the tomcat folder exists: git pull, if not: git clone.
-task gitClonePull(type: Exec) {
+task clonePullTomcat(type: Exec) {
     description 'Pulls git.'
 
     def folder = new File( tomcatInstallLocation )
@@ -85,19 +85,42 @@ task copyBuildLibs(type: Copy) {
     include 'ojdbc5.jar'
     include 'jtds-1.2.2.jar'
 }
-copyBuildLibs.mustRunAfter gitClonePull
+copyBuildLibs.mustRunAfter clonePullTomcat
 
 // Delete ROOT under tomcat8/webapps
-task deleteRoot(type: Delete) {
+task undeployWarTomcat(type: Delete) {
   delete tomcatInstallLocation + webAppRootFolder
   followSymlinks = true
 }
 
+// Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: Copy) {
-    dependsOn 'gitClonePull', 'deleteRoot', 'copyBuildLibs'
+    dependsOn 'clonePullTomcat', 'undeployWarTomcat', 'copyBuildLibs'
     into tomcatInstallLocation + webAppRootFolder
     with war
 }
+
+// This task finds all the plugins and runs 'ant build' inside each one.
+// In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
+task buildPlugins(dependsOn: 'jar') << {
+    delete "$buildDir/pluginsLib"
+
+    copy {
+        into "$buildDir/pluginsLib"
+        from configurations.compile
+        from "$buildDir/libs/"
+    }
+
+    new File("src/main/plugins").eachDir() {
+        def pluginPath = it
+        println "Compile Plugin: " + pluginPath
+        exec {
+          workingDir pluginPath
+          commandLine 'ant', 'build'
+        }
+    }  
+}
+
 //configurations {
 //    compile
 //    antLibs

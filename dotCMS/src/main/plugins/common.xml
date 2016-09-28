@@ -25,6 +25,9 @@
     </condition>
 
 	<path id="files-classpath">
+		<fileset dir="${basedir}/../../../../build/pluginsLib" erroronmissingdir="false">
+			<include name="**/*.jar" />
+		</fileset>
 
 		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
 		<fileset dir="${basedir}/../../${target.root.dir}/../../lib" erroronmissingdir="false">
