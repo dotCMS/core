@@ -45,6 +45,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigTestHelper;
 import com.dotmarketing.util.TestingJndiDatasource;
@@ -52,7 +53,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
@@ -109,8 +109,12 @@ public class ContentletBaseTest extends TestBase {
 
     @BeforeClass
     public static void prepare () throws Exception {
-        TestingJndiDatasource.init();
-        ConfigTestHelper._setupFakeTestingContext();
+
+        if (System.getProperty("TEST-RUNNER") == null || !System.getProperty("TEST-RUNNER")
+            .equals(ServletTestRunner.class.getCanonicalName())) {
+            TestingJndiDatasource.init();
+            ConfigTestHelper._setupFakeTestingContext();
+        }
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
@@ -201,7 +205,7 @@ public class ContentletBaseTest extends TestBase {
         contentlets.add( newContentlet );
     }
 
-    @AfterClass
+    //@AfterClass
     public static void afterClass () throws Exception {
 
         //Delete html pages

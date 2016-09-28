@@ -87,7 +87,6 @@ import org.junit.runners.Suite;
     CategoryAPITest.class,
     MenuLinkAPITest.class,
     ContentletFactoryTest.class,
-    ContentletAPITest.class,
     ContainerAPITest.class,
     FieldFactoryTest.class,
     StructureFactoryTest.class,
