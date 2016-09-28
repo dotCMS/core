@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -434,8 +435,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     				//Create a new notification to inform the pages were migrated
                     APILocator.getNotificationAPI().generateNotification(
-                            LanguageUtil.get(user.getLocale(), "notification.htmlpageassets.migration.info.title"), // title = HTML Pages Migration
-                            LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ),
+                            new I18NMessage("notification.htmlpageassets.migration.info.title"), // title = HTML Pages Migration
+                            new I18NMessage( "htmlpages-migration-finished" ),
                             null, // no actions
                             NotificationLevel.INFO,
                             NotificationType.GENERIC,

@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
@@ -47,17 +45,24 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	public static final String ID = "userId";
 	private final Queue<Session> queue;
 	private final UserAPI userAPI;
-
+	private final SystemEventProcessorFactory systemEventProcessorFactory;
 
 	public SystemEventsWebSocketEndPoint() {
-		this(new ConcurrentLinkedQueue<Session>(), APILocator.getUserAPI());
+
+		this(new ConcurrentLinkedQueue<Session>(),
+				APILocator.getUserAPI(),
+				SystemEventProcessorFactory.getInstance());
 	}
 
 	@VisibleForTesting
 	public SystemEventsWebSocketEndPoint(final Queue<Session> queue,
-										 final UserAPI userAPI) {
+										 final UserAPI userAPI,
+										 final SystemEventProcessorFactory systemEventProcessorFactory) {
+
 		this.queue   = queue;
 		this.userAPI = userAPI;
+		this.systemEventProcessorFactory =
+				systemEventProcessorFactory;
 	}
 
 	@OnOpen
@@ -125,6 +130,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 		final ArrayList<Session> closedSessions = new ArrayList<>();
 
+
 		try {
 
 			for (Session session : queue) {
@@ -136,7 +142,8 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 					if (this.apply (event, session)) {
 
-						session.getAsyncRemote().sendObject(event);
+						session.getAsyncRemote().sendObject
+								(this.processEvent(session, event));
 					}
 				}
 			}
@@ -147,6 +154,15 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 			Logger.error(this, "An error occurred when sending a message through the " + this.getClass().getName(), e);
 		}
 	} // sendSystemEvent.
+
+	private SystemEvent processEvent(final Session session,
+									 final SystemEvent event) {
+
+		final SystemEventProcessor processor =
+				this.systemEventProcessorFactory.createProcessor(event.getEventType());
+
+		return null != processor? processor.process(event, session): event;
+	} // processEvent.
 
 	private boolean apply(final SystemEvent event,
 						  final Session session) throws DotDataException  {
