@@ -4,6 +4,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import org.junit.Test;
@@ -47,8 +48,8 @@ public class TimeMachineAjaxActionTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Time Machine",
-                "Time Machine Snapshot created.",
+                new I18NMessage("notification.timemachine.created.info.title"),
+                new I18NMessage("TIMEMACHINE-SNAPSHOT-CREATED"),
                 null,
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
