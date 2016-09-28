@@ -61,7 +61,7 @@ public class ESClient {
 	}
 
     private void initNode () {
-
+    	
         if ( _nodeInstance == null || _nodeInstance.isClosed()) {
         	long start = System.currentTimeMillis();
             synchronized (syncMe) {
@@ -109,7 +109,7 @@ public class ESClient {
             }
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
         }
-
+        
     }
 
     public void shutDownNode () {

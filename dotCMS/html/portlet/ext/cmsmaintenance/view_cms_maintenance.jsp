@@ -118,14 +118,14 @@ function checkReindexation () {
 	CMSMaintenanceAjax.getReindexationProgress(checkReindexationCallback);
 }
 
-/** Stops de re-indexation process and clears the database table that contains
+/** Stops de re-indexation process and clears the database table that contains 
     the remaining non re-indexed records. */
 function stopReIndexing(){
 	CMSMaintenanceAjax.stopReindexation(checkReindexationCallback);
 }
 
-/** Stops de re-indexation process and clears the database table that contains
-    the remaining non re-indexed records. Moreover, switches the current index
+/** Stops de re-indexation process and clears the database table that contains 
+    the remaining non re-indexed records. Moreover, switches the current index 
     to point to the new one. */
 function stopReIndexingAndSwitchover() {
 	dijit.byId('stopReindexAndSwitch').set('label', '<%= LanguageUtil.get(pageContext,"Switching-To-New-Index") %>');
@@ -133,13 +133,13 @@ function stopReIndexingAndSwitchover() {
 	CMSMaintenanceAjax.stopReindexationAndSwitchover(checkReindexationCallback);
 }
 
-/** Downloads the main information of the records that could not be re-indexed
+/** Downloads the main information of the records that could not be re-indexed 
     as a .CSV file*/
 function downloadFailedAsCsv() {
 	var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
     href += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
-    href += "<portlet:param name='cmd' value='export-failed-as-csv' />";
-    href += "<portlet:param name='referer' value='<%= java.net.URLDecoder.decode(referer, "UTF-8") %>' />";
+    href += "<portlet:param name='cmd' value='export-failed-as-csv' />";      
+    href += "<portlet:param name='referer' value='<%= java.net.URLDecoder.decode(referer, "UTF-8") %>' />";       
     href += "</portlet:actionURL>";
     window.location.href=href;
 }
@@ -751,13 +751,13 @@ function doCreateLive() {
 	shardsUrl = "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/createIndex/live/on/shards/";
 }
 
-function shardCreating(){
+function shardCreating(){	
 	dijit.byId('addIndex').hide();
 	var shards = document.getElementById('shards').value;
 	if(shards <1){
 		return;
 	}
-
+	
 	var xhrArgs = {
        url: shardsUrl + shards,
        handleAs: "text",
@@ -974,7 +974,7 @@ function loadUsers() {
 		callback: function(sessionList) {
 		    // Append prefix to invalidate button id
 			var invalidateButtonIdPrefix = "invalidateButtonNode-";
-
+		    
             dojo.query('#loggedUsersProgress').style({display:"none"});
 
 			if(sessionList.length > 0) {
@@ -1179,7 +1179,7 @@ function updateHostList(inode, name, selectval){
 	if(row!=null){
 	   alert('<%= LanguageUtil.get(pageContext, "host-already-selected") %>');
 	}else{
-
+		
 		if(hostId == 'all'){
 			var existingHostIds=dojo.byId("assetHost").value.split(",");
 			for(var i = 0; i < existingHostIds.length; i++){
@@ -1195,8 +1195,8 @@ function updateHostList(inode, name, selectval){
 		if(nohosts!=null){
 			table.deleteRow(1);
 	    }
-
-
+	
+	
 		var newRow = table.insertRow(table.rows.length);
 		if((table.rows.length%2)==0){
 	        newRow.className = "alternate_1";
@@ -1211,7 +1211,7 @@ function updateHostList(inode, name, selectval){
 		anchor.innerHTML = '<span class="deleteIcon"></span>';
 		cell0.appendChild(anchor);
 		cell1.innerHTML = hostName;
-
+		
 		if((dojo.byId(inode).value == '') || (dojo.byId(inode).value == 'all')){
 			dojo.byId(inode).value = hostId;
 		}else if(hostId == 'all'){
@@ -1326,8 +1326,8 @@ dd.leftdl {
                             for (int i = 0; i<caches.length; i++) {
                             	indexValue[i] = caches[i].toString();
                             }
-                            java.util.Arrays.sort(indexValue);
-
+                            java.util.Arrays.sort(indexValue); 
+                            
                             for(String c : indexValue){ %>
                                 <option><%= c %></option>
                             <% } %>
@@ -1675,7 +1675,7 @@ dd.leftdl {
                 </tr>
 
             </table>
-
+            
              <table class="listingTable">
                 <tr>
                     <th><%= LanguageUtil.get(pageContext,"Convert-Pages-To-Content") %></th>
@@ -1747,7 +1747,7 @@ dd.leftdl {
 												<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "no-hosts-selected") %></div>
 											</td>
 										</tr>
-									</table>
+									</table>                        			
                   			    </td>
 			               		<td>
 			               			<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:<br/>
@@ -1953,10 +1953,10 @@ dd.leftdl {
   		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 4)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
-	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp;
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
+	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
+	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
 	</div>
-
+	
 </div>
 
 <script language="Javascript">
