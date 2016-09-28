@@ -8,10 +8,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.osgi.framework.Bundle;
-import com.dotcms.repackage.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.org.osgi.framework.ServiceReference;
+import com.dotcms.repackage.org.osgi.framework.*;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.NormalRule;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;
@@ -498,6 +495,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         return forwardConfig;
     }
+
+
 
     /**
      * Register a given ActionMapping

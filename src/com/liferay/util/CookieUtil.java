@@ -45,6 +45,12 @@ public class CookieUtil {
 	public static final String COOKIES_HTTP_ONLY = "COOKIES_HTTP_ONLY";
 	public static final String COOKIES_SECURE_FLAG = "COOKIES_SECURE_FLAG";
 
+	/**
+	 * 
+	 * @param cookies
+	 * @param name
+	 * @return
+	 */
 	public static String get(Cookie[] cookies, String name) {
 		if ((cookies != null) && (cookies.length > 0)) {
 			for (int i = 0; i < cookies.length; i++) {
@@ -59,6 +65,12 @@ public class CookieUtil {
 		return null;
 	}
 
+	/**
+	 * 
+	 * @param cookie
+	 * @param tag
+	 * @return
+	 */
 	public static String get(String cookie, String tag) {
 		if (cookie == null) {
 			return "";
@@ -85,6 +97,13 @@ public class CookieUtil {
 		return "";
 	}
 
+	/**
+	 * 
+	 * @param cookie
+	 * @param tag
+	 * @param sub
+	 * @return
+	 */
 	public static String set(String cookie, String tag, String sub) {
 		if (cookie == null) {
 			return "";
@@ -122,27 +141,31 @@ public class CookieUtil {
 		return cookie + tag.substring(1, tag.length()) + sub + ";";
 	}
 
-	/*
-	 * Adds the secure and httpOnly flag to cookies depending on the config by adding the SET-COOKIE header to the response
-	 * @param req The HttpServletRequest object
-	 * @param res the HttpServletResponse object
+	/**
+	 * Adds the secure and httpOnly flag to cookies depending on the config by
+	 * adding the SET-COOKIE header to the response
+	 * 
+	 * @param req
+	 *            - The HttpServletRequest object
+	 * @param res
+	 *            - The HttpServletResponse object
 	 */
-
-
 	public static void setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res) {
 		setCookiesSecurityHeaders(req, res, null);
 
 	}
 
-
-	/*
-	 * Adds the secure and httpOnly flag to cookies depending on the config by adding the SET-COOKIE header to the response
-	 * @param req The HttpServletRequest object
-	 * @param res the HttpServletResponse object
-	 * @cookies an optional list with the names of the cookies that will only be affected.
+	/**
+	 * Adds the secure and httpOnly flag to cookies depending on the config by
+	 * adding the SET-COOKIE header to the response
+	 * 
+	 * @param req
+	 *            - The HttpServletRequest object
+	 * @param res
+	 *            - The HttpServletResponse object
+	 * @cookies an optional list with the names of the cookies that will only be
+	 *          affected.
 	 */
-
-
 	public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res, Set<String> cookies) {
 
 		if(req.getSession(false)!=null){
@@ -151,7 +174,7 @@ public class CookieUtil {
 				for(Cookie cookie : req.getCookies()){
 					boolean modified = false;
 
-					if(cookie.getName().equals(CookieKeys.ID))
+					if(cookie.getName().equals(CookieKeys.JWT_ACCESS_TOKEN))
 						continue;
 
 					// if we are using websphere do not change the JSESSIONID vaules
@@ -231,7 +254,18 @@ public class CookieUtil {
 		return res;
 	}
 
-	private static boolean containsCookie(Cookie[] cookies, String name) {
+	/**
+	 * Verifies the existence of a cookie inside an array of {@link Cookie}
+	 * objects.
+	 * 
+	 * @param cookies
+	 *            - The array of cookies to verify.
+	 * @param name
+	 *            - The name of the cookie to locate.
+	 * @return If the specified cookie name exists, returns {@code true}.
+	 *         Otherwise, returns {@code false}.
+	 */
+	public static boolean containsCookie(Cookie[] cookies, String name) {
 		if(cookies==null) return false;
 
 		for (Cookie cookie : cookies) {

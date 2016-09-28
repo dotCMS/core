@@ -1,27 +1,14 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.CookieUtilTest;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.util.Http;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.net.HttpCookie;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 import static org.junit.Assert.assertEquals;

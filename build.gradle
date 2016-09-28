@@ -4,7 +4,7 @@ configurations {
     coreWeb
     provided
     ext.dotcmsFolder = "dotCMS"
-    ext.rulesEngineFolder ="dotCMS/html/js/_rulesengine"
+    ext.rulesEngineFolder ="dotCMS/html/ng"
     ext.libsFolder = "dotCMS/WEB-INF/lib"
     ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
     ext.testLibsFolder = "libs/test"
@@ -33,6 +33,8 @@ task webinfLibs(type: Sync) {
     exclude '**/dot.org.apache.felix.fileinstall*.jar'
     exclude '**/dot.org.apache.felix.gogo.*.jar'
     exclude '**/junit-*.jar'
+    exclude '**/powermock-*.jar'
+    exclude '**/javassist-*.jar'
     exclude '**/*.zip'
 }
 webinfLibs.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/lib folder'
@@ -53,7 +55,8 @@ task copyToLib {
         into configurations.testLibsFolder
 
         include '**/junit-*.jar'
-        include '**/testng-*.jar'
+        include '**/powermock-*.jar'
+        include '**/javassist-*.jar'
     }
 
     copy {

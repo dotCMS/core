@@ -50,6 +50,7 @@
 
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
+var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
 
 function resetSearch() {
 	form = document.getElementById('fm');
@@ -123,7 +124,12 @@ function togglePublish(){
 }
 
 function editTemplate(inode){
-	top.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=" + inode + "&referer=<%=referer%>";
+	var loc="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=" + inode + "&referer=<%=referer%>";
+	if(inFrame){
+		window.location = loc;
+	}else{
+		top.location = loc;
+	}
 }
 
 function delTemplate(inode, referer) {
@@ -193,7 +199,12 @@ function deleteCallback(data,arg1){
 }
 
 function processDelete(inode, referer) {
-	top.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=" + inode + "&referer=" + referer;
+	var loc="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=" + inode + "&referer=" + referer;
+	if(inFrame){
+		window.location = loc;
+	}else{
+		top.location = loc;
+	}
 }
 
 

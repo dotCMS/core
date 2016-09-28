@@ -32,6 +32,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import com.dotcms.repackage.org.apache.struts.action.Action;
@@ -59,56 +62,28 @@ import com.liferay.util.StringPool;
  */
 public class LogoutAction extends Action {
 
+	private final LoginService loginService = LoginServiceFactory.getInstance().getLoginService();
+
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws Exception {
 
 		try {
-			HttpSession ses = req.getSession();
 			try {
 				// Logger.info(this, "User " +
 				// PortalUtil.getUser(req).getFullName() + " (" +
 				// PortalUtil.getUser(req).getUserId() +
 				// ") has logged out from IP: " + req.getRemoteAddr());
-				SecurityLogger.logInfo(this.getClass(), "User " + PortalUtil.getUser(req).getFullName() + " (" + PortalUtil.getUser(req).getUserId() + ") has logged out from IP: "
+				SecurityLogger.logInfo(this.getClass(), "User " + PortalUtil.getUser(req).getFullName() +
+						" (" + PortalUtil.getUser(req).getUserId() + ") has logged out from IP: "
 						+ req.getRemoteAddr());
 			} catch (Exception e) {
 				//Logger.info(this, "User has logged out from IP: " + req.getRemoteAddr());
 				SecurityLogger.logInfo(this.getClass(),"User has logged out from IP: " + req.getRemoteAddr());
 			}
 
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_PRE), req, res);
-
-			ArrayList<Cookie> al = new ArrayList<Cookie>();
-			Cookie[] cookies = req.getCookies();
-			if (cookies != null) {
-				for (int i = 0; i < cookies.length; i++) {
-					Cookie cookie = cookies[i];
-					al.add(cookie);
-					cookie.setMaxAge(0);
-					cookie.setPath("/");
-					res.addCookie(cookie);
-				}
-			}
-
-			Map sessions = PortletSessionPool.remove(ses.getId());
-
-			if (sessions != null) {
-				Iterator itr = sessions.entrySet().iterator();
-
-				while (itr.hasNext()) {
-					Map.Entry entry = (Map.Entry) itr.next();
-
-					HttpSession portletSession = (HttpSession) entry.getValue();
-
-					portletSession.invalidate();
-				}
-			}
-
 			try {
-				ses.invalidate();
+				this.loginService.doActionLogout(req, res);
 			} catch (Exception e) {
 			}
-
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGOUT_EVENTS_POST), req, res);
 
 			// ActionForward af = mapping.findForward("referer");
 			// return af;

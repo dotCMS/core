@@ -10,14 +10,15 @@ import javax.servlet.http.HttpServletRequestWrapper;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 
+/**
+ * Mock Request Parameter using a Request Wrapper. Part of the work to be
+ * able to run the integration tests without the web app container i.e. Tomcat.
+ */
 public class MockParameterRequest extends HttpServletRequestWrapper implements MockRequest {
     final Map<String, String> params;
 
     public MockParameterRequest(HttpServletRequest request) {
-
         this(request, ImmutableMap.of());
-
-
     }
 
     public MockParameterRequest(HttpServletRequest request, Map<String, String> setMe) {
@@ -29,8 +30,7 @@ public class MockParameterRequest extends HttpServletRequestWrapper implements M
             mutable.put(key, request.getParameter(key));
         }
         mutable.putAll(setMe);
-        
-        
+
         params = ImmutableMap.copyOf(mutable);
     }
 
@@ -47,6 +47,5 @@ public class MockParameterRequest extends HttpServletRequestWrapper implements M
     public Enumeration<String> getParameterNames() {
         return new Vector<String>(params.keySet()).elements();
     }
-
 
 }

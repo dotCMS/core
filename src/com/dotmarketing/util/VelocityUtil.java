@@ -278,7 +278,7 @@ public class VelocityUtil {
         if ( toolboxManager == null ) {
             synchronized ( VelocityUtil.class ) {
                 if ( toolboxManager == null ) {
-                    toolboxManager = ServletToolboxManager.getInstance( Config.CONTEXT, "/WEB-INF/toolbox.xml" );
+                    toolboxManager = ServletToolboxManager.getInstance( Config.CONTEXT, Config.getStringProperty("TOOLBOX_MANAGER_PATH", "/WEB-INF/toolbox.xml"));
                 }
             }
 

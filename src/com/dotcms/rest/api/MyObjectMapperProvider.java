@@ -5,25 +5,20 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.core.Feature;
 import com.dotcms.repackage.javax.ws.rs.ext.ContextResolver;
 import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 
 @Provider
 public class MyObjectMapperProvider implements ContextResolver<ObjectMapper> {
 
-    final ObjectMapper defaultObjectMapper;
+    final DotObjectMapperProvider objectMapperProvider;
 
     public MyObjectMapperProvider() {
-        defaultObjectMapper = createDefaultMapper();
+        objectMapperProvider = DotObjectMapperProvider.getInstance();
     }
 
     @Override
     public ObjectMapper getContext(Class<?> type) {
-        return defaultObjectMapper;
-    }
-
-    private static ObjectMapper createDefaultMapper() {
-        final ObjectMapper result = new ObjectMapper();
-        result.disable(DeserializationFeature.WRAP_EXCEPTIONS);
-        return result;
+        return objectMapperProvider.getDefaultObjectMapper();
     }
 
 }

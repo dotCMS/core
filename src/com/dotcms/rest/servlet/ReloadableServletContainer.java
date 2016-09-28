@@ -46,13 +46,12 @@ import com.dotcms.repackage.com.google.common.base.Throwables;
 import com.dotcms.repackage.javax.ws.rs.core.Application;
 import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
 import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
-import com.dotcms.rest.annotation.CacheControlFilter;
+import com.dotcms.rest.annotation.HeaderFilter;
+import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
-import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
-import com.dotcms.rest.exception.mapper.JsonParseExceptionMapper;
-import com.dotcms.rest.exception.mapper.UnrecognizedPropertyExceptionMapper;
+import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 
@@ -167,12 +166,14 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
     private static ResourceConfig configureResourceConfig(ResourceConfig config) {
         return config
-                .register(CacheControlFilter.class)
+                .register(RequestFilter.class)
+                .register(HeaderFilter.class)
                 .register(CorsFilter.class)
                 .register(MyObjectMapperProvider.class)
                 .register(JacksonJaxbJsonProvider.class)
                 .register(InvalidFormatExceptionMapper.class)
                 .register(JsonParseExceptionMapper.class)
                 .register(UnrecognizedPropertyExceptionMapper.class);
+                //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }
