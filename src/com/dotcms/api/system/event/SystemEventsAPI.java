@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import com.dotcms.api.system.event.dto.SystemEventDTO;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
 
 /**
  * This API allows users and other services to record and retrieve different
@@ -44,6 +45,8 @@ public interface SystemEventsAPI {
 	 *             An error occurred when saving the event.
 	 */
 	public void push(SystemEvent systemEvent) throws DotDataException;
+
+	public void push(SystemEventType event, Payload payload) throws DotDataException;
 
 	/**
 	 * Returns a list of {@link SystemEvent} objects that were created from a

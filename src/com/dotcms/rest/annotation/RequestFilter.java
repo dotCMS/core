@@ -76,7 +76,7 @@ public class RequestFilter implements ContainerRequestFilter {
 
                         // company
                         final String companyId = (UtilMethods.isSet(ctx.getInitParameter("company_id")))?
-                                ctx.getInitParameter("company_id"): PublicCompanyFactory.getDefaultCompanyId();
+                                ctx.getInitParameter("company_id"):PublicCompanyFactory.getDefaultCompanyId();
 
                         ctx.setAttribute(WebKeys.COMPANY_ID, companyId);
 

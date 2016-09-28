@@ -167,6 +167,9 @@
         <Logger name="com.dotcms.rest.api.v1.authentication.LogoutResource" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
+        <Logger name="com.dotcms.rest.api.v1.user.UserResource" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
         <Logger name="com.liferay.portal.action.LoginAsAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>

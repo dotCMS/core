@@ -12,9 +12,7 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.SendPasswordException;
-import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.*;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.model.Company;
@@ -81,7 +79,7 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
@@ -121,7 +119,7 @@ public class ForgotPasswordResourceTest {
 
         final ForgotPasswordResource authenticationResource =
                 new ForgotPasswordResource(userLocalManager, userService,
-                        companyAPI, authenticationHelper);
+                        companyAPI, responseUtil);
 
 
         final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
@@ -147,7 +145,7 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
@@ -213,7 +211,7 @@ public class ForgotPasswordResourceTest {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final AuthenticationHelper authenticationHelper = AuthenticationHelper.INSTANCE;
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);

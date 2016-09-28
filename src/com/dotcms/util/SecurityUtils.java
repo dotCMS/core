@@ -10,6 +10,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
@@ -136,6 +137,9 @@ public class SecurityUtils {
 		seed = Math.abs(seed);
 		if (delayStrategy.equals(DelayStrategy.TIME_MIN)) {
 			try {
+
+				Logger.debug(SecurityUtils.class, "Sleeping " + seed + " minutes");
+
 				TimeUnit.MINUTES.sleep(seed);
 			} catch (NumberFormatException e) {
 				// Invalid number, defaults to no thread sleep
@@ -144,6 +148,9 @@ public class SecurityUtils {
 			}
 		} else if (delayStrategy.equals(DelayStrategy.TIME_SEC)) {
 			try {
+
+				Logger.debug(SecurityUtils.class, "Sleeping " + seed + " seconds");
+
 				TimeUnit.SECONDS.sleep(seed);
 			} catch (NumberFormatException e) {
 				// Invalid number, defaults to no thread sleep
@@ -152,6 +159,9 @@ public class SecurityUtils {
 			}
 		} else if (delayStrategy.equals(DelayStrategy.TIME_MILLS)) {
 			try {
+
+				Logger.debug(SecurityUtils.class, "Sleeping " + seed + " milliseconds");
+
 				TimeUnit.MILLISECONDS.sleep(seed);
 			} catch (NumberFormatException e) {
 				// Invalid number, defaults to no thread sleep
@@ -163,12 +173,16 @@ public class SecurityUtils {
 			if (seed > 0) {
 				final long sleepTime = (long) Math.pow(seed, 2);
 				try {
+
+					Logger.debug(SecurityUtils.class, "Sleeping " + sleepTime + " seconds");
 					TimeUnit.SECONDS.sleep(sleepTime);
 				} catch (InterruptedException e) {
 					// Sleep was interrupted, just ignore it
 				}
 			}
 		}
+
+		Logger.debug(SecurityUtils.class, "Leaving the delayRequest");
 	}
 
 }

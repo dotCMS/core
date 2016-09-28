@@ -41,7 +41,7 @@ import java.util.Map;
 public class AppContextInitResourceTest {
 
 	@Test
-	public void testVerifyConfigurationDataWithoutLoginAs() throws DotSecurityException, DotDataException, IllegalAccessException,
+	public void testVerifyConfigurationData() throws DotSecurityException, DotDataException, IllegalAccessException,
 			NoSuchMethodException, InvocationTargetException, LanguageException, ClassNotFoundException {
 
 		Collection<Menu> menuData = mock(Collection.class);
@@ -63,7 +63,7 @@ public class AppContextInitResourceTest {
 		User user = UserUtilTest.createUser();
 		when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( user );
 
-		AppConfigurationHelper helper = new AppConfigurationHelper(loginAsAPI, loginService, menuResource, configurationHelper);
+		AppConfigurationHelper helper = new AppConfigurationHelper(configurationHelper);
 
 		final AppContextInitResource resource = new AppContextInitResource( helper );
 		Response responseEntityView = resource.list(mockHttpRequest);
@@ -73,51 +73,6 @@ public class AppContextInitResourceTest {
 		assertTrue(entity instanceof Map);
 
 		Map map = ( Map ) entity;
-		assertEquals(menuData, map.get( "menu" ));
 		assertEquals(configData, map.get( "config" ));
-		assertEquals(user.toMap(), map.get( "user" ));
-		assertNull(map.get( "loginAsUser" ));
-	}
-
-	@Test
-	public void testVerifyConfigurationDataWithLoginAs() throws DotSecurityException, DotDataException, IllegalAccessException,
-			NoSuchMethodException, InvocationTargetException, LanguageException, ClassNotFoundException {
-
-		Collection<Menu> menuData = mock(Collection.class);
-		Map<String, Object> configData = mock(Map.class);
-
-		HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
-		LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
-
-		MenuResource menuResource = mock(MenuResource.class);
-		ConfigurationHelper configurationHelper = mock(ConfigurationHelper.class);
-
-		when(menuResource.getMenus( MenuResource.App.CORE_WEB.name(), mockHttpRequest )).thenReturn(
-				Response.ok(new ResponseEntityView(menuData)).build() );
-
-		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);
-
-		LoginService loginService = mock( LoginService.class );
-
-		User user = UserUtilTest.createUser();
-		User loginAsUser = UserUtilTest.createUser();
-
-		when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
-		when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest))).thenReturn(user);
-
-		AppConfigurationHelper helper = new AppConfigurationHelper(loginAsAPI, loginService, menuResource, configurationHelper);
-
-		final AppContextInitResource resource = new AppContextInitResource( helper );
-		Response responseEntityView = resource.list(mockHttpRequest);
-
-		RestUtilTest.verifySuccessResponse( responseEntityView );
-		Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
-		assertTrue(entity instanceof Map);
-
-		Map map = ( Map ) entity;
-		assertEquals(menuData, map.get( "menu" ));
-		assertEquals(configData, map.get( "config" ));
-		assertEquals(user.toMap(), map.get( "user" ));
-		assertEquals(loginAsUser.toMap(), map.get( "loginAsUser" ));
 	}
 }

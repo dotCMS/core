@@ -1,9 +1,13 @@
 package com.dotcms.api.system.event;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 
+import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import java.util.Map;
 
 /**
  * This class is the logical representation of a System Event in dotCMS. An
@@ -38,7 +42,7 @@ public class SystemEvent implements Serializable {
 	 *            - The information containing the details of this event.
 	 */
 	public SystemEvent(SystemEventType event, Payload payload) {
-		this(event, payload, null);
+		this(null, event, payload, null);
 	}
 
 	/**
@@ -158,5 +162,4 @@ public class SystemEvent implements Serializable {
 		return "SystemEventDTO [id=" + id + ", event=" + event + ", payload=" + payload + ", creationDate=" + creationDate
 				+ "]";
 	}
-
 }

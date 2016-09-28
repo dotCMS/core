@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 /**
  * This singleton class provides access to the {@link SystemEventsAPI} class.
@@ -106,6 +107,11 @@ public class SystemEventsFactory implements Serializable {
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
+		}
+
+		@Override
+		public void push(SystemEventType event, Payload payload) throws DotDataException {
+			push( new SystemEvent(event, payload ) );
 		}
 
 		@Override
