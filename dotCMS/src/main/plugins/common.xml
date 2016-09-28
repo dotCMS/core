@@ -72,7 +72,8 @@
 			</fileset>
 		</copy>
 	</target>
-	<target name="jar" depends="compile,doif">
+	<!--<target name="jar" depends="compile,doif">-->
+	<target name="jar" depends="compile">
 		<mkdir dir="${build.dir}/jar" />
 
 		<!-- 
@@ -105,6 +106,7 @@
 
 	</target>
 	
+	<!--
 	<target name="doif" depends="checkFileExists, if_target"/>
 	<target name="checkFileExists">
 	    <condition property="p">
@@ -117,6 +119,7 @@
 	    </condition>
 	    <jar destfile="${jar.destfile}" basedir="${classpath.dir}" />
 	</target>
+	-->
 
 	<target name="clean">
 		<delete dir="${build.dir}" />
