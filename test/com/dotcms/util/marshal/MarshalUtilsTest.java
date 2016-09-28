@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
+import com.dotcms.util.I18NMessage;
 import org.junit.Test;
 
 import com.dotcms.api.system.event.Payload;
@@ -260,8 +261,8 @@ public class MarshalUtilsTest {
 
         assertNotNull(marshalUtils);
 
-		final NotificationData notificationData = new NotificationData("Test Title", "Notification message",
-				CollectionsUtils.list(new NotificationAction("See More", "#seeMore", NotificationActionType.LINK, null)));
+		final NotificationData notificationData = new NotificationData(new I18NMessage("Test Title"), new I18NMessage("Notification message"),
+				CollectionsUtils.list(new NotificationAction(new I18NMessage("See More"), "#seeMore", NotificationActionType.LINK, null)));
 		final SystemEvent systemEvent = new SystemEvent("123456", SystemEventType.NOTIFICATION, new Payload(
 				new Notification("78910", NotificationType.GENERIC, NotificationLevel.INFO, "admin@dotcms.com", null,
 						false, notificationData)), new java.util.Date());

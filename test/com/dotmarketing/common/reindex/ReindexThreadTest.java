@@ -4,6 +4,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
@@ -36,6 +37,13 @@ public class ReindexThreadTest extends BaseMessageResources {
 
         final ReindexThread reindexThread =
                 new ReindexThread(jAPI, notificationAPI);
+        final String identToIndex = "index1";
+        final String msg = "Could not re-index record with the Identifier '"
+                + identToIndex
+                + "'. The record is in a bad state or can be associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and re-start the reindex.";
+        final User user = new User();
+        user.setLocale(locale);
+        user.setUserId("admin@dotcms.com");
 
         this.initMessages();
         Config.CONTEXT = context;
@@ -51,22 +59,14 @@ public class ReindexThreadTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Reindex Notification",
-                "Could not re-index record with the Identifier \"index1\". It is in a bad state or is associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and restart the re-index.",
+                new I18NMessage("notification.reindex.error.title"),
+                new I18NMessage("notification.reindexing.error.processrecord", msg, identToIndex),
                 null,
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,
                 "admin@dotcms.com",
                 locale
         );
-
-        final String identToIndex = "index1";
-        final String msg = "Could not re-index record with the Identifier '"
-                + identToIndex
-                + "'. The record is in a bad state or can be associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and re-start the reindex.";
-        final User user = new User();
-        user.setLocale(locale);
-        user.setUserId("admin@dotcms.com");
 
         reindexThread.sendNotification
                 ("notification.reindexing.error.processrecord",

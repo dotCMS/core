@@ -100,6 +100,28 @@ public class DateUtilTest extends BaseMessageResources {
         assertTrue(resultMap.get(DateUtil.DIFF_HOURS) == 9504L);
         assertTrue(resultMap.get(DateUtil.DIFF_MINUTES) == 0L);
     }
+
+    @Test
+    public void testMillisToSeconds1() throws ParseException {
+
+        int seconds1 = DateUtil.millisToSeconds(3000);
+        assertEquals(seconds1, 3);
+    }
+
+    @Test
+    public void testMillisToSeconds2() throws ParseException {
+
+        int seconds1 = DateUtil.millisToSeconds(3500);
+        assertEquals(seconds1, 3);
+    }
+
+    @Test
+    public void testMillisToSeconds3() throws ParseException {
+
+        int seconds1 = DateUtil.millisToSeconds(3999);
+        assertEquals(seconds1, 3);
+    }
+
     @Test
     public void testPrettyDateSince() throws ParseException {
 

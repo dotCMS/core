@@ -4,6 +4,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
@@ -49,8 +50,10 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Delete Field",
-                "Deletion of Field velocityVar has been started. Field Inode: iFieldNode1, Structure Inode: iStructureNode1",
+                new I18NMessage("notification.deletefieldjob.delete.info.title"),
+                new I18NMessage(
+                        "notification.deletefieldjob.startdelete.info.message", null,
+                        "velocityVar", "iFieldNode1", "iStructureNode1"),
                 null,
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
@@ -88,8 +91,10 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Delete Field",
-                "Field velocityVar was deleted successfully. Field Inode: iFieldNode1, Structure Inode: iStructureNode1",
+                new I18NMessage("notification.deletefieldjob.delete.info.title"),
+                new I18NMessage(
+                        "notification.deletefieldjob.enddelete.info.message", null,
+                        "velocityVar", "iFieldNode1", "iStructureNode1"),
                 null,
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
@@ -127,8 +132,10 @@ public class DeleteFieldJobHelperTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Delete Field",
-                "Unable to delete field velocityVar. Field Inode: iFieldNode1, Structure Inode: iStructureNode1",
+                new I18NMessage("notification.deletefieldjob.delete.info.title"),
+                new I18NMessage(
+                        "notification.deletefieldjob.unabledelete.info.message", null,
+                        "velocityVar", "iFieldNode1", "iStructureNode1"),
                 null,
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,

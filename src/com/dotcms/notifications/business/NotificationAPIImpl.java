@@ -8,6 +8,7 @@ import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.I18NMessage;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.APILocator;
@@ -106,20 +107,20 @@ public class NotificationAPIImpl implements NotificationAPI {
 	public void generateNotification(String title, String message, List<NotificationAction> actions,
 									 NotificationLevel level, NotificationType type, String userId) throws DotDataException {
 
-		this.generateNotification(title, message, actions, level, type, userId, null);
+		this.generateNotification(new I18NMessage(title), new I18NMessage(message), actions, level, type, userId, null);
 	}
 
 	@Override
-	public void generateNotification(final String title, final String message, final List<NotificationAction> actions,
+	public void generateNotification(final I18NMessage title, final I18NMessage message, final List<NotificationAction> actions,
 									 final NotificationLevel level, final NotificationType type, final String userId, final Locale locale) throws DotDataException {
 
 		// since the notification is not a priory process on the current thread, we decided to execute it async
 		this.dotSubmitter.execute(() -> {
 
 				final NotificationData data = new NotificationData(title, message, actions);
-				final String msg = this.marshalUtils.marshal(data);
-				final NotificationDTO dto = new NotificationDTO(StringUtils.EMPTY, msg, type.name(), level.name(), userId, null,
-						Boolean.FALSE);
+				final String messageJson    = this.marshalUtils.marshal(data);
+				final NotificationDTO dto   = new NotificationDTO(StringUtils.EMPTY, messageJson,
+						type.name(), level.name(), userId, null, Boolean.FALSE);
 
 				try {
 
@@ -133,15 +134,17 @@ public class NotificationAPIImpl implements NotificationAPI {
 					}
 				}
 
+				// remove all caches associated to the user.
+				Logger.info(this, "Removing all cache associated to the user notifications: " + userId);
 				this.newNotificationCache.remove(userId);
 
 				// Adding notification to System Events table
-				final Notification n = new Notification(level, userId, data);
-				final Payload payload = new Payload(n, Visibility.USER, userId);
+				final Notification notificationBean  = new Notification(level, userId, data);
+				final Payload payload 				 = new Payload(notificationBean, Visibility.USER, userId);
 
-				n.setId(dto.getId());
-				n.setTimeSent(new Date());
-				n.setPrettyDate(DateUtil.prettyDateSince(n.getTimeSent(), locale));
+				notificationBean.setId(dto.getId());
+				notificationBean.setTimeSent(new Date());
+				notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
 
 				final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
 
@@ -396,7 +399,10 @@ public class NotificationAPIImpl implements NotificationAPI {
 			data = this.marshalUtils.unmarshal(record.getMessage(), NotificationData.class);
 		} catch (Exception e) {
 			// If JSON cannot be parsed, just put the message
-			data = new NotificationData(StringUtils.EMPTY, record.getMessage(), null);
+			data = new NotificationData(
+					new I18NMessage(StringUtils.EMPTY),
+					new I18NMessage(record.getMessage()),
+					null);
 		}
 		return new Notification(id, type, level, userId, timeSent, wasRead, data);
 	} // convertNotificationDTO.

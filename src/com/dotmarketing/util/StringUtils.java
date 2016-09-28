@@ -5,7 +5,13 @@ import java.util.regex.Pattern;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 
+import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.*;
+
 public class StringUtils {
+
+	public static final char COMMA = ',';
+
+
 	public static String formatPhoneNumber(String phoneNumber) {
 		try {
 			String s = phoneNumber.replaceAll("\\(|\\)|:|-|\\.", "");
@@ -67,5 +73,16 @@ public class StringUtils {
 			return false;
 		}
 	}
+
+	/**
+	 * Split the string by commans
+	 * Pre: string argument must be not null
+	 * @param string {@link String}
+	 * @return String array
+     */
+	public static String [] splitByCommas (final String string) {
+
+		return split(string, COMMA);
+	} // splitByComma.
 
 }
