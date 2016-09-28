@@ -85,7 +85,28 @@ public class FieldFactoryImpl implements FieldFactory {
     return selectFieldVarsInDb(field);
   }
 
+  @Override
+  public FieldVariable loadVariable(String id) throws DotDataException {
+    return selectFieldVarInDb(id);
+  }
 
+  
+  
+  @Override
+  public FieldVariable save(FieldVariable fieldVar) throws DotDataException{
+      return  LocalTransaction.wrapReturn(() -> {
+         return upsertFieldVariable(fieldVar);
+     });
+  }
+  
+  @Override
+  public void delete(FieldVariable fieldVar) throws DotDataException{
+        LocalTransaction.wrapReturn(() -> {
+           deleteFieldVarInDb(fieldVar);
+           return null;
+      });
+        
+  }
 
   @Override
   public Field save(final Field throwAwayField) throws DotDataException {
@@ -128,7 +149,7 @@ public class FieldFactoryImpl implements FieldFactory {
     if (oldField == null) {
       // assign a db column if we need to
       if (throwAwayField.dbColumn() == null) {
-        builder.dbColumn(assignAvailableColumn(throwAwayField));
+        builder.dbColumn(nextAvailableColumn(throwAwayField));
       }
       // assign an inode if needed
       if (throwAwayField.inode() == null) {
@@ -400,7 +421,8 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
-  private String assignAvailableColumn(Field field) throws DotDataException {
+  @Override
+  public String nextAvailableColumn(Field field) throws DotDataException {
 
 
 

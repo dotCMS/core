@@ -1,11 +1,14 @@
 package com.dotmarketing.portlets.structure.model;
 
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FieldVariable    {
+import com.dotcms.contenttype.model.field.IFieldVar;
+
+public class FieldVariable  implements IFieldVar, Serializable  {
 
     private static final long serialVersionUID = 1L;
     

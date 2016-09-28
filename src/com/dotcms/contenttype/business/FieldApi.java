@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.exception.DotDataException;
@@ -36,6 +37,8 @@ public interface FieldApi {
 	List<Field> byContentTypeId(String typeId) throws DotDataException;
 
 	Field save(Field field, User user) throws DotDataException, DotSecurityException;
+	
+	FieldVariable save(FieldVariable fieldVar, User user) throws DotDataException, DotSecurityException;
 
 	static Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
 			Contentlet.INODE_KEY,
@@ -57,6 +60,16 @@ public interface FieldApi {
 			Contentlet.HOST_KEY,
 			Contentlet.FOLDER_KEY);
 
+    Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException;
 
+
+
+    void delete(FieldVariable fieldVar) throws DotDataException;
+
+    List<FieldVariable> loadVariables(Field field) throws DotDataException;
+    
+    FieldVariable loadVariable(String id) throws DotDataException;
+
+    String nextAvailableColumn(Field field) throws DotDataException;
 	
 }

@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -59,7 +60,18 @@ public class FieldApiImpl implements FieldApi {
 
 		return fac.save(field);
 	}
+  
+  @Override
+  public FieldVariable save(FieldVariable var, User user) throws DotDataException, DotSecurityException {
+      ContentTypeApi tapi = APILocator.getContentTypeAPI2();
+      Field field = fac.byId(var.fieldId());
 
+      ContentType type = tapi.find(field.contentTypeId(), user) ;
+      APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
+      
+
+      return fac.save(var);
+  }
   @Override
   public void delete(Field field) throws DotDataException {
     fac.delete(field);
@@ -70,8 +82,10 @@ public class FieldApiImpl implements FieldApi {
   public List<Field> byContentTypeId(String typeId) throws DotDataException {
     return fac.byContentTypeId(typeId);
   }
-
-
+  @Override
+  public String nextAvailableColumn(Field field) throws DotDataException{
+      return fac.nextAvailableColumn(field);
+  }
   @Override
   public Field find(String id) throws DotDataException {
     return fac.byId(id);
@@ -81,7 +95,12 @@ public class FieldApiImpl implements FieldApi {
   public Field byContentTypeAndVar(ContentType type, String fieldVar) throws DotDataException {
     return fac.byContentTypeFieldVar(type, fieldVar);
   }
-
+  
+  @Override
+  public Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException {
+    return fac.byContentTypeIdFieldVar(id, fieldVar);
+  }
+  
   @Override
   public void deleteFieldsByContentType(ContentType type) throws DotDataException {
     fac.deleteByContentType(type);
@@ -101,4 +120,26 @@ public class FieldApiImpl implements FieldApi {
   public void deRegisterFieldType(Field type) {
     throw new DotStateException("Not implemented");
   }
+
+@Override
+public void delete(FieldVariable fieldVar) throws DotDataException {
+    fac.delete(fieldVar);
+    
+}
+
+@Override
+public List<FieldVariable> loadVariables(Field field) throws DotDataException {
+    return fac.loadVariables(field);
+}
+
+@Override
+public FieldVariable loadVariable(String id) throws DotDataException {
+    return fac.loadVariable(id);
+}
+  
+  
+  
+  
+  
+  
 }

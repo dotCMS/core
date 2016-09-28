@@ -93,7 +93,17 @@ public class FieldBuilderTest {
 		}
 	}
 	
+	   
 	
+    @Test
+    public void testImplTypeBuilder() throws Exception {
+        for(LegacyFieldTypes types : LegacyFieldTypes.values()){
+            FieldBuilder.instanceOf(types.implClass());
+            FieldBuilder.builder(types.implClass()).inode("asd");
+            
+        }
+    }
+    
 	
 	@Test
 	public void testCopy() throws Exception {

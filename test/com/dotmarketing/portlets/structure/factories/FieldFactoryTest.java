@@ -179,34 +179,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         assertEquals( foundField.getInode(), field.getInode() );
     }
 
-    /**
-     * Testing {@link FieldFactory#getFieldByStructure(String, String)}
-     *
-     * @see FieldFactory
-     * @see FieldsCache
-     */
-    @Test
-    public void getFieldByStructure () {
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Getting the fields for this structure
-        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
-
-        //Validations
-        assertTrue( fields != null && !fields.isEmpty() );
-
-        Iterator<Field> iterator = fields.iterator();
-        Field field = iterator.next();
-
-        //Search by field name
-        Field foundField = FieldFactory.getFieldByStructure( structure.getInode(), field.getFieldName() );
-
-        //Start with the validations
-        assertNotNull( foundField );
-        assertEquals( foundField.getInode(), field.getInode() );
-    }
 
     /**
      * Testing {@link FieldFactory#getFieldByName(String, String)}

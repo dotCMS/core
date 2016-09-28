@@ -47,6 +47,9 @@ public class FieldForm extends ValidatorForm {
     private boolean unique = false;
     private String element;
     		
+    
+    
+    public FieldForm(){ }
 	public boolean isSearchable() {
 		return searchable;
 	}

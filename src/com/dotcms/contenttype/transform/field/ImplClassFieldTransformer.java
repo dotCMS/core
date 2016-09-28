@@ -33,7 +33,7 @@ public class ImplClassFieldTransformer implements FieldTransformer{
 		FieldBuilder builder = null;
 		try {
 			builder = FieldBuilder.builder(genericField);
-			return builder.from(genericField).build();
+			return builder.build();
 		} catch (Exception e) {
 			throw new DotStateException(e.getMessage(), e);
 		}

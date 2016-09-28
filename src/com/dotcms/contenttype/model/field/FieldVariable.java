@@ -10,7 +10,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 @Value.Immutable
-public interface FieldVariable extends Serializable {
+public interface FieldVariable extends Serializable, IFieldVar {
 
 	abstract String id();
 
@@ -33,8 +33,9 @@ public interface FieldVariable extends Serializable {
 	
 	@Value.Check
 	default void check() {
-		Preconditions.checkArgument(fieldId()==null,"FieldVariable.fieldId cannot be null");
-		Preconditions.checkArgument(key()==null,"FieldVariable.key cannot be null");
+	    Preconditions.checkArgument(fieldId()!=null,"FieldVariable.fieldId cannot be null");
+		Preconditions.checkArgument(key()!=null,"FieldVariable.key cannot be null");
+		Preconditions.checkArgument(value()!=null,"FieldVariable.val cannot be null");
 	}
 	
 }

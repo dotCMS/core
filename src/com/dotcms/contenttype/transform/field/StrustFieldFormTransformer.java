@@ -97,8 +97,11 @@ public class StrustFieldFormTransformer implements FieldTransformer {
 
 			@Override
 			public DataTypes dataType() {
+			    if(form.getFieldContentlet()!=null){
 				String dbType = form.getFieldContentlet().toString().replaceAll("[0-9]", "");
 				return DataTypes.getDataType(dbType);
+			    }
+			    return DataTypes.TEXT;
 			}
 
 			@Override
