@@ -33,13 +33,13 @@ try {
 } catch (Exception e) {
 	Logger.error(this.getClass(), e.getMessage());
 	%>
-
+	
 		<div class="callOutBox2" style="text-align:center;margin:40px;padding:20px;">
 		<%= LanguageUtil.get(pageContext,"you-have-been-logged-off-because-you-signed-on-with-this-account-using-a-different-session") %><br>&nbsp;<br>
 		<a href="/admin"><%= LanguageUtil.get(pageContext,"Click-here-to-login-to-your-account") %></a>
 		</div>
-
-	<%
+		
+	<% 
 	//response.sendError(403);
 	return;
 }
@@ -72,7 +72,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 	}
 	.trIdxNothing td{
 	color:#aaaaaa;
-
+	
 	}
 	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
 	 #restoreIndexUploader {
@@ -99,7 +99,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<div dojoType="dijit.form.DropDownButton">
 				<span><%= LanguageUtil.get(pageContext,"Add-Index") %></span>
 					<div dojoType="dijit.Menu">
-
+					
 					 	<div dojoType="dijit.MenuItem" onClick="doCreateWorking();">
 		                    <span class="addIcon"></span><%= LanguageUtil.get(pageContext,"Create-Working-Index") %>
 		                </div>
@@ -116,8 +116,8 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="resetIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
-
-
+		
+		
 		</div>
 
 
@@ -176,9 +176,9 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					</td>
 				</tr>
 			<%} %>
-
+			
 			<% for(String idx : closedIndices) {%>
-
+			    
 			    <%   Date d = null;
                     String myDate = null;
                     try{
@@ -188,8 +188,8 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
                         myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
                         }
                         catch(Exception e){}%>
-
-
+			    
+			    
 			    <tr class="trIdxNothing" id="<%=idx%>Row">
 			         <td  align="center" class="showPointer"> <%= LanguageUtil.get(pageContext,"Closed") %> </td>
 			         <td  class="showPointer" ><%=idx%></td>
@@ -214,7 +214,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<%boolean building =newIdx.contains(x);%>
 			<%if(building)continue; %>
 			<%ClusterIndexHealth health = map.get(x); %>
-			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;"
+			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
         <%if(!Config.getBooleanProperty("CLUSTER_AUTOWIRE",true) || !Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){ %>
             <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
@@ -255,7 +255,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 	                    <span class="deleteIcon"></span>
 	                    <%= LanguageUtil.get(pageContext,"Close-Index") %>
 	                </div>
-
+			 	
 				 	<div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=x%>', <%=(currentIdx.contains(x)) %>)" class="showPointer">
 				 		<span class="deleteIcon"></span>
 				 		<%= LanguageUtil.get(pageContext,"Delete-Index") %>
@@ -265,19 +265,19 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%} %>
 
         <% for(String idx : closedIndices) { %>
-             <div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;"
+             <div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
                  targetNodeIds="<%=idx%>Row" onOpen="dohighlight('<%=idx%>Row')" onClose="undohighlight('<%=idx%>Row')">
-
+                 
                  <div dojoType="dijit.MenuItem" onClick="doOpenIndex('<%=idx %>');" class="showPointer">
                      <span class="publishIcon"></span>
                      <%= LanguageUtil.get(pageContext,"Open-Index") %>
                  </div>
-
+                 
                  <div dojoType="dijit.MenuItem" onclick="deleteIndex('<%=idx%>', false)" class="showPointer">
                      <span class="deleteIcon"></span>
                      <%= LanguageUtil.get(pageContext,"Delete-Index") %>
                  </div>
-
+                 
              </div>
         <% } %>
 

@@ -25,7 +25,7 @@ public class FileUtil {
 	/**
 	 * This method takes a string of a filename or extension and maps it to a
 	 * known .png file in the /html/image/icons/directory
-	 *
+	 * 
 	 * @param x
 	 *            is the filename or extension
 	 * @return
@@ -65,7 +65,7 @@ public class FileUtil {
 
 	/**
 	 * This will return the full path to the file asset as a String
-	 *
+	 * 
 	 * @param inode
 	 * @return
 	 */
@@ -77,7 +77,7 @@ public class FileUtil {
 
 	/**
 	 * This will return the full path to the file asset as a String
-	 *
+	 * 
 	 * @param inode
 	 * @param extenstion
 	 * @return
@@ -103,24 +103,24 @@ public class FileUtil {
 		}
 		fileName = URLDecoder.decode(fileName);
 		char[] invalids ={'\\', '/',':', '*', '?' ,'"','\'' ,'<' ,'>' ,'|','&'};
-
-
+		
+		
 		for(int i=0;i< invalids.length;i++){
 			while(fileName.indexOf(invalids[i]) > -1){
 				fileName = fileName.replace(invalids[i], ' ');
-	        }
+	        }	
 		}
-
+		
 		while(fileName.indexOf("  ") > -1){
 			fileName = fileName.replaceAll("  ", " ");
-        }
-
+        }	
+		
 		return fileName;
 	}
-
+	
 	/**
 	 * This will write the given InputStream to a new File in the given location
-	 *
+	 * 
 	 * @param uploadedInputStream
 	 * @param uploadedFileLocation
 	 * @return
@@ -146,11 +146,11 @@ public class FileUtil {
 		}
 
 	}
-
+	
 
 	/**
 	 * This method will figure out if the passed in path is relative meaning relative to the WAR and will
-	 * use the Servlet.CONTEXT to find the real path or if the passed in path is Absolutely meaning absolute
+	 * use the Servlet.CONTEXT to find the real path or if the passed in path is Absolutely meaning absolute 
 	 * to the file system.  It will return the full path or the file or directory
 	 * @param path the passed in path. If it starts with a / or \ or [a-z]: then it is considered a full path
 	 * @return

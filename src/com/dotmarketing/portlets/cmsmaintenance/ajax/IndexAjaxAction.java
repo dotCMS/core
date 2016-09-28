@@ -17,8 +17,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
@@ -30,7 +28,6 @@ import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -145,7 +142,7 @@ public class IndexAjaxAction extends AjaxAction {
             if(ufile!=null) {
                 ESIndexResource.restoreIndex(ufile, aliasToRestore, indexToRestore, clearBeforeRestore);
             }
-
+            
             PrintWriter out=response.getWriter();
             if(isFlash) {
                 out.println("response=ok");
@@ -154,7 +151,7 @@ public class IndexAjaxAction extends AjaxAction {
                 response.setContentType("application/json");
                 out.println("{\"response\":1}");
             }
-
+            
 	    }
 	    catch(FileUploadException fue) {
 	        Logger.error(this, "Error uploading file", fue);
@@ -162,13 +159,14 @@ public class IndexAjaxAction extends AjaxAction {
 	    }
 	}
 
+	
 	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
-
+		
 		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
 		if(!UtilMethods.isSet(indexName)) return;
-
+		
 		File f=ESIndexResource.downloadIndex(indexName);
 		response.setContentLength((int) f.length());
 		OutputStream out = response.getOutputStream();
@@ -279,7 +277,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		boolean live = map.get("live") != null;
 		String indexName = map.get("indexName");
-
+		
 		ESIndexResource.create(indexName, shards, live);
 	}
 
@@ -399,7 +397,7 @@ public class IndexAjaxAction extends AjaxAction {
 	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
-
+		
 		response.getWriter().println(ESIndexResource.indexDocumentCount(indexName));
 	}
 
@@ -434,6 +432,6 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-        response.getWriter().println(idxApi.listDotCMSIndices());
+        response.getWriter().println(idxApi.listDotCMSIndices());        
     }
 }
