@@ -23,12 +23,13 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1/personas")
 public class PersonaResource {
