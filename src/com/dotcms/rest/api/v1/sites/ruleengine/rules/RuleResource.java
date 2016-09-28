@@ -36,6 +36,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -43,8 +45,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @Path("/v1/sites/{siteId}/ruleengine")
 public class RuleResource {

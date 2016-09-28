@@ -17,9 +17,9 @@ import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-import java.util.*;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
+import java.util.*;
 
 /**
  * @author Geoff M. Granum
