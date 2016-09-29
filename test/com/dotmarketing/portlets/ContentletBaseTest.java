@@ -54,7 +54,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import org.junit.BeforeClass;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -71,7 +70,6 @@ import java.util.Random;
  * Date: 3/19/12
  * Time: 11:36 AM
  */
-@PowerMockIgnore("javax.management.*")
 public class ContentletBaseTest extends TestBase {
 
     protected static ContentletAPI contentletAPI;
