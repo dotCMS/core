@@ -13,8 +13,9 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.org.apache.struts.util.MessageResources;
-
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -63,14 +64,9 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.apache.velocity.tools.struts.StrutsUtils;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -90,15 +86,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by Jonathan Gamba.
  * Date: 3/20/12
  * Time: 12:12 PM
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({StrutsUtils.class})
 public class ContentletAPITest extends ContentletBaseTest {
 
     /**
@@ -2052,14 +2045,17 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void widgetInvalidateAllLang() throws Exception {
 
         String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
-        MessageResources messageResources = mock(MessageResources.class);
         HttpServletRequest requestProxy = new MockInternalRequest().request();
         HttpServletResponse responseProxy = new BaseResponse().response();
 
-        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
-        PowerMockito.mockStatic(StrutsUtils.class);
+        ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
+        ModuleConfig config = factoryObject.createModuleConfig("");
 
-        PowerMockito.when(StrutsUtils.getMessageResources(Mockito.any(), Mockito.any())).thenReturn(messageResources);
+        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
+
+        Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
+
+        initMessages();
 
         Structure sw=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
         Language def=APILocator.getLanguageAPI().getDefaultLanguage();
