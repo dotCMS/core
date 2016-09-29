@@ -6,22 +6,21 @@ import static com.dotcms.util.CollectionsUtils.map;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -29,9 +28,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -50,20 +55,31 @@ public class UserResourceHelper implements Serializable {
 	private final UserAPI userAPI;
 	private final LayoutAPI layoutAPI;
 	private final HostWebAPI hostWebAPI;
-
+	private final UserWebAPI userWebAPI;
+	private final PermissionAPI permissionAPI;
+	private final UserProxyAPI userProxyAPI;
+	private final LoginService loginService;
 
 	@VisibleForTesting
 	public UserResourceHelper (	final UserService userService,
 			final RoleAPI roleAPI,
 			final UserAPI userAPI,
 			final LayoutAPI layoutAPI,
-			final HostWebAPI hostWebAPI) {
+			final HostWebAPI hostWebAPI,
+			final UserWebAPI userWebAPI,
+			final PermissionAPI permissionAPI,
+			final UserProxyAPI userProxyAPI,
+			final LoginService loginService) {
 
 		this.userService = userService;
 		this.roleAPI = roleAPI;
 		this.userAPI = userAPI;
 		this.layoutAPI = layoutAPI;
 		this.hostWebAPI = hostWebAPI;
+		this.userWebAPI = userWebAPI;
+		this.permissionAPI = permissionAPI;
+		this.userProxyAPI = userProxyAPI;
+		this.loginService = loginService;
 	}
 
 	private static class SingletonHolder {
@@ -84,6 +100,10 @@ public class UserResourceHelper implements Serializable {
 		this.userAPI = APILocator.getUserAPI();
 		this.layoutAPI = APILocator.getLayoutAPI();
 		this.hostWebAPI = WebAPILocator.getHostWebAPI();
+		this.userWebAPI = WebAPILocator.getUserWebAPI();
+		this.permissionAPI = APILocator.getPermissionAPI();
+		this.userProxyAPI = APILocator.getUserProxyAPI();
+		this.loginService = LoginServiceFactory.getInstance().getLoginService();
 	}
 
 	/**
@@ -300,4 +320,73 @@ public class UserResourceHelper implements Serializable {
 		return userList;
 	}
 
+	/**
+	 * Update a user
+	 *
+	 * @param updateUserForm data to update the user, the {@link UpdateUserForm#getUserId()} is the if of the user to update,
+	 *                       {@link UpdateUserForm#getCurrentPassword()} is the current password
+	 * @param modUser User who is updating the user, if modUser.getUserId() is equals to {@link UpdateUserForm#getUserId()},
+	 *                then the current password is need
+	 * @param request
+	 * @param locale
+	 * @return User updated
+	 * @throws DotSecurityException if modUser doesn't has permission to update the user
+	 * @throws DotDataException
+	 * @throws IncorrectPasswordException if modUser is equals to {@link UpdateUserForm#getUserId()} and
+	 * 									  {@link UpdateUserForm#getCurrentPassword()} is incorrect
+     */
+	public User updateUser(final UpdateUserForm updateUserForm, final User modUser,
+						   final HttpServletRequest request, Locale locale)
+			throws DotSecurityException, DotDataException, IncorrectPasswordException {
+
+		final HttpSession session = request.getSession();
+		boolean validatePassword = false;
+
+		User userToSave = null;
+
+		try {
+			userToSave = (User)this.userAPI.loadUserById
+                    (updateUserForm.getUserId(), this.userAPI.getSystemUser(), false).clone();
+
+
+			userToSave.setModified(false);
+			userToSave.setFirstName(updateUserForm.getGivenName());
+			userToSave.setLastName(updateUserForm.getSurname());
+
+			if (null != updateUserForm.getEmail()) {
+				userToSave.setEmailAddress(updateUserForm.getEmail());
+			}
+
+			if (null != updateUserForm.getNewPassword()) {
+				// Password has changed, so it has to be validated
+				userToSave.setPassword(updateUserForm.getNewPassword());
+				// And re-authentication might be required
+				validatePassword = true;
+			}
+
+			if (userToSave.getUserId().equalsIgnoreCase(modUser.getUserId())) {
+
+				boolean passwordMatch = loginService.passwordMatch(updateUserForm.getCurrentPassword(), modUser);
+
+				if (!passwordMatch){
+					throw new IncorrectPasswordException();
+				}
+
+				this.userAPI.save(userToSave, this.userAPI.getSystemUser(), validatePassword, false);
+				// if the user logged is the same of the user to save, we need to set the new user changes to the session.
+				session.setAttribute(com.dotmarketing.util.WebKeys.CMS_USER, userToSave);
+			} else if (this.permissionAPI.doesUserHavePermission
+					(this.userProxyAPI.getUserProxy(userToSave, modUser, false),
+							PermissionAPI.PERMISSION_EDIT, modUser, false)) {
+
+				this.userAPI.save(userToSave, modUser, validatePassword, !userWebAPI.isLoggedToBackend(request));
+			} else {
+				throw new DotSecurityException(LanguageUtil.get(locale, "User-Doesnot-Have-Permission"));
+			}
+		}  catch (SystemException|PortalException e) {
+			throw new RuntimeException(e);
+		}
+
+		return userToSave;
+	}
 }

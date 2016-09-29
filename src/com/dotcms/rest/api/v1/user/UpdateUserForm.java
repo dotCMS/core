@@ -25,15 +25,17 @@ public final class UpdateUserForm extends Validated  {
     @NotNull
     @NotBlank
     private final String surname;
-    private final String password;
-
+    private final String currentPassword;
+    private final String newPassword;
 
     private UpdateUserForm(UpdateUserForm.Builder builder) {
         userId    = builder.userId;
         givenName = builder.givenName;
         surname   = builder.surname;
-        password  = builder.password;
+        currentPassword  = builder.currentPassword;
         email     = builder.email;
+        newPassword = builder.newPassword;
+
         checkValid();
     }
 
@@ -53,15 +55,20 @@ public final class UpdateUserForm extends Validated  {
         return surname;
     }
 
-    public String getPassword() {
-        return password;
+    public String getCurrentPassword() {
+        return currentPassword;
+    }
+
+    public String getNewPassword() {
+        return newPassword;
     }
 
     public static final class Builder {
         @JsonProperty private String userId;
         @JsonProperty private String givenName;
         @JsonProperty private String surname;
-        @JsonProperty private String password;
+        @JsonProperty private String currentPassword;
+        @JsonProperty private String newPassword;
         @JsonProperty private String email;
 
         public Builder() {
@@ -82,8 +89,13 @@ public final class UpdateUserForm extends Validated  {
             return this;
         }
 
-        public UpdateUserForm.Builder password(String password) {
-            this.password = password;
+        public UpdateUserForm.Builder currentPassword(String password) {
+            this.currentPassword = password;
+            return this;
+        }
+
+        public UpdateUserForm.Builder newPassword(String newPassword) {
+            this.newPassword = newPassword;
             return this;
         }
 
