@@ -15,6 +15,7 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
@@ -556,12 +557,11 @@ public class HostAPIImpl implements HostAPI {
 				} catch (Exception e) {
 					// send notification
 					try {
-						String errorMessage = LanguageUtil.format(user.getLocale(), "notifications_host_deletion_error",new String[]{host.getHostname()},false);
-						errorMessage += e.getMessage();
-						//APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+						final I18NMessage errorMessage = new I18NMessage("notifications_host_deletion_error",
+								host.getHostname(), e.getMessage());
 
 						APILocator.getNotificationAPI().generateNotification(
-								LanguageUtil.get(user.getLocale(), "notification.hostapi.delete.error.title"), // title = Host Notification
+								new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
 								errorMessage,
 								null, // no actions
 								NotificationLevel.ERROR,
@@ -570,8 +570,6 @@ public class HostAPIImpl implements HostAPI {
 								user.getLocale()
 						);
 
-					} catch (LanguageException e1) {
-						Logger.error(HostAPIImpl.class, "error formating notification", e);
 					} catch (DotDataException e1) {
 						Logger.error(HostAPIImpl.class, "error saving Notification", e);
 					}

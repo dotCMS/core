@@ -316,4 +316,14 @@ public class DateUtil {
 		return days * 24 * 3600 * 1000L;
 	}
 
+	/**
+	 * Converts millis to seconds
+	 * @param time long
+	 * @return int
+     */
+	// todo: test it
+	public static int millisToSeconds(final long time) {
+
+		return (int) (time / SECOND_MILLIS);
+	}
 }

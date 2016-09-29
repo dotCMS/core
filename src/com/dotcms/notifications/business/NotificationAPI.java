@@ -8,6 +8,7 @@ import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.exception.DotDataException;
 
 /**
@@ -128,7 +129,7 @@ public interface NotificationAPI extends Serializable {
 	 * @throws DotDataException
 	 *             An error occurred when saving the message in the database.
 	 */
-	void generateNotification(String title, String message, List<NotificationAction> actions,
+	void generateNotification(I18NMessage title, I18NMessage message, List<NotificationAction> actions,
 							  NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException;
 	/**
 	 * Returns a notification based on its ID.

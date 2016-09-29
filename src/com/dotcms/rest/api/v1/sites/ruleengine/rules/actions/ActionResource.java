@@ -33,12 +33,12 @@ import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @Path("/v1/sites/{siteId}/ruleengine")
 public class ActionResource {

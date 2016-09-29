@@ -1,5 +1,6 @@
-package com.dotcms.notifications.bean;
+package com.dotcms.notifications.view;
 
+import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.util.I18NMessage;
 
 import java.io.Serializable;
@@ -18,24 +19,24 @@ import java.util.List;
  *
  */
 @SuppressWarnings("serial")
-public class NotificationData implements Serializable {
+public class NotificationDataView implements Serializable {
 
-	private I18NMessage title;
-	private I18NMessage message;
-	private List<NotificationAction> actions;
+	private final String title;
+	private final String message;
+	private final List<NotificationActionView> actions;
 
 	/**
 	 * Creates a new Notification Data object.
-	 * 
+	 *
 	 * @param title
-	 *            - I18NMessage: The title of the notification.
+	 *            -  The title of the notification.
 	 * @param message
-	 *            - I18NMessage: The message that will be displayed to the user.
+	 *            - The message that will be displayed to the user.
 	 * @param actions
 	 *            - A list of {@link NotificationAction} objects that provide
 	 *            more features to the notification.
 	 */
-	public NotificationData(I18NMessage title, I18NMessage message, List<NotificationAction> actions) {
+	public NotificationDataView(String title, String message, List<NotificationActionView> actions) {
 		this.title = title;
 		this.message = message;
 		this.actions = actions;
@@ -46,18 +47,8 @@ public class NotificationData implements Serializable {
 	 * 
 	 * @return The notification title.
 	 */
-	public I18NMessage getTitle() {
+	public String getTitle() {
 		return title;
-	}
-
-	/**
-	 * Sets the title of this notification.
-	 * 
-	 * @param title
-	 *            - The notification title.
-	 */
-	public void setTitle(I18NMessage title) {
-		this.title = title;
 	}
 
 	/**
@@ -65,39 +56,20 @@ public class NotificationData implements Serializable {
 	 * 
 	 * @return The notification message.
 	 */
-	public I18NMessage getMessage() {
+	public String getMessage() {
 		return message;
 	}
 
-	/**
-	 * Sets the message of this notification.
-	 * 
-	 * @param message
-	 *            - The notification message.
-	 */
-	public void setMessage(I18NMessage message) {
-		this.message = message;
-	}
 
 	/**
 	 * Returns the list of custom actions for this notification.
 	 * 
 	 * @return The notification action list.
 	 */
-	public List<NotificationAction> getActions() {
+	public List<NotificationActionView> getActions() {
 		return actions;
 	}
 
-	/**
-	 * Sets the list of {@link NotificationAction} objects for this
-	 * notification.
-	 * 
-	 * @param actions
-	 *            - The notification actions.
-	 */
-	public void setActions(List<NotificationAction> actions) {
-		this.actions = actions;
-	}
 
 	@Override
 	public int hashCode() {
@@ -117,7 +89,7 @@ public class NotificationData implements Serializable {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		NotificationData other = (NotificationData) obj;
+		NotificationDataView other = (NotificationDataView) obj;
 		if (actions == null) {
 			if (other.actions != null)
 				return false;

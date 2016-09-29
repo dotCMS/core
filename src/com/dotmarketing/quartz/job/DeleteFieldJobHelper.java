@@ -3,6 +3,7 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -42,9 +43,9 @@ public class DeleteFieldJobHelper implements Serializable {
                 userLocale: Locale.getDefault();
 
         notfAPI.generateNotification(
-                LanguageUtil.get(locale, "notification.deletefieldjob.delete.info.title"), // title = Delete Field
-                LanguageUtil.get(locale,
-                        "notification.deletefieldjob.startdelete.info.message",
+                new I18NMessage("notification.deletefieldjob.delete.info.title"), // title = Delete Field
+                new I18NMessage(
+                        "notification.deletefieldjob.startdelete.info.message", null,
                         velocityVarName, iFieldNode, iStructureNode), // message = Deletion of Field '{0}' has been started. Field Inode: {1}, Structure Inode: {2}
                 null, // no actions
                 NotificationLevel.INFO,
@@ -76,9 +77,9 @@ public class DeleteFieldJobHelper implements Serializable {
                 userLocale: Locale.getDefault();
 
         notfAPI.generateNotification(
-                LanguageUtil.get(locale, "notification.deletefieldjob.delete.info.title"), // title = Delete Field
-                LanguageUtil.get(locale,
-                        "notification.deletefieldjob.enddelete.info.message",
+                new I18NMessage("notification.deletefieldjob.delete.info.title"), // title = Delete Field
+                new I18NMessage(
+                        "notification.deletefieldjob.enddelete.info.message", null,
                         velocityVarName, iFieldNode, iStructureNode), // message = Field {0} was deleted successfully. Field Inode: {1}, Structure Inode: {2}
                 null, // no actions
                 NotificationLevel.INFO,
@@ -109,9 +110,9 @@ public class DeleteFieldJobHelper implements Serializable {
                 userLocale: Locale.getDefault();
 
         notfAPI.generateNotification(
-                LanguageUtil.get(locale, "notification.deletefieldjob.delete.info.title"), // title = Delete Field
-                LanguageUtil.get(locale,
-                        "notification.deletefieldjob.unabledelete.info.message",
+                new I18NMessage("notification.deletefieldjob.delete.info.title"), // title = Delete Field
+                new I18NMessage(
+                        "notification.deletefieldjob.unabledelete.info.message", null,
                         velocityVarName, iFieldNode, iStructureNode), // message = Unable to delete field {0}. Field Inode: {1}, Structure Inode: {2}
                 null, // no actions
                 NotificationLevel.ERROR,
