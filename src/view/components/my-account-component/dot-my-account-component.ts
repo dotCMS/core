@@ -5,9 +5,11 @@ import {LoginService, User, Auth} from '../../../api/services/login-service';
 import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MessageService} from '../../../api/services/messages-service';
 import {StringFormat} from '../../../api/util/stringFormat';
+import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
+import {MdButton} from '@angular2-material/button';
 
 @Component({
-    directives: [ MD_INPUT_DIRECTIVES ],
+    directives: [ MD_INPUT_DIRECTIVES, MdCheckbox, MdButton ],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
@@ -17,31 +19,45 @@ import {StringFormat} from '../../../api/util/stringFormat';
     templateUrl: ['dot-my-account-component.html'],
 })
 
-export class MyAccountComponent extends BaseComponent{
+export class MyAccountComponent extends BaseComponent {
     @Output() close  = new EventEmitter<>();
 
     private accountUser: AccountUser = {
+        currentPassword: '',
         email: '',
         givenName: '',
         surname: '',
-        userId: '',
+        userId: ''
     };
-    private password: string;
+
     private passwordConfirm: string;
     private passwordMatch: boolean;
-    private successMessage: string;
     private message = null;
+    private changePasswordOption: boolean = false;
 
     constructor(private loginService: LoginService, private accountService: AccountService,
                 private messageService: MessageService, private stringFormat: StringFormat) {
         super(['modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
-            'Last-Name', 'email-address', 'password', 're-enter-password', 'error.forgot.password.passwords.dont.match',
-            'message.createaccount.success', 'Error-communicating-with-server-Please-try-again'], messageService);
+            'Last-Name', 'email-address', 'new-password', 're-enter-new-password', 'error.forgot.password.passwords.dont.match',
+            'message.createaccount.success', 'Error-communicating-with-server-Please-try-again', 'change-password', 'current-password'], messageService);
         this.passwordMatch = false;
+        this.changePasswordOption = false;
         this.loginService.watchUser(this.loadUser.bind(this));
     }
 
-    private getRequiredMessage(item) {
+    checkPasswords(): void {
+        if (this.message) {
+            this.message = null;
+        }
+        this.passwordMatch = this.accountUser.newPassword !== '' && this.passwordConfirm !== '' &&
+            this.accountUser.newPassword === this.passwordConfirm;
+    }
+
+    toggleChangePasswordOption(): void {
+        this.changePasswordOption = !this.changePasswordOption;
+    }
+
+    private getRequiredMessage(item): void {
         return this.stringFormat.formatMessage(this.i18nMessages['error.form.mandatory'], item);
     }
 
@@ -53,39 +69,28 @@ export class MyAccountComponent extends BaseComponent{
             surname: user.lastName,
             userId: user.userId
         };
-        this.password = '';
-        this.passwordConfirm = '';
-    }
 
-    checkPasswords() {
-        if (this.message) {
-            this.message = null;
-        }
-        this.passwordMatch = this.password != '' && this.passwordConfirm != '' && this.password === this.passwordConfirm;
+        this.accountUser.newPassword = null;
+        this.passwordConfirm = null;
     }
 
     private save(): void {
 
-        if (this.password) {
-            this.accountUser.password = this.password;
-        }
-
         this.accountService.updateUser(this.accountUser).subscribe(response => {
             // TODO: replace the alert with a Angular components
-            alert(this.successMessage);
+            alert(this.i18nMessages['message.createaccount.success']);
             this.close.emit();
 
             if (response.entity.reauthenticate) {
-                this.loginService.logOutUser();
+                this.loginService.logOutUser().subscribe(() => {});
             } else {
                 this.loginService.setAuth({
-                    user: response.entity.user,
-                    loginAsUser: null
+                    loginAsUser: null,
+                    user: response.entity.user
                 });
             }
         }, response => {
             // TODO: We have to define how must be the user feedback in case of error
-            console.log(response.errorsMessages);
             this.message = response.errorsMessages;
         });
     }

@@ -40,7 +40,7 @@ export class ResponseView {
                 errorMessages += e.message;
             });
         } else {
-            errorMessages = this.response.statusText;
+            errorMessages = this.bodyJsonObject.message;
         }
 
         return errorMessages;

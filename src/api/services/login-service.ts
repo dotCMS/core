@@ -41,7 +41,7 @@ export class LoginService extends CoreWebService {
             recoverPassword: 'v1/forgotpassword',
             serverInfo: 'v1/loginform',
             userAuth: 'v1/authentication'
-        }
+        };
     }
 
     get loginAsUsersList$(): Observable<User[]> {
@@ -222,6 +222,7 @@ export class LoginService extends CoreWebService {
      * @returns {Observable<any>}
      */
     public logOutUser(): Observable<any> {
+
         return this.requestView({
             method: RequestMethod.Get,
             url: this.urls.logout,
@@ -232,6 +233,7 @@ export class LoginService extends CoreWebService {
             };
             this.setAuth(nullAuth);
             this.router.go('/public/login');
+            return response;
         });
     }
 
