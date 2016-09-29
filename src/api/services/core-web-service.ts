@@ -86,9 +86,11 @@ export class CoreWebService {
    * @returns {DotCMSHttpResponse}
    */
   public requestView(options: RequestOptionsArgs ): Observable<ResponseView> {
+
     let request = this.getRequestOpts(options);
 
     return Observable.create(observer => {
+
       this._http.request(request).subscribe(
           resp => {
             if (resp._body.errors && resp._body.errors.length > 0) {
