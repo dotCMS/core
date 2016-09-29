@@ -27,17 +27,14 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.UserProxyAPI;
-import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
@@ -46,7 +43,6 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.auth.PrincipalThreadLocal;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
@@ -65,10 +61,7 @@ import com.liferay.util.LocaleUtil;
 public class UserResource implements Serializable {
 
 	private final WebResource webResource;
-	private final UserWebAPI userWebAPI;
 	private final UserAPI userAPI;
-	private final PermissionAPI permissionAPI;
-	private final UserProxyAPI userProxyAPI;
 	private final UserResourceHelper helper;
 	private final ErrorResponseHelper errorHelper;
 
@@ -76,19 +69,15 @@ public class UserResource implements Serializable {
 	 * Default class constructor.
 	 */
 	public UserResource() {
-		this(new WebResource(new ApiProvider()), WebAPILocator.getUserWebAPI(), APILocator.getUserAPI(), APILocator
-				.getPermissionAPI(), APILocator.getUserProxyAPI(), UserResourceHelper.getInstance(), ErrorResponseHelper.INSTANCE);
+		this(new WebResource(new ApiProvider()), APILocator.getUserAPI(), UserResourceHelper.getInstance(),
+				ErrorResponseHelper.INSTANCE);
 	}
 
 	@VisibleForTesting
-	protected UserResource(final WebResource webResource, final UserWebAPI userWebAPI, final UserAPI userAPI,
-			final PermissionAPI permissionAPI, final UserProxyAPI userProxyAPI, final UserResourceHelper userHelper,
+	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final UserResourceHelper userHelper,
 			final ErrorResponseHelper errorHelper) {
 		this.webResource = webResource;
-		this.userWebAPI = userWebAPI;
 		this.userAPI = userAPI;
-		this.permissionAPI = permissionAPI;
-		this.userProxyAPI = userProxyAPI;
 		this.helper = userHelper;
 		this.errorHelper = errorHelper;
 	}
@@ -143,12 +132,9 @@ public class UserResource implements Serializable {
                                  final UpdateUserForm updateUserForm) throws Exception {
 
         final User modUser = webResource.init(true, request, true).getUser();
-        final HttpSession session = request.getSession();
         Response response = null;
         final String date = DateUtil.getCurrentDate();
-        final User userToSave;
-        boolean reAuthenticationRequired = false;
-        boolean validatePassword = false;
+        final User userToUpdated;
         Locale locale = LocaleUtil.getLocale(request);
         Locale systemLocale = this.userAPI.getSystemUser().getLocale();
         Map<String, Object> userMap = Collections.EMPTY_MAP;
@@ -159,51 +145,19 @@ public class UserResource implements Serializable {
         try {
 
             if (null == locale) {
-
                 locale = modUser.getLocale();
             }
 
-            userToSave = (User)this.userAPI.loadUserById
-                    (updateUserForm.getUserId(), this.userAPI.getSystemUser(), false).clone();
-            userToSave.setModified(false);
-            userToSave.setFirstName(updateUserForm.getGivenName());
-            userToSave.setLastName(updateUserForm.getSurname());
-
-            if (null != updateUserForm.getEmail()) {
-
-                userToSave.setEmailAddress(updateUserForm.getEmail());
-            }
-
-            if (null != updateUserForm.getPassword()) {
-                // Password has changed, so it has to be validated
-                userToSave.setPassword(updateUserForm.getPassword());
-                // And re-authentication might be required
-                validatePassword = reAuthenticationRequired = true;
-            }
-
-            if (userToSave.getUserId().equalsIgnoreCase(modUser.getUserId())) {
-
-                this.userAPI.save(userToSave, this.userAPI.getSystemUser(), validatePassword, false);
-                // if the user logged is the same of the user to save, we need to set the new user changes to the session.
-                session.setAttribute(com.dotmarketing.util.WebKeys.CMS_USER, userToSave);
-            } else if (this.permissionAPI.doesUserHavePermission
-                    (this.userProxyAPI.getUserProxy(userToSave, modUser, false),
-                        PermissionAPI.PERMISSION_EDIT, modUser, false)) {
-
-                this.userAPI.save(userToSave, modUser, validatePassword, !userWebAPI.isLoggedToBackend(request));
-            } else {
-
-                throw new DotSecurityException(LanguageUtil.get(locale, "User-Doesnot-Have-Permission"));
-            }
-
+			userToUpdated = this.helper.updateUser(updateUserForm, modUser, request, locale);
             this.helper.log("User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
-            if (!reAuthenticationRequired) { // if re authentication is not required, sent the current changed user
+			boolean reAuthenticationRequired =  null != updateUserForm.getNewPassword();
 
-                userMap = userToSave.toMap();
+            if (!reAuthenticationRequired) { // if re authentication is not required, sent the current changed user
+                userMap = userToUpdated.toMap();
             }
 
-            response = Response.ok(new ResponseEntityView(map("userID", userToSave.getUserId(),
+            response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
                     "reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
         } catch (UserFirstNameException e) {
 
@@ -229,7 +183,10 @@ public class UserResource implements Serializable {
         		this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
         		response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         	}
-    	} catch (Exception  e) {
+    	} catch (IncorrectPasswordException e) {
+			this.helper.log("Error Updating User. " + e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+		}catch (Exception  e) {
         	this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
         	response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
