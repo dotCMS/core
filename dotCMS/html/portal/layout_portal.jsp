@@ -5,7 +5,8 @@
 <%
         boolean inPortal = (request.getAttribute("org.dotcms.variables.inPortlets") != null);
         boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) || (UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME))) || (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME));
-
+		boolean isAjaxIframe = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.AJAX_PORTLET)) && "true".equals(ParamUtil.getString(request, WebKeys.AJAX_PORTLET));
+		
         request.setAttribute("org.dotcms.variables.inPortlets", "true"); 
         
 %>
@@ -27,8 +28,28 @@
                         background: white;
                 }
         </style>
+       
         <%@ include file="/html/common/messages_inc.jsp" %>
-        <jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
+        <%if(isAjaxIframe){ %>
+            <script>
+				var portletTabMap = {}; 
+			</script>
+            <div id="hd">
+                        <%@ include file="/html/common/nav_main_inc_js.jsp" %>
+            </div>
+	        <div id="bd">
+	        	<div id="dotAjaxMainHangerDiv">
+	            	<div id="dotAjaxMainDiv" dojoType="dojox.layout.ContentPane" style="overflow: visible;">
+	            	</div>
+	            </div>
+	        </div>
+		    
+		    <script type="text/javascript">
+		    	dotAjaxNav.show("/api/portlet/<%=ParamUtil.getString(request, "p_p_id")%>",undefined);
+		    </script>
+        <%} else { %>
+        	<jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
+        <%} %>
         <%@ include file="/html/common/bottom_inc.jsp" %>
 <%}else{ %>
 
