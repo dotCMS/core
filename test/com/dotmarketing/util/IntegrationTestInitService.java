@@ -2,6 +2,8 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.servlets.test.ServletTestRunner;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Sets up the web environment needed to execute integration tests without a server application
  * Created by nollymar on 9/29/16.
@@ -9,10 +11,10 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 public class IntegrationTestInitService {
     private static IntegrationTestInitService service = null;
 
-    private static boolean initCompleted;
+    private static AtomicBoolean initCompleted;
 
     private IntegrationTestInitService() {
-        initCompleted = false;
+        initCompleted = new AtomicBoolean(false);
     }
 
     public static IntegrationTestInitService getInstance() {
@@ -24,12 +26,12 @@ public class IntegrationTestInitService {
     }
 
     public void init() throws Exception {
-        if (!initCompleted && (System.getProperty("TEST-RUNNER") == null || !System.getProperty("TEST-RUNNER")
+        if (!initCompleted.get() && (System.getProperty("TEST-RUNNER") == null || !System.getProperty("TEST-RUNNER")
             .equals(ServletTestRunner.class.getCanonicalName()))) {
             TestingJndiDatasource.init();
             ConfigTestHelper._setupFakeTestingContext();
 
-            initCompleted = true;
+            initCompleted.set(true);
         }
     }
 }
