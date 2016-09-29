@@ -6,14 +6,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Simple Precondition checks, influenced heavily by Google's version of same.
+ * Simple Precondition checks, wrapping Google's version.
  * This implementation adds the ability to specify the exception that is to
  * be thrown, streamlining validation of public API methods by removing the need
  * to wrap the generic exceptions and rethrow as API specific versions.
  *
  * See https://code.google.com/p/guava-libraries/wiki/PreconditionsExplained
- *
- * @todo ggranum: move this class into a 'dotcms common' (or shared) sub-project / package.
  *
  * @author Geoff M. Granum
  */
