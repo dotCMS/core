@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotcms.util.TreeableUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -78,6 +79,15 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return name;
 	}
 
+	@Override
+	public boolean isParent() {
+		return true;
+	}
+
+	@Override
+	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+		return TreeableUtil.getInstance().loadAssetsUnderFolder(this,user,live,working, archived, respectFrontEndPermissions);
+	}
 
 
 	/**
@@ -220,6 +230,8 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
         retMap.put("showOnMenu", this.showOnMenu);
         retMap.put("sortOrder", this.sortOrder);
         retMap.put("defaultFileType", this.defaultFileType);
+		retMap.put("path", this.getPath());
+		retMap.put("modDate", this.getModDate());
         return retMap;
     }
 

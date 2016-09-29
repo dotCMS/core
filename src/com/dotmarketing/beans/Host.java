@@ -1,11 +1,14 @@
 package com.dotmarketing.beans;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.util.TreeableUtil;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,21 @@ public class Host extends Contentlet implements Permissionable,Treeable {
 		return super.getInode();
 	}
 
+	@Override
+	public String getName() {
+		return getTitle();
+	}
+
+	@Override
+	public boolean isParent() {
+		return true;
+	}
+
+	@Override
+	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+		return TreeableUtil.getInstance().loadAssetsUnderHost(this,user,live,working, archived, respectFrontEndPermissions);
+	}
+
 	public String getVersionType() {
 		return new String("host");
 	}
@@ -97,6 +115,8 @@ public class Host extends Contentlet implements Permissionable,Treeable {
 		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		return (String) st.getInode();
 	}
+
+
 
 	public boolean isSystemHost() {
 		Object isSystemHost = map.get(SYSTEM_HOST_KEY);

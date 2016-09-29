@@ -271,6 +271,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		else
 			map.put("modUserName", "unknown");
 
+		 map.put("type", this.getType());
 		return map;
 	 }
 
