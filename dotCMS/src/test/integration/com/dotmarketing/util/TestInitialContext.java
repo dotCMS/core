@@ -23,7 +23,15 @@ public class TestInitialContext extends InitialContext {
     private BasicDataSource dataSource;
 
     private TestInitialContext() throws NamingException {
-
+        dataSource = new BasicDataSource();
+        dataSource.setDriverClassName(driver);
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        dataSource.setRemoveAbandoned(true);
+        dataSource.setLogAbandoned(true);
+        dataSource.setMaxIdle(maxIdle);
+        dataSource.setMaxActive(maxTotal);
     }
 
     public static TestInitialContext getInstance() throws NamingException {
@@ -38,15 +46,6 @@ public class TestInitialContext extends InitialContext {
     public Object lookup(String name) throws NamingException {
 
         if (name != null && name.equals(Constants.DATABASE_DEFAULT_DATASOURCE)) { // init datasources
-            dataSource = new BasicDataSource();
-            dataSource.setDriverClassName(driver);
-            dataSource.setUrl(url);
-            dataSource.setUsername(username);
-            dataSource.setPassword(password);
-            dataSource.setRemoveAbandoned(true);
-            dataSource.setLogAbandoned(true);
-            dataSource.setMaxIdle(maxIdle);
-            dataSource.setMaxActive(maxTotal);
             return dataSource;
         }
 

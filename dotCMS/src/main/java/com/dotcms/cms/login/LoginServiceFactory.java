@@ -18,6 +18,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -436,7 +437,7 @@ public class LoginServiceFactory implements Serializable {
 
         @Override
         public boolean passwordMatch(String password, User user) {
-            return false;
+            return LoginFactory.passwordMatch(password, user);
         }
 
         /**

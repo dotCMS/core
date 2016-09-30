@@ -8,9 +8,9 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.validation.constraints.Operator;
 
-import java.util.Map;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
+import java.util.Map;
 
 @JsonDeserialize(builder = RestConditionGroup.Builder.class)
 public class RestConditionGroup extends Validated {

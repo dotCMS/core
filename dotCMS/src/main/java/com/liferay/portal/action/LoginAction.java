@@ -216,8 +216,14 @@ public class LoginAction extends Action {
 	private void _resetPassword(HttpServletRequest req) throws Exception {
 		String userId = ParamUtil.getString(req, "my_user_id");
 		String token = ParamUtil.getString(req, "token");
-
-		String newpass1 = ParamUtil.getString(req, "my_new_pass1");
+		
+		if(!UtilMethods.isSet(userId)){
+			JWTBean jwtBean  = JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(token);
+			userId = jwtBean.getId();
+			token = jwtBean.getSubject();
+		}
+		
+        String newpass1 = ParamUtil.getString(req, "my_new_pass1");
 		String newpass2 = ParamUtil.getString(req, "my_new_pass2");
 
 

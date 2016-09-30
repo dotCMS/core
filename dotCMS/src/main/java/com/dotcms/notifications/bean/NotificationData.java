@@ -1,5 +1,7 @@
 package com.dotcms.notifications.bean;
 
+import com.dotcms.util.I18NMessage;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -18,22 +20,22 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class NotificationData implements Serializable {
 
-	private String title;
-	private String message;
+	private I18NMessage title;
+	private I18NMessage message;
 	private List<NotificationAction> actions;
 
 	/**
 	 * Creates a new Notification Data object.
 	 * 
 	 * @param title
-	 *            - The title of the notification.
+	 *            - I18NMessage: The title of the notification.
 	 * @param message
-	 *            - The message that will be displayed to the user.
+	 *            - I18NMessage: The message that will be displayed to the user.
 	 * @param actions
 	 *            - A list of {@link NotificationAction} objects that provide
 	 *            more features to the notification.
 	 */
-	public NotificationData(String title, String message, List<NotificationAction> actions) {
+	public NotificationData(I18NMessage title, I18NMessage message, List<NotificationAction> actions) {
 		this.title = title;
 		this.message = message;
 		this.actions = actions;
@@ -44,7 +46,7 @@ public class NotificationData implements Serializable {
 	 * 
 	 * @return The notification title.
 	 */
-	public String getTitle() {
+	public I18NMessage getTitle() {
 		return title;
 	}
 
@@ -54,7 +56,7 @@ public class NotificationData implements Serializable {
 	 * @param title
 	 *            - The notification title.
 	 */
-	public void setTitle(String title) {
+	public void setTitle(I18NMessage title) {
 		this.title = title;
 	}
 
@@ -63,7 +65,7 @@ public class NotificationData implements Serializable {
 	 * 
 	 * @return The notification message.
 	 */
-	public String getMessage() {
+	public I18NMessage getMessage() {
 		return message;
 	}
 
@@ -73,7 +75,7 @@ public class NotificationData implements Serializable {
 	 * @param message
 	 *            - The notification message.
 	 */
-	public void setMessage(String message) {
+	public void setMessage(I18NMessage message) {
 		this.message = message;
 	}
 

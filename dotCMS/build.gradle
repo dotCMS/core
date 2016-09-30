@@ -32,7 +32,7 @@ ext {
     git = org.ajoberstar.grgit.Grgit.open(file('..'))
 
     dotcmsReleaseName='dotCMS Platform'
-    dotcmsReleaseVersion='3.7'
+    dotcmsReleaseVersion='3.7.0'
     dotcmsReleaseCodename='Panther'
     dotcmsReleaseBuild='999999'
     dotcmsReleaseDdate='Jun 08, 1986'
