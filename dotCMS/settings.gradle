@@ -15,5 +15,3 @@ include 'shared'
 include 'api'
 include 'services:webservice'
 */
-
-rootProject.name = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild

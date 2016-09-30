@@ -1,3 +1,8 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {classpath 'org.ajoberstar:grgit:1.1.0'}
+}
+
 configurations {
     compile
     buildlibs
@@ -11,14 +16,31 @@ configurations {
 apply plugin: 'java'
 apply plugin: 'war'
 
-// Import and apply the dependencies from the dependencies scripts.
-apply from: "$rootDir/dependencies.gradle"
-
 // In this section you declare where to find the dependencies of your project.
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
+
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/dependencies.gradle"
+
+ant.lifecycleLogLevel = "INFO"
+
+ext {
+    // Open the Git repository in the current directory.
+    git = org.ajoberstar.grgit.Grgit.open(file('..'))
+
+    dotcmsReleaseName='dotCMS Platform'
+    dotcmsReleaseVersion='3.7'
+    dotcmsReleaseCodename='Panther'
+    dotcmsReleaseBuild='999999'
+    dotcmsReleaseDdate='Jun 08, 1986'
+    dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+    dotcmsReleaseDdate = getDate()
+}
+
+archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
 
 // Compile Java.
 compileJava {
@@ -35,6 +57,7 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
+war.dependsOn 'deployPlugins'
 war {
     classpath = classpath - sourceSets.main.output.classesDir
     from (jar) {
@@ -59,6 +82,7 @@ war {
         into rulesEngineFolder
     }
 }
+war.finalizedBy 'undeployPlugins'
 
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
 // If the tomcat folder exists: git pull, if not: git clone.
@@ -95,9 +119,12 @@ task undeployWarTomcat(type: Delete) {
 
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: Copy) {
-    dependsOn 'clonePullTomcat', 'undeployWarTomcat', 'copyBuildLibs'
+    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat', 'copyBuildLibs'
+
+    def zipFile = file("$buildDir/libs/dotcms_3.7_689a906.war")
+ 
+    from zipTree(zipFile)
     into tomcatInstallLocation + webAppRootFolder
-    with war
 }
 
 // This task finds all the plugins and runs 'ant build' inside each one.
@@ -118,103 +145,79 @@ task buildPlugins(dependsOn: 'jar') << {
           workingDir pluginPath
           commandLine 'ant', 'build'
         }
-    }  
+    }
 }
 
-//configurations {
-//    compile
-//    antLibs
-//    coreWeb
-//    provided
-//    ext.dotcmsFolder = "dotCMS"
-//    ext.rulesEngineFolder ="dotCMS/html/ng"
-//    ext.libsFolder = "dotCMS/WEB-INF/lib"
-//    ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
-//    ext.testLibsFolder = "libs/test"
-//}
-////Import and apply the dependencies from the dependencies scripts
-//apply from: "$rootDir/dependencies.gradle"
-//
-//configurations.all({
-//    // dynamic: e.g. 'version: 2.0+'
-//    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
-//    // changing: e.g. 'version 2.0.0-SNAPSHOT'
-//    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-//})
-//
-//repositories {
-//    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-//    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
-//}
-//
-////Syncing the dotCMS/WEB-INF/lib folder
-//task webinfLibs(type: Sync) {
-//    from configurations.compile
-//    into configurations.libsFolder
-//
-//    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-//    exclude '**/dot.org.apache.felix.fileinstall*.jar'
-//    exclude '**/dot.org.apache.felix.gogo.*.jar'
-//    exclude '**/junit-*.jar'
-//    exclude '**/powermock-*.jar'
-//    exclude '**/javassist-*.jar'
-//    exclude '**/*.zip'
-//}
-//webinfLibs.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/lib folder'
-//
-//task copyToLib {
-//    copy {
-//        from configurations.compile
-//        into configurations.felixFolder
-//
-//        include '**/dot.org.apache.felix.bundlerepository*.jar'
-//        include '**/dot.org.apache.felix.fileinstall*.jar'
-//        include '**/dot.org.apache.felix.gogo.*.jar'
-//        include '**/dot.org.apache.felix.http.bundle*.jar'
-//    }
-//
-//    copy {
-//        from configurations.compile
-//        into configurations.testLibsFolder
-//
-//        include '**/junit-*.jar'
-//        include '**/powermock-*.jar'
-//    }
-//
-//    copy {
-//        from configurations.compile
-//        into configurations.dotcmsFolder
-//
-//        include '**/starter*.zip'
-//        rename ( /starter(.+)\.zip/, "starter.zip" )
-//    }
-//
-//    doLast {
-//        copy {
-//            from(zipTree(configurations.coreWeb.files.toArray()[0]))
-//            into configurations.rulesEngineFolder
-//        }
-//    }
-//}
-//
-//copyToLib.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/felix/bundle folder, copies the starter.zip and the core-web project files'
-//
-//dependencies {
-//    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
-//    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
-//}
-//
-//ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
-//configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
-//
-////Moving dependencies
-//tasks.webinfLibs.execute()
-//tasks.copyToLib.execute()
-//
-//ant.importBuild 'build.xml'
-//
-//task wrapper(type: Wrapper) {
-//    gradleVersion = '2.9'
-//}
-//
-//defaultTasks 'help', 'tasks'
+// TODO I think there are variables for this paths.
+// This task will copy what is used to be src-conf (now under resources)
+// to webapp/WEB-INF/classes in order to be merged with the plugins.
+task deployConfig(type: Copy) {
+    from 'src/main/resources'
+    into 'src/main/webapp/WEB-INF/classes'
+
+    filesMatching("release.properties") {
+        expand( project.properties )
+    }
+}
+
+//TODO Need to check ROOT folder functionality is working.
+// This task will:
+// 1. Copy the plugins.xml from plugins folder.
+// 2. Loop over each plugin and copy the .jar file into WEB-INF/liv
+// 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
+//    all the properties/files from the static plugins.
+task deployPlugins(dependsOn: ['buildPlugins', 'deployConfig']) << {
+    copy {
+        from 'src/main/plugins'
+        into 'src/main/webapp/WEB-INF/classes'
+        include 'plugins.xml'
+    }
+
+    //<target name="deploy-plugin"/>
+    new File("src/main/plugins").eachDir() {
+        def pluginPath = it
+        copy {
+            from pluginPath.getPath() + '/build/jar'
+            into 'src/main/webapp/WEB-INF/lib'
+            include '*.jar'
+        }
+    }
+
+    ant.taskdef(
+        name: 'pluginDeployTask', 
+        classname: 'com.dotmarketing.plugin.ant.DeployTask', 
+        classpath: configurations.compile.asPath)
+    ant.pluginDeployTask(
+        distributionPath: '../', 
+        dotcmsHome: 'src/main/webapp',
+        plugins: 'src/main/webapp/WEB-INF/lib')    
+}
+
+// This task will:
+// 1. Call the and task def com.dotmarketing.plugin.ant.UndeployTask to remove
+//    all the properties/files from the static plugins.
+// 2. Delete plugin.xml from classes and the html of the static plugins.
+task undeployPlugins << {
+    ant.taskdef(
+        name: 'pluginUndeployTask', 
+        classname: 'com.dotmarketing.plugin.ant.UndeployTask', 
+        classpath: configurations.compile.asPath)
+    ant.pluginUndeployTask(
+        distributionPath: '../', 
+        dotcmsHome: 'src/main/webapp',
+        plugins: 'src/main/webapp/WEB-INF/lib')
+
+    delete fileTree('src/main/webapp/WEB-INF/lib') {
+        include '**/plugin-*.jar'
+        include '**/pluginlib-*.jar'
+    }
+    delete 'src/main/webapp/WEB-INF/classes/plugins.xml'
+    delete 'src/main/webapp/html/plugins'
+}
+
+// Util methods.
+def getDate() {
+    def fmt = new java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.US)
+    def formattedDate = fmt.format(new Date())
+    return formattedDate
+}
