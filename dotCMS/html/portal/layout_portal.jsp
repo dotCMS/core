@@ -28,14 +28,20 @@
                         background: white;
                 }
         </style>
-       
         <%@ include file="/html/common/messages_inc.jsp" %>
         <%if(isAjaxIframe){ %>
             <script>
 				var portletTabMap = {}; 
+				portletTabMap['<%=ParamUtil.getString(request, "p_p_id")%>'] = '0';
 			</script>
-            <div id="hd">
-                        <%@ include file="/html/common/nav_main_inc_js.jsp" %>
+			<%@ include file="/html/common/nav_main_inc_js.jsp" %>
+            <div id="hd" style="display:none;">
+            	<div id="menu" class="navbar">
+        			<ul class="level1 horizontal" id="root">
+        				<li class="dotAjaxNav0 level1 active">
+        				</li>
+        			</ul>
+        		</div>         
             </div>
 	        <div id="bd">
 	        	<div id="dotAjaxMainHangerDiv">
@@ -43,9 +49,9 @@
 	            	</div>
 	            </div>
 	        </div>
-		    
+		    <%@ include file="/html/common/nav_main_inc_js.jsp" %>
 		    <script type="text/javascript">
-		    	dotAjaxNav.show("/api/portlet/<%=ParamUtil.getString(request, "p_p_id")%>",undefined);
+		        dotAjaxNav.show("/api/portlet/<%=ParamUtil.getString(request, "p_p_id")%>","0");
 		    </script>
         <%} else { %>
         	<jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>

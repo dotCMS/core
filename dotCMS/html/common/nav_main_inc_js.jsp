@@ -1,4 +1,5 @@
-<script>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<script type="text/javascript">
 
 dojo.require("dojo.hash");
         //

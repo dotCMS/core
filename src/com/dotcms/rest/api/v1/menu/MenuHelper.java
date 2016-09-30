@@ -7,7 +7,6 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.JSPPortlet;
 import com.liferay.portlet.PortletURLImpl;
@@ -16,8 +15,6 @@ import com.liferay.portlet.StrutsPortlet;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Helper for the {@link MenuResource}
