@@ -1,6 +1,6 @@
 buildscript {
     repositories { jcenter() }
-    dependencies {classpath 'org.ajoberstar:grgit:1.1.0'}
+    dependencies {classpath 'org.ajoberstar:grgit:1.7.0'}
 }
 
 configurations {
@@ -84,6 +84,7 @@ war {
 }
 war.finalizedBy 'undeployPlugins'
 
+//TODO: now that we have grgit we could use it here instead exec.
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
 // If the tomcat folder exists: git pull, if not: git clone.
 task clonePullTomcat(type: Exec) {
