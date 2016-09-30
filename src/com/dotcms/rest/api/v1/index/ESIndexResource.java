@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.index;
 
+import static com.dotcms.util.DotPreconditions.checkArgument;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -20,6 +22,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.io.ByteStreams;
 import com.dotcms.repackage.com.google.gson.Gson;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
@@ -29,10 +32,12 @@ import com.dotcms.repackage.javax.ws.rs.PUT;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
@@ -52,8 +57,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-
-import static com.dotcms.util.DotPreconditions.checkArgument;
 
 @Path("/v1/esindex")
 public class ESIndexResource {
@@ -247,8 +250,7 @@ public class ESIndexResource {
     @Path("/snapshot/{params:.*}")
     @Produces("application/zip")
     public Response snapshotIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
-    	File snapshotFile = null;
-        try {
+    	try {
         	checkArgument(params != null);
         	InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
@@ -264,12 +266,23 @@ public class ESIndexResource {
                 }
             }
 
-            snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, indexName, indexName);
-            this.indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY);
-            return Response.ok(snapshotFile)
-                    .header("Content-Disposition", "attachment; filename="+indexName+".zip")
-                    .header("Content-Type", "application/zip").build();
-
+            final File snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, indexName, indexName);
+			InputStream in = new FileInputStream(snapshotFile);
+			StreamingOutput stream = new StreamingOutput() {
+				@Override
+				public void write(OutputStream os) throws IOException, WebApplicationException {
+					try {
+						ByteStreams.copy(in, os);
+					} finally {
+						// clean up
+						indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
+						snapshotFile.delete();
+					}
+				}
+			};
+			return Response.ok(stream)
+					.header("Content-Disposition", "attachment; filename=" + indexName + ".zip")
+					.header("Content-Type", "application/zip").build();
         } catch (SecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
             return Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView("Invalid credentials")).type(MediaType.TEXT_PLAIN).build();
@@ -294,30 +307,29 @@ public class ESIndexResource {
         	checkArgument(inputFile != null);
         	webResource.init(true, request, true);
             if(inputFile!=null) {
-            	this.indexAPI.uploadSnapshot(inputFile, inputFileDetail.getFileName());
-                return Response.status(Response.Status.OK).entity(new ResponseEntityView("Snapshot uploaded")) .build();
+            	String index = indexHelper.getIndexFromFilename(inputFileDetail.getFileName());
+            	this.indexAPI.uploadSnapshot(inputFile, index);
+            	return Response.ok().build();
             }
-            return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseEntityView
-                    ("where is the zip file?")).type(MediaType.TEXT_PLAIN).build();
+            return Response.status(Response.Status.BAD_REQUEST).build();
 
         }catch (SecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
         }catch(IllegalArgumentException iar){
         	SecurityLogger.logInfo(this.getClass(), "Invalid parameter on request from "+request.getRemoteAddr());
-        	return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseEntityView
-                    ("Invalid parameter on request.")).type(MediaType.TEXT_PLAIN).build();
+        	return Response.status(Response.Status.BAD_REQUEST).build();
         }catch(IOException ex) {
             Logger.error(this, "Can't upload the file", ex);
-            return Response.serverError().build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
         catch(ExecutionException exc){
         	Logger.error(this, "Can't upload the file", exc);
-        	return Response.serverError().build();
+        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
         catch(InterruptedException exi){
         	Logger.error(this, "Did not finished uploading the file", exi);
-        	return Response.serverError().build();
+        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
     }
 
