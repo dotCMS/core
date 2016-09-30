@@ -266,20 +266,15 @@ public class IndexAjaxAction extends AjaxAction {
 			response.setContentType("application/json");
 			out.println("{\"response\":1}");
 		}catch (SnapshotRestoreException ere) {
-			response.setContentType("application/json");
-			response.sendError(400,ere.getMessage());
+			writeError(response, ere.getDetailedMessage());
 		}catch (InterruptedException iex) {
-			response.setContentType("application/json");
-			response.sendError(400,iex.getMessage());
+			writeError(response, iex.getMessage());
 		}catch (ExecutionException exx) {
-			response.setContentType("application/json");
-			response.sendError(400,exx.getMessage());
+			writeError(response, exx.getMessage());
 		}catch (ZipException zip) {
-			response.setContentType("application/json");
-			response.sendError(400,zip.getMessage());
+			writeError(response, zip.getMessage());
 		}catch (FileUploadException fue) {
-			Logger.error(this, "Error uploading file", fue);
-			throw new IOException(fue);
+			writeError(response, fue.getMessage());
 		}
 	}
 

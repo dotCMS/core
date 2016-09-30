@@ -53,6 +53,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotR
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
+import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -841,6 +842,7 @@ public class ESIndexAPI {
 			}
 		}
 		// this will be the zip file using the same name of the directory path
+
 		File toZipFile = new File(toFile.getParent() + File.separator + fileName + ".zip");
 		try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(toZipFile))) {
 			ZipUtil.zipDirectory(toFile.getAbsolutePath(), zipOut);
@@ -915,7 +917,8 @@ public class ESIndexAPI {
 		File outFile = new File(toDirectory.getParent() + File.separator + indexName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		return uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), indexName);
+		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), indexName);
+		return response;
 	}
 
 	/**
