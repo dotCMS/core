@@ -85,12 +85,13 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
-import com.dotcms.cluster.bean.Server;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+
+import static com.dotcms.util.DotPreconditions.checkArgument;
 
 public class ESIndexAPI {
 
@@ -100,6 +101,7 @@ public class ESIndexAPI {
     private  final int DEFAULT_HEARTBEAT_TIMEOUT = 1800; // 1800 seconds = 30 mins
 
     public static final String BACKUP_REPOSITORY = "backup";
+    private final String REPOSITORY_PATH = "es.path.repo";
 
 	private  ESClient esclient = new ESClient();
 	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
@@ -812,19 +814,14 @@ public class ESIndexAPI {
 	 */
 	public File createSnapshot(String repositoryName, String snapshotName, String indexName)
 			throws IOException, IllegalArgumentException, DotStateException {
+		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
+		checkArgument(indexName!=null,"There is no valid index name.");
 		Client client = esclient.getClient();
-		if (snapshotName == null) {
-			throw new IllegalArgumentException("There is no valid snapshot name.");
-		}
-		if (indexName == null) {
-			throw new IllegalArgumentException("There is no valid index name.");
-		}
-		String fileName = indexName.concat("_")
-				.concat(new java.text.SimpleDateFormat("yyyy-MM-dd_hh-mm-ss").format(new Date()));
+		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
 		File toFile = null;
 		// creates specific backup path (if it shouldn't exist)
 		toFile = new File(
-				Config.getStringProperty("es.repo.path", ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
 		if (!toFile.exists()) {
 			toFile.mkdirs();
 		}
@@ -837,8 +834,8 @@ public class ESIndexAPI {
 			CreateSnapshotResponse response = client.admin().cluster()
 					.prepareCreateSnapshot(repositoryName, snapshotName).setWaitForCompletion(true)
 					.setIndices(indexName).get();
-			if (response.status().equals(RestStatus.CREATED)) {
-				Logger.info(this.getClass(), "Snapshot was created:" + snapshotName);
+			if (response.status().equals(RestStatus.OK)) {
+				Logger.debug(this.getClass(), "Snapshot was created:" + snapshotName);
 			} else {
 				Logger.error(this.getClass(), response.status().toString());
 			}
@@ -875,7 +872,7 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(),
 						"Problems restoring snapshot " + snapshotName + " with status: " + response.status().name());
 			} else {
-				Logger.info(this.getClass(), "Snapshot was restored.");
+				Logger.debug(this.getClass(), "Snapshot was restored.");
 				return true;
 			}
 		}
@@ -910,7 +907,7 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
 		File toDirectory = new File(
-				Config.getStringProperty("es.repo.path", ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
 		if (!toDirectory.exists()) {
 			toDirectory.mkdirs();
 		}
@@ -969,8 +966,9 @@ public class ESIndexAPI {
 		if (repositories.size() > 0) {
 			for (RepositoryMetaData repo : repositories) {
 				result = repo.name().equals(repositoryName);
-				if (result)
+				if (result){
 					break;
+				}
 			}
 		}
 		return result;
@@ -1004,12 +1002,13 @@ public class ESIndexAPI {
 					.build();
 			PutRepositoryResponse response = client.admin().cluster().preparePutRepository(repositoryName).setType("fs").setSettings(settings).get();
 			if(result = response.isAcknowledged()){
-				Logger.info(this.getClass(), "Repository was created.");
+				Logger.debug(this.getClass(), "Repository was created.");
 			}else{
-				throw new DotStateException("Error creating respository on [" + path + "] named " + repositoryName);
+				//throw new DotStateException("Error creating respository on [" + path + "] named " + repositoryName);
+				throw new DotIndexRepositoryException("Error creating respository on [" + path + "] named " + repositoryName,"error.creating.index.repository",path,repositoryName);
 			}
 		} else {
-			Logger.info(this.getClass(), repositoryName + " repository already exists");
+			Logger.warn(this.getClass(), repositoryName + " repository already exists");
 		}
 		return result;
 	}
@@ -1031,8 +1030,9 @@ public class ESIndexAPI {
 		if (snapshotInfo.size() > 0) {
 			for (SnapshotInfo snapshot : snapshotInfo){
 				result = snapshot.name().equals(snapshotName);
-				if(result)
+				if(result){
 					break;
+				}
 			}
 		}
 		return result;
@@ -1076,7 +1076,7 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(), e.getMessage());
 			}
 			if (cleanUp) {
-				File toDelete = new File(Config.getStringProperty("es.repo.path",
+				File toDelete = new File(Config.getStringProperty(REPOSITORY_PATH,
 						ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
 				try {
 					FileUtil.deleteDir(toDelete.getAbsolutePath());
@@ -1084,7 +1084,7 @@ public class ESIndexAPI {
 					Logger.error(this.getClass(), "The files on " + toDelete.getAbsolutePath() + " were not deleted.");
 				}
 			} else {
-				Logger.info(this.getClass(), "No files were deleted");
+				Logger.warn(this.getClass(), "No files were deleted");
 			}
 		}
 		return result;

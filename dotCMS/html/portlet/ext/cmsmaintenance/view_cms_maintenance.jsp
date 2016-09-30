@@ -634,6 +634,7 @@ function hideRestoreIndex() {
 
 function hideRestoreSnapshotIndex() {
     dijit.byId("restoreSnapshotDialog").hide();
+    refreshIndexStats();
 }
 
 function showRestoreIndexDialog(indexName) {
@@ -655,8 +656,6 @@ function showRestoreSnapshotDialog() {
 	  dijit.byId('uploadSnapshotSubmit').set('disabled',false);
 	  dojo.query('#uploadSnapshotProgress').style({display:"none"});
 	  connectSnapshotUploadEvents();
-	  dojo.byId("uploadSnapshotWarningLive").style.display="none";
-	  dojo.byId("uploadSnapshotWarningWorking").style.display="none";
 	  dialog.show();
 	}
 
@@ -735,7 +734,7 @@ function connectSnapshotUploadEvents() {
 	  });
 	  dojo.connect(uploader, "onComplete", function(dataArray) {
 		         hideRestoreSnapshotIndex();
-	           showDotCMSSystemMessage("Upload Complete. Index Restores in background");
+	           showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "snapshot.uploading"))%>");
 	    });
 	}
 

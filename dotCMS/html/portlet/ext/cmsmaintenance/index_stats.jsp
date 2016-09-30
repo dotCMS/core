@@ -328,29 +328,18 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
            </button>
 		</div>
 
-    <div data-dojo-type="dijit.Dialog" style="width:345px;text-align: center;" id="restoreSnapshotDialog">
+    <div data-dojo-type="dijit.Dialog" style="width:345px;text-align: center;" id="restoreSnapshotDialog" title="<%= LanguageUtil.get(pageContext,"Restore-Index-Snapshot") %>">
         <img id="uploadSnapshotProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <span id="uploadSnapshotFileName"></span>
       <form method="post"
             action="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/restoreSnapshot"
             id="restoreSnapshotForm"
             enctype="multipart/form-data">
-
          <input name="uploadedSnapshotFile" multiple="false"
                 type="file" data-dojo-type="dojox.form.Uploader"
                 label="Select File" id="restoreSnapshotUploader"
                 showProgress="true"
                 onComplete="restoreSnapshotUploadCompleted()"/>
-
-         <span id="uploadSnapshotWarningWorking">
-            <span class="exclamation"></span>
-            <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Working-Index-Data") %>
-         </span>
-
-         <span id="uploadSnapshotWarningLive">
-            <span class="exclamation"></span>
-            <%= LanguageUtil.get(pageContext,"File-Doesnt-Look-As-A-Live-Index-Data") %>
-         </span>
        </form>
        <br/>
 
