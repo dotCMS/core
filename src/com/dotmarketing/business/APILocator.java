@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.company.CompanyAPI;
@@ -698,6 +699,8 @@ public class APILocator extends Locator<APIIndex>{
     public static VisitorAPI getVisitorAPI () {
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
+
+	public static TreeableAPI getTreeableAPI () {return new TreeableAPI();}
 
 	/**
 	 * Returns the System Events API that allows other pieces of the application

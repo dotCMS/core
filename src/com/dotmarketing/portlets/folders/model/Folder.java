@@ -6,8 +6,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.tree.Parentable;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.util.TreeableUtil;
+import com.dotcms.api.tree.TreeableAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -28,7 +29,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
-public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable {
+public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable, Parentable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -86,7 +87,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
 	@Override
 	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-		return TreeableUtil.getInstance().loadAssetsUnderFolder(this,user,live,working, archived, respectFrontEndPermissions);
+		return APILocator.getTreeableAPI().loadAssetsUnderFolder(this,user,live,working, archived, respectFrontEndPermissions);
 	}
 
 

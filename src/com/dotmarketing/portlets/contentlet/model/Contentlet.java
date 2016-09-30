@@ -390,16 +390,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getTitle();
     }
 
-    @Override
-    public boolean isParent() {
-        return false;
-    }
-
-    @Override
-    public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-        return null;
-    }
-
     /**
      * Returns the modUser.
      *

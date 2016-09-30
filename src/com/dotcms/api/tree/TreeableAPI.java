@@ -1,4 +1,4 @@
-package com.dotcms.util;
+package com.dotcms.api.tree;
 
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotmarketing.beans.Host;
@@ -20,26 +20,18 @@ import java.util.List;
 /**
  * Created by jasontesser on 9/28/16.
  */
-public class TreeableUtil {
+public class TreeableAPI {
 
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
     private final UserAPI userAPI;
     private final FileAssetAPI fileAPI;
 
-    private static class SingletonHolder {
-        private static final TreeableUtil INSTANCE = new TreeableUtil();
-    }
-
-    public static TreeableUtil getInstance() {
-        return TreeableUtil.SingletonHolder.INSTANCE;
-    } // getInstance.
-
     /**
      * Get the instance.
      * @return TreeableUtil
      */
-    public TreeableUtil() {
+    public TreeableAPI() {
         this.hostAPI = APILocator.getHostAPI();
         this.folderAPI = APILocator.getFolderAPI();
         this.userAPI = APILocator.getUserAPI();

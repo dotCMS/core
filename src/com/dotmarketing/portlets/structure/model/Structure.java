@@ -178,24 +178,6 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return name;
 	}
 
-	/**
-	 * NOT IMPLEMNTED IN TREE YET
-	 * @return
-	 */
-	@Override
-	public boolean isParent() {
-		return false;
-	}
-
-	/**
-	 * NOT IMPLEMNTED IN TREE YET
-	 * @return
-	 */
-	@Override
-	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-		return null;
-	}
-
 	public void setName(String name) {
 		this.name = name;
 	}

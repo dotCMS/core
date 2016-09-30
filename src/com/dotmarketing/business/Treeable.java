@@ -20,10 +20,6 @@ public interface Treeable extends Permissionable{
 
 	public String getName();
 
-	public boolean isParent();
-
-	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
-
 	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException;
 
 }
