@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by nollymar on 9/29/16.
  */
 public class IntegrationTestInitService {
-    private static IntegrationTestInitService service = null;
+    private static IntegrationTestInitService service = new IntegrationTestInitService();
 
     private static AtomicBoolean initCompleted;
 
@@ -18,10 +18,6 @@ public class IntegrationTestInitService {
     }
 
     public static IntegrationTestInitService getInstance() {
-        if (service == null) {
-            service = new IntegrationTestInitService();
-        }
-
         return service;
     }
 
