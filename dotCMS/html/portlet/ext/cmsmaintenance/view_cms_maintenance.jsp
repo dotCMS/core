@@ -729,7 +729,6 @@ function connectSnapshotUploadEvents() {
 	  dojo.connect(uploader, "onChange", function(dataArray){
 	     dojo.forEach(dataArray, function(data){
 	          dojo.byId("uploadSnapshotFileName").innerHTML=data.name;
-	          var uploadName=data.name;
 	     });
 	  });
 	  dojo.connect(uploader, "onComplete", function(dataArray) {
