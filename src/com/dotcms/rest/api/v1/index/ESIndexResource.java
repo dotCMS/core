@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.index;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -242,13 +244,14 @@ public class ESIndexResource {
      * @return
      */
     @GET
-    @Path("/snapshot")
+    @Path("/snapshot/{params:.*}")
     @Produces("application/zip")
-    public Response snapshotIndex(@Context HttpServletRequest request, @PathParam("index") String index) {
+    public Response snapshotIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    	File snapshotFile = null;
         try {
-        	checkArgument(index != null);
-        	webResource.init(true, request, true);
-            String indexName = index;
+        	checkArgument(params != null);
+        	InitDataObject init=auth(params,request);
+            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
 
             if("live".equalsIgnoreCase(indexName) || "working".equalsIgnoreCase(indexName)){
@@ -261,22 +264,23 @@ public class ESIndexResource {
                 }
             }
 
-            File f = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, indexName, indexName);
+            snapshotFile = this.indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, indexName, indexName);
             this.indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY);
-            return Response.ok(f)
+            return Response.ok(snapshotFile)
                     .header("Content-Disposition", "attachment; filename="+indexName+".zip")
                     .header("Content-Type", "application/zip").build();
 
         } catch (SecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView("Invalid credentials")).type(MediaType.TEXT_PLAIN).build();
         } catch(IllegalArgumentException iar){
         	SecurityLogger.logInfo(this.getClass(), "Invalid parameter on request from "+request.getRemoteAddr());
         	return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseEntityView
                     ("Invalid parameter on request.")).type(MediaType.TEXT_PLAIN).build();
         } catch (Exception de) {
             Logger.error(this, "Error on snapshot. URI: "+request.getRequestURI(),de);
-            return Response.serverError().build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ResponseEntityView
+                    ("Invalid parameter on request.")).type(MediaType.TEXT_PLAIN).build();
         }
     }
 
