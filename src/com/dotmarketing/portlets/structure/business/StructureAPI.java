@@ -176,7 +176,7 @@ public interface StructureAPI {
 	 * @param user
 	 * @return String
 	 */
-	String getActionUrl(final HttpServletRequest request,
+	public String getActionUrl(final HttpServletRequest request,
 							   final Structure structure,
 							   final User user);
 }
