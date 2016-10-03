@@ -13,7 +13,6 @@ import {Router} from '@angular/router';
     templateUrl: ['app.html']
 })
 
-
 /**
  * Display the login component or the main component if
  * there is a navigation menu set

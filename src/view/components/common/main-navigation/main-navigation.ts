@@ -1,9 +1,7 @@
-import {Accordion, AccordionGroup} from '../accordion/accordion';
 import {Component} from '@angular/core';
 import {RoutingService, Menu} from '../../../../api/services/routing-service';
 
 @Component({
-    directives: [Accordion, AccordionGroup],
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [],
     selector: 'dot-main-nav',

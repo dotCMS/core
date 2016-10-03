@@ -26,9 +26,11 @@ import {I18nService} from '../../api/system/locale/I18n';
 import {RuleService} from '../../api/rule-engine/Rule';
 import {UserModel} from '../../api/auth/UserModel';
 
+import {RoutingAuthService} from '../../api/services/routing-auth-service';
+
 
 // CUSTOM COMPONENTS
-import {routing} from './app.routing';
+import {routing, FakeRulesEngine} from './app.routing';
 import {MainComponent} from './common/main-component/main-component';
 import {LoginPageComponent} from './common/login/login-page-component';
 import {LoginContainer} from './common/login/login-component/login-container';
@@ -47,10 +49,11 @@ import {NotificationsList, NotificationsItem} from './common/notifications/notif
 import {CustomTimeComponent} from './common/custom-time/custom-time';
 import {ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent} from './toolbar-add-contentlet/toolbar-add-contentlet';
 import {SiteSelectorComponent} from './site-selector/dot-site-selector-component';
-import {ForgotPasswordContainer} from './common/login/forgot-password-component/forgot-password-container'
-import {ForgotPasswordComponent} from './common/login/forgot-password-component/forgot-password-component'
-import {ResetPasswordContainer} from './common/login/reset-password-component/reset-password-container'
-import {ResetPasswordComponent} from './common/login/reset-password-component/reset-password-component'
+import {ForgotPasswordContainer} from './common/login/forgot-password-component/forgot-password-container';
+import {ForgotPasswordComponent} from './common/login/forgot-password-component/forgot-password-component';
+import {ResetPasswordContainer} from './common/login/reset-password-component/reset-password-container';
+import {ResetPasswordComponent} from './common/login/reset-password-component/reset-password-component';
+import {PatternLibrary} from './common/pattern-library/pattern-library';
 
 
 // CUSTOM PIPES
@@ -60,8 +63,9 @@ import {CapitalizePipe} from '../../api/pipes/capitalize-pipe';
 import {MessageKeyDirective} from '../directives/message-keys';
 
 
-
 const COMPONENTS = [
+    FakeRulesEngine,
+
     Accordion,
     AccordionGroup,
     AppComponent,
@@ -82,6 +86,7 @@ const COMPONENTS = [
     MyAccountComponent,
     NotificationsItem,
     NotificationsList,
+    PatternLibrary,
     ResetPasswordComponent,
     ResetPasswordContainer,
     SiteSelectorComponent,
@@ -126,6 +131,7 @@ const DIRECTIVES = [
         RoutingService,
         SiteService,
         UserModel,
+        RoutingAuthService
     ]
 })
 export class AppModule {
