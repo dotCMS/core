@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -26,12 +27,14 @@ import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -430,11 +433,16 @@ public class CMSConfigResource {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
+        IntegrityUtil integrityUtil = new IntegrityUtil();
+        
         try {
             PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 
             PublishingEndPoint pep = pepAPI.findEndPointById(endPoint);
             String environmentId = pep.getGroupId();
+            
+            //Delete Existing conflicts reported for this endpoint
+            integrityUtil.completeDiscardConflicts(endPoint);
 
             //Delete the end point
             pepAPI.deleteEndPointById( endPoint );
