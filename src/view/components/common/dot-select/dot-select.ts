@@ -2,7 +2,6 @@ import {Component, Input, Output, EventEmitter, ElementRef, ViewChild, forwardRe
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from '@angular/forms';
 
 @Component({
-    directives: [],
     host: {
         '(document:click)': 'handleClick($event)',
     },

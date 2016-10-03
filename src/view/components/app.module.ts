@@ -54,6 +54,8 @@ import {ForgotPasswordComponent} from './common/login/forgot-password-component/
 import {ResetPasswordContainer} from './common/login/reset-password-component/reset-password-container';
 import {ResetPasswordComponent} from './common/login/reset-password-component/reset-password-component';
 import {PatternLibrary} from './common/pattern-library/pattern-library';
+import {DotSelect, DotOption} from './common/dot-select/dot-select';
+import {DropdownComponent} from "./common/dropdown-component/dropdown-component";
 
 
 // CUSTOM PIPES
@@ -71,7 +73,10 @@ const COMPONENTS = [
     AppComponent,
     CustomTimeComponent,
     DotOption,
+    DotOption,
     DotSelect,
+    DotSelect,
+    DropdownComponent,
     DropdownComponent,
     ForgotPasswordComponent,
     ForgotPasswordContainer,

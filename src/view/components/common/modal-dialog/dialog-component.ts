@@ -1,5 +1,6 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
+
+
 @Component({
   selector: 'cw-modal-dialog',
   directives: [CORE_DIRECTIVES],

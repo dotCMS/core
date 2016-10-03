@@ -2,10 +2,8 @@ import {Component, ViewChild} from '@angular/core';
 import {Router} from '@angular/router';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
-import {MyAccountComponent} from '../../my-account-component/dot-my-account-component';
 
 @Component({
-    directives: [],
     moduleId: __moduleName,
     selector: 'toolbar-user',
     styleUrls: ['toolbar-user.css'],

@@ -44,10 +44,9 @@ export class ResetPasswordComponent {
 
     constructor(private loginService: LoginService) {}
 
-    ngOnInit(){
+    ngOnInit() {
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
-            let entity = data.entity;
 
             this.resetPasswordLabel = dataI18n['reset-password'];
             this.enterPasswordLabel = dataI18n['enter-password'];
@@ -63,7 +62,7 @@ export class ResetPasswordComponent {
         });
     }
 
-    public ok():void{
+    public ok(): void {
         if (this.password == this.confirmPassword) {
             this.changePassword.emit({
                 password: this.password,
@@ -74,11 +73,11 @@ export class ResetPasswordComponent {
         }
     }
 
-    private cleanConfirmPassword(){
+    private cleanConfirmPassword() {
         this.clean();
         this.confirmPassword = '';
     }
-    private clean(){
+    private clean() {
         this.message = '';
     }
 }

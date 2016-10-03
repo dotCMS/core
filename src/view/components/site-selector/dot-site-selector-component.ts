@@ -1,14 +1,10 @@
 import {Component, ViewEncapsulation} from '@angular/core';
-import {DropdownComponent} from '../common/dropdown-component/dropdown-component';
 import {Site} from '../../../api/services/site-service';
-import {DotSelect} from '../common/dot-select/dot-select';
-import {DotOption} from '../common/dot-select/dot-select';
 import {SiteService} from '../../../api/services/site-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {BaseComponent} from '../common/_base/base-component';
 
 @Component({
-    directives: [DropdownComponent, DotSelect, DotOption],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],

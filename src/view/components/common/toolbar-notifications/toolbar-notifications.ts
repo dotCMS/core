@@ -5,10 +5,8 @@ import {INotification, NotificationsService} from '../../../../api/services/noti
 import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    providers: [],
     selector: 'dot-toolbar-notifications',
     styleUrls: ['toolbar-notifications.css'],
     templateUrl: ['toolbar-notifications.html']

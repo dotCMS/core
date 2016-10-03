@@ -2,13 +2,9 @@ import {Component, EventEmitter , Input, Output, ViewEncapsulation} from '@angul
 import {LoginService} from '../../../../../api/services/login-service';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
-    providers: [],
     selector: 'dot-forgot-password-component',
-    styleUrls: [],
     templateUrl: ['forgot-password-component.html'],
 })
 
@@ -26,7 +22,7 @@ export class ForgotPasswordComponent {
     forgotPasswordLabel: string = '';
     forgotPasswordButton: string = '';
     cancelButton: string = '';
-    userIdOrEmailLabel:string = ''
+    userIdOrEmailLabel:string = '';
 
     //Messages
     emailMandatoryFieldError:string = '';
@@ -39,7 +35,7 @@ export class ForgotPasswordComponent {
 
     }
 
-    ngOnInit(){
+    ngOnInit() {
         this.loadLabels();
     }
 
@@ -62,7 +58,6 @@ export class ForgotPasswordComponent {
             // Translate labels and messages
             let dataI18n = data.i18nMessagesMap;
             let entity = data.entity;
-
 
             if ('emailAddress' === entity.authorizationType) {
                 this.userIdOrEmailLabel = dataI18n['email-address'];

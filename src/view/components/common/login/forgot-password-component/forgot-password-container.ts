@@ -8,10 +8,7 @@ import {Router} from '@angular/router';
     directives: [ForgotPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
-    providers: [],
     selector: 'dot-forgot-password-container',
-    styleUrls: [],
     template: `
         <dot-forgot-password-component
             [message]="message"
@@ -38,7 +35,7 @@ export class ForgotPasswordContainer {
         }, (resp:ResponseView) => {
             if (!resp.existError('a-new-password-has-been-sent-to-x')){
                 this.message = resp.errorsMessages;
-            }else{
+            } else {
                 this.goToLogin();
             }
         });

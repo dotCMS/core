@@ -6,7 +6,6 @@ import {RoutingService} from '../../../api/services/routing-service';
 @Component({
     directives: [],
     moduleId: __moduleName,
-    providers: [ContentletService],
     selector: 'toolbar-add-contentlet-body',
     styleUrls: ['toolbar-add-contentlet-body.css'],
     templateUrl: ['toolbar-add-contentlet-body.html'],
@@ -34,7 +33,6 @@ export class ToolbarAddContenletBodyComponent {
 }
 
 @Component({
-    directives: [DropdownComponent, ToolbarAddContenletBodyComponent],
     moduleId: __moduleName,
     providers: [ContentletService],
     selector: 'toolbar-add-contentlet',

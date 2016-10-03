@@ -1,14 +1,11 @@
 import {Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef} from '@angular/core';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
     host: {
         '(document:click)': 'handleClick($event)',
     },
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
-    providers: [],
     selector: 'dot-dropdown-component',
     styleUrls: ['dropdown-component.css'],
     templateUrl: ['dropdown-component.html']
