@@ -20,24 +20,21 @@ export class ContentletService extends CoreWebService {
         loginService.watchUser(this.loadContentTypes.bind(this));
 
         dotcmsEventsService.subscribeTo('SAVE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeView => {
-            console.log('SAVE_BASE_CONTENT_TYPE', contentTypeView);
             let structureTypeView: StructureTypeView = this.getStructureTypeView(contentTypeView.type);
             structureTypeView.types.push(contentTypeView);
             this._structureTypeView$.next(this.structureTypeView);
         });
 
         dotcmsEventsService.subscribeTo('UPDATE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeViewUpdated => {
-            console.log('UPDATE_BASE_CONTENT_TYPE', contentTypeViewUpdated);
             let structureTypeView: StructureTypeView = this.getStructureTypeView(contentTypeViewUpdated.type);
-            console.log('structureTypeView.types_1', structureTypeView.types);
+
             structureTypeView.types = structureTypeView.types.map(
                 contentTypeView => contentTypeView.inode === contentTypeViewUpdated.inode ? contentTypeViewUpdated : contentTypeView);
-            console.log('structureTypeView.types_2', structureTypeView.types);
+
             this._structureTypeView$.next(this.structureTypeView);
         });
 
         dotcmsEventsService.subscribeTo('DELETE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeViewRemoved => {
-            console.log('DELETE_BASE_CONTENT_TYPE', contentTypeViewRemoved);
             let structureTypeView: StructureTypeView = this.getStructureTypeView(contentTypeViewRemoved.type);
             structureTypeView.types = structureTypeView.types.filter(
                 contentTypeView => contentTypeView.inode !== contentTypeViewRemoved.inode);
@@ -55,7 +52,6 @@ export class ContentletService extends CoreWebService {
             url: 'v1/content/types'
         }).pluck('entity').subscribe(
             structureTypeView => {
-                console.log('structureTypeView', structureTypeView);
                 this.structureTypeView = structureTypeView;
                 this._structureTypeView$.next(structureTypeView);
             }
