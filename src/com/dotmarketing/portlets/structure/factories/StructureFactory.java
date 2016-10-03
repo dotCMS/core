@@ -10,15 +10,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.repackage.org.apache.bsf.util.MethodUtils;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
+import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.*;
@@ -68,9 +67,9 @@ public class StructureFactory {
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 	private static HostAPI hostAPI = APILocator.getHostAPI();
-	private static StructureAPI structureAPI = APILocator.getStructureAPI();
 	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
-	private static final UserAPI userAPI = APILocator.getUserAPI();
+	private static final HttpServletRequestThreadLocal httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
+	private static final ContentTypeUtil contentTypeUtil = ContentTypeUtil.getInstance();
 
 	/**
 	 * @param permissionAPI the permissionAPI to set
@@ -570,7 +569,9 @@ public class StructureFactory {
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
 
 		try {
-			systemEventsAPI.push(systemEventType, new Payload(structure,  Visibility.PERMISSION,
+	 		String actionUrl = contentTypeUtil.getActionUrl(structure);
+			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
                             String.valueOf(PermissionAPI.PERMISSION_READ)));
 		} catch (DotDataException e) {
 			throw new RuntimeException( e );
@@ -602,7 +603,9 @@ public class StructureFactory {
 		InodeFactory.deleteInode(structure);
 
 		try {
-			systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(structure,  Visibility.PERMISSION,
+			String actionUrl = contentTypeUtil.getActionUrl(structure);
+			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+			systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
 					String.valueOf(PermissionAPI.PERMISSION_READ)));
 		} catch (DotDataException e) {
 			throw new RuntimeException( e );

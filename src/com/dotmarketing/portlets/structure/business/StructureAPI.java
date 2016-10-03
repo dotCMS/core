@@ -168,15 +168,4 @@ public interface StructureAPI {
      * @return Amount of structures found
      */
     int countStructures(String condition);
-
-	/**
-	 * Get the action url for the structure
-	 * @param request
-	 * @param structure
-	 * @param user
-	 * @return String
-	 */
-	public String getActionUrl(final HttpServletRequest request,
-							   final Structure structure,
-							   final User user);
 }

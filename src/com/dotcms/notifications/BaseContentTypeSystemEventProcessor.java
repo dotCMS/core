@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -22,28 +23,12 @@ import javax.websocket.Session;
  */
 public class BaseContentTypeSystemEventProcessor  implements SystemEventProcessor {
 
-    private final StructureAPI structureAPI;
-    private final HttpServletRequestThreadLocal httpServletRequestThreadLocal;
-
-    public BaseContentTypeSystemEventProcessor(){
-        structureAPI = APILocator.getStructureAPI();
-        httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
-    }
-
-    @VisibleForTesting
-    BaseContentTypeSystemEventProcessor(StructureAPI structureAPI, HttpServletRequestThreadLocal httpServletRequestThreadLocal){
-        this.structureAPI = structureAPI;
-        this.httpServletRequestThreadLocal = httpServletRequestThreadLocal;
-    }
-
-    @Override
+  @Override
     public SystemEvent process(SystemEvent event, Session session) {
-        HttpServletRequest req = httpServletRequestThreadLocal.getRequest();
-
         Payload payload = event.getPayload();
-        Structure structure = (Structure) payload.getData();
-        final User user = (session instanceof SessionWrapper) ? SessionWrapper.class.cast(session).getUser() : null;
-        ContentTypeView contentTypeView = ContentTypeView.getInstance(structure, structureAPI.getActionUrl(req, structure, user));
+        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = (ContentTypePayloadDataWrapper) payload.getRawData();
+        Structure structure = contentTypePayloadDataWrapper.getStructure();
+        ContentTypeView contentTypeView = ContentTypeView.getInstance(structure, contentTypePayloadDataWrapper.getActionUrl());
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityId()),

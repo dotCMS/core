@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -42,6 +43,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
+        final ContentTypeUtil contentTypeUtil  = mock(ContentTypeUtil.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
 
         final WebResource webResource = mock(WebResource.class);
@@ -58,11 +60,10 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
-        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI, contentTypeUtil);
         ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
         final Response response1 = contentTypeResource.getTypes(request);
-        System.out.println(response1);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 200);
@@ -82,6 +83,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
+        final ContentTypeUtil contentTypeUtil  = mock(ContentTypeUtil.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final List<Structure> structures = new ArrayList();
 
@@ -120,7 +122,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
 
         when(structureAPI.find(user, false, true)).thenReturn(structures);
 
-        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI, contentTypeUtil);
         ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
         final Response response1 = contentTypeResource.getTypes(request);

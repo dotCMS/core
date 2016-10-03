@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
@@ -46,17 +47,21 @@ public class ContentTypeHelper implements Serializable {
 
     private final WebResource webResource;
     private final StructureAPI structureAPI;
+    private final ContentTypeUtil contentTypeUtil;
 
     public ContentTypeHelper() {
         this(new WebResource(),
-                APILocator.getStructureAPI());
+                APILocator.getStructureAPI(),
+                ContentTypeUtil.getInstance());
     }
 
     @VisibleForTesting
     protected ContentTypeHelper(WebResource webResource,
-                                StructureAPI structureAPI) {
+                                StructureAPI structureAPI,
+                                ContentTypeUtil contentTypeUtil) {
         this.webResource = webResource;
         this.structureAPI = structureAPI;
+        this.contentTypeUtil = contentTypeUtil;
     }
 
     /**
@@ -84,7 +89,7 @@ public class ContentTypeHelper implements Serializable {
                         baseContentTypesViewCollection.add(structure, new ContentTypeView(
                                 Structure.Type.getType(structure.getStructureType()).name(),
                                 structure.getName(), structure.getInode(),
-                                structureAPI.getActionUrl(request, structure, user)));
+                                contentTypeUtil.getActionUrl(request, structure, user)));
                     });
 
             result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
