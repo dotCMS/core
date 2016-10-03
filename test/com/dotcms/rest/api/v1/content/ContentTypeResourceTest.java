@@ -41,21 +41,11 @@ public class ContentTypeResourceTest extends BaseMessageResources {
     public void testNoContentLetTypes() throws Exception {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session = mock(HttpSession.class);
-        final LoginService loginService = mock(LoginService.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final ContentTypeHelper contentletHelper  = mock(ContentTypeHelper.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
-        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-        final LanguageAPI languageAPI = mock(LanguageAPI.class);
-
 
         final WebResource webResource = mock(WebResource.class);
-        final String userId = "admin@dotcms.com";
-        final String pass = "pass";
+
         final ServletContext context = mock(ServletContext.class);
         final User user = new User();
 
@@ -68,7 +58,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
-        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI, layoutAPI, languageAPI);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI);
         ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
         final Response response1 = contentTypeResource.getTypes(request);
@@ -81,13 +71,8 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue( !((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).isEmpty());
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Persona").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Form").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Content").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Widget").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Page").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").size() == 0);
+        assertTrue( ((List<ContentTypeView>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).isEmpty());
+
 
     }
 
@@ -96,20 +81,13 @@ public class ContentTypeResourceTest extends BaseMessageResources {
     public void testFileContentLetTypes() throws Exception {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session = mock(HttpSession.class);
-        final LoginService loginService = mock(LoginService.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final ContentTypeHelper contentletHelper  = mock(ContentTypeHelper.class);
         final StructureAPI structureAPI  = mock(StructureAPI.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final List<Structure> structures = new ArrayList();
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-        final LanguageAPI languageAPI = mock(LanguageAPI.class);
+
 
         final WebResource webResource = mock(WebResource.class);
-        final String userId = "admin@dotcms.com";
-        final String pass = "pass";
+
         final ServletContext context = mock(ServletContext.class);
         final User user = new User();
 
@@ -142,7 +120,7 @@ public class ContentTypeResourceTest extends BaseMessageResources {
 
         when(structureAPI.find(user, false, true)).thenReturn(structures);
 
-        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI, layoutAPI, languageAPI);
+        ContentTypeHelper contentTypeHelper = new ContentTypeHelper(webResource, structureAPI);
         ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
         final Response response1 = contentTypeResource.getTypes(request);
@@ -155,19 +133,18 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue( !((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).isEmpty());
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Persona").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Form").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Content").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Widget").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("Page").size() == 0);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").size() == 3);
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").get(0).getType().equals("File"));
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").get(0).getName().equals("Document"));
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").get(1).getType().equals("File"));
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").get(1).getName().equals("File Asset"));
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").get(2).getType().equals("File"));
-        assertTrue(((Map<String, List<ContentTypeView>>)ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("File").get(2).getName().equals("Video"));
+
+        List<BaseContentTypesView> entity = (List<BaseContentTypesView>) ResponseEntityView.class.cast(response1.getEntity()).getEntity();
+        assertTrue(!entity.isEmpty());
+        assertEquals(1, entity.size());
+        assertEquals(Structure.Type.FILEASSET.name(), entity.get(0).getName());
+        assertEquals(3, entity.get(0).getTypes().size());
+        assertTrue(entity.get(0).getTypes().get(0).getType().equals("FILEASSET"));
+        assertTrue(entity.get(0).getTypes().get(0).getName().equals("Document"));
+        assertTrue(entity.get(0).getTypes().get(1).getType().equals("FILEASSET"));
+        assertTrue(entity.get(0).getTypes().get(1).getName().equals("File Asset"));
+        assertTrue(entity.get(0).getTypes().get(2).getType().equals("FILEASSET"));
+        assertTrue(entity.get(0).getTypes().get(2).getName().equals("Video"));
 
     }
 }

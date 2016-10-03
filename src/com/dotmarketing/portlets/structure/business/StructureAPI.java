@@ -8,6 +8,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * This class provides the dotCMS developer with access to the information related 
  * to Content Type objects (previously known as "Structures").
@@ -167,4 +169,14 @@ public interface StructureAPI {
      */
     int countStructures(String condition);
 
+	/**
+	 * Get the action url for the structure
+	 * @param request
+	 * @param structure
+	 * @param user
+	 * @return String
+	 */
+	String getActionUrl(final HttpServletRequest request,
+							   final Structure structure,
+							   final User user);
 }

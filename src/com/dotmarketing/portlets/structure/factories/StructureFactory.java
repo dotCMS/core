@@ -10,16 +10,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.repackage.org.apache.bsf.util.MethodUtils;
+import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.PermissionedWebAssetUtil;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -37,6 +39,7 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -47,6 +50,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Provides access to information related to Content Types and the different
@@ -63,7 +68,9 @@ public class StructureFactory {
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 	private static HostAPI hostAPI = APILocator.getHostAPI();
-
+	private static StructureAPI structureAPI = APILocator.getStructureAPI();
+	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private static final UserAPI userAPI = APILocator.getUserAPI();
 
 	/**
 	 * @param permissionAPI the permissionAPI to set
@@ -543,6 +550,7 @@ public class StructureFactory {
 	//### CREATE AND UPDATE
 	public static void saveStructure(Structure structure) throws DotHibernateException
 	{
+		boolean isNew = !UtilMethods.isSet(structure.getInode());
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
 		Date now = new Date();
 		structure.setiDate(now);
@@ -552,6 +560,20 @@ public class StructureFactory {
 
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
 		    CacheLocator.getContentTypeCache().clearURLMasterPattern();
+		}
+
+		pushSaveUpdateEvent(structure, isNew);
+	}
+
+	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
+
+		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
+
+		try {
+			systemEventsAPI.push(systemEventType, new Payload(structure,  Visibility.PERMISSION,
+                            String.valueOf(PermissionAPI.PERMISSION_READ)));
+		} catch (DotDataException e) {
+			throw new RuntimeException( e );
 		}
 	}
 
@@ -578,6 +600,13 @@ public class StructureFactory {
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
 		InodeFactory.deleteInode(structure);
+
+		try {
+			systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(structure,  Visibility.PERMISSION,
+					String.valueOf(PermissionAPI.PERMISSION_READ)));
+		} catch (DotDataException e) {
+			throw new RuntimeException( e );
+		}
 	}
 
 	public static void disableDefault() throws DotHibernateException
