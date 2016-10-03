@@ -28,32 +28,38 @@
                         background: white;
                 }
         </style>
-        <%@ include file="/html/common/messages_inc.jsp" %>
+        
         <%if(isAjaxIframe){ %>
             <script>
 				var portletTabMap = {}; 
-				portletTabMap['<%=ParamUtil.getString(request, "p_p_id")%>'] = '0';
 			</script>
-			<%@ include file="/html/common/nav_main_inc_js.jsp" %>
-            <div id="hd" style="display:none;">
-            	<div id="menu" class="navbar">
-        			<ul class="level1 horizontal" id="root">
-        				<li class="dotAjaxNav0 level1 active">
-        				</li>
-        			</ul>
-        		</div>         
+			
+	        <div id="menu" class="navbar" style="display:none;">
+				<ul class="level1 horizontal" id="root">
+					<script>portletTabMap['<%=ParamUtil.getString(request, "p_p_id")%>'] = '0';</script>
+				    <li class="dotAjaxNav0 level1 active">
+				    	<a href="javascript:dotAjaxNav.show("/api/portlet/<%=ParamUtil.getString(request, "p_p_id")%>/","0")">
+					        <div class="tabLeft">
+								<div class="navMenu-title"></div>
+								<div class="navMenu-subtitle"></div>
+							</div>
+						</a>                               
+					</li>            
+				</ul>
+			</div>
+            <%@ include file="/html/common/nav_main_inc_js.jsp" %>
+            <%@ include file="/html/common/messages_inc.jsp" %>
+                
+            <div id="dotAjaxMainHangerDiv">
+            	<div id="dotAjaxMainDiv" dojoType="dojox.layout.ContentPane" style="overflow: visible;">
+                </div>
             </div>
-	        <div id="bd">
-	        	<div id="dotAjaxMainHangerDiv">
-	            	<div id="dotAjaxMainDiv" dojoType="dojox.layout.ContentPane" style="overflow: visible;">
-	            	</div>
-	            </div>
-	        </div>
-		    <%@ include file="/html/common/nav_main_inc_js.jsp" %>
+            
 		    <script type="text/javascript">
-		        dotAjaxNav.show("/api/portlet/<%=ParamUtil.getString(request, "p_p_id")%>","0");
+		        dotAjaxNav.show("/api/portlet/<%=ParamUtil.getString(request, "p_p_id")%>/","0");
 		    </script>
         <%} else { %>
+        	<%@ include file="/html/common/messages_inc.jsp" %>
         	<jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
         <%} %>
         <%@ include file="/html/common/bottom_inc.jsp" %>
