@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
+import org.elasticsearch.snapshots.SnapshotRestoreException;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -41,6 +43,7 @@ import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -285,21 +288,23 @@ public class ESIndexResource {
 					.header("Content-Type", "application/zip").build();
         } catch (SecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
-            return Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView("Invalid credentials")).type(MediaType.TEXT_PLAIN).build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
+                    (new ErrorEntity("invalid-credentials","Invalid credentials"))).build();
         } catch(IllegalArgumentException iar){
         	SecurityLogger.logInfo(this.getClass(), "Invalid parameter on request from "+request.getRemoteAddr());
         	return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseEntityView
-                    ("Invalid parameter on request.")).type(MediaType.TEXT_PLAIN).build();
+                    (new ErrorEntity("illegal-argument","Illegal arguments"))).build();
         } catch (Exception de) {
             Logger.error(this, "Error on snapshot. URI: "+request.getRequestURI(),de);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ResponseEntityView
-                    ("Invalid parameter on request.")).type(MediaType.TEXT_PLAIN).build();
+                    (Arrays.asList(new ErrorEntity("temporary-unavilable-service",de.getMessage())))).build();
         }
     }
 
     @POST
     @Path("/restoresnapshot")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response snapshotIndex(@Context HttpServletRequest request,
             @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
 
@@ -309,27 +314,37 @@ public class ESIndexResource {
             if(inputFile!=null) {
             	String index = indexHelper.getIndexFromFilename(inputFileDetail.getFileName());
             	this.indexAPI.uploadSnapshot(inputFile, index);
-            	return Response.ok().build();
+            	return Response.status(Response.Status.OK).entity(new ResponseEntityView
+                        (new ErrorEntity("success","Success"))).build();
             }
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            return Response.status(Response.Status.CONFLICT).entity(new ResponseEntityView
+                    (new ErrorEntity("failed","Failed to upload."))).build();
 
         }catch (SecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
+                    (new ErrorEntity("invalid-credentials","Invalid credentials"))).build();
         }catch(IllegalArgumentException iar){
-        	SecurityLogger.logInfo(this.getClass(), "Invalid parameter on request from "+request.getRemoteAddr());
-        	return Response.status(Response.Status.BAD_REQUEST).build();
+        	return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseEntityView
+                    (new ErrorEntity("illegal-argument","Illegal arguments"))).build();
         }catch(IOException ex) {
-            Logger.error(this, "Can't upload the file", ex);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        	return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ResponseEntityView
+                    (new ErrorEntity("temporary-unavilable-service","Temporary unavilable service"))).build();
         }
         catch(ExecutionException exc){
-        	Logger.error(this, "Can't upload the file", exc);
-        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        	return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ResponseEntityView
+                    (new ErrorEntity("temporary-unavilable-service","Temporary unavilable service"))).build();
+        }
+        catch(SnapshotRestoreException exc){
+        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ResponseEntityView
+                    (new ErrorEntity("error-processing-snapshot","Error processing snapshot"))).build();
         }
         catch(InterruptedException exi){
-        	Logger.error(this, "Did not finished uploading the file", exi);
-        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        	return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ResponseEntityView
+                    (new ErrorEntity("temporary-unavilable-service","Temporary unavilable service"))).build();
+        }
+        catch(Exception ex){
+        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ResponseEntityView
+                    (Arrays.asList(new ErrorEntity("temporary-unavilable-service",ex.getMessage())))).build();
         }
     }
 

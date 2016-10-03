@@ -868,9 +868,9 @@ public class ESIndexAPI {
 			throws InterruptedException, ExecutionException {
 		Client client = esclient.getClient();
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
-			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName);
+			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
 			RestoreSnapshotResponse response = client.admin().cluster().restoreSnapshot(restoreSnapshotRequest).get();
-			if (response.status() != RestStatus.ACCEPTED) {
+			if (response.status() != RestStatus.OK) {
 				Logger.error(this.getClass(),
 						"Problems restoring snapshot " + snapshotName + " with status: " + response.status().name());
 			} else {
@@ -879,6 +879,36 @@ public class ESIndexAPI {
 			}
 		}
 		return false;
+	}
+
+
+	/**
+	 * Uploads and restore a snapshot by using a zipped repository from a input
+	 * stream as source. The file name most comply to the format
+	 * <index_name>.zip as the <index_name> will be used to identify the index
+	 * name to be restored. The zip file contains the repository information,
+	 * this includes the snapshot name. The index name is used to restore the
+	 * snapshot, a repository might contain several snapshot thus the need to
+	 * identify a snapshot by index name.  The repository is deleted after the
+	 * restore is done.
+	 *
+	 * @param inputFile
+	 *            stream with the zipped repository file
+	 * @param indexName
+	 *            index to be restore
+	 * @return true if the snapshot was restored
+	 * @throws InterruptedException
+	 *             if the current thread was interrupted while waiting
+	 * @throws ExecutionException
+	 *             if the computation threw an exception
+	 * @throws ZipException
+	 * 			   for problems during the zip extraction process
+	 * @throws IOException
+	 *             for problems writing the temporal zip file or the temporal zip contents
+	 */
+	public boolean uploadSnapshot(InputStream inputFile, String indexName)
+			throws InterruptedException, ExecutionException, ZipException, IOException {
+		return uploadSnapshot(inputFile, indexName, true);
 	}
 
 	/**
@@ -894,6 +924,9 @@ public class ESIndexAPI {
 	 *            stream with the zipped repository file
 	 * @param indexName
 	 *            index to be restored
+	 * @param deleteRepository
+	 * 	          defines if the respository should be deleted after the restore.
+	 *
 	 * @return true if the snapshot was restored
 	 * @throws InterruptedException
 	 *             if the current thread was interrupted while waiting
@@ -904,7 +937,7 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
 	 */
-	public boolean uploadSnapshot(InputStream inputFile, String indexName)
+	public boolean uploadSnapshot(InputStream inputFile, String indexName, boolean deleteRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
@@ -918,6 +951,10 @@ public class ESIndexAPI {
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
 		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), indexName);
+		if(deleteRepository){
+			deleteRepository(BACKUP_REPOSITORY);
+			outFile.delete();
+		}
 		return response;
 	}
 
