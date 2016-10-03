@@ -347,4 +347,5 @@ public class WebKeys {
 	public static final String IN_FRAME = "in_frame";
 	public static final String FRAME = "frame";
 	public static final String POPUP = "popup";
+	public static final String AJAX_PORTLET = "ajax_portlet";
 }
