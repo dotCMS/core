@@ -218,6 +218,10 @@
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
+	<servlet>
+		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet2</servlet-class>
+	</servlet>
 	
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
@@ -497,7 +501,10 @@
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
-	
+	<servlet-mapping>
+		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<url-pattern>/dA/*</url-pattern>
+	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotCMS/*</url-pattern>

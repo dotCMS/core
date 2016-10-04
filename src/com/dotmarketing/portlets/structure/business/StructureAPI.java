@@ -166,5 +166,4 @@ public interface StructureAPI {
      * @return Amount of structures found
      */
     int countStructures(String condition);
-
 }
