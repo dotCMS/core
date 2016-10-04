@@ -14,6 +14,7 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.org.apache.bsf.util.MethodUtils;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
@@ -608,7 +609,7 @@ public class StructureFactory {
 			systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
 					String.valueOf(PermissionAPI.PERMISSION_READ)));
 		} catch (DotDataException e) {
-			throw new RuntimeException( e );
+			throw new BaseRuntimeInternationalizationException( e );
 		}
 	}
 

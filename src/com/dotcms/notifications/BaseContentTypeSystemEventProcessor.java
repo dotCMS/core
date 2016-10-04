@@ -28,7 +28,7 @@ public class BaseContentTypeSystemEventProcessor  implements SystemEventProcesso
         Payload payload = event.getPayload();
         ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = (ContentTypePayloadDataWrapper) payload.getRawData();
         Structure structure = contentTypePayloadDataWrapper.getStructure();
-        ContentTypeView contentTypeView = ContentTypeView.getInstance(structure, contentTypePayloadDataWrapper.getActionUrl());
+        ContentTypeView contentTypeView = new ContentTypeView(structure, contentTypePayloadDataWrapper.getActionUrl());
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityId()),

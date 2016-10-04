@@ -22,8 +22,8 @@ public class ContentTypeView implements Serializable {
         this.action = action;
     }
 
-    public static ContentTypeView getInstance(Structure structure, String actionUrl){
-        return new ContentTypeView(Structure.Type.getType(structure.getStructureType()).name(),
+    public ContentTypeView (Structure structure, String actionUrl){
+        this(Structure.Type.getType(structure.getStructureType()).name(),
                 structure.getName(), structure.getInode(), actionUrl);
     }
 
