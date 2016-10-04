@@ -32,8 +32,8 @@ import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
-import com.dotcms.uuid.shorty.ShortyIdApi;
-import com.dotcms.uuid.shorty.ShortyIdApiImpl;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
@@ -333,14 +333,14 @@ public class APILocator extends Locator<APIIndex>{
 		return (PushedAssetsAPI)getInstance(APIIndex.PUSHED_ASSETS_API);
 	}
 
-	/**
-	 *
-	 * gets an instance of ShortyApi
-	 *
-	 * @return The {@link ShortyApi} class.
-	 */
-    public static ShortyIdApi getShortyAPI() {
-        return new ShortyIdApiImpl();
+    /**
+     *
+     * gets an instance of ShortyAPI
+     *
+     * @return The {@link ShortyIdAPI} class.
+     */
+    public static ShortyIdAPI getShortyAPI() {
+        return (ShortyIdAPI) getInstance(APIIndex.SHORTY_ID_API);
     }
 
 	public static ServerAPI getServerAPI() {
@@ -470,7 +470,8 @@ enum APIIndex
 	SERVER_ACTION_API,
 	ES_SEARCH_API,
     RULES_API,
-    VISITOR_API;
+    VISITOR_API,
+    SHORTY_ID_API;
 
 
 	Object create() {
@@ -535,6 +536,7 @@ enum APIIndex
 		case ES_SEARCH_API: return new ESSearchProxy();
 		case RULES_API: return new RulesAPIProxy();
 		case VISITOR_API: return new VisitorAPIImpl();
+		case SHORTY_ID_API: return new ShortyIdAPIImpl();
 
 		
 		}

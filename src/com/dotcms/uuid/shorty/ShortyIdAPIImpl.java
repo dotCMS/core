@@ -10,14 +10,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-public class ShortyIdApiImpl implements ShortyIdApi {
+public class ShortyIdAPIImpl implements ShortyIdAPI {
 
-    long getDbHits() {
+    public long getDbHits() {
         return dbHits;
     }
 
     long dbHits = 0;
-    int minLength=Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
+    public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
     
     
     @Override
@@ -30,7 +30,7 @@ public class ShortyIdApiImpl implements ShortyIdApi {
     public String shortify(final String shortStr) {
         try{
             validShorty(shortStr);
-            return shortStr.replaceAll("-", "").substring(0, minLength);
+            return shortStr.replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
         } catch (ShortyException se) {
             return null;
         }
@@ -91,9 +91,9 @@ public class ShortyIdApiImpl implements ShortyIdApi {
         }
         return shorty;
     }
-    
-    
-    String uuidIfy(String shorty){
+
+
+    public String uuidIfy(String shorty) {
         StringBuilder newShorty = new StringBuilder();
         shorty = unUidIfy(shorty);
         char[] chars =shorty.toCharArray();
@@ -155,17 +155,17 @@ public class ShortyIdApiImpl implements ShortyIdApi {
         
         return null;
     }
-    
-    void validShorty(final String test) {
+
+    public void validShorty(final String test) {
         if (test == null || test.length() < 8 || test.length()>36) {
             throw new ShortyException(
-                    "shorty " + test+" is not a short id.  Short Ids should be " +minLength + " chars in length");
+                    "shorty " + test + " is not a short id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
         }
         
         for (char c : test.toCharArray()) {
             if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='-')) {
                 throw new ShortyException(
-                        "shorty " + test+" is not an alpha numeric id.  Short Ids should be " + minLength+ " alpha/numeric chars in length");
+                        "shorty " + test + " is not an alpha numeric id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
             }
         }
     }

@@ -65,7 +65,7 @@ public class TestShortyIdApi {
         CacheLocator.init();
 
         for (int i = 0; i < 10; i++) {
-            fourOhFours.add(RandomStringUtils.randomAlphanumeric(new ShortyIdApiImpl().minLength));
+            fourOhFours.add(RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH));
         }
     }
 
@@ -78,17 +78,17 @@ public class TestShortyIdApi {
         ShortType shortType = null;
         ShortType shortSubType = null;
         String[] val = null;
-        ShortyIdApiImpl api = new ShortyIdApiImpl();
+        ShortyIdAPI api = APILocator.getShortyAPI();
         String key = null;
         // run 10 times
         for (int i = 0; i < 10; i++) {
             try {
                 for (String[] values : expecteds) {
                     val = values;
-                    key = val[0].substring(0, api.minLength);
+                    key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
                     shortType = ShortType.fromString(val[1]);
                     shortSubType = ShortType.fromString(val[2]);
-                    Optional<ShortyId> opt = new ShortyIdApiImpl().getShorty(key);
+                    Optional<ShortyId> opt = APILocator.getShortyAPI().getShorty(key);
                     shorty = opt.get();
 
                     assert (shorty.longId.equals(val[0]));
@@ -114,24 +114,24 @@ public class TestShortyIdApi {
 
     @Test
     public void testShortyCache() {
-        ShortyIdApiImpl api = new ShortyIdApiImpl();
+        ShortyIdAPI api = APILocator.getShortyAPI();
 
         String[] val = null;
 
         // load cache
         for (String[] values : expecteds) {
             val = values;
-            String key = val[0].substring(0, api.minLength);
+            String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
-        long dbQueries = api.dbHits;
+        long dbQueries = api.getDbHits();
 
         for (int i = 0; i < 10; i++) {
 
             for (String[] values : expecteds) {
                 val = values;
-                String key = val[0].substring(0, api.minLength);
+                String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
                 Optional<ShortyId> opt = api.getShorty(key);
             }
         }
@@ -146,7 +146,7 @@ public class TestShortyIdApi {
         // load cache
         for (String[] values : expecteds) {
             val = values;
-            String key = val[0].substring(0, api.minLength);
+            String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
@@ -163,7 +163,7 @@ public class TestShortyIdApi {
 
         String[] invalids = new String[] {"!", ":", ";", "\"", "'", "*", "_", null};
         String[] valids = new String[] {"-", "a", "4", "9", "A", "Z"};
-        ShortyIdApiImpl api = new ShortyIdApiImpl();
+        ShortyIdAPI api = APILocator.getShortyAPI();
         int runs = 10;
 
         for (String x : invalids) {
@@ -183,7 +183,7 @@ public class TestShortyIdApi {
 
 
         for (int i = 0; i < runs; i++) {
-            String x = RandomStringUtils.randomAlphanumeric(api.minLength);
+            String x = RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
             try {
                 api.validShorty(x);
                 assert (true);
@@ -195,15 +195,14 @@ public class TestShortyIdApi {
 
     @Test
     public void test404Cache() {
-        ShortyIdApiImpl api = new ShortyIdApiImpl();
-
+        ShortyIdAPI api = APILocator.getShortyAPI();
 
         // load cache
         for (String key : fourOhFours) {
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
-        long dbQueries = api.dbHits;
+        long dbQueries = api.getDbHits();
 
         for (int i = 0; i < 10; i++) {
 
@@ -232,7 +231,7 @@ public class TestShortyIdApi {
     @Test
     public void testUuidIfy() {
 
-        ShortyIdApiImpl api = new ShortyIdApiImpl();
+        ShortyIdAPI api = APILocator.getShortyAPI();
         for (String x : fourOhFours) {
             String y = api.uuidIfy(x);
             assert (y.indexOf('-') == 8);
@@ -250,12 +249,12 @@ public class TestShortyIdApi {
     @Test
     public void testLongerShorties() {
 
-        ShortyIdApiImpl api = new ShortyIdApiImpl();
+        ShortyIdAPI api = APILocator.getShortyAPI();
         for (String[] x : expecteds) {
             String noDashes = x[0].replaceAll("-", "");
-            for (int i = api.minLength; i < 30; i++) {
+            for ( int i = ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH; i < 30; i++ ) {
                 String key = noDashes.substring(0, i);
-                Optional<ShortyId> opt = new ShortyIdApiImpl().getShorty(key);
+                Optional<ShortyId> opt = APILocator.getShortyAPI().getShorty(key);
                 try {
                     assert (opt.isPresent());
                 } catch (Throwable t) {
