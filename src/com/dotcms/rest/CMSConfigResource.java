@@ -26,12 +26,14 @@ import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -429,7 +431,7 @@ public class CMSConfigResource {
         if ( !responseResource.validate( responseMessage, "endPoint" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
-
+        
         try {
             PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 
