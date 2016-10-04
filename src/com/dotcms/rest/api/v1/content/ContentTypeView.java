@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotmarketing.portlets.structure.model.Structure;
+
 import java.io.Serializable;
 
 /**
@@ -18,6 +20,11 @@ public class ContentTypeView implements Serializable {
         this.name   = name;
         this.inode  = inode;
         this.action = action;
+    }
+
+    public ContentTypeView (Structure structure, String actionUrl){
+        this(Structure.Type.getType(structure.getStructureType()).name(),
+                structure.getName(), structure.getInode(), actionUrl);
     }
 
     public String getType() {
