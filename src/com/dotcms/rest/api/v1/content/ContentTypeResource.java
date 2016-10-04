@@ -3,15 +3,18 @@ package com.dotcms.rest.api.v1.content;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.directwebremoting.annotations.Param;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.portlets.structure.model.Structure;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -74,6 +77,30 @@ public class ContentTypeResource implements Serializable {
      *                  "action":"..."
      *              }
      *            ]
+     *       },
+     *      {
+     *          "structureName":"RECENT_CONTENT",
+     *          "label": "..."
+     *          "types":[
+     *              {
+     *                  "type":"CONTENT",
+     *                  "name":"...",
+     *                  "inode":"...",
+     *                  "action":"..."
+     *              }
+     *            ]
+     *       },
+     *      {
+     *          "structureName":"RECENT_WIDGET",
+     *          "label": "..."
+     *          "types":[
+     *              {
+     *                  "type":"WIDGET",
+     *                  "name":"...",
+     *                  "inode":"...",
+     *                  "action":"..."
+     *              }
+     *            ]
      *       }
      *   ]
      * </pre>
@@ -103,7 +130,5 @@ public class ContentTypeResource implements Serializable {
 
         return response;
     } // getTypes.
-
-
 
 } // E:O:F:ContentTypeResource.

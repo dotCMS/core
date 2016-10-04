@@ -1,8 +1,6 @@
 package com.dotmarketing.portlets.structure.business;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -38,6 +36,11 @@ import com.liferay.portal.model.User;
  *
  */
 public class StructureAPIImpl implements StructureAPI {
+
+	private static String RECENTS_STRUCTURE_QUERY = "select s.name,s.structuretype as type,structure_inode as inode,c.mod_date " +
+			"from contentlet as c,structure as s\n" +
+			"where c.structure_inode = s.inode and mod_user = ? and s.structuretype = ? " +
+			"order by c.mod_date desc;";
 
     @Override
     public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {        
@@ -176,4 +179,28 @@ public class StructureAPIImpl implements StructureAPI {
         return StructureFactory.getStructuresCount(condition);
     }
 
+	public Collection<Map<String, String>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		dc.setSQL(RECENTS_STRUCTURE_QUERY);
+		dc.addParam(user.getUserId());
+		dc.addParam(type.getType());
+
+		List<Map<String, Object>> queryResults = dc.loadObjectResults();
+
+		Map result = new LinkedHashMap();
+
+		for (Map<String, Object> queryResult : queryResults) {
+			String inode = (String) queryResult.get("inode");
+
+			if (!result.containsKey(inode)){
+				result.put(inode, queryResult);
+			}
+
+			if (nRecents != -1 && result.size() == nRecents){
+				break;
+			}
+		}
+
+		return result.values();
+	}
 }
