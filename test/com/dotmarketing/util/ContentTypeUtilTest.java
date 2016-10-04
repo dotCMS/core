@@ -14,7 +14,7 @@ import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
