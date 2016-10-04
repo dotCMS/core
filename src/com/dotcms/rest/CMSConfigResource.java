@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -432,17 +431,12 @@ public class CMSConfigResource {
         if ( !responseResource.validate( responseMessage, "endPoint" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
-
-        IntegrityUtil integrityUtil = new IntegrityUtil();
         
         try {
             PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 
             PublishingEndPoint pep = pepAPI.findEndPointById(endPoint);
             String environmentId = pep.getGroupId();
-            
-            //Delete Existing conflicts reported for this endpoint
-            integrityUtil.completeDiscardConflicts(endPoint);
 
             //Delete the end point
             pepAPI.deleteEndPointById( endPoint );

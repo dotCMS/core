@@ -66,12 +66,8 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 		// remove the endpoints of the environment
 		
 		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(id);
-
-        IntegrityUtil integrityUtil = new IntegrityUtil();
         
         for (PublishingEndPoint ep : endPoints) {
-            //Delete Existing conflicts reported for this endpoint
-            integrityUtil.completeDiscardConflicts(ep.getId());
             //Delete endpoints associated to this Environment
             APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
         }
