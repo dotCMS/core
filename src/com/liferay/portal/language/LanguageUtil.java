@@ -88,7 +88,18 @@ public class LanguageUtil {
 	public static String get(Locale locale, String key) throws LanguageException {
 		return get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
 	}
-
+	
+	
+	/**
+	 * gets the key in the language set in the defaultCompany
+	 * @param key
+	 * @return
+	 * @throws LanguageException
+	 */
+    public static String get(String key)
+            throws LanguageException {
+            return get(PublicCompanyFactory.getDefaultCompany(),key);
+    }
 	/**
 	 * Get the i18n message based on the locale and the key (the message should be in the Language.properties, or the specific language file)
 	 * In addition if you have placeholders such as {0}, {1}, etc in order to interpolate arguments, you can use the arguments parameter in order to
