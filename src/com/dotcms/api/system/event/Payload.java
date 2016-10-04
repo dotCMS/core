@@ -68,7 +68,18 @@ public class Payload implements Serializable {
 	 * @return The payload.
 	 */
 	public Object getData() {
+
+		Object data = this.data;
+
+		if (data instanceof DataWrapper){
+			data = DataWrapper.class.cast(data).getData();
+		}
+
 		return data;
+	}
+
+	public Object getRawData() {
+		return this.data;
 	}
 
 	/**

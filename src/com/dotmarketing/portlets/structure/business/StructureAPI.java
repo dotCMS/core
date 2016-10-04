@@ -169,6 +169,7 @@ public interface StructureAPI {
      */
     int countStructures(String condition);
 
+
 	/**
 	 * Return the structures order from who that has a the most recent created
 	 * {@link com.dotmarketing.portlets.contentlet.business.Contentlet} to who that has the less recent created
@@ -183,4 +184,5 @@ public interface StructureAPI {
 	 * @throws DotDataException
      */
 	public Collection<Map<String, String>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException;
+
 }

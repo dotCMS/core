@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
@@ -48,111 +49,21 @@ public class ContentTypeHelper implements Serializable {
 
     private final WebResource webResource;
     private final StructureAPI structureAPI;
-    private final LayoutAPI layoutAPI;
-    private final LanguageAPI languageAPI;
+    private final ContentTypeUtil contentTypeUtil;
 
     public ContentTypeHelper() {
         this(new WebResource(),
                 APILocator.getStructureAPI(),
-                APILocator.getLayoutAPI(),
-                APILocator.getLanguageAPI());
+                ContentTypeUtil.getInstance());
     }
 
     @VisibleForTesting
     protected ContentTypeHelper(WebResource webResource,
                                 StructureAPI structureAPI,
-                                LayoutAPI layoutAPI,
-                                LanguageAPI languageAPI) {
+                                ContentTypeUtil contentTypeUtil) {
         this.webResource = webResource;
         this.structureAPI = structureAPI;
-        this.layoutAPI = layoutAPI;
-        this.languageAPI = languageAPI;
-    }
-
-    /**
-     * Get the action url for the structure
-     * @param request
-     * @param structure
-     * @param user
-     * @return String
-     */
-    public String getActionUrl(final HttpServletRequest request,
-                               final Structure structure,
-                               final User user
-    ) {
-        return getActionUrl(request, structure.getInode(), user);
-    }
-
-    /**
-     * Get the action url for the structure
-     * @param request
-     * @param structureInode
-     * @return String
-     */
-    public String getActionUrl(final HttpServletRequest request,
-                                      final String structureInode,
-                                      final User user
-                                      ) {
-
-        final List<Layout> layouts;
-        String actionUrl = StringUtils.EMPTY;
-
-
-        try {
-            layouts = layoutAPI.loadLayoutsForUser(user);
-
-            if (0 != layouts.size()) {
-
-                final Layout layout = layouts.get(0);
-                final List<String> portletIds = layout.getPortletIds();
-                final String portletName = portletIds.get(0);
-                final PortletURL portletURL = new PortletURLImpl(request, portletName, layout.getId(), true);
-
-                portletURL.setWindowState(WindowState.MAXIMIZED);
-
-                portletURL.setParameters(map(
-                        "struts_action", new String[]{"/ext/contentlet/edit_contentlet"},
-                        "cmd", new String[]{"new"},
-                        "inode", new String[]{""}
-                ));
-
-                actionUrl = portletURL.toString() + "&selectedStructure=" + structureInode +
-                        "&lang=" + this.getLanguageId(user.getLanguageId(), languageAPI);
-            }
-        } catch (Exception e) {
-
-            Logger.error(this, e.getMessage(), e);
-        }
-
-        return actionUrl;
-    }
-
-
-    private Long getLanguageId (final String userLocaleString, final LanguageAPI languageAPI) {
-
-
-        Long languageId = null;
-        final Locale locale = LocaleUtil.fromLanguageId(userLocaleString);
-
-        if (null != locale) {
-
-            try {
-
-                languageId =
-                        languageAPI.getLanguage(locale.getLanguage(),
-                                locale.getCountry()).getId();
-            } catch (Exception e) {
-
-                languageId = null;
-            }
-        }
-
-        if (null == languageId) {
-
-            languageId = languageAPI.getDefaultLanguage().getId();
-        }
-
-        return languageId;
+        this.contentTypeUtil = contentTypeUtil;
     }
 
     /**
@@ -180,7 +91,7 @@ public class ContentTypeHelper implements Serializable {
                         baseContentTypesViewCollection.add(new ContentTypeView(
                                 Structure.Type.getType(structure.getStructureType()).name(),
                                 structure.getName(), structure.getInode(),
-                                this.getActionUrl(request, structure, user)));
+                                contentTypeUtil.getActionUrl(request, structure, user)));
                     });
 
             result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
@@ -202,7 +113,7 @@ public class ContentTypeHelper implements Serializable {
         List<ContentTypeView> recentsContent = structureAPI.getRecentContentType(type, user, -1)
                 .stream()
                 .map(map -> new ContentTypeView(map.get("type"), map.get("name"), map.get("inode"),
-                        this.getActionUrl(request, map.get("inode"), user)))
+                        contentTypeUtil.getActionUrl(request, map.get("inode"), user)))
                 .collect(Collectors.toList());
 
         if (!recentsContent.isEmpty()){

@@ -2,7 +2,10 @@ package com.dotmarketing.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.fixtask.tasks.*;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
 import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
@@ -34,27 +37,45 @@ public class TaskLocatorUtil {
 	 * 
 	 * @return The list of Fix Tasks.
 	 */
+    
+    private static List<Class<?>> systemfixTasks = ImmutableList.of(
+            FixTask00001CheckAssetsMissingIdentifiers.class,
+            FixTask00003CheckContainersInconsistencies.class,
+            FixTask00004CheckFileAssetsInconsistencies.class,
+            FixTask00005CheckHTMLPagesInconsistencies.class,
+            FixTask00006CheckLinksInconsistencies.class,
+            FixTask00007CheckTemplatesInconsistencies.class,
+            FixTask00008CheckTreeInconsistencies.class,
+            FixTask00009CheckContentletsInexistentInodes.class,
+            FixTask00011RenameHostInFieldVariableName.class,
+            FixTask00012UpdateAssetsHosts.class,
+            FixTask00020DeleteOrphanedIdentifiers.class,
+            FixTask00030DeleteOrphanedAssets.class,
+            FixTask00040CheckFileAssetsMimeType.class,
+            FixTask00050FixInodesWithoutContentlets.class,
+            FixTask00060FixAssetType.class,
+            FixTask00070FixVersionInfo.class,
+            FixTask00080DeleteOrphanedContentTypeFields.class,
+            FixTask00090RecreateMissingFoldersInParentPath.class
+        );
+            
+    private static List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
+            
+    public static void addFixTask(Class clazz){
+        userfixTasks.add(clazz);
+    }
+            
+    public static void removeFixTask(Class clazz){
+        userfixTasks.remove(clazz);
+    }    
+    
+    
 	public static List<Class<?>> getFixTaskClasses() {
-		List<Class<?>> ret = new ArrayList<Class<?>>();
-		ret.add(FixTask00001CheckAssetsMissingIdentifiers.class);
-		ret.add(FixTask00003CheckContainersInconsistencies.class);
-		ret.add(FixTask00004CheckFileAssetsInconsistencies.class);
-		ret.add(FixTask00005CheckHTMLPagesInconsistencies.class);
-		ret.add(FixTask00006CheckLinksInconsistencies.class);
-		ret.add(FixTask00007CheckTemplatesInconsistencies.class);
-		ret.add(FixTask00008CheckTreeInconsistencies.class);
-		ret.add(FixTask00009CheckContentletsInexistentInodes.class);
-		ret.add(FixTask00011RenameHostInFieldVariableName.class);
-		ret.add(FixTask00012UpdateAssetsHosts.class);
-		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);
-		ret.add(FixTask00030DeleteOrphanedAssets.class);
-		ret.add(FixTask00040CheckFileAssetsMimeType.class);
-		ret.add(FixTask00050FixInodesWithoutContentlets.class);
-		ret.add(FixTask00060FixAssetType.class);
-		ret.add(FixTask00070FixVersionInfo.class);
-		ret.add(FixTask00080DeleteOrphanedContentTypeFields.class);
-		ret.add(FixTask00090RecreateMissingFoldersInParentPath.class);
-		return ret;
+	    List<Class<?>> l = new ArrayList<>();
+		l.addAll(systemfixTasks);
+		l.addAll(userfixTasks);
+        
+	    return l;
 	}
 
 	/**
@@ -168,6 +189,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03565FixContainerVersionsCheck.class);
         ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
         ret.add(Task03705AddingSystemEventTable.class);
+        ret.add(Task03710AddFKForIntegrityCheckerTables.class);
         return ret;
     }
 
