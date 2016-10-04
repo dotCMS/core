@@ -45,6 +45,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -125,10 +126,6 @@ public class ESIndexResource {
                 }
             }.start();
         }
-    }
-
-    public String getIndexNameOrAlias(Map<String, String> map,String indexAttr,String aliasAttr) {
-    	return indexHelper.getIndexNameOrAlias(map, indexAttr, aliasAttr);
     }
 
     public static File downloadIndex(String indexName) throws DotDataException, IOException {
@@ -225,7 +222,7 @@ public class ESIndexResource {
 
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
 
             File f=downloadIndex(indexName);
@@ -256,7 +253,7 @@ public class ESIndexResource {
     	try {
         	checkArgument(params != null);
         	InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
 
             if("live".equalsIgnoreCase(indexName) || "working".equalsIgnoreCase(indexName)){
@@ -284,7 +281,7 @@ public class ESIndexResource {
 				}
 			};
 			return Response.ok(stream)
-					.header("Content-Disposition", "attachment; filename=" + indexName + ".zip")
+					.header("Content-Disposition", "attachment; filename=\"" + indexName + ".zip\"")
 					.header("Content-Type", "application/zip").build();
         } catch (SecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
@@ -302,20 +299,25 @@ public class ESIndexResource {
     }
 
     @POST
-    @Path("/restoresnapshot")
+    @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response snapshotIndex(@Context HttpServletRequest request,
-            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
+            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail, @PathParam("params") String params) {
 
         try {
         	checkArgument(inputFile != null);
+        	InitDataObject init=auth(params,request);
+
+            String alias=init.getParamsMap().get("alias");
         	webResource.init(true, request, true);
             if(inputFile!=null) {
             	String index = indexHelper.getIndexFromFilename(inputFileDetail.getFileName());
+            	if(alias != null)
+            		index = alias;
             	this.indexAPI.uploadSnapshot(inputFile, index);
             	return Response.status(Response.Status.OK).entity(new ResponseEntityView
-                        (new ErrorEntity("success","Success"))).build();
+                        (new MessageEntity("Success"))).build();
             }
             return Response.status(Response.Status.CONFLICT).entity(new ResponseEntityView
                     (new ErrorEntity("failed","Failed to upload."))).build();
@@ -377,7 +379,7 @@ public class ESIndexResource {
     public Response clearIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().clearIndex(indexName);
             }
@@ -396,7 +398,7 @@ public class ESIndexResource {
     public Response deleteIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().delete(indexName);
             }
@@ -415,7 +417,7 @@ public class ESIndexResource {
     public Response activateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
 
             activateIndex(indexName);
 
@@ -434,7 +436,7 @@ public class ESIndexResource {
     public Response deactivateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
 
             deactivateIndex(indexName);
 
@@ -453,7 +455,7 @@ public class ESIndexResource {
     public Response updateReplica(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             int replicas = Integer.parseInt(init.getParamsMap().get("replicas"));
             APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 
@@ -475,7 +477,7 @@ public class ESIndexResource {
     public Response closeIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             APILocator.getESIndexAPI().closeIndex(indexName);
 
             return Response.ok().build();
@@ -493,7 +495,7 @@ public class ESIndexResource {
     public Response openIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             APILocator.getESIndexAPI().openIndex(indexName);
 
             return Response.ok().build();
@@ -536,7 +538,7 @@ public class ESIndexResource {
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
 
-            String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getDocumentCount from "+request.getRemoteAddr());

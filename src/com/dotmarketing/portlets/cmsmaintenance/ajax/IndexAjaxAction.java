@@ -217,12 +217,12 @@ public class IndexAjaxAction extends AjaxAction {
 
 		OutputStream out = response.getOutputStream();
 		InputStream in = new FileInputStream(indexFile);
-		IOUtils.copyLarge(in, out);
 
 		response.setContentType("application/zip");
 		response.setHeader("Content-Type", "application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + indexName + ".zip\"");
 
+		IOUtils.copyLarge(in, out);
 		// clean up
 		this.indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
 		indexFile.delete();
@@ -233,14 +233,10 @@ public class IndexAjaxAction extends AjaxAction {
 	 *
 	 * @param request
 	 * @param response
-	 * @throws ServletException
 	 * @throws IOException
-	 * @throws DotDataException
-	 * @throws InterruptedException
-	 * @throws ExecutionException
 	 */
-	public void restoreSnapshot(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException, DotDataException, InterruptedException, ExecutionException {
+	public void restoreSnapshot(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		try {
 			FileItemFactory factory = new DiskFileItemFactory();
@@ -263,18 +259,22 @@ public class IndexAjaxAction extends AjaxAction {
 				String index = indexHelper.getIndexFromFilename(it.getName());
 				this.indexAPI.uploadSnapshot(new FileInputStream(tempFile),index);
 			}
-			response.setContentType("application/json");
 			out.println("{\"response\":1}");
 		}catch (SnapshotRestoreException ere) {
-			writeError(response, ere.getDetailedMessage());
+			Logger.error(this.getClass(),ere.getDetailedMessage());
+			writeError(response, "could.not.create.snapshot");
 		}catch (InterruptedException iex) {
-			writeError(response, iex.getMessage());
+			Logger.error(this.getClass(),iex.getMessage());
+			writeError(response, "snapshot.process.interrupted");
 		}catch (ExecutionException exx) {
-			writeError(response, exx.getMessage());
+			Logger.error(this.getClass(),exx.getMessage());
+			writeError(response, "snapshote.restore.execution.halted");
 		}catch (ZipException zip) {
-			writeError(response, zip.getMessage());
+			Logger.error(this.getClass(),zip.getMessage());
+			writeError(response, "snapshot.zip.restore.error");
 		}catch (FileUploadException fue) {
-			writeError(response, fue.getMessage());
+			Logger.error(this.getClass(),fue.getMessage());
+			writeError(response, "snapshot.file.not.uploaded");
 		}
 	}
 

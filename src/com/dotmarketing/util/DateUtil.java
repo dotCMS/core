@@ -395,15 +395,12 @@ public class DateUtil {
 		checkNotNull(customFormat);
 		checkNotNull(locale);
 		String dateString = null;
-		DateTimeFormatter formatter = null;
 		try {
 			if (!formatterMap.containsKey(customFormat)) {
 				formatterMap.put(customFormat, DateTimeFormatter.ofPattern(customFormat,locale));
 			}
-			formatter = formatterMap.get(customFormat);
-			synchronized (formatter) {
-				dateString = formatter.format(date);
-			}
+			DateTimeFormatter formatter = formatterMap.get(customFormat);
+			dateString = formatter.format(date);
 		} catch (Exception e) {
 			dateString = StringUtils.EMPTY;
 		}
