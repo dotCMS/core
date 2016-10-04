@@ -8,8 +8,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * This class provides the dotCMS developer with access to the information related 
  * to Content Type objects (previously known as "Structures").
