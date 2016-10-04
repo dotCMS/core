@@ -268,7 +268,7 @@ public class IndexAjaxAction extends AjaxAction {
 			writeError(response, "snapshot.process.interrupted");
 		}catch (ExecutionException exx) {
 			Logger.error(this.getClass(),exx.getMessage());
-			writeError(response, "snapshote.restore.execution.halted");
+			writeError(response, "snapshot.restore.execution.halted");
 		}catch (ZipException zip) {
 			Logger.error(this.getClass(),zip.getMessage());
 			writeError(response, "snapshot.zip.restore.error");
