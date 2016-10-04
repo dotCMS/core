@@ -1,13 +1,9 @@
 package com.dotcms.api.system.event;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-
-import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import java.util.Map;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * This class is the logical representation of a System Event in dotCMS. An

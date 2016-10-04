@@ -4,6 +4,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
@@ -48,8 +49,8 @@ public class ESContentletAPIHelperTest extends BaseMessageResources {
                 return null;
             }
         }).when(notificationAPI).generateNotification(
-                "Contentlet Notification",
-                "Contentlet with Inode iFieldNode1 cannot be deleted because it's not archived. Please archive it first before deleting it.",
+                new I18NMessage("notification.escontentelet.cannotdelete.info.title"), //"Contentlet Notification"),
+                new I18NMessage("notification.escontentelet.cannotdelete.info.message.", "iFieldNode1"),
                 null,
                 NotificationLevel.ERROR,
                 NotificationType.GENERIC,

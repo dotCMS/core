@@ -9,10 +9,11 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestRuleAction.Builder.class)
 public class RestRuleAction extends Validated {

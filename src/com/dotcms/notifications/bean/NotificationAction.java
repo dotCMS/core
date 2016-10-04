@@ -1,5 +1,7 @@
 package com.dotcms.notifications.bean;
 
+import com.dotcms.util.I18NMessage;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -21,7 +23,7 @@ import java.util.Map;
 @SuppressWarnings("serial")
 public class NotificationAction implements Serializable {
 
-	private final String text;
+	private final I18NMessage text;
 	private final String action;
 	private final NotificationActionType actionType;
 	private final Map<String, Object> attributes;
@@ -30,7 +32,7 @@ public class NotificationAction implements Serializable {
 	 * Creates a new Notification Action object.
 	 * 
 	 * @param text
-	 *            - The message of the action. This can be the label for a
+	 *            - I18NMessage: The message of the action. This can be the label for a
 	 *            button or link.
 	 * @param action
 	 *            - The result of executing this action. This can be the URL of
@@ -43,7 +45,7 @@ public class NotificationAction implements Serializable {
 	 *            - If more configuration parameters are required, this
 	 *            {@code Map} can be used to define them.
 	 */
-	public NotificationAction(String text, String action, NotificationActionType actionType, Map<String, Object> attributes) {
+	public NotificationAction(I18NMessage text, String action, NotificationActionType actionType, Map<String, Object> attributes) {
 		this.text = text;
 		this.action = action;
 		this.actionType = actionType;
@@ -55,7 +57,7 @@ public class NotificationAction implements Serializable {
 	 * 
 	 * @return The text.
 	 */
-	public String getText() {
+	public I18NMessage getText() {
 		return text;
 	}
 

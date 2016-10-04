@@ -65,7 +65,7 @@ public class Task03545FixVarcharSizeInFolderOperations extends AbstractJDBCStart
 	private final String MYSQL_SCRIPT = new StringBuilder()
 									.append("DROP TRIGGER IF EXISTS rename_folder_assets_trigger;\n")
 									.append("CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE\n")
-									.append("ON Folder\n")
+									.append("ON folder\n")
 									.append("FOR EACH ROW\n")
 									.append("BEGIN\n")
 										.append("DECLARE old_parent_path VARCHAR(255);\n")

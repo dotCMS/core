@@ -59,6 +59,12 @@ public class FixTasksExecutor  implements StatefulJob {
     
     		Comparator<Class<?>> comparator = new Comparator<Class<?>>() {
     			public int compare(Class<?> o1, Class<?> o2) {
+    			    String name = o1.getName();
+    			    String name2 = o2.getName();
+    			    if(!name.matches("(\\D+)(\\d{5})(.*)")) {
+    			        return 1;
+    			    }
+    			    
     				return o1.getName().compareTo(o2.getName());
     			}
     		};
@@ -71,14 +77,19 @@ public class FixTasksExecutor  implements StatefulJob {
     		Collections.sort(runOnce, comparator);
     
     		//PreparedStatement update = null;
-    
+    		int taskId = 0;
     		try {
     			for (Class<?> c : runOnce) {
     				String name = c.getCanonicalName();
     				name = name.substring(name.lastIndexOf(".") + 1);
     				String id = name.substring(7, 12);
-    				try {
-    					int taskId = Integer.parseInt(id);
+
+    				    try{
+    				        taskId = Integer.parseInt(id);
+    				    } catch (NumberFormatException e) {
+    				        taskId++;
+    				    }
+    				    
     					if (FixTask.class.isAssignableFrom(c)) {
     						FixTask task;
     						try {
@@ -102,14 +113,8 @@ public class FixTasksExecutor  implements StatefulJob {
     								"fix assets and inconsistencies task: "
     										+ name+" "+executed);
     					}
-    				} catch (NumberFormatException e) {
-    					Logger
-    							.error(
-    									this,
-    									"Class "
-    											+ name
-    											+ " has invalid name or shouldn't be in the tasks package.");
-    				}
+    				
+
     			}
     		} catch (Exception e) {
     			Logger

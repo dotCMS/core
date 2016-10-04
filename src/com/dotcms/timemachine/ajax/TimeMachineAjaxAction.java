@@ -22,6 +22,7 @@ import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -348,12 +349,9 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
                                       final String userId) throws LanguageException, DotDataException {
 
 
-        final String message =
-                LanguageUtil.get( userLocale, "TIMEMACHINE-SNAPSHOT-CREATED" ); // message = Time Machine Snapshot created.
-
         this.notificationAPI.generateNotification(
-                LanguageUtil.get(userLocale, "notification.timemachine.created.info.title"), // title = Time Machine
-                message,
+                new I18NMessage("notification.timemachine.created.info.title"), // title = Time Machine
+                new I18NMessage("TIMEMACHINE-SNAPSHOT-CREATED" ), // message = Time Machine Snapshot created.
                 null, // no actions
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
