@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ public class FileAssetTest extends ContentletBaseTest {
 	Client client;
 	WebTarget webTarget;
 	
-    @BeforeClass
+    @Before
     public void before() throws Exception{
     	    	
         LicenseTestUtil.getLicense();
