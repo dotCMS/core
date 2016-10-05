@@ -16,6 +16,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -29,8 +30,11 @@ import com.liferay.portal.model.User;
  */
 public class HostAPITest {
 	
-	@Before
-    public void prepare() throws Exception {
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
         LicenseTestUtil.getLicense();
     }
 

@@ -4,6 +4,8 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.LicenseTestUtil;
@@ -21,15 +23,19 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.util.FileUtil;
 
 public class FileAssetTest extends ContentletBaseTest {
 	
-	Client client;
-	WebTarget webTarget;
+	static Client client;
+	static WebTarget webTarget;
 	
-    @Before
-    public void before() throws Exception{
+    @BeforeClass
+    public static void before() throws Exception{
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    	
         LicenseTestUtil.getLicense();
 
         client=RestClientBuilder.newClient();
@@ -38,7 +44,8 @@ public class FileAssetTest extends ContentletBaseTest {
         long serverPort = request.getServerPort();
         webTarget = client.target("http://" + serverName + ":" + serverPort + "/");
     }
-
+    
+    @Ignore("Temporarily ignore this test method https://github.com/dotCMS/core/issues/9785")
 	@Test
 	public void fileAssetLanguageDifferentThanDefault()throws DotSecurityException, DotDataException, IOException{
 		Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
@@ -93,6 +100,7 @@ public class FileAssetTest extends ContentletBaseTest {
 	}
 	*/
 	
+    @Ignore("Temporarily ignore this test method https://github.com/dotCMS/core/issues/9785")
 	@Test
 	public void fileAssetNonExistingLanguageDefaultFilesFalse()throws DotSecurityException, DotDataException, IOException{
 		Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
