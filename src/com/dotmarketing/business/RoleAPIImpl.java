@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
+import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -31,7 +32,9 @@ public class RoleAPIImpl implements RoleAPI {
 	private Role CMS_ANON = null;
 	private Role CMS_OWNER = null;
 	private Role LOGGEDIN_SITE_USER = null;
-	
+
+	private final UserAPI userAPI = APILocator.getUserAPI();
+
 	public RoleAPIImpl()  {
 		
 	}
@@ -365,6 +368,33 @@ public class RoleAPIImpl implements RoleAPI {
 		return role;
 	}
 
-
+	public boolean doesUserHaveRoles(String userId, List<String> roleIds){
+		if (!UtilMethods.isSet(userId) || roleIds == null || roleIds.size() == 0) {
+			return false;
+		}
+		User user;
+		try {
+			user = this.userAPI.loadUserById(userId, this.userAPI.getSystemUser(), false);
+		} catch (Exception e) {
+			Logger.error(this, "An error occurred when retrieving information of user ID [" + userId + "]", e);
+			return false;
+		}
+		String currentRoleId = null;
+		for (String roleId : roleIds) {
+			if (UtilMethods.isSet(roleId.trim())) {
+				currentRoleId = roleId;
+				try {
+					if (this.doesUserHaveRole(user, roleId)) {
+						return true;
+					}
+				} catch (DotDataException e) {
+					Logger.error(UserAjax.class, "An error occurred when checking role [" + currentRoleId + "] on user ID ["
+							+ userId + "]", e);
+					return false;
+				}
+			}
+		}
+		return false;
+	}
 	
 }

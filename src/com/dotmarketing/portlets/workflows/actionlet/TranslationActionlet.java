@@ -169,7 +169,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
                 translationService.translateContent(sourceContentlet, translateLanguages, translateFields, user);
 
             for (Contentlet translatedContent : translatedContents) {
-                translatedContent.setProperty("__disable_workflow__", true);
+                translatedContent.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 
                 sourceContentlet.setTags();
                 copyBinariesAndTags(user, sourceContentlet, translatedContent);

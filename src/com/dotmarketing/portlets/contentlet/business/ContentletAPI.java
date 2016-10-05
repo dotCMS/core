@@ -167,9 +167,25 @@ public interface ContentletAPI {
 	public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Returns a list of {@link Contentlet} whose parent host matches the given host and whose base-type
+	 * (See {@link Structure.Type}) matches any of the given base types. .
+	 *
+	 * @param parentHost the host to match content's parent host against
+	 * @param includingBaseTypes if not null or empty, content is filtered by these baseTypes
+	 * @param user the user requesting the operation
+	 * @param respectFrontendRoles a flag to indicate whether or not front-end roles are respected
+	 * @return a list of content whose parent matches the given host and whose base-type matches any of the given base
+	 * types
+	 * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	List<Contentlet> findContentletsByHostBaseType(Host parentHost, List<Integer> includingBaseTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+
+	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
 	 * so if source contentlet points to image A and resulting new contentlet will point to same image A as well, also copies source permissions.
-	 * 
+	 *
 	 * @param contentlet
 	 * @param user
 	 * @param respectFrontendRoles
@@ -1562,7 +1578,7 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 * @throws DotStateException
 	 */
-	public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+	void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.

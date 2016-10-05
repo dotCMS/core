@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
+import com.dotcms.config.DotInitializationService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -269,6 +270,9 @@ public class MainServlet extends ActionServlet {
 			}
 
 			PortalInstances.init(_companyId);
+
+			// Init other dotCMS services.
+			DotInitializationService.getInstance().initialize();
 		}
 	}
 

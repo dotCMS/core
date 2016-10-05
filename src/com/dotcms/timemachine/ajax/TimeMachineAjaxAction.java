@@ -17,13 +17,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
@@ -33,9 +38,21 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 public class TimeMachineAjaxAction extends IndexAjaxAction {
+
+    private final NotificationAPI notificationAPI;
+
+    public TimeMachineAjaxAction() {
+        this(APILocator.getNotificationAPI());
+    }
+
+    @VisibleForTesting
+    public TimeMachineAjaxAction(final NotificationAPI notificationAPI) {
+        this.notificationAPI = notificationAPI;
+    }
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -311,7 +328,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
                     try {
                         //Create a new notification to inform the snapshot was created
-                        APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( getUser().getLocale(), "TIMEMACHINE-SNAPSHOT-CREATED" ), NotificationLevel.INFO, getUser().getUserId() );
+                        TimeMachineAjaxAction.this.generateNotification( getUser().getLocale(), getUser().getUserId() );
                     } catch ( Exception e ) {
                         Logger.error( this, "Error creating notification after creation of the Time machine Snapshot.", e );
                     }finally {
@@ -327,6 +344,21 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             }.start();
         }
     }
+
+    public void generateNotification (final Locale userLocale,
+                                      final String userId) throws LanguageException, DotDataException {
+
+
+        this.notificationAPI.generateNotification(
+                new I18NMessage("notification.timemachine.created.info.title"), // title = Time Machine
+                new I18NMessage("TIMEMACHINE-SNAPSHOT-CREATED" ), // message = Time Machine Snapshot created.
+                null, // no actions
+                NotificationLevel.INFO,
+                NotificationType.GENERIC,
+                userId,
+                userLocale
+        );
+    } // generateNotification.
 
     @Override
     public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {}

@@ -27,6 +27,9 @@ import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -43,6 +46,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -83,6 +88,38 @@ public class LanguageUtil {
 	public static String get(Locale locale, String key) throws LanguageException {
 		return get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
 	}
+	
+	
+	/**
+	 * gets the key in the language set in the defaultCompany
+	 * @param key
+	 * @return
+	 * @throws LanguageException
+	 */
+    public static String get(String key)
+            throws LanguageException {
+            return get(PublicCompanyFactory.getDefaultCompany(),key);
+    }
+	/**
+	 * Get the i18n message based on the locale and the key (the message should be in the Language.properties, or the specific language file)
+	 * In addition if you have placeholders such as {0}, {1}, etc in order to interpolate arguments, you can use the arguments parameter in order to
+	 * send as much as you need.
+	 * @param locale {@link Locale}
+	 * @param key    {@link String}
+	 * @param arguments {@link Object} array
+	 * @return String
+	 * @throws LanguageException
+     */
+	public static String get(final Locale locale,
+							 final String key,
+							 final Object... arguments) throws LanguageException {
+
+		final String i18nMessage = get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
+
+		return  (null != arguments && arguments.length > 0)?
+			MessageFormat.format(i18nMessage, arguments):
+				i18nMessage;
+	} // get
 	
 	public static String get(Company company, String key)
 	throws LanguageException {
@@ -492,4 +529,25 @@ public class LanguageUtil {
 	private Map _charEncodings;
 
     private static class MessageResult {}
+
+	/**
+	 * Search a Httpsession's attribute named {@link Globals.LOCALE_KEY}, if it exists then return it,
+	 * if it doesn't exists then return the default user's locale and set it as a session's attribute.
+	 *
+	 * @param req
+	 * @return The default {@link Locale}
+	 *
+	 * @see LanguageUtil#getDefaultCompanyLocale()
+     */
+	public static Locale getDefaultLocale(HttpServletRequest req){
+		HttpSession session = req.getSession();
+		Locale defaultLocale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
+
+		if (defaultLocale == null) {
+			defaultLocale = getDefaultCompanyLocale();
+			session.setAttribute(Globals.LOCALE_KEY, defaultLocale);
+		}
+
+		return defaultLocale;
+	}
 }

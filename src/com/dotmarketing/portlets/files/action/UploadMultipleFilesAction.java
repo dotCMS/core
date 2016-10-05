@@ -1,16 +1,5 @@
 package com.dotmarketing.portlets.files.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -18,6 +7,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.util.exceptions.DuplicateFileException;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -34,6 +24,7 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.struts.FileForm;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -48,6 +39,17 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 
 /**
  * @author Maria
@@ -243,6 +245,9 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				contentlet.setStructureInode(selectedStructureInode);
 				contentlet.setHost(hostId);
 				contentlet.setFolder(folder.getInode());
+				if(UtilMethods.isSet(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE))){
+					contentlet.setLanguageId(Long.parseLong(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE).toString()));
+				}
 				String fileName = fileNamesArray[k];
 				String title = getFriendlyName(fileName);
 
@@ -274,8 +279,22 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                     if ( uploadedFile != null ) {
 
                         //checks if another identifier with the same name exists in the same folder
-                        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "")) {
+                        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "", contentlet.getLanguageId())) {
                             throw new DuplicateFileException(fileName);
+                        }
+
+                        // Now that we know that the host+folder+fileName+language doesn't exist, we need to find if
+                        // we have an identifier with host+folder+fileName in order to create a new language.
+                        Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+                        String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ?
+                            java.io.File.separator + fileName :
+                            folderId.getPath() + fileName;
+                        Identifier identifier = APILocator.getIdentifierAPI().find(host, path);
+
+                        // If we the identifier is found then the new FileAsset will be a new language
+                        // for that contentlet that already exist.
+                        if( identifier!=null && InodeUtils.isSet(identifier.getId()) ) {
+                            contentlet.setIdentifier(identifier.getId());
                         }
 
                         contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
@@ -290,12 +309,14 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                         }
 
                         HibernateUtil.commitTransaction();
+						APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 
                     }
 
 				}
 			}
 			catch (DuplicateFileException e){
+                Logger.warn(UploadMultipleFilesAction.class, "File Asset already exist: " + e.getMessage());
 				existingFileNames.add(e.getMessage());
 				HibernateUtil.rollbackTransaction();
 			}

@@ -31,17 +31,12 @@
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
 
 <style>
-.dijitHostFoldersTreeWrapper {
-    overflow: hidden;
-}
 .dijitTree {
     width: 100% !important;
-    max-height: 255px !important;
-    overflow: auto;
     height: 100%;
 }
 .classAce{
-	display: none;
+  display: none;
 }
 </style>
 
@@ -165,12 +160,17 @@
 
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("RULES_ENGINE_PORTLET", user) 
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user) 
+    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("RULES_ENGINE_PORTLET", user)
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
 	Integer catCounter = 0;
 
+	String targetFrame="_top";
+	boolean isAngularFrame = UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME));
+	if(isAngularFrame){
+	   targetFrame = (String)request.getSession().getAttribute(WebKeys.FRAME);
+	}
 %>
 
 
@@ -185,7 +185,7 @@ var editButtonRow="editContentletButtonRow";
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
 
-<html:form action="<%= formAction %>" styleId="fm" onsubmit="return false;">
+<html:form action="<%= formAction %>" styleId="fm" target="<%= targetFrame %>" onsubmit="return false;">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
@@ -438,8 +438,8 @@ var editButtonRow="editContentletButtonRow";
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
 		</div>
 	<%}%>
-	
-	
+
+
 	<!-- -Rules -->
 	<% if (canSeeRules) { %>
 	   	<%if(InodeUtils.isSet(contentlet.getInode()) && contentlet.getStructure()!=null ){ %>
@@ -493,12 +493,12 @@ var editButtonRow="editContentletButtonRow";
 				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_references.jsp" />
 			</div>
 		<%}%>
-		
 
-		
-		
-		
-		
+
+
+
+
+
 	<%}%>
 	</div>
 
@@ -509,23 +509,23 @@ var editButtonRow="editContentletButtonRow";
 
 <!-- START Left Column -->
 			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
-		
+
 				<%if (InodeUtils.isSet(structure.getInode())) {%>
 					<%--If the user has permissions to publish--%>
 					<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
 					<%--Then the save and publish button should appear--%>
-		
+
 					<div class="gradient2">
 						<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
 					</div>
-		
+
 					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
 					<div id="contentletActionsHanger">
 						<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
 					</div>
 				<% } %>
 				</div>
-		
+
 		<!-- END Left Column -->
 
 </html:form>

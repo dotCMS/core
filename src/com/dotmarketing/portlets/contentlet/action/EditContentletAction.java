@@ -74,6 +74,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
@@ -93,6 +95,7 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -111,6 +114,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private ContentletAPI conAPI;
 	private FieldAPI fAPI;
 	private HostWebAPI hostWebAPI;
+	private TagAPI tagAPI;
 
 	private String currentHost;
 
@@ -123,6 +127,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		conAPI = APILocator.getContentletAPI();
 		fAPI = APILocator.getFieldAPI();
 		hostWebAPI = WebAPILocator.getHostWebAPI();
+		tagAPI = APILocator.getTagAPI();
 	}
 
 	private Contentlet contentletToEdit;
@@ -768,6 +773,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		//the Content Search Manager
 		if(httpReq.getParameter("selected") != null){
 			httpReq.getSession().setAttribute("selectedStructure", st.getInode());
+		}
+
+		if(contentlet.getLanguageId() != 0){
+			httpReq.getSession().setAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE, String.valueOf(contentlet.getLanguageId()));
+		} else {
+			httpReq.getSession().setAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE,
+				String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
 		}
 
 		// Asset Versions to list in the versions tab
@@ -1852,8 +1864,19 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								if(UtilMethods.isSet(text)){
 									text=text.substring(1);
 								}
-							}else{
-
+							} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())){
+							    
+							    //Get Content Tags per field's Velocity Var Name
+							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), f.getVelocityVarName());
+							    if(tags!= null){
+							        for(Tag t:tags){
+							            if(text.equals(StringPool.BLANK))
+							                text = t.getTagName();
+							            else
+							                text = text + "," + t.getTagName();
+							        }
+							    }
+							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(f.getFieldType().equals(Field.FieldType.DATE.toString())) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
@@ -1871,7 +1894,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 										text = text.substring (0, text.length()-1);
 									}
 								}
-
 							}
 							//Windows carriage return conversion
 							text = text.replaceAll("\r","");

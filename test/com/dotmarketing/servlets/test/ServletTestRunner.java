@@ -67,6 +67,8 @@ public class ServletTestRunner extends HttpServlet {
 
         Logger.info( "Running unit tests....." );
 
+        System.setProperty("TEST-RUNNER", ServletTestRunner.class.getCanonicalName());
+
         //If nothing is present the default is to create an xml report
         if ( resultType == null || resultType.isEmpty() ) {
             xmlReport( response, className, methodName );
@@ -117,6 +119,7 @@ public class ServletTestRunner extends HttpServlet {
         reportDirectory.mkdirs();
 
         Logger.info( "Generating XML report in " + reportDirectory.getAbsolutePath() );
+        System.out.println("Generating XML report in: " + reportDirectory.getAbsolutePath());//Debug code for the catalina.out
 
         //Adding a listener for the running test
         TestXmlRingingListener testXmlRingingListener = new TestXmlRingingListener( reportDirectory );

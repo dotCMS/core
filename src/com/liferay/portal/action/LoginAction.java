@@ -22,22 +22,21 @@
 
 package com.liferay.portal.action;
 
-import java.util.Calendar;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
+import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
@@ -49,33 +48,36 @@ import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.RequiredLayoutException;
-import com.liferay.portal.SendPasswordException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.UserEmailAddressException;
-import com.liferay.portal.UserIdException;
-import com.liferay.portal.UserPasswordException;
+import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.portal.ejb.UserManagerImpl;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.Constants;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.util.*;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
  * <a href="LoginAction.java.html"><b><i>View Source</i></b></a>
@@ -86,7 +88,22 @@ import com.liferay.util.servlet.SessionMessages;
  */
 public class LoginAction extends Action {
 
-	public ActionForward execute(
+	private final LoginService loginService =
+			LoginServiceFactory.getInstance().getLoginService();
+
+	/**
+	 * Determines the action to execute based on the command issued by the user.
+	 * 
+	 * @param mapping
+	 *            - The mapping definitions for this Struts action.
+	 * @param form
+	 *            - The HTML form with the information sent by the user.
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 */
+    public ActionForward execute(
 			ActionMapping mapping, ActionForm form, HttpServletRequest req,
 			HttpServletResponse res)
 		throws Exception {
@@ -190,184 +207,90 @@ public class LoginAction extends Action {
 		
 		return mapping.findForward("portal.login");
 	}
-	
+
+    /**
+     *
+     * @param req
+     * @throws Exception
+     */
 	private void _resetPassword(HttpServletRequest req) throws Exception {
-	    String userId = ParamUtil.getString(req, "my_user_id");
-	    String token = ParamUtil.getString(req, "token");
-	    
-	    String newpass1 = ParamUtil.getString(req, "my_new_pass1");
-	    String newpass2 = ParamUtil.getString(req, "my_new_pass2");
-	    
-	    if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
-	        User user = APILocator.getUserAPI().loadUserById(userId);
-	        String tokenInfo = user.getIcqId();
-	        if(user!=null && UtilMethods.isSet(tokenInfo) && tokenInfo.matches("^[a-zA-Z0-9]+:[0-9]+$")) {
-	            String userToken = tokenInfo.substring(0,tokenInfo.indexOf(':'));
-	            if(userToken.equals(token)) {
-    	            // check if token expired
-    	            Calendar ttl = Calendar.getInstance();
-    	            ttl.setTimeInMillis(Long.parseLong(tokenInfo.substring(tokenInfo.indexOf(':')+1)));
-    	            ttl.add(Calendar.MINUTE, Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20));
-    	            if(ttl.after(Calendar.getInstance())) {
-    	                // all ok
-    	                if(UtilMethods.isSet(newpass1) && UtilMethods.isSet(newpass2)) {
-    	                    // actualy change password
-    	                    if(newpass1.equals(newpass2)) {
-    	                        try {
-    	                            APILocator.getUserAPI().updatePassword(user, newpass1, APILocator.getUserAPI().getSystemUser(), false);
-    	                            SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
-    	                            SessionMessages.add(req, "reset_pass_success");
-    	                        }
-    	                        catch(DotInvalidPasswordException ex) {
-    	                            SecurityLogger.logInfo(LoginAction.class, "User "+userId+" couldn't reset password because it is invalid. From IP:"+req.getRemoteAddr());
-    	                            SessionErrors.add(req, "reset_pass_invalid_pass");
-    	                        }
-    	                        
-    	                    }
-    	                    else {
-    	                        SessionErrors.add(req, "reset_pass_not_match");
-    	                    }
-    	                }
-    	                else {
-    	                    // just show the option to reset in UI
-        	                SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful password reset request from IP:"+req.getRemoteAddr());
-        	                SessionMessages.add(req, "reset_ok");
-    	                }
-    	            }
-    	            else {
-    	                SecurityLogger.logInfo(LoginAction.class, "User "+userId+" requested password reset with expired token from IP:"+req.getRemoteAddr());
-    	                SessionErrors.add(req, "reset_token_expired");
-    	            }
-	            }
-	            else {
-	                SecurityLogger.logInfo(LoginAction.class, "Attempt to reset user password ("+userId+") with wrong token. IP:"+req.getRemoteAddr());
-	            }
-	        }
-	    }
-	    
+		String userId = ParamUtil.getString(req, "my_user_id");
+		String token = ParamUtil.getString(req, "token");
+		
+		if(!UtilMethods.isSet(userId)){
+			JWTBean jwtBean  = JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(token);
+			userId = jwtBean.getId();
+			token = jwtBean.getSubject();
+		}
+		
+        String newpass1 = ParamUtil.getString(req, "my_new_pass1");
+		String newpass2 = ParamUtil.getString(req, "my_new_pass2");
+
+
+		if(UtilMethods.isSet(newpass1) && UtilMethods.isSet(newpass2)) {
+			// actualy change password
+			if(newpass1.equals(newpass2)) {
+				try {
+					UserManagerFactory.getManager().resetPassword(userId, token, newpass1);
+					SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful changed his password from IP:"+req.getRemoteAddr());
+					SessionMessages.add(req, "reset_pass_success");
+				}catch(com.dotmarketing.business.NoSuchUserException | DotSecurityException e){
+					throw e;
+				}catch(DotInvalidTokenException e){
+					if (e.isExpired()){
+						SecurityLogger.logInfo(LoginAction.class, "User "+userId+" requested password reset with expired token from IP:"+req.getRemoteAddr());
+						SessionErrors.add(req, "reset_token_expired");
+					}else{
+						SecurityLogger.logInfo(LoginAction.class, "Attempt to reset user password ("+userId+") with wrong token. IP:"+req.getRemoteAddr());
+					}
+				}catch(DotInvalidPasswordException e){
+					SecurityLogger.logInfo(LoginAction.class, "User "+userId+" couldn't reset password because it is invalid. From IP:"+req.getRemoteAddr());
+					SessionErrors.add(req, "reset_pass_invalid_pass");
+				}
+			}
+			else {
+				SessionErrors.add(req, "reset_pass_not_match");
+			}
+		}
+		else {
+			// just show the option to reset in UI
+			SecurityLogger.logInfo(LoginAction.class, "User "+userId+" successful password reset request from IP:"+req.getRemoteAddr());
+			SessionMessages.add(req, "reset_ok");
+		}
 	}
 
+	/**
+	 * Performs the authentication process carried out through the Login page.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 * @throws Exception
+	 *             An error occurred during the authentication process.
+	 */
 	private void _login(HttpServletRequest req, HttpServletResponse res)
 		throws Exception {
 
-		HttpSession ses = req.getSession();
-
 		String login = ParamUtil.getString(req, "my_account_login").toLowerCase();
-		
-
-
 		String password = ParamUtil.getString(req, "password");
 		if (Validator.isNull(password)) {
 			password = ParamUtil.getString(req, "password");
 		}
-
 		
 		boolean rememberMe = ParamUtil.get(req, "my_account_r_m", false);
 
 		String userId = login;
 
-		int authResult = Authenticator.FAILURE;
-
-		Company company = PortalUtil.getCompany(req);
-
-        //Search for the system user
-        User systemUser = APILocator.getUserAPI().getSystemUser();
-
-        if ( company.getAuthType().equals( Company.AUTH_TYPE_EA ) ) {
-
-            //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getEmailAddress().equalsIgnoreCase( login ) ) {
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-            }
-
-            authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), login, password );
-            userId = UserManagerUtil.getUserId( company.getCompanyId(), login );
-
-        } else {
-
-            //Verify that the System User is not been use to log in inside the system
-            if ( systemUser.getUserId().equalsIgnoreCase( login ) ) {
-                SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-            }
-
-            authResult = UserManagerUtil.authenticateByUserId( company.getCompanyId(), login, password );
-        }
-
-		try {
-			PrincipalFinder principalFinder =
-				(PrincipalFinder)InstancePool.get(
-					PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
-
-			userId = principalFinder.fromLiferay(userId);
-		}
-		catch (Exception e) {
-		}
-
-		if (authResult == Authenticator.SUCCESS) {
-			User user = UserLocalManagerUtil.getUserById(userId);
-			
-			//DOTCMS-4943
-			UserAPI userAPI = APILocator.getUserAPI();			
-			boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);			
-			Locale userSelectedLocale = (Locale)req.getSession().getAttribute(Globals.LOCALE_KEY);			
-			user.setLanguageId(userSelectedLocale.toString());
-			userAPI.save(user, userAPI.getSystemUser(), respectFrontend);
-
-			ses.setAttribute(WebKeys.USER_ID, userId);
-			
-			//DOTCMS-6392
-			PreviewFactory.setVelocityURLS(req);
-			
-			//set the host to the domain of the URL if possible if not use the default host
-			//http://jira.dotmarketing.net/browse/DOTCMS-4475
-			try{
-				String domainName = req.getServerName();
-				Host h = null;
-				h = APILocator.getHostAPI().findByName(domainName, user, false);
-				if(h == null || !UtilMethods.isSet(h.getInode())){
-					h = APILocator.getHostAPI().findByAlias(domainName, user, false);
-				}
-				if(h != null && UtilMethods.isSet(h.getInode())){
-					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, h.getIdentifier());
-				}else{
-					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
-				}
-			}catch (DotSecurityException se) {
-				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
-			}
-						
-			ses.removeAttribute("_failedLoginName");
-
-			String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
-			
-			String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
-			
-			String maxAge = rememberMe?"31536000":"0";
-				
-			StringBuilder headerStr = new StringBuilder();
-			headerStr.append(CookieKeys.ID).append("=\"").append(UserManagerUtil.encryptUserId(userId)).append("\";")
-				.append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
-			res.addHeader("SET-COOKIE", headerStr.toString());
-
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
-			
-		}
-
-		if (authResult != Authenticator.SUCCESS) {
-			//Logger.info(this, "An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
-			SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + login + " has been made from IP: " + req.getRemoteAddr());
-			throw new AuthException();
-		}
-		
-		//Logger.info(this, "User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
-		SecurityLogger.logInfo(this.getClass(),"User " + login + " has sucessfully login from IP: " + req.getRemoteAddr());
+		this.loginService.doActionLogin(userId, password, rememberMe, req, res);
 	}
 
-	private void _sendPassword(HttpServletRequest req) throws Exception {
+    /**
+     * 
+     * @param req
+     * @throws Exception
+     */
+    private void _sendPassword(HttpServletRequest req) throws Exception {
 		String emailAddress = ParamUtil.getString(
 			req, "my_account_email_address");
 		String userId = emailAddress;

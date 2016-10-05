@@ -5,15 +5,20 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.List;
-import java.util.Map;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionlet.SESSION_KEY;
@@ -23,17 +28,18 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(DataProviderRunner.class)
 public class SessionAttributeConditionletTest {
 
     private SessionAttributeConditionlet conditionlet;
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
         conditionlet = new SessionAttributeConditionlet();
     }
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() {
+    @DataProvider
+    public static Object[][] cases() {
         List<TestCase> data = Lists.newArrayList();
 
         data.add(new TestCase("Comparison 'Exists' should eval true for session attribute value == '' and user value == ''.")
@@ -186,7 +192,8 @@ public class SessionAttributeConditionletTest {
         return TestUtil.toCaseArray(data);
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -195,7 +202,7 @@ public class SessionAttributeConditionletTest {
         return conditionlet.evaluate(aCase.request, aCase.response, conditionlet.instanceFrom(aCase.params));
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         private final HttpServletRequest request;
         private final HttpServletResponse response;

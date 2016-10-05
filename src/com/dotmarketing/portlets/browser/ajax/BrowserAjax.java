@@ -1,23 +1,5 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -30,6 +12,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -64,6 +47,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -74,6 +58,25 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  *
@@ -91,6 +94,7 @@ public class BrowserAjax {
 	private ContentletAPI contAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
+	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
 
 	String activeHostId = "";
     String activeFolderInode = "";
@@ -374,67 +378,71 @@ public class BrowserAjax {
 			int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showArchived, boolean noFolders,
 			boolean onlyFiles, String sortBy, boolean sortByDesc,
-			boolean excludeLinks) throws DotHibernateException,
-			DotSecurityException, DotDataException {
+			boolean excludeLinks) throws DotSecurityException, DotDataException {
+
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
-		//Language selectedLang = APILocator.getLanguageAPI().getLanguage(languageId);
-		//req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, selectedLang);
 		long getAllLanguages = 0;
+
 		Map<String, Object> results = browserAPI.getFolderContent(usr,
 				folderId, offset, maxResults, filter, mimeTypes, extensions,
 				showArchived, noFolders, onlyFiles, sortBy, sortByDesc,
 				excludeLinks, getAllLanguages);
-		pageListCleanup((List<Map<String, Object>>) results.get("list"));
+
+		listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
+
 		return results;
 	}
 
 	/**
-	 * The list of content pages under a folder contains all the legacy pages
-	 * and the new content pages. The latter might include the page identifier
+	 * The list of content under a folder might include the identifier
 	 * several times, representing all the available languages for a single
-	 * page.
+	 * content.
 	 * <p>
 	 * This method takes that list and <i>leaves only one identifier per
-	 * page</i>. This unique record represents either the page with the default
-	 * language ID, or the page with the next language ID in the list of system
+	 * page</i>. This unique record represents either the content with the default
+	 * language ID, or the content with the next language ID in the list of system
 	 * languages.
 	 * </p>
+     * * <p>
+     * If the fallback properties are false <i>leaves only one identifier per
+     * page that match the param languageId</i>.
+     * </p>
 	 * 
 	 * @param results
 	 *            - The full list of pages under a given path/directory.
+     * @param languageId
+     *            - Content Language of the results.
 	 */
-	private void pageListCleanup(List<Map<String, Object>> results) {
-		Map<String, Integer> pageLangCounter = new HashMap<String, Integer>();
+	private void listCleanup(List<Map<String, Object>> results, long languageId) {
+		Map<String, Integer> contentLangCounter = new HashMap<>();
+
 		// Examine only the pages with more than 1 assigned language
-		for (Map<String, Object> pageInfo : results) {
-			if ((boolean) pageInfo.get("isContentlet")) {
-				String ident = (String) pageInfo.get("identifier");
-				if (pageLangCounter.containsKey(ident)) {
-					int counter = pageLangCounter.get(ident);
-					pageLangCounter.put(ident, counter + 1);
+		for (Map<String, Object> content : results) {
+			if ((boolean) content.get("isContentlet")) {
+				String ident = (String) content.get("identifier");
+				if (contentLangCounter.containsKey(ident)) {
+					int counter = contentLangCounter.get(ident);
+					contentLangCounter.put(ident, counter + 1);
 				} else {
-					pageLangCounter.put(ident, 1);
+					contentLangCounter.put(ident, 1);
 				}
 			}
 		}
-		Set<String> identifierSet = pageLangCounter.keySet();
+
+		Set<String> identifierSet = contentLangCounter.keySet();
 		for (String identifier : identifierSet) {
-			int counter = pageLangCounter.get(identifier);
+			int counter = contentLangCounter.get(identifier);
 			if (counter > 1) {
-				long defaultLang = this.languageAPI.getDefaultLanguage()
-						.getId();
 				// Remove all languages except the default one
-				boolean isDeleted = removeAdditionalLanguages(identifier,
-						results, defaultLang);
+				boolean isDeleted = removeAdditionalLanguages(identifier, results, languageId);
 				if (!isDeleted) {
 					// Otherwise, leave only the next available language
 					List<Language> languages = this.languageAPI.getLanguages();
 					for (Language language : languages) {
-						if (language.getId() != defaultLang) {
-							isDeleted = removeAdditionalLanguages(identifier,
-									results, language.getId());
+						if (language.getId() != languageId) {
+							isDeleted = removeAdditionalLanguages(identifier, results, language.getId());
 							if (isDeleted) {
 								break;
 							}
@@ -443,11 +451,41 @@ public class BrowserAjax {
 				}
 			}
 		}
+
+        // If any of the fallback properties, ie DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false,
+        // we need to iterate over all the contents in the result list so far, and we need to remove
+        // all the contents that don't have the same language that we are passing as parameter.
+        for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
+            Map<String, Object> contentMap = iterator.next();
+
+			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true we need to remove all the file_asset
+			// that are not in the same language or in default language.
+			if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
+				contentMap.containsKey("type") &&
+				"file_asset".equals(contentMap.get("type")) &&
+				!contentMap.get("languageId").toString().equals(String.valueOf(languageId)) &&
+				!contentMap.get("languageId").toString().equals(String.valueOf(languageAPI.getDefaultLanguage().getId()))) {
+
+				iterator.remove();
+			}
+
+			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false we need to remove all the file_asset
+			// that are not in the same language (including default language).
+			if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
+				contentMap.containsKey("type") &&
+				"file_asset".equals(contentMap.get("type")) &&
+				!contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
+
+                iterator.remove();
+            }
+            //TODO logic for DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE
+            //TODO logic for DEFAULT_PAGE_TO_DEFAULT_LANGUAGE
+        }
 	}
 
 	/**
-	 * Removes all other pages from the given list that ARE NOT associated to
-	 * the specified language ID. In the end, the list will contain one page per
+	 * Removes all other contents from the given list that ARE NOT associated to
+	 * the specified language ID. In the end, the list will contain one content per
 	 * identifier with either the default language ID or the next available
 	 * language.
 	 * 
@@ -464,13 +502,14 @@ public class BrowserAjax {
 	 */
 	private boolean removeAdditionalLanguages(String identifier,
 			List<Map<String, Object>> resultList, long languageId) {
+
 		boolean removeOtherLangs = false;
-		for (int i = 0; i < resultList.size(); i++) {
-			Map<String, Object> pageInfo = resultList.get(i);
-			if ((boolean) pageInfo.get("isContentlet")) {
-				String ident = (String) pageInfo.get("identifier");
+
+		for (Map<String, Object> contentInfo : resultList) {
+			if ((boolean) contentInfo.get("isContentlet")) {
+				String ident = (String) contentInfo.get("identifier");
 				if (identifier.equals(ident)) {
-					long langId = (long) pageInfo.get("languageId");
+					long langId = (long) contentInfo.get("languageId");
 					// If specified language is found, remove all others
 					if (languageId == langId) {
 						removeOtherLangs = true;
@@ -479,9 +518,11 @@ public class BrowserAjax {
 				}
 			}
 		}
+
 		if (removeOtherLangs) {
 			removeLangOtherThan(resultList, identifier, languageId);
 		}
+
 		return removeOtherLangs;
 	}
 
@@ -553,7 +594,7 @@ public class BrowserAjax {
 		}
 	}
 
-	public Map<String, Object> getFileInfo(String fileId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+	public Map<String, Object> getFileInfo(String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
         WebContext ctx = WebContextFactory.get();
         HttpServletRequest req = ctx.getHttpServletRequest();
         ServletContext servletContext = ctx.getServletContext();
@@ -561,6 +602,10 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userAPI.isLoggedToFrontend(req);
 
         Identifier ident = APILocator.getIdentifierAPI().find(fileId);
+
+		if(languageId==0) {
+			languageId = languageAPI.getDefaultLanguage().getId();
+		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("file_asset")) {
 			File file = fileAPI.getWorkingFileById(fileId, user, respectFrontendRoles);
@@ -579,9 +624,14 @@ public class BrowserAjax {
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
-		    ContentletVersionInfo vinfo=APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+
+			if(vinfo==null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+				languageId = languageAPI.getDefaultLanguage().getId();
+				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
+			}
 		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
-			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, APILocator.getLanguageAPI().getDefaultLanguage().getId() , user, respectFrontendRoles);
+			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
 			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
     			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
     			java.io.File file = fileAsset.getFileAsset();
@@ -1714,6 +1764,32 @@ public class BrowserAjax {
 
     }
 
+	/**
+	 * This mehod will retrieve the HTML Page LAnguage (WebKeys.CONTENT_SELECTED_LANGUAGE) that is set up in the session.
+	 *
+	 * @param request
+	 * @return language id used in Edit Contentlet Page or default language id if it is not set.
+     */
+    private long getContentSelectedLanguageId(HttpServletRequest request){
+		long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+		if ( request != null &&
+			request.getSession() != null &&
+			request.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE) != null ) {
+
+			try{
+				languageId = Long.parseLong((String)request.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE));
+			} catch (Exception e){
+				Logger.error(this.getClass(),
+					"Language Id from request is not a long value. " +
+						"We will use Default Language. " +
+						"Value from request: " + languageId, e);
+			}
+		}
+
+		return languageId;
+	}
+
 
 	/**
 	 * This method returns the basic info of the full tree of hosts and folders
@@ -1844,7 +1920,9 @@ public class BrowserAjax {
     	String currentPath = host.getHostname();
         Map<String,Object> hostMap = new HashMap<String, Object>();
         hostMap.put("type", "host");
-        hostMap.put("hostName", host.getHostname());
+		hostMap.put("hostName",
+			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-system-host")
+				: host.getHostname());
         hostMap.put("name", host.getHostname());
         hostMap.put("id", host.getIdentifier());
         hostMap.put("identifier", host.getIdentifier());

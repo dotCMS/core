@@ -210,7 +210,7 @@ function downloadToExcel(structureInode){
 				</portlet:actionURL>">
 				<%= LanguageUtil.get(pageContext, "view") %></a>
 				</td>
-			<td align="center"><a href="javascript:downloadToExcel('<%=structure.getInode()%>')"><img src='/icon?i=csv.xls' border='0' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' align='absbottom'></a></td>
+			<td align="center"><a href="javascript:downloadToExcel('<%=structure.getInode()%>')"><img src='/html/images/icons/csv.png' border='0' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' align='absbottom'></a></td>
 		</tr>
 	<% } %>
 <% } %>

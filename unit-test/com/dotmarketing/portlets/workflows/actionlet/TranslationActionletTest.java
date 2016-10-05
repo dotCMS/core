@@ -19,8 +19,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.liferay.portal.model.User;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.translate.TranslateTestUtil.*;
 import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
 import static com.dotcms.translate.TranslateTestUtil.getFieldsForContent;
 import static com.dotcms.translate.TranslateTestUtil.getTranslateToAsList;
@@ -49,13 +48,13 @@ public class TranslationActionletTest {
     private Contentlet spanishTranslatedContent = mock(Contentlet.class);
     private Contentlet frenchTranslatedContent = mock(Contentlet.class);
 
-    @BeforeMethod
+    @Before
     public void mockContents() {
         spanishTranslatedContent = mock(Contentlet.class);
         frenchTranslatedContent = mock(Contentlet.class);
     }
 
-    @Test(expectedExceptions = WorkflowActionFailureException.class)
+    @Test(expected = WorkflowActionFailureException.class)
     public void testExecuteAction_UnpersistedContent() throws Exception {
         User systemUser = new User("systemUser");
         Contentlet unpersisted = new Contentlet();
@@ -112,7 +111,7 @@ public class TranslationActionletTest {
         List<Contentlet> translatedContents = getTranslatedContents();
 
         for (Contentlet translatedContent : translatedContents) {
-            verify(translatedContent).setProperty("__disable_workflow__", true);
+            verify(translatedContent).setProperty(Contentlet.DISABLE_WORKFLOW, true);
             verify(contentletAPI)
                 .checkin(translatedContent, conRel, cats,
                     perms, systemUser,
@@ -160,7 +159,7 @@ public class TranslationActionletTest {
         List<Contentlet> translatedContents = getTranslatedContents();
 
         for (Contentlet translatedContent : translatedContents) {
-            verify(translatedContent).setProperty("__disable_workflow__", true);
+            verify(translatedContent).setProperty(Contentlet.DISABLE_WORKFLOW, true);
             verify(contentletAPI)
                 .checkin(translatedContent, conRel, cats,
                     perms, systemUser,

@@ -3,7 +3,6 @@ package com.dotmarketing.servlets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -20,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.servlet.ServletException;
@@ -32,6 +32,8 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
 import com.dotcms.util.DownloadUtil;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -42,7 +44,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -148,6 +149,10 @@ public class BinaryExporterServlet extends HttpServlet {
 		String[] uriPieces = uri.split("/");
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
+		Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(uuid);
+		ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : APILocator.getShortyAPI().noShorty(uuid);
+		boolean isContent= (shorty.subType == ShortType.CONTENTLET);
+		uuid = shorty.longId;
 
 		Map<String, String[]> params = new HashMap<String, String[]>();
 		params.putAll(req.getParameterMap());
@@ -163,7 +168,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		String assetInode = null;
 		String assetIdentifier = null;
-		boolean byInode = params.containsKey("byInode") ;
+		boolean byInode = params.containsKey("byInode") || shorty.type == ShortType.INODE ;
 		if (byInode){
 			assetInode = uuid;
 		}
@@ -171,7 +176,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			assetIdentifier = uuid;
 		}
 
-		String fieldVarName = uriPieces.length > 3?uriPieces[3]:null;
+		String fieldVarName = uriPieces.length > 3?uriPieces[3]:"fileAsset";
 		BinaryContentExporter exporter = exportersByPathMapping.get(exporterPath);
 		if(exporter == null) {
 			Logger.warn(this, "No exporter for path " + exporterPath + " is registered. Requested url = " + uri);
@@ -221,37 +226,8 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 
 			String downloadName = "file_asset";
-			long lang = defaultLang;
-			String request_language = req.getParameter("language_id");
-			if(request_language != null){
-				lang = Long.parseLong(request_language);
-			}else{ 
-				if(session != null){
-					lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
-				}
-			}
-			//Identifier assetId = APILocator.getIdentifierAPI().find(assetIdentifier);
-			//List<Contentlet> allAssets = APILocator.getContentletAPI().findAllVersions(assetId, userAPI.getSystemUser(), false);
-			//long lang = (!allAssets.isEmpty()) ? allAssets.get(0).getLanguageId() : defaultLang;
-			/*try {
-				String x = null;
-				if (session != null) {
-					x = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
-				} else {
-					x = (String) req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
-				}
-				lang = Long.parseLong(x);
-			} catch(Exception e){
-				// Number parsing exception
-			}*/
+			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
-			boolean isContent = false;
-			try {
-				isContent = isContent(uuid, byInode, lang, respectFrontendRoles);
-			}catch (DotStateException e) {
-				resp.sendError(404);
-				return;
-			}
 
 			if (isContent){
 				Contentlet content = null;
@@ -526,7 +502,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		            }
 
 		            /* Using the If-Modified-Since Header */
-		             if(ifModifiedSince != null){
+		             /*if(ifModifiedSince != null){
 					    try{
 					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
 					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
@@ -535,7 +511,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					        }
 					    }
 					    catch(Exception e){}
-					}
+					}*/
 
 		            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
 		            resp.setHeader("Content-Length", String.valueOf(_fileLength));

@@ -178,6 +178,9 @@
         <display-name>ImageIO service provider loader/unloader</display-name>
         <listener-class>com.twelvemonkeys.servlet.image.IIOProviderContextListener</listener-class>
     </listener>
+	<listener>
+		<listener-class>com.dotcms.listeners.RegisterMBeansListener</listener-class>
+	</listener>
 	<!-- this must be the last listener -->
 	<listener>
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
@@ -219,7 +222,11 @@
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
-	
+	<servlet>
+		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet2</servlet-class>
+	</servlet>
+
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
@@ -298,6 +305,12 @@
 		<load-on-startup>2</load-on-startup>
 	</servlet>
 	
+	<servlet>
+		<servlet-name>ImageServlet</servlet-name>
+		<servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
+		<load-on-startup>4</load-on-startup>
+	</servlet>
+
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
@@ -492,7 +505,10 @@
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
-	
+	<servlet-mapping>
+		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<url-pattern>/dA/*</url-pattern>
+	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotCMS/*</url-pattern>
@@ -507,6 +523,12 @@
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
 	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>ImageServlet</servlet-name>
+		<url-pattern>/image/*</url-pattern>
+	</servlet-mapping>
+
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>

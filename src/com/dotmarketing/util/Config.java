@@ -1,7 +1,16 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.base.Supplier;
+import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
 import com.dotmarketing.db.DbConnectionFactory;
+
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -11,7 +20,22 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import javax.servlet.ServletContext;
+
+/**
+ * This class provides access to the system configuration parameters that are
+ * set through the {@code dotmarketing-config.properties}, and the
+ * {@code dotcms-config-cluster.properties} files.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
+
 public class Config {
+
+	private static final String BLANK = "";
 
 	//Generated File Indicator
 	public static final String GENERATED_FILE ="dotGenerated_";
@@ -32,18 +56,23 @@ public class Config {
 	private static Date lastRefreshTime = new Date ();
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
-    private static URL dotmarketingPropertiesUrl = null;
-    private static URL clusterPropertiesUrl = null;
+    protected static URL dotmarketingPropertiesUrl = null;
+    protected static URL clusterPropertiesUrl = null;
     private static int prevInterval = Integer.MIN_VALUE;
 
     private static final String syncMe = "esSync";
 
-	//Config internal methods
+	/**
+	 * Config internal methods
+	 */
 	public static void initializeConfig () {
 	    classLoader = Thread.currentThread().getContextClassLoader();
 	    _loadProperties();
 	}
 
+	/**
+	 * 
+	 */
     private static void _loadProperties () {
 
         if ( classLoader == null ) {
@@ -162,12 +191,21 @@ public class Config {
         }
     }
 
+    /**
+     * 
+     */
 	private static void _refreshProperties () {
 	    if(System.currentTimeMillis() > lastRefreshTime.getTime() + (refreshInterval * 60 * 1000) || props == null){
 	    	_loadProperties();
 	    }
 	}
 
+	/**
+	 * 
+	 * @param name
+	 * @param defValue
+	 * @return
+	 */
 	public static String getStringProperty(String name, String defValue) {
 		return getStringProperty(name, defValue, true);
 	}
@@ -188,15 +226,9 @@ public class Config {
 		if(props != null) {
 			String[] propsArr = props.getStringArray(name);
 			StringBuilder property = new StringBuilder();
-			int i = 0;
+
 			if(propsArr != null && propsArr.length > 0) {
-				for (String propItem : propsArr) {
-					if(i > 0) {
-						property.append(",");
-					}
-					property.append(propItem);
-					i++;
-				}
+				buildProperty(propsArr, property);
 				result = property.toString();
 			} else if(forceDefaultToString) {
 				result = String.valueOf(defValue);
@@ -206,6 +238,80 @@ public class Config {
 			result = defValue;
 		}
 		return result;
+	}
+
+	/**
+	 * Returns a string property. The {@link Supplier} is useful when you want
+	 * lazy evaluation for the default value. This means that figuring out the
+	 * value of the supplier will not happen until the logic determines that the
+	 * property specified by the {@code name} parameter does not map to a value
+	 * in the properties files.
+	 *
+	 * @param name
+	 *            - The name of the property to read.
+	 * @param defValue
+	 *            - The default value as a {@link Supplier}, in case the
+	 *            property is not defined.
+	 * @return The value of the specified property, or its default value.
+	 */
+	public static String getAsString(String name, Supplier<String> defValue) {
+		return getAsString(name, defValue, true);
+	}
+
+	/**
+	 * Returns a string property. The {@link Supplier} is useful when you want
+	 * lazy evaluation for the default value. This means that figuring out the
+	 * value of the supplier will not happen until the logic determines that the
+	 * property specified by the {@code name} parameter does not map to a value
+	 * in the properties files.
+	 *
+	 * @param name
+	 *            - The name of the property to read.
+	 * @param defValue
+	 *            - The default value as a {@link Supplier}, in case the
+	 *            property is not defined.
+	 * @param forceDefaultToString
+	 *            - If the default value is to be returned when the property is
+	 *            not defined in the configuration files, set to {@code true}.
+	 *            Otherwise, set to {@code false}.
+	 * @return The value of the specified property, or its default value.
+	 */
+	public static String getAsString(String name, Supplier<String> defValue, boolean forceDefaultToString) {
+		_refreshProperties();
+		String result = BLANK;
+		if (props != null) {
+			String[] propsArr = props.getStringArray(name);
+			StringBuilder property = new StringBuilder();
+			if (propsArr != null && propsArr.length > 0) {
+				buildProperty(propsArr, property);
+				result = property.toString();
+			} else if (forceDefaultToString) {
+				result = (defValue != null) ? defValue.get() : "";
+			}
+		} else {
+			// Default is not forced to string here for historical reasons.
+			// Presumably props are never actually null.
+			result = (defValue != null) ? defValue.get() : "";
+		}
+		return result;
+	}
+
+	/**
+	 * 
+	 * @param propsArr
+	 * @param property
+	 */
+	private static void buildProperty(String[] propsArr, StringBuilder property) {
+
+		int i = 0;
+
+		for (String propItem : propsArr) {
+            if(i > 0) {
+                property.append(",");
+            }
+            property.append(propItem);
+            i++;
+        }
 	}
 
 	/**
@@ -227,10 +333,16 @@ public class Config {
         return property;
     }
 
+	/**
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public static String[] getStringArrayProperty (String name) {
 	    _refreshProperties ();
 	    return props.getStringArray(name);
 	}
+
 	/**
 	 * @deprecated  Use getIntProperty(String name, int default) and
 	 * set an intelligent default
@@ -241,6 +353,20 @@ public class Config {
 	    return props.getInt(name);
 	}
 
+	public static long getLongProperty (String name, final long defaultVal) {
+		_refreshProperties ();
+		if ( props == null ) {
+			return defaultVal;
+		}
+		return props.getLong(name, defaultVal);
+	}
+
+	/**
+	 * 
+	 * @param name
+	 * @param defaultVal
+	 * @return
+	 */
 	public static int getIntProperty (String name, int defaultVal) {
 	    _refreshProperties ();
         if ( props == null ) {
@@ -248,6 +374,7 @@ public class Config {
         }
         return props.getInt(name, defaultVal);
 	}
+
 	/**
 	 * @deprecated  Use getFloatProperty(String name, float default) and
 	 * set an intelligent default
@@ -258,6 +385,12 @@ public class Config {
 	    return props.getFloat( name );
 	}
 
+	/**
+	 * 
+	 * @param name
+	 * @param defaultVal
+	 * @return
+	 */
 	public static float getFloatProperty (String name, float defaultVal) {
 	    _refreshProperties ();
         if ( props == null ) {
@@ -265,6 +398,7 @@ public class Config {
         }
         return props.getFloat(name, defaultVal);
 	}
+
 	/**
 	 * @deprecated  Use getBooleanProperty(String name, boolean default) and
 	 * set an intelligent default
@@ -275,6 +409,12 @@ public class Config {
 	    return props.getBoolean(name);
 	}
 
+	/**
+	 * 
+	 * @param name
+	 * @param defaultVal
+	 * @return
+	 */
 	public static boolean getBooleanProperty (String name, boolean defaultVal) {
 	    _refreshProperties ();
         if ( props == null ) {
@@ -283,34 +423,63 @@ public class Config {
         return props.getBoolean(name, defaultVal);
 	}
 
+	/**
+	 * 
+	 * @param key
+	 * @param value
+	 */
 	public static void setProperty(String key, Object value) {
 		if(props!=null) {
 			props.setProperty(key, value);
 		}
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static Iterator<String> getKeys () {
 	    _refreshProperties ();
 	    return props.getKeys();
 	}
 
+	/**
+	 * 
+	 * @param prefix
+	 * @return
+	 */
 	@SuppressWarnings ( "unchecked" )
 	public static Iterator<String> subset ( String prefix ) {
 		_refreshProperties();
 		return props.subset(prefix).getKeys();
 	}
 
+	/**
+	 * 
+	 * @param key
+	 * @return
+	 */
 	public static boolean containsProperty(String key) {
 		return props.containsKey(key);
 	}
 
-	// Spindle Config
+	/**
+	 * Spindle Config
+	 * 
+	 * @param myApp
+	 */
 	public static void setMyApp(javax.servlet.ServletContext myApp) {
 		CONTEXT = myApp;
 		CONTEXT_PATH = myApp.getRealPath("/");
 	}
 
+	/**
+	 * 
+	 * @param limit
+	 * @param offset
+	 * @return
+	 */
 	public static String getLimitOffsetQuery(int limit, int offset) {
 		String db = DbConnectionFactory.getDBType();
 
@@ -323,11 +492,11 @@ public class Config {
 		return "";
 	}
 
-
+	/**
+	 * 
+	 */
 	public static void forceRefresh(){
 		lastRefreshTime = new Date(0);
-
 	}
-
 
 }

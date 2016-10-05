@@ -1,4 +1,5 @@
-	<%@ page import="com.dotmarketing.util.UtilMethods" %>
+	<%@page import="com.liferay.portal.util.WebKeys"%>
+<%@ page import="com.dotmarketing.util.UtilMethods" %>
 
 	var referer = '<%=referer%>';
 
@@ -178,13 +179,13 @@
 
 
 	function addBinaryResize(velocityVarName) {
-		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/resize-image/${ContentIdentifier}/" + velocityVarName + "?w=150&h=100\" />\n#end \n";
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/resize-image/${ContentIdentifier}/" + velocityVarName + "?w=150&h=100&language_id=${language}\" />\n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
 
 	function addBinaryThumbnail(velocityVarName) {
-		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/image-thumbnail/${ContentIdentifier}/" + velocityVarName + "?w=150&h=150\" />\n#end \n";
+		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"BinaryFileURI})) \n   <img src=\"/contentAsset/image-thumbnail/${ContentIdentifier}/" + velocityVarName + "?w=150&h=150&language_id=${language}\" />\n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");
 		dijit.byId('variablesDialog').hide();
 	}
@@ -318,7 +319,7 @@
 	}
 
 	function saveCodeWindowSizePreference (windowName, dimension) {
-		var baseActionURL = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_preference" /><portlet:param name="cmd" value="<%= com.liferay.portal.util.Constants.SAVE %>" /><portlet:param name="userId" value="<%=user.getUserId()%>" /></portlet:actionURL>&in_frame=true'
+		var baseActionURL = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_preference" /><portlet:param name="cmd" value="<%= com.liferay.portal.util.Constants.SAVE %>" /><portlet:param name="userId" value="<%=user.getUserId()%>" /></portlet:actionURL>&<%=WebKeys.IN_FRAME%>=true'
 		var iframe = document.getElementById("userpreferences_iframe");
 		var window = document.getElementById(windowName);
 		var newURL = baseActionURL + "&preference=window_"+windowName+"_"+dimension;
