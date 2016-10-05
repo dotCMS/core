@@ -1,5 +1,7 @@
 package com.dotcms.notifications.bean;
 
+import com.dotcms.util.I18NMessage;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -151,7 +153,7 @@ public class Notification implements Serializable, Cloneable {
 	 * 
 	 * @return The notification title.
 	 */
-	public String getTitle() {
+	public I18NMessage getTitle() {
 		return this.notificationData.getTitle();
 	}
 
@@ -161,7 +163,7 @@ public class Notification implements Serializable, Cloneable {
 	 * @param title
 	 *            - The notification title.
 	 */
-	public void setTitle(String title) {
+	public void setTitle(I18NMessage title) {
 		this.notificationData.setTitle(title);
 	}
 
@@ -170,7 +172,7 @@ public class Notification implements Serializable, Cloneable {
 	 * 
 	 * @return The message title.
 	 */
-	public String getMessage() {
+	public I18NMessage getMessage() {
 		return this.notificationData.getMessage();
 	}
 
@@ -180,7 +182,7 @@ public class Notification implements Serializable, Cloneable {
 	 * @param message
 	 *            - The notification message.
 	 */
-	public void setMessage(String message) {
+	public void setMessage(I18NMessage message) {
 		this.notificationData.setMessage(message);
 	}
 
@@ -338,8 +340,8 @@ public class Notification implements Serializable, Cloneable {
 
 	@Override
 	public int hashCode() {
-		String title = this.notificationData.getTitle();
-		String message = this.notificationData.getMessage();
+		I18NMessage title   = this.notificationData.getTitle();
+		I18NMessage message = this.notificationData.getMessage();
 		int result = id != null ? id.hashCode() : 0;
 		result = 31 * result + (title != null ? title.hashCode() : 0);
 		result = 31 * result + (message != null ? message.hashCode() : 0);

@@ -15,7 +15,7 @@ import com.dotcms.repackage.org.json.JSONObject;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.rest.validation.Preconditions;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -92,8 +92,8 @@ public class I18NResource {
 
     @VisibleForTesting
     void messageToJson(JSONObject root, String[] pathKeys, String value) {
-        root = Preconditions.checkNotNull(root, InternalServerException.class, "Root cannot be null.");
-        pathKeys = Preconditions.checkNotEmpty(pathKeys, InternalServerException.class, "PathKeys cannot be null.");
+        root = DotPreconditions.checkNotNull(root, InternalServerException.class, "Root cannot be null.");
+        pathKeys = DotPreconditions.checkNotEmpty(pathKeys, InternalServerException.class, "PathKeys cannot be null.");
 
         StringBuilder currentPath = new StringBuilder("");
         try {
@@ -214,8 +214,8 @@ public class I18NResource {
         private final String key;
 
         public RestResourceLookup(String lang, String childRef) {
-            Preconditions.checkNotEmpty(lang, BadRequestException.class, "Language is required.");
-            Preconditions.checkNotNull(childRef, BadRequestException.class, "Resource path is required.");
+            DotPreconditions.checkNotEmpty(lang, BadRequestException.class, "Language is required.");
+            DotPreconditions.checkNotNull(childRef, BadRequestException.class, "Resource path is required.");
 
             this.ref = lang + '/' + childRef;
             String key = childRef.replace('/', '.');

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -125,11 +126,11 @@ public class IdentifierDateJob implements Job {
 				offset += limit;
 				contenletSearchList = contentletAPI.searchIndex(luceneQuery, limit, offset, "random", user, false);
 			}
+
 			//Send Notification
-			String notificationMessage = LanguageUtil.get(user.getLocale(), "notifications_structure_identifiers_updated"); // All Identifiers were succesfully updated.
 			APILocator.getNotificationAPI().generateNotification(
-					LanguageUtil.get(user.getLocale(), "notification.identifier.datejob.info.title"), // title = Identifier Notification
-					notificationMessage,
+					new I18NMessage("notification.identifier.datejob.info.title"), // title = Identifier Notification
+					new I18NMessage("notifications_structure_identifiers_updated"),
 					null, // no actions
 					NotificationLevel.INFO,
 					NotificationType.GENERIC,
@@ -142,10 +143,7 @@ public class IdentifierDateJob implements Job {
 		} catch (DotSecurityException e) {
 			Logger.error(CascadePermissionsJob.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (LanguageException e) {
-			Logger.error(IdentifierDateJob.class, "Error creating Notification", e);
-		}
-		finally {
+		} finally {
 		    try {
                 HibernateUtil.closeSession();
             } catch (DotHibernateException e) {

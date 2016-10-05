@@ -98,10 +98,26 @@ public class FieldFactory {
 
 
 	//### CREATE AND UPDATE ###
-	public static void saveField(Field oldField) throws DotDataException, DotSecurityException
+	public static void saveField(Field oldField) throws DotHibernateException
 	{
+	    
+        if (oldField.getFieldType().equals("host or folder") || oldField.getFieldType().equals("line_divider") || oldField.getFieldType().equals("tab_divider")
+                || oldField.getFieldType().equals("categories_tab")
+                || oldField.getFieldType().equals("permissions_tab") 
+                || oldField.getFieldType().equals( "relationships_tab")
+                || oldField.getFieldType().equals("category")
+             ) {
+
+            oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
+            
+        }
+	    
 	    com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
-	    APILocator.getFieldAPI2().save(field, APILocator.systemUser());
+	    try {
+            APILocator.getFieldAPI2().save(field, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotHibernateException(e.getMessage(),e);
+        }
 	    
 	    
 	    
@@ -110,25 +126,27 @@ public class FieldFactory {
 	public static void saveField(Field oldField, String existingId) throws DotHibernateException
 	{
 	    oldField.setInode(existingId);
-	    try {
-            saveField(oldField);
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(FieldFactory.class, e.getMessage(),e);
-        }
+
+        saveField(oldField);
+
 
 	}
 
 	//### DELETE ###
-	public static void deleteField(String inode) throws DotDataException
+	public static void deleteField(String inode) throws DotHibernateException
 	{
 		Field field = getFieldByInode(inode);
 		deleteField(field);
 	}
 
-	public static void deleteField(Field oldField) throws DotDataException
+	public static void deleteField(Field oldField) throws DotHibernateException
 	{
         com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
-	    fapi().delete(field);
+	    try {
+            fapi().delete(field);
+        } catch (DotDataException e) {
+            throw new DotHibernateException(e.getMessage(),e);
+        }
 
 	}
 
@@ -199,7 +217,8 @@ public class FieldFactory {
 	    
 	       try {
 	           com.dotcms.contenttype.model.field.Field newfield = fapi().find(field.getInode());
-	           return new FieldVariableTransformer(fapi().loadVariables(newfield)).oldFieldList();
+	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = fapi().loadVariables(newfield);
+	           return new FieldVariableTransformer(fl).oldFieldList();
 	        } catch (DotStateException | DotDataException e) {
 	            Logger.error(FieldFactory.class, e.getMessage());
 	        }

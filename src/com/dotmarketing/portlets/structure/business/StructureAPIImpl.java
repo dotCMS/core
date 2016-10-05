@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.util.List;
 
+
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
@@ -9,7 +10,10 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Structure;
+
+
 import com.liferay.portal.model.User;
+
 
 /**
  * This API exposes useful methods to access and modify information related to

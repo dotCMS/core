@@ -18,6 +18,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.I18NMessage;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -804,20 +805,9 @@ public class ReindexThread extends Thread {
 	protected void sendNotification(final String key, final Object[] msgParams, final String defaultMsg, final User systemUser) throws DotDataException,
 			LanguageException {
 
-		String errorMessage = LanguageUtil.get(systemUser, key);
-
-		if (UtilMethods.isSet(defaultMsg) && errorMessage.equals(key)) {
-			errorMessage = defaultMsg;
-		}
-
-		if (msgParams != null && msgParams.length > 0) {
-			MessageFormat fmt = new MessageFormat(errorMessage);
-			errorMessage = fmt.format(msgParams);
-		}
-
 		this.notificationAPI.generateNotification(
-				LanguageUtil.get(systemUser, "notification.reindex.error.title"), // title = Reindex Notification
-				errorMessage,
+				new I18NMessage("notification.reindex.error.title"), // title = Reindex Notification
+				new I18NMessage(key, defaultMsg, msgParams),
 				null, // no actions
 				NotificationLevel.ERROR,
 				NotificationType.GENERIC,

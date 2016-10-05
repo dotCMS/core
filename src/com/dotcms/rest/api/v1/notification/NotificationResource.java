@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.notification;
 
+import com.dotcms.notifications.NotificationConverter;
 import com.dotcms.notifications.bean.*;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.notifications.view.NotificationView;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -11,7 +13,6 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import static com.dotcms.util.ConversionUtils.toLong;
 
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -20,16 +21,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import static com.dotmarketing.util.DateUtil.prettyDateSince;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.elasticsearch.common.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -127,14 +124,14 @@ public class NotificationResource {
                     this.notificationAPI.getNotifications(offset, limit) :
                     this.notificationAPI.getNotifications(user.getUserId(), offset, limit);
 
-            final List<Notification> notificationsResult = list();
+            final List<NotificationView> notificationsResult = list();
 
             // copy and doing some treatment.
             if (null != notifications) {
 
                 notifications.forEach(notification -> {
 
-                    final Notification notificationResult = this.conversionUtils.convert(
+                    final NotificationView notificationResult = this.conversionUtils.convert(
                             new UserNotificationPair(user, notification), this.notificationConverter);
 
                     notificationsResult.add(notificationResult);

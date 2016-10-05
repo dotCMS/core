@@ -1,3 +1,4 @@
+
 package com.dotmarketing.util;
 
 import java.util.regex.Pattern;
@@ -5,7 +6,7 @@ import java.util.regex.Pattern;
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-
+import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.*;
 public class StringUtils {
     public static String formatPhoneNumber(String phoneNumber) {
         try {
@@ -76,4 +77,20 @@ public class StringUtils {
         return isSet(test) ? test : null;
     }
     
+    /**
+     * Split the string by commans
+     * Pre: string argument must be not null
+     * @param string {@link String}
+     * @return String array
+     */
+    final static char COMMA = ',';
+    public static String [] splitByCommas (final String string) {
+
+        return split(string, COMMA);
+    } // splitByComma.
+    
+    
 }
+
+
+

@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.api.system.user.UserService;
+import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.*;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.site.SiteBrowserResource;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -29,6 +31,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 /**
  * {@link SiteBrowserResource} test
@@ -45,14 +48,9 @@ public class UserResourceTest extends BaseMessageResources {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
         final UserResourceHelper userHelper  = mock(UserResourceHelper.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
-        final UserLocalManager userLocalManager  = mock(UserLocalManager.class);
-
 
         Config.CONTEXT = context;
 
@@ -63,8 +61,7 @@ public class UserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         UserResource userResource =
-                new UserResource(webResource, userWebAPI, userAPI, permissionAPI,
-                        userProxyAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, userHelper, errorHelper);
 
         try {
 
@@ -98,53 +95,184 @@ public class UserResourceTest extends BaseMessageResources {
 
     @Test
     public void testUpdateWithoutPassword() throws Exception {
-
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final WebResource webResource       = mock(WebResource.class);
-        final ServletContext context = mock(ServletContext.class);
-        final InitDataObject initDataObject = mock(InitDataObject.class);
-        final User user = new User();
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        HttpSession session = request.getSession();
+        final UserService userService = mock(UserService.class);
+        final RoleAPI roleAPI  = mock( RoleAPI.class );
+        final UserAPI userAPI  = mock( UserAPI.class );
+        final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
+        final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
+        final WebResource webResource = mock(WebResource.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
-        final UserAPI userAPI = mock(UserAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
-        final UserResourceHelper userHelper  = mock(UserResourceHelper.class);
+        final PermissionAPI permissionAPI= mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final LoginService loginService= mock(LoginService.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
-        final UserLocalManager userLocalManager  = mock(UserLocalManager.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
 
+        RestUtilTest.initMockContext();
 
+        final User user = new User();
         user.setCompanyId(User.DEFAULT + "NO");
         user.setUserId("dotcms.org.1");
-        Config.CONTEXT = context;
+
+        final User systemUser = new User();
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(userAPI.getSystemUser()).thenReturn(user);
-        when(userAPI.loadUserById("dotcms.org.1", user, false)).thenReturn(user);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
+        when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
         when(webResource.init(true, request, true)).thenReturn(initDataObject);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+        when(loginService.passwordMatch("password", user)).thenReturn(true);
+
+        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
+                userWebAPI, permissionAPI, userProxyAPI, loginService);
+
         UserResource userResource =
-                new UserResource(webResource, userWebAPI, userAPI, permissionAPI,
-                        userProxyAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, userHelper, errorHelper);
 
+        UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+                .userId("dotcms.org.1")
+                .givenName("Admin")
+                .surname("User Admin")
+                .email("admin@dotcms.com")
+                .currentPassword("password")
+                .build();
 
-        UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1").givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
         Response response = userResource.update(request, updateUserForm);
+        RestUtilTest.verifySuccessResponse(response);
 
-        assertNotNull(response);
-        assertNotNull(response.getEntity());
-        assertNotNull(ResponseEntityView.class.cast(response.getEntity()).getEntity());
-        assertTrue(!Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity()).isEmpty());
-        assertTrue(Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity()).containsKey("reauthenticate"));
-        assertTrue(Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity()).get("reauthenticate").equals(false));
-        assertTrue(Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity()).containsKey("userID"));
-        assertTrue(Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity()).get("userID").equals("dotcms.org.1"));
-        assertTrue(Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity()).containsKey("user"));
-        System.out.println(response);
-        System.out.println(response.getEntity());
+        Map userMap = Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity());
+
+        assertTrue(!userMap.isEmpty());
+        assertTrue(userMap.containsKey("reauthenticate"));
+        assertTrue(userMap.get("reauthenticate").equals(false));
+        assertTrue(userMap.containsKey("userID"));
+        assertTrue(userMap.get("userID").equals("dotcms.org.1"));
+        assertTrue(userMap.containsKey("user"));
+
+        verify(userAPI).save(user, systemUser, false, false);
+    }
+
+    @Test
+    public void testUpdateWithPassword() throws Exception {
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        HttpSession session = request.getSession();
+        final UserService userService = mock(UserService.class);
+        final RoleAPI roleAPI  = mock( RoleAPI.class );
+        final UserAPI userAPI  = mock( UserAPI.class );
+        final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
+        final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
+        final WebResource webResource = mock(WebResource.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        final PermissionAPI permissionAPI= mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final LoginService loginService= mock(LoginService.class);
+        final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+
+        RestUtilTest.initMockContext();
+
+        final User user = new User();
+        user.setCompanyId(User.DEFAULT + "NO");
+        user.setUserId("dotcms.org.1");
+
+        final User systemUser = new User();
+
+        when(initDataObject.getUser()).thenReturn(user);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
+        when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
+        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+        when(loginService.passwordMatch("password", user)).thenReturn(true);
+
+        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
+                userWebAPI, permissionAPI, userProxyAPI, loginService);
+
+        UserResource userResource =
+                new UserResource(webResource, userAPI, userHelper, errorHelper);
+
+        UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+                .userId("dotcms.org.1")
+                .givenName("Admin")
+                .surname("User Admin")
+                .email("admin@dotcms.com")
+                .currentPassword("password")
+                .newPassword("new password")
+                .build();
+
+        Response response = userResource.update(request, updateUserForm);
+        RestUtilTest.verifySuccessResponse(response);
+
+        Map userMap = Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity());
+
+        assertTrue(!userMap.isEmpty());
+        assertTrue(userMap.containsKey("reauthenticate"));
+        assertTrue(userMap.get("reauthenticate").equals(true));
+        assertTrue(userMap.containsKey("userID"));
+        assertTrue(userMap.get("userID").equals("dotcms.org.1"));
+        assertTrue(userMap.containsKey("user"));
+        assertTrue(userMap.containsKey("user"));
+        assertTrue(((Map) userMap.get("user")).isEmpty());
+
+        verify(userAPI).save(user, systemUser, true, false);
+    }
+
+    @Test
+    public void testUpdateWithIncorrectPassword() throws Exception {
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        HttpSession session = request.getSession();
+        final UserService userService = mock(UserService.class);
+        final RoleAPI roleAPI  = mock( RoleAPI.class );
+        final UserAPI userAPI  = mock( UserAPI.class );
+        final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
+        final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
+        final WebResource webResource = mock(WebResource.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        final PermissionAPI permissionAPI= mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final LoginService loginService= mock(LoginService.class);
+        final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+
+        RestUtilTest.initMockContext();
+
+        final User user = new User();
+        user.setCompanyId(User.DEFAULT + "NO");
+        user.setUserId("dotcms.org.1");
+
+        final User systemUser = new User();
+
+        when(initDataObject.getUser()).thenReturn(user);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
+        when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
+        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+        when(loginService.passwordMatch("password", user)).thenReturn(false);
+
+        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
+                userWebAPI, permissionAPI, userProxyAPI, loginService);
+
+        UserResource userResource =
+                new UserResource(webResource, userAPI, userHelper, errorHelper);
+
+        UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+                .userId("dotcms.org.1")
+                .givenName("Admin")
+                .surname("User Admin")
+                .email("admin@dotcms.com")
+                .currentPassword("password")
+                .newPassword("new password")
+                .build();
+
+        Response response = userResource.update(request, updateUserForm);
+        assertEquals(response.getStatus(), 400);
     }
 
     @Test
@@ -154,12 +282,14 @@ public class UserResourceTest extends BaseMessageResources {
         final UserAPI userAPI  = mock( UserAPI.class );
         final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
         final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
-
         final WebResource webResource = mock(WebResource.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
-        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI);
+        final PermissionAPI permissionAPI= mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final LoginService loginService= mock(LoginService.class);
+
+        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
+                userWebAPI, permissionAPI, userProxyAPI, loginService);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
 
         String userId1 = "admin.role.id";
@@ -191,8 +321,7 @@ public class UserResourceTest extends BaseMessageResources {
         when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
 
         UserResource userResource =
-                new UserResource(webResource, userWebAPI, userAPI, permissionAPI,
-                        userProxyAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, userHelper, errorHelper);
 
         Response response = userResource.loginAsData();
 
@@ -200,6 +329,5 @@ public class UserResourceTest extends BaseMessageResources {
 
         List<Map<String,Object>> responseUsers = (List<Map<String, Object>>) ((Map) ((ResponseEntityView) response.getEntity()).getEntity()).get("users");
         assertEquals(2, responseUsers.size());
-
     }
 }

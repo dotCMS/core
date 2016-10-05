@@ -67,6 +67,8 @@ public class ServletTestRunner extends HttpServlet {
 
         Logger.info( "Running unit tests....." );
 
+        System.setProperty("TEST-RUNNER", ServletTestRunner.class.getCanonicalName());
+
         //If nothing is present the default is to create an xml report
         if ( resultType == null || resultType.isEmpty() ) {
             xmlReport( response, className, methodName );

@@ -28,10 +28,14 @@ public class TestingJndiDatasource {
     private static InitialContextFactoryBuilder builder;
 
     static {
-        builder = new TestInitialContextFactory();
+        if (Config.CONTEXT == null) {
+            builder = new TestInitialContextFactory();
+        }
     }
 
     public static void init() throws Exception {
-        NamingManager.setInitialContextFactoryBuilder(builder);
+        if (builder != null && !NamingManager.hasInitialContextFactoryBuilder()) {
+            NamingManager.setInitialContextFactoryBuilder(builder);
+        }
     }
 }

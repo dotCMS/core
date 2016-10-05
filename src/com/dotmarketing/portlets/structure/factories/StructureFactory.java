@@ -6,17 +6,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.api.system.event.*;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.exception.BaseRuntimeInternationalizationException;
+
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionedWebAssetUtil;
+
+
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -31,6 +41,7 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -40,6 +51,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
 
 /**
  * Provides access to information related to Content Types and the different
@@ -54,17 +66,13 @@ import com.liferay.portal.model.User;
 @Deprecated
 public class StructureFactory {
 
-	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-
-	private static HostAPI hostAPI = APILocator.getHostAPI();
 
 
-	/**
-	 * @param permissionAPI the permissionAPI to set
-	 */
-	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
-		permissionAPI = permissionAPIRef;
-	}
+
+	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private static final HttpServletRequestThreadLocal httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
+	private static final ContentTypeUtil contentTypeUtil = ContentTypeUtil.getInstance();
+
 
 	//### READ ###
 
@@ -373,14 +381,32 @@ public class StructureFactory {
 	}
 
 	//### CREATE AND UPDATE
-	public static void saveStructure(Structure structure) throws DotHibernateException
-	{
+	public static void saveStructure(Structure structure) throws DotHibernateException{
+        boolean isNew = !UtilMethods.isSet(structure.getInode());
 		try {
 			ContentType type = new StructureTransformer(structure).from();
 			type = APILocator.getContentTypeAPI2().save(type, APILocator.systemUser());
 			structure.setInode(type.inode());
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
+		}
+
+
+
+		pushSaveUpdateEvent(structure, isNew);
+	}
+
+	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
+
+		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
+
+		try {
+	 		String actionUrl = contentTypeUtil.getActionUrl(structure);
+			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
+                            String.valueOf(PermissionAPI.PERMISSION_READ)));
+		} catch (DotDataException e) {
+			throw new RuntimeException( e );
 		}
 	}
 
@@ -406,11 +432,16 @@ public class StructureFactory {
 
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
+
 		try {
 			APILocator.getContentTypeAPI2().delete(new StructureTransformer(structure).from(), APILocator.systemUser());
+	          String actionUrl = contentTypeUtil.getActionUrl(structure);
+	            ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+	            systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
+	                    String.valueOf(PermissionAPI.PERMISSION_READ)));
 		} catch (DotStateException | DotSecurityException e) {
 			Logger.error(StructureFactory.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage());
+			throw new BaseRuntimeInternationalizationException( e );
 		}
 	}
 

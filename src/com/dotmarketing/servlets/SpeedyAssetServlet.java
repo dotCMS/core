@@ -177,15 +177,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 				}
 				
 				//Language is in request, let's load it. Otherwise use the language in session
-				long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-				String request_language = request.getParameter("language_id");
-				if(request_language != null){
-					lang = Long.parseLong(request_language);
-				}else{ 
-					if(session != null){
-						lang = Long.parseLong((String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));//is the language that we have in the session, did not saw a language_id in it
-					}
-				}
+				long lang = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 				
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
 

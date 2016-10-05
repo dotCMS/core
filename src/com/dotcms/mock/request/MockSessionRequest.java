@@ -1,7 +1,10 @@
 package com.dotcms.mock.request;
 
+import com.dotmarketing.util.Config;
+
 import java.util.UUID;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
@@ -24,6 +27,11 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 
 	public HttpServletRequest request() {
 		return this;
+	}
+
+	@Override
+	public ServletContext getServletContext() {
+		return Config.CONTEXT;
 	}
 
 	@Override

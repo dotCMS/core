@@ -1,10 +1,11 @@
 package com.dotcms.rest.validation;
 
 import com.dotmarketing.util.Config;
-import javax.servlet.http.HttpServletRequest;
 
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
-import static com.dotcms.rest.validation.Preconditions.newException;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.dotcms.util.DotPreconditions.newException;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Geoff M. Granum
@@ -19,4 +20,4 @@ public class ServletPreconditions {
         return request;
     }
 }
- 
+

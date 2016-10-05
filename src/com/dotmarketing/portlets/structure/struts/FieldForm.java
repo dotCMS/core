@@ -276,7 +276,7 @@ public class FieldForm extends ValidatorForm {
 		    }
 		    if( !fieldType.equals("host or folder" )&& !fieldType.equals("relationships_tab") && !fieldType.equals("permissions_tab") && !fieldType.equals("categories_tab") && !fieldType.equals("image") && !fieldType.equals("link") && !fieldType.equals("file") && !element.equals(FieldAPI.ELEMENT_CONSTANT) && !fieldType.equals("hidden")) {
 		        if (!UtilMethods.isSet(dataType)) {
-		            ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.dataType"));
+		           // ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.dataType"));
 		        }
 		    }
 		}

@@ -15,7 +15,7 @@ public enum DataTypes {
 	SYSTEM("system_field"),
 	BINARY("binary");
 
-	private String value;
+	final String value;
 
 	DataTypes (String value) {
 		this.value = value;

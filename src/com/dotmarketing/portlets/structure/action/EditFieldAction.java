@@ -331,111 +331,14 @@ public class EditFieldAction extends DotPortletAction {
             if (!field.isFixed() && !field.isReadOnly()) {
                 // gets the data type from the contentlet: bool, date, text, etc
 
-                String prevDataType = (field.getFieldContentlet() != null) ? field.getFieldContentlet().replaceAll(
-                        "[0-9]*", "") : "";
 
-                if (field.getFieldType().equals("categories_tab") || field.getFieldType().equals("permissions_tab")
-                        || field.getFieldType().equals("relationships_tab")) {
 
-                    List<Field> structureFields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-                    for (Field f : structureFields) {
-                        if (f.getFieldType().equals("categories_tab") && field.getFieldType().equals("categories_tab")
-                                && !f.getInode().equals(field.getInode())) {
-                            String message = "message.structure.duplicate.categories_tab";
-                            SessionMessages.add(req, "error", message);
-                            return false;
 
-                        } else if (f.getFieldType().equals("permissions_tab")
-                                && field.getFieldType().equals("permissions_tab")
-                                && !f.getInode().equals(field.getInode())) {
-                            String message = "message.structure.duplicate.permissions_tab";
-                            SessionMessages.add(req, "error", message);
-                            return false;
 
-                        } else if (f.getFieldType().equals("relationships_tab")
-                                && field.getFieldType().equals("relationships_tab")
-                                && !f.getInode().equals(field.getInode())) {
-                            String message = "message.structure.duplicate.relationships_tab";
-                            SessionMessages.add(req, "error", message);
-                            return false;
 
-                        }
-                    }
-
-                }
-
-                if (!(field.getFieldType().equals("host or folder") || field.getFieldType().equals("line_divider") || field.getFieldType().equals("tab_divider")
-                        || field.getFieldType().equals("categories_tab")
-                        || field.getFieldType().equals("permissions_tab") || field.getFieldType().equals(
-                        "relationships_tab"))
-                        && !UtilMethods.isSet(fieldForm.getDataType())) {
-                    // it's either an image, file or link so there is no
-                    // datatype
-                    field.setFieldContentlet("");
-                }
-
-                if (!UtilMethods.isSet(fieldForm.getDataType())) {
-                    // it's either an image, file or link so there is no
-                    // datatype
-                    if (!field.getFieldType().equals("host or folder")){
-                            field.setFieldContentlet("");
-                        }
-
-                } else if (!prevDataType.equals(fieldForm.getDataType())) {
-                    String fieldContentlet = FieldFactory.getNextAvaliableFieldNumber(dataType, field.getInode(), field
-                            .getStructureInode());
-                    if (fieldContentlet == null) {
-                        // didn't find any empty ones, so im throwing an error
-                        // to the user to select a new one
-                        String message = "message.structure.nodatatype";
-                        SessionMessages.add(req, "error", message);
-                        return false;
-                    }
-                    field.setFieldContentlet(fieldContentlet);
-                }
-
-                if (field.getFieldType().equalsIgnoreCase(Field.FieldType.CATEGORY.toString())) {
-                    field.setValues(req.getParameter("categories"));
-                    field.setIndexed(true);
-
-                    // validate if a field with the same category already exists
-                    List<Field> stFields = FieldsCache.getFieldsByStructureInode(field.getStructureInode());
-                    for (Field stField : stFields) {
-                        if(stField.getFieldType().equalsIgnoreCase(Field.FieldType.CATEGORY.toString())
-                                && UtilMethods.isSet(stField.getValues())
-                                && stField.getValues().equals(field.getValues())
-                                && !stField.getInode().equals(field.getInode())) {
-                            SessionMessages.add(httpReq, "message", "message.category.existing.field");
-                            return false;
-                        }
-                    }
-
-                    if (UtilMethods.isSet(fieldForm.getDefaultValue())) {
-                        List<Category> selectedCategoriesList = new ArrayList<Category>();
-                        String[] selectedCategories = fieldForm.getDefaultValue().trim().split("\\|");
-                        for (String cat : selectedCategories) {
-                            selectedCategoriesList.add(categoryAPI.findByName(cat, user, false));
-                        }
-                        Category category = categoryAPI.find(req.getParameter("categories"), user, false);
-                        List<Category> childrenCategories = categoryAPI.getChildren(category, user, false);
-                        if (!childrenCategories.containsAll(selectedCategoriesList)) {
-                            String message = "error.invalid.child.category";
-                            SessionMessages.add(req, "error", message);
-                            return false;
-                        }
-                    }
-
-                }
-
-                if (field.getFieldType().equalsIgnoreCase(Field.FieldType.TAG.toString()) || field.isSearchable()) {
-                    field.setIndexed(true);
-                }
             }
 
-            if (fieldForm.getElement().equals(FieldAPI.ELEMENT_CONSTANT) || fieldForm.getFieldType().equals(FieldAPI.ELEMENT_CONSTANT)) {
-                field.setFieldContentlet(FieldAPI.ELEMENT_CONSTANT);
-                field.setValues(fieldForm.getValues());
-            }
+
 
             boolean isUpdating = UtilMethods.isSet(field.getInode());
             // saves this field

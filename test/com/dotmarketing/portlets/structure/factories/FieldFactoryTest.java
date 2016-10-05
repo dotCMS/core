@@ -135,19 +135,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         Iterator<Field> iterator = fields.iterator();
         Field field = iterator.next();
 
-        //Search by the field contentlet
-        //TODO: The data type is used everywhere instead the field.getFieldContentlet() as the method name, parameter and even te query suggested...
-        Collection<Field> fieldsByContentlet = FieldFactory.getFieldsByContentletField( Field.DataType.TEXT.toString(), field.getInode(), structure.getInode() );
 
-        //Validations
-        assertTrue( fieldsByContentlet != null && !fieldsByContentlet.isEmpty() );
-
-        //Search by the field contentlet and with an Inode null
-        //TODO: The data type is used everywhere instead the field.getFieldContentlet() as the method name, parameter and even te query suggested...
-        fieldsByContentlet = FieldFactory.getFieldsByContentletField( Field.DataType.TEXT.toString(), null, structure.getInode() );
-
-        //Validations
-        assertTrue( fieldsByContentlet != null && !fieldsByContentlet.isEmpty() );
     }
 
     /**
@@ -375,13 +363,6 @@ public class FieldFactoryTest extends ContentletBaseTest {
         //++++++++++++++++++++++++++++++++++++++++++++
         //Getting all the variables for a given field
         Collection<FieldVariable> variables = FieldFactory.getFieldVariablesForField( field.getInode() );
-
-        //Validations
-        assertTrue( variables != null && !variables.isEmpty() );
-
-        //++++++++++++++++++++++++++++++++++++++++++++
-        //Getting all the variables
-        variables = FieldFactory.getAllFieldVariables();
 
         //Validations
         assertTrue( variables != null && !variables.isEmpty() );

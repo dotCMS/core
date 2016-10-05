@@ -66,6 +66,7 @@ public class FieldVariableTransformer {
         fvar.setKey(var.key());
         fvar.setValue(var.value());
         fvar.setLastModDate(var.modDate());
+        fvar.setLastModifierId(var.userId());
         return fvar;
 
     }
