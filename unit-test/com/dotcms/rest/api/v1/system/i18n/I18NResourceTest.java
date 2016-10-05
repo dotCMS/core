@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.i18n;
 
-import com.beust.jcommander.internal.Maps;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.json.JSONObject;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -38,13 +38,19 @@ public class I18NResourceTest {
     @Test()
     public void testCheckHasResultDoesNotThrowForMultipleResults() throws Exception {
         I18NResource rsrc = new I18NResource();
-        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.<String>empty(), Maps.newHashMap("a", "b", "c", "d"));
+        Map<String, String> abcdMap = Maps.newHashMap();
+        abcdMap.put("a", "b");
+        abcdMap.put("c", "d");
+        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.<String>empty(), abcdMap);
     }
 
     @Test()
     public void testCheckHasResultDoesNotThrowForSingleAndMultipleResults() throws Exception {
         I18NResource rsrc = new I18NResource();
-        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.of("Fake Result"), Maps.newHashMap("a", "b", "c", "d"));
+        Map<String, String> abcdMap = Maps.newHashMap();
+        abcdMap.put("a", "b");
+        abcdMap.put("c", "d");
+        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.of("Fake Result"), abcdMap);
     }
 
     @Test(expected = InternalServerException.class)

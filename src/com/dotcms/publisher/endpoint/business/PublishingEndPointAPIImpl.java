@@ -2,6 +2,7 @@ package com.dotcms.publisher.endpoint.business;
 
 import java.util.List;
 
+import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.exception.DotDataException;
 
@@ -61,6 +62,10 @@ public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 	 * Delete an end point by id
 	 */
 	public void deleteEndPointById(String id) throws DotDataException {
+	    //Delete all conflicts reported for this Endpoint
+	    IntegrityUtil integrityUtil = new IntegrityUtil();
+	    integrityUtil.completeDiscardConflicts(id);
+	    //Delete the Endpoint
 		publishingEndPointFactory.deleteEndPointById(id);
 	}
 
