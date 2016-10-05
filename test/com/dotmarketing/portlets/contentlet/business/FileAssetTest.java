@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.contentlet.business;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -23,19 +22,16 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.util.FileUtil;
 
 public class FileAssetTest extends ContentletBaseTest {
 	
-	static Client client;
-	static WebTarget webTarget;
+	Client client;
+	WebTarget webTarget;
 	
     @BeforeClass
-    public static void before() throws Exception{
-    	//Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-    	
+    public void before() throws Exception{
+    	    	
         LicenseTestUtil.getLicense();
 
         client=RestClientBuilder.newClient();
