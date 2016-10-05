@@ -59,7 +59,7 @@ public class WorkingCache {
 				cache.put(getPrimaryGroup() + hostId + "-" + uri,uri, getPrimaryGroup() + "_" + hostId);
 
 				//if this is an index page, map its directories to it
-				if(id.getURI().endsWith(CMSFilter.CMS_INDEX_PAGE))
+				if(id.getURI().endsWith("/" + CMSFilter.CMS_INDEX_PAGE))
 				{
 					Logger.debug(WorkingCache.class, "Mapping Working: " + uri.substring(0,uri.lastIndexOf("/" + CMSFilter.CMS_INDEX_PAGE)) + " to " + uri);
 					cache.put(getPrimaryGroup() + hostId + "-" + uri.substring(0,uri.lastIndexOf("/" +CMSFilter.CMS_INDEX_PAGE)),uri, getPrimaryGroup() + "_" + hostId);
