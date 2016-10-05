@@ -1,14 +1,21 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
+import java.util.List;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 
-import java.util.Date;
-import java.util.List;
-
+/**
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public abstract class UserFactory {
 
 	/**
@@ -190,6 +197,41 @@ public abstract class UserFactory {
 			throws DotDataException;
 
 	/**
+	 * Return the number of users whose first name, last name, or email are
+	 * similar to the value specified in the {@code filter} parameter. For
+	 * example, retrieving all users that match {@code filter = "and"} will
+	 * return records like these:
+	 * <ul>
+	 * <li>Where {@code firstname = "Andrew"}</li>
+	 * <li>Or {@code firstname = "Alexander"}</li>
+	 * <li>Or {@code lastname = "Andrews"}</li>
+	 * <li>Or {@code lastname = "Allmand"}</li>
+	 * <li>Or {@code email = "john.anderson@domain.com"}</li>
+	 * <li>Etc.</li>
+	 * </ul>
+	 * <p>
+	 * If the filter is not specified, all users will be returned. This method 
+	 * <b>ALWAYS</b> hits the database.
+	 * 
+	 * @param filter
+	 *            - A set of characters that can match the value of the user's
+	 *            first name, last name, or e-mail. If not specified, all users
+	 *            will be returned.
+	 * @param includeAnonymous
+	 *            - If set to {@code true}, the "Anonymous" user will be
+	 *            included in the result. Otherwise, set to {@code false}.
+	 * @param includeDefault
+	 *            - If set to {@code true}, the "Default" user will be included
+	 *            in the result. Otherwise, set to {@code false}.
+	 * @return The total count of users that match the specified criteria.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the information from the
+	 *             database.
+	 */
+	protected abstract long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+			throws DotDataException;
+
+	/**
      * This method return a a paginated list of user that have a firstname, lastname or email like
      * the compare string passed, includes anonymous user
 	 * This method will ALWAYS hit DB
@@ -213,6 +255,41 @@ public abstract class UserFactory {
      */
 	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
 			int pageSize, boolean includeAnonymous) throws DotDataException;
+
+	/**
+	 * Return the list of {@link User} objects whose first name, last name, or
+	 * email are similar to the value specified in the {@code filter} parameter.
+	 * For example, retrieving all users that match {@code filter = "and"} will
+	 * return records like these:
+	 * <ul>
+	 * <li>Where {@code firstname = "Andrew"}</li>
+	 * <li>Or {@code firstname = "Alexander"}</li>
+	 * <li>Or {@code lastname = "Andrews"}</li>
+	 * <li>Or {@code lastname = "Allmand"}</li>
+	 * <li>Or {@code email = "john.anderson@domain.com"}</li>
+	 * <li>Etc.</li>
+	 * </ul>
+	 * <p>
+	 * If the filter is not specified, all users will be returned. This method
+	 * <b>ALWAYS</b> hits the database.
+	 * 
+	 * @param filter
+	 *            - A set of characters that can match the value of the user's
+	 *            first name, last name, or e-mail. If not specified, all users
+	 *            will be returned.
+	 * @param includeAnonymous
+	 *            - If set to {@code true}, the "Anonymous" user will be
+	 *            included in the result. Otherwise, set to {@code false}.
+	 * @param includeDefault
+	 *            - If set to {@code true}, the "Default" user will be included
+	 *            in the result. Otherwise, set to {@code false}.
+	 * @return The list of users that match the specified criteria.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the information from the
+	 *             database.
+	 */
+	protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException;
 
     /**
      * Search for users that could not be deleted successfully

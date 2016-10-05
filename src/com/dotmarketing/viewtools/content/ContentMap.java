@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.viewtools.content;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -123,16 +124,16 @@ public class ContentMap {
 			Object ret = null;
 			Field f = retriveField(fieldVariableName);
 			if(f==null){
-				if(fieldVariableName.equalsIgnoreCase("host")){
+				if("host".equalsIgnoreCase(fieldVariableName)){
 					try{
 						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
 					}catch (IndexOutOfBoundsException e) {
 						Logger.debug(this, "Unable to get host on content");
 						return null;
 					}
-				}else if(fieldVariableName.equalsIgnoreCase("title")){
+				}else if("title".equalsIgnoreCase(fieldVariableName)){
 					ret =  getContentletsTitle();
-				}else if(fieldVariableName.equalsIgnoreCase("structure")){
+				}else if("structure".equalsIgnoreCase(fieldVariableName) || "contenttype".equalsIgnoreCase(fieldVariableName)){
 					return getStructure();
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033
 				}else if(fieldVariableName.contains("FileURI")){
@@ -232,7 +233,7 @@ public class ContentMap {
 
                 // Field value is not present in fieldValueMap hashmap
                 if (content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
-                        && f.getVelocityVarName().equalsIgnoreCase("fileasset")) {
+                        && "fileasset".equalsIgnoreCase(f.getVelocityVarName())) {
                     // http://jira.dotmarketing.net/browse/DOTCMS-7406
                     FileAssetMap fam = FileAssetMap.of(content);
 
@@ -247,7 +248,7 @@ public class ContentMap {
                     return bm;
                 }
 			//if the property being served is URL and the structure is a page show URL using the identifier information
-			}else if(fieldVariableName.equalsIgnoreCase("url") && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			}else if("url".equalsIgnoreCase(fieldVariableName) && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
 					// asset name only keeps the page name and not the full path, the full path is obtained by concatenating the parent path and the asset name
@@ -337,6 +338,65 @@ public class ContentMap {
 		}
 	}
 
+    /**
+    * Returns the returns the identifier based URI for the 
+    * first doc/file on a piece of content
+    * EXAMPLE : $mycontent.shorty
+    * @return
+    * @throws IOException 
+    */
+    public String getShorty() throws IOException{
+        return getShorty(content.getIdentifier());
+    }
+    
+    
+    /**
+    * Returns the returns the identifier based URI for the 
+    * first doc/file on a piece of content
+    * EXAMPLE : $mycontent.shortyInode
+    * @return
+    * @throws IOException 
+    */
+    public String getShortyInode() throws IOException{
+        return getShorty(content.getInode());
+    }
+	
+	
+
+    private String getShorty(final String idInode) throws IOException{
+        String tryField=getFileField();
+        java.io.File file=content.getBinary(getFileField());
+
+        StringBuilder sb = new StringBuilder("/dA/").append(APILocator.getShortyAPI().shortify(idInode));
+        if(!"fileAsset".equals(tryField)){
+            sb.append("/").append(tryField);
+        }
+        sb.append("/").append(file.getName()) ;
+        
+        return sb.toString();
+    }
+    
+    private String getFileField() throws IOException{
+        String tryField="fileAsset";
+        java.io.File file=content.getBinary(tryField);
+
+        if(file!=null &&  file.exists()){
+            return tryField;
+        }
+
+        for (Field f : FieldsCache.getFieldsByStructureInode(content.getStructureInode())) {
+            if ("binary".equals(f.getFieldType())) {
+                file=content.getBinary(f.getVelocityVarName());
+                if(file!=null &&  file.exists()){
+                    return f.getVelocityVarName();
+                }
+            }
+        }
+        return null;
+    }
+    
+	
+	
 	/**
 	 * Returns the URLMap if it exists for a piece of content. <br/>
 	 * EXAMPLE : $mycontent.urlMap OR $mycontent.getUrlMap() both of these work the same.

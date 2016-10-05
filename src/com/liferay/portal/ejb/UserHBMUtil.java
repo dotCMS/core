@@ -57,6 +57,9 @@ public class UserHBMUtil {
 					userHBM.getLastLoginIP(), userHBM.getFailedLoginAttempts(),
 					userHBM.getAgreedToTermsOfUse(), userHBM.getActive(),
 					userHBM.getDeleteInProgress(), userHBM.getDeleteDate());
+
+            user.setModificationDate(userHBM.getModDate());
+
 			UserPool.put(user.getPrimaryKey(), user);
 		}
 

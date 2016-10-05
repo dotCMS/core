@@ -2,6 +2,7 @@ package com.dotmarketing.logConsole.model;
 
 import java.util.List;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
@@ -15,6 +16,11 @@ public class LogMapper {
     private List<LogMapperRow> logList = null;
     private LogMapperCache cache = CacheLocator.getLogMapperCache();
     private ConsoleLogFactory consoleLogFactory = new ConsoleLogFactoryImpl();
+
+    @VisibleForTesting
+    public static void setLogMapper( LogMapper instance ){
+        LogMapper.instance = instance;
+    }
 
     public static LogMapper getInstance () {
         if ( instance == null ) {

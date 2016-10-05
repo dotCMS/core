@@ -1,13 +1,7 @@
 package com.dotmarketing.portlets;
 
-import java.net.URL;
-import java.util.*;
-
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -52,9 +46,22 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Created by Jonathan Gamba.
@@ -97,7 +104,10 @@ public class ContentletBaseTest extends TestBase {
             "tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a.</p>";
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
@@ -188,7 +198,7 @@ public class ContentletBaseTest extends TestBase {
         contentlets.add( newContentlet );
     }
 
-    @AfterClass
+    //@AfterClass
     public static void afterClass () throws Exception {
 
         //Delete html pages

@@ -1,28 +1,38 @@
 package com;
 
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceTest;
 import com.dotcms.cmis.DotCMSCMISTest;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIHelperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexSpeedTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
+import com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptorTest;
 import com.dotcms.notification.business.NotificationAPITest;
 import com.dotcms.publisher.ajax.RemotePublishAjaxActionTest;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
+import com.dotcms.rest.api.v1.authentication.AuthenticationResourceTest;
+import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResourceTest;
+import com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceTest;
+import com.dotcms.rest.api.v1.authentication.LogoutResourceTest;
+import com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest;
+import com.dotcms.rest.api.v1.site.SiteBrowserResourceTest;
 import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
-import com.dotmarketing.business.IdentifierAPITest;
-import com.dotmarketing.business.LanguageAPITest;
-import com.dotmarketing.business.PermissionAPITest;
-import com.dotmarketing.business.RoleAPITest;
-import com.dotmarketing.business.UserAPITest;
-import com.dotmarketing.business.UserProxyFactoryTest;
+import com.dotcms.rest.api.v1.user.UserResourceTest;
+import com.dotcms.timemachine.ajax.TimeMachineAjaxActionTest;
+import com.dotcms.util.CollectionsUtilsTest;
+import com.dotcms.util.ReflectionUtilsTest;
+import com.dotcms.util.marshal.MarshalUtilsTest;
+import com.dotmarketing.business.*;
+import com.dotmarketing.common.reindex.ReindexThreadTest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
 import com.dotmarketing.plugin.PluginMergerTest;
@@ -42,20 +52,7 @@ import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletFTest;
 import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIFTest;
-import com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletFTest;
-import com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletFTest;
-import com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletFTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionletFTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletFTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletFTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionletFTest;
+import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
@@ -63,13 +60,15 @@ import com.dotmarketing.portlets.structure.factories.StructureFactoryTest;
 import com.dotmarketing.portlets.templates.business.TemplateAPITest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
+import com.dotmarketing.quartz.DeleteFieldJobHelperTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.tag.business.TagAPITest;
+import com.dotmarketing.util.DateUtilTest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.webdav.WebDavTest;
 import com.liferay.portal.ejb.UserLocalManagerTest;
 import com.liferay.portal.ejb.UserUtilTest;
-
+import com.liferay.util.LocaleUtilTest;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -88,7 +87,6 @@ import org.junit.runners.Suite;
     CategoryAPITest.class,
     MenuLinkAPITest.class,
     ContentletFactoryTest.class,
-    ContentletAPITest.class,
     ContainerAPITest.class,
     FieldFactoryTest.class,
     StructureFactoryTest.class,
@@ -162,7 +160,33 @@ import org.junit.runners.Suite;
     UserAPITest.class, //Needs Enterprise License.
     UserLocalManagerTest.class,
     UserUtilTest.class,
-    UserProxyFactoryTest.class
+    UserProxyFactoryTest.class,
+
+    //-------------------------------------
+    //Unit tests
+    DeleteFieldJobHelperTest.class,
+    ReflectionUtilsTest.class,
+    DateUtilTest.class,
+    LocaleUtilTest.class,
+    CollectionsUtilsTest.class,
+    MarshalUtilsTest.class,
+
+    ReindexThreadTest.class,
+    ESContentletAPIHelperTest.class,
+    SiteBrowserResourceTest.class,
+    JsonWebTokenServiceTest.class,
+    JsonWebTokenInterceptorTest.class,
+
+    CreateJsonWebTokenResourceTest.class,
+    AuthenticationResourceTest.class,
+    LogoutResourceTest.class,
+    ForgotPasswordResourceTest.class,
+    TimeMachineAjaxActionTest.class,
+    UserResourceTest.class,
+    ConfigurationResourceTest.class
+    //Unit tests
+    //-------------------------------------
+
 })
 
 public class AllTestsSuite {}

@@ -1,5 +1,10 @@
 package com.dotmarketing.business;
 
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -33,15 +38,12 @@ import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 
-import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
 /**
- * UserAPIImpl is an API intended to be a helper class for class to get User entities from liferay's repository.  Classes within the dotCMS
- * should use this API for user management.  The UserAPIImpl does not do cache management. It delegates this responsabilities
- * to underlying classes.
+ * UserAPIImpl is an API intended to be a helper class for class to get User
+ * entities from liferay's repository. Classes within the dotCMS should use this
+ * API for user management. The UserAPIImpl does not do cache management. It
+ * delegates this responsabilities to underlying classes.
+ * 
  * @author David Torres
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
@@ -55,6 +57,9 @@ public class UserAPIImpl implements UserAPI {
 	private UserProxyAPI upAPI;
 	private final NotificationAPI notfAPI;
 
+	/**
+	 * Creates an instance of the class.
+	 */
 	public UserAPIImpl() {
 		uf = FactoryLocator.getUserFactory();
 		perAPI = APILocator.getPermissionAPI();
@@ -62,6 +67,7 @@ public class UserAPIImpl implements UserAPI {
 		notfAPI = APILocator.getNotificationAPI();
 	}
 
+	@Override
 	public User loadUserById(String userId, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
 		if(!UtilMethods.isSet(userId)){
 			throw new DotDataException("You must specifiy an userId to search for");
@@ -77,6 +83,7 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	@Override
 	public User loadUserById(String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
 		if(!UtilMethods.isSet(userId)){
 			throw new DotDataException("You must specifiy an userId to search for");
@@ -88,6 +95,7 @@ public class UserAPIImpl implements UserAPI {
 		return u;
 	}
 
+	@Override
 	public User loadByUserByEmail(String email, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
 		if(!UtilMethods.isSet(email)){
 			throw new DotDataException("You must specifiy an email to search for");
@@ -103,10 +111,7 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see com.dotmarketing.business.UserAPI#encryptUserId(java.lang.String)
-	 */
+	@Override
 	public String encryptUserId(String userId) throws DotStateException{
 		try{
 			return UserManagerUtil.encryptUserId(userId);
@@ -115,17 +120,17 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.UserAPI#getUsersByName(java.lang.String, int, int)
-	 */
+	@Override
 	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
 		return uf.getUsersByName(filter, start, limit);
 	}
 
+	@Override
 	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
 		return uf.createUser(userId, email);
 	}
 
+	@Override
 	public User getDefaultUser() throws DotDataException {
 		try {
 			return uf.loadDefaultUser();
@@ -134,10 +139,10 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	@Override
 	public User getSystemUser() throws DotDataException {
 		User user = null;
 		RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();
-		//Role cmsAdminRole = roleAPI.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
 		Role cmsAdminRole = roleAPI.loadCMSAdminRole();
 		try {
 			user = uf.loadUserById(SYSTEM_USER_ID);
@@ -156,6 +161,7 @@ public class UserAPIImpl implements UserAPI {
 		return user;
 	}
 
+	@Override
 	public User getAnonymousUser() throws DotDataException {
 		User user = null;
 		try {
@@ -180,46 +186,69 @@ public class UserAPIImpl implements UserAPI {
 		return user;
 	}
 
+	@Override
 	public boolean userExistsWithEmail(String email) throws DotDataException {
 		return uf.userExistsWithEmail(email);
 	}
 
+	@Override
 	public List<User> findAllUsers(int begin, int end) throws DotDataException {
 		return uf.findAllUsers(begin, end);
 	}
 
+	@Override
 	public List<User> findAllUsers() throws DotDataException {
 		return uf.findAllUsers();
 	}
 
+	@Override
 	public long getCountUsersByNameOrEmail(String filter) throws DotDataException {
 		return uf.getCountUsersByNameOrEmail(filter);
 	}
 
+	@Override
 	public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
 		return uf.getUsersByNameOrEmail(filter, page, pageSize);
 	}
 
+	@Override
 	public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
 		return uf.getUsersIdsByCreationDate( filterDate, page, pageSize );
 	}
 
+	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
 		return uf.getCountUsersByNameOrEmailOrUserID(filter);
 	}
 
+	@Override
 	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
 		return uf.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
 	}
 
+	@Override
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+			throws DotDataException {
+		return uf.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
+	}
+
+	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
 		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
 	}
 
+	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
 	}
 
+	@Override
+	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+		return uf.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
+	}
+
+	@Override
 	public void save(User userToSave, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
 		String userId = userToSave.getUserId();
 		if (userId == null) {
@@ -259,7 +288,7 @@ public class UserAPIImpl implements UserAPI {
 						pwd)) {
 					// Get the first validation error and display it
 					throw new DotDataException(passwordTracker
-							.getValidationErrors().get(0).toString());
+							.getValidationErrors().get(0).toString(),"User-Info-Save-Password-Failed");
 				}
 			} catch (PortalException | SystemException e) {
 				throw new DotDataException(
@@ -277,6 +306,7 @@ public class UserAPIImpl implements UserAPI {
 		save(userToSave, user, respectFrontEndRoles);
 	}
 
+	@Override
 	public void delete(User userToDelete, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
 		if (userToDelete.getUserId() == null) {
 			throw new DotDataException("Can't delete a user without a userId");
@@ -287,17 +317,7 @@ public class UserAPIImpl implements UserAPI {
 		delete(userToDelete,user, user, respectFrontEndRoles);
 	}
 
-	/**
-	 * Delete the specified user on the permission, users_cms_roles, cms_role, user_ tables and change the user references in the db with another replacement user
-	 * on the contentlet, file_asset, containers, template, links, htmlpage, workflow_task, workflow_comment 
-	 * inode and version info tables. 
-	 * @param userToDelete User to delete 
-	 * @param replacementUser User to replace the db reference of the user to delete
-	 * @param user User requesting the operation
-	 * @param respectFrontEndRoles
-	 * @throws DotDataException The user to delete or the replacement user are not set
-	 * @throws DotSecurityException The user requesting the delete doesn't have permission edit permission
-	 */
+	@Override
 	public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
 		if (!UtilMethods.isSet(userToDelete) || userToDelete.getUserId() == null) {
 			throw new DotDataException("Can't delete a user without a userId");
@@ -399,11 +419,25 @@ public class UserAPIImpl implements UserAPI {
 
 	}
 
+	/**
+	 * 
+	 * @author Daniel Silva
+	 * @version 3.7
+	 * @since Jul 25, 2016
+	 *
+	 */
 	private enum DeletionStage {
 		BEGINNING,
 		END
 	}
 
+	/**
+	 * 
+	 * @param stage
+	 * @param userToDelete
+	 * @param user
+	 * @param referenceType
+	 */
 	private void logDelete(DeletionStage stage, User userToDelete, User user, String referenceType) {
 
 		String userToDeleteStr = userToDelete.getUserId() + "/" + userToDelete.getFullName();
@@ -426,6 +460,7 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	@Override
 	public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
@@ -433,6 +468,7 @@ public class UserAPIImpl implements UserAPI {
 		uf.saveAddress(user, ad);
 	}
 
+	@Override
 	public Address loadAddressById(String addressId, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
 		Address ad = uf.loadAddressById(addressId);
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
@@ -441,6 +477,7 @@ public class UserAPIImpl implements UserAPI {
 		return ad;
 	}
 
+	@Override
 	public void deleteAddress(Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
@@ -448,6 +485,7 @@ public class UserAPIImpl implements UserAPI {
 		uf.deleteAddress(ad);
 	}
 
+	@Override
 	public List<Address> loadUserAddresses(User user, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
 			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
@@ -455,6 +493,7 @@ public class UserAPIImpl implements UserAPI {
 		return uf.loadUserAddresses(user);
 	}
 
+	@Override
 	public boolean isCMSAdmin(User user) throws DotDataException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
@@ -492,4 +531,5 @@ public class UserAPIImpl implements UserAPI {
 	public List<User> getUnDeletedUsers() throws DotDataException {
 		return uf.getUnDeletedUsers();
 	}
+
 }

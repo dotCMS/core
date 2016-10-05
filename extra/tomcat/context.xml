@@ -4,7 +4,6 @@
     The class loader behaviour changed on recent tomcat versions, with the new default behaviour
      we are unable to set a -javaagent and with that we won't be able to use instrumentation, setting the
      delegate to true will restored the loader behaviour.
-
         "Set to true if you want the class loader to follow the standard Java2 delegation model,
         and attempt to load classes from parent class loaders before looking inside the web
         application.
@@ -47,7 +46,7 @@
     <!-- MYSQL UTF8
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
-          url="jdbc:mysql://localhost/dotcms2?characterEncoding=UTF-8"
+          url="jdbc:mysql://localhost/dotcms?characterEncoding=UTF-8"
           username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
           removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />

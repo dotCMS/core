@@ -136,6 +136,7 @@ create table User_ (
 	userId varchar2(100) not null primary key,
 	companyId varchar2(100) not null,
 	createDate date null,
+	mod_date   date null,
 	password_ nclob null,
 	passwordEncrypted number(1, 0),
 	passwordExpirationDate date null,
@@ -2609,6 +2610,12 @@ create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_ino
 create table htmlpages_ir(html_page varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 create table fileassets_ir(file_name varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 
+alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+
 ---Server Action
 create table cluster_server_action(
 	server_action_id varchar2(36) not null, 
@@ -2632,6 +2639,14 @@ create table rule_action (id varchar2(36) primary key,rule_id varchar2(36) refer
 create table rule_action_pars(id varchar2(36) primary key,rule_action_id varchar2(36) references rule_action(id), paramkey varchar2(255) not null,value nclob);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
+CREATE TABLE system_event (
+	identifier VARCHAR(36) NOT NULL,
+	event_type VARCHAR(50) NOT NULL,
+	payload NCLOB NOT NULL,
+	created NUMBER(19, 0) NOT NULL,
+	PRIMARY KEY (identifier)
+);
+CREATE INDEX idx_system_event ON system_event (created);
 
 -- Delete User
 ALTER TABLE user_ ADD delete_in_progress number(1,0) default 0;

@@ -31,6 +31,9 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -39,9 +42,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
-import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionGroupResource  {

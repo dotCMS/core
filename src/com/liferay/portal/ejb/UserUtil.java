@@ -29,6 +29,8 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.Validator;
 
+import java.util.Date;
+
 /**
  * <a href="UserUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -79,7 +81,7 @@ public class UserUtil {
 		return user;
 	}
 
-	protected static com.liferay.portal.model.User update(
+	public static com.liferay.portal.model.User update(
 		com.liferay.portal.model.User user)
 		throws com.liferay.portal.SystemException {
 		UserPersistence persistence = (UserPersistence)InstancePool.get(PERSISTENCE);
@@ -103,6 +105,11 @@ public class UserUtil {
 			else {
 				listener.onBeforeUpdate(user);
 			}
+		}
+
+		if (null == user.getModificationDate()) {
+
+			user.setModificationDate(new Date());
 		}
 
 		user = persistence.update(user);
@@ -247,7 +254,7 @@ public class UserUtil {
 			obc);
 	}
 
-	protected static com.liferay.portal.model.User findByC_EA(
+	public static com.liferay.portal.model.User findByC_EA(
 		java.lang.String companyId, java.lang.String emailAddress)
 		throws com.liferay.portal.NoSuchUserException, 
 			com.liferay.portal.SystemException {

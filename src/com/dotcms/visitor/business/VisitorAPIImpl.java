@@ -1,8 +1,8 @@
 package com.dotcms.visitor.business;
 
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
-import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.HttpRequestDataUtil;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -48,7 +48,7 @@ public class VisitorAPIImpl implements VisitorAPI {
     @Override
     public Optional<Visitor> getVisitor(HttpServletRequest request, boolean create) {
 
-        Preconditions.checkNotNull(request, IllegalArgumentException.class, "Null Request");
+        DotPreconditions.checkNotNull(request, IllegalArgumentException.class, "Null Request");
 
         Optional<Visitor> visitorOpt;
 

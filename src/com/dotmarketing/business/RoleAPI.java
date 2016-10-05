@@ -341,5 +341,19 @@ public interface RoleAPI {
 	 * @throws DotDataException 
 	 */
 	public Role getUserRole(User user) throws DotDataException;
-	
+
+
+	/**
+	 * Verifies that a user is assigned to one of the specified role IDs. It is
+	 * not guaranteed that this method will traverse the full list of roles.
+	 * Once it finds a role that is associated to the user, it will return.
+	 *
+	 * @param userId
+	 *            - The ID of the user going through role verification.
+	 * @param roleIds
+	 *            - A list of role IDs to check the user.
+	 * @return If the user is associated to at least one role ID, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 */
+	public boolean doesUserHaveRoles(String userId, List<String> roleIds);
 }

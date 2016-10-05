@@ -1,7 +1,7 @@
 
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@ include file="/html/portal/init.jsp" %><%@ include file="/html/common/top_inc.jsp" %><%
 String cmd = ParamUtil.getString(request, "my_account_cmd");
@@ -29,19 +29,22 @@ request.getSession().removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
 
 String uId = null;
 Cookie[] cookies = request.getCookies();
-if(cookies != null){
-	for(Cookie c : cookies){
 
-		if(CookieKeys.ID.equals(c.getName())){
-			try{
-				uId = PublicEncryptionFactory.decryptString(c.getValue());
-			}
-			catch(Exception e){
+if (cookies != null) {
+
+	for (Cookie c : cookies){
+
+		if (CookieKeys.JWT_ACCESS_TOKEN.equals(c.getName())){
+
+			try {
+
+				uId =
+						JsonWebTokenUtils.getUserIdFromJsonWebToken(c.getValue());
+			} catch(Exception e) {
 				Logger.info(this, "An ivalid attempt to login as " + uId + " has been made from IP: " + request.getRemoteAddr());
 				uId = null;
 			}
 		}
-
 	}
 }
 if(UtilMethods.isSet(uId)){
@@ -182,45 +185,46 @@ if(errorMessage != null){
 </style>
 
 
-<%@page import="com.dotmarketing.cms.factories.PublicEncryptionFactory"%>
 <%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.liferay.portal.util.CookieKeys"%>
+<%@ page import="com.dotcms.auth.providers.jwt.JsonWebTokenUtils" %>
 <script type="text/javascript">
 
-	dojo.addOnLoad(function(){
+	dojo.addOnLoad(function () {
 		if (dojo.isIE <= 8) {
 			var cfMissing = false;
 			CFInstall.check({
-	            mode: 'overlay',
-	            onmissing: function () {
-	                cfMissing = true;
-	            }
-	        });
+				mode: 'overlay',
+				onmissing: function () {
+					cfMissing = true;
+				}
+			});
 
-			if(!cfMissing) {
+			if (!cfMissing) {
 				showLogin();
 			}
-		}else{
+		} else {
 			showLogin();
 		}
 	});
 
 
-   //dojo.addOnLoad(showLogin);
+	//dojo.addOnLoad(showLogin);
 
-	function showLogin(){
-	       var myDialog = dijit.byId("loginBox");
-	       dojo.style(myDialog.closeButtonNode, "visibility", "hidden");
-	       myDialog.tabStart = dojo.byId("loginPasswordTextBox");
-	       myDialog.show();
-	       setTimeout("dijit.byId('loginPasswordTextBox').focus()",200);
+	function showLogin() {
+		var myDialog = dijit.byId("loginBox");
+		dojo.style(myDialog.closeButtonNode, "visibility", "hidden");
+		myDialog.tabStart = dojo.byId("loginPasswordTextBox");
+		myDialog.show();
+		setTimeout("dijit.byId('loginPasswordTextBox').focus()", 200);
 	}
 
-	function showForgot(){
+	function showForgot() {
 		var myDialog = dijit.byId("loginBox");
 		myDialog.hide();
 
 		myDialog = dijit.byId("forgotPassword");
-		myDialog.connect(myDialog,"hide",showLogin);
+		myDialog.connect(myDialog, "hide", showLogin);
 
 		myDialog.show();
 	}
