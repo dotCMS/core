@@ -112,8 +112,8 @@ public class ContentTypeHelper implements Serializable {
 
         List<ContentTypeView> recentsContent = structureAPI.getRecentContentType(type, user, -1)
                 .stream()
-                .map(map -> new ContentTypeView(map.get("type"), map.get("name"), map.get("inode"),
-                        contentTypeUtil.getActionUrl(request, map.get("inode"), user)))
+                .map(map -> new ContentTypeView(map.get("type").toString(), map.get("name").toString(), map.get("inode").toString(),
+                        contentTypeUtil.getActionUrl(request, map.get("inode").toString(), user)))
                 .collect(Collectors.toList());
 
         if (!recentsContent.isEmpty()){

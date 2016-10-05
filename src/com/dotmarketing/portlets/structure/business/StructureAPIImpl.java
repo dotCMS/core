@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.portlet.PortletURL;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.*;
+import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -19,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -50,6 +52,8 @@ import static com.dotcms.util.CollectionsUtils.map;
  *
  */
 public class StructureAPIImpl implements StructureAPI {
+
+	private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
 
 	private static String RECENTS_STRUCTURE_QUERY = "select s.name,s.structuretype as type,structure_inode as inode,c.mod_date " +
 			"from contentlet as c,structure as s\n" +
@@ -193,7 +197,18 @@ public class StructureAPIImpl implements StructureAPI {
         return StructureFactory.getStructuresCount(condition);
     }
 
-	public Collection<Map<String, String>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException {
+	public Collection<Map<String, Object>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException {
+		Collection<Map<String, Object>> recents = contentTypeCache.getRecents(type, user, nRecents);
+
+		if (recents == null) {
+			recents = getRecentsFromDataBase(type, user, nRecents);
+			contentTypeCache.addRecents(type, user, nRecents, recents);
+		}
+
+		return recents;
+	}
+
+	private Collection<Map<String, Object>> getRecentsFromDataBase(Structure.Type type, User user, int nRecents) throws DotDataException {
 		final DotConnect dc = new DotConnect();
 		dc.setSQL(RECENTS_STRUCTURE_QUERY);
 		dc.addParam(user.getUserId());

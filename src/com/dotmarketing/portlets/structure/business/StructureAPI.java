@@ -183,6 +183,6 @@ public interface StructureAPI {
 	 *         (the date of the last created contentlet)
 	 * @throws DotDataException
      */
-	public Collection<Map<String, String>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException;
+	public Collection<Map<String, Object>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException;
 
 }
