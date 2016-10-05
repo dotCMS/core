@@ -77,7 +77,7 @@ public class StructureFactory {
 		try {
 			return new StructureTransformer(APILocator.getContentTypeAPI2().find(inode,APILocator.systemUser())).asStructure();
 		} catch (Exception e) {
-			throw new DotStateException(e);
+			return new Structure();
 		}
 	}
 	/**
