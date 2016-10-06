@@ -30,8 +30,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
         if (this.routingService.currentMenu) {
             this.initComponent();
         }
-
-        this.routingService.menusChange$.subscribe(menus => this.initComponent(menus));
+        
         this.iframeElement.onload = () => this.loadingInProgress = false;
     }
 
