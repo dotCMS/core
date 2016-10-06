@@ -13,6 +13,7 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
@@ -23,18 +24,20 @@ import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import static com.dotcms.util.CollectionsUtils.imap;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
-import java.util.Map;
 
 /**
  * Contentlet helper.
  * @author jsanca
  */
 public class ContentTypeHelper implements Serializable {
+
+    private static final Map<Locale, Map<String, String>> BASE_CONTENT_TYPE_LABELS = new HashMap<>();
 
     private static class SingletonHolder {
         private static final ContentTypeHelper INSTANCE = new ContentTypeHelper();
@@ -86,16 +89,38 @@ public class ContentTypeHelper implements Serializable {
 
             structures.stream()
                     .forEach(structure -> {
-                        baseContentTypesViewCollection.add(structure, new ContentTypeView(
+                        baseContentTypesViewCollection.add(new ContentTypeView(
                                 Structure.Type.getType(structure.getStructureType()).name(),
                                 structure.getName(), structure.getInode(),
                                 contentTypeUtil.getActionUrl(request, structure, user)));
                     });
 
             result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
+
+            addRecents(request, user, Structure.Type.CONTENT, result);
+            addRecents(request, user, Structure.Type.WIDGET, result);
         }
 
         return result;
+    }
+
+    private void addRecents(final HttpServletRequest request, final User user, Structure.Type type,
+                                            List<BaseContentTypesView>  baseContentTypesView)
+            throws DotDataException, LanguageException {
+
+        Locale locale = LocaleUtil.getLocale(request);
+
+        List<ContentTypeView> recentsContent = structureAPI.getRecentContentType(type, user, -1)
+                .stream()
+                .map(map -> new ContentTypeView(map.get("type").toString(), map.get("name").toString(), map.get("inode").toString(),
+                        contentTypeUtil.getActionUrl(request, map.get("inode").toString(), user)))
+                .collect(Collectors.toList());
+
+        if (!recentsContent.isEmpty()){
+            String name = String.format("RECENT_%s" ,type.toString());
+            String label = LanguageUtil.get(locale, name.toLowerCase());
+            baseContentTypesView.add(new BaseContentTypesView(name, label, recentsContent));
+        }
     }
 
     /**
@@ -104,16 +129,24 @@ public class ContentTypeHelper implements Serializable {
      * @return Map (type Id -> i18n value)
      * @throws LanguageException
      */
-    public final Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
+    public synchronized static Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
-        return map(
-                Structure.Type.CONTENT.name(), LanguageUtil.get(locale, "Content"),
-                Structure.Type.WIDGET.name(), LanguageUtil.get(locale, "Widget"),
-                Structure.Type.FORM.name(), LanguageUtil.get(locale, "Form"),
-                Structure.Type.FILEASSET.name(), LanguageUtil.get(locale, "File"),
-                Structure.Type.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
-                Structure.Type.PERSONA.name(), LanguageUtil.get(locale, "Persona")
-        );
+        Map<String, String> map = BASE_CONTENT_TYPE_LABELS.get(locale);
+
+        if (map == null) {
+            map = imap(
+                    Structure.Type.CONTENT.name(), LanguageUtil.get(locale, "Content"),
+                    Structure.Type.WIDGET.name(), LanguageUtil.get(locale, "Widget"),
+                    Structure.Type.FORM.name(), LanguageUtil.get(locale, "Form"),
+                    Structure.Type.FILEASSET.name(), LanguageUtil.get(locale, "File"),
+                    Structure.Type.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
+                    Structure.Type.PERSONA.name(), LanguageUtil.get(locale, "Persona")
+            );
+
+            BASE_CONTENT_TYPE_LABELS.put(locale, map);
+        }
+
+        return map;
     } // getBaseContentTypeNames.
 
 } // E:O:F:ContentTypeHelper.

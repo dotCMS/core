@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -38,6 +39,8 @@ import com.liferay.portal.model.User;
  * @author oswaldogallango
  *
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class WorkflowAPITest extends TestBase{
 
 	/**

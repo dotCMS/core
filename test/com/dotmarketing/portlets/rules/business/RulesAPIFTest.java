@@ -21,6 +21,7 @@ import com.dotcms.TestBase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -35,6 +36,7 @@ import com.liferay.portal.model.User;
 
 import static org.junit.Assert.*;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class RulesAPIFTest extends TestBase {
 
 	private HttpServletRequest request;

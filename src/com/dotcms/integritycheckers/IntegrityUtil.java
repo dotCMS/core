@@ -173,27 +173,57 @@ public class IntegrityUtil {
     public static void unzipFile(InputStream zipFile, String outputDir) throws Exception {
         File dir = new File(outputDir);
 
-        // if file doesnt exists, then create it
+        // if file doesn't exists, then create it
         if (!dir.exists()) {
             dir.mkdir();
         }
-
-        try (ZipInputStream zin = new ZipInputStream(zipFile)) {
+        
+        ZipInputStream zin = null;
+        FileOutputStream fout = null;
+        
+        try {
+            
             ZipEntry ze = null;
+            zin = new ZipInputStream(zipFile);
             while ((ze = zin.getNextEntry()) != null) {
+                
+             // for each entry to be extracted
+                int bytesRead;
+                byte[] buf = new byte[1024];
+                
                 Logger.info(IntegrityUtil.class, "Unzipping " + ze.getName());
+         
+                fout = new FileOutputStream(outputDir + File.separator
+                        + ze.getName()); 
 
-                try (FileOutputStream fout = new FileOutputStream(outputDir + File.separator
-                        + ze.getName())) {
-                    for (int c = zin.read(); c != -1; c = zin.read()) {
-                        fout.write(c);
+                while ( (bytesRead = zin.read( buf, 0, 1024 )) > -1 )
+                    fout.write( buf, 0, bytesRead );
+                try {
+                    if ( null != fout ) {
+                        fout.close();
                     }
-                    zin.closeEntry();
+                } catch ( Exception e ) {
+                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
                 }
             }
         } catch (IOException e) {
             Logger.error(IntegrityUtil.class, "Error while unzipping Integrity Data", e);
             throw new Exception("Error while unzipping Integrity Data", e);
+        } finally { // close your streams
+            if ( zin != null ) {
+                try {
+                    zin.close();
+                } catch ( IOException e ) {
+                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
+                }
+            }
+            if ( fout != null ) {
+                try {
+                    fout.close();
+                } catch ( IOException e ) {
+                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
+                }
+            }
         }
     }
 

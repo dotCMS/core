@@ -6,9 +6,13 @@ import java.net.URL;
 import java.net.URLConnection;
 import javax.servlet.http.HttpServletRequest;
 
+import org.junit.Ignore;
+
 /**
  * @author Geoff M. Granum
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class ApiRequest {
 
     private final String robotsTxtUrl;
