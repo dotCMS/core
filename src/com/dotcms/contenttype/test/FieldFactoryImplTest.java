@@ -16,13 +16,16 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldApiImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -35,6 +38,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
@@ -48,6 +52,7 @@ public class FieldFactoryImplTest {
     }
 
     FieldFactoryImpl factory = new FieldFactoryImpl();
+    FieldApiImpl api = new FieldApiImpl();
     final static String TEST_VAR_PREFIX = "testField";
 
     @Test
@@ -92,7 +97,52 @@ public class FieldFactoryImplTest {
 
     @Test
     public void testFieldVariables() throws Exception {
+        List<Field> fields = factory.byContentTypeId(Constants.NEWS);
+        final int runs = 10;
+        
+        
+        for (Field field : fields) {
+            List<FieldVariable> vars = FactoryLocator.getFieldFactory2().loadVariables(field);
+            for(FieldVariable var : vars){
+                api.delete(var);
+            }
+            vars = api.loadVariables(field);
+            
+            assertThat("No field vars for field " + field, vars.size() ==0);
+            
+            for(int i=0;i<runs;i++){
+                String key = "key" + i;
+                String val = "val"+i;
+                
+                FieldVariable var = ImmutableFieldVariable.builder()
+                        .key(key)
+                        .value(val)
+                        .fieldId(field.inode())
+                        .build();
+                
+                var = api.save(var, APILocator.systemUser());
+                assertThat("field var saved correctly " + var,var.equals(api.loadVariable(var.id())));
 
+                vars = api.loadVariables(field);
+                assertThat("field var added for field " + field, vars.size() ==i+1);
+                
+            }
+            int mySize = vars.size();
+            assertThat("field vars all saved correctly ", mySize ==runs);
+            
+            for(FieldVariable var : vars){
+                api.delete(var);
+                assertThat("field deleted correctly " + var,--mySize ==  api.loadVariables(field).size());
+
+            }
+            
+            
+        }
+        
+        
+        
+        
+        
 
     }
 

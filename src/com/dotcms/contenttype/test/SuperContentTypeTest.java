@@ -34,8 +34,8 @@ import com.dotmarketing.util.ConfigTestHelper;
 				return;
 			}
 			inited=true;
-
-
+			
+			
 		    new com.dotmarketing.util.TestingJndiDatasource().init();
 		    ConfigTestHelper._setupFakeTestingContext();
 		    

@@ -11,19 +11,27 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 @Value.Immutable
 public interface FieldVariable extends Serializable, IFieldVar {
-
-	abstract String id();
+    static final String NOT_PERSISTED="NOT_PERSISTED";
+    @Value.Default
+    default String id(){
+        return NOT_PERSISTED;
+    }
 
 	abstract String fieldId();
-
-	abstract String name();
+	
+	@Value.Default
+	default String name(){
+	    return NOT_PERSISTED;
+	}
 
 	abstract String key();
 
 	abstract String value();
 
-	abstract String userId();
-
+    @Value.Default
+    default String userId(){
+        return NOT_PERSISTED;
+    }
 	@Value.Default
 	default Date modDate() {
 		return DateUtils.round(new Date(), Calendar.SECOND);

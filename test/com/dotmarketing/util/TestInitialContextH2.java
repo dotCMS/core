@@ -10,19 +10,19 @@ import javax.naming.NamingException;
  *
  * Created by nollymar on 9/16/16.
  */
-public class TestInitialContext extends InitialContext {
+public class TestInitialContextH2 extends InitialContext {
 
-    private final String driver = "org.postgresql.Driver";
-    private final String url = "jdbc:postgresql://localhost/dotcms";
-    private final String username = "postgres";
-    private final String password = "postgres";
+    private final String driver = "org.h2.Driver";
+    private final String url = "jdbc:h2:WEB-INF/H2_DATABASE/h2_dotcms_data;MVCC=TRUE;LOCK_TIMEOUT=15000";
+    private final String username = "sa";
+    private final String password = "sa";
     private final int maxTotal = 60;
     private final int maxIdle = 10;
-    private static TestInitialContext context;
+    private static TestInitialContextH2 context;
 
     private BasicDataSource dataSource;
 
-    private TestInitialContext() throws NamingException {
+    private TestInitialContextH2() throws NamingException {
         dataSource = new BasicDataSource();
         dataSource.setDriverClassName(driver);
         dataSource.setUrl(url);
@@ -34,9 +34,9 @@ public class TestInitialContext extends InitialContext {
         dataSource.setMaxActive(maxTotal);
     }
 
-    public static TestInitialContext getInstance() throws NamingException {
+    public static TestInitialContextH2 getInstance() throws NamingException {
         if (context == null) {
-            context = new TestInitialContext();
+            context = new TestInitialContextH2();
         }
 
         return context;

@@ -83,7 +83,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
     @Override
     public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-        List<FieldVariable> l =  selectFieldVarsInDb(field);
+        List<FieldVariable> l = selectFieldVarsInDb(field);
         return l;
     }
 
@@ -99,10 +99,10 @@ public class FieldFactoryImpl implements FieldFactory {
         FieldVariable newVar = LocalTransaction.wrapReturn(() -> {
             return upsertFieldVariable(fieldVar);
         });
-        
+
         Field f = byId(fieldVar.fieldId());
         ContentType t = CacheLocator.getContentTypeCache2().byInode(f.contentTypeId());
-        if (t != null){
+        if (t != null) {
             CacheLocator.getContentTypeCache2().remove(t);
         }
         return newVar;
@@ -332,7 +332,8 @@ public class FieldFactoryImpl implements FieldFactory {
         return new DbFieldVariableTransformer(dc.loadObjectResults()).from();
     }
 
-    private FieldVariable upsertFieldVariable(final FieldVariable throwAway) throws DotDataException {
+    private FieldVariable upsertFieldVariable(final FieldVariable throwAway)
+            throws DotDataException {
         String key = StringUtils.camelCaseLower(throwAway.key());
         String value = throwAway.value().trim();
 
@@ -346,52 +347,37 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
 
-       
-        if (!UtilMethods.isSet(throwAway.id())) {
+        if (throwAway.id().equals(FieldVariable.NOT_PERSISTED)) {
             builder.id(UUID.randomUUID().toString());
         }
-        
+
         // at least this will order it
-        if (!UtilMethods.isSet(throwAway.name())) {
+        if (throwAway.name().equals(FieldVariable.NOT_PERSISTED)) {
             builder.name(String.valueOf(System.currentTimeMillis()));
         }
-        
+
         FieldVariable var = builder.build();
-        
-        
-        
+
+
+
         // delete first
         deleteFieldVarInDb(var);
 
-        
-        
-        
-        
-        
-        new DotConnect()
-        .setSQL(sql.insertFieldVar)
-        .addParam(var.id())
-        .addParam(var.fieldId())
-        .addParam(var.name())
-        .addParam(var.key())
-        .addParam(var.value())
-        .addParam(var.userId())
-        .addParam(var.modDate())
-        .loadResult();
+
+
+        new DotConnect().setSQL(sql.insertFieldVar).addParam(var.id()).addParam(var.fieldId())
+                .addParam(var.name()).addParam(var.key()).addParam(var.value())
+                .addParam(var.userId()).addParam(var.modDate()).loadResult();
         return var;
     }
 
     private void deleteFieldVarInDb(FieldVariable var) throws DotDataException {
-        
-        new DotConnect()
-        .setSQL(sql.deleteFieldVar)
-        .addParam(var.id())
-        .addParam(var.fieldId())
-        .addParam(var.key())
-        .loadResult();
-       
-        
-        
+
+        new DotConnect().setSQL(sql.deleteFieldVar).addParam(var.id()).addParam(var.fieldId())
+                .addParam(var.key()).loadResult();
+
+
+
     }
 
     private void deleteFieldVarsInDb(Field field) throws DotDataException {

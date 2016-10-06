@@ -131,6 +131,7 @@ public abstract class Field implements FieldIf, Serializable {
 	public boolean legacyField() {
 		return false;
 	}
+	
 	@Value.Lazy
 	public List<FieldVariable> fieldVariables(){
 		try {
