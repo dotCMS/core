@@ -74,7 +74,10 @@ public class ContentTypeUtil {
      * @return String
      */
     public String getActionUrl( HttpServletRequest request, final Structure structure, User user) {
+        return getActionUrl(request, structure.getInode(), user);
+    }
 
+    public String getActionUrl( HttpServletRequest request, final String structureInode, User user) {
         final List<Layout> layouts;
         String actionUrl = StringUtils.EMPTY;
 
@@ -97,7 +100,7 @@ public class ContentTypeUtil {
                         "inode", new String[]{""}
                 ));
 
-                actionUrl = portletURL.toString() + "&selectedStructure=" + structure.getInode() +
+                actionUrl = portletURL.toString() + "&selectedStructure=" + structureInode +
                         "&lang=" + this.getLanguageId(user.getLanguageId(), languageAPI);
             }
         } catch (Exception e) {

@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.structure.business;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -166,4 +168,21 @@ public interface StructureAPI {
      * @return Amount of structures found
      */
     int countStructures(String condition);
+
+
+	/**
+	 * Return the structures order from who that has a the most recent created
+	 * {@link com.dotmarketing.portlets.contentlet.business.Contentlet} to who that has the less recent created
+	 * {@link com.dotmarketing.portlets.contentlet.business.Contentlet}.
+	 *
+	 * @param type Structure.Type
+	 * @param user filter {@link com.dotmarketing.portlets.contentlet.business.Contentlet} by user
+	 * @param nRecents number of resents structure to return
+	 *
+	 * @return A List of Map, each Map represents a Structure and has the follows keys: name, inode, type and date
+	 *         (the date of the last created contentlet)
+	 * @throws DotDataException
+     */
+	public Collection<Map<String, Object>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException;
+
 }
