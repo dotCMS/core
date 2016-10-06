@@ -13,9 +13,13 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
+import org.junit.Ignore;
+
 /**
  * @author Geoff M. Granum
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class FunctionalTestConfig {
 
     private static final long serialVersionUID = 1L;

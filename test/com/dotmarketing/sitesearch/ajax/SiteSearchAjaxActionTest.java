@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +23,8 @@ import com.liferay.portal.model.User;
  * @author Oswaldo Gallango
  * @since 3/11/14
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class SiteSearchAjaxActionTest {
 
 	protected String baseURL=null;

@@ -4,6 +4,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.LicenseTestUtil;
@@ -23,6 +24,7 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class FileAssetTest extends ContentletBaseTest {
 	
 	Client client;
@@ -30,6 +32,7 @@ public class FileAssetTest extends ContentletBaseTest {
 	
     @Before
     public void before() throws Exception{
+    	    	
         LicenseTestUtil.getLicense();
 
         client=RestClientBuilder.newClient();
@@ -38,7 +41,7 @@ public class FileAssetTest extends ContentletBaseTest {
         long serverPort = request.getServerPort();
         webTarget = client.target("http://" + serverName + ":" + serverPort + "/");
     }
-
+    
 	@Test
 	public void fileAssetLanguageDifferentThanDefault()throws DotSecurityException, DotDataException, IOException{
 		Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);

@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeatur
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -60,7 +61,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class ContentResourceTest extends TestBase {
     Client client;
     WebTarget webTarget;

@@ -4,6 +4,7 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.After;
 import com.dotmarketing.portlets.rules.ApiRequest;
@@ -34,6 +35,7 @@ import static org.junit.Assert.assertNull;
  * @author Geoff M. Granum
  */
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class SetResponseHeaderActionletFTest extends TestBase {
 
     private final Random random = new Random();

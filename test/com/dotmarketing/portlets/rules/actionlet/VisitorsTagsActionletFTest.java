@@ -19,6 +19,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -52,6 +53,8 @@ import com.liferay.portal.model.User;
  * Testing actionlet to add tags to the visitor object
  *
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class VisitorsTagsActionletFTest extends TestBase {
 
 	private final Random random = new Random();
