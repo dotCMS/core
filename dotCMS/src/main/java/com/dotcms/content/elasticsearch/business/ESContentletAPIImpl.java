@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotmarketing.cache.ContentTypeCache;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -149,6 +150,7 @@ import com.liferay.util.FileUtil;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
+    private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
 
     private final NotificationAPI notificationAPI;
     private final ESContentletAPIHelper esContentletAPIHelper;
@@ -3253,6 +3255,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				cache.remove(LiveCache.getPrimaryGroup() + host.getIdentifier() + ":" + contIdent.getParentPath()+contIdent.getAssetName(),
 						LiveCache.getPrimaryGroup() + "_" + host.getIdentifier());
 
+                this.contentTypeCache.clearRecents(contentlet.getModUser());
 
 				String velocityResourcePath = "working/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
 				if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))

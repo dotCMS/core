@@ -1,6 +1,9 @@
 package com.dotmarketing.cache;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.CacheLocator;
@@ -10,6 +13,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 /**
  * @author David
@@ -22,8 +26,10 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
     private final String primaryGroup = "StructureCache";
     private final String containerStructureGroup = "ContainerStructureCache";
     private final String structuresByTypeGroup = "StructuresByTypeCache";
+    private final String recentGroup = "RecentCache";
+
     // region's name for the cache
-    private final String[] groups = { primaryGroup, containerStructureGroup, structuresByTypeGroup };
+    private final String[] groups = { primaryGroup, containerStructureGroup, structuresByTypeGroup, recentGroup };
 
     public ContentTypeCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -263,5 +269,43 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
     
     public String getPrimaryGroup() {
     	return primaryGroup;
+    }
+
+    @Override
+    public void addRecents(Structure.Type type, User user, int nRecents, Collection<Map<String, Object>> recents) {
+        try {
+            Map<String, Collection<Map<String, Object>>> userRecent = getFromRecentCache(user);
+            String mapKey = String.format("%s-%d", type.toString(), nRecents);
+            userRecent.put(mapKey, recents);
+        } catch (DotCacheException e) {
+            Logger.debug(ContentTypeCacheImpl.class, "Cache Entry not found: ", e);
+        }
+
+    }
+
+    public Collection<Map<String, Object>> getRecents(Structure.Type type, User user, int nRecents){
+        try {
+            Map<String, Collection<Map<String, Object>>> userRecent = getFromRecentCache(user);
+            String mapKey = String.format("%s-%d", type.toString(), nRecents);
+            return userRecent.get(mapKey);
+        } catch (DotCacheException e) {
+            Logger.debug(ContentTypeCacheImpl.class, "Cache Entry not found: ", e);
+            return null;
+        }
+    }
+
+    public void clearRecents(String userId){
+        cache.remove(userId, recentGroup);
+    }
+
+    private Map<String, Collection<Map<String, Object>>> getFromRecentCache(User user) throws DotCacheException {
+        Map<String, Collection<Map<String, Object>>> userRecent =
+                (Map<String, Collection<Map<String, Object>>>) cache.get(user.getUserId(), recentGroup);
+
+        if (userRecent == null){
+            userRecent = new HashMap<>();
+            cache.put(user.getUserId(), userRecent, recentGroup);
+        }
+        return userRecent;
     }
 }

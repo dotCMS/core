@@ -13,13 +13,19 @@ public class BaseContentTypesViewCollection {
 
     private final Map<String, List<ContentTypeView>> contentTypeViews = new LinkedHashMap<>();
 
-    public void add (Structure structure, ContentTypeView contentTypeView){
-        String structureName = Structure.Type.getType(structure.getStructureType()).name();
-        List<ContentTypeView> contentTypeViews = this.contentTypeViews.get(structureName);
+    public void add (ContentTypeView contentTypeView){
+        add(contentTypeView, this.contentTypeViews);
+    }
+
+    private void add (ContentTypeView contentTypeView,
+                      Map<String, List<ContentTypeView>> contentTypeViewsMap){
+
+        String baseContentTypeName = contentTypeView.getType();
+        List<ContentTypeView> contentTypeViews = contentTypeViewsMap.get(baseContentTypeName);
 
         if (contentTypeViews == null){
             contentTypeViews = new ArrayList<>();
-            this.contentTypeViews.put(structureName, contentTypeViews);
+            contentTypeViewsMap.put(baseContentTypeName, contentTypeViews);
         }
 
         contentTypeViews.add(contentTypeView);

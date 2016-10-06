@@ -1,11 +1,14 @@
 package com.dotmarketing.cache;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
 
 /**
  * 
@@ -61,5 +64,10 @@ public abstract class ContentTypeCache implements Cachable {
     public abstract void addStructuresByType(List<Structure> structures, int structureType);
     
     public abstract void removeStructuresByType(int structureType);
-    
+
+    public abstract void addRecents(Structure.Type type, User user, int nRecents, Collection<Map<String, Object>> recents);
+
+    public abstract Collection<Map<String, Object>> getRecents(Structure.Type type, User user, int nRecents);
+
+    public abstract void clearRecents(String userId);
 }
