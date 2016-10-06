@@ -15,7 +15,6 @@ import {CwError} from "../../../api/system/http-response-util";
 import {BundleService, IPublishEnvironment} from "../../../api/services/bundle-service";
 import {SiteChangeListener} from "../../../api/util/site-change-listener";
 import {SiteService} from "../../../api/services/site-service";
-import {Site} from "../../../api/services/site-service";
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 

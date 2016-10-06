@@ -3,7 +3,6 @@ import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/
 import {NgControl, ControlValueAccessor,} from '@angular/forms';
 import {Http} from '@angular/http';
 
-import {Dropdown, InputOption} from '../dropdown/dropdown'
 import {Verify} from "../../../../../api/validation/Verify";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 import {Observer} from "rxjs/Observer";
@@ -11,7 +10,6 @@ import _ from 'lodash';
 
 @Component({
   selector: 'cw-input-rest-dropdown',
-  directives: [Dropdown, InputOption],
   template: `
   <cw-input-dropdown 
       [value]="_modelValue"

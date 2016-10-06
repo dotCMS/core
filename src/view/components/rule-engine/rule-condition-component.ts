@@ -1,25 +1,13 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
-
-import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
-
-import {Dropdown, InputOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {
     RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_TYPE,
     RULE_CONDITION_DELETE, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
 } from "../../../api/rule-engine/Rule";
-import {VisitorsLocationContainer} from "./custom-types/visitors-location/visitors-location.container";
-
 
 @Component({
   selector: 'rule-condition',
-  directives: [
-    ServersideCondition,
-    VisitorsLocationContainer,
-    Dropdown,
-    InputOption
-  ],
   template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
   <div class="cw-btn-group cw-condition-toggle">
     <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">

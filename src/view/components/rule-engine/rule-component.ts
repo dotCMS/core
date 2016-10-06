@@ -2,12 +2,6 @@ import {Component, EventEmitter, ElementRef, Input, Output, ChangeDetectionStrat
 import {FormControl, Validators, FormGroup, FormBuilder, FormGroup} from '@angular/forms';
 import {Observable} from 'rxjs/Rx'
 
-
-import {RuleActionComponent} from './rule-action-component';
-import {ConditionGroupComponent} from './rule-condition-group-component';
-
-import {InputToggle} from '../../../view/components/input/toggle/InputToggle'
-
 import {
     RuleModel, RULE_UPDATE_ENABLED_STATE,
     RULE_UPDATE_NAME,
@@ -20,8 +14,6 @@ import {
     RULE_CONDITION_GROUP_CREATE, RuleService
 } from "../../../api/rule-engine/Rule";
 
-import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
-import {InputText} from "../semantic/elements/input-text/input-text";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {UserModel} from "../../../api/auth/UserModel";
 import {ApiRoot} from "../../../api/persistence/ApiRoot";
@@ -30,8 +22,6 @@ import {
     RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
 } from "./rule-engine.container";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
-import {AddToBundleDialogContainer} from "../common/push-publish/add-to-bundle-dialog-container";
-import {PushPublishDialogContainer} from "../common/push-publish/push-publish-dialog-container"
 import {IPublishEnvironment} from "../../../api/services/bundle-service";
 
 
@@ -47,17 +37,6 @@ var rsrc = {
 
 @Component({
   selector: 'rule',
-  directives: [
-    FormGroup,
-    InputToggle,
-    RuleActionComponent,
-    ConditionGroupComponent,
-    InputText,
-    Dropdown,
-    InputOption,
-    AddToBundleDialogContainer,
-    PushPublishDialogContainer
-  ],
   template: `<form [formGroup]="formModel" let rf="ngForm">
   <cw-add-to-bundle-dialog-container
       [assetId]="rule.id || rule.key"

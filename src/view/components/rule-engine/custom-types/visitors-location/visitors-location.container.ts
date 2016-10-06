@@ -4,7 +4,6 @@ import {FormControl} from "@angular/forms";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {Observable} from "rxjs/Observable";
 import {I18nService} from "../../../../../api/system/locale/I18n";
-import {VisitorsLocationComponent} from "./visitors-location.component";
 import {BehaviorSubject} from "rxjs/Rx";
 import {GCircle} from "../../../../../api/maps/GoogleMapService";
 
@@ -46,7 +45,6 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 @Component({
   selector: 'cw-visitors-location-container',
   providers:[DecimalPipe],
-  directives: [VisitorsLocationComponent],
   template: `<cw-visitors-location-component 
     [circle]="circle$ | async"
     [preferredUnit]="preferredUnit"

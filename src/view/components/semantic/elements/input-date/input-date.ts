@@ -1,15 +1,13 @@
 import {
-    Attribute,
     ChangeDetectionStrategy,
     Component,
-    Directive,
     ElementRef,
     EventEmitter,
     Input,
     Output,
     Optional
 } from '@angular/core'
-import {FormControl, Validators, NgControl, ControlValueAccessor} from '@angular/forms'
+import {NgControl, ControlValueAccessor} from '@angular/forms'
 import _ from 'lodash';
 
 /**
@@ -33,7 +31,6 @@ import _ from 'lodash';
     <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
   `,
-  directives: []
 })
 export class InputDate implements ControlValueAccessor {
 

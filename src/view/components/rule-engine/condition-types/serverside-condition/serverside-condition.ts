@@ -1,9 +1,5 @@
 import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
-import {FormControl, Validators, FormBuilder} from '@angular/forms';
-import { Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
-
-import {InputText} from "../../../semantic/elements/input-text/input-text";
-import {InputDate} from "../../../semantic/elements/input-date/input-date";
+import {FormBuilder} from '@angular/forms';
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwComponent} from "../../../../../api/util/CwComponent";
@@ -11,14 +7,11 @@ import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFie
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ObservableHack} from "../../../../../api/util/ObservableHack";
 import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
-import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 import {Verify} from "../../../../../api/validation/Verify";
-import {CustomValidators} from "../../../../../api/validation/CustomValidators";
 import {ParameterModel} from "../../../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'cw-serverside-condition',
-  directives: [RestDropdown, Dropdown, InputOption, InputText, InputDate],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<form>
   <div flex layout="row" class="cw-condition-component-body">

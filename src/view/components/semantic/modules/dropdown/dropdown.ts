@@ -28,7 +28,6 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
 
 @Component({
   selector: 'cw-input-dropdown',
-  directives: [],
   template: `<div class="ui fluid selection dropdown search ng-valid"
      [class.required]="minSelections > 0"
      [class.multiple]="maxSelections > 1"

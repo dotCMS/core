@@ -1,10 +1,6 @@
 import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
 import {DecimalPipe} from "@angular/common";
 import {FormControl} from '@angular/forms';
-import {AreaPickerDialogComponent} from "../../../../../view/components/common/google-map/area-picker-dialog.component";
-import {Observable} from "rxjs/Observable";
-import {Dropdown, InputOption} from "../../../semantic/modules/dropdown/dropdown";
-import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {GCircle} from "../../../../../api/maps/GoogleMapService";
 
 interface Param<T> {
@@ -45,7 +41,6 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 @Component({
   selector: 'cw-visitors-location-component',
   providers:[DecimalPipe],
-  directives: [AreaPickerDialogComponent, Dropdown, InputOption, InputText],
   template: `<div flex layout="row" class="cw-visitors-location cw-condition-component-body" *ngIf="comparisonDropdown != null">
   <cw-input-dropdown flex
                      class="cw-input"
