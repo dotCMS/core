@@ -14,8 +14,11 @@ import {RoutingService} from '../../../api/services/routing-service';
 
 })
 export class ToolbarAddContenletBodyComponent {
-    @Input() structureTypeView: StructureTypeView;
+    @Input() structureTypeViews: StructureTypeView[];
+    @Input() showMore: boolean = false;
+
     @Output() select = new EventEmitter<>();
+    @Output() more = new EventEmitter<>();
 
     constructor(private routingService: RoutingService) {}
 
@@ -23,6 +26,11 @@ export class ToolbarAddContenletBodyComponent {
         this.routingService.goToPortlet(contentTypeView.name);
         this.select.emit();
         return false;
+    }
+
+    clickMore(): void {
+        event.preventDefault();
+        this.more.emit();
     }
 }
 
@@ -40,36 +48,69 @@ export class ToolbarAddContenletComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
     private types: StructureTypeView[];
-    private selected: StructureTypeView;
+    private recent: StructureTypeView[];
+    private selected: StructureTypeView[];
+    private showMore: boolean = false;
+
+    private NUMBER_BY_PAGE: number = 4;
+    private currentPage: number = -1;
 
     constructor(private contentletService: ContentletService,
                 private routingService: RoutingService) {
     }
 
     ngOnInit(): void {
-        this.contentletService.structureTypeView$.subscribe(strcutures => {
-            this.types = strcutures;
+        this.contentletService.structureTypeView$.subscribe(structures => {
+            this.types = structures;
+            this.recent = [];
 
-            this.types.forEach(strcuture => {
-                    strcuture.types.forEach(type => {
-                        this.routingService.addPortletURL(type.name, type.action);
-                    });
+            this.types = this.types.filter(structure => {
+                    if (structure.name.startsWith('RECENT')) {
+                        this.recent.push(structure);
+                    } else {
+                        structure.types.forEach(type => {
+                            this.routingService.addPortletURL(type.name, type.action);
+                        });
+                    }
+
+                    return !structure.name.startsWith('RECENT');
                 }
             );
 
-            this.selected = this.types && this.types.length > 1 ? this.types[0] : null;
+            this.nextRecent();
         });
     }
 
     select(selected: StructureTypeView): void {
-        if (this.selected && this.selected === selected) {
-            this.selected = null;
+        if (this.selected !== this.recent && this.selected[0] === selected) {
+            this.currentPage = -1;
+            this.nextRecent();
         }else {
-            this.selected = selected;
+            this.selected = [ selected ];
+            this.showMore = false;
         }
     }
 
     close(): void {
         this.dropdown.closeIt();
+    }
+
+    nextRecent(): void {
+        this.currentPage++;
+        this.showMore = false;
+
+        this.selected = this.recent.map(structureTypeView => {
+            let currentPage = this.currentPage % (structureTypeView.types.length / this.NUMBER_BY_PAGE );
+            this.showMore = this.showMore || structureTypeView.types.length > this.NUMBER_BY_PAGE;
+
+            let startIndex = currentPage * this.NUMBER_BY_PAGE;
+            let endIndex = startIndex + this.NUMBER_BY_PAGE;
+
+            return {
+                label: structureTypeView.label,
+                name: structureTypeView.name,
+                types: structureTypeView.types.slice(startIndex, endIndex)
+            };
+        });
     }
 }

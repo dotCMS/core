@@ -20,6 +20,7 @@ export class ContentletService extends CoreWebService {
         loginService.watchUser(this.loadContentTypes.bind(this));
 
         dotcmsEventsService.subscribeTo('SAVE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeView => {
+            console.log('contentTypeView', contentTypeView);
             let structureTypeView: StructureTypeView = this.getStructureTypeView(contentTypeView.type);
             structureTypeView.types.push(contentTypeView);
             this._structureTypeView$.next(this.structureTypeView);
