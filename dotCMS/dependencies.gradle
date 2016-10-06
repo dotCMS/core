@@ -262,23 +262,23 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
-
+    compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
 
     /**
      * Order matters here: JUNIT must come after hamcrest.
      */
     compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
-    compile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12'
     compile "org.mockito:mockito-core:1.+"
-    compile "com.tngtech.java:junit-dataprovider:1.11.0"
-    compile ("org.powermock:powermock-api-mockito:1.6.5" ){
+    testCompile "com.tngtech.java:junit-dataprovider:1.11.0"
+    testCompile ("org.powermock:powermock-api-mockito:1.6.5" ){
         exclude group: 'org.hamcrest'
         exclude group: 'org.objenesis'
         exclude group: 'cglib'
 
     }
-    compile "org.powermock:powermock-module-junit4:1.6.5"
-    compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
+    testCompile "org.powermock:powermock-module-junit4:1.6.5"
+
     /**
      * Order matters here: OSGI-Core must come after felix.
      */
@@ -287,21 +287,21 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version:'2.2.0_2'
 
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_3'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_3'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_3'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_3'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_3'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_3'
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
-    compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
+    compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    compile group: 'com.dotcms', name: 'starter', version: '20160902', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20160902', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.7.0-SNAPSHOT', ext: 'zip', changing: true
 
-    provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
-    provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
+    providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
     compile group: 'org.apache.xmlgraphics', name: 'batik-anim', version:'1.8'
