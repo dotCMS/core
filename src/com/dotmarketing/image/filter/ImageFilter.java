@@ -40,8 +40,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 			List<String> acceptFilter = new ArrayList<String>();
 			String thisFilter="";
 			if(parameters.get("filter")!=null && parameters.get("filter").length>0){
-				String[] filters = parameters.get("filter")[0].split(",");
-				
+				String[] filters = parameters.get("filter");
+	
 				
 				for(int i=0;i<filters.length;i++){
 					String x = filters[i];
