@@ -1,18 +1,23 @@
 package com.dotmarketing.image.filter;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.ScaleFilter;
 import com.dotmarketing.util.ImageResizeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.twelvemonkeys.image.ResampleOp;
 
 public class ResizeImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
@@ -50,13 +55,10 @@ public class ResizeImageFilter extends ImageFilter {
 			int width    =      (int) w;    
 			int hieght     =     (int) h;
 
-			ScaleFilter filter = new ScaleFilter(width,hieght);
 
-			BufferedImage dst = new BufferedImage(width,hieght,
-					BufferedImage.TYPE_INT_ARGB);
-
-			 dst = filter.filter(src, dst);
-			ImageIO.write(dst, "png", resultFile);
+			BufferedImageOp resampler = new ResampleOp(width, hieght, ResampleOp.FILTER_LANCZOS); // A good default filter, see class documentation for more info
+			BufferedImage output = resampler.filter(ImageIO.read(file), null);
+			ImageIO.write(output, "png", resultFile);
 			return resultFile;
 			
 			//fos = new FileOutputStream(resultFile);
