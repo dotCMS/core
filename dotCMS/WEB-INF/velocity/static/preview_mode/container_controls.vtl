@@ -35,7 +35,11 @@
 				'<span class="dotNewContent"><a href="javascript:addContentlet(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.New-Content")</a></span>\n'+
 			#end
 			'<span class="dotReuseContent"><a href="javascript:popContentletsBrowser(\'$CONTAINER_INODE\');" onclick="parent.showHideMenu(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</a></span>\n'+
+			#if($isAngularFrame)
+			'<span class="dotAddWidget"><a href="javascript:if(parent.${angularFrame}.contentWindow !== undefined){parent.${angularFrame}.contentWindow.openAddWidget(\'${CONTAINER_INODE}\');}else{ parent.${angularFrame}.openAddWidget(\'${CONTAINER_INODE}\');}">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
+			#else
 			'<span class="dotAddWidget"><a href="javascript:parent.openAddWidget(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
+			#end
 			'<span class="dotAddForm"><a href="javascript:openAddForm(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Form")</a></span>\n'+
 		#else
 			'<span class="dotNewContentDisabled">$languagewebapi.getFromUserLanguage("modes.New-Content")</span>\n'+
