@@ -214,7 +214,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<%boolean building =newIdx.contains(x);%>
 			<%if(building)continue; %>
 			<%ClusterIndexHealth health = map.get(x); %>
-			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
+			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;"
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
         <%if(!Config.getBooleanProperty("CLUSTER_AUTOWIRE",true) || !Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){ %>
             <div dojoType="dijit.MenuItem" onClick="updateReplicas('<%=x %>',<%=health.getNumberOfReplicas()%>);" class="showPointer">
@@ -222,15 +222,6 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
                 <%= LanguageUtil.get(pageContext,"Update-Replicas-Index") %>
             </div>
         <%} %>
-
-			 	<div dojoType="dijit.MenuItem" onClick="showRestoreIndexDialog('<%=x %>');" class="showPointer">
-			 		<span class="uploadIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Restore-Index") %>
-			 	</div>
-			 	<div dojoType="dijit.MenuItem" onClick="doDownloadIndex('<%=x %>');" class="showPointer">
-			 		<span class="downloadIcon"></span>
-			 		<%= LanguageUtil.get(pageContext,"Download-Index") %>
-			 	</div>
 			 	<div dojoType="dijit.MenuItem" onClick="doSnapshotIndex('<%=x %>');" class="showPointer">
           <span class="downloadIcon"></span>
           <%= LanguageUtil.get(pageContext,"Snapshot-Index") %>
@@ -331,29 +322,28 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
     <div data-dojo-type="dijit.Dialog" style="width:345px;text-align: center;" id="restoreSnapshotDialog" title="<%= LanguageUtil.get(pageContext,"Restore-Index-Snapshot") %>">
         <img id="uploadSnapshotProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <span id="uploadSnapshotFileName"></span>
-      <form method="post"
-            action="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/restoreSnapshot"
+      <form method="POST"
             id="restoreSnapshotForm"
-            enctype="multipart/form-data">
-         <input name="uploadedSnapshotFile" multiple="false"
-                type="file" data-dojo-type="dojox.form.Uploader"
+            data-dojo-id="restoreSnapshotForm"
+            name="restoreSnapshotForm">
+         <input name="uploadedSnapshotFile"
+                type="file"
                 label="Select File" id="restoreSnapshotUploader"
-                showProgress="true"
-                onComplete="restoreSnapshotUploadCompleted()"/>
-       </form>
-       <br/>
-
-       <button id="uploadSnapshotSubmit" data-dojo-type="dijit.form.Button" type="button">
+                showProgress="true"/>
+         <br/>
+      </form>
+      <br/>
+      <button id="uploadSnapshotSubmit" data-dojo-type="dijit.form.Button" type="button">
           <span class="uploadIcon"></span>
           <%= LanguageUtil.get(pageContext,"Upload-File") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndexSnapshot();</script>
-           </button>
-
-       <button data-dojo-type="dijit.form.Button" type="button">
+      </button>
+      <button data-dojo-type="dijit.form.Button" type="button">
           <span class="deleteIcon"></span>
           <%= LanguageUtil.get(pageContext,"Close") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreSnapshotIndex();</script>
            </button>
+      <br/>
     </div>
 
 

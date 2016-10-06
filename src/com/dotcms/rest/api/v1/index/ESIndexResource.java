@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -49,6 +50,7 @@ import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -67,16 +69,19 @@ public class ESIndexResource {
 
 	private ESIndexAPI indexAPI;
 	private ESIndexHelper indexHelper;
+	private final ResponseUtil responseUtil;
 
 	public ESIndexResource(){
 		this.indexAPI = APILocator.getESIndexAPI();
 		this.indexHelper = ESIndexHelper.INSTANCE;
+		this.responseUtil = ResponseUtil.INSTANCE;
 	}
 
 	@VisibleForTesting
-	protected ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper){
+	protected ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper, ResponseUtil responseUtil){
 		this.indexAPI = indexAPI;
 		this.indexHelper = indexHelper;
+		this.responseUtil = responseUtil;
 	}
 
     private final WebResource webResource = new WebResource();
@@ -316,37 +321,24 @@ public class ESIndexResource {
             	if(alias != null)
             		index = alias;
             	this.indexAPI.uploadSnapshot(inputFile, index);
-            	return Response.status(Response.Status.OK).entity(new ResponseEntityView
-                        (new MessageEntity("Success"))).build();
+            	return Response.ok(new MessageEntity("Success")).build();
             }
-            return Response.status(Response.Status.CONFLICT).entity(new ResponseEntityView
-                    (new ErrorEntity("failed","Failed to upload."))).build();
+            return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
 
         }catch (SecurityException sec) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
-                    (new ErrorEntity("invalid-credentials","Invalid credentials"))).build();
+            return this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, Locale.getDefault(), null, "authentication-failed");
         }catch(IllegalArgumentException iar){
-        	return Response.status(Response.Status.BAD_REQUEST).entity(new ResponseEntityView
-                    (new ErrorEntity("illegal-argument","Illegal arguments"))).build();
+        	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
         }catch(IOException ex) {
-        	return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ResponseEntityView
-                    (new ErrorEntity("temporary-unavilable-service","Temporary unavilable service"))).build();
-        }
-        catch(ExecutionException exc){
-        	return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ResponseEntityView
-                    (new ErrorEntity("temporary-unavilable-service","Temporary unavilable service"))).build();
-        }
-        catch(SnapshotRestoreException exc){
-        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ResponseEntityView
-                    (new ErrorEntity("error-processing-snapshot","Error processing snapshot"))).build();
-        }
-        catch(InterruptedException exi){
-        	return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ResponseEntityView
-                    (new ErrorEntity("temporary-unavilable-service","Temporary unavilable service"))).build();
-        }
-        catch(Exception ex){
-        	return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ResponseEntityView
-                    (Arrays.asList(new ErrorEntity("temporary-unavilable-service",ex.getMessage())))).build();
+        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.io.writing.fail");
+        }catch(ExecutionException exc){
+        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.fail.during.execution");
+        }catch(SnapshotRestoreException exc){
+        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.fail");
+        }catch(InterruptedException exi){
+        	return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
+        }catch(Exception ex){
+        	return this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, Locale.getDefault(), null, "snapshot.error");
         }
     }
 

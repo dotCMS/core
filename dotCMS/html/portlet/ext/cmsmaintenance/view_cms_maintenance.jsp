@@ -471,7 +471,7 @@ function doDownloadIndex(indexName){
 }
 
 function doSnapshotIndex(indexName){
-	  window.location="/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/snapshotIndex/indexName/" + indexName;
+	  window.location="/api/v1/esindex/snapshot/index/" + indexName;
 }
 
 function doReindex(){
@@ -655,7 +655,6 @@ function showRestoreSnapshotDialog() {
 	  dojo.byId("uploadSnapshotFileName").innerHTML='';
 	  dijit.byId('uploadSnapshotSubmit').set('disabled',false);
 	  dojo.query('#uploadSnapshotProgress').style({display:"none"});
-	  connectSnapshotUploadEvents();
 	  dialog.show();
 	}
 
@@ -670,16 +669,31 @@ function doRestoreIndex() {
 	}
 }
 
-function doRestoreIndexSnapshot() {
-	  if(dojo.byId("uploadSnapshotFileName").innerHTML=='') {
-	    showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "No-File-Selected"))%>");
-	  }
-	  else {
-	    dijit.byId('uploadSnapshotSubmit').set('disabled',true);
-	      dojo.query('#uploadSnapshotProgress').style({display:"block"});
-	      dijit.byId("restoreSnapshotUploader").submit();
-	  }
+function doRestoreIndexSnapshot(evt){
+	if(!document.getElementById("restoreSnapshotUploader").value) {
+	    showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "no.snapshot.selected"))%>");
 	}
+	else{
+		let formData = new FormData();
+	  let oReq = new XMLHttpRequest();
+	  dijit.byId('uploadSnapshotSubmit').set('disabled',true);
+	  dojo.query('#uploadSnapshotProgress').style({display:"block"});
+		formData.append('file',document.getElementById("restoreSnapshotUploader").files[0]);
+		oReq.onreadystatechange = function(){
+			if (oReq.readyState === 4) {
+		     var msgJson = JSON.parse(oReq.response)
+				 if (oReq.status === 200) {
+		      	 showDotCMSErrorMessage(msgJson.message,true);
+		     } else {
+		     	 showDotCMSErrorMessage(msgJson.errors[0].message);
+		     }
+		     restoreSnapshotUploadCompleted();
+		  }
+		}
+	   oReq.open('POST','/api/v1/esindex/restoresnapshot/',true);
+	   oReq.send(formData);
+	}
+}
 
 function restoreUploadCompleted() {
 	hideRestoreIndex();
@@ -723,19 +737,6 @@ function connectUploadEvents() {
            showDotCMSSystemMessage("Upload Complete. Index Restores in background");
     });
 }
-
-function connectSnapshotUploadEvents() {
-	  var uploader=dijit.byId("restoreSnapshotUploader");
-	  dojo.connect(uploader, "onChange", function(dataArray){
-	     dojo.forEach(dataArray, function(data){
-	          dojo.byId("uploadSnapshotFileName").innerHTML=data.name;
-	     });
-	  });
-	  dojo.connect(uploader, "onComplete", function(dataArray) {
-		         hideRestoreSnapshotIndex();
-	           showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "snapshot.uploading"))%>");
-	    });
-	}
 
 function doCreateWorking() {
 	dijit.byId('addIndex').show();
