@@ -20,6 +20,7 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,6 +37,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by Oscar Arrieta on 2/24/16.
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class RulesUnderPageAssetsFTest extends TestBase {
 
     private Host host;

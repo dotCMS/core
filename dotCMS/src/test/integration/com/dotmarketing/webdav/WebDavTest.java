@@ -19,6 +19,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -39,6 +40,7 @@ import com.ettrema.httpclient.InternalServerError;
 import com.ettrema.httpclient.Resource;
 import com.liferay.portal.model.User;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class WebDavTest extends TestBase {
 	
 	@Before

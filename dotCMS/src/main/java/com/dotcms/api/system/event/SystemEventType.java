@@ -21,9 +21,14 @@ package com.dotcms.api.system.event;
 public enum SystemEventType {
 
 	NOTIFICATION,
+
 	SAVE_SITE,
 	UPDATE_SITE,
 	ARCHIVE_SITE,
-	UN_ARCHIVE_SITE;
+	UN_ARCHIVE_SITE,
+
+	SAVE_BASE_CONTENT_TYPE,
+	UPDATE_BASE_CONTENT_TYPE,
+	DELETE_BASE_CONTENT_TYPE;
 
 }

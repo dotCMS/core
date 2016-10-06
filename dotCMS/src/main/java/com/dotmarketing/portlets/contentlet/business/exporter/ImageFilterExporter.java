@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.business.exporter;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
@@ -38,6 +41,16 @@ public class ImageFilterExporter implements BinaryContentExporter {
 			}
 			else if(parameters.get("filters") != null){
 				filter= parameters.get("filters")[0].split(","); 
+			}
+
+			if(filter!=null || filter.length==0 || !"Png".equalsIgnoreCase(filter[0])){
+				List<String> newFilters = new ArrayList<String>();
+				newFilters.add(0, "Png");
+				newFilters.addAll(Arrays.asList(filter));
+				filter =newFilters.toArray(new String[newFilters.size()]);
+				parameters.replace("filter", filter);
+				parameters.replace("filters", filter);
+				
 			}
 
 			for(String s : filter){

@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -31,13 +32,14 @@ import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.db.HibernateUtil;
@@ -233,9 +235,13 @@ public class UtilMethods {
     public static final boolean isImage(String x) {
         if (x == null)
             return false;
+        
+        return ImageIO.getImageReadersByFormatName(getFileExtension(x)).hasNext();
+        /*
         return (x.toLowerCase().endsWith(".gif") || x.toLowerCase().endsWith(".jpg") || x.toLowerCase().endsWith(".jpe")
                 || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".png") || x.toLowerCase().endsWith(".jpeg"))
                 || x.toLowerCase().endsWith(".svg");
+                */
     }
 
     public static final String getMonthFromNow() {
@@ -3485,20 +3491,16 @@ public class UtilMethods {
         throwable.printStackTrace(pw);
         return sw.getBuffer().toString();
     }
-
+    
+    /**
+     *  {@link  DbConnectionFactory#closeSilently()}
+     */
+    @Deprecated
     public static void closeDbSilently() {
-        try {
-            HibernateUtil.closeSession();
-        } catch (Exception e) {
 
-        } finally {
-            try {
+        
+        DbConnectionFactory.closeSilently();
 
-                DbConnectionFactory.closeConnection();
-            } catch (Exception e) {
-
-            }
-        }
     }
 
     public static boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){

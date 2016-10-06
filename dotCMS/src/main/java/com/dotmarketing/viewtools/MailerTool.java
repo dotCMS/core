@@ -29,7 +29,7 @@ public class MailerTool implements ViewTool {
 	/**
 	 * Sends an email
 	 * 
-	 * Example:  #set($error = $mailer.sendMail(
+	 * Example:  #set($error = $mailer.sendEmail(
 	 *                   'them@theirdomain.com',
 	 *                   'you@yourdomain.com',
 	 *                   'The Subject',
