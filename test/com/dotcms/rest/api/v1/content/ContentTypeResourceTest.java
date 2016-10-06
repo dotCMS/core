@@ -116,7 +116,6 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
 
         final Response response1 = contentTypeResource.getTypes(request);
-        System.out.println(response1);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 200);
