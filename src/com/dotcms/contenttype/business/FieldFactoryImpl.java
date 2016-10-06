@@ -27,11 +27,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 
@@ -101,10 +105,16 @@ public class FieldFactoryImpl implements FieldFactory {
         });
 
         Field f = byId(fieldVar.fieldId());
-        ContentType t = CacheLocator.getContentTypeCache2().byInode(f.contentTypeId());
-        if (t != null) {
-            CacheLocator.getContentTypeCache2().remove(t);
+        ContentType t;
+        try {
+            t = APILocator.getContentTypeAPI2().find(f.contentTypeId(), APILocator.systemUser());
+            if (t != null) {
+                CacheLocator.getContentTypeCache2().remove(t);
+            }
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e);
         }
+
         return newVar;
 
     }

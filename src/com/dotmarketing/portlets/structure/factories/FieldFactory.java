@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.contenttype.business.FieldApi;
-import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.EmptyField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -106,6 +105,7 @@ public class FieldFactory {
                 || oldField.getFieldType().equals("permissions_tab") 
                 || oldField.getFieldType().equals( "relationships_tab")
                 || oldField.getFieldType().equals("category")
+                || oldField.getFieldType().equals("tag")
              ) {
 
             oldField.setFieldContentlet(DataTypes.SYSTEM.toString());

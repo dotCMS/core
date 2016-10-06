@@ -9,12 +9,14 @@ import org.elasticsearch.common.Nullable;
 
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 
 
 public class LegacyFieldTransformer implements FieldTransformer {
@@ -154,6 +156,9 @@ public class LegacyFieldTransformer implements FieldTransformer {
 			@Override
 			public DataTypes dataType() {
 				String dbType = oldField.getFieldContentlet().replaceAll("[0-9]", "");
+				if(!UtilMethods.isSet(dbType)){
+				   return FieldBuilder.instanceOf(LegacyFieldTypes.getImplClass(fieldType)).acceptedDataTypes().get(0);
+				}
 				return DataTypes.getDataType(dbType);
 			}
 

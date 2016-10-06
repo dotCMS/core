@@ -16,12 +16,11 @@ public class TestInitialContextFactory implements InitialContextFactoryBuilder {
 
 
     final DbConnectionFactory.DataBaseType type;
-
+    final String dbType = (System.getProperty("test.database.type") != null)
+            ? System.getProperty("test.database.type") 
+            : System.getenv("test_database_type");
 
     TestInitialContextFactory() {
-        // get if from the sys property or from the environment
-        String dbType = (System.getProperty("test.database.type") != null)
-                ? System.getProperty("test.database.type") : System.getenv("test_database_type");
         if ("mysql".equalsIgnoreCase(dbType)) {
             this.type = DbConnectionFactory.DataBaseType.MySQL;
         } else if ("mssql".equalsIgnoreCase(dbType)) {
