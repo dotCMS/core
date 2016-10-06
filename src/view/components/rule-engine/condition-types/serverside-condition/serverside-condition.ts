@@ -1,5 +1,5 @@
-import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy, provide} from '@angular/core';
-import {Control, Validators, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES, NG_VALUE_ACCESSOR} from '@angular/common';
+import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
+import {FormControl, Validators, FormBuilder} from '@angular/forms';
 import { Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
@@ -18,7 +18,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'cw-serverside-condition',
-  directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
+  directives: [RestDropdown, Dropdown, InputOption, InputText, InputDate],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<form>
   <div flex layout="row" class="cw-condition-component-body">
@@ -28,7 +28,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                          flex
                          class="cw-input"
                          [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                         [ngFormControl]="input.control"
+                         [formControl]="input.control"
                          [required]="input.required"
                          [allowAdditions]="input.allowAdditions"
                          [class.cw-comparator-selector]="input.name == 'comparison'"
@@ -46,7 +46,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
         <cw-input-rest-dropdown flex
                                 class="cw-input"
                                 [value]="input.value"
-                                [ngFormControl]="input.control"
+                                [formControl]="input.control"
                                 [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                                 placeholder="{{input.placeholder | async}}"
                                 [minSelections]="input.minSelections"
@@ -70,7 +70,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
         <cw-input-text
             flex
             [placeholder]="input.placeholder | async"
-            [ngFormControl]="input.control"
+            [formControl]="input.control"
             [type]="input.type"
             [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
             (blur)="onBlur(input)"
@@ -84,7 +84,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                      flex
                     layout-fill
                      class="cw-input"
-                     [ngFormControl]="input.control"
+                     [formControl]="input.control"
                      [class.cw-last]="islast"
                      [placeholder]="input.placeholder | async"
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"

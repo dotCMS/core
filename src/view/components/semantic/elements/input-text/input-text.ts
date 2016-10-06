@@ -1,4 +1,3 @@
-import {bootstrap} from '@angular/bootstrap'
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,8 +7,8 @@ import {
     Output,
     Optional
 } from '@angular/core'
-import {Control, Validators, NgControl, ControlValueAccessor} from '@angular/common'
-import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
+import {FormControl, Validators, NgControl, ControlValueAccessor} from '@angular/forms'
+import _ from 'lodash';
 
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
@@ -90,7 +89,7 @@ import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
   }
 
   writeValue(value:any) {
-    this._modelValue = isBlank(value) ? '' : value
+    this._modelValue = _.isEmpty(value) ? '' : value;
     this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
   }
 

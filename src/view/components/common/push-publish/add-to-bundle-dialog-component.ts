@@ -1,5 +1,4 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 import {IBundle} from "../../../../api/services/bundle-service";
@@ -7,10 +6,10 @@ import {ViewChild} from "@angular/core";
 
 @Component({
   selector: 'cw-add-to-bundle-dialog-component',
-  directives: [CORE_DIRECTIVES, ModalDialogComponent, Dropdown, InputOption],
+  directives: [ModalDialogComponent, Dropdown, InputOption],
   template: `<cw-modal-dialog
     [headerText]="'Add to Bundle'"
-    [okText]="'Add'"
+    [okButtonText]="'Add'"
     [hidden]="hidden"
     [okEnabled]="selectedBundle != null"
     [errorMessage]="errorMessage"

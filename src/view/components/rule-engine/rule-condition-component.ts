@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
-import {CORE_DIRECTIVES} from '@angular/common';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 
@@ -15,7 +14,7 @@ import {VisitorsLocationContainer} from "./custom-types/visitors-location/visito
 
 @Component({
   selector: 'rule-condition',
-  directives: [CORE_DIRECTIVES,
+  directives: [
     ServersideCondition,
     VisitorsLocationContainer,
     Dropdown,
@@ -40,10 +39,10 @@ import {VisitorsLocationContainer} from "./custom-types/visitors-location/visito
         icon="{{opt.icon}}"></cw-input-option>
   </cw-input-dropdown>
   <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-    <template [ngSwitchWhen]="'NoSelection'">
+    <template [ngSwitchCase]="'NoSelection'">
       <div class="cw-condition-component"></div>
     </template>
-    <template [ngSwitchWhen]="'VisitorsGeolocationConditionlet'">
+    <template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
       <cw-visitors-location-container
           [componentInstance]="condition"
           (parameterValuesChange)="onParameterValuesChange($event)"></cw-visitors-location-container>

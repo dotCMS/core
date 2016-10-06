@@ -1,18 +1,3 @@
-import {Component} from '@angular/core';
-
-@Component({
-    directives: [],
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    providers: [],
-    template: '<h1>Fake rules engine</h1>'
-})
-
-export class FakeRulesEngine {
-    constructor() {
-
-    }
-}
-
 import {AppComponent} from './app';
 import {ForgotPasswordContainer} from './common/login/forgot-password-component/forgot-password-container';
 import {IframeLegacyComponent} from './common/iframe-legacy/Iframe-legacy-component';
@@ -52,7 +37,7 @@ const appRoutes: Routes = [
 
             },
             {
-                component: FakeRulesEngine,
+                component: RuleEngineContainer,
                 path: 'html/ng/p/RULES_ENGINE_PORTLET',
                 canActivate: [RoutingAuthService]
             }

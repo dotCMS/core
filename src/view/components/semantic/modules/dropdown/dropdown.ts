@@ -1,8 +1,8 @@
 import {ElementRef, Component, Directive, EventEmitter, Optional} from '@angular/core';
 import { Host, AfterViewInit, OnDestroy, Output, Input, ChangeDetectionStrategy } from '@angular/core';
-import {CORE_DIRECTIVES, ControlValueAccessor, NgControl,} from '@angular/common';
+import {ControlValueAccessor, NgControl} from '@angular/forms';
 import {BehaviorSubject, Observable} from 'rxjs/Rx'
-import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
+import _ from 'lodash';
 
 
 /**
@@ -28,7 +28,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
 
 @Component({
   selector: 'cw-input-dropdown',
-  directives: [CORE_DIRECTIVES],
+  directives: [],
   template: `<div class="ui fluid selection dropdown search ng-valid"
      [class.required]="minSelections > 0"
      [class.multiple]="maxSelections > 1"
@@ -98,7 +98,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
   }
 
   writeValue(value:any) {
-    this._modelValue = isBlank(value) ? '' : value
+    this._modelValue = _.isEmpty(value) ? '' : value;
     this.applyValue(this._modelValue)
   }
 

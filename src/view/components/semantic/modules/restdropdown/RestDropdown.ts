@@ -1,22 +1,17 @@
 import {Component, EventEmitter, Optional } from '@angular/core';
 import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/core';
-import {CORE_DIRECTIVES, NgControl, ControlValueAccessor,} from '@angular/common';
+import {NgControl, ControlValueAccessor,} from '@angular/forms';
 import {Http} from '@angular/http';
 
 import {Dropdown, InputOption} from '../dropdown/dropdown'
 import {Verify} from "../../../../../api/validation/Verify";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 import {Observer} from "rxjs/Observer";
-import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
-//
-//<cw-input-dropdown [value]="value"  placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)" [maxSelections]="maxSelections"
-// [minSelections]="minSelections" [allowAdditions]="allowAdditions">
-// <cw-input-option *ngFor="#opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
-// </cw-input-dropdown>`,
-// 
+import _ from 'lodash';
+
 @Component({
   selector: 'cw-input-rest-dropdown',
-  directives: [CORE_DIRECTIVES, Dropdown, InputOption],
+  directives: [Dropdown, InputOption],
   template: `
   <cw-input-dropdown 
       [value]="_modelValue"
@@ -40,6 +35,7 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
   @Input() optionUrl:string
   @Input() optionValueField:string
   @Input() optionLabelField:string
+  @Input() value:string
 
   @Output() change:EventEmitter<any> = new EventEmitter()
   @Output() touch:EventEmitter<any> = new EventEmitter()
@@ -70,7 +66,7 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
     if(value && value.indexOf(',') > -1){
       this._modelValue = value.split(',')
     } else {
-      this._modelValue = isBlank(value) ? '' : value
+      this._modelValue = _.isEmpty(value) ? '' : value
     }
   }
 

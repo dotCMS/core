@@ -1,12 +1,11 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
 import {AddToBundleDialogComponent} from "./add-to-bundle-dialog-component";
 import {BehaviorSubject} from "rxjs/Rx";
 import {BundleService, IBundle} from "../../../../api/services/bundle-service";
 
 @Component({
   selector: 'cw-add-to-bundle-dialog-container',
-  directives: [CORE_DIRECTIVES, AddToBundleDialogComponent],
+  directives: [AddToBundleDialogComponent],
   template: `
   <cw-add-to-bundle-dialog-component
   [bundleStores]="bundleService.bundles$ | async"

@@ -1,9 +1,5 @@
 import {Component, EventEmitter, ElementRef, Input, Output, ChangeDetectionStrategy} from '@angular/core';
-import {
-    CORE_DIRECTIVES, Control, Validators, FORM_DIRECTIVES, NgFormModel, FormBuilder,
-    ControlGroup
-} from '@angular/common';
-
+import {FormControl, Validators, FormGroup, FormBuilder, FormGroup} from '@angular/forms';
 import {Observable} from 'rxjs/Rx'
 
 
@@ -51,15 +47,18 @@ var rsrc = {
 
 @Component({
   selector: 'rule',
-  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle,
+  directives: [
+    FormGroup,
+    InputToggle,
     RuleActionComponent,
     ConditionGroupComponent,
     InputText,
     Dropdown,
     InputOption,
     AddToBundleDialogContainer,
-    PushPublishDialogContainer],
-  template: `<form [ngFormModel]="formModel" let rf="ngForm">
+    PushPublishDialogContainer
+  ],
+  template: `<form [formGroup]="formModel" let rf="ngForm">
   <cw-add-to-bundle-dialog-container
       [assetId]="rule.id || rule.key"
       [hidden]="!showAddToBundleDialog"
@@ -77,10 +76,10 @@ var rsrc = {
       <cw-input-text class="cw-rule-name-input"
                      focused="{{rule.key == null}}"
                      placeholder="{{rsrc('inputs.name.placeholder') | async}}"
-                     ngControl="name"
-                     (click)="$event.stopPropagation()" #fName="ngForm">
+                     formControlName="name"
+                     (click)="$event.stopPropagation()">
       </cw-input-text>
-      <div flex="50" [hidden]="!fName.touched || fName.valid" class="name cw-warn basic label">Name is required</div>
+      <div flex="50" [hidden]="!formModel.controls['name'].touched || formModel.controls['name'].valid" class="name cw-warn basic label">Name is required</div>
       </div>
       <span class="cw-fire-on-label" *ngIf="!hideFireOn">{{rsrc('inputs.fireOn.label') | async}}</span>
       <cw-input-dropdown flex="none"
@@ -99,8 +98,6 @@ var rsrc = {
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
       <span class="cw-rule-status-text" title="{{statusText()}}">{{statusText(30)}}</span>
       <cw-toggle-input class="cw-input"
-                       [on-text]="rsrc('inputs.onOff.on.label') | async"
-                       [off-text]="rsrc('inputs.onOff.off.label') | async"
                        [disabled]="!saved"
                        [value]="rule.enabled"
                        (change)="setRuleEnabledState($event)"
@@ -125,7 +122,6 @@ var rsrc = {
   </div>
   <div class="cw-accordion-body" *ngIf="rule._expanded">
     <condition-group *ngFor="let group of rule._conditionGroups; let i=index"
-                     [rule]="rule"
                      [group]="group"
                      [conditionTypes]="conditionTypes"
                      [groupIndex]="i"
@@ -200,7 +196,7 @@ class RuleComponent {
   private _updateEnabledStateDelay:EventEmitter<{type:string, payload: {rule:RuleModel, value:boolean}}> = new EventEmitter(false)
 
   hideFireOn:boolean
-  formModel:ControlGroup
+  formModel:FormGroup
 
   private fireOn:any
   private _rsrcCache:{[key:string]:Observable<string>}
@@ -220,7 +216,7 @@ class RuleComponent {
               fb:FormBuilder) {
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
-    
+
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
     this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
       this.updateEnabledState.emit(event)
@@ -253,7 +249,7 @@ class RuleComponent {
     vFns.push(Validators.required)
     vFns.push(Validators.minLength(3))
     this.formModel = fb.group({
-      name: new Control(this.rule ? this.rule.name : '', Validators.compose(vFns))
+      name: new FormControl(this.rule ? this.rule.name : '', Validators.compose(vFns))
     })
   }
 
@@ -269,8 +265,8 @@ class RuleComponent {
   ngOnChanges(change) {
     if (change.rule) {
       let rule = this.rule
-      let ctrl:Control = <Control>this.formModel.controls['name']
-      ctrl.updateValue(this.rule.name, {})
+      let ctrl:FormControl = <FormControl>this.formModel.controls['name']
+      ctrl.patchValue(this.rule.name, {})
       ctrl.valueChanges.debounceTime(250).subscribe((name:string)=> {
         if (ctrl.valid) {
           this.updateName.emit({type: RULE_UPDATE_NAME, payload: {rule: this.rule, value: name}})

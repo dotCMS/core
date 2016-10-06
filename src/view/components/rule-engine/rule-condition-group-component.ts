@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
-import {CORE_DIRECTIVES} from '@angular/common';
 
 
 import {ConditionComponent} from './rule-condition-component';
@@ -15,7 +14,7 @@ import {
 
 @Component({
   selector: 'condition-group',
-  directives: [CORE_DIRECTIVES, ConditionComponent],
+  directives: [ConditionComponent],
   template: `<div class="cw-rule-group">
   <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
     {{rsrc('inputs.group.whenConditions.label') | async}}

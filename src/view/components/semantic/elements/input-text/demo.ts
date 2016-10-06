@@ -1,5 +1,5 @@
 import {Component, Optional} from '@angular/core'
-import { FormBuilder, NgControl, Control, Validators, FORM_DIRECTIVES, NgFormModel, CORE_DIRECTIVES } from '@angular/common'
+import { FormBuilder, NgControl, FormControl, Validators, FormGroup } from '@angular/forms'
 import {InputText} from "./input-text";
 
 export class Hero {
@@ -23,7 +23,7 @@ export class Hero {
 
 @Component({
   selector: 'hero-form',
-  directives: [InputText, CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel],
+  directives: [InputText, FormGroup],
   template: `<div flex layout="row" layout-align="center center">
   <div flex="40" layout="row" layout-wrap layout-align="center center">
     <form (ngSubmit)="onSubmit()" [ngFormModel]="model" #hf="ngForm">
@@ -62,9 +62,9 @@ export class HeroFormComponent {
 
   constructor(fb:FormBuilder) {
     this.model = fb.group({
-      name: new Control(this.hero.name, Validators.minLength(5)),
-      alterEgo: new Control(this.hero.alterEgo, Validators.required),
-      power: new Control(this.hero.power)
+      name: new FormControl(this.hero.name, Validators.minLength(5)),
+      alterEgo: new FormControl(this.hero.alterEgo, Validators.required),
+      power: new FormControl(this.hero.power)
     })
   }
 
@@ -83,7 +83,7 @@ export class HeroFormComponent {
 
 @Component({
   selector: 'demo',
-  directives: [InputText,FORM_DIRECTIVES, NgFormModel, HeroFormComponent],
+  directives: [InputText, FormGroup, HeroFormComponent],
   template: `<div [ngFormModel]="model">
   <div style="margin-top:5em;margin-bottom:5em">
     <hero-form></hero-form>
@@ -106,8 +106,8 @@ export class App {
 
   constructor(fb:FormBuilder) {
     this.model = fb.group({
-      demoOneCtrl: new Control('test', Validators.minLength(5)),
-      someDate: new Control(new Date().toISOString().split('T')[0], (c) => {
+      demoOneCtrl: new FormControl('test', Validators.minLength(5)),
+      someDate: new FormControl(new Date().toISOString().split('T')[0], (c) => {
         let v:any;
         try {
           let d = new Date(c.value)

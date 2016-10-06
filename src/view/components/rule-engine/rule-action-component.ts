@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
-import {CORE_DIRECTIVES} from '@angular/common';
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
@@ -13,7 +12,7 @@ import {RuleActionActionEvent} from "./rule-engine.container";
 
 @Component({
   selector: 'rule-action',
-  directives: [CORE_DIRECTIVES,
+  directives: [
     ServersideCondition,
     Dropdown,
     InputOption
