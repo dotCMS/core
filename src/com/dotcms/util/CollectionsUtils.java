@@ -3,6 +3,7 @@ package com.dotcms.util;
 import java.io.Serializable;
 import java.util.*;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
@@ -450,6 +451,31 @@ public class CollectionsUtils implements Serializable {
     } // map.
 
 
+    public static <K,V> Map<K,V> imap(Object... entries) {
+
+        if (entries.length % 2 != 0){
+            throw new IllegalArgumentException("The entries must be pair");
+        }
+
+        Collection<Map.Entry<K, V>> entriesCollection = new ArrayList<>();
+
+        for (int i = 0; i < entries.length; i += 2) {
+            entriesCollection.add(entry((K) entries[i], (V) entries[i + 1]));
+        }
+
+        return mapEntries(entriesCollection);
+    } // map.
+
+    private static <K,V> Map<K,V> immutableMapEntries(final Collection<Map.Entry<K, V>> entries) {
+
+        final ImmutableMap.Builder<K, V> parametersBuilder = ImmutableMap.builder();
+
+        for (Map.Entry<K, V> entry : entries) {
+            parametersBuilder.put(entry.getKey(), entry.getValue());
+        }
+
+        return parametersBuilder.build();
+    } // map.
 
     /**
      * Get a new map based on a collections of entries

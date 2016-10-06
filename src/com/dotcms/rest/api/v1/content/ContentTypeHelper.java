@@ -27,6 +27,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.CollectionsUtils.imap;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -108,7 +109,6 @@ public class ContentTypeHelper implements Serializable {
             throws DotDataException, LanguageException {
 
         Locale locale = LocaleUtil.getLocale(request);
-        Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
 
         List<ContentTypeView> recentsContent = structureAPI.getRecentContentType(type, user, -1)
                 .stream()
@@ -118,7 +118,7 @@ public class ContentTypeHelper implements Serializable {
 
         if (!recentsContent.isEmpty()){
             String name = String.format("RECENT_%s" ,type.toString());
-            String label = LanguageUtil.get(locale, name);
+            String label = LanguageUtil.get(locale, name.toLowerCase());
             baseContentTypesView.add(new BaseContentTypesView(name, label, recentsContent));
         }
     }
@@ -129,12 +129,12 @@ public class ContentTypeHelper implements Serializable {
      * @return Map (type Id -> i18n value)
      * @throws LanguageException
      */
-    public static Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
+    public synchronized static Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
         Map<String, String> map = BASE_CONTENT_TYPE_LABELS.get(locale);
 
         if (map == null) {
-            map = map(
+            map = imap(
                     Structure.Type.CONTENT.name(), LanguageUtil.get(locale, "Content"),
                     Structure.Type.WIDGET.name(), LanguageUtil.get(locale, "Widget"),
                     Structure.Type.FORM.name(), LanguageUtil.get(locale, "Form"),
