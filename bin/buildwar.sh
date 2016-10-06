@@ -91,6 +91,6 @@ if [ $have_tty -eq 1 ]; then
 fi
 
 CURRENT_PWD=`pwd`
-cd $DOTCMS_HOME
+cd $DOTCMS_HOME/bin
 
-$JAVA_HOME/bin/java -jar "$DOTCMS_HOME/bin/ant/ant-launcher.jar" -buildfile "$DOTCMS_HOME/bin/ant"/build.xml custom-dist-war
+./gradlew customDistWar

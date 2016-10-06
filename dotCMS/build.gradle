@@ -29,23 +29,42 @@ ant.lifecycleLogLevel = "INFO"
 
 ext {
     // Open the Git repository in the current directory.
-    git = org.ajoberstar.grgit.Grgit.open(file('..'))
 
-    dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseVersion='3.7.0'
+    dotcmsReleaseBuild = ''
+    dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'
     dotcmsReleaseBuild='999999'
     dotcmsReleaseDdate='Jun 08, 1986'
-    dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
     dotcmsReleaseDdate = getDate()
+    serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
+    homeFolder = serverFolder + webAppRootFolder
+    dotcmsHome = serverFolder + webAppRootFolder
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')){
+        git = org.ajoberstar.grgit.Grgit.open(file('..'))
+        dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+    }
 }
 
 archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 
 // Compile Java.
 compileJava {
     targetCompatibility = 1.8
     sourceCompatibility = 1.8
+}
+
+jar {
+    sourceSets {
+        main {
+            resources {
+                //TODO: Removes all files and folders. Currently, it is removing just files in root
+                exclude "*.*"
+            }
+        }
+    }
 }
 
 // Expand the release properties.
@@ -128,7 +147,138 @@ task deployWarTomcat(type: Copy) {
     into tomcatInstallLocation + webAppRootFolder
 }
 
-// This task finds all the plugins and runs 'ant build' inside each one.
+task clonePullTomcatDist(type: Exec) {
+    description 'Pulls git.'
+
+    def folder = new File(tomcatDistBase)
+    if( !folder.exists() ) {
+        commandLine "git", "clone", "-b", tomcatInstallVersion, tomcatInstallRepo, tomcatDistBase
+    } else {
+        workingDir tomcatDistBase
+        commandLine "git", "pull"
+    }
+}
+
+clonePullTomcatDist.mustRunAfter 'cleanDist'
+
+// Makes all the magic to place the webapp under tomcat8 for devs.
+task deployWarTomcatDist(type: Copy) {
+    dependsOn 'copyBuildLibsDist', 'war'
+
+    def zipFile = file("$buildDir/libs/$archivesBaseName" + ".war")
+
+    from zipTree(zipFile)
+    into "$tomcatDistBase$webAppRootFolder"
+}
+
+task copyBuildLibsDist(type: Copy) {
+    from '../libs/buildlibs'
+    into "$tomcatDistBase/lib"
+    include 'mail.jar'
+    include 'sqljdbc42.jar'
+    include 'mysql-connector-java-5.1.37-bin.jar'
+    include 'postgresql-9.0-801.jdbc3.jar'
+    include 'ojdbc5.jar'
+    include 'jtds-1.2.2.jar'
+}
+
+task cleanDist(type: Delete){
+    dependsOn 'clean'
+    delete "$distLocation"
+}
+
+def replaceText(filePath, fromString, toString) {
+    def sourceFile = filePath
+    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
+    new File(sourceFile).write(updatedContent, 'UTF-8')
+}
+
+//Creates the final distribution files for dotCMS.
+task createDist(dependsOn: ['cleanDist', 'clonePullTomcatDist', 'deployWarTomcatDist']) << {
+
+    copy {
+        from "../bin"
+        into "$distLocation$distBinLocation"
+        filesMatching('build.con*') {
+            expand(project.properties)
+        }
+    }
+
+    copy {
+        from "$rootDir/gradle"
+        into "$distLocation$distBinLocation/gradle"
+    }
+
+    copy {
+        from "$rootDir"
+        into "$distLocation$distBinLocation"
+        include 'build.gradle'
+        include 'dependencies.gradle'
+        include 'gradle.properties'
+        include 'gradlew'
+        include 'gradlew.bat'
+    }
+
+    copy {
+        into "$distLocation$confDistLocation"
+        from sourceSets.main.resources
+        exclude "com", "org"//, "release.properties"
+    }
+
+    copy {
+        into "$distLocation$pluginsDistLocation"
+        from "src/main/plugins"
+        exclude "**/.git"
+    }
+
+    copy {
+        into "$distLocation$docsDistLocation"
+        from  "$rootDir/../docs"
+    }
+
+    replaceText("$distLocation$distBinLocation/build.conf", "#SERVER_FOLDER", "SERVER_FOLDER")
+
+    replaceText("$distLocation$distBinLocation/build.conf", "#HOME_FOLDER", "HOME_FOLDER")
+
+    replaceText("$distLocation$distBinLocation/build.conf", "#target.root", "target.root")
+
+    replaceText("$distLocation$distBinLocation/build.conf.bat", "rem set", "set")
+
+    replaceText("$distLocation$distBinLocation/build.conf.bat", "/", "\\\\")
+
+    if ("$distUpdate".toBoolean()){
+        delete "$tomcatDistBase$webAppRootFolder/starter.zip"
+    }
+
+}
+
+createDist.finalizedBy 'zip', 'tgzTask'
+
+task zip(type: Zip) {
+    from "$distLocation"
+    exclude "**/output/**"
+    destinationDir file("$outputDistLocation")
+    baseName "$archivesBaseName"
+}
+
+task tgzTask(type: Tar) {
+    if (!"$distUpdate".toBoolean()) {
+        from ("$distLocation"){
+            eachFile { file ->
+                if (file.getName().endsWith(".sh") || file.getName().startsWith("gradle")) {
+                    file.setMode(0755)
+                }
+            }
+        }
+        exclude "**/output/**"
+        destinationDir file("$outputDistLocation")
+        baseName "$archivesBaseName"
+        extension = 'tgz'
+        compression = Compression.GZIP
+    }
+}
+
+// This task finds all th plugins and runs 'ant build' inside each one.
 // In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
 task buildPlugins(dependsOn: 'jar') << {
     delete "$buildDir/pluginsLib"
@@ -139,7 +289,13 @@ task buildPlugins(dependsOn: 'jar') << {
         from "$buildDir/libs/"
     }
 
-    new File("src/main/plugins").eachDir() {
+    def pluginsFolder = new File("src/main/plugins");
+
+    if( !pluginsFolder.exists() ) {
+        pluginsFolder = new File("../plugins");
+    }
+
+    pluginsFolder.eachDir() {
         def pluginPath = it
         println "Compile Plugin: " + pluginPath
         exec {
@@ -153,8 +309,17 @@ task buildPlugins(dependsOn: 'jar') << {
 // This task will copy what is used to be src-conf (now under resources)
 // to webapp/WEB-INF/classes in order to be merged with the plugins.
 task deployConfig(type: Copy) {
-    from 'src/main/resources'
-    into 'src/main/webapp/WEB-INF/classes'
+
+    def webAppFolder = 'src/main/webapp'
+
+    if (new File('src/main/resources').exists()){
+        from 'src/main/resources'
+    }else{
+        webAppFolder = "../$tomcatDistBase$webAppRootFolder"
+        from "../$distLocation$confDistLocation"
+
+    }
+    into "$webAppFolder/WEB-INF/classes"
 
     filesMatching("release.properties") {
         expand( project.properties )
@@ -167,19 +332,28 @@ task deployConfig(type: Copy) {
 // 2. Loop over each plugin and copy the .jar file into WEB-INF/liv
 // 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
 //    all the properties/files from the static plugins.
-task deployPlugins(dependsOn: ['buildPlugins', 'deployConfig']) << {
+task deployPlugins(dependsOn: ['buildPlugins']) << {
+
+    def pluginsFolder = new File("src/main/plugins")
+    def webAppFolder = 'src/main/webapp'
+
+    if( !pluginsFolder.exists() ) {
+        pluginsFolder = new File("../plugins");
+        webAppFolder = "../$tomcatDistBase$webAppRootFolder"
+    }
+
     copy {
-        from 'src/main/plugins'
-        into 'src/main/webapp/WEB-INF/classes'
+        from "$pluginsFolder.path"
+        into "$webAppFolder/WEB-INF/classes"
         include 'plugins.xml'
     }
 
     //<target name="deploy-plugin"/>
-    new File("src/main/plugins").eachDir() {
+    pluginsFolder.eachDir() {
         def pluginPath = it
         copy {
             from pluginPath.getPath() + '/build/jar'
-            into 'src/main/webapp/WEB-INF/lib'
+            into "$webAppFolder/WEB-INF/lib"
             include '*.jar'
         }
     }
@@ -188,10 +362,11 @@ task deployPlugins(dependsOn: ['buildPlugins', 'deployConfig']) << {
         name: 'pluginDeployTask', 
         classname: 'com.dotmarketing.plugin.ant.DeployTask', 
         classpath: configurations.compile.asPath)
+
     ant.pluginDeployTask(
         distributionPath: '../', 
-        dotcmsHome: 'src/main/webapp',
-        plugins: 'src/main/webapp/WEB-INF/lib')    
+        dotcmsHome: "$webAppFolder",
+        plugins: "$webAppFolder/WEB-INF/lib")
 }
 
 // This task will:
@@ -199,23 +374,42 @@ task deployPlugins(dependsOn: ['buildPlugins', 'deployConfig']) << {
 //    all the properties/files from the static plugins.
 // 2. Delete plugin.xml from classes and the html of the static plugins.
 task undeployPlugins << {
+
+    def webAppFolder = 'src/main/webapp'
+
+    if( !new File("$webAppFolder").exists() ) {
+        webAppFolder = "../$tomcatDistBase$webAppRootFolder"
+    }
+
+
     ant.taskdef(
         name: 'pluginUndeployTask', 
         classname: 'com.dotmarketing.plugin.ant.UndeployTask', 
         classpath: configurations.compile.asPath)
     ant.pluginUndeployTask(
         distributionPath: '../', 
-        dotcmsHome: 'src/main/webapp',
-        plugins: 'src/main/webapp/WEB-INF/lib')
+        dotcmsHome: "$webAppFolder",
+        plugins: "$webAppFolder/WEB-INF/lib")
 
-    delete fileTree('src/main/webapp/WEB-INF/lib') {
+    delete fileTree("$webAppFolder/WEB-INF/lib") {
         include '**/plugin-*.jar'
         include '**/pluginlib-*.jar'
     }
-    delete 'src/main/webapp/WEB-INF/classes/plugins.xml'
-    delete 'src/main/webapp/html/plugins'
+    delete "$webAppFolder/WEB-INF/classes/plugins.xml"
+    delete "$webAppFolder/html/plugins"
 }
 
+undeployPlugins.finalizedBy 'deployConfig'
+
+//Task mean to be use from a distribution structure using the buildwar.sh script.
+//This task will just use the already deployed folder inside the app server and compressed to a war file.
+task customDistWar(type: War) {
+    dependsOn 'deployPlugins'
+    from "../$tomcatDistBase$webAppRootFolder"
+    exclude "assets/**", "dotsecure/**"
+    baseName "dotcms"
+    destinationDir = file("../WAR")
+}
 // Util methods.
 def getDate() {
     def fmt = new java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.US)
