@@ -309,8 +309,8 @@ dependencies {
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
     
         
-    compile 'org.immutables:value:2.3+'
+    compile 'org.immutables:value:2.3.3'
 	
 	/** only needed for dev **/
-	compile 'org.immutables:generator:2.3+'
+	compile 'org.immutables:generator:2.3.3'
 }
