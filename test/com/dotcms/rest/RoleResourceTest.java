@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
@@ -21,6 +22,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class RoleResourceTest extends TestBase  {
 
 	private Client client;
