@@ -50,6 +50,7 @@ import com.liferay.portal.model.User;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -73,6 +74,8 @@ import static org.junit.Assert.assertTrue;
  * @author Oswaldo Gallango
  *
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class UserAPITest extends TestBase{
 
 	private static User systemUser;

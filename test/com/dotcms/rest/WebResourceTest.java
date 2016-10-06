@@ -11,6 +11,7 @@ import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.org.codehaus.cargo.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
@@ -30,6 +31,7 @@ import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class WebResourceTest extends TestBase {
 
     private Client client;

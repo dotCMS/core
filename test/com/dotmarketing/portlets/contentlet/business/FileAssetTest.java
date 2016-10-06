@@ -24,6 +24,7 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class FileAssetTest extends ContentletBaseTest {
 	
 	Client client;
@@ -41,7 +42,6 @@ public class FileAssetTest extends ContentletBaseTest {
         webTarget = client.target("http://" + serverName + ":" + serverPort + "/");
     }
     
-    @Ignore("Temporarily ignore this test method https://github.com/dotCMS/core/issues/9785")
 	@Test
 	public void fileAssetLanguageDifferentThanDefault()throws DotSecurityException, DotDataException, IOException{
 		Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
@@ -96,7 +96,6 @@ public class FileAssetTest extends ContentletBaseTest {
 	}
 	*/
 	
-    @Ignore("Temporarily ignore this test method https://github.com/dotCMS/core/issues/9785")
 	@Test
 	public void fileAssetNonExistingLanguageDefaultFilesFalse()throws DotSecurityException, DotDataException, IOException{
 		Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
