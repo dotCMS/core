@@ -8,7 +8,7 @@
               *ngFor="let structureTypeView of types">
 
             <button md-icon-button (click) = "select(structureTypeView)"
-                    [class.toolbar-add-contentlet__head--selected]="selected && selected.length === 1 && selected[0] === structureTypeView">
+                    [class.toolbar-add-contentlet__head--selected]="selectedName === structureTypeView.name">
             </button>
 
             <label>{{structureTypeView.label}}</label>
@@ -17,7 +17,7 @@
     </div>
 
     <toolbar-add-contentlet-body
-            [structureTypeViews] = "selected"
+            [structureTypeViews] = "structureTypeViewSelected"
             [showMore] = "showMore"
             (select) = "close()"
             (more)="nextRecent()">

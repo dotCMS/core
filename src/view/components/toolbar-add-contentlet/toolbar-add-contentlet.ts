@@ -49,11 +49,12 @@ export class ToolbarAddContenletComponent {
 
     private types: StructureTypeView[];
     private recent: StructureTypeView[];
-    private selected: StructureTypeView[];
+    private structureTypeViewSelected: StructureTypeView[];
     private showMore: boolean = false;
 
     private NUMBER_BY_PAGE: number = 4;
     private currentPage: number = -1;
+    private selectedName: string = '';
 
     constructor(private contentletService: ContentletService,
                 private routingService: RoutingService) {
@@ -82,12 +83,14 @@ export class ToolbarAddContenletComponent {
     }
 
     select(selected: StructureTypeView): void {
-        if (this.selected !== this.recent && this.selected[0] === selected) {
+        if (this.structureTypeViewSelected !== this.recent && this.structureTypeViewSelected[0] === selected) {
             this.currentPage = -1;
             this.nextRecent();
+            this.selectedName = '';
         }else {
-            this.selected = [ selected ];
+            this.structureTypeViewSelected = [ selected ];
             this.showMore = false;
+            this.selectedName = selected.name;
         }
     }
 
@@ -99,7 +102,7 @@ export class ToolbarAddContenletComponent {
         this.currentPage++;
         this.showMore = false;
 
-        this.selected = this.recent.map(structureTypeView => {
+        this.structureTypeViewSelected = this.recent.map(structureTypeView => {
             let currentPage = this.currentPage % (structureTypeView.types.length / this.NUMBER_BY_PAGE );
             this.showMore = this.showMore || structureTypeView.types.length > this.NUMBER_BY_PAGE;
 
@@ -112,5 +115,7 @@ export class ToolbarAddContenletComponent {
                 types: structureTypeView.types.slice(startIndex, endIndex)
             };
         });
+
+        console.log();
     }
 }
