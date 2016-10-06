@@ -48,7 +48,6 @@ export class DotcmsEventsService {
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
-
                     this.subjects[data.event].next(data.payload);
                 },
                 function (e): void {

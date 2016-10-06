@@ -18,15 +18,33 @@
     padding-right: 2.5%;
   }
 
-  .toolbar-add-contentlet-body__links span{
-    display: inline-block;
+  .toolbar-add-contentlet-body__links div{
     margin-left: 2.5%;
     margin-right: 2.5%;
-    width: 45%;
   }
 
-  .toolbar-add-contentlet-body__links span a{
+  .toolbar-add-contentlet-body__links div a{
     font-size: 12px;
+  }
+
+  .toolbar-add-contentlet-body__more-panel{
+    margin-top: 15px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+  }
+
+  .toolbar-add-contentlet-body__more-panel a{
+    text-decoration: none;
+  }
+
+  .toolbar-add-contentlet-body__more-panel a:visited{
+    text-decoration: none;
+  }
+
+  .two-columns-width{
+    width: 45%;
+    display: inline-table;
   }
 }
 
