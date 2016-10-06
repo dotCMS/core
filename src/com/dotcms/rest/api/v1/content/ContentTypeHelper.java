@@ -117,8 +117,9 @@ public class ContentTypeHelper implements Serializable {
                 .collect(Collectors.toList());
 
         if (!recentsContent.isEmpty()){
-            baseContentTypesView.add(new BaseContentTypesView(String.format("RECENT_%s" ,type.toString()),
-                    baseContentTypeNames.get(type.toString()), recentsContent));
+            String name = String.format("RECENT_%s" ,type.toString());
+            String label = LanguageUtil.get(locale, name);
+            baseContentTypesView.add(new BaseContentTypesView(name, label, recentsContent));
         }
     }
 
