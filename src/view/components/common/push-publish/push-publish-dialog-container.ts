@@ -1,12 +1,11 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
 import {PushPublishDialogComponent} from "./push-publish-dialog-component";
 import {BehaviorSubject} from "rxjs/Rx";
 import {BundleService, IPublishEnvironment} from "../../../../api/services/bundle-service";
 
 @Component({
   selector: 'cw-push-publish-dialog-container',
-  directives: [CORE_DIRECTIVES, PushPublishDialogComponent],
+  directives: [PushPublishDialogComponent],
   template: `
   <cw-push-publish-dialog-component
   [environmentStores]="environmentStores"

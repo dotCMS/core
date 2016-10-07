@@ -1,10 +1,7 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
-import {CORE_DIRECTIVES} from '@angular/common';
 
-import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
-import {ServersideCondition} from "./condition-types/serverside-condition/serverside-condition";
 import {
     RULE_RULE_ACTION_UPDATE_TYPE, RULE_RULE_ACTION_UPDATE_PARAMETER,
     RULE_RULE_ACTION_DELETE, ActionModel
@@ -13,11 +10,6 @@ import {RuleActionActionEvent} from "./rule-engine.container";
 
 @Component({
   selector: 'rule-action',
-  directives: [CORE_DIRECTIVES,
-    ServersideCondition,
-    Dropdown,
-    InputOption
-  ],
   template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-rule-action cw-entry">
   <div flex="25" layout="row" class="cw-row-start-area">
     <cw-input-dropdown

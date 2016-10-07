@@ -113,10 +113,8 @@ export class CoreWebService {
       headers.set(key, tempHeaders[key]);
     });
 
-    if (options.body && typeof options.body !== 'string') {
-        options.body = JSON.stringify(options.body);
-    }
-
+    // https://github.com/angular/angular/issues/10612#issuecomment-238712920
+    options.body = options.body && typeof options.body !== 'string' ?  JSON.stringify(options.body) : '';
     options.headers = headers;
 
     if (!options.url.startsWith('http://')) {

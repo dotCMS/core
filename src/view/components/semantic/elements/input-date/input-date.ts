@@ -1,17 +1,15 @@
-import {bootstrap} from '@angular/bootstrap'
 import {
-    Attribute,
     ChangeDetectionStrategy,
     Component,
-    Directive,
     ElementRef,
     EventEmitter,
     Input,
     Output,
     Optional
 } from '@angular/core'
-import {Control, Validators, NgControl, ControlValueAccessor} from '@angular/common'
-import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
+import {NgControl, ControlValueAccessor} from '@angular/forms'
+import _ from 'lodash';
+
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
@@ -33,13 +31,13 @@ import {isBlank} from '@angular/platform-browser-dynamic/src/facade/lang';
     <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
   `,
-  directives: []
 })
 export class InputDate implements ControlValueAccessor {
 
   private static DEFAULT_VALUE:string = InputDate._defaultValue()
   @Input() placeholder:string = ""
   @Input() type:string = ""
+  @Input() value:string = ""
   @Input() icon:string
   @Input() disabled:boolean = false
   @Input() focused:boolean = false
@@ -77,7 +75,7 @@ export class InputDate implements ControlValueAccessor {
   }
 
   writeValue(value:any) {
-    this._modelValue = isBlank(value) ? InputDate.DEFAULT_VALUE : value
+    this._modelValue = _.isEmpty(value) ? InputDate.DEFAULT_VALUE : value
     this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
   }
 

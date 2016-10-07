@@ -1,5 +1,4 @@
-import {Component, EventEmitter} from '@angular/core'
-import {CORE_DIRECTIVES} from '@angular/common'
+import {Component, EventEmitter, ViewEncapsulation} from '@angular/core'
 import {
     RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel,
     RuleEngineState, RULE_CONDITION_CREATE
@@ -16,7 +15,6 @@ import {CwError} from "../../../api/system/http-response-util";
 import {BundleService, IPublishEnvironment} from "../../../api/services/bundle-service";
 import {SiteChangeListener} from "../../../api/util/site-change-listener";
 import {SiteService} from "../../../api/services/site-service";
-import {Site} from "../../../api/services/site-service";
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
@@ -52,9 +50,9 @@ export interface ConditionActionEvent extends RuleActionEvent {
  *
  */
 @Component({
+  encapsulation: ViewEncapsulation.None,
   moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
   selector: 'cw-rule-engine-container',
-  directives: [CORE_DIRECTIVES, RuleEngineComponent],
   styleUrls: ['styles/rule-engine.css', 'styles/angular-material.layouts.css', 'styles/semantic.ui.css'],
   template: `
     <cw-rule-engine

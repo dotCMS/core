@@ -1,25 +1,20 @@
-:host {
-    margin: 10px 0;
+.accordion-group__title {
+    display: block;
+    padding: 5px 10px;
 
-    .accordion-group__title {
-        padding: 5px 10px;
-
-        &.is-active {
-            background-color: rgba(lightgrey, 0.5);
-            font-weight: bold;
-        }
+    &.is-active {
+        background-color: rgba(lightgrey, 0.5);
+        font-weight: bold;
     }
-
-    .accordion-group__content {
-        transition: max-height 0.15s ease-in;
-        padding: 0 10px;
-        max-height: 0;
-        overflow: hidden;
-
-        &.is-open {
-            max-height: 200px;
-        }
-    }
-
 }
 
+.accordion-group__content {
+    transition: max-height 0.15s ease-in;
+    padding: 0 10px;
+    max-height: 0;
+    overflow: hidden;
+
+    &.is-open {
+        max-height: 200px;
+    }
+}

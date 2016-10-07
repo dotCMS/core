@@ -1,9 +1,5 @@
-import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
-
-import {CORE_DIRECTIVES} from '@angular/common'
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Observable} from 'rxjs/Rx'
-
-import {RuleComponent} from './rule-component'
 import {RuleModel, RULE_CREATE} from "../../../api/rule-engine/Rule"
 import {I18nService} from "../../../api/system/locale/I18n"
 import {CwFilter} from "../../../api/util/CwFilter"
@@ -21,7 +17,6 @@ const I8N_BASE:string = 'api.sites.ruleengine'
  */
 @Component({
   selector: 'cw-rule-engine',
-  directives: [CORE_DIRECTIVES, RuleComponent],
   template: `
   <div class="cw-modal-glasspane"  [class.cw-loading]="loading" *ngIf="loading"></div>
   <div *ngIf="!loading && globalError" class="ui negative message cw-message">

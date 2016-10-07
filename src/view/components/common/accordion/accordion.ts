@@ -46,7 +46,6 @@ export class AccordionGroup implements OnDestroy {
 
     @Input() heading: string;
 
-    @Input()
     set isOpen(value: boolean) {
         this._isOpen = value;
         if (this._isOpen) {

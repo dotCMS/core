@@ -1,9 +1,6 @@
 import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
-import {FORM_DIRECTIVES, CORE_DIRECTIVES, DecimalPipe, Control} from "@angular/common";
-import {AreaPickerDialogComponent} from "../../../../../view/components/common/google-map/area-picker-dialog.component";
-import {Observable} from "rxjs/Observable";
-import {Dropdown, InputOption} from "../../../semantic/modules/dropdown/dropdown";
-import {InputText} from "../../../semantic/elements/input-text/input-text";
+import {DecimalPipe} from "@angular/common";
+import {FormControl} from '@angular/forms';
 import {GCircle} from "../../../../../api/maps/GoogleMapService";
 
 interface Param<T> {
@@ -44,12 +41,10 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 @Component({
   selector: 'cw-visitors-location-component',
   providers:[DecimalPipe],
-  directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, AreaPickerDialogComponent, Dropdown, InputOption, InputText],
   template: `<div flex layout="row" class="cw-visitors-location cw-condition-component-body" *ngIf="comparisonDropdown != null">
-
   <cw-input-dropdown flex
                      class="cw-input"
-                     [ngFormControl]="comparisonDropdown.control"
+                     [formControl]="comparisonDropdown.control"
                      [required]="true"
                      [class.cw-comparator-selector]="true"
                      (change)="comparisonChange.emit($event)"
@@ -101,7 +96,7 @@ export class VisitorsLocationComponent {
 
   @Input() circle:GCircle = {center: {lat:38.89, lng: -77.04}, radius: 10000}
   @Input() comparisonValue:string
-  @Input() comparisonControl:Control
+  @Input() comparisonControl:FormControl
   @Input() comparisonOptions:{}[]
   @Input() fromLabel:string = 'of'
   @Input() changedHook:number = 0

@@ -1,17 +1,15 @@
-:host {
-    md-nav-list {
-        a {
-            display: block;
-            padding: 5px 0;
-        }
+md-nav-list {
+    a {
+        display: block;
+        padding: 5px 0;
     }
+}
 
-    .md-nav-list__submenu {
-        font-size: 14px;
-        padding: 5px 0 10px 0;
+.md-nav-list__submenu {
+    font-size: 14px;
+    padding: 5px 0 10px 0;
 
-        a {
-            color: gray;
-        }
+    a {
+        color: gray;
     }
 }

@@ -1,15 +1,14 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
 import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {IPublishEnvironment} from "../../../../api/services/bundle-service";
 
 @Component({
   selector: 'cw-push-publish-dialog-component',
-  directives: [CORE_DIRECTIVES, ModalDialogComponent, Dropdown, InputOption],
+  directives: [ModalDialogComponent, Dropdown, InputOption],
   template: `<cw-modal-dialog
     [headerText]="'Push Publish'"
-    [okText]="'Push'"
+    [okButtonText]="'Push'"
     [hidden]="hidden"
     [okEnabled]="selectedEnvironmentId != null"
     [errorMessage]="errorMessage"

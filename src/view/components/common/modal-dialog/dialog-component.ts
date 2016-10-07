@@ -1,8 +1,8 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
+
 @Component({
   selector: 'cw-modal-dialog',
-  directives: [CORE_DIRECTIVES],
+  directives: [],
   template: `
   <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)">
     <div class="ui modal cw-modal-dialog" style="height:{{height}};width:{{width}};max-height:{{maxHeight}};max-width:{{maxWidth}}" (click)="$event.stopPropagation()">

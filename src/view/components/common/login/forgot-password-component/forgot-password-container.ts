@@ -1,17 +1,14 @@
 import {Component, ViewEncapsulation} from '@angular/core';
-import {LoginService} from '../../../../../api/services/login-service';
 import {ForgotPasswordComponent} from './forgot-password-component';
-import { Router } from '@ngrx/router';
+import {LoginService} from '../../../../../api/services/login-service';
 import {ResponseView} from '../../../../../api/services/response-view';
+import {Router} from '@angular/router';
 
 @Component({
     directives: [ForgotPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
-    providers: [],
     selector: 'dot-forgot-password-container',
-    styleUrls: [],
     template: `
         <dot-forgot-password-component
             [message]="message"
@@ -20,7 +17,7 @@ import {ResponseView} from '../../../../../api/services/response-view';
         ></dot-forgot-password-component>
     `,
 })
-export class ForgotPasswordContainer{
+export class ForgotPasswordContainer {
 
     private message: string = '';
     private email: string = '';
@@ -33,18 +30,18 @@ export class ForgotPasswordContainer{
         this.message = '';
         this.email = forgotPasswordLogin;
 
-        this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp:ResponseView) => {
+        this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp: ResponseView) => {
             this.goToLogin();
         }, (resp:ResponseView) => {
             if (!resp.existError('a-new-password-has-been-sent-to-x')){
                 this.message = resp.errorsMessages;
-            }else{
+            } else {
                 this.goToLogin();
             }
         });
     }
 
     goToLogin(): void {
-        this.router.go('/public/login', { 'resetEmailSent': true, 'resetEmail': this.email});
+        this.router.navigate(['/public/login', {'resetEmailSent': true, 'resetEmail': this.email}]);
     }
 }

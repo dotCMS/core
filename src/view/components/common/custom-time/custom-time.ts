@@ -4,11 +4,8 @@ import {Subject} from 'rxjs/Subject';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
-    pipes: [],
-    providers: [],
     selector: 'custom-time',
     styleUrls: ['custom-time.css'],
     templateUrl: ['custom-time.html'],

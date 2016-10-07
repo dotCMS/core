@@ -1,39 +1,28 @@
 import {BaseComponent} from '../_base/base-component';
 import {Component, ViewEncapsulation, ElementRef} from '@angular/core';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
-import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
-import {MD_CARD_DIRECTIVES} from '@angular2-material/card/card';
-import {MdButton} from '@angular2-material/button/button';
-import {MdIcon} from '@angular2-material/icon/icon';
 import {MessageService} from '../../../../api/services/messages-service';
-import {NotificationsList} from '../notifications/notifications';
 
 @Component({
-    directives: [MdIcon, MdButton, NotificationsList, MD_CARD_DIRECTIVES, DropdownComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    providers: [DotcmsEventsService, NotificationsService],
     selector: 'dot-toolbar-notifications',
     styleUrls: ['toolbar-notifications.css'],
     templateUrl: ['toolbar-notifications.html']
 })
 export class ToolbarNotifications extends BaseComponent{
-    private dotcmsEventsService: DotcmsEventsService;
     private elementRef;
     private isNotificationsMarkedAsRead: boolean = false;
     private notifications: Array<INotification> = [];
-    private notificationService: NotificationsService;
     private notificationsUnreadCount: number = 0;
     private showNotifications: boolean = false;
 
 
-    constructor(_dotcmsEventsService: DotcmsEventsService, _notificationService: NotificationsService,
+    constructor(private dotcmsEventsService: DotcmsEventsService, private notificationService: NotificationsService,
                 myElement: ElementRef, private messageService: MessageService) {
         super(['notifications_dismissall', 'notifications_title'], messageService);
-        this.dotcmsEventsService = _dotcmsEventsService;
         this.elementRef = myElement;
-        this.notificationService = _notificationService;
     }
 
     ngOnInit() {

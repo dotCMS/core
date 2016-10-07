@@ -1,5 +1,4 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {CORE_DIRECTIVES} from "@angular/common";
 import {ModalDialogComponent} from "../modal-dialog/dialog-component";
 import {GoogleMapService, GCircle} from "../../../../api/maps/GoogleMapService";
 
@@ -8,7 +7,7 @@ var mapIdCounter = 1;
 
 @Component({
   selector: 'cw-area-picker-dialog-component',
-  directives: [CORE_DIRECTIVES, ModalDialogComponent],
+  directives: [ModalDialogComponent],
   template: `<cw-modal-dialog 
                  [headerText]="headerText"
                  [hidden]="hidden"
@@ -27,6 +26,7 @@ var mapIdCounter = 1;
   , changeDetection: ChangeDetectionStrategy.Default
 })
 export class AreaPickerDialogComponent {
+  @Input() apiKey:string = ''
   @Input() headerText:string = ''
   @Input() hidden:boolean = false
   @Input() circle:GCircle = {center: {lat:38.8977, lng: -77.0365}, radius: 50000}

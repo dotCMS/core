@@ -82,7 +82,7 @@
                       required>
             </md-input>
 
-            <div class="col-sm-12">
+            <div class="col-sm-12 my-account__actions">
                 <button id="dot-my-account-ok-button" md-button md-raised-button type="submit"
                         [disabled]="(changePasswordOption && !passwordMatch) || !myAccountForm.form.valid">{{i18nMessages['save']}}</button>
                 <button id="dot-my-account-close-button" md-button md-flat-button (click)="close.emit()" type="button">{{i18nMessages['modes.Close']}}</button>

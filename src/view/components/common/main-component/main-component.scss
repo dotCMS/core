@@ -1,40 +1,38 @@
 @import "../../../../scss/mixins";
 @import "../../../../scss/variables";
 
-:host {
-  md-sidenav-layout[fullscreen] {
+md-sidenav-layout[fullscreen] {
+  &.layout {
     top: 64px
   }
+}
 
-  md-toolbar {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-    position: relative;
-    width: 100%;
-    z-index: 1;
+md-toolbar {
+  position: relative;
+  z-index: 1;
 
-    .md-toolbar-layout {
-      width: 100%;
-    }
+  md-toolbar-row {
+    justify-content: space-between;
   }
 
-  .toolbar__actions,
-  .toolbar__host {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    min-width: 200px;
+}
+
+
+
+.toolbar__actions,
+.toolbar__host {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.toolbar__host {
+  .md-underline {
+    display: none;
   }
 
-  .toolbar__host {
-    .md-underline {
-      display: none;
-    }
-
-    // TODO: should we add a param for not hover state in the dot-select?
-    .dot-select.is-active .dot-select__icon {
-      color: $white;
-    }
+  // TODO: should we add a param for not hover state in the dot-select?
+  .dot-select.is-active .dot-select__icon {
+    color: $white;
   }
 }

@@ -1,24 +1,11 @@
 import {Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
-
-
-// angular material imports
-import {MdButton} from '@angular2-material/button';
-import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
-import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {DotCMSHttpResponse} from '../../../../../api/services/dotcms-http-response';
 import {LoginData} from './login-container';
-import {MD_PROGRESS_CIRCLE_DIRECTIVES} from '@angular2-material/progress-circle';
 import {LoginService} from '../../../../../api/services/login-service';
-import {CapitalizePipe} from '../../../../../api/pipes/capitalize-pipe';
 
 @Component({
-    directives: [MdButton,MdCheckbox, MD_INPUT_DIRECTIVES, MD_PROGRESS_CIRCLE_DIRECTIVES],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [CapitalizePipe],
-    providers: [],
     selector: 'dot-login-component',
-    styleUrls: [],
     templateUrl: ['login-component.html'],
 })
 
@@ -27,7 +14,6 @@ import {CapitalizePipe} from '../../../../../api/pipes/capitalize-pipe';
  * the info required to log in the dotCMS angular backend
  */
 export class LoginComponent {
-
     @Input() isLoginInProgress: boolean = false;
     @Input()  message: string = '';
     @Input() passwordChanged: boolean = false;
@@ -36,6 +22,7 @@ export class LoginComponent {
 
     @Output() recoverPassword  = new EventEmitter<>();
     @Output() login  = new EventEmitter<LoginData>();
+
     private myAccountLogin: string;
     private password: string;
     private myAccountRememberMe: boolean = false;
@@ -44,24 +31,24 @@ export class LoginComponent {
     languages: Array<any> = [];
 
     // labels
-    loginLabel: string = '';
+    cancelButton: string = '';
+    communityLicenseInfoMessage: string = '';
+    dotcmsBuildDateString: string = '';
+    dotcmscompanyLogo: string = '';
+    dotcmslicenceLevel: string = '';
+    dotcmsServerId: string = '';
+    dotcmsVersion: string = '';
     emailAddressLabel: string = '';
-    userIdOrEmailLabel: string = '';
+    forgotPasswordButton: string = '';
+    loginButton: string = '';
+    loginLabel: string = '';
+    mandatoryFieldError: string = '';
     passwordLabel: string = '';
     rememberMeLabel: string = '';
-    loginButton: string = '';
-    forgotPasswordButton: string = '';
-    cancelButton: string = '';
-    serverLabel: string = '';
-    dotcmscompanyLogo: string = '';
-    dotcmsServerId: string = '';
-    dotcmslicenceLevel: string = '';
-    dotcmsVersion: string = '';
-    dotcmsBuildDateString: string = '';
-    mandatoryFieldError: string = '';
-    communityLicenseInfoMessage: string = '';
-    resetPasswordSuccess: string = '';
     resetEmailMessage: string ='';
+    resetPasswordSuccess: string = '';
+    serverLabel: string = '';
+    userIdOrEmailLabel: string = '';
 
     isCommunityLicense: boolean = true;
 

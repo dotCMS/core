@@ -2,6 +2,7 @@ import {ApiRoot} from '../../persistence/ApiRoot';
 import {CoreWebService} from "../core-web-service";
 import {Http, RequestMethod} from '@angular/http';
 import {Injectable} from '@angular/core';
+import {Observable} from "rxjs";
 
 /**
  * Created by josecastro on 7/29/16.
@@ -24,14 +25,14 @@ export class DotcmsConfig extends CoreWebService {
     constructor(apiRoot: ApiRoot, http: Http) {
         super(apiRoot, http);
         this.configUrl = 'v1/appconfiguration';
-        this.getConfig();
     }
 
-    getConfig() {
-        this.requestView({
+    // TODO: try to make this a promise
+    getConfig(): Observable {
+        return this.requestView({
             method: RequestMethod.Get,
             url: this.configUrl
-        }).pluck('entity').subscribe(res => {
+        }).pluck('entity').map(res => {
             this.configParams = res;
             return res;
         });

@@ -1,9 +1,9 @@
 import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
-import {FORM_DIRECTIVES, CORE_DIRECTIVES, DecimalPipe, Control} from "@angular/common";
+import {DecimalPipe} from "@angular/common";
+import {FormControl} from "@angular/forms";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {Observable} from "rxjs/Observable";
 import {I18nService} from "../../../../../api/system/locale/I18n";
-import {VisitorsLocationComponent} from "./visitors-location.component";
 import {BehaviorSubject} from "rxjs/Rx";
 import {GCircle} from "../../../../../api/maps/GoogleMapService";
 
@@ -45,7 +45,6 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 @Component({
   selector: 'cw-visitors-location-container',
   providers:[DecimalPipe],
-  directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, VisitorsLocationComponent],
   template: `<cw-visitors-location-component 
     [circle]="circle$ | async"
     [preferredUnit]="preferredUnit"
@@ -72,7 +71,7 @@ export class VisitorsLocationContainer {
   lng:number = 0
   radius:number = 50000
   comparisonValue:string = 'within'
-  comparisonControl:Control
+  comparisonControl:FormControl
   comparisonOptions: {value: string, label: Observable<string>, icon:string }[]
   fromLabel:string = 'of'
 

@@ -2,18 +2,12 @@ import {BaseComponent} from '../common/_base/base-component';
 import {AccountService, AccountUser} from '../../../api/services/account-service';
 import {Component, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService, User, Auth} from '../../../api/services/login-service';
-import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
 import {MessageService} from '../../../api/services/messages-service';
 import {StringFormat} from '../../../api/util/stringFormat';
-import {MdCheckbox} from '@angular2-material/checkbox/checkbox';
-import {MdButton} from '@angular2-material/button';
 
 @Component({
-    directives: [ MD_INPUT_DIRECTIVES, MdCheckbox, MdButton ],
-    encapsulation: ViewEncapsulation.Emulated,
+    encapsulation: ViewEncapsulation.None,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
-    providers: [AccountService, StringFormat],
     selector: 'dot-my-account',
     styleUrls: ['dot-my-account-component.css'],
     templateUrl: ['dot-my-account-component.html'],
@@ -75,7 +69,6 @@ export class MyAccountComponent extends BaseComponent {
     }
 
     private save(): void {
-
         this.accountService.updateUser(this.accountUser).subscribe(response => {
             // TODO: replace the alert with a Angular components
             alert(this.i18nMessages['message.createaccount.success']);

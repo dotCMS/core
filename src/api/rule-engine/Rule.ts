@@ -1,16 +1,11 @@
-import {EventEmitter, Injectable} from '@angular/core'
-import {Http, Response, RequestMethod, Request, Headers} from '@angular/http'
+import {Injectable} from '@angular/core'
+import {Http, RequestMethod} from '@angular/http'
 import {Observable, BehaviorSubject} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {
-    hasContent, ResponseError, CwError, NETWORK_CONNECTION_ERROR, UNKNOWN_RESPONSE_ERROR,
-    CLIENTS_ONLY_MESSAGES, SERVER_RESPONSE_ERROR
-} from "../system/http-response-util";
 import {ServerSideFieldModel, ServerSideTypeModel} from "./ServerSideFieldModel";
 import {I18nService} from "../system/locale/I18n";
 import {CoreWebService} from "../services/core-web-service";
-import {Site} from "../services/site-service";
 import {SiteService} from "../services/site-service";
 
 

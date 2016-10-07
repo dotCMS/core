@@ -1,17 +1,13 @@
 import {Component,ViewEncapsulation} from '@angular/core';
-import {LoginService} from '../../../../../api/services/login-service';
-import {Router} from '@ngrx/router';
-import {LoginComponent} from './login-component';
 import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
+import {LoginService} from '../../../../../api/services/login-service';
+import {Router} from '@angular/router';
 
 @Component({
-    directives: [LoginComponent],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    pipes: [],
     providers: [HttpRequestUtils],
     selector: 'dot-login-container',
-    styleUrls: [],
     template: `
         <dot-login-component
             [message]="message"
@@ -26,11 +22,11 @@ import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
     `,
 })
 export class LoginContainer{
-    private message:string;
     private isLoginInProgress: boolean = false;
+    private message:string;
     private passwordChanged: boolean = false;
-    private resetEmailSent: boolean = false;
     private resetEmail: string = '';
+    private resetEmailSent: boolean = false;
 
     constructor(private loginService: LoginService, private router: Router, private httprequestUtils: HttpRequestUtils) {
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
@@ -49,7 +45,7 @@ export class LoginContainer{
 
         this.loginService.loginUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result: any) => {
             this.message = '';
-            this.router.go('/dotCMS');
+            this.router.navigate(['/dotCMS']);
          }, (error) => {
 
             if (error.response.status === 400 || error.response.status === 401) {
@@ -66,7 +62,7 @@ export class LoginContainer{
      * Display the forgot password card
      */
     showForgotPassword(): void {
-        this.router.go('/public/forgotPassword');
+        this.router.navigate(['/public/forgotPassword']);
     }
 
 }

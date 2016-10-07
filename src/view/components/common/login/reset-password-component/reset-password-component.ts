@@ -1,17 +1,11 @@
 import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
-import {NgForm} from '@angular/forms';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-
 import {LoginService} from '../../../../../api/services/login-service';
 
 // angular material imports
-import {MdButton} from '@angular2-material/button';
-import {MD_INPUT_DIRECTIVES} from '@angular2-material/input/input';
-import {DotCMSHttpService} from '../../../../../api/services/http/dotcms-http-service';
 import {ChangePasswordData} from './reset-password-container';
 
 @Component({
-    directives: [MdButton, MD_INPUT_DIRECTIVES],
+    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
@@ -27,8 +21,6 @@ export class ResetPasswordComponent {
     @Input()  message: string = '';
 
     @Output() changePassword  = new EventEmitter<ChangePasswordData>();
-
-    form: FormGroup;
 
     private language: string = '';
 
@@ -50,17 +42,11 @@ export class ResetPasswordComponent {
 
     private i18nMessages: Array<string> = [ 'error.form.mandatory', 'reset-password', 'enter-password', 're-enter-password', 'change-password', 'reset-password-success', 'reset-password-confirmation-do-not-match'];
 
-    constructor( private loginService: LoginService, fbld: FormBuilder) {
-        this.form = fbld .group({
-            password: ['', Validators.required],
-            confirmPassword: ['', Validators.required]
-        });
-    }
+    constructor(private loginService: LoginService) {}
 
-    ngOnInit(){
+    ngOnInit() {
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
-            let entity = data.entity;
 
             this.resetPasswordLabel = dataI18n['reset-password'];
             this.enterPasswordLabel = dataI18n['enter-password'];
@@ -76,7 +62,7 @@ export class ResetPasswordComponent {
         });
     }
 
-    public ok():void{
+    public ok(): void {
         if (this.password == this.confirmPassword) {
             this.changePassword.emit({
                 password: this.password,
@@ -87,11 +73,11 @@ export class ResetPasswordComponent {
         }
     }
 
-    private cleanConfirmPassword(){
+    private cleanConfirmPassword() {
         this.clean();
         this.confirmPassword = '';
     }
-    private clean(){
+    private clean() {
         this.message = '';
     }
 }

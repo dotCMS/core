@@ -8,7 +8,7 @@ import {Http} from '@angular/http';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
-import {Router} from '@ngrx/router';
+import {Router} from '@angular/router';
 import {Subject} from 'rxjs/Subject';
 
 /**
@@ -232,8 +232,7 @@ export class LoginService extends CoreWebService {
                 user: null
             };
             this.setAuth(nullAuth);
-            this.router.go('/public/login');
-            return response;
+            this.router.navigate(['/public/login']);
         });
     }
 

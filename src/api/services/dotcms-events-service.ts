@@ -28,7 +28,6 @@ export class DotcmsEventsService {
         this.protocol = dotcmsConfig.getWebsocketProtocol();
         this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
         this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
-
         loginService.watchUser(this.connectWithSocket.bind(this));
     }
 

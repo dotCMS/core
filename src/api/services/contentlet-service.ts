@@ -1,11 +1,10 @@
-import {Inject, Injectable} from '@angular/core';
-import {CoreWebService} from './core-web-service';
-import {RequestMethod} from '@angular/http';
-import {ResponseView} from './response-view';
-import {Observable} from 'rxjs/Rx';
 import {ApiRoot} from '../persistence/ApiRoot';
+import {CoreWebService} from './core-web-service';
 import {Http} from '@angular/http';
+import {Injectable} from '@angular/core';
 import {LoginService} from './login-service';
+import {Observable} from 'rxjs/Rx';
+import {RequestMethod} from '@angular/http';
 import {Subject} from 'rxjs/Subject';
 import {DotcmsEventsService} from './dotcms-events-service';
 
@@ -16,7 +15,6 @@ export class ContentletService extends CoreWebService {
 
     constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
         super(apiRoot, http);
-
         loginService.watchUser(this.loadContentTypes.bind(this));
 
         dotcmsEventsService.subscribeTo('SAVE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeView => {
@@ -47,7 +45,7 @@ export class ContentletService extends CoreWebService {
     }
 
     private loadContentTypes(): void {
-        return this.requestView({
+        this.requestView({
             method: RequestMethod.Get,
             url: 'v1/content/types'
         }).pluck('entity').subscribe(
