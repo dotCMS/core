@@ -20,6 +20,7 @@
     "gulp": "^3.9.x",
     "gulp-artifactory-upload": "^1.1.0",
     "gulp-concat": "~2.6.x",
+    "gulp-flatten": "^0.2.0",
     "gulp-minify-css": "^1.2.4",
     "gulp-minify-html": "^1.0.6",
     "gulp-rename": "^1.2.2",
