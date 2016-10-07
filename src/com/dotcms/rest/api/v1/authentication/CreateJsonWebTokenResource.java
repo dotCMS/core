@@ -19,6 +19,7 @@ import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
@@ -50,7 +51,7 @@ public class CreateJsonWebTokenResource implements Serializable {
 
     private final UserLocalManager         userLocalManager;
     private final LoginService             loginService;
-    private final ResponseUtil responseUtil;
+    private final ResponseUtil             responseUtil;
     private final JsonWebTokenUtils        jsonWebTokenUtils;
     private final SecurityLoggerServiceAPI securityLoggerServiceAPI;
 
@@ -106,7 +107,8 @@ public class CreateJsonWebTokenResource implements Serializable {
 
                 final HttpSession ses = request.getSession();
                 final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
-                final int jwtMaxAge = createTokenForm.getExpirationDays() > 0 ? createTokenForm.getExpirationDays():
+                final int jwtMaxAge = createTokenForm.getExpirationDays() > 0 ?
+                        this.getExpirationDays (createTokenForm.getExpirationDays()):
                         Config.getIntProperty(
                             LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE,
                             LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
@@ -156,6 +158,22 @@ public class CreateJsonWebTokenResource implements Serializable {
 
         return res;
     } // authentication
+
+    protected int getExpirationDays(final int expirationDays) {
+
+
+        final int jsonWebTokenMaxAllowedExpirationDay =
+                Config.getIntProperty(LoginService.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS, -1);
+
+        final int maxAllowedExpirationDays =
+                (jsonWebTokenMaxAllowedExpirationDay > 0 && (expirationDays > jsonWebTokenMaxAllowedExpirationDay))?
+                        jsonWebTokenMaxAllowedExpirationDay:
+                         expirationDays;
+
+        Logger.debug(this, "Json Web Token Expiration days value: " + expirationDays + " days");
+
+        return maxAllowedExpirationDays;
+    }
 
     /**
      * Creates Json Web Token
