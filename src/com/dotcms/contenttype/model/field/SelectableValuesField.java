@@ -9,7 +9,10 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.BooleanUtils;
 import com.dotmarketing.business.DotStateException;
 import com.liferay.util.StringUtil;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+@JsonSerialize
+@JsonDeserialize
 public abstract class SelectableValuesField extends Field{
 	
 	/**

@@ -8,7 +8,10 @@ import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+@JsonSerialize
+@JsonDeserialize
 @Value.Immutable
 public abstract class TagField extends Field  implements OnePerContentType{
 

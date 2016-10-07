@@ -1,14 +1,13 @@
 package com.dotcms.contenttype.transform.contenttype;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.transform.JsonHelper;
+import com.dotcms.contenttype.transform.JsonWrapper;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.UtilMethods;
@@ -17,7 +16,6 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer {
@@ -41,7 +39,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(Include.NON_NULL);
         
-        JsonWrapper input = new JsonWrapper<>(type, type.baseType().immutableClass());
+        JsonWrapper input = new JsonWrapper<>(type, type.getClass());
         try {
             return mapper.writeValueAsString(input);
         } catch (JsonProcessingException e) {
@@ -50,7 +48,8 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
     }
 
     private static ContentType fromJsonStr(String input) throws DotStateException {
-        
+        return (ContentType) JsonHelper.fromJson(input);
+        /*
         JSONObject jo;
         try {
             jo = new JSONObject(input);
@@ -84,6 +83,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
 
            throw new DotStateException(e + " : json=" + input);
         }
+        */
     }
 
     @Override
@@ -112,24 +112,6 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         sb.append(']');
 
         return sb.toString();
-    }
-    static class JsonWrapper<T> {
-        @JsonUnwrapped
-        final private T inner;
-        final private Class implClass;
-
-        public JsonWrapper(T inner, Class field) {
-            this.inner = inner;
-            this.implClass = field;
-        }
-
-        public T getInner() {
-            return inner;
-        }
-
-        public Class getImplClass() {
-            return implClass;
-        }
     }
 }
 

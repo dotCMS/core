@@ -8,7 +8,10 @@ import org.immutables.value.Value;
 
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+@JsonSerialize
+@JsonDeserialize
 @Value.Immutable
 public interface FieldVariable extends Serializable, IFieldVar {
     static final String NOT_PERSISTED="NOT_PERSISTED";

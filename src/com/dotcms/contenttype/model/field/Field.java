@@ -16,6 +16,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 
@@ -27,6 +28,7 @@ public abstract class Field implements FieldIf, Serializable {
 			Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
 		}
 	}
+	
 	
 	private static final long serialVersionUID = 5640078738113157867L;
 	final static Date legacyFieldDate = new Date(1470845479000L); // 08/10/2016 @ 4:11pm (UTC)
@@ -69,7 +71,7 @@ public abstract class Field implements FieldIf, Serializable {
 
 	
 	public abstract String name();
-
+	@JsonIgnore
 	@Derived
 	public   String typeName() {
 		return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName()).getCanonicalName();
@@ -92,7 +94,7 @@ public abstract class Field implements FieldIf, Serializable {
 
 	@Value.Default
 	public   int sortOrder() {
-		return -1;
+		return 0;
 	}
 
 	@Value.Lazy

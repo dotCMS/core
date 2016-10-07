@@ -60,7 +60,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public boolean defaultType() {
 		return false;
 	}
-	
+	@JsonIgnore
 	@Value.Default
 	public StorageType storageType(){
 		return  ImmutableDbStorageType.of();
@@ -132,6 +132,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public String host() {
 		return Host.SYSTEM_HOST;
 	}
+	
 	@JsonIgnore
 	@Value.Lazy
 	public  List<Field> fields(){
@@ -166,7 +167,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public void setOwner(String x) {
 		throw new DotStateException("Cannot change the owner for an immutable value");
 	}
-
+	@JsonIgnore
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
 		return ImmutableList.of(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ),
@@ -194,7 +195,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public boolean isParentPermissionable() {
 		return true;
 	}
-
+	@JsonIgnore
 	@Override
 	public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
 		return null;
@@ -204,7 +205,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public String getPermissionType() {
 		return Structure.class.getCanonicalName();
 	}
-
+	@JsonIgnore
 	@Default
 	public  List<Field> requiredFields(){
 		return ImmutableList.of();
