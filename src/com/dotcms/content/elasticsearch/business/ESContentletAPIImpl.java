@@ -851,6 +851,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             return; // Binary fields have nothing to do with database.
         }
+        //https://github.com/dotCMS/core/issues/9909
+        else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
+        	List<Contentlet> contentlets = conFac.findByStructure(structure.getInode(),0,0);
+
+            for(Contentlet contentlet : contentlets) {
+            	tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
+            }
+        }
 
         conFac.clearField(structure.getInode(), field);
 
