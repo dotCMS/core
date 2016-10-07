@@ -1,8 +1,15 @@
 package com.dotmarketing.cache;
 
+import java.util.Collection;
+import java.util.Map;
+
+import org.immutables.value.Value.Immutable;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.FactoryLocator;
@@ -10,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 /**
  * @author David
@@ -142,6 +150,48 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
     	super.remove(type);
     }
 
+
     
+    public void removeContainerStructures(String containerIdentifier, String containerInode) {
+        cache.remove(containerStructureGroup + containerIdentifier + containerInode, containerStructureGroup);
+    }
+    
+
+    
+
+
+    
+    public void clearCache(){
+        //clear the cache
+        for (String cacheGroup : getGroups()) {
+            cache.flushGroup(cacheGroup);
+        }
+    }
+    
+    public String[] getGroups() {
+        return groups;
+    }
+    
+    public String getPrimaryGroup() {
+        return primaryGroup;
+    }
+
+    @Override
+    public void addRecents(Structure.Type type, User user, int nRecents, Collection<Map<String, Object>> recents) {
+
+
+    }
+
+    public Collection<Map<String, Object>> getRecents(Structure.Type type, User user, int nRecents){
+        
+        // get this from the 
+        return ImmutableList.of(ImmutableMap.of());
+    }
+
+    public void clearRecents(String userId){
+
+    }
+
+
 
 }

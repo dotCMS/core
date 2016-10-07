@@ -11,7 +11,7 @@ public enum BaseContentType {
 	HTMLPAGE(5, PageContentType.class),
 	PERSONA(6,PersonaContentType.class);
 
-	int type;
+	final int type;
 	Class immutableClass;
 	
 	BaseContentType(int type, Class clazz) {

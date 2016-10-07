@@ -1,18 +1,14 @@
 package com.dotcms.notifications;
 
-import com.dotcms.api.system.event.*;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.rest.api.v1.content.ContentTypeView;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
-import com.dotcms.util.ContentTypeUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.structure.business.StructureAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.liferay.portal.model.User;
-import org.elasticsearch.common.annotations.VisibleForTesting;
-
-import javax.servlet.http.HttpServletRequest;
 import javax.websocket.Session;
+
+import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventProcessor;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rest.api.v1.content.ContentTypeView;
+import com.dotmarketing.portlets.structure.model.Structure;
 
 /**
  * Decorates the {@link com.dotcms.api.system.event.SystemEventType#SAVE_BASE_CONTENT_TYPE},
@@ -28,7 +24,8 @@ public class BaseContentTypeSystemEventProcessor  implements SystemEventProcesso
         Payload payload = event.getPayload();
         ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = (ContentTypePayloadDataWrapper) payload.getRawData();
         Structure structure = contentTypePayloadDataWrapper.getStructure();
-        ContentTypeView contentTypeView = new ContentTypeView(structure, contentTypePayloadDataWrapper.getActionUrl());
+        
+        ContentTypeView contentTypeView = new ContentTypeView(new StructureTransformer(structure).from(), contentTypePayloadDataWrapper.getActionUrl());
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityId()),

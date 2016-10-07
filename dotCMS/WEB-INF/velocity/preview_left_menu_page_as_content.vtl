@@ -111,10 +111,10 @@
     function backToCMS(){
         #if(${isAngularFrame})
         	#if($UtilMethods.isSet(${viewBrowserURL}))
-	            window.top.${angularFrame}.location  = "${viewBrowserURL}";
-	        #else
-	            window.top.${angularFrame}.location  = "/c/";
-	        #end
+        	window.top.${angularFrame}.src = "${viewBrowserURL}";
+	    	#else
+	        window.top.${angularFrame}.src = "/c/";
+	    	#end
         #else
 	        #if($UtilMethods.isSet(${viewBrowserURL}))
 	            window.top.location  = "${viewBrowserURL}";
@@ -265,6 +265,9 @@
     function publishAll(){
         if(confirm("$languagewebapi.getFromUserLanguage("message.confirm.modes.publish.page")")){
             document.getElementById('cmd').value="publishHTMLPage";
+            #if($isAngularFrame)
+            document.getElementById('submitParent').target="_parent";
+            #end
             document.getElementById('submitParent').submit();
         }
     }
@@ -713,7 +716,7 @@
 </div>
 
 <div style="display:none">
-<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="${angularFrame}" #else target="_top" #end >
+<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="_parent" #else target="_top" #end >
     <input type="hidden" name="referer" id="referer" value="$referer">
     <input type="hidden" name="taskInode" id="taskInode" value="">
     <input type="hidden" name="cmd" id="cmd" value="addChild">

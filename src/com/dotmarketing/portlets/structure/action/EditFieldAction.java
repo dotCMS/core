@@ -520,3 +520,4 @@ public class EditFieldAction extends DotPortletAction {
     }
 
 }
+

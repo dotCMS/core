@@ -1,10 +1,14 @@
 package com.dotmarketing.portlets.structure.factories;
 
 import java.io.Serializable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import java.util.*;
+
 
 
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -399,9 +403,9 @@ public class StructureFactory {
 	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
 
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
-
+		ContentType type=new StructureTransformer(structure).from();
 		try {
-	 		String actionUrl = contentTypeUtil.getActionUrl(structure);
+	 		String actionUrl = contentTypeUtil.getActionUrl(type);
 			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
                             String.valueOf(PermissionAPI.PERMISSION_READ)));
@@ -432,10 +436,11 @@ public class StructureFactory {
 
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
+		ContentType type=new StructureTransformer(structure).from();
 
 		try {
-			APILocator.getContentTypeAPI2().delete(new StructureTransformer(structure).from(), APILocator.systemUser());
-	          String actionUrl = contentTypeUtil.getActionUrl(structure);
+			APILocator.getContentTypeAPI2().delete(type, APILocator.systemUser());
+	          String actionUrl = contentTypeUtil.getActionUrl(type);
 	            ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 	            systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
 	                    String.valueOf(PermissionAPI.PERMISSION_READ)));
@@ -652,6 +657,4 @@ public class StructureFactory {
 	public static List<Structure> findStructuresUserCanUse(User user, String query, Integer structureType, int offset, int limit) throws DotDataException, DotSecurityException {
 		return PermissionedWebAssetUtil.findStructuresForLimitedUser(query, structureType, "name", offset, limit, PermissionAPI.PERMISSION_READ, user, false);
 	}
-
-
 }
