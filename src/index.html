@@ -1,16 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <base href="/html/ng/">
   <meta charset="UTF-8">
   <title>(Dev) dotCMS Core-Web</title>
 
-  <!-- build:css styles/app.style.css -->
   <link rel="stylesheet" type="text/css" href="scss/main.css" />
-  <!-- endbuild -->
 
   <!-- 1. Load libraries -->
   <!-- Polyfill(s) for older browsers -->
-  <!-- build:js thirdparty/lib.js -->
+  <!-- build:ng thirdparty/lib.js -->
   <script src="../node_modules/core-js/client/shim.min.js"></script>
   <script src="../node_modules/reflect-metadata/Reflect.js"></script>
   <script src="../node_modules/systemjs/dist/system.src.js"></script>
@@ -23,8 +22,6 @@
     System.import('view/main.js')
             .catch(function(err) { console.error(err); });
   </script>
-  <base href="/">
-
   <!-- 3. Load icons for angular-material md-icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 </head>

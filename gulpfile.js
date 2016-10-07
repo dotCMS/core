@@ -17,6 +17,7 @@ var sass = require('gulp-sass')
 var ts = require('gulp-typescript');
 var uglify = require('gulp-uglify');
 var usemin = require('gulp-usemin');
+var flatten = require('gulp-flatten');
 
 var config = {
   appProtocol: 'http',
@@ -99,6 +100,7 @@ var project = {
               .pipe(usemin({
                 css: [ rev() ],
                 js: [ uglify(), rev() ],
+                ng: [ uglify(), rev() ],
                 inlinejs: [ uglify() ],
                 inlinecss: [ minifyCss(), 'concat' ]
               }))
@@ -118,13 +120,23 @@ var project = {
     })
   },
 
+  copyMaterialDesignCssTheme: function(cb) {
+    gulp.src([
+      '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
+    ], {cwd: 'node_modules/**'}) /* Glob required here. */
+        .pipe(flatten())
+        .pipe(gulp.dest('build/scss')).on('finish', cb);
+  },
+
   compileStyles: function(cb) {
-    var sourcemaps = require('gulp-sourcemaps');
-    gulp.src('./src/**/*.scss')
-        .pipe(sourcemaps.init())
-        .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
-        .pipe(sourcemaps.write())
-        .pipe(gulp.dest(config.buildDir)).on('finish', cb);
+    project.copyMaterialDesignCssTheme(function () {
+      var sourcemaps = require('gulp-sourcemaps');
+          gulp.src('./src/**/*.scss')
+              .pipe(sourcemaps.init())
+              .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
+              .pipe(sourcemaps.write())
+              .pipe(gulp.dest(config.buildDir)).on('finish', cb);
+    });
   },
 
   callbackOnCount: function(count, cb) {

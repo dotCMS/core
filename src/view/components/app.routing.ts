@@ -13,7 +13,15 @@ import {RuleEngineContainer} from './rule-engine/rule-engine.container';
 
 const appRoutes: Routes = [
     {
+        path: '',
+        component: AppComponent
+    },
+    {
         path: 'build',
+        component: AppComponent
+    },
+    {
+        path: 'html/ng',
         component: AppComponent
     },
     {
