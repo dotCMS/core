@@ -70,6 +70,7 @@ import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -843,25 +844,45 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotDataException("Unable to clean a " + type + " system field");
         }
 
-        //http://jira.dotmarketing.net/browse/DOTCMS-2178
-        if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
-            List<Contentlet> contentlets = conFac.findByStructure(structure.getInode(),0,0);
+        boolean localTransaction = false;
+        try {
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-            deleteBinaryFiles(contentlets,field);
+            //http://jira.dotmarketing.net/browse/DOTCMS-2178
+	        if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
+	            List<Contentlet> contentlets = conFac.findByStructure(structure.getInode(),0,0);
 
-            return; // Binary fields have nothing to do with database.
+	    		HibernateUtil.addCommitListener(new DotRunnable() {
+					@Override
+					public void run() {
+	                	deleteBinaryFiles(contentlets,field);
+					}
+				});
+
+	            return; // Binary fields have nothing to do with database.
+	        }
+	        //https://github.com/dotCMS/core/issues/9909
+	        else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
+	        	List<Contentlet> contentlets = conFac.findByStructure(structure.getInode(),0,0);
+	
+	            for(Contentlet contentlet : contentlets) {
+	            	tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
+	            }
+	        }
+	
+	        conFac.clearField(structure.getInode(), field);
         }
-        //https://github.com/dotCMS/core/issues/9909
-        else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
-        	List<Contentlet> contentlets = conFac.findByStructure(structure.getInode(),0,0);
-
-            for(Contentlet contentlet : contentlets) {
-            	tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
+        catch (Exception e) {
+            if(localTransaction){
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
+        }
+        finally {
+            if(localTransaction){
+                HibernateUtil.commitTransaction();
             }
         }
-
-        conFac.clearField(structure.getInode(), field);
-
     }
 
     @Override
