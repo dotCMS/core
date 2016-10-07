@@ -17,7 +17,8 @@ import com.dotmarketing.util.ConfigTestHelper;
 		ContentTypeBuilderTest.class, 
 		ContentTypeFactoryImplTest.class, 
 		FieldFactoryImplTest.class, 
-		FieldBuilderTest.class 
+		FieldBuilderTest.class ,
+		JsonContentTypeTransformerTest.class
 	})
 
 

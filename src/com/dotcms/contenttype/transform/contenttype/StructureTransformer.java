@@ -106,23 +106,27 @@ public class StructureTransformer implements ContentTypeTransformer  {
 
 			@Override
 			public String urlMapPattern() {
-				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? struct.getUrlMapPattern() : null;
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass()) && UtilMethods.isSet(struct.getUrlMapPattern())) 
+				        ? struct.getUrlMapPattern() 
+				                : null;
 	
 			}
 
 			@Override
 			public String publishDateVar() {
-				return struct.getPublishDateVar();
+				return UtilMethods.isSet(struct.getPublishDateVar()) ? struct.getPublishDateVar(): null;
 			}
 
 			@Override
 			public String detailPage() {
-				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? struct.getPagedetail() : null;
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass()) && UtilMethods.isSet(struct.getPagedetail())) 
+				        ? struct.getPagedetail() : null;
 			}
 
 			@Override
 			public String owner() {
-				return struct.getOwner();
+			    return UtilMethods.isSet(struct.getOwner()) ? struct.getOwner(): null;
+
 			}
 
 			@Override
@@ -147,12 +151,14 @@ public class StructureTransformer implements ContentTypeTransformer  {
 
 			@Override
 			public String expireDateVar() {
-				return struct.getExpireDateVar();
+			     return UtilMethods.isSet(struct.getExpireDateVar()) ? struct.getExpireDateVar(): null;
+	
 			}
 
 			@Override
 			public String description() {
-				return struct.getDescription();
+			    return UtilMethods.isSet(struct.getDescription()) ? struct.getDescription(): null;
+
 			}
 
 			@Override

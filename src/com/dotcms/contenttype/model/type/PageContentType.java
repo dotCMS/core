@@ -16,7 +16,8 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
+@JsonSerialize
+@JsonDeserialize
 @Value.Immutable
 public abstract class PageContentType extends ContentType{
 

@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.transform.contenttype;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -10,6 +11,10 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -34,7 +39,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
 
     private static String toJsonStr(ContentType type) throws DotStateException {
         ObjectMapper mapper = new ObjectMapper();
-
+        mapper.setSerializationInclusion(Include.NON_NULL);
         
         JsonWrapper input = new JsonWrapper<>(type, type.baseType().immutableClass());
         try {
@@ -44,16 +49,40 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         }
     }
 
-    private static ContentType fromJsonStr(String type) throws DotStateException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
+    private static ContentType fromJsonStr(String input) throws DotStateException {
+        
+        JSONObject jo;
         try {
-            ContentType wrap =  mapper.readValue(type, ImmutableSimpleContentType.class);
-            //ContentType t = (ContentType) wrap.getInner();
-            return wrap;
-        } catch (IOException e) {
-            throw new DotStateException(e);
+            jo = new JSONObject(input);
+
+            
+            
+            String clazz = jo.getString("implClass");
+            ContentTypeBuilder builder = ContentTypeBuilder.builder(Class.forName(clazz));
+            builder.defaultType(jo.optBoolean("defaultType", false));
+
+            builder.fixed(jo.optBoolean("fixed")); 
+            builder.folder(jo.getString("folder")); 
+            builder.host(jo.getString("host")); 
+            builder.iDate(new Date(jo.getLong("iDate"))); 
+            builder.modDate(new Date(jo.getLong("modDate"))); 
+            builder.multilingualable(jo.getBoolean("multilingualable")); 
+            builder.name(jo.optString("name")); 
+            builder.system(jo.getBoolean("system")); 
+            builder.versionable(jo.getBoolean("versionable"));   
+            builder.variable(jo.getString("variable")); 
+            builder.inode(jo.getString("inode"));
+
+            if(UtilMethods.isSet(jo.optString("urlMapPattern"))) builder.urlMapPattern(jo.optString("urlMapPattern")); 
+            if(UtilMethods.isSet(jo.optString("publishDateVar")))  builder.publishDateVar(jo.optString("publishDateVar")); 
+            if(UtilMethods.isSet(jo.optString("expireDateVar"))) builder.expireDateVar(jo.optString("expireDateVar"));
+            if(UtilMethods.isSet(jo.optString("detailPage"))) builder.detailPage(jo.optString("detailPage"));
+            if(UtilMethods.isSet(jo.optString("owner"))) builder.owner(jo.optString("owner"));
+            if(UtilMethods.isSet(jo.optString("description"))) builder.description(jo.optString("description"));
+            return builder.build();
+        } catch (JSONException | ClassNotFoundException e) {
+
+           throw new DotStateException(e + " : json=" + input);
         }
     }
 

@@ -5,7 +5,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
+
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
@@ -25,6 +26,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 
@@ -63,10 +65,13 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public StorageType storageType(){
 		return  ImmutableDbStorageType.of();
 	}
-	
-	@Nullable
-	public abstract String detailPage();
 
+    @Value.Default
+    @Nullable
+    public String detailPage(){
+        return null;
+    }
+    
 	@Value.Default
 	public boolean fixed() {
 		return false;
@@ -95,18 +100,26 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	
 	
 	public abstract String variable();
-
 	@Nullable
-	public abstract String urlMapPattern();
-
+	@Value.Default
+	public  String urlMapPattern(){
+	    return null;
+	}
 	@Nullable
-	public abstract String publishDateVar();
-
+	@Value.Default
+	public  String publishDateVar(){
+	    return null;
+	}
 	@Nullable
-	public abstract String expireDateVar();
-	
+	@Value.Default
+	public  String expireDateVar(){
+	    return null;
+	}
 	@Nullable
-	public abstract String owner();
+	@Value.Default
+	public String owner(){
+	    return null;
+	}
 
 	@Value.Default
 	public Date modDate() {
@@ -119,7 +132,7 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	public String host() {
 		return Host.SYSTEM_HOST;
 	}
-	
+	@JsonIgnore
 	@Value.Lazy
 	public  List<Field> fields(){
 		try {
@@ -162,8 +175,8 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 						"edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 
 	}
+	@JsonIgnore
 	@Value.Lazy
-	@Override
 	public Permissionable getParentPermissionable()  {
 		try {
 			Permissionable parent =  (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) 

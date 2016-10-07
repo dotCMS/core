@@ -25,17 +25,21 @@ public class JsonContentTypeTransformerTest {
     public void testFindMethodEquals() throws Exception {
         List<ContentType> types = factory.findAll();
         for (ContentType type : types) {
-            String json = new JsonContentTypeTransformer(type).asJson();
-            
-            ContentType type2 = new JsonContentTypeTransformer(json).from();
-            
-            
-            
-            
+            ContentType type2 = null;
             try {
+                String json = new JsonContentTypeTransformer(type).asJson();
+            
+                type2 = new JsonContentTypeTransformer(json).from();
+            
+            
+            
+            
+
                 assertThat("ContentType == ContentType2", type.equals(type2) );
             } catch (Throwable t) {
-
+                System.out.println(type);
+                System.out.println(type2);
+                System.out.println(t);
                 throw t;
             }
         }

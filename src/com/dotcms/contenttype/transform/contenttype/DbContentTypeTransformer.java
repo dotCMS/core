@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.UtilMethods;
 
 public class DbContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
@@ -40,29 +41,37 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public String urlMapPattern() {
-				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? (String) map.get("url_map_pattern") : null;
+	             String ret = (String) map.get("url_map_pattern");
+	             return (UrlMapable.class.isAssignableFrom(base.immutableClass()) && UtilMethods.isSet(ret))  ? ret : null;
+
 				
 			}
 
 
 			@Override
 			public String publishDateVar() {
-				return (String) map.get("publish_date_var");
+	            String ret = (String) map.get("publish_date_var");
+                return ( UtilMethods.isSet(ret))  ? ret : null;
 			}
 
 			@Override
 			public String detailPage() {
-				return (UrlMapable.class.isAssignableFrom(base.immutableClass())) ? (String) map.get("page_detail") : null;
+			    String ret = (String) map.get("page_detail");
+				return (UrlMapable.class.isAssignableFrom(base.immutableClass()) && UtilMethods.isSet(ret))  ? ret : null;
 			}
 
 			@Override
 			public String owner() {
-				return (String) map.get("owner");
+                String ret = (String) map.get("owner");
+                return ( UtilMethods.isSet(ret))  ? ret : null;
+
 			}
 
 			@Override
 			public String name() {
-				return (String) map.get("name");
+                String ret = (String) map.get("name");
+                return ( UtilMethods.isSet(ret))  ? ret : null;
+
 			}
 
 			@Override
@@ -82,12 +91,17 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public String expireDateVar() {
-				return (String) map.get("expire_date_var");
+
+                String ret = (String) map.get("expire_date_var");
+                return ( UtilMethods.isSet(ret))  ? ret : null;
 			}
 
 			@Override
 			public String description() {
-				return (String) map.get("description");
+
+                String ret = (String) map.get("description");
+                return ( UtilMethods.isSet(ret))  ? ret : null;
+
 			}
 
 			@Override

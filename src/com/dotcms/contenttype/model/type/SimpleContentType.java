@@ -4,6 +4,10 @@ import java.io.Serializable;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+@JsonSerialize
+@JsonDeserialize
 @Value.Immutable
 public abstract class SimpleContentType extends ContentType implements UrlMapable, Serializable, Expireable {
 
