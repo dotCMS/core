@@ -559,6 +559,11 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
+    public void deleteTagInodesByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
+        tagFactory.deleteTagInodesByInodeAndFieldVarName(inode, fieldVarName);    	
+    }
+
+    @Override
     public void deleteTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
 
         TagInode tagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
