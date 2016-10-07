@@ -1885,8 +1885,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     tempStructureVarName = clause.substring(0, clause.indexOf('.'));
                     tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
 
-                    List<com.dotmarketing.portlets.structure.model.Field> tempStructureFields = FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName());
-
+                    List<com.dotmarketing.portlets.structure.model.Field> structureFields = FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName());
+                    List<com.dotmarketing.portlets.structure.model.Field> tempStructureFields = new ArrayList<>();
+                    tempStructureFields.addAll(structureFields);
                     for (int pos = 0; pos < tempStructureFields.size();) {
 
                         if (tempStructureFields.get(pos).getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.DATE_TIME.toString()) ||
