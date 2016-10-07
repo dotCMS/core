@@ -56,7 +56,7 @@ compileJava {
     sourceCompatibility = 1.8
 }
 
-jar {
+/*jar {
     sourceSets {
         main {
             resources {
@@ -65,7 +65,7 @@ jar {
             }
         }
     }
-}
+}*/
 
 // Expand the release properties.
 processResources {
@@ -103,83 +103,21 @@ war {
 }
 war.finalizedBy 'undeployPlugins'
 
-//TODO: now that we have grgit we could use it here instead exec.
-// Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
-// If the tomcat folder exists: git pull, if not: git clone.
-task clonePullTomcat(type: Exec) {
-    description 'Pulls git.'
-
-    def folder = new File( tomcatInstallLocation )
-    if( !folder.exists() ) {
-        commandLine "git", "clone", "-b", tomcatInstallVersion, tomcatInstallRepo, tomcatInstallLocation
-    } else {
-        workingDir tomcatInstallLocation
-        commandLine "git", "pull"
-    }
-}
-
-// Copying libs/buildlibs under tomcat8/lib.
-task copyBuildLibs(type: Copy) {
-    from '../libs/buildlibs'
-    into tomcatInstallLocation + '/lib'
-    include 'mail.jar'
-    include 'sqljdbc42.jar'
-    include 'mysql-connector-java-5.1.37-bin.jar'
-    include 'postgresql-9.0-801.jdbc3.jar'
-    include 'ojdbc5.jar'
-    include 'jtds-1.2.2.jar'
-}
-copyBuildLibs.mustRunAfter clonePullTomcat
-
 // Delete ROOT under tomcat8/webapps
 task undeployWarTomcat(type: Delete) {
-  delete tomcatInstallLocation + webAppRootFolder
-  followSymlinks = true
+    delete tomcatInstallLocation + webAppRootFolder
+    followSymlinks = true
 }
 
 // Makes all the magic to place the webapp under tomcat8 for devs.
-task deployWarTomcat(type: Copy) {
-    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat', 'copyBuildLibs'
-
-    def zipFile = file("$buildDir/libs/$archivesBaseName" + ".war")
- 
-    from zipTree(zipFile)
-    into tomcatInstallLocation + webAppRootFolder
+task deployWarTomcat(type: DeployWarTomcatTask) {
+    dependsOn 'war', 'ClonePullTomcatTask', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
 }
 
-task clonePullTomcatDist(type: Exec) {
-    description 'Pulls git.'
-
-    def folder = new File(tomcatDistBase)
-    if( !folder.exists() ) {
-        commandLine "git", "clone", "-b", tomcatInstallVersion, tomcatInstallRepo, tomcatDistBase
-    } else {
-        workingDir tomcatDistBase
-        commandLine "git", "pull"
-    }
-}
-
-clonePullTomcatDist.mustRunAfter 'cleanDist'
-
-// Makes all the magic to place the webapp under tomcat8 for devs.
-task deployWarTomcatDist(type: Copy) {
-    dependsOn 'copyBuildLibsDist', 'war'
-
-    def zipFile = file("$buildDir/libs/$archivesBaseName" + ".war")
-
-    from zipTree(zipFile)
-    into "$tomcatDistBase$webAppRootFolder"
-}
-
-task copyBuildLibsDist(type: Copy) {
-    from '../libs/buildlibs'
-    into "$tomcatDistBase/lib"
-    include 'mail.jar'
-    include 'sqljdbc42.jar'
-    include 'mysql-connector-java-5.1.37-bin.jar'
-    include 'postgresql-9.0-801.jdbc3.jar'
-    include 'ojdbc5.jar'
-    include 'jtds-1.2.2.jar'
+task deployWarTomcatDist(type: DeployWarTomcatTask) {
+    dependsOn 'war'
+    tomcatPath = tomcatDistBase
 }
 
 task cleanDist(type: Delete){
@@ -187,14 +125,13 @@ task cleanDist(type: Delete){
     delete "$distLocation"
 }
 
-def replaceText(filePath, fromString, toString) {
-    def sourceFile = filePath
-    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
-    new File(sourceFile).write(updatedContent, 'UTF-8')
+task clonePullTomcatDist(type: ClonePullTomcatTask) {
+    tomcatLocation = tomcatDistBase
 }
 
+
 //Creates the final distribution files for dotCMS.
-task createDist(dependsOn: ['cleanDist', 'clonePullTomcatDist', 'deployWarTomcatDist']) << {
+task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
 
     copy {
         from "../bin"
@@ -276,6 +213,16 @@ task tgzTask(type: Tar) {
         extension = 'tgz'
         compression = Compression.GZIP
     }
+}
+
+//Task mean to be use from a distribution structure using the buildwar.sh script.
+//This task will just use the already deployed folder inside the app server and compressed to a war file.
+task customDistWar(type: War) {
+    dependsOn 'deployPlugins'
+    from "../$tomcatDistBase$webAppRootFolder"
+    exclude "assets/**", "dotsecure/**"
+    baseName "dotcms"
+    destinationDir = file("../WAR")
 }
 
 // This task finds all th plugins and runs 'ant build' inside each one.
@@ -401,18 +348,70 @@ task undeployPlugins << {
 
 undeployPlugins.finalizedBy 'deployConfig'
 
-//Task mean to be use from a distribution structure using the buildwar.sh script.
-//This task will just use the already deployed folder inside the app server and compressed to a war file.
-task customDistWar(type: War) {
-    dependsOn 'deployPlugins'
-    from "../$tomcatDistBase$webAppRootFolder"
-    exclude "assets/**", "dotsecure/**"
-    baseName "dotcms"
-    destinationDir = file("../WAR")
-}
 // Util methods.
 def getDate() {
     def fmt = new java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.US)
     def formattedDate = fmt.format(new Date())
     return formattedDate
 }
+
+
+
+static def replaceText(filePath, fromString, toString) {
+    def sourceFile = filePath
+    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
+    new File(sourceFile).write(updatedContent, 'UTF-8')
+}
+
+//TODO: now that we have grgit we could use it here instead exec.
+// Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
+// If the tomcat folder exists: git pull, if not: git clone.
+class ClonePullTomcatTask extends DefaultTask{
+
+    String tomcatLocation = project.tomcatInstallLocation
+
+    @TaskAction
+    def pull(){
+        project.exec{
+            def folder = new File( tomcatLocation )
+            if( !folder.exists() ) {
+                commandLine "git", "clone", "-b", project.tomcatInstallVersion, project.tomcatInstallRepo, tomcatLocation
+            } else {
+                workingDir tomcatLocation
+                commandLine "git", "pull"
+            }
+        }
+    }
+
+}
+
+class DeployWarTomcatTask extends DefaultTask{
+    String tomcatPath;
+
+    @TaskAction
+    def deploy(){
+        copyBuildLibs(tomcatPath)
+
+        def zipFile = project.file("$project.buildDir/libs/$project.archivesBaseName" + ".war")
+        project.copy{
+            from project.zipTree(zipFile)
+            into tomcatPath + project.webAppRootFolder
+        }
+    }
+
+    // Copying libs/buildlibs under tomcat8/lib.
+    def copyBuildLibs(buildLibLocation) {
+        project.copy{
+            from '../libs/buildlibs'
+            into buildLibLocation + '/lib'
+            include 'mail.jar'
+            include 'sqljdbc42.jar'
+            include 'mysql-connector-java-5.1.37-bin.jar'
+            include 'postgresql-9.0-801.jdbc3.jar'
+            include 'ojdbc5.jar'
+            include 'jtds-1.2.2.jar'
+        }
+
+    }
+}
+
