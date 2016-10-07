@@ -167,12 +167,21 @@ public class CreateJsonWebTokenResource implements Serializable {
 
         final int maxAllowedExpirationDays =
                 (jsonWebTokenMaxAllowedExpirationDay > 0 && (expirationDays > jsonWebTokenMaxAllowedExpirationDay))?
-                        jsonWebTokenMaxAllowedExpirationDay:
+                         this.getJsonWebTokenMaxAllowedExpirationDay(jsonWebTokenMaxAllowedExpirationDay, expirationDays):
                          expirationDays;
 
         Logger.debug(this, "Json Web Token Expiration days value: " + expirationDays + " days");
 
         return maxAllowedExpirationDays;
+    }
+
+    private int getJsonWebTokenMaxAllowedExpirationDay(final int jsonWebTokenMaxAllowedExpirationDay,
+                                                       final int expirationDays) {
+
+        Logger.debug(this, "Json Web Token Expiration days pass by the user is: " + expirationDays
+                + " days, it exceeds the max allowed expiration day set in the configuration: " + jsonWebTokenMaxAllowedExpirationDay +
+                ", so the expiration days for this particular token will be overriden to :" + jsonWebTokenMaxAllowedExpirationDay);
+        return jsonWebTokenMaxAllowedExpirationDay;
     }
 
     /**
