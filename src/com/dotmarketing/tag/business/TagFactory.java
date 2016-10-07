@@ -159,6 +159,14 @@ public interface TagFactory {
      */
     public void deleteTagInodesByTagId(String tagId) throws DotDataException;
 
+	/**
+	 * Deletes associated to given inode and field var name
+	 * @param inode inode of the object tagged
+	 * @param fieldVarName velocity var name of a field
+	 * @throws DotDataException
+	 */
+    public void deleteTagInodesByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException;
+
     /**
      * Deletes a TagInode
      * @param tagInode TagInode to delete

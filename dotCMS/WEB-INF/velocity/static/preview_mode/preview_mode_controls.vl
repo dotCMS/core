@@ -317,22 +317,22 @@
 
 	function backToCMS(){
 		#if(${isAngularFrame})
-	    window.top.${angularFrame}.location  = "${viewFoldersURL}";
-		#else
+		window.top.${angularFrame}.src = "${viewFoldersURL}";
+	    #else
 		window.location  = "${viewFoldersURL}";
 		#end
 	}
 
 	function livePage(){
 		#if(${isAngularFrame})
-	    window.top.${angularFrame}.location  = "${VTLSERVLET_URI}?livePage=1";
+	    window.top.${angularFrame}.src  = "${VTLSERVLET_URI}?livePage=1";
 		#else
 		window.location  = "${VTLSERVLET_URI}?livePage=1";
 		#end
 	}
 	function previewPage(){
 		#if(${isAngularFrame})
-	    window.top.${angularFrame}.location  = "${VTLSERVLET_URI}?previewPage=1";
+	    window.top.${angularFrame}.src  = "${VTLSERVLET_URI}?previewPage=1";
 		#else
 		window.location  = "${VTLSERVLET_URI}?previewPage=1";
 		#end
@@ -409,6 +409,9 @@
 		if(confirm('$languagewebapi.getFromUserLanguage("modes.Are-you-sure-you-would-like-to-publish-this-page")')){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="publishHTMLPage";
+	        #if($isAngularFrame)
+            document.getElementById('submitParent').target="_parent";
+            #end
 	        form.submit();
 		}
 	}
@@ -1038,7 +1041,7 @@
 
 </script>
 <div style="display:none">
-    <form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="${angularFrame}" #else target="_top" #end >
+    <form action="${directorURL}" id="submitParent" method="post" #if(!$isAngularFrame) target="_top" #end >
         <input type="hidden" name="referer" id="referer" value="$referer">
         <input type="hidden" name="cmd" id="cmd" value="">
         <input type="hidden" name="container" id="container" value="">
