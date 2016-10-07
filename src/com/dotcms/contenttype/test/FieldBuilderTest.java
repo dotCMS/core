@@ -53,7 +53,6 @@ public class FieldBuilderTest {
 		try{
 			 f1 = ImmutableHostFolderField.builder()
 					.indexed(false)
-					.dataType(DataTypes.BINARY)
 					.name("asdsad").variable("asdasd").build();
 
 		}
@@ -68,7 +67,6 @@ public class FieldBuilderTest {
 			f1 = ImmutableHostFolderField.builder()
 					.iDate(new Date(0L))
 					.indexed(false)
-					.dataType(DataTypes.BINARY)
 					.name("asdsad").variable("asdasd").build();
 			assertThat("fieldChecks should not be called for old fields" ,f1!=null);
 		}
@@ -110,7 +108,6 @@ public class FieldBuilderTest {
 		
 		Field test = ImmutableHiddenField.builder()
 				.name("Form Title")
-				.dataType(DataTypes.CONSTANT)
 				.variable("formTitle")
 				.required(true)
 				.listed(true)

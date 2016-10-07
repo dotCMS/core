@@ -18,12 +18,12 @@ public abstract class BinaryField extends Field {
 	
 	@Override
 	public List<DataTypes> acceptedDataTypes() {
-		return ImmutableList.of(DataTypes.BINARY);
+		return ImmutableList.of(DataTypes.SYSTEM);
 	}
 	@Value.Default
 	@Override
 	public DataTypes dataType(){
-		return DataTypes.BINARY;
+		return DataTypes.SYSTEM;
 	}
 
 	

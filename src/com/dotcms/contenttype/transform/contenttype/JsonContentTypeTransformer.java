@@ -3,10 +3,16 @@ package com.dotcms.contenttype.transform.contenttype;
 import java.io.IOException;
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer {
@@ -28,8 +34,11 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
 
     private static String toJsonStr(ContentType type) throws DotStateException {
         ObjectMapper mapper = new ObjectMapper();
+
+        
+        JsonWrapper input = new JsonWrapper<>(type, type.baseType().immutableClass());
         try {
-            return mapper.writeValueAsString(type);
+            return mapper.writeValueAsString(input);
         } catch (JsonProcessingException e) {
             throw new DotStateException(e);
         }
@@ -37,8 +46,12 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
 
     private static ContentType fromJsonStr(String type) throws DotStateException {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
         try {
-            return mapper.readValue(type, ContentType.class);
+            ContentType wrap =  mapper.readValue(type, ImmutableSimpleContentType.class);
+            //ContentType t = (ContentType) wrap.getInner();
+            return wrap;
         } catch (IOException e) {
             throw new DotStateException(e);
         }
@@ -71,10 +84,23 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
 
         return sb.toString();
     }
+    static class JsonWrapper<T> {
+        @JsonUnwrapped
+        final private T inner;
+        final private Class implClass;
+
+        public JsonWrapper(T inner, Class field) {
+            this.inner = inner;
+            this.implClass = field;
+        }
+
+        public T getInner() {
+            return inner;
+        }
+
+        public Class getImplClass() {
+            return implClass;
+        }
+    }
 }
 
-/**
- * Fields in the db inode owner idate type inode name description default_structure page_detail
- * structuretype system fixed velocity_var_name url_map_pattern host folder expire_date_var
- * publish_date_var mod_date
- **/

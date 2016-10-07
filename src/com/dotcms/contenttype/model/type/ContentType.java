@@ -10,7 +10,7 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
@@ -25,7 +25,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+
 
 
 public abstract class ContentType implements Serializable, Permissionable,ContentTypeIf {
@@ -164,7 +164,6 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	}
 	@Value.Lazy
 	@Override
-	@JsonIgnore
 	public Permissionable getParentPermissionable()  {
 		try {
 			Permissionable parent =  (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) 

@@ -22,13 +22,13 @@ public abstract class RelationshipsTabField extends Field implements OnePerConte
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.SECTION_DIVIDER);
+		return ImmutableList.of(DataTypes.SYSTEM);
 	}
 	
 	@Value.Default
 	@Override
 	public DataTypes dataType(){
-		return DataTypes.SECTION_DIVIDER;
+		return DataTypes.SYSTEM;
 	};
 
 	

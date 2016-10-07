@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum BaseContentType {
 	ANY(0, ContentType.class),
@@ -22,9 +23,11 @@ public enum BaseContentType {
 	 * Gets the integer representation of this value.
 	 * @return the integer representation
      */
+	@JsonValue
 	public int getType() {
 		return type;
 	}
+
 	public Class immutableClass() {
 		return immutableClass;
 	}

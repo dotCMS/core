@@ -10,12 +10,10 @@ public enum DataTypes {
 	INTEGER("integer"),
 	TEXT("text"),
 	LONG_TEXT("text_area"),
-	SECTION_DIVIDER("section_divider"),
-	CONSTANT("constant"),
-	SYSTEM("system_field"),
-	BINARY("binary");
+	SYSTEM("system_field");
 
-	final String value;
+
+	public final String value;
 
 	DataTypes (String value) {
 		this.value = value;
@@ -26,6 +24,9 @@ public enum DataTypes {
 	}
 
 	public static DataTypes getDataType (String value) {
+	    if(value.contains("_divider") || value.contains("binary")|| value.contains("_tab") || value.contains("constant")){
+	        return SYSTEM;
+	    }
 		DataTypes[] types = DataTypes.values();
 		for (DataTypes type : types) {
 			if (type.value.equals(value))

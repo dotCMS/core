@@ -31,7 +31,7 @@ public abstract class HiddenField extends Field {
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.SYSTEM, DataTypes.CONSTANT);
+		return ImmutableList.of(DataTypes.SYSTEM);
 	}
 	public abstract static class Builder implements FieldBuilder {}
 }

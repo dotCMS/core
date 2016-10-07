@@ -4669,19 +4669,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public List<Map<String, Serializable>> DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException {
-        List<Field> fields = FieldsCache.getFieldsByStructureVariableName(query.getFromClause());
+
+        List<com.dotcms.contenttype.model.field.Field> fields;
+        try {
+            fields = APILocator.getContentTypeAPI2().findByVarName(query.getFromClause(), APILocator.systemUser()).fields();
+        } catch (DotSecurityException e) {
+           throw new DotStateException(e);
+        }
         if(fields == null || fields.size() < 1){
             throw new ValidationException("No Fields found for Content");
         }
         Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
-        for (Field field : fields) {
-            dbColToObjectAttribute.put(field.getFieldContentlet(), field.getVelocityVarName());
+        for (com.dotcms.contenttype.model.field.Field field : fields) {
+            dbColToObjectAttribute.put(field.dbColumn(), field.variable());
         }
 
         String title = "inode";
-        for (Field f : fields) {
-            if(f.isListed()){
-                title = f.getFieldContentlet();
+        for (com.dotcms.contenttype.model.field.Field f : fields) {
+            if(f.listed()){
+                title = f.dbColumn();
                 break;
             }
         }
@@ -4697,7 +4703,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             query.setSelectAttributes(atts);
         }
 
-        return QueryUtil.DBSearch(query, dbColToObjectAttribute, "structure_inode = '" + fields.get(0).getStructureInode() + "'", user, true,respectFrontendRoles);
+        return QueryUtil.DBSearch(query, dbColToObjectAttribute, "structure_inode = '" + fields.get(0).contentTypeId() + "'", user, true,respectFrontendRoles);
     }
 
 	/**

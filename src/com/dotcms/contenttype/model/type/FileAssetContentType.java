@@ -43,7 +43,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableBinaryField.builder()
 				.name("File Asset")
 				.variable("fileAsset")
-				.dataType(DataTypes.BINARY)
 				.sortOrder(fields.size())
 				.fixed(true)
 				.required(true)
@@ -80,7 +79,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 		fields.add(
 				ImmutableTabDividerField.builder()
 				.name("Metadata")
-				.dataType(DataTypes.SECTION_DIVIDER)
 				.variable("metadataTab")
 				.sortOrder(fields.size())
 				.build()

@@ -14,6 +14,8 @@ import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 
 @Value.Immutable
@@ -85,7 +87,6 @@ public abstract class PersonaContentType extends ContentType{
 			ImmutableBinaryField.builder()
 				.name("Photo")
 				.variable("photo")
-				.dataType(DataTypes.BINARY)
 				.sortOrder(4)
 				.fixed(true)
 				.build()

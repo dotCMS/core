@@ -470,8 +470,7 @@ public class FieldFactoryImpl implements FieldFactory {
             }
         }
 
-        if (field.dataType() == DataTypes.CONSTANT || field.dataType() == DataTypes.SECTION_DIVIDER
-                || field.dataType() == DataTypes.SYSTEM) {
+        if (field.dataType() == DataTypes.SYSTEM) {
             return field.dataType().toString();
         }
 

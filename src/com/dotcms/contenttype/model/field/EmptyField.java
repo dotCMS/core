@@ -26,12 +26,12 @@ public abstract class EmptyField extends Field {
                 DataTypes.TEXT, 
                 DataTypes.FLOAT, 
                 DataTypes.INTEGER,
-                DataTypes.BINARY,
+
                 DataTypes.BOOL,
-                DataTypes.CONSTANT,
+
                 DataTypes.DATE,
                 DataTypes.NONE,
-                DataTypes.SECTION_DIVIDER,
+
                 DataTypes.SYSTEM
                 );
     }

@@ -14,6 +14,8 @@ import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Value.Immutable
 public abstract class PageContentType extends ContentType{
@@ -136,7 +138,6 @@ public abstract class PageContentType extends ContentType{
 		fields.add(
 				ImmutableTabDividerField.builder()
 				.name("Advanced Properties")
-				.dataType(DataTypes.SECTION_DIVIDER)
 				.variable("advancetab")
 				.sortOrder(i++)
 				.build()

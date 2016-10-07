@@ -22,12 +22,12 @@ public abstract class ConstantField extends Field {
 	@Value.Default
 	@Override
 	public DataTypes dataType(){
-		return DataTypes.CONSTANT;
+		return DataTypes.SYSTEM;
 	};
 
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.CONSTANT);
+		return ImmutableList.of(DataTypes.SYSTEM);
 	}
 	public abstract static class Builder implements FieldBuilder {}
 	

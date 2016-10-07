@@ -49,7 +49,6 @@ public abstract class WidgetContentType extends ContentType {
 		
 		Field preExecute = ImmutableConstantField.builder()
 				.name(WIDGET_PRE_EXECUTE_FIELD_NAME)
-				.dataType(DataTypes.CONSTANT)
 				.variable(WIDGET_PRE_EXECUTE_FIELD_VAR)
 				.sortOrder(4)
 				.fixed(true)
@@ -60,7 +59,6 @@ public abstract class WidgetContentType extends ContentType {
 		
 		Field codeField = ImmutableConstantField.builder()
 				.name(WIDGET_CODE_FIELD_NAME)
-				.dataType(DataTypes.CONSTANT)
 				.variable(WIDGET_CODE_FIELD_VAR)
 				.sortOrder(3)
 				.fixed(true)
@@ -70,8 +68,6 @@ public abstract class WidgetContentType extends ContentType {
 		
 		Field usageField = ImmutableConstantField.builder()
 				.name(WIDGET_USAGE_FIELD_NAME)
-
-				.dataType(DataTypes.CONSTANT)
 				.variable(WIDGET_USAGE_FIELD_VAR)
 				.sortOrder(2)
 				.fixed(true)
