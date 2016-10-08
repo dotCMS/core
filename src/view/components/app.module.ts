@@ -8,6 +8,7 @@ import {NgModule} from '@angular/core';
 import {routing} from './app.routing';
 
 // CUSTOM SERVICES
+import {AccountService} from '../../api/services/account-service'
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {BundleService} from '../../api/services/bundle-service';
 import {CoreWebService} from '../../api/services/core-web-service';
@@ -20,6 +21,7 @@ import {NotificationsService} from '../../api/services/notifications-service';
 import {RoutingAuthService} from '../../api/services/routing-auth-service';
 import {RoutingService} from '../../api/services/routing-service';
 import {SiteService} from '../../api/services/site-service';
+import {StringFormat} from '../../api/util/stringFormat';
 
 // RULES ENGINE SERVICES
 import {ActionService} from '../../api/rule-engine/Action'
@@ -176,8 +178,8 @@ const RULES_ENGINE_SERVICES = [
         routing,
     ],
     providers: [
+        AccountService,
         ApiRoot,
-        RoutingAuthService,
         BundleService,
         CoreWebService,
         DotcmsConfig,
@@ -186,8 +188,10 @@ const RULES_ENGINE_SERVICES = [
         LoginService,
         MessageService,
         NotificationsService,
+        RoutingAuthService,
         RoutingService,
         SiteService,
+        StringFormat,
         UserModel,
         ...RULES_ENGINE_SERVICES
     ]

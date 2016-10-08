@@ -18,6 +18,7 @@ var ts = require('gulp-typescript');
 var uglify = require('gulp-uglify');
 var usemin = require('gulp-usemin');
 var flatten = require('gulp-flatten');
+var replace = require('gulp-replace-task');
 
 var config = {
   appProtocol: 'http',
@@ -103,6 +104,14 @@ var project = {
                 ng: [ uglify(), rev() ],
                 inlinejs: [ uglify() ],
                 inlinecss: [ minifyCss(), 'concat' ]
+              }))
+              .pipe(replace({
+                patterns: [
+                  {
+                    match: /<base href=\"\/build\/\">/g,
+                    replacement: '<base href=\"/html/ng/\">'
+                  }
+                ]
               }))
               .pipe(gulp.dest('build/')).on('finish', cb);
     });

@@ -4,7 +4,7 @@
         [disabled]="disabled">
     <i *ngIf="icon" class="material-icons">{{icon}}</i>
     <span *ngIf="title"><label>{{title}}</label><i class="material-icons">keyboard_arrow_down</i></span>
-    <ng-content select="#badge"></ng-content>
+    <ng-content select=".badge"></ng-content>
 </button>
 
 <div class="dropdown-content" *ngIf="show" [ngClass]="{'dropdown-content_align-right': alignRight, 'dropdown-content_align-left': !alignRight}">
