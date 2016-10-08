@@ -40,6 +40,9 @@ public class ESClient {
 
 	private static Node _nodeInstance;
 	final String syncMe = "esSync";
+	private String DATA_PATH = "es.path.data";
+	private String WORK_PATH = "es.path.work";
+	private String REPO_PATH = "es.path.repo";
 
 	public Client getClient() {
 
@@ -194,7 +197,7 @@ public class ESClient {
 			if(key.startsWith("es.")){
 				// if we already have a key, use it
 				if(System.getProperty(key) == null){
-					if(key.equalsIgnoreCase("es.path.data") || key.equalsIgnoreCase("es.path.work")){
+					if(key.equalsIgnoreCase(DATA_PATH) || key.equalsIgnoreCase(WORK_PATH) || key.equalsIgnoreCase(REPO_PATH)){
                         String esPath = Config.getStringProperty(key);
                       if( new File(esPath).isAbsolute()){
                     	  System.setProperty(key,esPath);

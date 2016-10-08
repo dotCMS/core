@@ -44,6 +44,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPa
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.beans.Host;
@@ -82,6 +83,8 @@ import com.liferay.portal.model.User;
  * @author Jonathan Gamba
  *         Date: 3/17/14
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class RemotePublishAjaxActionTest extends TestBase {
 
 	private static User user;

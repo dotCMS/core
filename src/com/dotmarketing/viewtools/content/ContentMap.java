@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.viewtools.content;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -337,6 +338,65 @@ public class ContentMap {
 		}
 	}
 
+    /**
+    * Returns the returns the identifier based URI for the 
+    * first doc/file on a piece of content
+    * EXAMPLE : $mycontent.shorty
+    * @return
+    * @throws IOException 
+    */
+    public String getShorty() throws IOException{
+        return getShorty(content.getIdentifier());
+    }
+    
+    
+    /**
+    * Returns the returns the identifier based URI for the 
+    * first doc/file on a piece of content
+    * EXAMPLE : $mycontent.shortyInode
+    * @return
+    * @throws IOException 
+    */
+    public String getShortyInode() throws IOException{
+        return getShorty(content.getInode());
+    }
+	
+	
+
+    private String getShorty(final String idInode) throws IOException{
+        String tryField=getFileField();
+        java.io.File file=content.getBinary(getFileField());
+
+        StringBuilder sb = new StringBuilder("/dA/").append(APILocator.getShortyAPI().shortify(idInode));
+        if(!"fileAsset".equals(tryField)){
+            sb.append("/").append(tryField);
+        }
+        sb.append("/").append(file.getName()) ;
+        
+        return sb.toString();
+    }
+    
+    private String getFileField() throws IOException{
+        String tryField="fileAsset";
+        java.io.File file=content.getBinary(tryField);
+
+        if(file!=null &&  file.exists()){
+            return tryField;
+        }
+
+        for (Field f : FieldsCache.getFieldsByStructureInode(content.getStructureInode())) {
+            if ("binary".equals(f.getFieldType())) {
+                file=content.getBinary(f.getVelocityVarName());
+                if(file!=null &&  file.exists()){
+                    return f.getVelocityVarName();
+                }
+            }
+        }
+        return null;
+    }
+    
+	
+	
 	/**
 	 * Returns the URLMap if it exists for a piece of content. <br/>
 	 * EXAMPLE : $mycontent.urlMap OR $mycontent.getUrlMap() both of these work the same.

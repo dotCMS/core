@@ -34,6 +34,8 @@ import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
@@ -627,6 +629,15 @@ public class APILocator extends Locator<APIIndex>{
 	public static PushedAssetsAPI getPushedAssetsAPI() {
 		return (PushedAssetsAPI)getInstance(APIIndex.PUSHED_ASSETS_API);
 	}
+    /**
+     * 
+     * gets an instance of ShortyAPI
+     * 
+     * @return The {@link ShortyIdAPI} class.
+     */
+    public static ShortyIdAPI getShortyAPI() {
+		return (ShortyIdAPI) getInstance(APIIndex.SHORTY_ID_API);
+    }
 
 	/**
 	 * Creates a single instance of the {@link ServerAPI} class.
@@ -825,6 +836,7 @@ enum APIIndex
 	ES_SEARCH_API,
     RULES_API,
     VISITOR_API,
+	SHORTY_ID_API,
 	SYSTEM_EVENTS_API,
 	WEB_SOCKET_CONTAINER_API,
 	COMPANY_API,
@@ -890,6 +902,7 @@ enum APIIndex
 		case ES_SEARCH_API: return new ESSearchProxy();
 		case RULES_API: return new RulesAPIProxy();
 		case VISITOR_API: return new VisitorAPIImpl();
+		case SHORTY_ID_API: return new ShortyIdAPIImpl();
 		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
 		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
 		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();

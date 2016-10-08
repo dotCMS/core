@@ -44,10 +44,7 @@ public class ClickstreamRequestFactory {
     public static ClickstreamRequest getClickstreamRequest(HttpServletRequest request, Date timestamp) {
         
         HttpSession session = request.getSession(true);
-        long languageId = langAPI.getDefaultLanguage().getId();
-        if (session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE) != null) {
-            languageId = Long.parseLong(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString());
-        }
+        long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
         String uri = request.getRequestURI();
         if(request.getAttribute(WebKeys.CLICKSTREAM_URI_OVERRIDE) != null){
