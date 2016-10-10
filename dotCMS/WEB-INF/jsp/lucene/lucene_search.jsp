@@ -16,6 +16,7 @@
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotmarketing.portlets.contentlet.util.ContentletUtil" %>
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <%
@@ -215,7 +216,7 @@ query = Xss.strip(query);
 					<tr >
 						<td>&nbsp;</td>
 						<td colspan=2>
-							<div style="border-bottom:1px silver solid;padding:10px;"><%= UtilMethods.makeHtmlSafe(c.getMap().toString()) %></div>
+							<div style="border-bottom:1px silver solid;padding:10px;"><%= UtilMethods.makeHtmlSafe(ContentletUtil.getContentPrintableMap(user, c).toString()) %></div>
 						</td>
 					</tr>
 					<%	counter++;%>
