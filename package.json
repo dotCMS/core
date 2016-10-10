@@ -74,8 +74,7 @@
     "webdriver-update-ie": "webdriver-manager update --ie",
     "webdriver-update-ie32": "webdriver-manager update --ie32",
     "webdriver-start": "webdriver-manager start",
-    "typings": "^1.3.2",
-    "typescript": "^2.0.2"
+    "typings": "typings"
   },
   "dependencies": {
     "@angular/common": "2.0.0",

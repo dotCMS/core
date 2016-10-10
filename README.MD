@@ -1,60 +1,47 @@
 # Core-Web
-
-## Demo
-
-Check out the demo at [http://dotcms.github.io/core-web/](http://dotcms.github.io/core-web/). 
-
-If you have an up to date instance of the [Rules Engine branch](https://github.com/dotCMS/core/tree/master-3.5) 
-of dotCMS Core running locally you can point to it by adding the Base URL of your server to the link. For example
-[http://dotcms.github.io/core-web/?baseUrl=http://localhost:8080](http://dotcms.github.io/core-web/?baseUrl=http://localhost:8080)
-
-## About
-
 DotCMS Core-Web is a Typescript based Angular 2 application. The project is divided into two primary layers: an API 
 that provides convenience methods for accessing the DotCMS Core ReST API, and views. 
 
 As of this writing the view layer uses [Semantic UI](http://semantic-ui.com/) to provide widgets and input components,
 and Angular 2 alpha 44 for framework and scaffolding (templating, dependency injection, etc).   
 
+## Running this project:
 
-## To Run:
+### Requirements
+  * [NodeJS](https://nodejs.org/en/download/) (min. v4.4.5)
+  * [npm](https://nodejs.org/en/download/) (min. v3.9.6)
+  * [TypeScript](https://www.typescriptlang.org/#download-links) (min. v2.0.0)
+  * [Typings](https://www.npmjs.com/package/typings) (min. v1.4.0)
 
-The general steps are as follows:
-  * Checkout this repo
-  * Update [Node JS](https://nodejs.org/en/download/) to at least v0.12.x and NPM to 2.14.x
-  * Install global NPM hooks: Typescript Compiler and [Karma Command Line Interface](http://karma-runner.github.io/0.13/intro/installation.html)
+### Bafore run it for the first time running:
   * Run ```npm install```
-  * Run ```npm run typings install``` if you don't have typing install run ```npm install -g typings```
-  * Run a server
-  
-On a mac you should be able to get by with these commands, once you've installed/updated npm  
-```Shell
-git clone git@github.com:dotCMS/core-web.git
-npm -g install typescript@^1.6.2
-npm -g install karma-cli
-npm install
-npm run itest
+  * Run ```npm run typings install```
+
+### DotCMS instance
+To run this project locally you need a DotCMS instance running in ```http://localhost:8080```.
+
+Also edit file ```plugins/com.dotcms.config/conf/dotmarketing-config-ext.properties``` and add the following line: 
+
+```java
+dotcms.websocket.baseurl=localhost:8080
 ```
-To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests,
-and will start a server on http://localhost:9000 that by default will proxy all ReST requests to http://localhost:8080, which is where you should
-have an up-to-date instance of dotCMS running.
- 
+
+After that your start your DotCMS instance normally.
+
+### Run `dev` mode:
+Make sure you have your [DotCMS instance](#dotcms-instance) running and...
+  * Run ```npm rum dev```
+
+This will compile scss and ts files, copy dependecies and start the server in ```http://localhost:9000``` from the ```/build/``` folder. **Give it a couple of minutes** while the whole procces is finish, it will open the browser before it's done. 
+
+This will also be on ```watch``` mode, all the changes in ```scss```, ```html``` and ```ts``` will update automatically, you'll only need to refresh the page to see your changes.
+
+### Run `dev` mode with integration test in watch mode
+
+To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests, and will start a server on http://localhost:9000 that by default will proxy all ReST requests to http://localhost:8080, which is where you should have an up-to-date instance of dotCMS running.
+
 The `itest` target will also maintain a watch task that will compile your files when changes are detected. You will need
 to refresh the test page manually to re-run the integration tests.
-
-Also you can run just the dev server and watch the file by:
-
-```Shell
-npm run dev
-```
-
-This will run a server over the ```/build/``` folder and watch the ts, js, html and css files for change, you still need to reload the browser manually after each compile.
-
-Note that `npm install` will produce a number of 'peer dependency' warnings and errors. Ignore them and move on with life.    
-
-If `npm install` fails, do try at least one additional time. Occasionally npm has issues due to dependency order... or something like that. 
-
-To see the main site as you develop, open another browser tab to http://localhost:9000/index.html
 
 ## Deploy to artifactory
 
@@ -66,7 +53,6 @@ To see the main site as you develop, open another browser tab to http://localhos
   * Gulp with NPM script targets for convenience.
   * Jasmine + Karma
     
-
 ## API Layer
 
   * WhatWG for HTTP requests. 
@@ -81,7 +67,6 @@ To see the main site as you develop, open another browser tab to http://localhos
     * For the convenient Flex Layout styles. See [https://material.angularjs.org/HEAD/layout/container]()
   * Semantic-UI:
     * Input elements and styling
-  
 
 ### Components
  
@@ -94,8 +79,6 @@ Verbiage subject to change.
 
 #### Widgets - Input elements and layout templates
 
-
-
 ##### List of Widgets (links to demo pages)
   * Semantic UI Wrappers [http://semantic-ui.com/]() 
     * [Input Toggle](http://localhost:9000/build/view/components/input/toggle.html)
@@ -105,8 +88,6 @@ Verbiage subject to change.
 
 #### Feature Components
   * [Rules Engine](http://localhost:9000/index-dev.html)
-
-
 
 ## Developing
  
@@ -144,20 +125,15 @@ View components and API Services are puppies. They are blind and naive. They kno
 them, only the small bit of the world under their control. If they need to change something that is not encompassed 
 within that world then their only hope is to emit an event and hope something larger than them knows what to do with it.
 
-
 #### Design for off-line first
-
 Each View component should have a demo page that uses fake/mocked models to demonstrate functionality. This forces a 
 development model that allows testing of view components without the need of a backend server, or even a 
 mock persistence layer. 
-  
  
 ### Troubleshooting
-
 When all else fails, try running `gulp clean` and deleting the node_modules directory, and then re-run `npm install`. 
 
 ### Some useful links
-
 
 #### Angular2
   * [Angular](https://angular.io/)
@@ -170,12 +146,8 @@ When all else fails, try running `gulp clean` and deleting the node_modules dire
   * [Some background on Functional programming with Ng2](http://victorsavkin.com/post/108837493941/better-support-for-functional-programming-in)
   * [Pascal Precht on dependency injection](https://www.youtube.com/watch?v=8c-qv9TisVE&list=PL9w_03cWjMXOkPgcoOnLaPJBoa2GJWxvD&index=9)
 
-  
 #### Layout
   * [Flex layouts by Angular Material CSS](https://material.angularjs.org/HEAD/layout)
   
 #### General
   * [Jasmine - Unit testing framework](http://jasmine.github.io/2.2/introduction.html)
-
-  
-
