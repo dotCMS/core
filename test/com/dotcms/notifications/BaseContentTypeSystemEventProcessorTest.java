@@ -9,7 +9,10 @@ import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -22,6 +25,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class BaseContentTypeSystemEventProcessorTest {
+	
+	@BeforeClass
+	public static void prepare() throws Exception{
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
     @Test
     public void testProcess(){

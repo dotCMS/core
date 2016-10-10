@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -33,6 +34,7 @@ import com.dotcms.util.security.Encryptor;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyLocalManager;
@@ -47,6 +49,12 @@ import com.liferay.util.EncryptorException;
  * @author jsanca
  */
 public class JsonWebTokenInterceptorTest {
+	
+	@BeforeClass
+	public static void prepare() throws Exception{
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
     /**
      * Test the scenario when the user is already logged in, means does not need any process

@@ -14,6 +14,9 @@ import com.dotmarketing.util.json.JSONObject;
 
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Ignore;
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class RuleResourceFTest extends TestBase {
 
     private final FunctionalTestConfig config;
