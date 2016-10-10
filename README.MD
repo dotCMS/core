@@ -13,7 +13,7 @@ and Angular 2 alpha 44 for framework and scaffolding (templating, dependency inj
   * [TypeScript](https://www.typescriptlang.org/#download-links) (min. v2.0.0)
   * [Typings](https://www.npmjs.com/package/typings) (min. v1.4.0)
 
-### Bafore run it for the first time running:
+### Before run it for the first time running:
   * Run ```npm install```
   * Run ```npm run typings install```
 
