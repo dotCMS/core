@@ -7,15 +7,20 @@ import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 public class ESIndexSpeedTest extends TestBase {
 	
-	private static final ContentletAPI contAPI = APILocator.getContentletAPI();
+	private static ContentletAPI contAPI;
 	private static User user=null;
 	
 	@BeforeClass
-	public static void before() throws DotDataException {
+	public static void before() throws Exception {
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+		
+        contAPI  = APILocator.getContentletAPI();
 		user=APILocator.getUserAPI().getAnonymousUser();
 	}
 	

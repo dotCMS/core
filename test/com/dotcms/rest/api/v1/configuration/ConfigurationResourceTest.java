@@ -16,6 +16,9 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotmarketing.util.IntegrationTestInitService;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -30,6 +33,12 @@ import org.junit.Test;
 public class ConfigurationResourceTest {
 
 	protected static final String HOST_NAME = "localhost:8080";
+	
+	@BeforeClass
+	public static void prepare() throws Exception{
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 	
 	@SuppressWarnings("unchecked")
 	@Test

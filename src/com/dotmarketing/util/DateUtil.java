@@ -1,13 +1,22 @@
 package com.dotmarketing.util;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -32,6 +41,9 @@ public class DateUtil {
 	public static final String DIFF_DAYS = "diffDays";
 	public static final String DIFF_HOURS = "diffHours";
 	public static final String DIFF_MINUTES = "diffMinutes";
+
+	private static Map<String, DateTimeFormatter> formatterMap = new ConcurrentHashMap<>();
+
 
 	/**
 	 * This method allows you to add to a java.util.Date returning a Date
@@ -325,5 +337,73 @@ public class DateUtil {
 	public static int millisToSeconds(final long time) {
 
 		return (int) (time / SECOND_MILLIS);
+	}
+
+	/**
+	 * Formats a date object to a custom representation using the default locale
+	 * @param date date value
+	 * @param customFormat format pattern
+	 * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html">Valid formats</a>
+	 * @return formated text value
+	 */
+	public static String format(final Date date, final String customFormat){
+		checkNotNull(date);
+		checkNotNull(customFormat);
+		LocalDateTime localDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+		return format(localDate,customFormat);
+	}
+
+	/**
+	 * Formats a date object to a custom representation and the locale
+	 * @param date date value
+	 * @param customFormat format pattern
+	 * @param locale locale information
+	 * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html">Valid formats</a>
+	 * @return formated text value
+	 */
+	public static String format(final Date date, final String customFormat, Locale locale){
+		checkNotNull(date);
+		checkNotNull(customFormat);
+		checkNotNull(locale);
+		LocalDateTime localDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+		return format(localDate, customFormat, locale);
+	}
+
+	/**
+	 * Formats a date object to a custom representation using the default locale
+	 * @param date date value
+	 * @param customFormat format pattern
+	 * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html">Valid formats</a>
+	 * @return formated text value
+	 */
+	public static String format(final LocalDateTime date, final String customFormat) {
+		checkNotNull(date);
+		checkNotNull(customFormat);
+		return format(date,customFormat,Locale.getDefault());
+	}
+
+	/**
+	 * Formats a date object to a custom representation and the locale
+	 * @param date date value
+	 * @param customFormat format pattern
+	 * @param locale locale information
+	 * @see <a href="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html">Valid formats</a>
+	 * @return formated text value
+	 */
+	public static String format(final LocalDateTime date, final String customFormat, Locale locale) {
+		checkNotNull(date);
+		checkNotNull(customFormat);
+		checkNotNull(locale);
+		String dateString = null;
+		try {
+			if (!formatterMap.containsKey(customFormat)) {
+				formatterMap.put(customFormat, DateTimeFormatter.ofPattern(customFormat,locale));
+			}
+			DateTimeFormatter formatter = formatterMap.get(customFormat);
+			dateString = formatter.format(date);
+		} catch (Exception e) {
+			dateString = StringUtils.EMPTY;
+		}
+		return dateString;
 	}
 }

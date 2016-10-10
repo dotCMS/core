@@ -11,6 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 import com.dotcms.util.I18NMessage;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.api.system.event.Payload;
@@ -24,6 +26,7 @@ import com.dotcms.notifications.bean.NotificationData;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
