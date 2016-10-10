@@ -2,6 +2,8 @@ import {Component, ViewChild, Input, Output, EventEmitter} from '@angular/core';
 import {DropdownComponent} from '../common/dropdown-component/dropdown-component';
 import {ContentletService, StructureTypeView, ContentTypeView} from '../../../api/services/contentlet-service';
 import {RoutingService} from '../../../api/services/routing-service';
+import {BaseComponent} from '../common/_base/base-component';
+import {MessageService} from '../../../api/services/messages-service';
 
 @Component({
     directives: [],
@@ -40,7 +42,7 @@ export class ToolbarAddContenletBodyComponent {
     templateUrl: ['toolbar-add-contentlet.html'],
 
 })
-export class ToolbarAddContenletComponent {
+export class ToolbarAddContenletComponent extends BaseComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
     private types: StructureTypeView[];
@@ -52,7 +54,10 @@ export class ToolbarAddContenletComponent {
     private currentPage: number = -1;
     private selectedName: string = '';
 
-    constructor(private contentletService: ContentletService, private routingService: RoutingService) {
+    constructor(private contentletService: ContentletService, private routingService: RoutingService,
+                 messageService: MessageService) {
+
+        super(['more'], messageService);
     }
 
     ngOnInit(): void {
