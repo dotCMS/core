@@ -49,12 +49,6 @@ import com.liferay.util.EncryptorException;
  * @author jsanca
  */
 public class JsonWebTokenInterceptorTest {
-	
-	@BeforeClass
-	public static void prepare() throws Exception{
-    	//Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-	}
 
     /**
      * Test the scenario when the user is already logged in, means does not need any process

@@ -25,12 +25,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class BaseContentTypeSystemEventProcessorTest {
-	
-	@BeforeClass
-	public static void prepare() throws Exception{
-    	//Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-	}
 
     @Test
     public void testProcess(){

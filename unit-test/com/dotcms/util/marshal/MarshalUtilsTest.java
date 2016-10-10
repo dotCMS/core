@@ -38,12 +38,6 @@ import com.dotmarketing.util.json.JSONObject;
  */
 
 public class MarshalUtilsTest {
-	
-	@BeforeClass
-	public static void prepare() throws Exception{
-		//Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-	}
 
     /**
      * Testing the marshall
