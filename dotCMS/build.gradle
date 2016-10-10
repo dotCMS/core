@@ -111,7 +111,7 @@ task undeployWarTomcat(type: Delete) {
 
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: DeployWarTomcatTask) {
-    dependsOn 'war', 'ClonePullTomcatTask', 'undeployWarTomcat'
+    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
 
@@ -123,6 +123,10 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
 task cleanDist(type: Delete){
     dependsOn 'clean'
     delete "$distLocation"
+}
+
+task clonePullTomcat(type: ClonePullTomcatTask) {
+
 }
 
 task clonePullTomcatDist(type: ClonePullTomcatTask) {
