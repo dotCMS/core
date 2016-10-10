@@ -240,9 +240,10 @@ public class ContentUtils {
 				for(Contentlet c : contentlets)
 					ret.add(c);
 			} 
-			catch (Exception e) {
+			catch (Throwable e) {
 				String msg = e.getMessage();
-				msg = (msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
+				msg=(msg==null && e.getStackTrace().length>0)?e.getStackTrace()[0].toString() : msg;
+				msg = (msg!=null && msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
 				Logger.warn(ContentUtils.class,msg);
 				Logger.debug(ContentUtils.class,e.getMessage(),e);
 			}
