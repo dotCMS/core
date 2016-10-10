@@ -9,6 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.business.APILocator;
@@ -26,6 +27,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class ActionResourceFTest extends TestBase {
 
     private final FunctionalTestConfig config;

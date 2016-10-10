@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -67,7 +68,9 @@ public class ESContentletIndexAPITest extends TestBase {
     private static Language defaultLanguage;
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         HostAPI hostAPI = APILocator.getHostAPI();
         LanguageAPI languageAPI = APILocator.getLanguageAPI();

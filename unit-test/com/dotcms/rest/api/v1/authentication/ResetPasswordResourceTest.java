@@ -61,6 +61,7 @@ public class ResetPasswordResourceTest {
         }
     }
 
+    //Failed
     @Test
     public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
@@ -78,6 +79,7 @@ public class ResetPasswordResourceTest {
 
     }
 
+    //Failed
     @Test
     public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
@@ -96,6 +98,7 @@ public class ResetPasswordResourceTest {
     }
 
 
+    //Failed
     @Test
     public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
@@ -112,6 +115,7 @@ public class ResetPasswordResourceTest {
         RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");
     }
 
+    //Failed
     @Test
     public void testDotInvalidPasswordException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 

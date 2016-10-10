@@ -9,7 +9,10 @@ import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;

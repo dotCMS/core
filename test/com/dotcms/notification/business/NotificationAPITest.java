@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
@@ -19,6 +20,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -30,7 +32,14 @@ import com.liferay.portal.model.User;
  *
  */
 public class NotificationAPITest extends TestBase  {
+	
+	@BeforeClass
+	public static void prepare() throws Exception{
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
+	//This one still fails
 	@Test
 	public void testSaveDeleteNotification() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();
