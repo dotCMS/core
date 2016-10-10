@@ -115,20 +115,18 @@ task deployWarTomcat(type: DeployWarTomcatTask) {
     tomcatPath = tomcatInstallLocation
 }
 
+//Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
     dependsOn 'war'
     tomcatPath = tomcatDistBase
 }
 
-task cleanDist(type: Delete){
-    dependsOn 'clean'
-    delete "$distLocation"
-}
-
+//Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
 
 }
 
+//Executes clonePullTomcat task from dist version
 task clonePullTomcatDist(type: ClonePullTomcatTask) {
     tomcatLocation = tomcatDistBase
 }
@@ -195,6 +193,7 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
 
 createDist.finalizedBy 'zip', 'tgzTask'
 
+//Task used to create a .zip file from the distribution
 task zip(type: Zip) {
     from "$distLocation"
     exclude "**/output/**"
@@ -202,6 +201,7 @@ task zip(type: Zip) {
     baseName "$archivesBaseName"
 }
 
+//Task used to create a tar.gz from the distribution
 task tgzTask(type: Tar) {
     if (!"$distUpdate".toBoolean()) {
         from ("$distLocation"){
@@ -219,7 +219,7 @@ task tgzTask(type: Tar) {
     }
 }
 
-//Task mean to be use from a distribution structure using the buildwar.sh script.
+//Task meant to be use from a distribution structure using the buildwar.sh script.
 //This task will just use the already deployed folder inside the app server and compressed to a war file.
 task customDistWar(type: War) {
     dependsOn 'deployPlugins'
@@ -359,8 +359,7 @@ def getDate() {
     return formattedDate
 }
 
-
-
+//Util method that replaces the occurrence of a string in a specified file
 static def replaceText(filePath, fromString, toString) {
     def sourceFile = filePath
     def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
@@ -389,6 +388,9 @@ class ClonePullTomcatTask extends DefaultTask{
 
 }
 
+//Gradle Custom Task that contains the logic for deploying the app war in the application server
+//It works for dist and development versions
+//Also, copies specific libraries from /libs/buildlibs to tomcat/lib folder
 class DeployWarTomcatTask extends DefaultTask{
     String tomcatPath;
 
