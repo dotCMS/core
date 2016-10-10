@@ -42,10 +42,7 @@ export class DotcmsEventsService {
             this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${user.userId}`);
             this.ws.connect();
 
-            this.ws.onClose(() => {
-                console.log('CLOSE');
-                setTimeout(this.reconnect.bind(this), this.TIME_TO_WAIT_TO_RECONNECT);
-            });
+            this.ws.onClose(() => setTimeout(this.reconnect.bind(this), this.TIME_TO_WAIT_TO_RECONNECT));
 
             this.ws.getDataStream().subscribe(
                 res => {
