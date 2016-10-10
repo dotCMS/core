@@ -1909,7 +1909,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function addMultipleFile(parentId, selectedStructure, referer) {
-        var url = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>&cmd=edit&<%=WebKeys.IN_FRAME%>=true&parent=' + parentId + '&selectedStructure=' + selectedStructure +'&inode=\'\'&referer=' + referer;
+        var url = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>&cmd=edit&<%=WebKeys.IN_FRAME%>=true&<%=WebKeys.HIDE_SUBNAV%>=true&parent=' + parentId + '&selectedStructure=' + selectedStructure +'&inode=\'\'&referer=' + referer;
         if(dijit.byId('addFileDialog')){
         	var uploadDlg = dijit.byId('addFileDialog');
         	uploadDlg.set('href',url);
