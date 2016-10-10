@@ -7,6 +7,11 @@
   height: 100%;
   justify-content: center;
 
+  input.ui-inputtext {
+    display: block;
+    width: 100%;
+  }
+
   md-input {
     overflow: inherit;
     width: 100%;

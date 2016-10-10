@@ -78,6 +78,7 @@ var project = {
         '@angular/**/*.js',
         'lodash/lodash.js',
         '@angular2-material/**/*.js',
+        'primeng/**/*.js',
         'rxjs/**',
         'moment/moment.js'
         ], {cwd: 'node_modules/**'}) /* Glob required here. */
@@ -129,16 +130,35 @@ var project = {
     })
   },
 
-  copyMaterialDesignCssTheme: function(cb) {
+  copyCssThemesResources: function(cb) {
     gulp.src([
-      '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
+      'primeng/resources/themes/omega/fonts/*.*',
+
     ], {cwd: 'node_modules/**'}) /* Glob required here. */
         .pipe(flatten())
-        .pipe(gulp.dest('build/scss')).on('finish', cb);
+        .pipe(gulp.dest('build/scss/fonts')).on('finish', function() {
+          gulp.src([
+            'primeng/resources/themes/omega/images/*.*',
+          ], {cwd: 'node_modules/**'})
+            .pipe(flatten())
+            .pipe(gulp.dest('build/scss/images')).on('finish', cb)
+    });
+  },
+
+  copyCssThemes: function(cb) {
+    gulp.src([
+      '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
+      'primeng/resources/themes/omega/theme.css',
+      'primeng/resources/primeng.min.css'
+    ], {cwd: 'node_modules/**'}) /* Glob required here. */
+        .pipe(flatten())
+        .pipe(gulp.dest('build/scss')).on('finish', function() {
+          project.copyCssThemesResources(cb);
+        });
   },
 
   compileStyles: function(cb) {
-    project.copyMaterialDesignCssTheme(function () {
+    project.copyCssThemes(function () {
       var sourcemaps = require('gulp-sourcemaps');
           gulp.src('./src/**/*.scss')
               .pipe(sourcemaps.init())
