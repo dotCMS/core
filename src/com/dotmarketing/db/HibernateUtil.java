@@ -754,10 +754,7 @@ public class HibernateUtil {
 		
 		
 		for(DotRunnable runner : listeners){
-			if(runner instanceof FlushCacheRunnable){
-				runner.run();
-			}
-			else if(runner instanceof ReindexRunnable){
+			if(runner instanceof ReindexRunnable){
 				ReindexRunnable rrunner = (ReindexRunnable) runner;
 				if(rrunner.getAction().equals(ReindexRunnable.Action.REMOVING)){
 					rrunner.run();
@@ -774,6 +771,8 @@ public class HibernateUtil {
 						}
 					}
 				}
+			} else {
+				runner.run();
 			}
 		}
 		listOfLists.add(contentToIndex);

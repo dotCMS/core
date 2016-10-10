@@ -52,6 +52,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -668,42 +669,83 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     /**
      * Testing {@link ContentletAPI#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)}
+     * with a binary field
      *
      * @throws DotDataException
      * @throws DotSecurityException
      * @see ContentletAPI
      * @see Contentlet
      */
-    @Ignore ( "Not Ready to Run." )
     @Test
-    public void cleanField () throws DotDataException, DotSecurityException {
+    public void cleanBinaryField() throws DotDataException, DotSecurityException {
 
         //Getting a known structure
         Structure structure = structures.iterator().next();
+
+        Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Search the contentlet for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
         Contentlet contentlet = contentletList.iterator().next();
 
-        //Getting a know field for this structure
+        //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
+        Field foundBinaryField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Binary-" + identifier );
 
         //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
+        Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
 
         //Validations
         assertNotNull( value );
-        assertTrue( !( ( String ) value ).isEmpty() );
+        assertTrue( ((java.io.File) value).exists() );
 
-        //Set to the default value
-        contentletAPI.cleanField( structure, foundWysiwygField, user, false );
-
-        //Search for the value again
-        Object newValue = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
+        //Cleaning the binary field
+        contentletAPI.cleanField( structure, foundBinaryField, user, false );
 
         //Validations
-        assertNotSame( value, newValue );
+        assertFalse( ((java.io.File) value).exists() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)}
+     * with a tag field
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void cleanTagField() throws DotDataException, DotSecurityException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        Long identifier = uniqueIdentifier.get(structure.getName());
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        Contentlet contentlet = contentletList.iterator().next();
+
+        //Getting a known tag field for this structure
+        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
+        Field foundTagField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Tag-" + identifier );
+
+        //Getting the current value for this field
+        List<Tag> value = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
+
+        //Validations
+        assertNotNull( value );
+        assertFalse( value.isEmpty() );
+
+        //Cleaning the tag field
+        contentletAPI.cleanField( structure, foundTagField, user, false );
+
+        //Getting the current value for this field
+        List<Tag> value2 = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
+
+        //Validations
+        assertTrue( value2.isEmpty() );        
     }
 
     /**

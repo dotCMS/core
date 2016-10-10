@@ -134,6 +134,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -855,7 +856,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	    		HibernateUtil.addCommitListener(new DotRunnable() {
 					@Override
 					public void run() {
-	                	deleteBinaryFiles(contentlets,field);
+						moveBinaryFilesToTrash(contentlets,field);
 					}
 				});
 
@@ -4592,53 +4593,79 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param field
      */
     private void deleteBinaryFiles(List<Contentlet> contentlets,Field field) {
+    	contentlets.stream().forEach(con -> {
 
-            Iterator itr = contentlets.iterator();
+        	String contentletAssetPath = getContentletAssetPath(con, field);
+        	String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
 
-            while(itr.hasNext()){
-                Contentlet con = (Contentlet)itr.next();
-                String inode =  con.getInode();
+        	// To delete binary files
+            FileUtil.deltree(new java.io.File(contentletAssetPath));
 
-                // To delete binary files
-                String contentletAssetPath = APILocator.getFileAPI().getRealAssetPath()
-                                            + java.io.File.separator
-                                            + inode.charAt(0)
-                                            + java.io.File.separator
-                                            + inode.charAt(1)
-                                            + java.io.File.separator
-                                            + inode;
+            // To delete resized images
+            FileUtil.deltree(new java.io.File(contentletAssetCachePath));
+    	});
+    }
 
-                if(field != null){
-                    contentletAssetPath = contentletAssetPath
-                                            + java.io.File.separator
-                                            + field.getVelocityVarName();
-                }
+   /**
+    *
+    * @param contentlets
+    * @param field
+    */
+    private void moveBinaryFilesToTrash(List<Contentlet> contentlets,Field field) {
+    	contentlets.stream().forEach(con -> {
+
+        	String contentletAssetPath = getContentletAssetPath(con, field);
+        	String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
+
+        	try {
+        		// To delete binary files
+            	new TrashUtils().moveFileToTrash(new java.io.File(contentletAssetPath), "binaries/asset/"+con.getInode());
 
                 // To delete resized images
-                String contentletAssetCachePath = APILocator.getFileAPI().getRealAssetPath()
-                                + java.io.File.separator
-                                + "cache"
-                                + java.io.File.separator
-                                + inode.charAt(0)
-                                + java.io.File.separator
-                                + inode.charAt(1)
-                                + java.io.File.separator
-                                + inode;
+                new TrashUtils().moveFileToTrash(new java.io.File(contentletAssetCachePath), "binaries/cache/"+con.getInode());
 
-                if(field != null){
-                contentletAssetCachePath = contentletAssetCachePath
-                                + java.io.File.separator
-                                + field.getVelocityVarName();
-                }
-
-
-                FileUtil.deltree(new java.io.File(contentletAssetPath));
-
-                FileUtil.deltree(new java.io.File(contentletAssetCachePath));
-
+            } catch (IOException e) {
+                Logger.error(this, "Error moving files to trash: '"+contentletAssetPath+"', '"+ contentletAssetCachePath +"'" );
             }
+    	});
+    }
 
+	private String getContentletAssetPath(Contentlet con, Field field) {
+		String inode = con.getInode();
+
+		String result = APILocator.getFileAPI().getRealAssetPath()
+		                            + java.io.File.separator
+		                            + inode.charAt(0)
+		                            + java.io.File.separator
+		                            + inode.charAt(1)
+		                            + java.io.File.separator
+		                            + inode;
+
+		if(field != null){
+			result += java.io.File.separator + field.getVelocityVarName();
+		}
+
+		return result;
+	}
+	private String getContentletCacheAssetPath(Contentlet con, Field field) {
+		String inode = con.getInode();
+
+        String result = APILocator.getFileAPI().getRealAssetPath()
+                + java.io.File.separator
+                + "cache"
+                + java.io.File.separator
+                + inode.charAt(0)
+                + java.io.File.separator
+                + inode.charAt(1)
+                + java.io.File.separator
+                + inode;
+
+        if(field != null){
+        	result += java.io.File.separator + field.getVelocityVarName();
         }
+
+		return result;
+	}
 
     @Override
     public java.io.File getBinaryFile(String contentletInode, String velocityVariableName,User user) throws DotDataException,DotSecurityException {
