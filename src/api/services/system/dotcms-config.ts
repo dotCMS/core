@@ -67,6 +67,10 @@ export class DotcmsConfig extends CoreWebService {
         return this.configParams.config['dotcms.websocket.endpoints']['websocket.systemevents.endpoint'];
     }
 
+    getTimeToWaitToReconnect(): number {
+        return this.configParams.config['dotcms.websocket.reconnect.time'];
+    }
+
     /**
      * Returns the elements that make up the main navigation menu in the back-end. The
      * items in the menu depend on the roles and permissions of the logged-in user.
