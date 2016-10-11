@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -45,6 +46,8 @@ public class CurrentSessionLanguageConditionletFTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

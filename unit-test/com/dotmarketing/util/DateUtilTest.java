@@ -143,7 +143,7 @@ public class DateUtilTest extends BaseMessageResources {
         String prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
         assertNotNull(prettyDate);
-        assertEquals("more than a year ago.", prettyDate);
+        assertEquals("more-than-a-year-ago", prettyDate);
 
         //////////******************
         date    = format.parse("2016/Feb/25");
@@ -151,7 +151,7 @@ public class DateUtilTest extends BaseMessageResources {
 
         System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
         assertNotNull(prettyDate);
-        assertEquals("last month", prettyDate);
+        assertEquals("last-month", prettyDate);
 
         //////////******************
         date    = format.parse("2016/Mar/04");
@@ -159,7 +159,7 @@ public class DateUtilTest extends BaseMessageResources {
 
         System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
         assertNotNull(prettyDate);
-        assertEquals("3 weeks ago", prettyDate);
+        assertEquals("x-weeks-ago", prettyDate);
 
         //////////******************
         date    = format.parse("2016/Jan/04");
@@ -167,7 +167,7 @@ public class DateUtilTest extends BaseMessageResources {
 
         System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
         assertNotNull(prettyDate);
-        assertEquals("2 months ago", prettyDate);
+        assertEquals("x-months-ago", prettyDate);
 
         //////////******************
         date    = format.parse("2016/Mar/20");
@@ -175,7 +175,7 @@ public class DateUtilTest extends BaseMessageResources {
 
         System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
         assertNotNull(prettyDate);
-        assertEquals("last week", prettyDate);
+        assertEquals("last-week", prettyDate);
 
         //////////******************
         date    = format.parse("2016/Mar/27");
@@ -183,7 +183,7 @@ public class DateUtilTest extends BaseMessageResources {
 
         System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
         assertNotNull(prettyDate);
-        assertEquals("5 days ago", prettyDate);
+        assertEquals("x-days-ago", prettyDate);
 
         //////////******************
         date    = format.parse("2016/Mar/31");
@@ -191,7 +191,7 @@ public class DateUtilTest extends BaseMessageResources {
 
         System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
         assertNotNull(prettyDate);
-        assertEquals("Yesterday", prettyDate);
+        assertEquals("yesterday", prettyDate);
 
     }
 }

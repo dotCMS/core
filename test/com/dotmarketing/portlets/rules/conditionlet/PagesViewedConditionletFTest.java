@@ -8,6 +8,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +36,8 @@ public class PagesViewedConditionletFTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 
