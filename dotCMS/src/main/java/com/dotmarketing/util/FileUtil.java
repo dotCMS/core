@@ -7,6 +7,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -155,6 +161,28 @@ public class FileUtil {
 		}else{
 			return com.liferay.util.FileUtil.getRealPath(path);
 		}
+	}
+
+	/**
+	 * Delete directories recursively including the initial directory, taking into account symbolic links
+	 * @param path path to be file/directory to be deleted
+	 * @throws IOException
+	 */
+	public static void deleteDir(String path) throws IOException{
+		// initial directory
+		Path directory = Paths.get(path);
+		Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+		   @Override
+		   public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+		       Files.delete(file);
+		       return FileVisitResult.CONTINUE;
+		   }
+		   @Override
+		   public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+		       Files.delete(dir);
+		       return FileVisitResult.CONTINUE;
+		   }
+		});
 	}
 }
 

@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 /**
@@ -40,7 +41,10 @@ public class CategoryAPITest extends TestBase {
     private static Host defaultHost;
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         HostAPI hostAPI = APILocator.getHostAPI();
 

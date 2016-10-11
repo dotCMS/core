@@ -7,15 +7,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 public class DbConnectionFactoryUtilTest {
     
 
     
-    @BeforeClass
-    public static void init() throws Exception {
-
-    }
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
     
     @After
     @Before

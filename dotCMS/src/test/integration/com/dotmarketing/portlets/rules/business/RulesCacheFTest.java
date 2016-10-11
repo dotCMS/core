@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 import java.util.*;
 
@@ -33,6 +34,8 @@ public class RulesCacheFTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

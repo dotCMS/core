@@ -18,10 +18,12 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,6 +37,13 @@ public class FolderAPITest {
 
 	private final String LOGO_GIF_1 = "logo.gif";
 	private final String LOGO_GIF_2 = "logo2.gif";
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
 
 	@Rule
 	public TemporaryFolder testFolder = new TemporaryFolder();

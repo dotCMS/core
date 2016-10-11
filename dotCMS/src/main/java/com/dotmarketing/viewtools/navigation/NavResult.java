@@ -18,11 +18,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
+
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -324,15 +326,20 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     @Override
     public Permissionable getParentPermissionable() throws DotDataException {
         try {
-            if(type.equals("htmlpage"))
-                return APILocator.getHTMLPageAPI().loadLivePageById(permissionId, sysuser, false).getParentPermissionable();
+            if(type.equals("htmlpage")){
+                Identifier ident=APILocator.getIdentifierAPI().find(permissionId);
+                if(Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(ident.getAssetType()))
+                    return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), sysuser, false).getParentPermissionable();
+                else
+                    return APILocator.getHTMLPageAPI().loadLivePageById(permissionId, sysuser, false).getParentPermissionable();
+            }
             if(type.equals("folder"))
                 return APILocator.getFolderAPI().find(folderId, sysuser, false).getParentPermissionable();
             if(type.equals("link"))
                 return APILocator.getMenuLinkAPI().findWorkingLinkById(permissionId, sysuser, false).getParentPermissionable();
             if(type.equals("file")) {
                 Identifier ident=APILocator.getIdentifierAPI().find(permissionId);
-                if(ident.getAssetType().equals("contentlet"))
+                if(Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(ident.getAssetType()))
                     return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), sysuser, false).getParentPermissionable();
                 else
                     return APILocator.getFileAPI().getWorkingFileById(permissionId, sysuser, false).getParentPermissionable();

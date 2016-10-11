@@ -470,6 +470,10 @@ function doDownloadIndex(indexName){
 
 }
 
+function doSnapshotIndex(indexName){
+	  window.location="/api/v1/esindex/snapshot/index/" + indexName;
+}
+
 function doReindex(){
 	var shards;
     if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
@@ -628,6 +632,11 @@ function hideRestoreIndex() {
     dijit.byId("restoreIndexDialog").hide();
 }
 
+function hideRestoreSnapshotIndex() {
+    dijit.byId("restoreSnapshotDialog").hide();
+    refreshIndexStats();
+}
+
 function showRestoreIndexDialog(indexName) {
 	dojo.byId("indexToRestore").value=indexName;
 	var dialog=dijit.byId("restoreIndexDialog");
@@ -641,6 +650,14 @@ function showRestoreIndexDialog(indexName) {
 	dialog.show();
 }
 
+function showRestoreSnapshotDialog() {
+	  var dialog=dijit.byId("restoreSnapshotDialog");
+	  dojo.byId("uploadSnapshotFileName").innerHTML='';
+	  dijit.byId('uploadSnapshotSubmit').set('disabled',false);
+	  dojo.query('#uploadSnapshotProgress').style({display:"none"});
+	  dialog.show();
+	}
+
 function doRestoreIndex() {
 	if(dojo.byId("uploadFileName").innerHTML=='') {
 		showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "No-File-Selected"))%>");
@@ -652,8 +669,38 @@ function doRestoreIndex() {
 	}
 }
 
+function doRestoreIndexSnapshot(evt){
+	if(!document.getElementById("restoreSnapshotUploader").value) {
+	    showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "no.snapshot.selected"))%>");
+	}
+	else{
+		let formData = new FormData();
+	  let oReq = new XMLHttpRequest();
+	  dijit.byId('uploadSnapshotSubmit').set('disabled',true);
+	  dojo.query('#uploadSnapshotProgress').style({display:"block"});
+		formData.append('file',document.getElementById("restoreSnapshotUploader").files[0]);
+		oReq.onreadystatechange = function(){
+			if (oReq.readyState === 4) {
+		     var msgJson = JSON.parse(oReq.response)
+				 if (oReq.status === 200) {
+		      	 showDotCMSErrorMessage(msgJson.message,true);
+		     } else {
+		     	 showDotCMSErrorMessage(msgJson.errors[0].message);
+		     }
+		     restoreSnapshotUploadCompleted();
+		  }
+		}
+	   oReq.open('POST','/api/v1/esindex/restoresnapshot/',true);
+	   oReq.send(formData);
+	}
+}
+
 function restoreUploadCompleted() {
 	hideRestoreIndex();
+}
+
+function restoreSnapshotUploadCompleted() {
+	hideRestoreSnapshotIndex();
 }
 
 dojo.ready(function() {

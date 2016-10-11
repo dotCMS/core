@@ -10,6 +10,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.rest.api.FunctionalTestConfig;
@@ -31,6 +32,7 @@ import static org.junit.Assert.assertTrue;
  *
  * Use this test class to write tests against Actionlets Rest endpoint.
  */
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class ActionletResourceFTest extends TestBase {
 
     Host defaultHost;

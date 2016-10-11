@@ -10,6 +10,7 @@ import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 
 import java.util.Map;
@@ -20,6 +21,8 @@ public class ConditionletOSGIFTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

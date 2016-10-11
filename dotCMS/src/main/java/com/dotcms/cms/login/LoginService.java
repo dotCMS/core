@@ -53,6 +53,9 @@ public interface LoginService extends Serializable {
     // Default max days for the JWT
     public static final int JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT = 14;
 
+    // max expiration day allowed for a json web token
+    public static final String JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS = "json.web.token.max.allowed.expiration.days";
+
     /**
      * Calls the event processor, kill cookies, portlets session and the http session.
      * @param req

@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -22,17 +23,27 @@ import com.liferay.portal.model.User;
 import static org.junit.Assert.*;
 
 public class MenuLinkAPITest extends TestBase {
-    static PermissionAPI pAPI = APILocator.getPermissionAPI();
-    static FolderAPI fAPI = APILocator.getFolderAPI();
-    static MenuLinkAPI mAPI = APILocator.getMenuLinkAPI();
-    static ContentletAPI cAPI = APILocator.getContentletAPI();
-    static HostAPI hAPI = APILocator.getHostAPI();
-    static UserAPI uAPI = APILocator.getUserAPI();
+    static PermissionAPI pAPI;
+    static FolderAPI fAPI;
+    static MenuLinkAPI mAPI;
+    static ContentletAPI cAPI;
+    static HostAPI hAPI;
+    static UserAPI uAPI;
     static Host host=null;
     static User user=null;
     
     @BeforeClass
     public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        
+        pAPI = APILocator.getPermissionAPI();
+        fAPI = APILocator.getFolderAPI();
+        mAPI = APILocator.getMenuLinkAPI();
+        cAPI = APILocator.getContentletAPI();
+        hAPI = APILocator.getHostAPI();
+        uAPI = APILocator.getUserAPI();
+        
         user = uAPI.getSystemUser();
         host = new Host();
         host.setHostname("MenuLinkTest"+UUIDGenerator.generateUuid());

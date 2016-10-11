@@ -1,16 +1,27 @@
 package com.dotmarketing.business;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 
 public class IdentifierAPITest {
     
     protected static final String id404 = "$$__404__CACHE_MISS__$$";
-    final IdentifierAPI api = APILocator.getIdentifierAPI();
-    final IdentifierCache cache = CacheLocator.getIdentifierCache();
+    private static IdentifierAPI api;
+    private static IdentifierCache cache;
+    
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        
+        api = APILocator.getIdentifierAPI();
+        cache = CacheLocator.getIdentifierCache();
+	}
     
     @Test
     public void testing404() throws Exception {
