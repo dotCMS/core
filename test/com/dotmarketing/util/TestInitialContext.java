@@ -12,10 +12,10 @@ import javax.naming.NamingException;
  */
 public class TestInitialContext extends InitialContext {
 
-    private final String driver = "com.mysql.jdbc.Driver";
-    private final String url = "jdbc:mysql://localhost/i9882?characterEncoding=UTF-8";
-    private final String username = "root";
-    private final String password = "dotcms";
+    private final String driver = "org.postgresql.Driver";
+    private final String url = "jdbc:postgresql://localhost/dotcms";
+    private final String username = "postgres";
+    private final String password = "postgres";
     private final int maxTotal = 60;
     private final int maxIdle = 10;
     private static TestInitialContext context;
