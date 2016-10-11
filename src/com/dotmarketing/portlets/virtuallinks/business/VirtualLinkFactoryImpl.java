@@ -35,7 +35,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		}
 
 		if (UtilMethods.isSet(url)){
-			query += " and (url like ? or url like ?)";
+			query += " and (lower(url) like ? or lower(url) like ?)";
 		}
 
 		query += " and active = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue();
@@ -53,7 +53,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
         }
 
         if (UtilMethods.isSet(url)){
-        	dh.setParam("%" + url+ "%");
+        	dh.setParam("%" + url.toLowerCase()+ "%");
         	dh.setParam("%/%");
         }
 
@@ -72,10 +72,10 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		java.util.List<VirtualLink> result = null;
 		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
 
-		query += " and url like ?";
+		query += " and lower(url) like ?";
 		try {
 			dh.setQuery(query);
-			dh.setParam(host.getHostname() + ":%");
+			dh.setParam(host.getHostname().toLowerCase() + ":%");
 			result = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactoryImpl.class, "getHostVirtualLinks failed:" + e,e);
@@ -92,10 +92,10 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 
 		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
 
-		query += " and uri = ?";
+		query += " and lower(uri) = ?";
 		try {
 			dh.setQuery(query);
-			dh.setParam(uri);
+			dh.setParam(uri.toLowerCase());
 			result = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactoryImpl.class, "getHostVirtualLinks failed:" + e,e);
@@ -110,16 +110,16 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link'";
 
 		if (title != null)
-			query += " and title like ?";
+			query += " and lower(title) like ?";
 
 		if (hosts != null) {
 			StringBuilder filterHosts = new StringBuilder(128);
 			filterHosts.ensureCapacity(32);
 			for (Host host: hosts) {
 				if (filterHosts.length() == 0)
-					filterHosts.append("url like ?");
+					filterHosts.append("lower(url) like ?");
 				else
-					filterHosts.append(" or url like ?");
+					filterHosts.append(" or lower(url) like ?");
 			}
 
 			if (0 < hosts.size())
@@ -144,7 +144,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
         		if (host.isSystemHost())
         			dh.setParam("/%");
         		else
-        			dh.setParam("%" + host.getHostname() + ":/%");
+        			dh.setParam("%" + host.getHostname().toLowerCase() + ":/%");
         	}
         }
 

@@ -125,7 +125,7 @@ public class ViewVirtualLinksAction extends PortletAction {
 					{
 						while (listvs .hasNext()) {
 							VirtualLink next = (VirtualLink) listvs .next();
-							if (next.getUrl().startsWith(h.getHostname()) || (next.getUrl().startsWith("/") && APILocator.getUserAPI().isCMSAdmin(user))){
+							if (next.getUrl().toLowerCase().startsWith(h.getHostname().toLowerCase()) || (next.getUrl().startsWith("/") && APILocator.getUserAPI().isCMSAdmin(user))){
 								listV.add(next);
 							} 
 						}
@@ -172,7 +172,7 @@ public class ViewVirtualLinksAction extends PortletAction {
 					{
 						while (listvs .hasNext()) {
 							VirtualLink next = (VirtualLink) listvs .next();
-							if (next.getUrl().startsWith(h.getHostname()) || (next.getUrl().startsWith("/") && APILocator.getUserAPI().isCMSAdmin(user))){
+							if (next.getUrl().toLowerCase().startsWith(h.getHostname().toLowerCase()) || (next.getUrl().startsWith("/") && APILocator.getUserAPI().isCMSAdmin(user))){
 								list.add(next);
 							} 
 						}

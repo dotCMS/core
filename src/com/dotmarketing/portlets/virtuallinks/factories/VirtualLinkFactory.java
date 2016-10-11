@@ -40,7 +40,7 @@ public class VirtualLinkFactory {
 
     public static VirtualLink getVirtualLinkByURL(String url) throws DotHibernateException {
         HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-        dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where url = ?");
+        dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where lower(url) = ?");
         dh.setParam(url.toLowerCase());
         return (VirtualLink) dh.load();
     }
@@ -75,7 +75,7 @@ public class VirtualLinkFactory {
 		List<VirtualLink> list=null;
 		String query ="from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' ";
 			if(condition!=null)
-				query += " and (url like '%"+condition.toLowerCase()+"%' "+ "or title like '%"+condition.toLowerCase()+"%')";
+				query += " and (lower(url) like '%"+condition.toLowerCase()+"%' "+ "or lower(title) like '%"+condition.toLowerCase()+"%')";
 			query += " and active = "+com.dotmarketing.db.DbConnectionFactory.getDBTrue();
 			if(orderby!=null)
 				query += " order by "+orderby;
