@@ -2,10 +2,13 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.repackage.org.apache.fop.fo.flow.Float;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.IntegrationTestInitService;
+
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
@@ -14,6 +17,12 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 public class ESContentFactoryImplTest {
+	
+	@BeforeClass
+	public static void prepare() throws Exception{
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
     
     final ESContentFactoryImpl instance = new ESContentFactoryImpl();
     

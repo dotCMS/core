@@ -5,12 +5,16 @@ import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import junit.framework.Assert;
 import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 
 /**
  * @author Geoff M. Granum
  */
+
+@Ignore("Temporarily ignore this. https://github.com/dotCMS/core/issues/9785")
 public class I8NResourceFTest {
 
     private final FunctionalTestConfig config;

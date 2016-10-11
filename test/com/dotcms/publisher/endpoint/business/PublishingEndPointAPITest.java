@@ -7,6 +7,7 @@ import java.util.*;
 
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.business.*;
 import com.dotcms.TestBase;
 import com.dotcms.publisher.endpoint.bean.*;
@@ -52,7 +53,10 @@ public class PublishingEndPointAPITest extends TestBase{
 	}
 	
 	@BeforeClass
-	public static void init() {
+	public static void init() throws Exception {
+	    	//Setting web app environment
+	        IntegrationTestInitService.getInstance().init();
+		
 		api = APILocator.getPublisherEndPointAPI();
 		_endPoints.add(createPublishingEndPoint("01", "G01", "Alpha", "192.168.1.1", "81", "https", true, "AuthKey01", false));
 		_endPoints.add(createPublishingEndPoint("02", "G01", "Beta", "192.168.1.2", "82", "https", true, "AuthKey02", false));
