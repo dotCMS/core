@@ -16,6 +16,7 @@ export class DotcmsEventsService {
     private endPoint: String;
 
     private subjects: Subject<any>[] = [];
+    private timeWaitToReconnect: number;
 
     /**
      * Initializes this service with the configuration properties that are
@@ -28,6 +29,8 @@ export class DotcmsEventsService {
         this.protocol = dotcmsConfig.getWebsocketProtocol();
         this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
         this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
+        this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
+
         loginService.watchUser(this.connectWithSocket.bind(this));
     }
 
@@ -39,6 +42,8 @@ export class DotcmsEventsService {
             let user: User = auth.user;
             this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${user.userId}`);
             this.ws.connect();
+
+            this.ws.onClose(() => setTimeout(this.reconnect.bind(this), this.timeWaitToReconnect));
 
             this.ws.getDataStream().subscribe(
                 res => {
@@ -77,4 +82,8 @@ export class DotcmsEventsService {
         return this.subjects[clientEventType].asObservable();
     }
 
+    private reconnect(): void {
+        this.ws = null;
+        this.connectWithSocket(this.loginService.auth);
+    }
 }
