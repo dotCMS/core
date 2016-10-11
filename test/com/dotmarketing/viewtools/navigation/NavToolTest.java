@@ -1,6 +1,8 @@
 package com.dotmarketing.viewtools.navigation;
 
 import com.dotcms.TestBase;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -8,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -19,6 +22,12 @@ import static org.junit.Assert.assertEquals;
  * Created by Oscar Arrieta on 5/4/15.
  */
 public class NavToolTest extends TestBase{
+	
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
     @Test
     public void testAboutUs() throws Exception { // https://github.com/dotCMS/core/issues/7678

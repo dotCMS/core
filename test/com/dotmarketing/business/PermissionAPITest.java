@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -64,6 +65,9 @@ public class PermissionAPITest extends TestBase {
 
     @BeforeClass
     public static void createTestHost() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        
         perm=APILocator.getPermissionAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
         host = new Host();

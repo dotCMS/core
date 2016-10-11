@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionlet.Insta
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.WebKeys;
 
 public class VisitedUrlConditionletTest {
@@ -42,6 +43,8 @@ public class VisitedUrlConditionletTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

@@ -4,6 +4,7 @@ import com.dotcms.TestBase;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,7 +31,10 @@ public class RoleAPITest extends TestBase {
     private String rootRolesGroup = "dotCMSRootRolesCache";
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         cache = CacheLocator.getCacheAdministrator();
 

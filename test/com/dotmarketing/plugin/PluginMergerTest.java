@@ -8,12 +8,20 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.plugin.util.PluginFileMerger;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 public class PluginMergerTest extends TestBase {
+	
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
 	 @Test
 	public void testMergeByAttribute() throws IOException {

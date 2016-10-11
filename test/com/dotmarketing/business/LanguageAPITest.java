@@ -1,10 +1,19 @@
 package com.dotmarketing.business;
 
 import junit.framework.Assert;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 public class LanguageAPITest {
+	
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
 	/*
 	 * 1- Put things in cache
