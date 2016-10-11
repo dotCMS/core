@@ -567,6 +567,30 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     @Override
+    public void deleteTagInodesByInodeAndFieldVarName(String inode, String fieldVarName) throws DotDataException {
+
+        try {
+            //Get the current tagInodes in order to do a proper clean up
+            for ( TagInode tagInode : getTagInodesByInode(inode) ) {
+            	if (fieldVarName != null && fieldVarName.equals(tagInode.getFieldVarName())) {
+                    tagInodeCache.remove(tagInode);
+                    tagCache.removeByInode(tagInode.getInode());
+            	}
+            }
+        } catch (DotDataException e) {
+            Logger.error(this, "Error cleaning up cache.", e);
+        }
+
+        //Execute the delete
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM tag_inode WHERE inode = ? AND field_var_name = ?");
+        dc.addParam(inode);
+        dc.addParam(fieldVarName);
+
+        dc.loadResult();
+    }
+
+    @Override
     public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
 
         //First lets clean up the cache

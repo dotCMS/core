@@ -23,7 +23,7 @@
 <%
 
 	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) ||(UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME)));
-    boolean isAngularFrame = (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getSession().getAttribute(WebKeys.FRAME));
+    boolean isAngularFrame = (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getSession().getAttribute(WebKeys.FRAME)) && !UtilMethods.isSet(ParamUtil.getString(request, WebKeys.HIDE_SUBNAV));
 
 	if(!inPopupIFrame || isAngularFrame) {
 		UserAPI userAPI = APILocator.getUserAPI();

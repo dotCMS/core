@@ -1,6 +1,8 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -42,7 +44,7 @@ public  class WebResource {
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
     private final LayoutAPI         layoutAPI;
-    private final JsonWebTokenUtils jsonWebTokenUtils;
+    private final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor;
 
     public WebResource() {
 
@@ -51,16 +53,16 @@ public  class WebResource {
 
     public WebResource(final ApiProvider apiProvider) {
 
-        this(apiProvider, JsonWebTokenUtils.getInstance());
+        this(apiProvider, JsonWebTokenAuthCredentialProcessorImpl.getInstance());
     }
 
     public WebResource(final ApiProvider apiProvider,
-                       final JsonWebTokenUtils jsonWebTokenUtils) {
+                       final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor) {
 
         this.userAPI           = apiProvider.userAPI();
         this.userWebAPI        = apiProvider.userWebAPI();
         this.layoutAPI         = apiProvider.layoutAPI();
-        this.jsonWebTokenUtils = jsonWebTokenUtils;
+        this.jsonWebTokenAuthCredentialProcessor = jsonWebTokenAuthCredentialProcessor;
     }
 
     /**
@@ -189,7 +191,7 @@ public  class WebResource {
         }
 
         if(null == user) {
-            user = processAuthCredentialsFromJWT(request, this.jsonWebTokenUtils);
+            user = processAuthCredentialsFromJWT(request, this.jsonWebTokenAuthCredentialProcessor);
         }
 
         if(user == null && !forceFrontendAuth) {
@@ -229,35 +231,9 @@ public  class WebResource {
         return user;
     } // getAnonymousUser.
 
-    private static User processAuthCredentialsFromJWT(final HttpServletRequest request, final JsonWebTokenUtils jsonWebTokenUtils) {
+    private static User processAuthCredentialsFromJWT(final HttpServletRequest request, final JsonWebTokenAuthCredentialProcessor authCredentialProcessor) {
 
-        // Extract authentication credentials
-        final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        final String jsonWebToken;
-        final HttpSession session = request.getSession();
-        User user = null;
-
-        if (StringUtils.isNotEmpty(authentication) && authentication.trim().startsWith(BEARER)) {
-
-            jsonWebToken = authentication.substring(BEARER.length());
-
-            if(!UtilMethods.isSet(jsonWebToken)) {
-                // "Invalid syntax for username and password"
-                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
-            }
-
-            user = jsonWebTokenUtils.getUser(jsonWebToken.trim());
-
-            if(!UtilMethods.isSet(user)) {
-                // "Invalid syntax for username and password"
-                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
-            }
-
-            session.setAttribute(WebKeys.CMS_USER, user);
-            session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-        }
-
-        return user;
+        return authCredentialProcessor.processAuthCredentialsFromJWT(request);
     } // getAuthCredentialsFromJWT.
 
 
