@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -77,14 +78,9 @@ public class ForgotPasswordResourceTest {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
-        final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
-        final ApiProvider apiProvider = mock(ApiProvider.class);
-        final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
-        final WebResource webResource       = new WebResource(apiProvider, jsonWebTokenUtils);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final UserService userService = mock(UserService.class);
@@ -143,14 +139,9 @@ public class ForgotPasswordResourceTest {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
-        final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
-        final ApiProvider apiProvider = mock(ApiProvider.class);
-        final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
-        final WebResource webResource       = new WebResource(apiProvider, jsonWebTokenUtils);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final UserService userService = mock(UserService.class);
@@ -209,14 +200,10 @@ public class ForgotPasswordResourceTest {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
-        final UserManager userManager = mock(UserManager.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ApiProvider apiProvider = mock(ApiProvider.class);
-        final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
-        final WebResource webResource       = new WebResource(apiProvider, jsonWebTokenUtils);
         final String userId = "admin@dotcms.com";
         final ServletContext context = mock(ServletContext.class);
         final Company company = new Company() {
