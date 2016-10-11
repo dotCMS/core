@@ -20,23 +20,29 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
 		
 	}
 
+	@Override
 	public User getLoggedInUser(HttpServletRequest request)
 			throws DotRuntimeException, PortalException, SystemException {
 		User user = PortalUtil.getUser(request);
-		if(user == null) {
-			//Assuming is a front-end access
-			HttpSession session = request.getSession(false);
-			if(session != null)
-				user = (User)session.getAttribute(WebKeys.CMS_USER);
-		}
-		return user;
+		return (user == null)?
+				//Assuming is a front-end access
+				this.getLoggedInUser(request.getSession(false)):user;
 	}
 
+	@Override
+	public User getLoggedInUser(final HttpSession session) {
+
+		return  (session != null)?
+					(User)session.getAttribute(WebKeys.CMS_USER):null;
+	}
+
+	@Override
 	public boolean isLoggedToBackend(HttpServletRequest request)
 			throws DotRuntimeException, PortalException, SystemException {
 		return PortalUtil.getUser(request) != null;
 	}
 
+	@Override
 	public User getLoggedInFrontendUser(HttpServletRequest request) throws DotRuntimeException, PortalException, SystemException {
 		HttpSession session = request.getSession(false);
 		if(session != null)
@@ -44,6 +50,7 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
 		return null;
 	}
 
+	@Override
 	public boolean isLoggedToFrontend(HttpServletRequest req) throws DotRuntimeException, PortalException, SystemException {
 		return !isLoggedToBackend(req);
 	}

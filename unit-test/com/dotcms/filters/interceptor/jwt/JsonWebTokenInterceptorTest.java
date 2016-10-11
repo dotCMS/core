@@ -1,8 +1,7 @@
 package com.dotcms.filters.interceptor.jwt;
 
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,11 +56,13 @@ public class JsonWebTokenInterceptorTest {
     @Test
     public void interceptLoggedUserTest() throws IOException {
 
-        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-                new JsonWebTokenInterceptor();
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
+        final LoginService    loginService  = mock(LoginService.class);
+
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(null, null, null, null, loginService, null);
 
         when(request.getSession(false)).thenReturn(session); //
         when(request.isSecure()).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
@@ -74,6 +75,7 @@ public class JsonWebTokenInterceptorTest {
             }
         });
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn("userId"); // user logged
+        when(loginService.isLoggedIn(request)).thenReturn(true);
 
         jsonWebTokenInterceptor.init();
 
@@ -90,12 +92,15 @@ public class JsonWebTokenInterceptorTest {
     @Test
     public void interceptOnNonHttpsTest() throws IOException {
 
-        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-                new JsonWebTokenInterceptor();
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
+        final LoginService    loginService  = mock(LoginService.class);
 
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(null, null, null, null, loginService, null);
+
+        when(loginService.isLoggedIn(request)).thenReturn(false);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
         when(request.isSecure()).thenReturn(false); // no https
@@ -124,13 +129,18 @@ public class JsonWebTokenInterceptorTest {
     @Test
     public void interceptNonAccessTokenTest() throws IOException {
 
-        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-                new JsonWebTokenInterceptor();
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
         final JsonWebTokenService  jsonWebTokenService =
                                               mock(JsonWebTokenService.class);
+        final LoginService    loginService  = mock(LoginService.class);
+
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(null, null, null, null, loginService, null);
+
+        when(loginService.isLoggedIn(request)).thenReturn(false);
+
 
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
@@ -144,7 +154,7 @@ public class JsonWebTokenInterceptorTest {
                 return new Cookie[0];
             }
         });
-        when(jsonWebTokenService.parseToken("xxx")).thenAnswer(new Answer<JWTBean>() {
+        when(jsonWebTokenService.parseToken(anyString())).thenAnswer(new Answer<JWTBean>() {
 
             @Override
             public JWTBean answer(InvocationOnMock invocation) throws Throwable {
@@ -171,8 +181,6 @@ public class JsonWebTokenInterceptorTest {
     @Test
     public void interceptWithAccessTokenNonValidTest() throws IOException, ParseException {
 
-        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-                new JsonWebTokenInterceptor();
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
@@ -180,6 +188,14 @@ public class JsonWebTokenInterceptorTest {
                                               mock(MarshalUtils.class);
         final JsonWebTokenService jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+        final LoginService    loginService  = mock(LoginService.class);
+        final UserAPI         userAPI       = mock(UserAPI.class);
+
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(jsonWebTokenService, null, null, null, loginService, userAPI);
+
+        when(loginService.isLoggedIn(request)).thenReturn(false);
+
 
         final String jwtId  = "jwt1";
         final String userId = "jsanca";
@@ -240,8 +256,6 @@ public class JsonWebTokenInterceptorTest {
     @Test
     public void interceptWithAccessTokenUserModifiedTest() throws IOException, ParseException, SystemException, PortalException, EncryptorException, DotSecurityException, DotDataException {
 
-        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-                new JsonWebTokenInterceptor();
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
@@ -252,6 +266,11 @@ public class JsonWebTokenInterceptorTest {
         final UserAPI userAPI     = mock(UserAPI.class);
         final Encryptor encryptor = mock(Encryptor.class);
         final LoginService loginService = mock(LoginService.class);
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(jsonWebTokenService, MarshalFactory.getInstance().getMarshalUtils(), null, null, loginService, userAPI);
+
+        when(loginService.isLoggedIn(request)).thenReturn(false);
+
 
         final String jwtId  = "jwt1";
         final String userId = "jsanca";
@@ -350,8 +369,6 @@ public class JsonWebTokenInterceptorTest {
     @Test
     public void interceptWithAccessTokenTest() throws IOException, ParseException, SystemException, PortalException, EncryptorException, DotSecurityException, DotDataException {
 
-        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-                new JsonWebTokenInterceptor();
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
@@ -362,6 +379,12 @@ public class JsonWebTokenInterceptorTest {
         final UserAPI userAPI     = mock(UserAPI.class);
         final Encryptor encryptor = mock(Encryptor.class);
         final LoginService loginService = mock(LoginService.class);
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(jsonWebTokenService, MarshalFactory.getInstance().getMarshalUtils(), null, null, loginService, null);
+
+        when(loginService.isLoggedIn(request)).thenReturn(false);
+
+
 
         final String jwtId  = "jwt1";
         final String userId = "jsanca";

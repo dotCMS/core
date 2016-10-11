@@ -15,6 +15,7 @@ import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.Encryptor;
@@ -50,23 +51,45 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
     public static final String JSON_WEB_TOKEN_ALLOW_HTTP = "json.web.token.allowhttp";
 
-    private JsonWebTokenService jsonWebTokenService =
-            JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+    private JsonWebTokenService jsonWebTokenService;
 
-    private MarshalUtils marshalUtils =
-            MarshalFactory.getInstance().getMarshalUtils();
+    private MarshalUtils marshalUtils;
 
-    private CompanyLocalManager companyLocalManager =
-            CompanyLocalManagerFactory.getManager();
+    private CompanyLocalManager companyLocalManager;
 
-    private Encryptor encryptor =
-            EncryptorFactory.getInstance().getEncryptor();
+    private Encryptor encryptor;
 
-    private LoginService loginService =
-            LoginServiceFactory.getInstance().getLoginService();
+    private LoginService loginService;
 
 
-	private UserAPI userAPI = APILocator.getUserAPI();
+	private UserAPI userAPI;
+
+	public JsonWebTokenInterceptor() {
+
+		this(JsonWebTokenFactory.getInstance().getJsonWebTokenService(),
+				MarshalFactory.getInstance().getMarshalUtils(),
+				CompanyLocalManagerFactory.getManager(),
+				EncryptorFactory.getInstance().getEncryptor(),
+				LoginServiceFactory.getInstance().getLoginService(),
+				APILocator.getUserAPI()
+				);
+	}
+
+	@VisibleForTesting
+	protected JsonWebTokenInterceptor(final JsonWebTokenService jsonWebTokenService,
+								   final MarshalUtils marshalUtils,
+								   final CompanyLocalManager companyLocalManager,
+								   final Encryptor encryptor,
+								   final LoginService loginService,
+								   final UserAPI userAPI) {
+
+		this.jsonWebTokenService = jsonWebTokenService;
+		this.marshalUtils = marshalUtils;
+		this.companyLocalManager = companyLocalManager;
+		this.encryptor = encryptor;
+		this.loginService = loginService;
+		this.userAPI = userAPI;
+	}
 
 	/**
 	 * In case you need a diff implementation of the APILocator.

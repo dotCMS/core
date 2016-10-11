@@ -4,6 +4,7 @@ import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -46,7 +47,7 @@ public class JsonWebTokenUtils {
                 MarshalFactory.getInstance().getMarshalUtils(),
                 CompanyLocalManagerFactory.getManager(),
                 EncryptorFactory.getInstance().getEncryptor(),
-                APILocator.getUserAPI());
+                new LazyUserAPIWrapper());
     }
 
     @VisibleForTesting
