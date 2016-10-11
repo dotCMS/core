@@ -702,95 +702,101 @@ public class RoleAjax {
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 
 		HibernateUtil.startTransaction();
-		//Retrieving the current user
-		User systemUser = userAPI.getSystemUser();
-		boolean respectFrontendRoles = false;
+		try {
+			//Retrieving the current user
+			User systemUser = userAPI.getSystemUser();
+			boolean respectFrontendRoles = false;
 
-		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-		Host host = hostAPI.find(folderHostId, systemUser, false);
-		Folder folder = null;
-		if(host == null) {
-			folder =APILocator.getFolderAPI().find(folderHostId, APILocator.getUserAPI().getSystemUser(), false);
-		}
-		Permissionable permissionable = host == null?folder:host;
-		List<Permission> permissionsToSave = new ArrayList<Permission>();
+			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+			Host host = hostAPI.find(folderHostId, systemUser, false);
+			Folder folder = null;
+			if ( host == null ) {
+				folder = APILocator.getFolderAPI().find(folderHostId, APILocator.getUserAPI().getSystemUser(), false);
+			}
+			Permissionable permissionable = host == null ? folder : host;
+			List<Permission> permissionsToSave = new ArrayList<Permission>();
 
-		if(APILocator.getPermissionAPI().isInheritingPermissions(permissionable)){
-			Permissionable parentPermissionable = permissionAPI.findParentPermissionable(permissionable);
-			permissionAPI.permissionIndividually(parentPermissionable, permissionable, systemUser, respectFrontendRoles);
-		}
+			if ( APILocator.getPermissionAPI().isInheritingPermissions(permissionable) ) {
+				Permissionable parentPermissionable = permissionAPI.findParentPermissionable(permissionable);
+				permissionAPI.permissionIndividually(parentPermissionable, permissionable, systemUser, respectFrontendRoles);
+			}
 
-		if(permissions.get("individual") != null) {
-			int permission = Integer.parseInt(permissions.get("individual"));
-			permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("hosts") != null) {
-			int permission = Integer.parseInt(permissions.get("hosts"));
-			permissionsToSave.add(new Permission(Host.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("folders") != null) {
-			int permission = Integer.parseInt(permissions.get("folders"));
-			permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("containers") != null) {
-			int permission = Integer.parseInt(permissions.get("containers"));
-			permissionsToSave.add(new Permission(Container.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("templates") != null) {
-			int permission = Integer.parseInt(permissions.get("templates"));
-			permissionsToSave.add(new Permission(Template.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("templateLayouts") != null) {
-			int permission = Integer.parseInt(permissions.get("templateLayouts"));
-			permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("files") != null) {
-			int permission = Integer.parseInt(permissions.get("files"));
-			permissionsToSave.add(new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("links") != null) {
-			int permission = Integer.parseInt(permissions.get("links"));
-			permissionsToSave.add(new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("content") != null) {
-			int permission = Integer.parseInt(permissions.get("content"));
-			permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		// DOTCMS - 3755
-		if(permissions.get("pages") != null) {
-			int permission = Integer.parseInt(permissions.get("pages"));
-			permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("structures") != null) {
-			int permission = Integer.parseInt(permissions.get("structures"));
-			permissionsToSave.add(new Permission(Structure.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-		if(permissions.get("categories") != null) {
-			int permission = Integer.parseInt(permissions.get("categories"));
-			permissionsToSave.add(new Permission(Category.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
-        if(permissions.get("rules") != null) {
-			int permission = Integer.parseInt(permissions.get("rules"));
-			permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-		}
+			if ( permissions.get("individual") != null ) {
+				int permission = Integer.parseInt(permissions.get("individual"));
+				permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("hosts") != null ) {
+				int permission = Integer.parseInt(permissions.get("hosts"));
+				permissionsToSave.add(new Permission(Host.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("folders") != null ) {
+				int permission = Integer.parseInt(permissions.get("folders"));
+				permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("containers") != null ) {
+				int permission = Integer.parseInt(permissions.get("containers"));
+				permissionsToSave.add(new Permission(Container.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("templates") != null ) {
+				int permission = Integer.parseInt(permissions.get("templates"));
+				permissionsToSave.add(new Permission(Template.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("templateLayouts") != null ) {
+				int permission = Integer.parseInt(permissions.get("templateLayouts"));
+				permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("files") != null ) {
+				int permission = Integer.parseInt(permissions.get("files"));
+				permissionsToSave.add(new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("links") != null ) {
+				int permission = Integer.parseInt(permissions.get("links"));
+				permissionsToSave.add(new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("content") != null ) {
+				int permission = Integer.parseInt(permissions.get("content"));
+				permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			// DOTCMS - 3755
+			if ( permissions.get("pages") != null ) {
+				int permission = Integer.parseInt(permissions.get("pages"));
+				permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("structures") != null ) {
+				int permission = Integer.parseInt(permissions.get("structures"));
+				permissionsToSave.add(new Permission(Structure.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("categories") != null ) {
+				int permission = Integer.parseInt(permissions.get("categories"));
+				permissionsToSave.add(new Permission(Category.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
+			if ( permissions.get("rules") != null ) {
+				int permission = Integer.parseInt(permissions.get("rules"));
+				permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			}
 
 
-		if(permissionsToSave.size() > 0) {
-			permissionAPI.assignPermissions(permissionsToSave, permissionable, systemUser, respectFrontendRoles);
-		}
+			if ( permissionsToSave.size() > 0 ) {
+				permissionAPI.assignPermissions(permissionsToSave, permissionable, systemUser, respectFrontendRoles);
+			}
 
-		if(cascade && permissionable.isParentPermissionable()) {
-			Logger.info(this, "Cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
-			Role role = APILocator.getRoleAPI().loadRoleById(roleId);
-			CascadePermissionsJob.triggerJobImmediately(permissionable, role);
-			Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
-		}
+			if ( cascade && permissionable.isParentPermissionable() ) {
+				Logger.info(this, "Cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
+				Role role = APILocator.getRoleAPI().loadRoleById(roleId);
+				CascadePermissionsJob.triggerJobImmediately(permissionable, role);
+				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
+			}
 
-		HibernateUtil.commitTransaction();
+			HibernateUtil.commitTransaction();
+
+		} catch (Exception e) {
+			Logger.error(this, "Error saving permissions for role " + roleId + " and folder/host id:" + folderHostId, e);
+			HibernateUtil.rollbackTransaction();
+		} finally {
+			HibernateUtil.closeSession();
+		}
 
 		Logger.info(this, "Done applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
-
-
 	}
 
 	public List<Map<String, Object>> getCurrentCascadePermissionsJobs () throws DotDataException, DotSecurityException {
