@@ -169,6 +169,20 @@ public class BundleFactoryImpl extends BundleFactory {
 	}
 
 	@Override
+    public void updateOwnerReferences ( String userId, String replacementUserId ) throws DotDataException {
+		if(!UtilMethods.isSet(userId) || !UtilMethods.isSet(replacementUserId)) {
+			return;
+		}		
+
+		DotConnect dc = new DotConnect();
+		dc.setSQL(UPDATE_BUNDLE_OWNER_REFERENCES);
+		dc.addParam(replacementUserId);
+		dc.addParam(userId);
+
+		dc.loadResult();
+	}
+	
+	@Override
 	public void deleteAssetFromBundle(String assetId, String bundleId)
 			throws DotDataException {
 		if(!UtilMethods.isSet(assetId) || !UtilMethods.isSet(bundleId)) {

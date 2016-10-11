@@ -75,6 +75,11 @@ public class BundleAPIImpl implements BundleAPI {
 	}
 
 	@Override
+    public void updateOwnerReferences( String userId, String replacementUserId ) throws DotDataException {
+		bundleFactory.updateOwnerReferences(userId, replacementUserId);
+	}
+
+	@Override
 	public void deleteAssetFromBundle(String assetId, String bundleId)
 			throws DotDataException {
 		bundleFactory.deleteAssetFromBundle(assetId, bundleId);

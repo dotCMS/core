@@ -8,6 +8,7 @@ import java.util.List;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -401,6 +402,14 @@ public class UserAPIImpl implements UserAPI {
 		wofAPI.updateUserReferences(userToDelete.getUserId(), userRole.getId(), replacementUser.getUserId(),replacementUserRole.getId());
 
 		logDelete(DeletionStage.END, userToDelete, user, "Workflows");
+
+		//replace the user reference in publishing bundles
+		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Publishing Bundles");
+
+		BundleAPI bundleAPI = APILocator.getBundleAPI();
+		bundleAPI.updateOwnerReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
+		logDelete(DeletionStage.END, userToDelete, user, "Publishing Bundles");
 
 		//removing user roles
 		perAPI.removePermissionsByRole(userRole.getId());
