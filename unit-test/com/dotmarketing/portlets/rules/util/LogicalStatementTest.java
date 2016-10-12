@@ -3,21 +3,26 @@ package com.dotmarketing.portlets.rules.util;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.List;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static com.dotmarketing.portlets.rules.model.LogicalOperator.AND;
 import static com.dotmarketing.portlets.rules.model.LogicalOperator.OR;
-import static com.dotmarketing.portlets.rules.util.LogicalStatement.*;
+import static com.dotmarketing.portlets.rules.util.LogicalStatement.BooleanCondition;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.mock;
+import static org.hamcrest.Matchers.is;
 
+@RunWith(DataProviderRunner.class)
 public class LogicalStatementTest {
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() {
+    @DataProvider
+    public static Object[][] cases() {
 
         List<TestCase> data = Lists.newArrayList();
 
@@ -180,7 +185,8 @@ public class LogicalStatementTest {
         return TestUtil.toCaseArray(data);
     }
 
-    @Test(dataProvider = "cases", invocationCount = 1)
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -189,7 +195,7 @@ public class LogicalStatementTest {
         return aCase.statement.evaluate();
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         private final LogicalStatement statement = new LogicalStatement();
         private final String testDescription;

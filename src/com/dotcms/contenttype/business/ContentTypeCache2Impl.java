@@ -106,7 +106,7 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
     @Override
 	public ContentType byVar(String var) {
         try{
-        	return (ContentType) cache.get(primaryGroup + var,primaryGroup);
+        	return (ContentType) cache.get(primaryGroup + var.toLowerCase(),primaryGroup);
         }catch (Exception e) {
 			Logger.debug(ContentTypeCache2.class,"Cache Entry not found", e);
 			return null;

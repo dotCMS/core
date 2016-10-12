@@ -2,9 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 import java.lang.reflect.Method;
 import java.util.Date;
-import java.util.List;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 

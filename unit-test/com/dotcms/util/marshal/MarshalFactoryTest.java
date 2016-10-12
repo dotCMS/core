@@ -12,7 +12,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import org.apache.velocity.runtime.parser.ParseException;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 
 
-
 public class MarshalFactoryTest {
 
     @Test
@@ -34,12 +32,12 @@ public class MarshalFactoryTest {
         final MarshalFactory marshalFactory =
                 MarshalFactory.getInstance();
 
-        Assert.assertNotNull(marshalFactory);
+        assertNotNull(marshalFactory);
 
         final MarshalUtils marshalUtils =
                 marshalFactory.getMarshalUtils();
 
-        Assert.assertNotNull(marshalUtils);
+        assertNotNull(marshalUtils);
 
         Contentlet contentlet = new Contentlet();
         contentlet.setIdentifier("1");
@@ -51,14 +49,14 @@ public class MarshalFactoryTest {
         String json = marshalUtils.marshal(contentlet);
 
         Contentlet contentlet1 = marshalUtils.unmarshal(json, Contentlet.class);
-        Assert. assertEquals("1", contentlet.getIdentifier());
-        Assert. assertEquals(true, contentlet.isLowIndexPriority());
-        Assert. assertEquals("iiii", contentlet.getInode());
-        Assert. assertEquals("WWWWW", contentlet.getStringProperty("hostName"));
+        assertEquals("1", contentlet.getIdentifier());
+        assertEquals(true, contentlet.isLowIndexPriority());
+        assertEquals("iiii", contentlet.getInode());
+        assertEquals("WWWWW", contentlet.getStringProperty("hostName"));
 
 
         List<String> disabledWysiwyg = contentlet1.getDisabledWysiwyg();
-        Assert.assertEquals("AAAA", disabledWysiwyg.get(0));
-        Assert.assertEquals("BBBB", disabledWysiwyg.get(1));
+        assertEquals("AAAA", disabledWysiwyg.get(0));
+        assertEquals("BBBB", disabledWysiwyg.get(1));
     }
 }

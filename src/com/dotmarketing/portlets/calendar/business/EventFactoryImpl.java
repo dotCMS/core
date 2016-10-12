@@ -177,37 +177,18 @@ public class EventFactoryImpl extends EventFactory {
 		
 	}
 
-	//Structure creation constants
-	/**
-	 * Returns the event structure
-	 */
-	@SuppressWarnings("deprecation")
-	@Override
-	protected Structure getBuildingStructure() {
-		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(BUILDING_STRUCTURE_NAME);
-		return eventStructure;
-	}
+
 
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Structure getEventStructure() {
-		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(EVENT_STRUCTURE_NAME);
+		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(EventAPI.EVENT_STRUCTURE_VAR);
 		return eventStructure;
 	}
 
-	@SuppressWarnings("deprecation")
-	@Override
-	protected Structure getLocationStructure() {
-		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(FACILITY_STRUCTURE_NAME);
-		return eventStructure;
-	}	
+
 	
-	private static final String EVENT_STRUCTURE_NAME = "Event";
-	private static final String EVENT_STRUCTURE_DESCRIPTION = "Calendar Events";
-	private static final String BUILDING_STRUCTURE_NAME = "Building";
-	private static final String BUILDING_STRUCTURE_DESCRIPTION = "Buildings";
-	private static final String FACILITY_STRUCTURE_NAME = "Facility";
-	private static final String FACILITY_STRUCTURE_DESCRIPTION = "Facilities";
+
 
 	private static void initEventEventRelation(Structure eventStructure) throws DotHibernateException {
 		

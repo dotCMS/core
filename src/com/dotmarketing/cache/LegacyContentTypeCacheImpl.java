@@ -3,9 +3,6 @@ package com.dotmarketing.cache;
 import java.util.Collection;
 import java.util.Map;
 
-import org.immutables.value.Value.Immutable;
-
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
@@ -22,6 +19,7 @@ import com.liferay.portal.model.User;
 /**
  * @author David
  */
+@Deprecated
 public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 
 

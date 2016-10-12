@@ -6,6 +6,7 @@ import java.util.List;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.enterprise.ESSeachAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -209,21 +210,13 @@ public class StructureAPIImpl implements StructureAPI {
 	}
 
 	public Collection<Map<String, Object>> getRecentContentType(BaseContentType type, User user, int nRecents) throws DotDataException {
-	    /*
-		Collection<Map<String, Object>> recents = contentTypeCache.getRecents(type, user, nRecents);
 
-		if (recents == null) {
-			recents = getRecentsFromDataBase(type, user, nRecents);
-			contentTypeCache.addRecents(type, user, nRecents, recents);
-		}
-
-		return recents;
-		*/
-	    return null;
+	    
+	    return getRecentsFromDataBase(type, user, nRecents);
 	}
 
-	private Collection<Map<String, Object>> getRecentsFromDataBase(Structure.Type type, User user, int nRecents) throws DotDataException {
-	    /*
+	private Collection<Map<String, Object>> getRecentsFromDataBase(BaseContentType type, User user, int nRecents) throws DotDataException {
+	
 		final DotConnect dc = new DotConnect();
 		dc.setSQL(RECENTS_STRUCTURE_QUERY);
 		dc.addParam(user.getUserId());
@@ -246,7 +239,7 @@ public class StructureAPIImpl implements StructureAPI {
 		}
 
 		return result.values();
-		*/
-	    return null;
+	
+
 	}
 }

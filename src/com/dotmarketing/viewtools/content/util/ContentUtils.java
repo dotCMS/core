@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -69,7 +70,7 @@ public class ContentUtils {
 				inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifier);
 				Contentlet c = conAPI.find(inodeOrIdentifier, user, true);
 				if(c != null){
-					if(c.getStructure().getVelocityVarName().equals("calendarEvent")
+					if(c.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)
 							&& (recDates!=null && recDates.length==2)){
 						String startDate = recDates[0];
 						String endDate = recDates[1];
@@ -120,7 +121,7 @@ public class ContentUtils {
 								return contentlet;
 						}
 					}
-					if(l.get(0).getStructure().getVelocityVarName().equals("calendarEvent")
+					if(l.get(0).getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)
 							&& (recDates!=null && recDates.length==2)){
 						String startDate = recDates[0];
 						String endDate = recDates[1];

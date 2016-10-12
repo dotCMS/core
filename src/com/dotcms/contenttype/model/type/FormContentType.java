@@ -4,14 +4,12 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
 @JsonSerialize
 @JsonDeserialize
 @Value.Immutable
@@ -31,13 +29,9 @@ public abstract class FormContentType extends ContentType{
 		return false;
 	}
 	
-
-	
-	
 	
 	public  List<Field> requiredFields(){
 		
-
 		
 		Field titleField = ImmutableHiddenField.builder()
 				.name("Form Title")
@@ -72,7 +66,6 @@ public abstract class FormContentType extends ContentType{
 				.variable("formHost")
 				.sortOrder(4)
 				.fixed(true)
-				.readOnly(false)
 				.searchable(true)
 				.build();
 		

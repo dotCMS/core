@@ -112,20 +112,20 @@ public class ContentTypeHelper implements Serializable {
         return result;
     }
 
-    private void addRecents(final HttpServletRequest request, final User user, BaseContentType type,
+    private void addRecents(final HttpServletRequest request, final User user, BaseContentType baseType,
                                             List<BaseContentTypesView>  baseContentTypesView)
             throws DotDataException, LanguageException {
 
         Locale locale = LocaleUtil.getLocale(request);
-
-        List<ContentTypeView> recentsContent = structureAPI.getRecentContentType(type, user, -1)
-                .stream()
-                .map(map -> new ContentTypeView(map.get("type").toString(), map.get("name").toString(), map.get("inode").toString(),
-                        contentTypeUtil.getActionUrl(request, map.get("inode").toString(), user)))
-                .collect(Collectors.toList());
+        
+        List<ContentTypeView> recentsContent = new ArrayList<>();
+        List<ContentType> types = APILocator.getContentTypeAPI2().recentlyUsed(baseType, user, -1);
+        for(ContentType type : types){
+            recentsContent.add(  new ContentTypeView(type,contentTypeUtil.getActionUrl(request, type.inode(), user)));
+        }
 
         if (!recentsContent.isEmpty()){
-            String name = String.format("RECENT_%s" ,type.toString());
+            String name = String.format("RECENT_%s" ,baseType.toString());
             String label = LanguageUtil.get(locale, name.toLowerCase());
             baseContentTypesView.add(new BaseContentTypesView(name, label, recentsContent));
         }

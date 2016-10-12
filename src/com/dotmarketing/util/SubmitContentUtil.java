@@ -220,7 +220,7 @@ public class SubmitContentUtil {
 	 */
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 
-		Structure st = CacheLocator.getContentTypeCache().getStructureByName(structureName);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureName);
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(st.getInode());
 		contentlet.setLanguageId(langAPI.getDefaultLanguage().getId());

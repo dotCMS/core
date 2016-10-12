@@ -274,7 +274,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	private ContentType dbByVar(String var) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.SELECT_BY_VAR);
-		dc.addParam(var);
+		dc.addParam(var.toLowerCase());
 		List<Map<String, Object>> results;
 
 		results = dc.loadObjectResults();

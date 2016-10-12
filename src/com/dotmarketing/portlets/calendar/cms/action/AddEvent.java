@@ -165,7 +165,8 @@ public class AddEvent extends DispatchAction
 			Event event = new Event();
 			Language language = langAPI.getDefaultLanguage();
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host,APILocator.getUserAPI().getSystemUser(),false);
-            Structure structure = CacheLocator.getContentTypeCache().getStructureByName("Event");
+            
+			Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(EventAPI.EVENT_STRUCTURE_VAR);
             event.setStructureInode(structure.getInode());
 			if (!InodeUtils.isSet(folder.getInode())){
 				folder = APILocator.getFolderAPI().createFolders(path, host,userAPI.getSystemUser(),false);

@@ -330,7 +330,7 @@ public class SubmitContentUtil {
 	 */
 	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
-		Structure st = CacheLocator.getContentTypeCache().getStructureByName(structureName);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureName);
 		String contentletInode = null;
 		long contentLanguageId = 1;
 		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();

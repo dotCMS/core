@@ -21,7 +21,7 @@ public abstract class ContentTypeCache extends ContentTypeCache2Impl {
 
     public abstract Structure getStructureByInode(String inode);
 
-    public abstract Structure getStructureByName(String name);
+
 
     public abstract Structure getStructureByVelocityVarName(String variableName);
 

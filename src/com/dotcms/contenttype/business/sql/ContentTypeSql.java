@@ -15,7 +15,7 @@ public abstract class ContentTypeSql {
 	private final String SELECT_ALL_STRUCTURE_FIELDS = "select  inode.inode as inode, owner, idate as idate, name, description, default_structure, page_detail, structuretype, system, fixed, velocity_var_name , url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date   from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
 
 	public final String SELECT_BY_INODE = SELECT_ALL_STRUCTURE_FIELDS + " and inode.inode = ?";
-	public final String SELECT_BY_VAR = SELECT_ALL_STRUCTURE_FIELDS + " and structure.velocity_var_name = ?";
+	public final String SELECT_BY_VAR = SELECT_ALL_STRUCTURE_FIELDS + " and structure.velocity_var_name like ?";
 	public final String SELECT_ALL = SELECT_ALL_STRUCTURE_FIELDS + " order by %s  ";
 	public final String SELECT_BY_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and structuretype= ? order by %s ";
 	public final String SELECT_DEFAULT_TYPE = SELECT_ALL_STRUCTURE_FIELDS + " and default_structure= true ";

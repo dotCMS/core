@@ -24,11 +24,7 @@ public abstract class EventFactory {
 	abstract protected List<Event> find(String hostId, Date fromDate, Date toDate, String[] tags, String[] keywords, List<Category> categories, boolean liveOnly, boolean archived, int offset,
 			int limit, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	abstract protected Structure getBuildingStructure();
-
 	abstract protected Structure getEventStructure();
-
-	abstract protected Structure getLocationStructure();
 	
 	abstract protected Event convertToEvent (Contentlet cont) throws DotDataException, DotContentletStateException, DotSecurityException;
 

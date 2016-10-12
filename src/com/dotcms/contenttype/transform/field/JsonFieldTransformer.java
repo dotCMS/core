@@ -52,49 +52,7 @@ public class JsonFieldTransformer implements FieldTransformer {
 
         return (Field) JsonHelper.fromJson(input);
 
-        /*
-        
-        JSONObject jo;
-        try {
-           
-
-
-
-            String clazz = jo.getString("implClass");
-            FieldBuilder builder = FieldBuilder.builder(Class.forName(clazz));
-            builder.contentTypeId(jo.getString("contentTypeId"));
-          
-            builder.fixed(jo.optBoolean("fixed"));
-            builder.folder(jo.getString("folder"));
-            builder.host(jo.getString("host"));
-            builder.iDate(new Date(jo.getLong("iDate")));
-            builder.modDate(new Date(jo.getLong("modDate")));
-            builder.multilingualable(jo.getBoolean("multilingualable"));
-            builder.name(jo.optString("name"));
-            builder.system(jo.getBoolean("system"));
-            builder.versionable(jo.getBoolean("versionable"));
-            builder.variable(jo.getString("variable"));
-            builder.inode(jo.getString("inode"));
-
-            if (UtilMethods.isSet(jo.optString("urlMapPattern")))
-                builder.urlMapPattern(jo.optString("urlMapPattern"));
-            if (UtilMethods.isSet(jo.optString("publishDateVar")))
-                builder.publishDateVar(jo.optString("publishDateVar"));
-            if (UtilMethods.isSet(jo.optString("expireDateVar")))
-                builder.expireDateVar(jo.optString("expireDateVar"));
-            if (UtilMethods.isSet(jo.optString("detailPage")))
-                builder.detailPage(jo.optString("detailPage"));
-            if (UtilMethods.isSet(jo.optString("owner")))
-                builder.owner(jo.optString("owner"));
-            if (UtilMethods.isSet(jo.optString("description")))
-                builder.description(jo.optString("description"));
-                
-            return builder.build();
-        } catch (JSONException | ClassNotFoundException e) {
-
-            throw new DotStateException(e + " : json=" + input);
-        }
-        */
+      
     }
 
     @Override

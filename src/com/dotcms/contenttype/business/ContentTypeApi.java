@@ -52,10 +52,14 @@ public interface ContentTypeApi {
 
 	List<ContentType> find(String condition, User user, boolean respectFrontendRoles) throws DotDataException;
 
-
-
-
+	
+	List<ContentType> recentlyUsed(BaseContentType type, User user, int numberToShow) throws DotDataException;
+	    
+	
+	
 	Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "html page", "menu link", "virtual link", "container", "template", "user" );
 
+	
+	
 
 }
