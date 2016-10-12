@@ -33,6 +33,9 @@
 
         // angular-material
         '@angular2-material': 'n:@angular2-material',
+
+        // PrimeNG Components
+        'primeng': 'n:primeng',
     };
 
     // packages tells the System loader how to load when no filename and/or no extension
@@ -55,7 +58,10 @@
         'moment': {
             main: 'moment.js',
             defaultExtension: 'js'
-        }
+        },
+        'primeng': {
+            defaultExtension: 'js'
+        },
     };
 
     var config = {

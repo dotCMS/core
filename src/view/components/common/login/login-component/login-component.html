@@ -13,45 +13,46 @@
         <div class="signin">
             <h2 class="login__title" [innerHTML]="loginLabel"></h2>
             <div class="error-message" [innerHTML]="message"></div>
-            <md-input id="login-component-login-input"
-                    (keyup)="message=''"
-                    (keyup.enter)="logInUser()"
-                    placeholder="{{userIdOrEmailLabel}}"
-                    [(ngModel)]="myAccountLogin"
-                    floatingPlaceholder="false"
-                    [disabled]="isLoginInProgress">
-            </md-input>
-            <md-input id="login-component-password-input"
-                    (keyup)="message=''"
-                    (keyup.enter)="logInUser()"
-                    placeholder="{{passwordLabel}}"
-                    [(ngModel)]="password"
-                    type="password"
-                    floatingPlaceholder="false"
-                    [disabled]="isLoginInProgress"></md-input>
+            <div class="login__form-line">
+                <input pInputText type="text" id="login-component-login-input"
+                       (keyup)="message=''"
+                       (keyup.enter)="logInUser()"
+                       placeholder="{{userIdOrEmailLabel}}"
+                       [(ngModel)]="myAccountLogin"
+                       floatingPlaceholder="false"
+                       [disabled]="isLoginInProgress" />
+            </div>
+            <div class="login__form-line">
+                <input pInputText type="password" id="login-component-password-input"
+                       (keyup)="message=''"
+                       (keyup.enter)="logInUser()"
+                       placeholder="{{passwordLabel}}"
+                       [(ngModel)]="password"
+                       floatingPlaceholder="false"
+                       [disabled]="isLoginInProgress" />
+            </div>
             <div class="row login__form-line">
                 <div class="col-sm-6">
-                    <md-checkbox [(ngModel)]="myAccountRememberMe"
-                                 id="login-component-remenberme-checkbox"
-                                 [disabled]="isLoginInProgress">{{rememberMeLabel}}</md-checkbox>
+                    <p-checkbox [(ngModel)]="myAccountRememberMe" binary="true" [label]="rememberMeLabel"></p-checkbox>
                 </div>
                 <div class="col-sm-6">
-                    <select class="singin__language"
+                    <p-dropdown [options]="languages"
+                            [style]="{'width':'auto'}"
+                            class="singin__language"
                             id="login-component-language-select"
                             [(ngModel)]="language"
-                            (change)="changeLanguage($event.target.value)"
+                            (onChange)="changeLanguage($event.value)"
                             [disabled]="isLoginInProgress">
-                        <option *ngFor="let lang of languages" value="{{lang.value}}">{{lang.label | capitalize}}</option>
-                    </select>
+                    </p-dropdown>
                 </div>
             </div>
             <div class="row login__form-line">
                 <div class="col-sm-12">
                     <md-spinner color="accent" *ngIf="isLoginInProgress" class="app-spinner"></md-spinner>
-                    <button id="login-component-login-submit-button" md-button md-raised-button *ngIf="!isLoginInProgress"
-                            (click)="logInUser()">{{loginButton}}</button>
-                    <button id="login-component-show-fogot-password-button"  md-button md-flat-button
-                            (click)="showForgotPassword()">{{forgotPasswordButton}}</button>
+                    <button pButton type="button" id="login-component-login-submit-button" *ngIf="!isLoginInProgress"
+                            (click)="logInUser()" [label]="loginButton"></button>
+                    <button pButton type="button" id="login-component-show-fogot-password-button"
+                            (click)="showForgotPassword()" [label]="forgotPasswordButton"></button>
                 </div>
             </div>
         </div>

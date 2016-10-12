@@ -161,6 +161,18 @@ const RULES_ENGINE_SERVICES = [
     RuleService,
 ];
 
+import {InputTextModule} from 'primeng/primeng';
+import {CheckboxModule} from 'primeng/primeng';
+import {ButtonModule} from 'primeng/primeng';
+import {DropdownModule} from 'primeng/primeng';
+
+const NGFACES_MODULES = [
+    InputTextModule,
+    CheckboxModule,
+    ButtonModule,
+    DropdownModule,
+];
+
 @NgModule({
     bootstrap: [AppComponent],
     declarations: [
@@ -176,6 +188,7 @@ const RULES_ENGINE_SERVICES = [
         MaterialModule.forRoot(),
         ReactiveFormsModule,
         routing,
+        ...NGFACES_MODULES,
     ],
     providers: [
         AccountService,

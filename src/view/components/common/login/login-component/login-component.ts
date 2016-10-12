@@ -64,7 +64,7 @@ export class LoginComponent {
 
     ngAfterViewInit(): void {
         this.ngZone.runOutsideAngular(() =>
-            setTimeout(() => document.getElementById('login-component-login-input').getElementsByClassName('md-input-element')[0].focus()
+            setTimeout(() => document.getElementById('login-component-login-input').focus()
         ));
     }
 

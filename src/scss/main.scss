@@ -3,11 +3,20 @@
 @import "grids";
 @import "typography";
 @import "material-design";
-
 @import "./deeppurple-amber.css";
+
+// PRIME NG
+@import "https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css";
+@import "./primeng.min.css";
+@import "./theme.css";
 
 *, *:before, *:after {
     box-sizing: border-box;
+}
+
+// Fix for primeng theme
+[class^='ui-'] {
+    box-sizing: content-box !important;
 }
 
 html, body {
