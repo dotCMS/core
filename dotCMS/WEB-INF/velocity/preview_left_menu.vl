@@ -77,12 +77,16 @@
     function backToCMS(){
        #if(${isAngularFrame})
         #if($UtilMethods.isSet(${viewBrowserURL}))
-        window.top.${angularFrame}.src  = "${viewBrowserURL}";
+        if(window.top.${angularFrame}.src !== undefined){
+        	window.top.${angularFrame}.src = "${viewBrowserURL}";
+        }else{
+        	window.top.${angularFrame}.location = "${viewBrowserURL}";
+        }
 	    #else
 	    window.top.${angularFrame}.src  = "/c/";
 	    #end
        #else
-	    #if($UtilMethods.isSet(${viewBrowserURL}))
+        #if($UtilMethods.isSet(${viewBrowserURL}))
 	    window.top.location  = "${viewBrowserURL}";
 	    #else
 	    window.top.location  = "/c/";
