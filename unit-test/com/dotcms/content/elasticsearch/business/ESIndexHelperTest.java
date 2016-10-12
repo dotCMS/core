@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 
-import com.dotcms.enterprise.LicenceService;
+import com.dotcms.enterprise.LicenseService;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 
@@ -28,7 +28,7 @@ public class ESIndexHelperTest {
 		String searchIndex = "dummyIndex";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
 		Map<String,String> indexInfo = new HashMap<String,String>();
 		indexInfo.put("index", searchIndex);
@@ -37,7 +37,7 @@ public class ESIndexHelperTest {
 		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
 		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(new HashMap<String,String>());
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 
 		String response = esIndexHelper.getIndexNameOrAlias(indexInfo);
 		assertNotNull(response);
@@ -52,7 +52,7 @@ public class ESIndexHelperTest {
 		String searchIndex = "dummyIndex";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
 		Map<String,String> indexInfo = new HashMap<String,String>();
 		indexInfo.put("alias", searchIndex);
@@ -62,9 +62,9 @@ public class ESIndexHelperTest {
 
 		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
 		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(indexInfo);
-		when(licenceService.getLevel()).thenReturn(200);
+		when(LicenseService.getLevel()).thenReturn(200);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 
 		String response = esIndexHelper.getIndexNameOrAlias(indexInfo);
 		assertNotNull(response);
@@ -76,7 +76,7 @@ public class ESIndexHelperTest {
 		String searchIndex = "dummyIndex";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
 		Map<String,String> indexInfo = new HashMap<String,String>();
 		indexInfo.put("index", searchIndex);
@@ -86,7 +86,7 @@ public class ESIndexHelperTest {
 		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
 		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(new HashMap<String,String>());
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 
 		String response = esIndexHelper.getIndexNameOrAlias(indexInfo);
 		assertNotNull(response);
@@ -101,7 +101,7 @@ public class ESIndexHelperTest {
 		String searchIndex = null;
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
 		Map<String,String> indexInfo = new HashMap<String,String>();
 		indexInfo.put("index", searchIndex);
@@ -111,7 +111,7 @@ public class ESIndexHelperTest {
 		when(siteSearchAPI.listIndices()).thenReturn(indexes);
 		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<String,String>());
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 
 		String response = esIndexHelper.getIndexNameOrAlias(indexInfo);
 		assertNull(response);
@@ -125,7 +125,7 @@ public class ESIndexHelperTest {
 		String searchIndex = "dummyIndex";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
 		Map<String,String> indexInfo = new HashMap<String,String>();
 		indexInfo.put("something", searchIndex);
@@ -135,7 +135,7 @@ public class ESIndexHelperTest {
 		when(siteSearchAPI.listIndices()).thenReturn(indexes);
 		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<String,String>());
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 
 		String response = esIndexHelper.getIndexNameOrAlias(indexInfo);
 		assertNull(response);
@@ -149,7 +149,7 @@ public class ESIndexHelperTest {
 		String searchIndex = "dummyIndex";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
 		Map<String,String> indexInfo = new HashMap<String,String>();
 		indexInfo.put(null, searchIndex);
@@ -159,7 +159,7 @@ public class ESIndexHelperTest {
 		when(siteSearchAPI.listIndices()).thenReturn(indexes);
 		when(esIndexAPI.getAliasToIndexMap(indexes)).thenReturn(new HashMap<String,String>());
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 
 		String response = esIndexHelper.getIndexNameOrAlias(indexInfo);
 		assertNull(response);
@@ -173,9 +173,9 @@ public class ESIndexHelperTest {
 		String indexName = "Live_dummy.zip";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		boolean response = esIndexHelper.isSnapshotFilename(indexName);
 		assertTrue(response);
 	}
@@ -188,9 +188,9 @@ public class ESIndexHelperTest {
 		String indexName = "Live_dummy.zIp";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		boolean response = esIndexHelper.isSnapshotFilename(indexName);
 		assertTrue(response);
 	}
@@ -203,9 +203,9 @@ public class ESIndexHelperTest {
 		String indexName = "Live_dummy.tar";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		boolean response = esIndexHelper.isSnapshotFilename(indexName);
 		assertFalse(response);
 	}
@@ -218,9 +218,9 @@ public class ESIndexHelperTest {
 		String indexName = "Live_dummy";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		boolean response = esIndexHelper.isSnapshotFilename(indexName);
 		assertFalse(response);
 	}
@@ -233,9 +233,9 @@ public class ESIndexHelperTest {
 		String indexName = null;
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		boolean response = esIndexHelper.isSnapshotFilename(indexName);
 		assertFalse(response);
 	}
@@ -248,9 +248,9 @@ public class ESIndexHelperTest {
 		String indexName = StringUtils.EMPTY;
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		boolean response = esIndexHelper.isSnapshotFilename(indexName);
 		assertFalse(response);
 	}
@@ -263,9 +263,9 @@ public class ESIndexHelperTest {
 		String indexName = "live_dummy.zip";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		String response  = esIndexHelper.getIndexFromFilename(indexName);
 		assertEquals(response, "live_dummy");
 	}
@@ -278,9 +278,9 @@ public class ESIndexHelperTest {
 		String indexName = "Live_dummy.Zip";
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		String response  = esIndexHelper.getIndexFromFilename(indexName);
 		assertEquals(response, "live_dummy");
 	}
@@ -293,9 +293,9 @@ public class ESIndexHelperTest {
 		String indexName = null;
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		String response  = esIndexHelper.getIndexFromFilename(indexName);
 		assertNull(response);
 	}
@@ -308,9 +308,9 @@ public class ESIndexHelperTest {
 		String indexName = StringUtils.EMPTY;
 		final ESIndexAPI esIndexAPI = mock(ESIndexAPI.class) ;
 		final SiteSearchAPI siteSearchAPI = mock(SiteSearchAPI.class);
-		final LicenceService licenceService = mock(LicenceService.class);
+		final LicenseService LicenseService = mock(LicenseService.class);
 
-		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,licenceService);
+		ESIndexHelper esIndexHelper = new ESIndexHelper(esIndexAPI,siteSearchAPI,LicenseService);
 		String response  = esIndexHelper.getIndexFromFilename(indexName);
 		assertNull(response);
 	}

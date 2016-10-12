@@ -3,7 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import java.io.Serializable;
 import java.util.Map;
 
-import com.dotcms.enterprise.LicenceService;
+import com.dotcms.enterprise.LicenseService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
@@ -18,7 +18,7 @@ public class ESIndexHelper implements Serializable{
 	public final static ESIndexHelper INSTANCE = new ESIndexHelper();
 	private final ESIndexAPI esIndexAPI;
 	private final SiteSearchAPI siteSearchAPI;
-	private final LicenceService licenceService;
+	private final LicenseService licenseService;
 
 	private final String EXTENSION_PATTERN = "\\.[zZ][iI][pP]$";
 	private final String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
@@ -28,14 +28,14 @@ public class ESIndexHelper implements Serializable{
 	private ESIndexHelper() {
 		this.esIndexAPI = APILocator.getESIndexAPI();
 		this.siteSearchAPI = APILocator.getSiteSearchAPI();
-		this.licenceService = new LicenceService();
+		this.licenseService = new LicenseService();
 	}
 
 	@VisibleForTesting
-	protected ESIndexHelper(ESIndexAPI indexAPI, SiteSearchAPI searchAPI, LicenceService licenceService) {
+	protected ESIndexHelper(ESIndexAPI indexAPI, SiteSearchAPI searchAPI, LicenseService licenseService) {
 		this.esIndexAPI = indexAPI;
 		this.siteSearchAPI = searchAPI;
-		this.licenceService = licenceService;
+		this.licenseService = licenseService;
 	}
 
 	/**
@@ -58,7 +58,7 @@ public class ESIndexHelper implements Serializable{
 	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
-		if (UtilMethods.isSet(indexAlias) && licenceService.getLevel() >= 200) {
+		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= 200) {
 			String currentIndexName = esIndexAPI.getAliasToIndexMap(siteSearchAPI.listIndices()).get(aliasAttr);
 			if (UtilMethods.isSet(currentIndexName))
 				indexName = currentIndexName;
