@@ -64,6 +64,7 @@ ext {
 
 archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
+def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
 // Compile Java.
 compileJava {
@@ -158,10 +159,19 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
         }
     }
 
+    copy{
+        from "$rootDir/gradle"
+        into "$distLocation$distBinLocation/gradle"
+    }
+
     copy {
-        from "$rootDir/../"
-        into "$distLocation$distBinLocation/ant"
-        include "build.xml"
+        from "$rootDir"
+        into "$distLocation$distBinLocation"
+        include 'build.gradle'
+        include 'dependencies.gradle'
+        include 'gradle.properties'
+        include 'gradlew'
+        include 'gradlew.bat'
     }
 
     copy {
@@ -229,7 +239,7 @@ task tgzTask(type: Tar) {
 //This task will just use the already deployed folder inside the app server and compressed to a war file.
 task customDistWar(type: War) {
     dependsOn 'deployPlugins'
-    from "../$tomcatDistBase$webAppRootFolder"
+    from "$dotcmsDistBase$webAppRootFolder"
     exclude "assets/**", "dotsecure/**"
     baseName "dotcms"
     destinationDir = file("../WAR")
@@ -255,10 +265,18 @@ task buildPlugins(dependsOn: 'jar') << {
     pluginsFolder.eachDir() {
         def pluginPath = it
         println "Compile Plugin: " + pluginPath
-        exec {
-          workingDir pluginPath
-          commandLine 'ant', 'build'
+
+        javaexec {
+            workingDir pluginPath
+            main="-jar";
+            args = [
+                    "$rootDir/../bin/ant/ant-launcher.jar",
+                    "-buildfile",
+                    pluginPath.getAbsolutePath() + "/build.xml"
+            ]
         }
+
+
     }
 }
 
@@ -272,8 +290,8 @@ task deployConfig(type: Copy) {
     if (new File('src/main/resources').exists()){
         from 'src/main/resources'
     }else{
-        webAppFolder = "../$tomcatDistBase$webAppRootFolder"
-        from "../$distLocation$confDistLocation"
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+        from "../$confDistLocation"
 
     }
     into "$webAppFolder/WEB-INF/classes"
@@ -296,7 +314,7 @@ task deployPlugins(dependsOn: ['buildPlugins']) << {
 
     if( !pluginsFolder.exists() ) {
         pluginsFolder = new File("../plugins");
-        webAppFolder = "../$tomcatDistBase$webAppRootFolder"
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
     }
 
     copy {
@@ -335,7 +353,7 @@ task undeployPlugins << {
     def webAppFolder = 'src/main/webapp'
 
     if( !new File("$webAppFolder").exists() ) {
-        webAppFolder = "../$tomcatDistBase$webAppRootFolder"
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
     }
 
 
