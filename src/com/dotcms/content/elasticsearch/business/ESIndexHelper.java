@@ -2,10 +2,10 @@ package com.dotcms.content.elasticsearch.business;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.zip.ZipException;
 
-import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.LicenceService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.UtilMethods;
@@ -16,28 +16,50 @@ import com.dotmarketing.util.UtilMethods;
 public class ESIndexHelper implements Serializable{
 
 	public final static ESIndexHelper INSTANCE = new ESIndexHelper();
-	private final ESIndexAPI indexAPI;
-	private final SiteSearchAPI searchAPI;
+	private final ESIndexAPI esIndexAPI;
+	private final SiteSearchAPI siteSearchAPI;
+	private final LicenceService licenceService;
 
 	private final String EXTENSION_PATTERN = "\\.[zZ][iI][pP]$";
 	private final String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
+	private final String INDEX = "index";
+	private final String ALIAS = "alias";
 
 	private ESIndexHelper() {
-		this.indexAPI = APILocator.getESIndexAPI();
-		this.searchAPI = APILocator.getSiteSearchAPI();
+		this.esIndexAPI = APILocator.getESIndexAPI();
+		this.siteSearchAPI = APILocator.getSiteSearchAPI();
+		this.licenceService = new LicenceService();
 	}
 
 	@VisibleForTesting
-	protected ESIndexHelper(ESIndexAPI indexAPI, SiteSearchAPI searchAPI) {
-		this.indexAPI = indexAPI;
-		this.searchAPI = searchAPI;
+	protected ESIndexHelper(ESIndexAPI indexAPI, SiteSearchAPI searchAPI, LicenceService licenceService) {
+		this.esIndexAPI = indexAPI;
+		this.siteSearchAPI = searchAPI;
+		this.licenceService = licenceService;
 	}
 
+	/**
+	 * Obtains the index or alias reference from a map, using the index key name
+	 * as "index" and the alias key name as "alias"
+	 * @param map map containing the key (type) and the name
+	 * @return
+	 */
+	public String getIndexNameOrAlias(Map<String, String> map) {
+		return getIndexNameOrAlias(map, INDEX, ALIAS);
+	}
+
+	/**
+	 * Obtains the index or alias reference from a map
+	 * @param map map containing the key (type) and the name
+	 * @param indexAttr index key name
+	 * @param aliasAttr alias key name
+	 * @return
+	 */
 	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
-		if (UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel() >= 200) {
-			String currentIndexName = indexAPI.getAliasToIndexMap(searchAPI.listIndices()).get(indexAlias);
+		if (UtilMethods.isSet(indexAlias) && licenceService.getLevel() >= 200) {
+			String currentIndexName = esIndexAPI.getAliasToIndexMap(siteSearchAPI.listIndices()).get(aliasAttr);
 			if (UtilMethods.isSet(currentIndexName))
 				indexName = currentIndexName;
 		}
@@ -51,6 +73,9 @@ public class ESIndexHelper implements Serializable{
 	 * @return true if the filename ends on ".zip"
 	 */
 	public boolean isSnapshotFilename(String snapshotFilename){
+		if(snapshotFilename == null){
+			return false;
+		}
 		return snapshotFilename.matches(FILE_PATTERN);
 	}
 
@@ -61,7 +86,10 @@ public class ESIndexHelper implements Serializable{
 	 * @return file name with the .zip extension
 	 */
 	public String getIndexFromFilename(String snapshotFilename){
-		return snapshotFilename.replaceAll(EXTENSION_PATTERN, "");
+		if(snapshotFilename == null || StringUtils.isEmpty(snapshotFilename)){
+			return null;
+		}
+		return snapshotFilename.toLowerCase().replaceAll(EXTENSION_PATTERN, "");
 	}
 }
 

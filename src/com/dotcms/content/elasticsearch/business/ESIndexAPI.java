@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.BufferedReader;
@@ -29,16 +30,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-
-import org.elasticsearch.common.collect.ImmutableList;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.hppc.cursors.ObjectCursor;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-
-import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
@@ -53,7 +44,6 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotR
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
-import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -80,6 +70,11 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData.State;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.common.collect.ImmutableList;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.hppc.cursors.ObjectCursor;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -87,12 +82,21 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-
-import static com.dotcms.util.DotPreconditions.checkArgument;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.ZipUtil;
 
 public class ESIndexAPI {
 
@@ -104,8 +108,8 @@ public class ESIndexAPI {
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "es.path.repo";
 
-	private  ESClient esclient = new ESClient();
-	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
+	final private ESClient esclient;
+	final private ESContentletIndexAPI iapi;
 
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
@@ -118,6 +122,17 @@ public class ESIndexAPI {
 			return status;
 		}
 	};
+
+	public ESIndexAPI(){
+		this.esclient = new ESClient();
+		this.iapi = new ESContentletIndexAPI();
+	}
+
+	@VisibleForTesting
+	protected ESIndexAPI(ESClient esclient, ESContentletIndexAPI iapi){
+		this.esclient = esclient;
+		this.iapi = iapi;
+	}
 
     /**
      * returns all indicies and status
@@ -717,7 +732,7 @@ public class ESIndexAPI {
     public Map<String,String> getIndexAlias(String[] indexNames) {
         Map<String,String> alias=new HashMap<String,String>();
         try{
-            Client client=new ESClient().getClient();
+            Client client = esclient.getClient();
             ClusterStateRequest clusterStateRequest = Requests.clusterStateRequest()
                     .routingTable(true)
                     .nodes( true )
@@ -814,7 +829,7 @@ public class ESIndexAPI {
 	 *            for problems writing the files to the repository path
 	 */
 	public File createSnapshot(String repositoryName, String snapshotName, String indexName)
-			throws IOException, IllegalArgumentException, DotStateException {
+			throws IOException, IllegalArgumentException, DotStateException, ElasticsearchException {
 		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
 		checkArgument(indexName!=null,"There is no valid index name.");
 		Client client = esclient.getClient();
@@ -839,6 +854,7 @@ public class ESIndexAPI {
 				Logger.debug(this.getClass(), "Snapshot was created:" + snapshotName);
 			} else {
 				Logger.error(this.getClass(), response.status().toString());
+				throw new ElasticsearchException("Could not create snapshot");
 			}
 		}
 		// this will be the zip file using the same name of the directory path
