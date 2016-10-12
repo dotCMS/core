@@ -317,9 +317,13 @@
 
 	function backToCMS(){
 		#if(${isAngularFrame})
-		window.top.${angularFrame}.src = "${viewFoldersURL}";
+		if(window.top.${angularFrame}.src !== undefined){
+        	window.top.${angularFrame}.src = "${viewBrowserURL}";
+        }else{
+        	window.top.${angularFrame}.location = "${viewBrowserURL}";
+        }
 	    #else
-		window.location  = "${viewFoldersURL}";
+	    window.location  = "${viewFoldersURL}";
 		#end
 	}
 
@@ -410,7 +414,7 @@
 		form = document.getElementById('submitParent');
 	        form.cmd.value="publishHTMLPage";
 	        #if($isAngularFrame)
-            document.getElementById('submitParent').target="_parent";
+	        document.getElementById('submitParent').target="_parent";
             #end
 	        form.submit();
 		}
