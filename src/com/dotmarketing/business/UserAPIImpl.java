@@ -57,6 +57,7 @@ public class UserAPIImpl implements UserAPI {
 	private PermissionAPI perAPI;
 	private UserProxyAPI upAPI;
 	private final NotificationAPI notfAPI;
+	private final BundleAPI bundleAPI;
 
 	/**
 	 * Creates an instance of the class.
@@ -66,6 +67,7 @@ public class UserAPIImpl implements UserAPI {
 		perAPI = APILocator.getPermissionAPI();
 		upAPI = APILocator.getUserProxyAPI();
 		notfAPI = APILocator.getNotificationAPI();
+		bundleAPI = APILocator.getBundleAPI();
 	}
 
 	@Override
@@ -406,7 +408,6 @@ public class UserAPIImpl implements UserAPI {
 		//replace the user reference in publishing bundles
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Publishing Bundles");
 
-		BundleAPI bundleAPI = APILocator.getBundleAPI();
 		bundleAPI.updateOwnerReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
 		logDelete(DeletionStage.END, userToDelete, user, "Publishing Bundles");
