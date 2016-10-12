@@ -10,6 +10,7 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -21,49 +22,75 @@ import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
 
 /**
- * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
+ * This Struts action provides users the ability to publish HTML Pages in
+ * dotCMS. This action can be triggered from the "Page Edition" page when
+ * clicking the "Publish Page" button on the left pane.
  * 
- * @author Maria Ahues
- * @version $Revision: 1.3 $
- * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
  */
 public class PublishHTMLPagesAction extends DotPortletAction {
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * This is the main entry point of the {@link PublishHTMLPagesAction} class
+	 * which determines the command (i.e., action) that the user wants to
+	 * execute.
+	 * 
+	 * @param mapping
+	 *            - Provides information related to the Struts mapping.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @throws Exception
+	 *             An error occurred when processing the desired action
+	 */
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
-
 		String cmd = req.getParameter("cmd");
-
 		Logger.debug(this, "Running PublishHTMLPagesAction!!!! cmd=" + cmd);
-
 		String referer = req.getParameter("referer");
 		if ((referer != null) && (referer.length() != 0)) {
 			referer = URLDecoder.decode(referer, "UTF-8");
 		}
-
 		try {
 			// get the user
 			User user = _getUser(req);
-
 			if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.PREPUBLISH)) {
 				_prePublishHTMLPages(req, user);
-
 			}
 			java.util.List relatedAssets = (java.util.List) req.getAttribute(WebKeys.HTMLPAGE_RELATED_ASSETS);
 			java.util.List relatedWorkflows = (java.util.List) req.getAttribute(WebKeys.HTMLPAGE_RELATED_WORKFLOWS);
-
 			if (((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.PUBLISH))
 					|| ((relatedAssets == null || relatedAssets.size() == 0) && (relatedWorkflows == null || relatedWorkflows.size() == 0))) {
 				_publishHTMLPages(req, user);
-
+				// Unlock pages after they are published
+				String[] publishedPages = req.getParameterValues("publishInode");
+				if (publishedPages != null && publishedPages.length > 0) {
+					ContentletAPI capi = APILocator.getContentletAPI();
+					for (String publishedPage : publishedPages) {
+						Contentlet htmlPageContentlet = APILocator.getContentletAPI().find(publishedPage, user, false);
+						// Verify if user is able to lock/unlock page
+						if (capi.canLock(htmlPageContentlet, user, false)) {
+							capi.unlock(htmlPageContentlet, user, false);
+						}
+					}
+				}
 				if ((referer != null) && (referer.length() != 0)) {
 					_sendToReferral(req, res, referer);
 				}
 			}
-
 			setForward(req, "portlet.ext.htmlpages.publish_htmlpages");
-
 		} catch (Exception e) {
+			String[] inodes = req.getParameterValues("publishInode");
+			Logger.error(this, "An error occurred when calling the [" + cmd + "] command with these Inodes: " + inodes, e);
 			_handleException(e, req);
 		}
 	}

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.TestBase;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -18,11 +20,20 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class TemplateAPITest extends TestBase {
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
+	
     @Test
     public void saveTemplate() throws Exception {
         User user=APILocator.getUserAPI().getSystemUser();

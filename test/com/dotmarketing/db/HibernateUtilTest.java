@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
@@ -26,6 +27,8 @@ public class HibernateUtilTest {
     
     @BeforeClass
     public static void init() throws Exception {
+    	 //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(user, false);
     }

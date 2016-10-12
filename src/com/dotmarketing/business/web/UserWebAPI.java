@@ -1,6 +1,7 @@
 package com.dotmarketing.business.web;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -25,6 +26,13 @@ public interface UserWebAPI extends UserAPI {
 	 * @throws PortalException 
 	 */
 	public abstract User getLoggedInUser(HttpServletRequest req) throws DotRuntimeException, PortalException, SystemException;
+
+	/**
+	 * Tries to get the user from the session, if the session is not valid or the user is not logged returns null
+	 * @param session {@link HttpSession}
+	 * @return User
+     */
+	User getLoggedInUser(final HttpSession session);
 
 	/**
 	 * 

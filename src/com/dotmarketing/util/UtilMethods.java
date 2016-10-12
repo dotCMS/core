@@ -17,20 +17,8 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Random;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -321,6 +309,8 @@ public class UtilMethods {
     public static final boolean isSet(Object x) {
         return (x != null);
     }
+
+
 
     public static final boolean isSetCrumb(String x) {
         return (isSet(x) && !x.equals("index"));

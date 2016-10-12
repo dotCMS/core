@@ -31,13 +31,17 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
                 PortletURLImpl portletURLImpl = new PortletURLImpl(request, portletIDs.get(0), layouts[l].getId(), false);
                 String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
 
-                Portlet portlet = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(0));
-                Object object = Class.forName(portlet.getPortletClass()).newInstance();
-                if(object instanceof BaseRestPortlet){
-                    tabHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(0) + "/', '" + l + "');";
-            	}else if(object instanceof PortletController ){
-                     tabHREF =  "/spring/portlet/" + portletIDs.get(0);
-              	}
+                Portlet portlet = APILocator.getPortletAPI().findPortlet(portletIDs.get(0));
+                try {
+                    Object object = Class.forName(portlet.getPortletClass()).newInstance();
+                    if ( object instanceof BaseRestPortlet ) {
+                        tabHREF = "javascript:dotAjaxNav.show('/api/portlet/" + portletIDs.get(0) + "/', '" + l + "');";
+                    } else if ( object instanceof PortletController ) {
+                        tabHREF = "/spring/portlet/" + portletIDs.get(0);
+                    }
+                } catch (Exception e) {
+                    com.dotmarketing.util.Logger.error(this.getClass(), "Exception on portlet: " + (portlet == null ? "[null]" : portlet.getPortletClass()), e);
+                }
 
                 %>
 

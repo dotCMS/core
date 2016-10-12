@@ -38,7 +38,9 @@ public class ImportUtilTest extends TestBase {
     private static Language defaultLanguage;
 
     @BeforeClass
-    public static void prepare () throws DotDataException, DotSecurityException {
+    public static void prepare () throws Exception {
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
