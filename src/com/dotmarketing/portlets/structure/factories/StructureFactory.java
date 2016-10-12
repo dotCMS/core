@@ -566,7 +566,7 @@ public class StructureFactory {
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
 
 		try {
-	 		String actionUrl = contentTypeUtil.getActionUrl(structure);
+	 		String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
 			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
                             String.valueOf(PermissionAPI.PERMISSION_READ)));
