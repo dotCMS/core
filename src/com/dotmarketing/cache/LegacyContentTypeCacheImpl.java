@@ -115,7 +115,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
      * structure name can be changed by the user, use getStructureByVelocityVarName
      */
     public Structure getStructureByType(String type){
-        return getStructureByName(type);
+        return getStructureByVelocityVarName(type);
     }
 
     /**
@@ -131,7 +131,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
      * structure name can be changed by the user, use getStructureByVelocityVarName
      */
     public boolean hasStructureByName (String name) {
-        return getStructureByName(name) != null;
+        return getStructureByVelocityVarName(name) != null;
     }
     
     public boolean hasStructureByVelocityVarName (String varname) {
