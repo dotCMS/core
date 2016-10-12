@@ -3,7 +3,6 @@ import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
 import {Auth, User} from './login-service';
-import {LoginService} from './login-service';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
@@ -25,22 +24,21 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(private dotcmsConfig: DotcmsConfig, private loginService: LoginService) {
+    constructor(private dotcmsConfig: DotcmsConfig) {
         this.protocol = dotcmsConfig.getWebsocketProtocol();
         this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
         this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
         this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
 
-        loginService.watchUser(this.connectWithSocket.bind(this));
+        this.connectWithSocket();
     }
 
     /**
      * Opens the Websocket connection with the System Events end-point.
      */
-    connectWithSocket(auth: Auth): void {
+    connectWithSocket(): void {
         if (!this.ws) {
-            let user: User = auth.user;
-            this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}?userId=${user.userId}`);
+            this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}`);
             this.ws.connect();
 
             this.ws.onClose(() => setTimeout(this.reconnect.bind(this), this.timeWaitToReconnect));
@@ -84,6 +82,6 @@ export class DotcmsEventsService {
 
     private reconnect(): void {
         this.ws = null;
-        this.connectWithSocket(this.loginService.auth);
+        this.connectWithSocket();
     }
 }
