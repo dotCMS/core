@@ -28,9 +28,10 @@ export class ToolbarAddContenletBodyComponent {
         return false;
     }
 
-    clickMore(): void {
+    clickMore(event): boolean {
         event.preventDefault();
         this.more.emit();
+        return false;
     }
 }
 
@@ -115,7 +116,5 @@ export class ToolbarAddContenletComponent extends BaseComponent {
                 types: structureTypeView.types.slice(startIndex, endIndex)
             };
         });
-
-        console.log();
     }
 }
