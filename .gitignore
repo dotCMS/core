@@ -59,3 +59,9 @@ starter.zip
 .ant-targets-build.xml
 .gradle/
 /*.local.*
+
+
+# Changes after git migration #
+###############################
+dist/
+dotCMS/src/main/webapp/WEB-INF/classes/
