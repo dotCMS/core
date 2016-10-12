@@ -29,5 +29,6 @@ if exist "%DOTCMS_HOME%\bin\setenv.bat" call "%DOTCMS_HOME%\bin\setenv.bat"
 echo Using DOTCMS_HOME:   %DOTCMS_HOME%
 echo Using JAVA_HOME:       %JAVA_HOME%
 
-cd "%DOTCMS_HOME%\bin"
-gradlew.bat undeployPlugins
+cd "%DOTCMS_HOME%"
+"%JAVA_HOME%/bin/java" -jar "%DOTCMS_HOME%\bin\ant\ant-launcher.jar" -buildfile "%DOTCMS_HOME%\bin\ant\build.xml" undeploy-plugins
+cd "%CURRENT_DIR%"

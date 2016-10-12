@@ -151,7 +151,7 @@ task clonePullTomcatDist(type: ClonePullTomcatTask) {
 task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
 
     copy {
-        from "../bin"
+        from "$rootDir/../bin"
         into "$distLocation$distBinLocation"
         filesMatching('build.con*') {
             expand(project.properties)
@@ -159,24 +159,15 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
     }
 
     copy {
-        from "$rootDir/gradle"
-        into "$distLocation$distBinLocation/gradle"
-    }
-
-    copy {
-        from "$rootDir"
-        into "$distLocation$distBinLocation"
-        include 'build.gradle'
-        include 'dependencies.gradle'
-        include 'gradle.properties'
-        include 'gradlew'
-        include 'gradlew.bat'
+        from "$rootDir/../"
+        into "$distLocation$distBinLocation/ant"
+        include "build.xml"
     }
 
     copy {
         into "$distLocation$confDistLocation"
         from sourceSets.main.resources
-        exclude "com", "org"//, "release.properties"
+        exclude "com", "org", "release.properties"
     }
 
     copy {
