@@ -76,7 +76,6 @@
 
     function backToCMS(){
        #if(${isAngularFrame})
-       alert('backToCMS 2.1'); 
         #if($UtilMethods.isSet(${viewBrowserURL}))
         if(window.top.${angularFrame}.src !== undefined){
         	window.top.${angularFrame}.src = "${viewBrowserURL}";
