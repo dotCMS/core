@@ -25,7 +25,7 @@ public abstract class BundleFactory {
 
     protected static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ? where id = ?";
 
-    protected static String UPDATE_BUNDLE_OWNER_REFERENCES = "UPDATE publishing_bundle SET owner = ? where owner = ?";
+    protected static final String UPDATE_BUNDLE_OWNER_REFERENCES = "UPDATE publishing_bundle SET owner = ? where owner = ?";
 
     protected static String DELETE_ASSET_FROM_BUNDLE = "DELETE from publishing_queue where asset = ? and bundle_id = ?";
 
