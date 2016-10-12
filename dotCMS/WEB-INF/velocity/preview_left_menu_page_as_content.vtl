@@ -158,13 +158,8 @@
     	
     	var newUrl="";
 
-        /*
-         Since it's a page as content, we add LanguageId, HostId AND PersonaId to the Query String
-         mainFrame indicates we're updating the main iframe only
-         */
-    	newUrl+="${VTLSERVLET_URI}?mainFrame=1&host_id=${host.identifier}";
-    	newUrl+="&com.dotmarketing.htmlpage.language="+language ;
-    	newUrl+="&com.dotmarketing.persona.id="+personaId ;
+        //mainFrame indicates we're updating the main iframe only
+        newUrl+="${VTLSERVLET_URI}?mainFrame=1";
 
         //We check what view mode is selected (Live, Edit or Preview)
     	if(state == "live"){
@@ -176,6 +171,11 @@
     	else if(state=="preview"){
     		newUrl+="&previewPage=2"
     	}
+
+        //Since it's a page as content, we add LanguageId, HostId AND PersonaId to the Query String
+        newUrl+="&com.dotmarketing.htmlpage.language="+language ;
+        newUrl+="&host_id=${host.identifier}";
+        newUrl+="&com.dotmarketing.persona.id="+personaId ;
 
         //Check other Query String Params
         var queryStringFromContext = "${queryString}".split("&");
