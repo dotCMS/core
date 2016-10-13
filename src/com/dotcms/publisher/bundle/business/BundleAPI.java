@@ -120,6 +120,14 @@ public interface BundleAPI {
 	public void updateBundle(Bundle bundle) throws DotDataException;
 
 	/**
+	 * updates the Bundles owned by userId with the owner given by replacementUserId
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+    public void updateOwnerReferences( String userId, String replacementUserId ) throws DotDataException;
+
+	/**
 	 * deletes the Asset with the given assetId from the Bundle with the given bundleId
 	 *
 	 *
