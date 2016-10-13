@@ -70,6 +70,7 @@ def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 compileJava {
     targetCompatibility = 1.8
     sourceCompatibility = 1.8
+    options.incremental = true
 }
 
 /*jar {
@@ -159,19 +160,10 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
         }
     }
 
-    copy{
-        from "$rootDir/gradle"
-        into "$distLocation$distBinLocation/gradle"
-    }
-
     copy {
-        from "$rootDir"
-        into "$distLocation$distBinLocation"
-        include 'build.gradle'
-        include 'dependencies.gradle'
-        include 'gradle.properties'
-        include 'gradlew'
-        include 'gradlew.bat'
+        from "$rootDir/../"
+        into "$distLocation$distBinLocation/ant"
+        include "build.xml"
     }
 
     copy {

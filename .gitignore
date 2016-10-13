@@ -39,7 +39,7 @@ dotCMS/src/main/webapp/WEB-INF/generated_web.xml
 dotCMS/src/main/webapp/WEB-INF/lib/*.jar
 dotCMS/src/main/webapp/WEB-INF/felix/bundle/dot.*.jar
 dotCMS/src/main/webapp/WEB-INF/lib/plugin-*.jar
-starter.zip
+dotCMS/starter.zip
 .ant-targets-build.xml
 .gradle/
 /*.local.*
@@ -48,6 +48,8 @@ starter.zip
 # Changes after gradle migration #
 ###############################
 dist/
+dotCMS/build/
+dotCMS/.gradle/
 dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
 dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
