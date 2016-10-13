@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 
 
 @Deprecated
@@ -72,6 +73,7 @@ public class FieldFactory {
 
 	public static Field getFieldByVariableName(String structureInode, String velocityVarName)
 	{
+	    velocityVarName = StringUtils.camelCaseLower(velocityVarName);
         try {
             com.dotcms.contenttype.model.field.Field f = fapi().byContentTypeIdAndVar(structureInode, velocityVarName);
             return new LegacyFieldTransformer(f).asOldField();
