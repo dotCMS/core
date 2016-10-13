@@ -1014,6 +1014,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected List<Contentlet> findPageContentlets(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working,
 			long languageId) throws DotDataException, DotStateException, DotSecurityException {
+	    
+	    
+       if(false){
+            return findPageContentletFromCache(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId);
+       }
+	    
+	    
+	    
 	    StringBuilder condition = new StringBuilder();
         if (working) {
             condition.append("contentletvi.working_inode=contentlet.inode")
@@ -1060,6 +1068,56 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return result;
 	}
 
+
+	protected List<Contentlet> findPageContentletFromCache(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working,
+            long languageId) throws DotDataException, DotStateException, DotSecurityException {
+        StringBuilder condition = new StringBuilder();
+        
+        if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
+            orderby = " multi_tree.tree_order ";
+        }
+        languageId = (languageId==0) ?  langAPI.getDefaultLanguage().getId() : languageId;
+        
+
+        condition
+            .append("select contentlet_version_info.{0} as mynode from contentlet_version_info, multi_tree ")
+            .append(" where ")
+            .append(" contentlet_version_info.identifier =  multi_tree.child " )
+            .append(" and contentlet_version_info.deleted = ? ")
+            .append(" and multi_tree.parent1 = ? ")
+            .append(" and multi_tree.parent2 = ? ");
+        if (languageId > 0) {
+            condition.append(" and contentlet_version_info.lang = ").append(languageId);
+        }
+
+        int marker = condition.indexOf("{0}");
+        if(working){
+            condition.replace(marker, marker+3,"working_inode");
+        }else{
+            condition.replace(marker, marker+3,"live_inode");
+        }
+
+        DotConnect db = new DotConnect();
+        db.setSQL(condition.toString());
+        db.addParam(false);
+        db.addParam(HTMLPageIdentifier);
+        db.addParam(containerIdentifier);
+        
+        List<Map<String,Object>> res = db.loadObjectResults();
+        List<Contentlet> cons = new ArrayList<>();
+        for(Map<String,Object> map :res ){
+            Contentlet c = find((String) map.get("mynode"));
+            if(c!=null && c.getInode()!=null){
+                cons.add(c);
+            }
+        }
+        return cons;
+    }
+	
+	
+	
+	
+	
 	@Override
 	protected List<Contentlet> getContentletsByIdentifier(String identifier) throws DotDataException, DotStateException, DotSecurityException {
 	    return getContentletsByIdentifier(identifier, null);
