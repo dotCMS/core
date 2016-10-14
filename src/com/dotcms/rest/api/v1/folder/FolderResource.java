@@ -63,9 +63,10 @@ public class FolderResource implements Serializable {
     @Path("/createfolders")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response createFolders(@Context final HttpServletRequest req,
-                                        @PathParam("paths") final List<String> paths,
+                                        final List<String> paths,
                                         @PathParam("siteName") final String siteName) {
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
