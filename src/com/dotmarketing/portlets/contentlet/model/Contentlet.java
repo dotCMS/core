@@ -265,16 +265,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         map.put(DISABLED_WYSIWYG_KEY, disabledFields);
     }
 
-    public String getStringProperty(String fieldVarName) throws DotRuntimeException {
-        try {
-            if (get(fieldVarName) instanceof Long)
-                return get(fieldVarName).toString();
-
-            return (String) get(fieldVarName);
-        } catch (Exception e) {
-            throw new DotRuntimeException(e.getMessage(), e);
-        }
-    }
+	public String getStringProperty(String fieldVarName) throws DotRuntimeException {
+		try{
+			Object value = get(fieldVarName);
+			if(value instanceof Long || value instanceof Date ){
+				return value.toString();
+			}
+			return (String)value;
+		}catch (Exception e) {
+			 throw new DotRuntimeException(e.getMessage(), e);
+		}
+	}
 
     public void setStringProperty(String fieldVarName, String stringValue) throws DotRuntimeException {
         map.put(fieldVarName, stringValue);
