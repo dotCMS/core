@@ -1,28 +1,20 @@
 package com.dotcms.notifications;
 
 
-import com.dotcms.api.system.event.*;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.com.bradmcevoy.http.Response;
+import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
-import com.dotcms.util.ContentTypeUtil;
-import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.websocket.Session;
-
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class BaseContentTypeSystemEventProcessorTest {
 

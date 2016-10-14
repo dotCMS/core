@@ -1,9 +1,28 @@
 package com.dotcms.filters.interceptor.jwt;
 
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
+import com.dotcms.util.security.Encryptor;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.CompanyLocalManager;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.WebKeys;
+import com.liferay.util.EncryptorException;
+
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -16,32 +35,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptor;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
-import com.dotcms.util.security.Encryptor;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.IntegrationTestInitService;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyLocalManager;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.util.EncryptorException;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * The goal of this unit test is to try some scenarios for the json web token interceptor.
