@@ -258,6 +258,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		map.put("isContent", true);
 		map.put("fileAssetType", this.getStructureInode());
 		map.put("friendlyName", getStringProperty(FileAssetAPI.DESCRIPTION));
+		map.put("mimeType", getMimeType());
 		User modUser = null;
 		try {
 			modUser = APILocator.getUserAPI().loadUserById(this.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
@@ -271,6 +272,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		else
 			map.put("modUserName", "unknown");
 
+		 map.put("type", this.getType());
 		return map;
 	 }
 

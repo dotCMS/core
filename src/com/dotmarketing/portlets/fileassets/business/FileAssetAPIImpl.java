@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -61,6 +62,27 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		contAPI = APILocator.getContentletAPI();
 		perAPI = APILocator.getPermissionAPI();
 	}
+
+	/**
+	 * This method will allow you to pass a file where the identifier is not set.  It the file exists on the set host/path
+	 * the identifier and all necessary data will be set in order to checkin as a new version of the existing file. The method will
+	 * call checkout for you so there is no need to do that work before calling this method
+	 * @param fileCon
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+
+	public FileAsset checkinFile(Contentlet fileCon, User user,boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		boolean isExisting = false;
+		if(!UtilMethods.isSet(fileCon.getIdentifier())){
+			APILocator.getIdentifierAPI().find(fileCon.getHost(),fileCon.getFolder()))
+		}
+
+		return fromContentlet(contAPI.checkin(fileCon,user,respectFrontendRoles));
+	}
+	 */
 
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {

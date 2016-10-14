@@ -21,6 +21,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.commons.net.io.Util;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -44,6 +45,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -1141,6 +1143,12 @@ public class ContentResource {
 												if(folder!=null && InodeUtils.isSet(folder.getInode())) {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
+													if(st.getStructureType()==Structure.Type.FILEASSET.getType()){
+														Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,split[1]);
+														if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
+															contentlet.setIdentifier(existingIdent.getId());
+														}
+													}
 												}
 											}
 										}
