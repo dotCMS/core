@@ -20,7 +20,6 @@ import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
 import com.dotmarketing.business.*;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
-import com.dotmarketing.plugin.PluginMergerTest;
 import com.dotmarketing.portlets.categories.business.CategoryAPITest;
 import com.dotmarketing.portlets.containers.business.ContainerAPITest;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest;
@@ -82,7 +81,6 @@ import org.junit.runners.Suite;
     WebResourceTest.class,
     RoleResourceTest.class,
     ESIndexSpeedTest.class,
-    PluginMergerTest.class,
     WebDavTest.class,
     ContentResourceTest.class, //Needs Enterprise License
     RoleAPITest.class,
@@ -126,19 +124,14 @@ import org.junit.runners.Suite;
     //Rules:Conditionlets.
     ConditionletOSGIFTest.class, //Needs Enterprise License.
     CurrentSessionLanguageConditionletFTest.class, //Needs Enterprise License.
-    CurrentSessionLanguageConditionletTest.class, //Needs Enterprise License.
     NumberOfTimesPreviouslyVisitedConditionletFTest.class, //Needs Enterprise License.
-    NumberOfTimesPreviouslyVisitedConditionletTest.class, //Needs Enterprise License.
     //TODO: PagesViewedConditionlet has some bugs (https://github.com/dotCMS/core/issues/8971)
     //PagesViewedConditionletFTest.class, //Needs Enterprise License.
     UsersBrowserLanguageConditionletFTest.class, //Needs Enterprise License.
-    UsersBrowserLanguageConditionletTest.class, //Needs Enterprise License.
     UsersSiteVisitsConditionletFTest.class, //Needs Enterprise License.
-    UsersSiteVisitsConditionletTest.class, //Needs Enterprise License.
     VisitedUrlConditionletTest.class, //Needs Enterprise License.
     VisitedUrlConditionletFTest.class, //Needs Enterprise License.
     VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
-    VisitorOperatingSystemConditionletTest.class, //Needs Enterprise License.
     VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
     UserAPITest.class, //Needs Enterprise License.
     UserLocalManagerTest.class,
