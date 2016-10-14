@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.I18NMessage;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -368,33 +369,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
     }
 
-    protected HTMLPageAsset copyLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
-        Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
-        HTMLPageAsset newpage=new HTMLPageAsset();
-        newpage.setStructureInode(getHostDefaultPageType(legacyident.getHostId()));
-        newpage.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        newpage.setTitle(legacyPage.getTitle());
-        newpage.setFriendlyName(legacyPage.getFriendlyName());
-        newpage.setHttpsRequired(legacyPage.isHttpsRequired());
-        newpage.setTemplateId(legacyPage.getTemplateId());
-        newpage.setSeoDescription(legacyPage.getSeoDescription());
-        newpage.setSeoKeywords(legacyPage.getSeoKeywords());
-        newpage.setInode(legacyPage.getInode());
-        newpage.setIdentifier(legacyPage.getIdentifier());
-        newpage.setHost(legacyident.getHostId());
-        newpage.setFolder(APILocator.getFolderAPI().findFolderByPath(
-                legacyident.getParentPath(), legacyident.getHostId(), user, respectFrontEndPermissions).getInode());
-        newpage.setPageUrl(legacyPage.getPageUrl());
-        newpage.setCacheTTL(legacyPage.getCacheTTL());
-        newpage.setMetadata(legacyPage.getMetadata());
-        newpage.setSortOrder(legacyPage.getSortOrder());
-        newpage.setShowOnMenu(legacyPage.isShowOnMenu());
-        newpage.setModUser(legacyPage.getModUser());
-        newpage.setModDate(legacyPage.getModDate());
-        newpage.setRedirect(legacyPage.getRedirect());
-        return newpage;
-    }
-    
     /**
      * Migrate all Legacy Pages to Contents
      * @param user
@@ -473,57 +447,107 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     			}
     	return result;
     }
-    
+
     @Override
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
         Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
         VersionInfo vInfo=APILocator.getVersionableAPI().getVersionInfo(legacyident.getId());
-        
-        List<HTMLPageAsset> versions=new ArrayList<HTMLPageAsset>(); 
-        
+
         HTMLPage working=(HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(legacyident, user, respectFrontEndPermissions);
-        HTMLPageAsset cworking=copyLegacyData(working, user, respectFrontEndPermissions), clive=null;
+        HTMLPageAsset cworking = migrateLegacyData(working, user, respectFrontEndPermissions), clive=null;
         if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
             HTMLPage live=(HTMLPage) APILocator.getVersionableAPI().findLiveVersion(legacyident, user, respectFrontEndPermissions);
-            clive=copyLegacyData(live, user, respectFrontEndPermissions);
+            clive = migrateLegacyData(live, user, respectFrontEndPermissions);
         }
-        
+
         List<Permission> perms=null;
         if(!APILocator.getPermissionAPI().isInheritingPermissions(legacyPage)) {
             perms = APILocator.getPermissionAPI().getPermissions(legacyPage, true, true, true);
         }
-        
+
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
-        
+
         APILocator.getHTMLPageAPI().delete(working, user, respectFrontEndPermissions);
         PageServices.invalidateAll(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
-        
-        if(clive!=null) {
+
+        // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
+        if(clive!=null && !UtilMethods.isSet(clive.getTemplateId())) {
             Contentlet cclive = APILocator.getContentletAPI().checkin(clive, user, respectFrontEndPermissions);
             APILocator.getContentletAPI().publish(cclive, user, respectFrontEndPermissions);
         }
-        
-        Contentlet ccworking = APILocator.getContentletAPI().checkin(cworking, user, respectFrontEndPermissions);
-        
-        if(vInfo.getLiveInode()!=null && vInfo.getLiveInode().equals(ccworking.getInode())) {
-            APILocator.getContentletAPI().publish(ccworking, user, respectFrontEndPermissions);
+
+        // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
+        if (UtilMethods.isSet(cworking.getTemplateId())) {
+            Contentlet ccworking = APILocator.getContentletAPI().checkin(cworking, user, respectFrontEndPermissions);
+
+            if(vInfo.getLiveInode()!=null && vInfo.getLiveInode().equals(ccworking.getInode())) {
+                APILocator.getContentletAPI().publish(ccworking, user, respectFrontEndPermissions);
+            }
+
+            for(MultiTree mt : multiTree) {
+                MultiTreeFactory.saveMultiTree(mt);
+            }
+
+            APILocator.getPermissionAPI().removePermissions(ccworking);
+            if(perms!=null) {
+                APILocator.getPermissionAPI().permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
+                APILocator.getPermissionAPI().assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
+            }
+
+            return fromContentlet(ccworking);        	
         }
-        
-        for(MultiTree mt : multiTree) {
-            MultiTreeFactory.saveMultiTree(mt);
-        }
-        
-        APILocator.getPermissionAPI().removePermissions(ccworking);
-        if(perms!=null) {
-            APILocator.getPermissionAPI().permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
-            APILocator.getPermissionAPI().assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
-        }
-        
-        return fromContentlet(ccworking);
+
+        return null;
     }
-    
+
+    protected HTMLPageAsset migrateLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
+        HTMLPageAsset newpage=new HTMLPageAsset();
+
+        newpage.setStructureInode(getHostDefaultPageType(legacyident.getHostId()));
+        newpage.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        newpage.setTitle(legacyPage.getTitle());
+        newpage.setFriendlyName(legacyPage.getFriendlyName());
+        newpage.setHttpsRequired(legacyPage.isHttpsRequired());
+        newpage.setTemplateId(legacyPage.getTemplateId());
+        newpage.setSeoDescription(legacyPage.getSeoDescription());
+        newpage.setSeoKeywords(legacyPage.getSeoKeywords());
+        newpage.setInode(legacyPage.getInode());
+        newpage.setIdentifier(legacyPage.getIdentifier());
+        newpage.setHost(legacyident.getHostId());
+        newpage.setFolder(APILocator.getFolderAPI().findFolderByPath(
+                legacyident.getParentPath(), legacyident.getHostId(), user, respectFrontEndPermissions).getInode());
+
+        // Rewrite page-url per https://github.com/dotCMS/core/issues/9971
+        newpage.setPageUrl(migratePageUrl(legacyident.getAssetName(), legacyPage.getPageUrl()));
+
+        newpage.setCacheTTL(legacyPage.getCacheTTL());
+        newpage.setMetadata(legacyPage.getMetadata());
+        newpage.setSortOrder(legacyPage.getSortOrder());
+        newpage.setShowOnMenu(legacyPage.isShowOnMenu());
+        newpage.setModUser(legacyPage.getModUser());
+        newpage.setModDate(legacyPage.getModDate());
+        newpage.setRedirect(legacyPage.getRedirect());
+
+        return newpage;
+    }
+
+    private String migratePageUrl(String legacyIdentAssetName, String legacyPageUrl) {
+    	String migratedPageUrl = legacyPageUrl;
+
+    	// Use asset-name from identifier as default migrated page-url
+    	if (!StringUtils.isEmpty(legacyIdentAssetName) && !legacyIdentAssetName.equals(migratedPageUrl)) {    		
+    		migratedPageUrl = legacyIdentAssetName;
+    	}
+
+    	// Replace invalid character sequences on migrated page-url
+    	migratedPageUrl = UtilMethods.getValidFileName(migratedPageUrl.replaceAll("\\.+", "."));
+
+    	return migratedPageUrl;
+    }
+
     @Override
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
         return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false));
