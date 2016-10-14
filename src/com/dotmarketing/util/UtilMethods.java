@@ -1216,7 +1216,7 @@ public class UtilMethods {
 
     public static String validateFileName(String fileName) throws IllegalArgumentException{
 
-        if (!isSet(fileName) || REGEX_FILENAME_INVALID_CHARS.matcher(fileName).matches()) {
+        if (!isSet(fileName) || REGEX_FILENAME_INVALID_CHARS.matcher(fileName).find()) {
 
         	throw new IllegalArgumentException("Invalid Filename passed in: " + fileName);
 

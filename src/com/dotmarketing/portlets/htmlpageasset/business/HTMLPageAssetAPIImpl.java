@@ -33,7 +33,10 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
@@ -47,12 +50,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.ClickstreamFilter;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -77,7 +82,22 @@ import com.liferay.portal.model.User;
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
-    private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+    private PermissionAPI permissionAPI;
+    private IdentifierAPI identifierAPI;
+    private HTMLPageAPI htmlPageAPI;
+    private UserAPI userAPI;
+    private VersionableAPI versionableAPI;
+    private ContentletAPI contentletAPI;
+
+    public HTMLPageAssetAPIImpl() {
+    	permissionAPI = APILocator.getPermissionAPI();
+    	identifierAPI = APILocator.getIdentifierAPI();
+    	htmlPageAPI = APILocator.getHTMLPageAPI();
+    	userAPI = APILocator.getUserAPI();
+    	versionableAPI = APILocator.getVersionableAPI();
+    	contentletAPI = APILocator.getContentletAPI();
+    }
 
     @Override
     public void createHTMLPageAssetBaseFields(Structure structure) throws DotDataException, DotStateException {
@@ -159,14 +179,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public Template getTemplate(IHTMLPage page, boolean preview) throws DotDataException, DotSecurityException {
         if (preview) 
-            return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+            return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
         else
-            return APILocator.getTemplateAPI().findLiveTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+            return APILocator.getTemplateAPI().findLiveTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
     }
 
     @Override
     public Host getParentHost(IHTMLPage page) throws DotDataException, DotStateException, DotSecurityException {
-        return APILocator.getHostAPI().find(APILocator.getIdentifierAPI().find(page).getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+        return APILocator.getHostAPI().find(identifierAPI.find(page).getHostId(), userAPI.getSystemUser(), false);
     }
 
     @Override
@@ -186,15 +206,15 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         pa=new HTMLPageAsset();
         pa.setStructureInode(con.getStructureInode());
         try {
-            APILocator.getContentletAPI().copyProperties((Contentlet) pa, con.getMap());
+            contentletAPI.copyProperties((Contentlet) pa, con.getMap());
         } catch (Exception e) {
             throw new DotStateException("Page Copy Failed", e);
         }
         pa.setHost(con.getHost());
         if(UtilMethods.isSet(con.getFolder())){
             try{
-                Identifier ident = APILocator.getIdentifierAPI().find(con);
-                User systemUser = APILocator.getUserAPI().getSystemUser();
+                Identifier ident = identifierAPI.find(con);
+                User systemUser = userAPI.getSystemUser();
                 Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
                 Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
                 pa.setFolder(folder.getInode());
@@ -207,7 +227,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         //We have to get PageUrl from the Identifier (AssetName)
         if(!UtilMethods.isSet(pa.getPageUrl())){
             try{
-                Identifier identifier = APILocator.getIdentifierAPI().find(con);
+                Identifier identifier = identifierAPI.find(con);
                 if(identifier != null && UtilMethods.isSet(identifier.getAssetName())){
                     pa.setPageUrl(identifier.getAssetName());
                 } else {
@@ -236,7 +256,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             return null;
         }
         try {
-            id = APILocator.getIdentifierAPI().find(host, uri);
+            id = identifierAPI.find(host, uri);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Unable to find" + uri);
             return null;
@@ -247,13 +267,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         if ("contentlet".equals(id.getAssetType())) {
             try {
 
-                ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), languageId );
+                ContentletVersionInfo cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId );
 
                 if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
                     return null;
                 }
 
-                Contentlet c = APILocator.getContentletAPI().find(live?cinfo.getLiveInode():cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
+                Contentlet c = contentletAPI.find(live?cinfo.getLiveInode():cinfo.getWorkingInode(), userAPI.getSystemUser(), false);
 
                 if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
                     return fromContentlet(c);
@@ -315,7 +335,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 		if (!UtilMethods.isSet(sortBy)) {
 			sortBy = "modDate asc";
 		}
-		List<Contentlet> contentlets = APILocator.getContentletAPI().search(
+		List<Contentlet> contentlets = contentletAPI.search(
 				query.toString(), limit, offset, sortBy, user,
 				respectFrontEndRoles);
 		for (Contentlet cont : contentlets) {
@@ -357,15 +377,15 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException {
-        Identifier ident = APILocator.getIdentifierAPI().find(htmlPage.getIdentifier());
+        Identifier ident = identifierAPI.find(htmlPage.getIdentifier());
         if(ident.getParentPath().equals("/")) {
             return APILocator.getFolderAPI().findSystemFolder();
         }
         else {
             return APILocator.getFolderAPI().findFolderByPath(
                     ident.getParentPath(), APILocator.getHostAPI().find(
-                            ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false), 
-                            APILocator.getUserAPI().getSystemUser(), false);
+                            ident.getHostId(), userAPI.getSystemUser(), false), 
+                            userAPI.getSystemUser(), false);
         }
     }
 
@@ -384,7 +404,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     			try {
     				int offset = 0;
     				int limit = 100;
-    				List<HTMLPage> elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset, limit, null);
+    				List<HTMLPage> elements = htmlPageAPI.findHtmlPages(userAPI.getSystemUser(), true, null, null, null, null, null, offset, limit, null);
 
     				while(!elements.isEmpty()) {
     					int migrated = 0;
@@ -401,7 +421,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     						if(migrated==elements.size() || (migrated>0 && migrated%100==0) ) {
     							HibernateUtil.commitTransaction();
-    							elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
+    							elements = htmlPageAPI.findHtmlPages(userAPI.getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
     						}
     					}
 
@@ -450,50 +470,50 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
-        Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
-        VersionInfo vInfo=APILocator.getVersionableAPI().getVersionInfo(legacyident.getId());
+        Identifier legacyident=identifierAPI.find(legacyPage);
+        VersionInfo vInfo=versionableAPI.getVersionInfo(legacyident.getId());
 
-        HTMLPage working=(HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(legacyident, user, respectFrontEndPermissions);
+        HTMLPage working=(HTMLPage) versionableAPI.findWorkingVersion(legacyident, user, respectFrontEndPermissions);
         HTMLPageAsset cworking = migrateLegacyData(working, user, respectFrontEndPermissions), clive=null;
         if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
-            HTMLPage live=(HTMLPage) APILocator.getVersionableAPI().findLiveVersion(legacyident, user, respectFrontEndPermissions);
+            HTMLPage live=(HTMLPage) versionableAPI.findLiveVersion(legacyident, user, respectFrontEndPermissions);
             clive = migrateLegacyData(live, user, respectFrontEndPermissions);
         }
 
         List<Permission> perms=null;
-        if(!APILocator.getPermissionAPI().isInheritingPermissions(legacyPage)) {
-            perms = APILocator.getPermissionAPI().getPermissions(legacyPage, true, true, true);
+        if(!permissionAPI.isInheritingPermissions(legacyPage)) {
+            perms = permissionAPI.getPermissions(legacyPage, true, true, true);
         }
 
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
 
-        APILocator.getHTMLPageAPI().delete(working, user, respectFrontEndPermissions);
+        htmlPageAPI.delete(working, user, respectFrontEndPermissions);
         PageServices.invalidateAll(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
 
         // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
         if(clive!=null && !UtilMethods.isSet(clive.getTemplateId())) {
-            Contentlet cclive = APILocator.getContentletAPI().checkin(clive, user, respectFrontEndPermissions);
-            APILocator.getContentletAPI().publish(cclive, user, respectFrontEndPermissions);
+            Contentlet cclive = contentletAPI.checkin(clive, user, respectFrontEndPermissions);
+            contentletAPI.publish(cclive, user, respectFrontEndPermissions);
         }
 
         // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
         if (UtilMethods.isSet(cworking.getTemplateId())) {
-            Contentlet ccworking = APILocator.getContentletAPI().checkin(cworking, user, respectFrontEndPermissions);
+            Contentlet ccworking = contentletAPI.checkin(cworking, user, respectFrontEndPermissions);
 
             if(vInfo.getLiveInode()!=null && vInfo.getLiveInode().equals(ccworking.getInode())) {
-                APILocator.getContentletAPI().publish(ccworking, user, respectFrontEndPermissions);
+                contentletAPI.publish(ccworking, user, respectFrontEndPermissions);
             }
 
             for(MultiTree mt : multiTree) {
                 MultiTreeFactory.saveMultiTree(mt);
             }
 
-            APILocator.getPermissionAPI().removePermissions(ccworking);
+            permissionAPI.removePermissions(ccworking);
             if(perms!=null) {
-                APILocator.getPermissionAPI().permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
-                APILocator.getPermissionAPI().assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
+                permissionAPI.permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
+                permissionAPI.assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
             }
 
             return fromContentlet(ccworking);        	
@@ -503,7 +523,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     protected HTMLPageAsset migrateLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
-        Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
+        Identifier legacyident=identifierAPI.find(legacyPage);
         HTMLPageAsset newpage=new HTMLPageAsset();
 
         newpage.setStructureInode(getHostDefaultPageType(legacyident.getHostId()));
@@ -550,7 +570,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
-        return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false));
+        return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, userAPI.getSystemUser(), false));
     }
     
     @Override
@@ -572,15 +592,15 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public boolean rename ( HTMLPageAsset page, String newName, User user ) throws DotDataException, DotSecurityException {
 
-        Identifier sourceIdent = APILocator.getIdentifierAPI().find( page );
+        Identifier sourceIdent = identifierAPI.find( page );
         Host host = APILocator.getHostAPI().find( sourceIdent.getHostId(), user, false );
-        Identifier targetIdent = APILocator.getIdentifierAPI().find( host, sourceIdent.getParentPath() + newName );
+        Identifier targetIdent = identifierAPI.find( host, sourceIdent.getParentPath() + newName );
         if ( targetIdent == null || !InodeUtils.isSet( targetIdent.getId() ) ) {
-            Contentlet cont = APILocator.getContentletAPI().checkout( page.getInode(), user, false );
+            Contentlet cont = contentletAPI.checkout( page.getInode(), user, false );
             cont.setStringProperty( URL_FIELD, newName );
-            cont = APILocator.getContentletAPI().checkin( cont, user, false );
+            cont = contentletAPI.checkin( cont, user, false );
             if ( page.isLive() ) {
-                APILocator.getContentletAPI().publish( cont, user, false );
+                contentletAPI.publish( cont, user, false );
             }
             return true;
         }
@@ -589,7 +609,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public boolean move(HTMLPageAsset page, Folder parent, User user) throws DotDataException, DotSecurityException {
-        return move(page,APILocator.getHostAPI().find(APILocator.getIdentifierAPI().find(parent).getHostId(),user,false), parent, user);
+        return move(page,APILocator.getHostAPI().find(identifierAPI.find(parent).getHostId(),user,false), parent, user);
     }
 
     @Override
@@ -599,12 +619,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     
     public boolean move(HTMLPageAsset page, Host host, Folder parent, User user)
             throws DotDataException, DotSecurityException {
-        Identifier sourceIdent = APILocator.getIdentifierAPI().find(page);
-        Identifier targetFolderIdent = APILocator.getIdentifierAPI().find(parent);
-        Identifier targetIdent = APILocator.getIdentifierAPI().find(host,
+        Identifier sourceIdent = identifierAPI.find(page);
+        Identifier targetFolderIdent = identifierAPI.find(parent);
+        Identifier targetIdent = identifierAPI.find(host,
                 targetFolderIdent.getURI() + sourceIdent.getAssetName());
         if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())) {
-            Contentlet contentlet = APILocator.getContentletAPI()
+            Contentlet contentlet = contentletAPI
                     .find(page.getInode(), user, false);
 
             /*
@@ -612,25 +632,25 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
              */
             Map<String, Boolean> inodesToMove = new HashMap<String, Boolean>();
             // Getting all working contentlet version languages
-            for(Contentlet workingContentlet : APILocator.getContentletAPI().getAllLanguages(contentlet, false,
+            for(Contentlet workingContentlet : contentletAPI.getAllLanguages(contentlet, false,
                     user, false)) {
                 inodesToMove.put(workingContentlet.getInode(), false);
             }
             // Getting all live contentlet version languages
-            for(Contentlet liveContentlet : APILocator.getContentletAPI().getAllLanguages(contentlet, true,
+            for(Contentlet liveContentlet : contentletAPI.getAllLanguages(contentlet, true,
                     user, false)) {
                 inodesToMove.put(liveContentlet.getInode(), true);
             }
 
             for (String contentletInode : inodesToMove.keySet()) {
-                Contentlet cont = APILocator.getContentletAPI().checkout(contentletInode, user, false);
+                Contentlet cont = contentletAPI.checkout(contentletInode, user, false);
 
                 cont.setFolder(parent.getInode());
                 cont.setHost(host.getIdentifier());
-                cont = APILocator.getContentletAPI().checkin(cont, user, false);
+                cont = contentletAPI.checkin(cont, user, false);
                 if (inodesToMove.get(contentletInode)) {
                     // We need to publish those that were live
-                    APILocator.getContentletAPI().publish(cont, user, false);
+                    contentletAPI.publish(cont, user, false);
                 }
             }
 
@@ -827,7 +847,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         // Map with all identifier inodes for a given uri.
-        String idInode = APILocator.getIdentifierAPI().find(host, uri).getInode();
+        String idInode = identifierAPI.find(host, uri).getInode();
 
         String cachedUri;
         if (UtilMethods.isSet(langId)) {
@@ -868,7 +888,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         if (user != null) {
             signedIn = true;
         }
-        Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
+        Identifier ident = identifierAPI.find(host, uri);
 
         Logger.debug(HTMLPageAssetAPIImpl.class, "Page Permissions for URI=" + uri);
 
@@ -975,7 +995,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     UserProxy userProxy = null;
                     try {
                         userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,
-                                APILocator.getUserAPI().getSystemUser(), false);
+                                userAPI.getSystemUser(), false);
                     } catch (DotRuntimeException e) {
                         e.printStackTrace();
                     } catch (DotSecurityException e) {
