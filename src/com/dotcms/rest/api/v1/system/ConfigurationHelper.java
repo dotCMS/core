@@ -8,6 +8,7 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_ENDPOINTS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_BASEURL;
 import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_PROTOCOL;
 import static com.dotmarketing.util.WebKeys.WEBSOCKET_SYSTEMEVENTS_ENDPOINT;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -69,6 +70,8 @@ public class ConfigurationHelper implements Serializable {
 						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")),
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
+				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
+				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications

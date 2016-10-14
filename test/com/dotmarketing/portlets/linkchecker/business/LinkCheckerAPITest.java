@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
@@ -63,6 +64,9 @@ public class LinkCheckerAPITest extends TestBase {
 
     @BeforeClass
     public static void createStructure() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        
         try {
         	LicenseTestUtil.getLicense();
         	

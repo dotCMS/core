@@ -45,11 +45,13 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 
 import org.junit.BeforeClass;
 
@@ -76,6 +78,7 @@ public class ContentletBaseTest extends TestBase {
     protected static ContentletFactory contentletFactory;
     protected static MenuLinkAPI menuLinkAPI;
     protected static FileAPI fileAPI;
+    protected static TagAPI tagAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
     private static LanguageAPI languageAPI;
@@ -126,6 +129,7 @@ public class ContentletBaseTest extends TestBase {
         folderAPI = APILocator.getFolderAPI();
         menuLinkAPI = APILocator.getMenuLinkAPI();
         fileAPI = APILocator.getFileAPI();
+        tagAPI = APILocator.getTagAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 
@@ -391,6 +395,12 @@ public class ContentletBaseTest extends TestBase {
                 value = "Test Tag";
             } else if ( field.getFieldType().equals( Field.FieldType.DATE.toString() ) || field.getFieldType().equals( Field.FieldType.DATE_TIME.toString() ) ) {
                 value = new Date();
+            } else if ( field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ) {
+            	try {
+                	java.io.File file = java.io.File.createTempFile("testFile"+field.getVelocityVarName(), ".txt");
+            		FileUtil.write(file, "Test Binary");
+            		value = file;
+            	} catch (Exception e){}
             }
             if ( UtilMethods.isSet( value ) ) {
                 contentletAPI.setContentletProperty( contentlet, field, value );

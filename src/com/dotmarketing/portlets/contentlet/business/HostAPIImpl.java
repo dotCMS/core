@@ -955,12 +955,12 @@ public class HostAPIImpl implements HostAPI {
 		if(!workingHostName.equals(updatedHostName)) {
     		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
     		List<VirtualLink> resultList = new ArrayList<VirtualLink>();
-    		dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where inode.url like ?");
-    		dh.setParam(workingHostName+":/%");
+    		dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where lower(inode.url) like ?");
+    		dh.setParam(workingHostName.toLowerCase()+":/%");
     		resultList = dh.list();
     		for (VirtualLink vl : resultList) {
     			String workingURL = vl.getUrl();
-    			String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
+    			String newURL = updatedHostName.toLowerCase()+workingURL.substring(workingHostName.length());//gives url with updatedhostname
     			vl.setUrl(newURL);
     			HibernateUtil.saveOrUpdate(vl);
     			VirtualLinksCache.removePathFromCache(vl.getUrl());

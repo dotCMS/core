@@ -32,6 +32,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -48,7 +49,10 @@ public class CMISBaseTest extends TestBase {
 	protected static CMISManager cmisManager;
 	
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();

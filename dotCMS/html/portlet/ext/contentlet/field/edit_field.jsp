@@ -1003,6 +1003,15 @@
     <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
    <%} %>
    </div>
+   <%if(!field.isReadOnly()){ %>
+      <script>
+      var source<%=field.getFieldContentlet()%> = new dojo.dnd.Source(dojo.byId('<%=field.getFieldContentlet()%>_kvtable'));
+      dojo.connect(source<%=field.getFieldContentlet()%>, "insertNodes", function(){
+         setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
+         recolorTable('<%=field.getFieldContentlet()%>');
+      });
+      </script>
+  <%}%>
 
 <%}%>
 

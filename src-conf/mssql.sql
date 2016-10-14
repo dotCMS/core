@@ -2674,6 +2674,8 @@ create table publishing_bundle(
 	owner varchar(100)
 );
 
+ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
+
 create table publishing_bundle_environment(
 	id varchar(36) NOT NULL primary key,
 	bundle_id varchar(36) NOT NULL,

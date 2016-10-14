@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.TestBase;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.datagen.ContentletDataGen;
@@ -44,12 +46,21 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class HTMLPageAPITest extends TestBase {
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
+    
     @Test
     public void saveHTMLPage() throws Exception {
     	

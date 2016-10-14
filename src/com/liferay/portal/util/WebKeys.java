@@ -348,4 +348,5 @@ public class WebKeys {
 	public static final String FRAME = "frame";
 	public static final String POPUP = "popup";
 	public static final String AJAX_PORTLET = "ajax_portlet";
+	public static final String HIDE_SUBNAV = "hide_subnav";
 }

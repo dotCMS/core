@@ -1,18 +1,19 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
-import com.dotcms.api.system.event.*;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventProcessor;
+import com.dotcms.api.system.event.SystemEventProcessorFactory;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -43,9 +44,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
 	public static final String ID = "userId";
+	public static final String USER = "user";
 	private final Queue<Session> queue;
 	private final UserAPI userAPI;
 	private final SystemEventProcessorFactory systemEventProcessorFactory;
+
 
 	public SystemEventsWebSocketEndPoint() {
 
@@ -59,8 +62,8 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 										 final UserAPI userAPI,
 										 final SystemEventProcessorFactory systemEventProcessorFactory) {
 
-		this.queue   = queue;
-		this.userAPI = userAPI;
+		this.queue      = queue;
+		this.userAPI    = userAPI;
 		this.systemEventProcessorFactory =
 				systemEventProcessorFactory;
 	}
@@ -68,36 +71,21 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	@OnOpen
 	public void open(final Session session) {
 
-		final Map<String, List<String>> paramMap =
-				session.getRequestParameterMap();
 		User user = null;
 		boolean addToNormalSession = true;
 
-		if(null != paramMap && paramMap.containsKey(ID)) {
+		if (session.getUserProperties().containsKey(USER)) {
 
-			final List<String> idValues = paramMap.get(ID);
+			try {
 
-			if (null != idValues && idValues.size() > 0) {
+				user = (User) session.getUserProperties().get(USER);
+				this.queue.add(new SessionWrapper(session, user));
+				addToNormalSession = false; // not need to add the normal session, since the wrapper was added.
+			} catch (Exception e) {
 
-				final String userId = idValues.get(0);
+				if (Logger.isErrorEnabled(this.getClass())) {
 
-				try {
-
-					if (UtilMethods.isSet(userId)) {
-
-						user = this.userAPI.loadUserById(userId);
-						if (null != user) {
-
-							this.queue.add(new SessionWrapper(session, user));
-							addToNormalSession = false; // not need to add the normal session, since the wrapper was added.
-						}
-					}
-				} catch (Exception e) {
-
-					if (Logger.isErrorEnabled(this.getClass())) {
-
-						Logger.error(this.getClass(), e.getMessage(), e);
-					}
+					Logger.error(this.getClass(), e.getMessage(), e);
 				}
 			}
 		}

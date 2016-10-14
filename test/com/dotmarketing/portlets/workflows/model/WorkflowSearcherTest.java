@@ -3,11 +3,20 @@ package com.dotmarketing.portlets.workflows.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 public class WorkflowSearcherTest {
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
     
     /**
      * See https://github.com/dotCMS/dotCMS/issues/4134 Oracle specific

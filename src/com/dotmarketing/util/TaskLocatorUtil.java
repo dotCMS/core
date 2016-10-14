@@ -190,6 +190,7 @@ public class TaskLocatorUtil {
         ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
         ret.add(Task03705AddingSystemEventTable.class);
         ret.add(Task03710AddFKForIntegrityCheckerTables.class);
+        ret.add(Task03715AddFKForPublishingBundleTable.class);
         return ret;
     }
 

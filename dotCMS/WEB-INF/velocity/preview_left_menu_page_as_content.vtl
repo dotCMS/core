@@ -111,12 +111,16 @@
     function backToCMS(){
         #if(${isAngularFrame})
         	#if($UtilMethods.isSet(${viewBrowserURL}))
-        	window.top.${angularFrame}.src = "${viewBrowserURL}";
+        	if(window.top.${angularFrame}.src !== undefined){
+        		window.top.${angularFrame}.src = "${viewBrowserURL}";
+        	}else{
+        		window.top.${angularFrame}.location = "${viewBrowserURL}";
+        	}
 	    	#else
 	        window.top.${angularFrame}.src = "/c/";
 	    	#end
         #else
-	        #if($UtilMethods.isSet(${viewBrowserURL}))
+            #if($UtilMethods.isSet(${viewBrowserURL}))
 	            window.top.location  = "${viewBrowserURL}";
 	        #else
 	            window.top.location  = "/c/";
@@ -152,13 +156,16 @@
     
 
     var _lastUrl;
+
+    //changeUrl Function updates the mainFrame iframe depending on the selected view and session-related attributes
     function changeUrl(){
     	
-    	var newUrl=""; 
-    	newUrl+="${VTLSERVLET_URI}?mainFrame=1&host_id=${host.identifier}";
-    	newUrl+="&com.dotmarketing.htmlpage.language="+language ;
-    	newUrl+="&com.dotmarketing.persona.id="+personaId ;
+    	var newUrl="";
 
+        //mainFrame indicates we're updating the main iframe only
+        newUrl+="${VTLSERVLET_URI}?mainFrame=1";
+
+        //We check what view mode is selected (Live, Edit or Preview)
     	if(state == "live"){
     		newUrl+="&livePage=1"
     	}
@@ -168,8 +175,24 @@
     	else if(state=="preview"){
     		newUrl+="&previewPage=2"
     	}
+
+        //Since it's a page as content, we add LanguageId, HostId AND PersonaId to the Query String
+        newUrl+="&com.dotmarketing.htmlpage.language="+language ;
+        newUrl+="&host_id=${host.identifier}";
+        newUrl+="&com.dotmarketing.persona.id="+personaId ;
+
+        //Check other Query String Params
+        var queryStringFromContext = "${queryString}".split("&");
+
+        //Let's check for duplicated ones and those that cannot be added to the QueryString params at the same time
+        for (i=0; i< queryStringFromContext.length; i++){
+            if(newUrl.indexOf(queryStringFromContext[i]) < 0 && queryStringFromContext[i].indexOf("leftMenu") < 0
+                    && queryStringFromContext[i].indexOf("livePage") < 0 && queryStringFromContext[i].indexOf("previewPage") < 0){
+                newUrl += "&"+queryStringFromContext[i];
+            }
+        }
+
     	if(_lastUrl!=newUrl){
-	    	//console.log("changing url:" + newUrl);
 	    	_lastUrl=newUrl;
 	    	 #if(${isAngularFrame})
 	    	    if(window.top.${angularFrame} != undefined){

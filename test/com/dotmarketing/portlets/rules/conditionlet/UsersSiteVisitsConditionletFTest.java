@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import com.dotcms.LicenseTestUtil;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.IntegrationTestInitService;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,6 +25,8 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 
