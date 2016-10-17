@@ -14,7 +14,6 @@ import java.util.Map;
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -86,11 +85,8 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(child) type " + asset + " : " + deleteTreesToDelete_child);
 
 						dc.setSQL(deleteTreesToDelete_child);
-						try {
-							dc.loadResult();
-						} catch (DotDataException e) {
-							Logger.error(this,e.getMessage(), e);
-						}
+
+						dc.loadResult();
 					}
 
 					if (badDataCount.get("tree_parent_"+asset).intValue() > 0) {
@@ -101,11 +97,8 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(parent) type " + asset + " : " + deleteTreesToDelete_parent);
 
 						dc.setSQL(deleteTreesToDelete_parent);
-						try {
-							dc.loadResult();
-						} catch (DotDataException e) {
-							Logger.error(this,e.getMessage(), e);
-						}
+
+						dc.loadResult();
 					}
 
 					if (badDataCount.get("identifier_"+asset).intValue() > 0) {
@@ -117,11 +110,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 
 						dc.setSQL(indentifiersToDelete);
 
-						try {
-							dc.loadResult();
-						} catch (DotDataException e) {
-							Logger.error(this,e.getMessage(), e);
-						}
+						dc.loadResult();
 					}
 				}
 
