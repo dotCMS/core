@@ -11,9 +11,7 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
 import com.dotmarketing.plugin.util.PluginFileMerger;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 public class PluginMergerTest{
 

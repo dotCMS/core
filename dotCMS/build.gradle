@@ -1,6 +1,9 @@
 buildscript {
     repositories { jcenter() }
-    dependencies {classpath 'org.ajoberstar:grgit:1.7.0'}
+    dependencies {
+        classpath 'org.ajoberstar:grgit:1.7.0'
+        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
+    }
 }
 
 configurations {
@@ -30,11 +33,16 @@ configurations.all({
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
 apply plugin: 'war'
+apply plugin: 'org.unbroken-dome.test-sets'
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+testSets {
+    integrationTest { dirName = 'integration-test' }
 }
 
 // Import and apply the dependencies from the dependencies scripts.
@@ -73,16 +81,11 @@ compileJava {
     options.incremental = true
 }
 
-/*jar {
-    sourceSets {
-        main {
-            resources {
-                //TODO: Removes all files and folders. Currently, it is removing just files in root
-                exclude "*.*"
-            }
-        }
+jar{
+    if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
     }
-}*/
+}
 
 // Expand the release properties.
 processResources {
@@ -96,6 +99,11 @@ processResources {
 war.dependsOn 'deployPlugins'
 war {
     classpath = classpath - sourceSets.main.output.classesDir
+
+    if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+        classpath = configurations.testRuntime
+    }
+
     from (jar) {
         into 'WEB-INF/lib'
     }
@@ -128,6 +136,12 @@ task undeployWarTomcat(type: Delete) {
 
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: DeployWarTomcatTask) {
+    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
+}
+
+//Executes deployWarTomcat task compiling tests as well
+task deployWarTomcatTests(type: DeployWarTomcatTask){
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
@@ -296,7 +310,7 @@ task deployConfig(type: Copy) {
 //TODO Need to check ROOT folder functionality is working.
 // This task will:
 // 1. Copy the plugins.xml from plugins folder.
-// 2. Loop over each plugin and copy the .jar file into WEB-INF/liv
+// 2. Loop over each plugin and copy the .jar file into WEB-INF/lib
 // 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
 //    all the properties/files from the static plugins.
 task deployPlugins(dependsOn: ['buildPlugins']) << {
