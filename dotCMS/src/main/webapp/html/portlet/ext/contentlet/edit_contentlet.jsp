@@ -1,4 +1,5 @@
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
+<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
@@ -399,8 +400,14 @@ var editButtonRow="editContentletButtonRow";
 										request.setAttribute("host", hostId);
 										request.setAttribute("folder", folderId);
 					    	  		} else if(!f.isRequired()) {
-					    	  			String hostId = (String) APILocator.getHostAPI().findSystemHost().getIdentifier();
-										request.setAttribute("host", hostId);
+					    	  			Host host = APILocator.getHostAPI().findSystemHost();
+
+					    	  			String hostId = host.getIdentifier();
+					    	  			if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user)) {
+					    	  				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+					    	  			}
+
+					    	  			request.setAttribute("host", hostId);
 										request.setAttribute("folder", null);
 					    	  		}
 						  	    }

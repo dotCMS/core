@@ -49,6 +49,7 @@ public class TaskLocatorUtil {
             FixTask00009CheckContentletsInexistentInodes.class,
             FixTask00011RenameHostInFieldVariableName.class,
             FixTask00012UpdateAssetsHosts.class,
+            FixTask00015FixAssetTypesInIdentifiers.class,
             FixTask00020DeleteOrphanedIdentifiers.class,
             FixTask00030DeleteOrphanedAssets.class,
             FixTask00040CheckFileAssetsMimeType.class,

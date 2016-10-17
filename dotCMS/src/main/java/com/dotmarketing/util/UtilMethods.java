@@ -19,6 +19,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Calendar;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -117,6 +120,8 @@ public class UtilMethods {
     private static final java.text.SimpleDateFormat DATE_TO_PRETTY_HTML_DATE_2 = new java.text.SimpleDateFormat("MMMM d, yyyy");
     
     private static final java.text.SimpleDateFormat DATE_TO_LUCENE_DATE = new java.text.SimpleDateFormat("yyyyMMdd*");
+    
+    private static final Pattern REGEX_FILENAME_INVALID_CHARS = Pattern.compile("(\\.\\.)|(WEB-INF)|(META-INF)|([\\!\\:\\;\\&\\?\\$\\*\\\"\\/\\[\\]\\=\\|\\,\\#\\{\\}\\\\])");
 
     static {
         _CC_MAPPINGS.put("AMEX", "American Express");
@@ -1211,21 +1216,42 @@ public class UtilMethods {
 
     public static String validateFileName(String fileName) throws IllegalArgumentException{
 
-        if (!isSet(fileName)  ||
-        		fileName.indexOf("..") != -1 || fileName.indexOf("WEB-INF") != -1 || fileName.indexOf("META-INF") != -1 || fileName.indexOf("!") != -1
-                || fileName.indexOf(":") != -1 || fileName.indexOf(";") != -1 || fileName.indexOf(";") != -1 || fileName.indexOf("&") != -1
-                || fileName.indexOf("?") != -1 || fileName.indexOf("$") != -1 || fileName.indexOf("*") != -1 || fileName.indexOf("\"") != -1
-                || fileName.indexOf("/") != -1 || fileName.indexOf("[") != -1 || fileName.indexOf("]") != -1 || fileName.indexOf("=") != -1
-                || fileName.indexOf("|") != -1 || fileName.indexOf(",") != -1 || fileName.indexOf("#") != -1 || fileName.indexOf("{") != -1
-                || fileName.indexOf("}") != -1 || fileName.indexOf("\\") != -1) {
-            throw new IllegalArgumentException("Invalid Filename passed in: " + fileName);
+        if (!isSet(fileName) || REGEX_FILENAME_INVALID_CHARS.matcher(fileName).find()) {
+
+        	throw new IllegalArgumentException("Invalid Filename passed in: " + fileName);
 
         } else {
             return fileName;
-
         }
 
     }
+
+    public static String getValidFileName(String fileName) throws IllegalArgumentException{
+
+        if (!isSet(fileName)) {
+
+        	throw new IllegalArgumentException("Invalid Filename passed in: " + fileName);
+
+        } else {
+    	    StringBuffer buffer = new StringBuffer();
+
+    	    Matcher matcher = REGEX_FILENAME_INVALID_CHARS.matcher(fileName);
+    	    while (matcher.find()) {
+    	        String match = matcher.group(0);
+
+    	        Stream<String> targetChars = match.chars().mapToObj(c -> String.format("0x%X", c));
+
+    	        String replacement = String.join("_", targetChars.toArray(String[]::new));
+
+    	        matcher.appendReplacement(buffer, replacement);
+    	    }
+
+    	    return matcher.appendTail(buffer).toString();
+        }
+
+    }
+
+
     public static String getPageChannel(String uri) {
         java.util.StringTokenizer st = new java.util.StringTokenizer(String.valueOf(uri), "/");
         String pageChannel = null;

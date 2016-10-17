@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.BufferedReader;
@@ -29,16 +30,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-
-import org.elasticsearch.common.collect.ImmutableList;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.hppc.cursors.ObjectCursor;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-
-import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
@@ -48,12 +39,13 @@ import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.action.admin.cluster.repositories.delete.DeleteRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
-import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -80,6 +72,11 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData.State;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.common.collect.ImmutableList;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.hppc.cursors.ObjectCursor;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
@@ -87,12 +84,21 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-
-import static com.dotcms.util.DotPreconditions.checkArgument;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.ZipUtil;
 
 public class ESIndexAPI {
 
@@ -104,8 +110,9 @@ public class ESIndexAPI {
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "es.path.repo";
 
-	private  ESClient esclient = new ESClient();
-	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
+	final private ESClient esclient;
+	final private ESContentletIndexAPI iapi;
+	final private ESIndexHelper esIndexHelper;
 
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
@@ -118,6 +125,19 @@ public class ESIndexAPI {
 			return status;
 		}
 	};
+
+	public ESIndexAPI(){
+		this.esclient = new ESClient();
+		this.iapi = new ESContentletIndexAPI();
+		this.esIndexHelper = ESIndexHelper.INSTANCE;
+	}
+
+	@VisibleForTesting
+	protected ESIndexAPI(ESClient esclient, ESContentletIndexAPI iapi, ESIndexHelper esIndexHelper){
+		this.esclient = esclient;
+		this.iapi = iapi;
+		this.esIndexHelper = esIndexHelper;
+	}
 
     /**
      * returns all indicies and status
@@ -369,6 +389,21 @@ public class ESIndexAPI {
 		Client client = esclient.getClient();
 		Map<String, IndexStatus> indices = client.admin().indices().status(new IndicesStatusRequest()).actionGet().getIndices();
 		return indices.keySet();
+	}
+
+	/**
+	 * Returns close status of an index
+	 * @return
+	 */
+	public boolean isIndexClosed(String index) {
+		Client client = esclient.getClient();
+		ImmutableOpenMap<String,IndexMetaData> indices = client.admin().cluster()
+			    .prepareState().get().getState()
+			    .getMetaData().getIndices();
+		IndexMetaData indexMetaData = indices.get(index);
+		if(indexMetaData != null)
+			return indexMetaData.getState() == State.CLOSE;
+		return true;
 	}
 
 	/**
@@ -717,7 +752,7 @@ public class ESIndexAPI {
     public Map<String,String> getIndexAlias(String[] indexNames) {
         Map<String,String> alias=new HashMap<String,String>();
         try{
-            Client client=new ESClient().getClient();
+            Client client = esclient.getClient();
             ClusterStateRequest clusterStateRequest = Requests.clusterStateRequest()
                     .routingTable(true)
                     .nodes( true )
@@ -814,7 +849,7 @@ public class ESIndexAPI {
 	 *            for problems writing the files to the repository path
 	 */
 	public File createSnapshot(String repositoryName, String snapshotName, String indexName)
-			throws IOException, IllegalArgumentException, DotStateException {
+			throws IOException, IllegalArgumentException, DotStateException, ElasticsearchException {
 		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
 		checkArgument(indexName!=null,"There is no valid index name.");
 		Client client = esclient.getClient();
@@ -839,6 +874,7 @@ public class ESIndexAPI {
 				Logger.debug(this.getClass(), "Snapshot was created:" + snapshotName);
 			} else {
 				Logger.error(this.getClass(), response.status().toString());
+				throw new ElasticsearchException("Could not create snapshot");
 			}
 		}
 		// this will be the zip file using the same name of the directory path
@@ -868,6 +904,17 @@ public class ESIndexAPI {
 			throws InterruptedException, ExecutionException {
 		Client client = esclient.getClient();
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
+			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
+			GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().getSnapshots(getSnapshotsRequest).get();
+			final ImmutableList<SnapshotInfo> snapshots = getSnapshotsResponse.getSnapshots();
+			for(SnapshotInfo snapshot: snapshots){
+				ImmutableList<String> indices = snapshot.indices();
+				for(String index: indices){
+					if(!isIndexClosed(index)){
+						throw new ElasticsearchException("Index \"" + index + "\"is not closed and can not be restored");
+					}
+				}
+			}
 			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
 			RestoreSnapshotResponse response = client.admin().cluster().restoreSnapshot(restoreSnapshotRequest).get();
 			if (response.status() != RestStatus.OK) {
@@ -906,9 +953,9 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
 	 */
-	public boolean uploadSnapshot(InputStream inputFile, String indexName)
+	public boolean uploadSnapshot(InputStream inputFile)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
-		return uploadSnapshot(inputFile, indexName, true);
+		return uploadSnapshot(inputFile, true);
 	}
 
 	/**
@@ -922,7 +969,7 @@ public class ESIndexAPI {
 	 *
 	 * @param inputFile
 	 *            stream with the zipped repository file
-	 * @param indexName
+	 * @param snapshotName
 	 *            index to be restored
 	 * @param deleteRepository
 	 * 	          defines if the respository should be deleted after the restore.
@@ -937,7 +984,7 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
 	 */
-	public boolean uploadSnapshot(InputStream inputFile, String indexName, boolean deleteRepository)
+	public boolean uploadSnapshot(InputStream inputFile, boolean deleteRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
@@ -947,10 +994,11 @@ public class ESIndexAPI {
 			toDirectory.mkdirs();
 		}
 		// zip file extraction
-		File outFile = new File(toDirectory.getParent() + File.separator + indexName);
+		File outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
+		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), indexName);
+		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath());
 		if(deleteRepository){
 			deleteRepository(BACKUP_REPOSITORY);
 			outFile.delete();
@@ -966,7 +1014,7 @@ public class ESIndexAPI {
 	 *            zip file containing the repository file structure
 	 * @param toDirectory
 	 *            place to extract the zip file
-	 * @param indexName
+	 * @param snapshotName
 	 *            index to be restored, most exists on the repository
 	 * @return true if the snapshot was restored
 	 * @throws InterruptedException
@@ -978,14 +1026,21 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
 	 */
-	public boolean uploadSnapshot(ZipFile zip, String toDirectory, String indexName)
+	public boolean uploadSnapshot(ZipFile zip, String toDirectory)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		ZipUtil.extract(zip, new File(toDirectory));
+
+		File zipDirectory = new File(toDirectory);
+		String snapshotName = esIndexHelper.findSnapshotName(zipDirectory);
+		if (snapshotName == null) {
+			Logger.error(this.getClass(), "No snapshot file on the zip.");
+			throw new ElasticsearchException("No snapshot file on the zip.");
+		}
 		if (!isRepositoryExist(BACKUP_REPOSITORY)) {
 			// initial repository under the complete path
 			createRepository(toDirectory, BACKUP_REPOSITORY, true);
 		}
-		return restoreSnapshot(BACKUP_REPOSITORY, indexName);
+		return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
 	}
 
 	/**
