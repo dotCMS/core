@@ -1016,7 +1016,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			long languageId) throws DotDataException, DotStateException, DotSecurityException {
 	    
 	    
-       if(false){
+       if(Config.getBooleanProperty("FIND_PAGE_CONTENTLETS_FROM_CACHE", false)){
             return findPageContentletFromCache(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId);
        }
 	    
