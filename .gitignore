@@ -1,6 +1,5 @@
 # config/log files   #
 ######################
-tomcat/conf
 bin/*.sh
 *.log
 .classpath
@@ -10,32 +9,18 @@ bin/*.sh
 *.iml
 *.ipr
 *.iws
-tomcat/work
-tomcat/logs
-tomcat/temp
 
 
 
 #Temporary Build Migration Ignores
-dotCMS/html/ng
-
-
+dotCMS/src/main/webapp/html/ng
 
 # Instance Files     #
 ######################
-dotCMS/dotSecure
-dotCMS/dotsecure
-dotCMS/assets
-sql/cms/dotcms_mssql-sybase.sql
-sql/cms/dotcms_mysql.sql
-sql/cms/dotcms_oracle.sql
-sql/cms/dotcms_postgresql.sql
-sql/cms/dotcms_h2.sql
-dotCMS/email_backups
-dotCMS/WEB-INF/felix/felix-cache
-dotCMS/WEB-INF/felix/osgi-extra-generated.conf
-dotCMS/WEB-INF/felix/osgi-extra.conf
-dotCMS/html/js/tinymce/jscripts/tiny_mce/*.gz
+dotCMS/src/main/webapp/WEB-INF/felix/felix-cache
+dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf
+dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra.conf
+dotCMS/src/main/webapp/html/js/tinymce/jscripts/tiny_mce/*.gz
 
 _original
 # OS generated files #
@@ -47,15 +32,25 @@ Thumbs.db
 
 # Build #
 ######################
-dotCMS/WEB-INF/classes/
 libs/test
 build/
 out/
-dotCMS/WEB-INF/generated_web.xml
-dotCMS/WEB-INF/lib/*.jar
-dotCMS/WEB-INF/felix/bundle/dot.*.jar
-dotCMS/WEB-INF/lib/plugin-*.jar
-starter.zip
+dotCMS/src/main/webapp/WEB-INF/generated_web.xml
+dotCMS/src/main/webapp/WEB-INF/lib/*.jar
+dotCMS/src/main/webapp/WEB-INF/felix/bundle/dot.*.jar
+dotCMS/src/main/webapp/WEB-INF/lib/plugin-*.jar
+dotCMS/starter.zip
 .ant-targets-build.xml
 .gradle/
 /*.local.*
+
+
+# Changes after gradle migration #
+###############################
+dist/
+dotCMS/build/
+dotCMS/.gradle/
+dotCMS/src/main/webapp/WEB-INF/classes/
+dotCMS/src/main/webapp/WEB-INF/lib/
+dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
+dotCMS/src/main/webapp/html/plugins/

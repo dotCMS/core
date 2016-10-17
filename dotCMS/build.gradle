@@ -1,0 +1,453 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'org.ajoberstar:grgit:1.7.0'
+        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
+    }
+}
+
+configurations {
+    compile
+    buildlibs
+    starter
+    coreWeb
+    provided
+    felix
+}
+
+configurations.all({
+    // dynamic: e.g. 'version: 2.0+'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+
+    /*POM relocation to an other version number is not fully supported in Gradle : xml-apis#xml-apis;2.0.2 relocated to xml-apis#xml-apis;1.0.b2.
+            Please update your dependency to directly use the correct version 'xml-apis#xml-apis;1.0.b2'.
+    Resolution will only pick dependencies of the relocated element.  Artifacts and other metadata will be ignored.*/
+    resolutionStrategy {
+        force 'xml-apis:xml-apis:1.4.01'
+    }
+})
+
+
+// Apply the java plugin to add support for Java.
+apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'org.unbroken-dome.test-sets'
+
+// In this section you declare where to find the dependencies of your project.
+repositories {
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+testSets {
+    integrationTest { dirName = 'integration-test' }
+}
+
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/dependencies.gradle"
+
+ant.lifecycleLogLevel = "INFO"
+
+ext {
+    // Open the Git repository in the current directory.
+
+    dotcmsReleaseVersion='3.7.0'
+    dotcmsReleaseBuild = ''
+    dotcmsReleaseName='dotCMS Platform'
+    dotcmsReleaseCodename='Panther'
+    dotcmsReleaseBuild='999999'
+    dotcmsReleaseDdate='Jun 08, 1986'
+    dotcmsReleaseDdate = getDate()
+    serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
+    homeFolder = serverFolder + webAppRootFolder
+    dotcmsHome = serverFolder + webAppRootFolder
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')){
+        git = org.ajoberstar.grgit.Grgit.open(file('..'))
+        dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+    }
+}
+
+archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
+def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
+
+// Compile Java.
+compileJava {
+    targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    options.incremental = true
+}
+
+jar{
+    if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
+    }
+}
+
+// Expand the release properties.
+processResources {
+    filesMatching("release.properties") {
+        expand( project.properties )
+    }
+}
+
+// By default the war task compiles everything under src/main/java into WEB-INF/classes/
+// but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
+war.dependsOn 'deployPlugins'
+war {
+    classpath = classpath - sourceSets.main.output.classesDir
+
+    if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+        classpath = configurations.testRuntime
+    }
+
+    from (jar) {
+        into 'WEB-INF/lib'
+    }
+
+    from (configurations.felix) {
+        into felixFolder
+    }
+
+    from (configurations.compile) {
+        into felixFolder
+        include '**/dot.org.apache.felix.http.bundle*.jar'
+    }
+
+    from (configurations.starter) {
+        into dotcmsFolder
+        rename ( /starter(.+)\.zip/, "starter.zip" )
+    }
+
+    from (zipTree(configurations.coreWeb.files.toArray()[0])) {
+        into rulesEngineFolder
+    }
+}
+war.finalizedBy 'undeployPlugins'
+
+// Delete ROOT under tomcat8/webapps
+task undeployWarTomcat(type: Delete) {
+    delete tomcatInstallLocation + webAppRootFolder
+    followSymlinks = true
+}
+
+// Makes all the magic to place the webapp under tomcat8 for devs.
+task deployWarTomcat(type: DeployWarTomcatTask) {
+    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
+}
+
+//Executes deployWarTomcat task compiling tests as well
+task deployWarTomcatTests(type: DeployWarTomcatTask){
+    dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
+}
+
+//Executes deployWarTomcat task from dist version
+task deployWarTomcatDist(type: DeployWarTomcatTask) {
+    dependsOn 'war'
+    tomcatPath = tomcatDistBase
+}
+
+//Executes a pull or clone to get tomcat from the repository
+task clonePullTomcat(type: ClonePullTomcatTask) {
+
+}
+
+//Executes clonePullTomcat task from dist version
+task clonePullTomcatDist(type: ClonePullTomcatTask) {
+    tomcatLocation = tomcatDistBase
+}
+
+
+//Creates the final distribution files for dotCMS.
+task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
+
+    copy {
+        from "$rootDir/../bin"
+        into "$distLocation$distBinLocation"
+        filesMatching('build.con*') {
+            expand(project.properties)
+        }
+    }
+
+    copy {
+        from "$rootDir/../"
+        into "$distLocation$distBinLocation/ant"
+        include "build.xml"
+    }
+
+    copy {
+        into "$distLocation$confDistLocation"
+        from sourceSets.main.resources
+        exclude "com", "org", "release.properties"
+    }
+
+    copy {
+        into "$distLocation$pluginsDistLocation"
+        from "src/main/plugins"
+        exclude "**/.git"
+    }
+
+    copy {
+        into "$distLocation$docsDistLocation"
+        from  "$rootDir/../docs"
+    }
+
+    replaceText("$distLocation$distBinLocation/build.conf", "#SERVER_FOLDER", "SERVER_FOLDER")
+
+    replaceText("$distLocation$distBinLocation/build.conf", "#HOME_FOLDER", "HOME_FOLDER")
+
+    replaceText("$distLocation$distBinLocation/build.conf", "#target.root", "target.root")
+
+    replaceText("$distLocation$distBinLocation/build.conf.bat", "rem set", "set")
+
+    replaceText("$distLocation$distBinLocation/build.conf.bat", "/", "\\\\")
+
+    if ("$distUpdate".toBoolean()){
+        delete "$tomcatDistBase$webAppRootFolder/starter.zip"
+    }
+
+}
+
+createDist.finalizedBy 'zip', 'tgzTask'
+
+//Task used to create a .zip file from the distribution
+task zip(type: Zip) {
+    from "$distLocation"
+    exclude "**/output/**"
+    destinationDir file("$outputDistLocation")
+    baseName "$archivesBaseName"
+}
+
+//Task used to create a tar.gz from the distribution
+task tgzTask(type: Tar) {
+    if (!"$distUpdate".toBoolean()) {
+        from ("$distLocation"){
+            eachFile { file ->
+                if (file.getName().endsWith(".sh") || file.getName().startsWith("gradle")) {
+                    file.setMode(0755)
+                }
+            }
+        }
+        exclude "**/output/**"
+        destinationDir file("$outputDistLocation")
+        baseName "$archivesBaseName"
+        extension = 'tgz'
+        compression = Compression.GZIP
+    }
+}
+
+//Task meant to be use from a distribution structure using the buildwar.sh script.
+//This task will just use the already deployed folder inside the app server and compressed to a war file.
+task customDistWar(type: War) {
+    dependsOn 'deployPlugins'
+    from "$dotcmsDistBase$webAppRootFolder"
+    exclude "assets/**", "dotsecure/**"
+    baseName "dotcms"
+    destinationDir = file("../WAR")
+}
+
+// This task finds all th plugins and runs 'ant build' inside each one.
+// In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
+task buildPlugins(dependsOn: 'jar') << {
+    delete "$buildDir/pluginsLib"
+
+    copy {
+        into "$buildDir/pluginsLib"
+        from configurations.compile
+        from "$buildDir/libs/"
+    }
+
+    def pluginsFolder = new File("src/main/plugins");
+
+    if( !pluginsFolder.exists() ) {
+        pluginsFolder = new File("../plugins");
+    }
+
+    pluginsFolder.eachDir() {
+        def pluginPath = it
+        println "Compile Plugin: " + pluginPath
+
+        javaexec {
+            workingDir pluginPath
+            main="-jar";
+            args = [
+                    "$rootDir/../bin/ant/ant-launcher.jar",
+                    "-buildfile",
+                    pluginPath.getAbsolutePath() + "/build.xml"
+            ]
+        }
+
+
+    }
+}
+
+// TODO I think there are variables for this paths.
+// This task will copy what is used to be src-conf (now under resources)
+// to webapp/WEB-INF/classes in order to be merged with the plugins.
+task deployConfig(type: Copy) {
+
+    def webAppFolder = 'src/main/webapp'
+
+    if (new File('src/main/resources').exists()){
+        from 'src/main/resources'
+    }else{
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+        from "../$confDistLocation"
+
+    }
+    into "$webAppFolder/WEB-INF/classes"
+
+    filesMatching("release.properties") {
+        expand( project.properties )
+    }
+}
+
+//TODO Need to check ROOT folder functionality is working.
+// This task will:
+// 1. Copy the plugins.xml from plugins folder.
+// 2. Loop over each plugin and copy the .jar file into WEB-INF/lib
+// 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
+//    all the properties/files from the static plugins.
+task deployPlugins(dependsOn: ['buildPlugins']) << {
+
+    def pluginsFolder = new File("src/main/plugins")
+    def webAppFolder = 'src/main/webapp'
+
+    if( !pluginsFolder.exists() ) {
+        pluginsFolder = new File("../plugins");
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+    }
+
+    copy {
+        from "$pluginsFolder.path"
+        into "$webAppFolder/WEB-INF/classes"
+        include 'plugins.xml'
+    }
+
+    //<target name="deploy-plugin"/>
+    pluginsFolder.eachDir() {
+        def pluginPath = it
+        copy {
+            from pluginPath.getPath() + '/build/jar'
+            into "$webAppFolder/WEB-INF/lib"
+            include '*.jar'
+        }
+    }
+
+    ant.taskdef(
+        name: 'pluginDeployTask', 
+        classname: 'com.dotmarketing.plugin.ant.DeployTask', 
+        classpath: configurations.compile.asPath)
+
+    ant.pluginDeployTask(
+        distributionPath: '../', 
+        dotcmsHome: "$webAppFolder",
+        plugins: "$webAppFolder/WEB-INF/lib")
+}
+
+// This task will:
+// 1. Call the and task def com.dotmarketing.plugin.ant.UndeployTask to remove
+//    all the properties/files from the static plugins.
+// 2. Delete plugin.xml from classes and the html of the static plugins.
+task undeployPlugins << {
+
+    def webAppFolder = 'src/main/webapp'
+
+    if( !new File("$webAppFolder").exists() ) {
+        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+    }
+
+
+    ant.taskdef(
+        name: 'pluginUndeployTask', 
+        classname: 'com.dotmarketing.plugin.ant.UndeployTask', 
+        classpath: configurations.compile.asPath)
+    ant.pluginUndeployTask(
+        distributionPath: '../', 
+        dotcmsHome: "$webAppFolder",
+        plugins: "$webAppFolder/WEB-INF/lib")
+
+    delete fileTree("$webAppFolder/WEB-INF/lib") {
+        include '**/plugin-*.jar'
+        include '**/pluginlib-*.jar'
+    }
+    delete "$webAppFolder/WEB-INF/classes/plugins.xml"
+    delete "$webAppFolder/html/plugins"
+}
+
+undeployPlugins.finalizedBy 'deployConfig'
+
+// Util methods.
+def getDate() {
+    def fmt = new java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.US)
+    def formattedDate = fmt.format(new Date())
+    return formattedDate
+}
+
+//Util method that replaces the occurrence of a string in a specified file
+static def replaceText(filePath, fromString, toString) {
+    def sourceFile = filePath
+    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
+    new File(sourceFile).write(updatedContent, 'UTF-8')
+}
+
+//TODO: now that we have grgit we could use it here instead exec.
+// Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
+// If the tomcat folder exists: git pull, if not: git clone.
+class ClonePullTomcatTask extends DefaultTask{
+
+    String tomcatLocation = project.tomcatInstallLocation
+
+    @TaskAction
+    def pull(){
+        project.exec{
+            def folder = new File( tomcatLocation )
+            if( !folder.exists() ) {
+                commandLine "git", "clone", "-b", project.tomcatInstallVersion, project.tomcatInstallRepo, tomcatLocation
+            } else {
+                workingDir tomcatLocation
+                commandLine "git", "pull"
+            }
+        }
+    }
+
+}
+
+//Gradle Custom Task that contains the logic for deploying the app war in the application server
+//It works for dist and development versions
+//Also, copies specific libraries from /libs/buildlibs to tomcat/lib folder
+class DeployWarTomcatTask extends DefaultTask{
+    String tomcatPath;
+
+    @TaskAction
+    def deploy(){
+        copyBuildLibs(tomcatPath)
+
+        def zipFile = project.file("$project.buildDir/libs/$project.archivesBaseName" + ".war")
+        project.copy{
+            from project.zipTree(zipFile)
+            into tomcatPath + project.webAppRootFolder
+        }
+    }
+
+    // Copying libs/buildlibs under tomcat8/lib.
+    def copyBuildLibs(buildLibLocation) {
+        project.copy{
+            from '../libs/buildlibs'
+            into buildLibLocation + '/lib'
+            include 'mail.jar'
+            include 'sqljdbc42.jar'
+            include 'mysql-connector-java-5.1.37-bin.jar'
+            include 'postgresql-9.0-801.jdbc3.jar'
+            include 'ojdbc5.jar'
+            include 'jtds-1.2.2.jar'
+        }
+
+    }
+}
+
