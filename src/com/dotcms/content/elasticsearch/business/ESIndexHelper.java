@@ -33,19 +33,6 @@ public class ESIndexHelper implements Serializable{
 	private final String ALIAS = "alias";
 	private final String SNAPSHOT_PREFIX = "snapshot-";
 
-//	private static class SingletonHolder {
-//        private static final ESIndexHelper INSTANCE = new ESIndexHelper();
-//    }
-//    /**
-//     * Get the instance.
-//     * @return ESIndexHelper
-//     */
-//    public static ESIndexHelper getInstance() {
-//
-//        return ESIndexHelper.SingletonHolder.INSTANCE;
-//    } // getInstance.
-
-
 	private ESIndexHelper() {
 		this.siteSearchAPI = APILocator.getSiteSearchAPI();
 		this.licenseService = new LicenseService();

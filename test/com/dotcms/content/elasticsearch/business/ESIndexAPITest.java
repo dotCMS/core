@@ -24,6 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.IntegrationTestInitService;
+import com.dotmarketing.util.Logger;
 
 public class ESIndexAPITest {
 
@@ -175,7 +176,8 @@ public class ESIndexAPITest {
 		try {
 			FileUtil.deleteDir(toDelete.getAbsolutePath());
 		} catch (IOException e) {
-			e.printStackTrace();
+			Logger.error(ESIndexAPITest.class,e.getMessage());
 		}
+
 	}
 }
