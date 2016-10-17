@@ -84,7 +84,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version:'2.6.0-rc2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jamm', version:'0.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jasperreports', version:'3.5.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.javacsv', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-api', version:'2.2.7_3'
