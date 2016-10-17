@@ -25,6 +25,8 @@ public abstract class BundleFactory {
 
     protected static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ? where id = ?";
 
+    protected static final String UPDATE_BUNDLE_OWNER_REFERENCES = "UPDATE publishing_bundle SET owner = ? where owner = ?";
+
     protected static String DELETE_ASSET_FROM_BUNDLE = "DELETE from publishing_queue where asset = ? and bundle_id = ?";
 
     protected static String DELETE_BUNDLE_ENVIRONMENT_BY_ENV = "DELETE from publishing_bundle_environment where environment_id = ?";
@@ -75,6 +77,8 @@ public abstract class BundleFactory {
     public abstract void deleteBundle ( String id ) throws DotDataException;
 
     public abstract void updateBundle ( Bundle bundle ) throws DotDataException;
+
+    public abstract void updateOwnerReferences ( String userId, String replacementUserId ) throws DotDataException;
 
     public abstract void deleteAssetFromBundle ( String assetId, String bundleId ) throws DotDataException;
 

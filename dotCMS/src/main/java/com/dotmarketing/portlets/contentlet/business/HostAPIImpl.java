@@ -254,8 +254,6 @@ public class HostAPIImpl implements HostAPI {
 	}
 
 	/**
-	 *
-	 * @param hostName
 	 * @return the host with the passed in name
 	 */
 	public Host findByAlias(String alias, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -821,6 +819,7 @@ public class HostAPIImpl implements HostAPI {
 		if(rs.isEmpty()) {
 			Host systemHost = new Host();
 			systemHost.setDefault(false);
+			systemHost.setInode("dbdec5e2-c02b-4cfb-83a9-4a4c4f3b2eb0");
 			systemHost.setHostname("system");
 			systemHost.setSystemHost(true);
 			systemHost.setHost(null);
