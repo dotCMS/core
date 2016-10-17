@@ -54,34 +54,28 @@ public class ESIndexAPITest {
 
 	/**
 	 * Test creation of a snapshot file with a valid index name
+	 * @throws Exception
 	 */
 	@Test
-	public void createSnapshotTest(){
+	public void createSnapshotTest() throws IOException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
-		try {
-			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			assertNotNull(snapshot);
-		} catch (DotStateException | IllegalArgumentException | IOException e) {
-			e.printStackTrace();
-		}finally{
-			snapshot.delete();
-		}
+		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		assertNotNull(snapshot);
+		snapshot.delete();
 	}
 
 	/**
 	 * Creation of a snapshot file using and invalid index, should fail
+	 * @throws IOException
+	 * @throws ElasticsearchException
+	 * @throws IllegalArgumentException
+	 * @throws DotStateException
 	 */
 	@Test(expected = ElasticsearchException.class)
-	public void createSnapshotTest_invalidIndex(){
+	public void createSnapshotTest_invalidIndex() throws IOException{
 		String indexName = "live_xxxxxxxxx";
-		File snapshot = null;
-		try {
-			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			assertNull(snapshot);
-		} catch (DotStateException | IllegalArgumentException | IOException e) {
-			e.printStackTrace();
-		}
+		esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
 	}
 
 	/**
@@ -94,20 +88,17 @@ public class ESIndexAPITest {
 	 * @throws DotDataException
 	 */
 	@Test
-	public void uploadSnapshotTest_fromCurrentLive() throws IOException, InterruptedException, ExecutionException, DotDataException{
+	public void uploadSnapshotTest_fromCurrentLive() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
-		try {
-			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			esIndexAPI.closeIndex(indexName);
-			ZipFile file = new ZipFile(snapshot.getAbsolutePath());
-			String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
-			File tempDir = new File(pathToRepo);
-			boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
-			assertTrue(response);
-		} catch (DotStateException | IllegalArgumentException | IOException e) {
-			e.printStackTrace();
-		}finally{
+		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		esIndexAPI.closeIndex(indexName);
+		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
+		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		File tempDir = new File(pathToRepo);
+		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		assertTrue(response);
+		if(snapshot!=null){
 			snapshot.delete();
 		}
 	}
@@ -156,15 +147,12 @@ public class ESIndexAPITest {
 	public void uploadSnapshotTest_alreadyExistingIndex() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
-		try {
-			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			ZipFile file = new ZipFile(snapshot.getAbsolutePath());
-			String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
-			File tempDir = new File(pathToRepo);
-			esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
-		} catch (DotStateException | IllegalArgumentException | IOException e) {
-			e.printStackTrace();
-		}finally{
+		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
+		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+		File tempDir = new File(pathToRepo);
+		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		if(snapshot!=null){
 			snapshot.delete();
 		}
 	}
