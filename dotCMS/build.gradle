@@ -140,6 +140,7 @@ task deployWarTomcat(type: DeployWarTomcatTask) {
     tomcatPath = tomcatInstallLocation
 }
 
+//Executes deployWarTomcat task compiling tests as well
 task deployWarTomcatTests(type: DeployWarTomcatTask){
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
@@ -309,7 +310,7 @@ task deployConfig(type: Copy) {
 //TODO Need to check ROOT folder functionality is working.
 // This task will:
 // 1. Copy the plugins.xml from plugins folder.
-// 2. Loop over each plugin and copy the .jar file into WEB-INF/liv
+// 2. Loop over each plugin and copy the .jar file into WEB-INF/lib
 // 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
 //    all the properties/files from the static plugins.
 task deployPlugins(dependsOn: ['buildPlugins']) << {
