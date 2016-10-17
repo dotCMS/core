@@ -1,11 +1,19 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
-import java.util.zip.ZipException;
 
-import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.LicenseService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.UtilMethods;
@@ -16,28 +24,48 @@ import com.dotmarketing.util.UtilMethods;
 public class ESIndexHelper implements Serializable{
 
 	public final static ESIndexHelper INSTANCE = new ESIndexHelper();
-	private final ESIndexAPI indexAPI;
-	private final SiteSearchAPI searchAPI;
+	private final SiteSearchAPI siteSearchAPI;
+	private final LicenseService licenseService;
 
 	private final String EXTENSION_PATTERN = "\\.[zZ][iI][pP]$";
 	private final String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
+	private final String INDEX = "index";
+	private final String ALIAS = "alias";
+	private final String SNAPSHOT_PREFIX = "snapshot-";
 
 	private ESIndexHelper() {
-		this.indexAPI = APILocator.getESIndexAPI();
-		this.searchAPI = APILocator.getSiteSearchAPI();
+		this.siteSearchAPI = APILocator.getSiteSearchAPI();
+		this.licenseService = new LicenseService();
 	}
 
 	@VisibleForTesting
-	protected ESIndexHelper(ESIndexAPI indexAPI, SiteSearchAPI searchAPI) {
-		this.indexAPI = indexAPI;
-		this.searchAPI = searchAPI;
+	protected ESIndexHelper(SiteSearchAPI searchAPI, LicenseService licenseService) {
+		this.siteSearchAPI = searchAPI;
+		this.licenseService = licenseService;
 	}
 
-	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr) {
+	/**
+	 * Obtains the index or alias reference from a map, using the index key name
+	 * as "index" and the alias key name as "alias"
+	 * @param map map containing the key (type) and the name
+	 * @return
+	 */
+	public String getIndexNameOrAlias(Map<String, String> map, ESIndexAPI esIndexAPI) {
+		return getIndexNameOrAlias(map, INDEX, ALIAS, esIndexAPI);
+	}
+
+	/**
+	 * Obtains the index or alias reference from a map
+	 * @param map map containing the key (type) and the name
+	 * @param indexAttr index key name
+	 * @param aliasAttr alias key name
+	 * @return
+	 */
+	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, ESIndexAPI esIndexAPI) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
-		if (UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel() >= 200) {
-			String currentIndexName = indexAPI.getAliasToIndexMap(searchAPI.listIndices()).get(indexAlias);
+		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= 200) {
+			String currentIndexName = esIndexAPI.getAliasToIndexMap(siteSearchAPI.listIndices()).get(aliasAttr);
 			if (UtilMethods.isSet(currentIndexName))
 				indexName = currentIndexName;
 		}
@@ -51,6 +79,9 @@ public class ESIndexHelper implements Serializable{
 	 * @return true if the filename ends on ".zip"
 	 */
 	public boolean isSnapshotFilename(String snapshotFilename){
+		if(snapshotFilename == null){
+			return false;
+		}
 		return snapshotFilename.matches(FILE_PATTERN);
 	}
 
@@ -61,7 +92,52 @@ public class ESIndexHelper implements Serializable{
 	 * @return file name with the .zip extension
 	 */
 	public String getIndexFromFilename(String snapshotFilename){
-		return snapshotFilename.replaceAll(EXTENSION_PATTERN, "");
+		if(snapshotFilename == null || StringUtils.isEmpty(snapshotFilename)){
+			return null;
+		}
+		return snapshotFilename.toLowerCase().replaceAll(EXTENSION_PATTERN, "");
+	}
+
+	/**
+	 * Finds file within the directory named "snapshot-"
+	 * @param snapshotDirectory
+	 * @return
+	 * @throws IOException
+	 */
+	public String findSnapshotName(File snapshotDirectory) throws IOException {
+		String name = null;
+		if (snapshotDirectory.isDirectory()) {
+			class SnapshotVisitor extends SimpleFileVisitor<Path> {
+				private String fileName;
+
+				public String getFileName() {
+					return fileName;
+				}
+
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+					if (file.getFileName().toString().startsWith(SNAPSHOT_PREFIX)) {
+						fileName = file.getFileName().toString();
+						return FileVisitResult.TERMINATE;
+					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+					return FileVisitResult.CONTINUE;
+				}
+			}
+			Path directory = Paths.get(snapshotDirectory.getAbsolutePath());
+			SnapshotVisitor snapshotVisitor = new SnapshotVisitor();
+			Files.walkFileTree(directory, snapshotVisitor);
+
+			String fullName = snapshotVisitor.getFileName();
+			if (fullName != null) {
+				name = fullName.replaceFirst(SNAPSHOT_PREFIX, "");
+			}
+		}
+		return name;
 	}
 }
 
