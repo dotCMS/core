@@ -481,15 +481,15 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	 */
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions)	throws DotDataException, DotSecurityException,DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles);
+			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles, allVersions);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles);
+		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles, allVersions);
 		for(ContentletAPIPostHook post : postHooks){
-			post.delete(contentlet, user, respectFrontendRoles);
+			post.delete(contentlet, user, respectFrontendRoles, allVersions);
 		}
 
 		return delete;
