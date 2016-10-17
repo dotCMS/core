@@ -56,7 +56,6 @@ public class ESIndexAPITest {
 	 * Test creation of a snapshot file with a valid index name
 	 */
 	@Test
-	@Ignore
 	public void createSnapshotTest(){
 		String indexName = getLiveIndex();
 		File snapshot = null;
@@ -74,7 +73,6 @@ public class ESIndexAPITest {
 	 * Creation of a snapshot file using and invalid index, should fail
 	 */
 	@Test(expected = ElasticsearchException.class)
-	@Ignore
 	public void createSnapshotTest_invalidIndex(){
 		String indexName = "live_xxxxxxxxx";
 		File snapshot = null;
@@ -101,9 +99,7 @@ public class ESIndexAPITest {
 		File snapshot = null;
 		try {
 			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
-			esIndexAPI.clearIndex(indexName);
 			esIndexAPI.closeIndex(indexName);
-			//esIndexAPI.delete(indexName);
 			ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 			String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 			File tempDir = new File(pathToRepo);
@@ -113,8 +109,6 @@ public class ESIndexAPITest {
 			e.printStackTrace();
 		}finally{
 			snapshot.delete();
-			esIndexAPI.openIndex(indexName);
-			contentletIndexAPI.activateIndex(indexName);
 		}
 	}
 
@@ -127,11 +121,9 @@ public class ESIndexAPITest {
 	 * @throws ExecutionException
 	 */
 	@Test
-	@Ignore
 	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
 		String currentLiveIndex = getLiveIndex();
 		esIndexAPI.closeIndex(currentLiveIndex);
-		//esIndexAPI.delete(currentLiveIndex);
 		ZipFile file = new ZipFile("test-resources/index.zip");
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
@@ -146,7 +138,6 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	@Ignore
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
 		ZipFile file = new ZipFile("test-resources/failing-test.zip");
@@ -161,8 +152,7 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	@Ignore
-	@Test(expected = ExecutionException.class)
+	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_alreadyExistingIndex() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
