@@ -68,7 +68,7 @@ public class ESIndexResourceTest {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-        when(indexHelper.getIndexNameOrAlias(paramsMap)).thenReturn(liveIndex);
+        when(indexHelper.getIndexNameOrAlias(paramsMap,indexAPI)).thenReturn(liveIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
@@ -113,7 +113,7 @@ public class ESIndexResourceTest {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-        when(indexHelper.getIndexNameOrAlias(paramsMap)).thenReturn("live");
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn("live");
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
@@ -158,7 +158,7 @@ public class ESIndexResourceTest {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-        when(indexHelper.getIndexNameOrAlias(paramsMap)).thenReturn(workingIndex);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
@@ -203,7 +203,7 @@ public class ESIndexResourceTest {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-        when(indexHelper.getIndexNameOrAlias(paramsMap)).thenReturn(workingIndex);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
@@ -239,7 +239,7 @@ public class ESIndexResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
-        when(indexHelper.getIndexNameOrAlias(paramsMap)).thenReturn(null);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(null);
         when(responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments")).thenReturn(Response.status(Status.BAD_REQUEST).build());
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);

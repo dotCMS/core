@@ -1,6 +1,14 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 
 import com.dotcms.enterprise.LicenseService;
@@ -16,7 +24,6 @@ import com.dotmarketing.util.UtilMethods;
 public class ESIndexHelper implements Serializable{
 
 	public final static ESIndexHelper INSTANCE = new ESIndexHelper();
-	private final ESIndexAPI esIndexAPI;
 	private final SiteSearchAPI siteSearchAPI;
 	private final LicenseService licenseService;
 
@@ -24,16 +31,28 @@ public class ESIndexHelper implements Serializable{
 	private final String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
 	private final String INDEX = "index";
 	private final String ALIAS = "alias";
+	private final String SNAPSHOT_PREFIX = "snapshot-";
+
+//	private static class SingletonHolder {
+//        private static final ESIndexHelper INSTANCE = new ESIndexHelper();
+//    }
+//    /**
+//     * Get the instance.
+//     * @return ESIndexHelper
+//     */
+//    public static ESIndexHelper getInstance() {
+//
+//        return ESIndexHelper.SingletonHolder.INSTANCE;
+//    } // getInstance.
+
 
 	private ESIndexHelper() {
-		this.esIndexAPI = APILocator.getESIndexAPI();
 		this.siteSearchAPI = APILocator.getSiteSearchAPI();
 		this.licenseService = new LicenseService();
 	}
 
 	@VisibleForTesting
-	protected ESIndexHelper(ESIndexAPI indexAPI, SiteSearchAPI searchAPI, LicenseService licenseService) {
-		this.esIndexAPI = indexAPI;
+	protected ESIndexHelper(SiteSearchAPI searchAPI, LicenseService licenseService) {
 		this.siteSearchAPI = searchAPI;
 		this.licenseService = licenseService;
 	}
@@ -44,8 +63,8 @@ public class ESIndexHelper implements Serializable{
 	 * @param map map containing the key (type) and the name
 	 * @return
 	 */
-	public String getIndexNameOrAlias(Map<String, String> map) {
-		return getIndexNameOrAlias(map, INDEX, ALIAS);
+	public String getIndexNameOrAlias(Map<String, String> map, ESIndexAPI esIndexAPI) {
+		return getIndexNameOrAlias(map, INDEX, ALIAS, esIndexAPI);
 	}
 
 	/**
@@ -55,7 +74,7 @@ public class ESIndexHelper implements Serializable{
 	 * @param aliasAttr alias key name
 	 * @return
 	 */
-	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr) {
+	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, ESIndexAPI esIndexAPI) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
 		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= 200) {
@@ -90,6 +109,48 @@ public class ESIndexHelper implements Serializable{
 			return null;
 		}
 		return snapshotFilename.toLowerCase().replaceAll(EXTENSION_PATTERN, "");
+	}
+
+	/**
+	 * Finds file within the directory named "snapshot-"
+	 * @param snapshotDirectory
+	 * @return
+	 * @throws IOException
+	 */
+	public String findSnapshotName(File snapshotDirectory) throws IOException {
+		String name = null;
+		if (snapshotDirectory.isDirectory()) {
+			class SnapshotVisitor extends SimpleFileVisitor<Path> {
+				private String fileName;
+
+				public String getFileName() {
+					return fileName;
+				}
+
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+					if (file.getFileName().toString().startsWith(SNAPSHOT_PREFIX)) {
+						fileName = file.getFileName().toString();
+						return FileVisitResult.TERMINATE;
+					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+					return FileVisitResult.CONTINUE;
+				}
+			}
+			Path directory = Paths.get(snapshotDirectory.getAbsolutePath());
+			SnapshotVisitor snapshotVisitor = new SnapshotVisitor();
+			Files.walkFileTree(directory, snapshotVisitor);
+
+			String fullName = snapshotVisitor.getFileName();
+			if (fullName != null) {
+				name = fullName.replaceFirst(SNAPSHOT_PREFIX, "");
+			}
+		}
+		return name;
 	}
 }
 

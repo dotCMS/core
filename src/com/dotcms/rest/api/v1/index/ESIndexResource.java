@@ -64,6 +64,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 
+/**
+ * Index endpoint for REST calls version 1
+ *
+ */
 @Path("/v1/esindex")
 public class ESIndexResource {
 
@@ -250,7 +254,7 @@ public class ESIndexResource {
 
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
 
             File f=downloadIndex(indexName);
@@ -281,7 +285,7 @@ public class ESIndexResource {
     	try {
         	checkArgument(params != null);
         	InitDataObject init = auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap());
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),this.indexAPI);
             if(!UtilMethods.isSet(indexName)){
             	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments");
             }
@@ -345,18 +349,9 @@ public class ESIndexResource {
         try {
         	checkArgument(inputFile != null);
         	InitDataObject init=auth(params,request);
-
-            String alias=init.getParamsMap().get("alias");
-        	webResource.init(true, request, true);
             if(inputFile!=null) {
-            	if(indexHelper.isSnapshotFilename(inputFileDetail.getFileName())){
-	            	String index = indexHelper.getIndexFromFilename(inputFileDetail.getFileName());
-	            	if(alias != null)
-	            		index = alias;
-	            	this.indexAPI.uploadSnapshot(inputFile, index);
-	            	return Response.ok(new MessageEntity("Success")).build();
-            	}else{
-            		return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "bad.file.name");
+            	if(this.indexAPI.uploadSnapshot(inputFile)){
+            		return Response.ok(new MessageEntity("Success")).build();
             	}
             }
             return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, Locale.getDefault(), null, "snapshot.upload.failed");
@@ -407,7 +402,7 @@ public class ESIndexResource {
     public Response clearIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().clearIndex(indexName);
             }
@@ -426,7 +421,7 @@ public class ESIndexResource {
     public Response deleteIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().delete(indexName);
             }
@@ -445,7 +440,7 @@ public class ESIndexResource {
     public Response activateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
 
             activateIndex(indexName);
 
@@ -464,7 +459,7 @@ public class ESIndexResource {
     public Response deactivateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
 
             deactivateIndex(indexName);
 
@@ -483,7 +478,7 @@ public class ESIndexResource {
     public Response updateReplica(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             int replicas = Integer.parseInt(init.getParamsMap().get("replicas"));
             APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
 
@@ -505,7 +500,7 @@ public class ESIndexResource {
     public Response closeIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             APILocator.getESIndexAPI().closeIndex(indexName);
 
             return Response.ok().build();
@@ -523,7 +518,7 @@ public class ESIndexResource {
     public Response openIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
             InitDataObject init=auth(params,request);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             APILocator.getESIndexAPI().openIndex(indexName);
 
             return Response.ok().build();
@@ -566,7 +561,7 @@ public class ESIndexResource {
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
 
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias");
+            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
         } catch (DotSecurityException sec) {
             SecurityLogger.logInfo(this.getClass(), "Access denied on getDocumentCount from "+request.getRemoteAddr());
