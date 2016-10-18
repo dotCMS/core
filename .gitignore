@@ -50,6 +50,7 @@ dotCMS/starter.zip
 dist/
 dotCMS/build/
 dotCMS/.gradle/
+dotCMS/.settings/
 dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
 dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
