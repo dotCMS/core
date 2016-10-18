@@ -408,7 +408,7 @@ class ClonePullTomcatTask extends DefaultTask{
         project.exec{
             def folder = new File( tomcatLocation )
             if( !folder.exists() ) {
-                commandLine "git", "clone", "-b", project.tomcatInstallVersion, project.tomcatInstallRepo, tomcatLocation
+                commandLine "git", "clone", "-b", project.tomcatInstallBranch, project.tomcatInstallRepo, tomcatLocation
             } else {
                 workingDir tomcatLocation
                 commandLine "git", "pull"
