@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
@@ -1143,7 +1144,7 @@ public class ContentResource {
 												if(folder!=null && InodeUtils.isSet(folder.getInode())) {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
-													if(st.getStructureType()==Structure.Type.FILEASSET.getType()){
+													if(st.getStructureType()==BaseContentType.FILEASSET.getType()){
 														Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,split[1]);
 														if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
 															contentlet.setIdentifier(existingIdent.getId());

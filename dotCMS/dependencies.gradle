@@ -311,10 +311,10 @@ dependencies {
 
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.0'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'
-
-	/** only needed for dev **/
+	
+	
 	compile 'org.immutables:generator:2.3.3'
-
+	compile 'org.immutables:value:2.3.3'
 
     integrationTestCompile sourceSets.test.output
 

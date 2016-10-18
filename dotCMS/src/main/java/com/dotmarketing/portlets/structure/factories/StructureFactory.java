@@ -405,11 +405,8 @@ public class StructureFactory {
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
 		ContentType type=new StructureTransformer(structure).from();
 		try {
-<<<<<<< HEAD:src/com/dotmarketing/portlets/structure/factories/StructureFactory.java
+
 	 		String actionUrl = contentTypeUtil.getActionUrl(type);
-=======
-	 		String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
->>>>>>> origin/master-3.7:dotCMS/src/main/java/com/dotmarketing/portlets/structure/factories/StructureFactory.java
 			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
                             String.valueOf(PermissionAPI.PERMISSION_READ)));

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.adrianwalker.multilinestring.Multiline;
 import org.elasticsearch.action.search.SearchResponse;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -354,7 +353,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
             
 
-            return com.google.common.collect.ImmutableList.copyOf(ret);
+            return ImmutableList.copyOf(ret);
         } catch (Exception e) {
             throw new DotStateException(e);
         }

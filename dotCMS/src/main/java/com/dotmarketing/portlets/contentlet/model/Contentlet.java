@@ -130,7 +130,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
+    @Override
+    public String getName() {
+        return getTitle();
+    }
+    
     public String getTitle(){
 
     	if(map.get("title") !=null){

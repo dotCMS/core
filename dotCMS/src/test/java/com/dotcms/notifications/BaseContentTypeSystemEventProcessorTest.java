@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -36,7 +37,7 @@ public class BaseContentTypeSystemEventProcessorTest {
         when(payload.getData()).thenReturn(structure);
         when(payload.getRawData()).thenReturn(contentTypePayloadDataWrapper);
         when(payload.getVisibilityId()).thenReturn("1");
-        when(structure.getStructureType()).thenReturn(Structure.Type.CONTENT.getType());
+        when(structure.getStructureType()).thenReturn(BaseContentType.CONTENT.getType());
         when(structure.getName()).thenReturn("test structure");
         when(structure.getInode()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");
 
@@ -46,7 +47,7 @@ public class BaseContentTypeSystemEventProcessorTest {
         assertEquals(result.getEventType(), systemEventType);
         assertEquals(result.getId(), "1");
         ContentTypeView contentTypeView = ContentTypeView.class.cast(result.getPayload().getData());
-        assertEquals(Structure.Type.CONTENT.toString(), contentTypeView.getType());
+        assertEquals(BaseContentType.CONTENT.toString(), contentTypeView.getType());
         assertEquals( "test structure", contentTypeView.getName());
         assertEquals("3b276d59-46e3-4196-9169-639ddfe6677f", contentTypeView.getInode());
         assertEquals("http://localhost:8080", contentTypeView.getAction());

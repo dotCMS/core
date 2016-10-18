@@ -3,6 +3,8 @@ package com.dotmarketing.util;
 import javax.naming.spi.InitialContextFactoryBuilder;
 import javax.naming.spi.NamingManager;
 
+import com.dotmarketing.db.DbConnectionFactory;
+
 /**
  * This class will set up the data source for testing. The main purpose here
  * is to be able to run the integration tests without the web app container
@@ -36,6 +38,7 @@ public class TestingJndiDatasource {
     public static void init() throws Exception {
         if (builder != null && !NamingManager.hasInitialContextFactoryBuilder()) {
             NamingManager.setInitialContextFactoryBuilder(builder);
+            DbConnectionFactory.getConnection().close();
         }
     }
 }
