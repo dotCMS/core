@@ -52,8 +52,8 @@ public interface FieldBuilder {
 			}
 			
 			
-			Method method = tryMe.getMethod("builder", null);
-			return (FieldBuilder) method.invoke(null, new Object[0]);
+			Method method = tryMe.getMethod("builder");
+			return (FieldBuilder) method.invoke(tryMe);
 		} catch (Exception e) {
 			throw new DotStateException(e.getMessage(),e);
 		}

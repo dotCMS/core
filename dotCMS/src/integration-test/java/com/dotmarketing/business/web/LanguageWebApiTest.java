@@ -18,9 +18,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.business.APILocator;
 
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigTestHelper;
-import com.dotmarketing.util.TestingJndiDatasource;
+
 import com.dotmarketing.util.WebKeys;
 
 
@@ -29,8 +27,7 @@ public class LanguageWebApiTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
 
-        new TestingJndiDatasource().init();
-        ConfigTestHelper._setupFakeTestingContext();
+
 
     }
 
@@ -57,16 +54,16 @@ public class LanguageWebApiTest {
                         .request();
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
-        
+
         // test passing in a parameter
         ImmutableMap<String, String> map =
                 ImmutableMap.<String, String>builder().put("language_id", "2").build();
 
-        pageRequest = new MockParameterRequest(pageRequest,map);
+        pageRequest = new MockParameterRequest(pageRequest, map);
         Language lang2 = lapi.getLanguage(pageRequest);
         assertEquals(lang2.getId(), 2);
     }
-    
+
     @Test
     public void testLangWebKeyParameter() {
 
@@ -75,23 +72,23 @@ public class LanguageWebApiTest {
                         .request();
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
-        
-        
-        
+
+
+
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        
+
         // test passing in a parameter
         ImmutableMap<String, String> map =
                 ImmutableMap.<String, String>builder().put(WebKeys.HTMLPAGE_LANGUAGE, "2").build();
 
-        pageRequest = new MockParameterRequest(pageRequest,map);
+        pageRequest = new MockParameterRequest(pageRequest, map);
         Language lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 2);
 
     }
-    
+
     @Test
     public void testLangAttribute() {
         HttpServletRequest pageRequest = new MockSessionRequest(
@@ -99,46 +96,46 @@ public class LanguageWebApiTest {
                         .request();
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
-        
-        
-        
+
+
+
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
 
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
-        
-        
+
+
         Language lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 2);
 
     }
-    
+
     @Test
     public void testLangInSession() {
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        
-        
+
+
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
-        assert(pageRequest.getSession(false) ==null);
+        assert (pageRequest.getSession(false) == null);
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
-        
-        
+
+
         Language lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 2);
-        assert(pageRequest.getSession(false) !=null);
-        
+        assert (pageRequest.getSession(false) != null);
+
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, null);
         // this should still be 2 because of the session
         lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 2);
 
     }
-    
-    
+
+
     @Test
     public void testBadLangWebKeyParameter() {
 
@@ -147,70 +144,66 @@ public class LanguageWebApiTest {
                         .request();
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
-        
-        
-        
+
+
+
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
         // test passing in a parameter
-        ImmutableMap<String, String> map =
-                ImmutableMap.<String, String>builder().put(WebKeys.HTMLPAGE_LANGUAGE, "NOTALANG").build();
+        ImmutableMap<String, String> map = ImmutableMap.<String, String>builder()
+                .put(WebKeys.HTMLPAGE_LANGUAGE, "NOTALANG").build();
 
-        pageRequest = new MockParameterRequest(pageRequest,map);
+        pageRequest = new MockParameterRequest(pageRequest, map);
         Language lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 1);
-        
-        
-        
+
+
+
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
         // test passing in a parameter
-        map =
-                ImmutableMap.<String, String>builder().put("language_id", "NOTALANG").build();
+        map = ImmutableMap.<String, String>builder().put("language_id", "NOTALANG").build();
 
-        pageRequest = new MockParameterRequest(pageRequest,map);
+        pageRequest = new MockParameterRequest(pageRequest, map);
         lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 1);
-        
+
 
     }
-    
+
     @Test
     public void testSettingMultipleWays() {
 
-        
+
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        
-        Map<String, String> map = new HashMap<>();
-        //map.put("language_id", "2");
 
-        pageRequest = new MockParameterRequest(pageRequest,map);
-        
-        
+        Map<String, String> map = new HashMap<>();
+        // map.put("language_id", "2");
+
+        pageRequest = new MockParameterRequest(pageRequest, map);
+
+
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
-        
-        
-        
+
+
+
         pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
 
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
-        
-        
+
+
         Language lang = lapi.getLanguage(pageRequest);
         assertEquals(lang.getId(), 2);
 
     }
-    
-    
-    
-    
-    
-    
+
+
+
 }

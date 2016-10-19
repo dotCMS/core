@@ -6,6 +6,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.ConfigTestHelper;
 
@@ -35,11 +37,9 @@ import com.dotmarketing.util.ConfigTestHelper;
 				return;
 			}
 			inited=true;
-			
-			
-		    new com.dotmarketing.util.TestingJndiDatasource().init();
-		    ConfigTestHelper._setupFakeTestingContext();
-		    
+	        new com.dotmarketing.util.TestingJndiDatasource().init();
+	        ConfigTestHelper._setupFakeTestingContext();
+
 
 			DotConnect dc = new DotConnect();
 			String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";

@@ -199,7 +199,7 @@ public class CMSFilter implements Filter {
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
-
+        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
@@ -209,7 +209,7 @@ public class CMSFilter implements Filter {
 				
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
 				request.setAttribute(CMS_FILTER_IDENTITY, ident);
-				RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+
 				if(response.isCommitted()) {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
 					return;
@@ -245,7 +245,6 @@ public class CMSFilter implements Filter {
 			}
 
 			// fire every_request rules
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
             if(response.isCommitted()){
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
                 return;
@@ -255,7 +254,6 @@ public class CMSFilter implements Filter {
 		}
 
 		if(rewrite.startsWith("/contentAsset/")){
-	        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 	        if(response.isCommitted()){
 	            /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
 	            return;

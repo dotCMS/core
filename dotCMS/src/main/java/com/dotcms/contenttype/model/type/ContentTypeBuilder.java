@@ -73,8 +73,8 @@ public interface ContentTypeBuilder {
 				}
 			}
 
-			Method method = tryMe.getMethod("builder", null);
-			return (ContentTypeBuilder) method.invoke(null, new Object[0]);
+			Method method = tryMe.getMethod("builder");
+			return (ContentTypeBuilder) method.invoke(tryMe);
 		} catch (Exception e) {
 			throw new DotStateException(e.getMessage(), e);
 		}
