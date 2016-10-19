@@ -152,6 +152,13 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
     tomcatPath = tomcatDistBase
 }
 
+//Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
+//(Useful for development)
+task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
+
+}
+deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
+
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
 
@@ -381,6 +388,46 @@ task undeployPlugins << {
 }
 
 undeployPlugins.finalizedBy 'deployConfig'
+
+//Generates a no obfuscated version of the license jar
+task generateMoveCleanLicenseTomcat << {
+
+    exec {
+        workingDir "$licenseProjectHome"
+        commandLine 'ant', "-Ddotcms.release.version=$dotcmsReleaseVersion"
+    }
+
+    delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+        include "eelic-*", "eelic_*"
+    }
+
+    copy{
+        from "$licenseProjectHome/build"
+        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+        include "eelic_clean.jar"
+    }
+
+
+}
+
+//Generates a no obfuscated version of the enterprise jar
+task generateMoveCleanEnterpriseTomcat << {
+
+    exec {
+        workingDir "$enterpriseProjectHome"
+        commandLine 'ant', "-Ddotcms.release.version=$dotcmsReleaseVersion"
+    }
+
+    delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+        include "ee-*", "ee_*"
+    }
+
+    copy{
+        from "$enterpriseProjectHome/build"
+        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+        include "ee_clean.jar"
+    }
+}
 
 // Util methods.
 def getDate() {
