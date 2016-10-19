@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
@@ -43,6 +44,7 @@ import com.liferay.portal.model.User;
 
 public class BrowserAPI {
 
+    private LanguageAPI langAPI = APILocator.getLanguageAPI();
     private UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
     private FolderAPI folderAPI = APILocator.getFolderAPI();
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -456,18 +458,25 @@ public class BrowserAPI {
 					fileAsset.getParent() != null ? fileAsset
 							.getParent() : "");
 			fileMap.put("isContentlet", false);
-			// END GRAZIANO issue-12-dnd-template
-			if (contentlet != null) {
-				fileMap.put("identifier", contentlet.getIdentifier());
-				fileMap.put("inode", contentlet.getInode());
-				fileMap.put("isLocked", contentlet.isLocked());
-				fileMap.put("isContentlet", true);
-				//Add Language Attributes to FileMap, required in Website Browser
-                Language lang = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
-                fileMap.put("languageId", contentlet.getLanguageId());
-                fileMap.put("languageCode", lang.getLanguageCode());
-                fileMap.put("countryCode", lang.getCountryCode());
-			}
+            // END GRAZIANO issue-12-dnd-template
+            Language lang = null;
+            
+            if (contentlet != null) {
+                fileMap.put("identifier", contentlet.getIdentifier());
+                fileMap.put("inode", contentlet.getInode());
+                fileMap.put("isLocked", contentlet.isLocked());
+                fileMap.put("isContentlet", true);
+                lang = langAPI.getLanguage(contentlet.getLanguageId());
+                fileMap.put("languageId", lang.getId());
+            }
+            else{
+                //This is a Legacy File. Add the default Language to FileMap
+                lang = langAPI.getDefaultLanguage();
+                fileMap.put("languageId", lang.getId());
+            }
+            //Add Language Attributes to FileMap, required in Website Browser
+            fileMap.put("languageCode", lang.getLanguageCode());
+            fileMap.put("countryCode", lang.getCountryCode());
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
 
