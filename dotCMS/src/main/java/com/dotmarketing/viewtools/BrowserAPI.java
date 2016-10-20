@@ -467,14 +467,13 @@ public class BrowserAPI {
                 fileMap.put("isLocked", contentlet.isLocked());
                 fileMap.put("isContentlet", true);
                 lang = langAPI.getLanguage(contentlet.getLanguageId());
-                fileMap.put("languageId", lang.getId());
             }
             else{
                 //This is a Legacy File. Add the default Language to FileMap
                 lang = langAPI.getDefaultLanguage();
-                fileMap.put("languageId", lang.getId());
             }
             //Add Language Attributes to FileMap, required in Website Browser
+            fileMap.put("languageId", lang.getId());
             fileMap.put("languageCode", lang.getLanguageCode());
             fileMap.put("countryCode", lang.getCountryCode());
 
