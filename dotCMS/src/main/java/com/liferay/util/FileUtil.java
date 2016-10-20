@@ -193,7 +193,7 @@ public class FileUtil {
 					Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
 						+ ", destination: " + destination.getAbsolutePath());
 				}
-			} catch (Exception e) {
+			} catch (IOException e) {
 
 				hardLinks = false; // setting to false will execute the fallback
 				Logger.warn(FileUtil.class,
