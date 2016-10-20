@@ -173,22 +173,31 @@ public class FileUtil {
         }
 
         if (hardLinks) {
-            // I think we need to be sure to unlink first
-            if (destination.exists()) {
-                Path destinationPath = Paths.get(destination.getAbsolutePath());
-                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-                Files.delete(destinationPath);
-            }
-            Path newLink = Paths.get(destination.getAbsolutePath());
-            Path existingFile = Paths.get(source.getAbsolutePath());
 
-            Files.createLink(newLink, existingFile);
-            // setting this means we will try again if we cannot hard link
-            if (!destination.exists() || destination.length() == 0) {
-                hardLinks = false;
-                Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-                    + ", destination: " + destination.getAbsolutePath());
-            }
+			try {
+				// I think we need to be sure to unlink first
+				if (destination.exists()) {
+					Path destinationPath = Paths.get(destination.getAbsolutePath());
+					//"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+					Files.delete(destinationPath);
+				}
+				Path newLink = Paths.get(destination.getAbsolutePath());
+				Path existingFile = Paths.get(source.getAbsolutePath());
+
+				Files.createLink(newLink, existingFile);
+				// setting this means we will try again if we cannot hard link
+				if (!destination.exists() || destination.length() == 0) {
+					hardLinks = false;
+					Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+						+ ", destination: " + destination.getAbsolutePath());
+				}
+			} catch (Exception e) {
+
+				hardLinks = false; // setting to false will execute the fallback
+				Logger.warn(FileUtil.class,
+						"Could not created the hard link for source: " + source +
+								", destination: " + destination + ". Error message: " + e.getMessage());
+			}
         }
 
         if (!hardLinks) {
