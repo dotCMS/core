@@ -196,8 +196,8 @@ public class FileUtil {
 			} catch (IOException e) {
 
 				hardLinks = false; // setting to false will execute the fallback
-				Logger.warn(FileUtil.class,
-						"Could not created the hard link for source: " + source +
+				Logger.debug(FileUtil.class,
+						"Could not created the hard link, will try copy for source: " + source +
 								", destination: " + destination + ". Error message: " + e.getMessage());
 			}
         }
