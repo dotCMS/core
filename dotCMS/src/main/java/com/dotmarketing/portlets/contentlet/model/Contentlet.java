@@ -12,9 +12,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.sync.Exportable;
-import com.dotcms.sync.Importable;
-import com.dotcms.sync.exception.DotDependencyException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -51,7 +48,7 @@ import com.liferay.portal.model.User;
  * @author David Tores
  *
  */
-public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Exportable, Importable, Treeable, Ruleable  {
+public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
 
     private static final long serialVersionUID = 1L;
     public static final String INODE_KEY = "inode";
@@ -112,25 +109,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	//setFolder(FolderFactory.SYSTEM_FOLDER);
     }
 
-	@JsonIgnore
-	public List<Exportable> getDependencies() {
-		// TODO Auto-generated method stub
-		List<Exportable> ret =new ArrayList<Exportable>();
-		ret.add(getStructure());
-		for(Field f : getStructure().getFields()){
-			ret.addAll(f.getDependencies());
-		}
-		ret.add(this);
-		return ret;
-	}
 
 
 
-	public boolean isDependenciesMet() throws DotDependencyException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
+
     @Override
     public String getName() {
         return getTitle();

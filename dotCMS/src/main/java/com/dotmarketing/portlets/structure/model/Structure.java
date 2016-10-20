@@ -10,9 +10,6 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
-import com.dotcms.sync.Exportable;
-import com.dotcms.sync.Importable;
-import com.dotcms.sync.exception.DotDependencyException;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -29,10 +26,10 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 
-public class Structure extends Inode implements Permissionable, Exportable, Importable,Treeable,ContentTypeIf  {
+
+public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf  {
 
     public static final String STRUCTURE_TYPE_ALL       = "_all";
 
@@ -93,11 +90,6 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
     private Date modDate;
 
 
-
-    public boolean isDependenciesMet() throws DotDependencyException {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     public String getDetailPage() {
         return pagedetail;
