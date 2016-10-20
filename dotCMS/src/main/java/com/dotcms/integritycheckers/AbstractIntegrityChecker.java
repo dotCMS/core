@@ -39,7 +39,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      * @return temporal table name
      */
     protected String getTempTableName(final String endpointId) {
-        return getTempTableName(endpointId, "");
+        return getTempTableName(endpointId, StringUtils.EMPTY);
     }
 
     /**

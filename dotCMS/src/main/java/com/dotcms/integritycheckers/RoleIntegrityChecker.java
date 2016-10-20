@@ -37,9 +37,9 @@ import java.util.function.Consumer;
  */
 public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 
-	private RoleAPI roleAPI;
-	private UserAPI userAPI;
-	private WorkflowAPI workflowAPI;
+	private final RoleAPI roleAPI;
+	private final UserAPI userAPI;
+	private final WorkflowAPI workflowAPI;
 	
     public RoleIntegrityChecker() {
     	roleAPI = APILocator.getRoleAPI();
@@ -320,11 +320,11 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 
 
     private static class CmsRole {
-    	private String roleId;
-    	private String roleKey;
-    	private String roleName;
-    	private String qualifiedId;    	
-    	private String qualifiedName;
+    	private final String roleId;
+    	private final String roleKey;
+    	private final String roleName;
+    	private final String qualifiedId;    	
+    	private final String qualifiedName;
 
     	public CmsRole(String roleId, String roleKey, String roleName, CmsRole parent) {
     		this.roleId = roleId;
