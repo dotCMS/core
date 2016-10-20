@@ -1,3 +1,4 @@
+<!DOCTYPE doctypeName [<!ENTITY nbsp "&#160;">]> 
 <xml>
      <object_0>
           <html>&lt;form id="new_form_1208193501310" name="new_form_1208193501310" method="post" action="/dotCMS/sendEmail" onsubmit="return checkForm();"&gt;

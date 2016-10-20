@@ -40,7 +40,8 @@ public class ConfigTestHelper extends Config {
             Config.CONTEXT = context;
 
         }
-        dotmarketingPropertiesUrl = new File("test-resources/it-dotmarketing-config.properties").toURI().toURL();
-        clusterPropertiesUrl = new File("test-resources/it-dotcms-config-cluster.properties").toURI().toURL();
+
+        dotmarketingPropertiesUrl = Thread.currentThread().getContextClassLoader().getResource("it-dotmarketing-config.properties").toURI().toURL();
+        clusterPropertiesUrl = Thread.currentThread().getContextClassLoader().getResource("it-dotcms-config-cluster.properties").toURI().toURL();
     }
 }
