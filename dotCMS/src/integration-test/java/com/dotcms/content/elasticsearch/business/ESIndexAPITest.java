@@ -22,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigTestHelper;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
@@ -89,6 +90,7 @@ public class ESIndexAPITest {
 	 * @throws DotDataException
 	 */
 	@Test
+	@Ignore
 	public void uploadSnapshotTest_fromCurrentLive() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
@@ -116,7 +118,8 @@ public class ESIndexAPITest {
 	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
 		String currentLiveIndex = getLiveIndex();
 		esIndexAPI.closeIndex(currentLiveIndex);
-		ZipFile file = new ZipFile("test-resources/index.zip");
+		String path = ConfigTestHelper.getPathToTestResource("index.zip");
+		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
 		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
@@ -132,7 +135,8 @@ public class ESIndexAPITest {
 	 */
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
-		ZipFile file = new ZipFile("test-resources/failing-test.zip");
+		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
+		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
 		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
