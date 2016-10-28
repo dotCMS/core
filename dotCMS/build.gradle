@@ -51,6 +51,14 @@ testSets {
     integrationTest { dirName = 'integration-test' }
 }
 
+sourceSets {
+    main {
+        resources {
+            include 'org/apache/velocity/runtime/defaults/**', 'com/dotmarketing/**'
+        }
+    }
+}
+
 
 tasks.matching {it instanceof Test}.all {
     testLogging.events = ["failed", "passed", "skipped"]
@@ -146,6 +154,11 @@ war {
     from (zipTree(configurations.coreWeb.files.toArray()[0])) {
         into rulesEngineFolder
     }
+
+    rootSpec.exclude('**/org/apache/velocity/runtime/defaults/**')
+    rootSpec.exclude('**/com/dotmarketing/beans/**')
+    rootSpec.exclude('**/com/dotmarketing/startup/**')
+
 }
 war.finalizedBy 'undeployPlugins'
 
