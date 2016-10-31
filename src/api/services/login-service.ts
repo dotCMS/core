@@ -247,7 +247,6 @@ export class LoginService extends CoreWebService {
      * or if there is an error
      */
     public recoverPassword(login: string): Observable<any> {
-        console.log('login', login);
         let body = JSON.stringify({'userId': login});
 
         return this.requestView({

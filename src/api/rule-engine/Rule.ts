@@ -322,7 +322,6 @@ export class RuleService extends CoreWebService {
       url: `${this._apiRoot.baseUrl}api/v1/sites/${site.identifier}/ruleengine/rules`
     }).subscribe(ruleMap => {
       this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
-      console.log('swith site - rules2', this.rules);
       this._rules$.next(this.rules);
     });
   }

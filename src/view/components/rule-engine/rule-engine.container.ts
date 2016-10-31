@@ -87,6 +87,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
 })
 export class RuleEngineContainer extends SiteChangeListener{
 
+  rules: RuleModel[];
   state:RuleEngineState = new RuleEngineState()
 
   environments:IPublishEnvironment[] = []
@@ -105,7 +106,7 @@ export class RuleEngineContainer extends SiteChangeListener{
               siteService:SiteService
   ) {
     this.rules$.subscribe(( rules ) => {
-      //console.log("RuleEngineContainer", "rules$.subscribe", rules)
+      console.log("RuleEngineContainer", "rules$.subscribe", rules);
       this.rules = rules;
     })
 
@@ -177,6 +178,7 @@ export class RuleEngineContainer extends SiteChangeListener{
    */
 
   onCreateRule(event) {
+    console.log("RuleEngineContainer", "onCreateRule", event)
     let priority = this.rules.length ? this.rules[0].priority + 1 : 1;
     let rule = new RuleModel({ priority})
     let group = new ConditionGroupModel({priority:1, operator:'AND'})
@@ -218,6 +220,7 @@ export class RuleEngineContainer extends SiteChangeListener{
 
 
   onUpdateFireOn(event:RuleActionEvent){
+    console.log("RuleEngineContainer", "onUpdateFireOn", event)
     event.payload.rule.fireOn = <string>event.payload.value
     this.patchRule(event.payload.rule, false)
   }
