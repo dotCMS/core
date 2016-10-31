@@ -1,6 +1,8 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,7 +29,10 @@ public class IntegrationTestInitService {
             .equals(ServletTestRunner.class.getCanonicalName()))) {
             TestingJndiDatasource.init();
             ConfigTestHelper._setupFakeTestingContext();
-    		CacheLocator.init();
+
+            CacheLocator.init();
+    		FactoryLocator.init();
+    		APILocator.init();
 
             initCompleted.set(true);
         }
