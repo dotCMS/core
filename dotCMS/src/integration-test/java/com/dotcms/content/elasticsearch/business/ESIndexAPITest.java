@@ -90,7 +90,6 @@ public class ESIndexAPITest {
 	 * @throws DotDataException
 	 */
 	@Test
-	@Ignore
 	public void uploadSnapshotTest_fromCurrentLive() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
