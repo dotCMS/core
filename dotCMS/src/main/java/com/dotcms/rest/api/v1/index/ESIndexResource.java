@@ -374,6 +374,9 @@ public class ESIndexResource {
     }
 
 
+    /**
+     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(request, inputFile, inputFileDetail ,params)} and {@link #snapshotIndex(request, inputFile, inputFileDetail ,params)}
+     */
     @PUT
     @Path("/create/{params:.*}")
     @Produces("text/plain")
