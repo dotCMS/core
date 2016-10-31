@@ -45,6 +45,11 @@ testSets {
     integrationTest { dirName = 'integration-test' }
 }
 
+//Avoid skipping running tests when the integrationTest task is invoked
+project.integrationTest {
+    outputs.upToDateWhen { false }
+}
+
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
@@ -134,11 +139,24 @@ task undeployWarTomcat(type: Delete) {
     followSymlinks = true
 }
 
+undeployWarTomcat.mustRunAfter 'backupWarTomcatData'
+
 // Makes all the magic to place the webapp under tomcat8 for devs.
 task deployWarTomcat(type: DeployWarTomcatTask) {
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
+
+
+//Same as the deploy-war-tomcat except that it will backup the assets, dotsecure, META-INF and H2 folders
+//in order to restore them after the deploy.
+//This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
+task deployWarTomcatBackup(type: DeployWarTomcatTask){
+    dependsOn 'war', 'clonePullTomcat', 'backupWarTomcatData', 'undeployWarTomcat'
+    tomcatPath = tomcatInstallLocation
+}
+deployWarTomcatBackup.finalizedBy 'restoreBackupWarTomcatData'
+
 
 //Executes deployWarTomcat task compiling tests as well
 task deployWarTomcatTests(type: DeployWarTomcatTask){
@@ -151,6 +169,13 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
     dependsOn 'war'
     tomcatPath = tomcatDistBase
 }
+
+//Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
+//(Useful for development)
+task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
+
+}
+deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
@@ -380,7 +405,112 @@ task undeployPlugins << {
     delete "$webAppFolder/html/plugins"
 }
 
+//Creates a backup of assets, dotsecure, META-INF and H2_Database
+task backupWarTomcatData << {
+    delete "$tomcatInstallLocation/temp"
+
+    copy{
+        into "$tomcatInstallLocation/temp/assets"
+        from "$tomcatInstallLocation$webAppRootFolder/assets"
+        include "**/*"
+    }
+
+    copy{
+        into "$tomcatInstallLocation/temp/dotsecure"
+        from "$tomcatInstallLocation$webAppRootFolder/dotsecure"
+        include "**/*"
+    }
+
+    copy{
+        into "$tomcatInstallLocation/temp/META-INF"
+        from "$tomcatInstallLocation$webAppRootFolder/META-INF"
+        include "**/*"
+    }
+
+    copy{
+        into "$tomcatInstallLocation/temp/h2"
+        from "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
+        include "*.db"
+    }
+}
+
+//Restores content of assets, dotsecure, META-INF and H2_Database (copy back to webapps/ROOT)
+task restoreBackupWarTomcatData << {
+
+    delete "$tomcatInstallLocation$webAppRootFolder/assets"
+    copy{
+        from "$tomcatInstallLocation/temp/assets"
+        into "$tomcatInstallLocation$webAppRootFolder/assets"
+        include "**/*"
+    }
+
+    delete "$tomcatInstallLocation$webAppRootFolder/dotsecure"
+    copy{
+        from "$tomcatInstallLocation/temp/dotsecure"
+        into "$tomcatInstallLocation$webAppRootFolder/dotsecure"
+        include "**/*"
+    }
+
+    delete "$tomcatInstallLocation$webAppRootFolder/META-INF"
+    copy{
+        from "$tomcatInstallLocation/temp/META-INF"
+        into "$tomcatInstallLocation$webAppRootFolder/META-INF"
+        include "**/*"
+    }
+
+    delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
+    copy{
+        from "$tomcatInstallLocation/temp/h2"
+        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
+        include "*.db"
+    }
+
+    delete "$tomcatInstallLocation/temp"
+
+    delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
+}
+
 undeployPlugins.finalizedBy 'deployConfig'
+
+//Generates a no obfuscated version of the license jar
+task generateMoveCleanLicenseTomcat << {
+
+    exec {
+        workingDir "$licenseProjectHome"
+        commandLine 'ant', "-Ddotcms.release.version=$dotcmsReleaseVersion"
+    }
+
+    delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+        include "eelic-*", "eelic_*"
+    }
+
+    copy{
+        from "$licenseProjectHome/build"
+        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+        include "eelic_clean.jar"
+    }
+
+
+}
+
+//Generates a no obfuscated version of the enterprise jar
+task generateMoveCleanEnterpriseTomcat << {
+
+    exec {
+        workingDir "$enterpriseProjectHome"
+        commandLine 'ant', "-Ddotcms.release.version=$dotcmsReleaseVersion"
+    }
+
+    delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+        include "ee-*", "ee_*"
+    }
+
+    copy{
+        from "$enterpriseProjectHome/build"
+        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+        include "ee_clean.jar"
+    }
+}
 
 // Util methods.
 def getDate() {
@@ -408,7 +538,7 @@ class ClonePullTomcatTask extends DefaultTask{
         project.exec{
             def folder = new File( tomcatLocation )
             if( !folder.exists() ) {
-                commandLine "git", "clone", "-b", project.tomcatInstallVersion, project.tomcatInstallRepo, tomcatLocation
+                commandLine "git", "clone", "-b", project.tomcatInstallBranch, project.tomcatInstallRepo, tomcatLocation
             } else {
                 workingDir tomcatLocation
                 commandLine "git", "pull"
