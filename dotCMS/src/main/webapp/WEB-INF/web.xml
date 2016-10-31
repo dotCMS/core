@@ -1,46 +1,4 @@
 <?xml version="1.0"?>
-<!DOCTYPE web-app [
-		<!ELEMENT web-app (display-name|context-param|filter|servlet|filter-mapping|listener|servlet-mapping|session-config|mime-mapping|welcome-file-list|error-page|jsp-config|security-constraint)*>
-		<!ATTLIST web-app
-				xmlns CDATA #REQUIRED
-				xmlns:xsi CDATA #REQUIRED
-				xsi:schemaLocation CDATA #REQUIRED
-				version CDATA #REQUIRED>
-		<!ELEMENT display-name (#PCDATA)>
-		<!ELEMENT context-param (param-name|param-value)*>
-		<!ELEMENT param-name (#PCDATA)>
-		<!ELEMENT param-value (#PCDATA)>
-		<!ELEMENT filter (filter-name|filter-class|init-param)*>
-		<!ELEMENT filter-name (#PCDATA)>
-		<!ELEMENT filter-class (#PCDATA)>
-		<!ELEMENT init-param (param-name|param-value)*>
-		<!ELEMENT servlet (servlet-name|servlet-class|load-on-startup|init-param)*>
-		<!ELEMENT servlet-name (#PCDATA)>
-		<!ELEMENT servlet-class (#PCDATA)>
-		<!ELEMENT filter-mapping (servlet-name|url-pattern|filter-name)*>
-		<!ELEMENT url-pattern (#PCDATA)>
-		<!ELEMENT listener (listener-class|display-name)*>
-		<!ELEMENT listener-class (#PCDATA)>
-		<!ELEMENT load-on-startup (#PCDATA)>
-		<!ELEMENT servlet-mapping (servlet-name|url-pattern)*>
-		<!ELEMENT session-config (session-timeout)*>
-		<!ELEMENT session-timeout (#PCDATA)>
-		<!ELEMENT mime-mapping (extension|mime-type)*>
-		<!ELEMENT extension (#PCDATA)>
-		<!ELEMENT mime-type (#PCDATA)>
-		<!ELEMENT welcome-file-list (welcome-file)*>
-		<!ELEMENT welcome-file (#PCDATA)>
-		<!ELEMENT error-page (error-code|location)*>
-		<!ELEMENT error-code (#PCDATA)>
-		<!ELEMENT location (#PCDATA)>
-		<!ELEMENT jsp-config (jsp-property-group)*>
-		<!ELEMENT jsp-property-group (url-pattern|el-ignored)*>
-		<!ELEMENT el-ignored (#PCDATA)>
-		<!ELEMENT security-constraint (display-name|web-resource-collection|auth-constraint)*>
-		<!ELEMENT web-resource-collection (web-resource-name|url-pattern)*>
-		<!ELEMENT web-resource-name (#PCDATA)>
-		<!ELEMENT auth-constraint (#PCDATA)>
-		]>
 <web-app xmlns="http://java.sun.com/xml/ns/j2ee"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
