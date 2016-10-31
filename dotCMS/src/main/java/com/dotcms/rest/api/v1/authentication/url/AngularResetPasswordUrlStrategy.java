@@ -21,7 +21,7 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
     private final JsonWebTokenService jsonWebTokenService;
     private final long jwtMillis = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20) * DateUtil.MINUTE_MILLIS;
 
-    private static final String HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1 = "/html/ng?resetPassword=true&token={0}";
+    private static final String HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1 = "/resetPassword/{0}";
 
     public AngularResetPasswordUrlStrategy() {
         this(JsonWebTokenFactory.getInstance().getJsonWebTokenService());
