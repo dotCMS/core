@@ -2611,12 +2611,14 @@ create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36)
 create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table htmlpages_ir(html_page varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 create table fileassets_ir(file_name varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table cms_roles_ir(name varchar2(1000), role_key varchar2(255), local_role_id varchar2(36), remote_role_id varchar2(36), local_role_fqn varchar2(1000), remote_role_fqn varchar2(1000), endpoint_id varchar2(36), PRIMARY KEY (local_role_id, endpoint_id));
 
 alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 
 ---Server Action
 create table cluster_server_action(
