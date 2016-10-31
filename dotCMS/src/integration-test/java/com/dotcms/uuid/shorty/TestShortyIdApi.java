@@ -13,6 +13,7 @@ import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.ConfigTestHelper;
+import com.dotmarketing.util.IntegrationTestInitService;
 
 public class TestShortyIdApi {
 
@@ -59,10 +60,8 @@ public class TestShortyIdApi {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        new com.dotmarketing.util.TestingJndiDatasource().init();
-        ConfigTestHelper._setupFakeTestingContext();
+    	IntegrationTestInitService.getInstance().init();
         APILocator.getBundleAPI();
-        CacheLocator.init();
 
         for (int i = 0; i < 10; i++) {
             fourOhFours.add(RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH));

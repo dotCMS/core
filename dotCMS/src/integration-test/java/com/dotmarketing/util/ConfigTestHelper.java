@@ -8,6 +8,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
+import java.net.URL;
 
 import javax.servlet.ServletContext;
 
@@ -40,8 +41,25 @@ public class ConfigTestHelper extends Config {
             Config.CONTEXT = context;
 
         }
-
-        dotmarketingPropertiesUrl = Thread.currentThread().getContextClassLoader().getResource("it-dotmarketing-config.properties").toURI().toURL();
-        clusterPropertiesUrl = Thread.currentThread().getContextClassLoader().getResource("it-dotcms-config-cluster.properties").toURI().toURL();
+        dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
+        clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
     }
+
+    /**
+     * URL to known resource on the test-resources path, now on "bin"
+     * @param resource resource name
+     * @return
+     */
+    public static URL getUrlToTestResource(String resource){
+    	return Thread.currentThread().getContextClassLoader().getResource(resource);
+    }
+
+    /**
+     * Path to known resource on the test-resources path, now on "bin"
+     * @param resource resource name
+     * @return
+     */
+	public static String getPathToTestResource(String resource){
+		return getUrlToTestResource(resource).getPath();
+	}
 }

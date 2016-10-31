@@ -6,6 +6,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
@@ -32,9 +33,10 @@ public class UserUtilTest {
     private static RoleAPI roleAPI;
 
     @BeforeClass
-    public static void prepare() throws DotDataException {
+    public static void prepare() throws Exception {
 
         //Setting the test user
+    	IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.getUserAPI().getSystemUser();
         userAPI = APILocator.getUserAPI();
         roleAPI = APILocator.getRoleAPI();

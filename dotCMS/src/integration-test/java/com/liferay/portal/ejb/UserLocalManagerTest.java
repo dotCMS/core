@@ -1,16 +1,17 @@
 package com.liferay.portal.ejb;
 
-import com.dotcms.TestBase;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserFirstNameException;
 import com.liferay.portal.UserLastNameException;
 import com.liferay.portal.model.User;
-
-import org.junit.Test;
 
 /**
  * Tests for user management operations (create, validate, delete)
@@ -18,6 +19,12 @@ import org.junit.Test;
  * @author Nollymar Longa
  */
 public class UserLocalManagerTest {
+
+	@BeforeClass
+	public static void prepare() throws Exception{
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
     @Test
     public void testValidName() throws DotDataException, SystemException, PortalException, DotSecurityException {
