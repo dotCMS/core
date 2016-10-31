@@ -106,7 +106,6 @@ export class RuleEngineContainer extends SiteChangeListener{
               siteService:SiteService
   ) {
     this.rules$.subscribe(( rules ) => {
-      console.log("RuleEngineContainer", "rules$.subscribe", rules);
       this.rules = rules;
     })
 
