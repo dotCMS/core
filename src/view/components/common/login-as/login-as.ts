@@ -2,7 +2,7 @@ import {BaseComponent} from '../_base/base-component';
 import {Component, Output, EventEmitter} from '@angular/core';
 import {LoginService, User} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
-import {Router} from '@angular/router';
+import {DotRouterService} from '../../../../api/services/dot-router-service';
 
 @Component({
     directives: [],
@@ -18,7 +18,7 @@ export class LoginAsComponent extends BaseComponent {
     private needPassword: boolean = false;
     private userLists: Array<User>;
 
-    constructor(private loginService: LoginService, private router: Router, private messageService: MessageService) {
+    constructor(private loginService: LoginService, private router: DotRouterService, private messageService: MessageService) {
         super(['change', 'cancel', 'password'], messageService);
     }
 
@@ -36,7 +36,7 @@ export class LoginAsComponent extends BaseComponent {
     dolLoginAs(options: any): void {
         this.loginService.loginAs(options).subscribe(data => {
             if (data) {
-                this.router.navigate(['dotCMS']);
+                this.router.goToMain();
                 this.close();
             }
         });

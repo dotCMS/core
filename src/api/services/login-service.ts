@@ -56,11 +56,15 @@ export class LoginService extends CoreWebService {
         return this._auth;
     }
 
+    get isLogin(): boolean{
+        return this.auth && this.auth.user;
+    }
+
     /**
      * Load _auth information.
      * @returns {Observable<any>}
      */
-    public loadAuth(): Observable<any> {
+    public loadAuth(): Observable<Auth> {
         return this.requestView({
             method: RequestMethod.Get,
             url: this.urls.getAuth
@@ -243,10 +247,11 @@ export class LoginService extends CoreWebService {
      * or if there is an error
      */
     public recoverPassword(login: string): Observable<any> {
+        console.log('login', login);
         let body = JSON.stringify({'userId': login});
 
         return this.requestView({
-            body: body,
+            body: {'userId': login},
             method: RequestMethod.Post,
             url: this.urls.recoverPassword,
         });

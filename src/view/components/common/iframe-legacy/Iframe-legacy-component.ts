@@ -27,17 +27,19 @@ export class IframeLegacyComponent extends SiteChangeListener {
     ngOnInit(): void {
         this.iframeElement = this.element.nativeElement.querySelector('iframe');
 
-        if (this.routingService.currentMenu) {
-            this.initComponent();
-        }
+        this.initComponent();
 
         this.iframeElement.onload = () => this.loadingInProgress = false;
-    }
+  }
 
     initComponent(): void {
         this.route.params.pluck<string>('id').subscribe(res => {
             this.currentId = res;
-            this.iframe = this.loadURL(this.routingService.getPortletURL(this.currentId) + '&in_frame=true&frame=detailFrame');
+
+            setTimeout(() => {
+                    this.iframe = this.loadURL(this.routingService.getPortletURL(this.currentId) + '&in_frame=true&frame=detailFrame');
+                },
+            1);
         });
     }
 
