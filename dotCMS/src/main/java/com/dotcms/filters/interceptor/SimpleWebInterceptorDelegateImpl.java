@@ -131,7 +131,8 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             for (WebInterceptor webInterceptor : this.interceptors) {
 
                 // if the filter applies just for some filter patterns.
-                if (this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
+                if (webInterceptor.isActivate() &&
+                        this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
 
                     result          = webInterceptor.intercept(request, response);
                     shouldContinue &= (Result.SKIP_NO_CHAIN != result);
