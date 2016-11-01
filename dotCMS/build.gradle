@@ -1,10 +1,16 @@
 buildscript {
-    repositories { jcenter() }
+    repositories {
+        maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        jcenter()
+    }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
+        classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
     }
 }
+
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 configurations {
     compile
@@ -45,8 +51,18 @@ testSets {
     integrationTest { dirName = 'integration-test' }
 }
 
+
+tasks.matching {it instanceof Test}.all {
+    testLogging.events = ["failed", "passed", "skipped"]
+}
+
 //Avoid skipping running tests when the integrationTest task is invoked
 project.integrationTest {
+    outputs.upToDateWhen { false }
+}
+
+//Avoid skipping running tests when the test task is invoked
+project.test {
     outputs.upToDateWhen { false }
 }
 
@@ -238,14 +254,13 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
 
 }
 
-createDist.finalizedBy 'zip', 'tgzTask'
+createDist.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
 
 //Task used to create a .zip file from the distribution
 task zip(type: Zip) {
     from "$distLocation"
-    exclude "**/output/**"
     destinationDir file("$outputDistLocation")
-    baseName "$archivesBaseName"
+    baseName 'dotcms_'+dotcmsReleaseVersion
 }
 
 //Task used to create a tar.gz from the distribution
@@ -258,13 +273,19 @@ task tgzTask(type: Tar) {
                 }
             }
         }
-        exclude "**/output/**"
         destinationDir file("$outputDistLocation")
-        baseName "$archivesBaseName"
+        baseName 'dotcms_'+dotcmsReleaseVersion
         extension = 'tgz'
         compression = Compression.GZIP
     }
 }
+
+task removeDistFolder(type: Delete){
+    delete "$distLocation"
+}
+
+removeDistFolder.mustRunAfter 'zip', 'tgzTask'
+
 
 //Task meant to be use from a distribution structure using the buildwar.sh script.
 //This task will just use the already deployed folder inside the app server and compressed to a war file.
@@ -465,8 +486,7 @@ task restoreBackupWarTomcatData << {
         include "*.db"
     }
 
-    delete "$tomcatInstallLocation/temp"
-
+    FileUtils.cleanDirectory(new File("$tomcatInstallLocation/temp"));
     delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
 }
 

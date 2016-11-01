@@ -495,6 +495,10 @@ function getIntegrityResult(identifier) {
           	// Getting the fileassets data
             var fileAssetsData = data.fileassets;
             populateTabContent(fileAssetsData, "fileAssets");
+            
+          	// Getting the roles data
+            var cmsRolesData = data.cms_roles;
+            populateTabContent(cmsRolesData, "cms_roles");
 
             //Display the integrity results dialog
             selectedEndpointId = identifier;
@@ -1071,7 +1075,7 @@ function deleteEnvPushHistory(envId) {
 <%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <style type="text/css">
-    #structuresTab,#foldersTab,#schemesTab,#htmlPagesTab,#fileAssetsTab {
+    #structuresTab,#foldersTab,#schemesTab,#htmlPagesTab,#fileAssetsTab,#cms_rolesTab {
         height:100%;
         min-height:250px;
         width:800px;
@@ -1142,6 +1146,19 @@ function deleteEnvPushHistory(envId) {
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="fileAssetsDiscardButton"
                         onClick="discardConflicts(selectedEndpointId, 'fileAssets')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_discard_conflicts")%></button>
+                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+            </div>
+        </div>
+
+        <div id="cms_rolesTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "integritychecker.cms-roles") %>" >
+            <div id="cms_rolesTabContentDiv" style="height:280px">No Results</div>
+            <div class="buttonRow">
+                <button dojoType="dijit.form.Button" id="cms_rolesFixButton"
+                        onClick="fixConflicts(selectedEndpointId, 'cms_roles')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_fix_conflicts")%></button>
+                <button dojoType="dijit.form.Button" id="cms_rolesDiscardButton"
+                        onClick="discardConflicts(selectedEndpointId, 'cms_roles')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
                 <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>

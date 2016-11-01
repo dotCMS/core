@@ -96,7 +96,10 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
 
-			<div dojoType="dijit.form.DropDownButton">
+			<button dojoType="dijit.form.Button"  onClick="showRestoreSnapshotDialog();" iconClass="uploadIcon">
+               <%= LanguageUtil.get(pageContext,"Restore-Index-Snapshot") %>
+            </button>
+			<!-- div dojoType="dijit.form.DropDownButton">
 				<span><%= LanguageUtil.get(pageContext,"Add-Index") %></span>
 					<div dojoType="dijit.Menu">
 					
@@ -112,7 +115,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
                       <%= LanguageUtil.get(pageContext,"Restore-Index-Snapshot") %>
                     </div>
 		           </div>
-			</div>
+			</div -->
 		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="resetIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>

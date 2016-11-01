@@ -46,7 +46,7 @@ public class ConfigTestHelper extends Config {
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
         
     }
-    
+
     /**
      * URL to known resource on the test-resources path, now on "bin"
      * @param resource resource name
@@ -55,13 +55,13 @@ public class ConfigTestHelper extends Config {
     public static URL getUrlToTestResource(String resource){
     	return Thread.currentThread().getContextClassLoader().getResource(resource);
     }
-    
+
     /**
      * Path to known resource on the test-resources path, now on "bin"
      * @param resource resource name
      * @return
      */
 	public static String getPathToTestResource(String resource){
-		return getUrlToTestResource(resource).getPath();	
+		return getUrlToTestResource(resource).getPath();
 	}
 }
