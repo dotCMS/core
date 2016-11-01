@@ -76,7 +76,7 @@ public interface IntegrityChecker {
     public void executeFix(final String endpointId) throws DotDataException, DotSecurityException;
 
     /**
-     * Get temporal table name for an specific endpoint id.
+     * Get temporal table names for an specific endpoint id.
      * <p>
      * Note: the integrity type it will be pick up using getIntegrityType()
      * method of the checker implementation
@@ -85,7 +85,7 @@ public interface IntegrityChecker {
      * @param endpointId
      * @return temporal table name
      */
-    public String getTempTableName(final String endpointId);
+    public String[] getTempTableNames(String endpointId);
 
     /**
      * Discard conflicts from an specific endpoint id.

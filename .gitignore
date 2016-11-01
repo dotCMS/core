@@ -48,6 +48,7 @@ dotCMS/starter.zip
 # Changes after gradle migration #
 ###############################
 dist/
+dist-output/
 dotCMS/build/
 dotCMS/.gradle/
 dotCMS/.settings/
