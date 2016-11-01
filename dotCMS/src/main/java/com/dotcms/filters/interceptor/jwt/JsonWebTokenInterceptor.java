@@ -14,6 +14,7 @@ import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.marshal.MarshalFactory;
@@ -162,15 +163,17 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
     }
 
     @Override
-    public boolean intercept(final HttpServletRequest req, final HttpServletResponse res) throws IOException {
+    public Result intercept(final HttpServletRequest req, final HttpServletResponse res) throws IOException {
+
+		Result result = Result.NEXT;
 
         if (!this.isLoggedIn(req)) {
 
             if (Config.getBooleanProperty(JSON_WEB_TOKEN_ALLOW_HTTP, false) || this.isHttpSecure(req)) {
 
                 try {
-                    
-                    this.processJwtCookie(res, req);
+
+					result = this.processJwtCookie(res, req);
                 } catch (Exception e) {
 
                     if (Logger.isErrorEnabled(JsonWebTokenInterceptor.class)) {
@@ -182,8 +185,8 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
             }
         }
 
-        return true;
-    }
+        return result;
+    } // intercept.
 
 	/**
 	 * Checks whether the current request belongs to a user that has already
@@ -208,19 +211,23 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 */
-    protected void processJwtCookie(final HttpServletResponse response,
+    protected Result processJwtCookie(final HttpServletResponse response,
                                     final HttpServletRequest request) {
 
         final String jwtAccessToken =
                 UtilMethods.getCookieValue(
                         HttpServletRequest.class.cast(request).getCookies(),
                         CookieKeys.JWT_ACCESS_TOKEN);
+		Result result = Result.NEXT;
 
         if (null != jwtAccessToken) {
 
-            this.parseJwtToken(jwtAccessToken, response, request);
+			result =
+				this.parseJwtToken(jwtAccessToken, response, request);
         }
-    }
+
+		return result;
+    } // processJwtCookie.
 
 	/**
 	 * Parses the String contents of the JWT into a Java object. If the
@@ -234,21 +241,25 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 */
-    protected void parseJwtToken(final String jwtAccessToken,
+    protected Result parseJwtToken(final String jwtAccessToken,
                                  final HttpServletResponse response,
                                  final HttpServletRequest request) {
 
         final JWTBean jwtBean =
                 this.jsonWebTokenService.parseToken(jwtAccessToken);
+		Result result = Result.NEXT;
 
         if (null != jwtBean) {
 
             if (JsonWebTokenUtils.isJsonWebTokenValid (jwtBean)) {
             	// todo: handle exceptions here
-                this.processSubject(jwtBean, response, request);
+                result =
+					this.processSubject(jwtBean, response, request);
             }
         }
-    }
+
+		return result;
+    } // parseJwtToken.
 
 
 	/**
@@ -262,18 +273,22 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 */
-    protected void processSubject(final JWTBean jwtBean,
+    protected Result processSubject(final JWTBean jwtBean,
                                   final HttpServletResponse response,
                                   final HttpServletRequest request) {
 
 
         final DotCMSSubjectBean dotCMSSubjectBean =
                 this.marshalUtils.unmarshal(jwtBean.getSubject(), DotCMSSubjectBean.class);
+		Result result = Result.NEXT;
 
         if (null != dotCMSSubjectBean) {
 
-            this.performAuthentication (dotCMSSubjectBean, response, request);
+            result =
+				this.performAuthentication (dotCMSSubjectBean, response, request);
         }
+
+		return result;
     }
 
 	/**
@@ -286,12 +301,13 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 */
-    protected void performAuthentication(final DotCMSSubjectBean subjectBean,
+    protected Result performAuthentication(final DotCMSSubjectBean subjectBean,
                                          final HttpServletResponse response,
                                          final HttpServletRequest request) {
 
         final Company company;
         final String userId;
+		Result result = Result.NEXT;
 
         try {
 
@@ -301,7 +317,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                     subjectBean.getUserId()); // encrypt the user id.
 
             // todo: if there is a custom implementation to handle the authentication use it
-            this.performDefaultAuthentication
+			result = this.performDefaultAuthentication
                     (company, userId, subjectBean.getLastModified(),
                             response, request);
         } catch (Exception e) {
@@ -312,6 +328,8 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                         e.getMessage(), e);
             }
         }
+
+		return result;
     }
 
 	/**
@@ -348,23 +366,30 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the user's data.
 	 */
-    protected void performDefaultAuthentication(final Company company,
+    protected Result performDefaultAuthentication(final Company company,
                                                 final String userId,
                                                 final Date lastModified,
                                                 final HttpServletResponse response,
                                                 final HttpServletRequest request) throws DotSecurityException, DotDataException {
 
         final User user = this.userAPI.loadUserById(userId);
+		Result result = Result.NEXT;
 
         if (null != user) {
 
             // The user hasn't change since the creation of the JWT
             if (0 == user.getModificationDate().compareTo(lastModified)) {
 
-                this.loginService.
-                        doCookieLogin(this.encryptor.encryptString(userId), request, response);
+                if (this.loginService.
+                        doCookieLogin(this.encryptor.encryptString(userId), request, response)) {
+
+					// if this login was successfully, do not need to do any other.
+					result = Result.SKIP;
+				}
             }
         }
+
+		return result;
     }
 
 	/**

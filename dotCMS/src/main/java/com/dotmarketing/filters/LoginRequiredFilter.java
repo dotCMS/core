@@ -8,60 +8,36 @@
  */
 package com.dotmarketing.filters;
 
-import java.io.IOException;
+import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
+import com.dotcms.filters.interceptor.dotcms.DefaultFrontEndLoginRequiredWebInterceptor;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import java.io.IOException;
 
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
+/**
+ * This Filter is in charge if checking if the user is logged in or not.
+ * By default will use an interceptor that check if the user is logged in, if it is not, will returns a 401 and set a REDIRECT_AFTER_LOGIN
+ * it does not apply if ADMIN_MODE is on.
+ *
+ * In addition you can extends the intercept functionality by implementing your on filter.
+ * @author jsanca
+ */
+public class LoginRequiredFilter extends AbstractWebInterceptorSupportFilter {
 
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
+    @Override
+    public void init(final FilterConfig config) throws ServletException {
 
-public class LoginRequiredFilter implements Filter {
+        this.addDefaultInterceptors (config);
+        super.init(config);
+    } // init.
 
+    // add the previous legacy code to be align with the interceptor approach.
+    private void addDefaultInterceptors(final FilterConfig config) {
 
-    public void destroy() {
+        this.getDelegate(config.getServletContext()).add(
+                new DefaultFrontEndLoginRequiredWebInterceptor());
+    } // addDefaultInterceptors.
 
-    }
-
-    
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-       
-    	HttpServletResponse response = (HttpServletResponse) res;
-        HttpServletRequest request = (HttpServletRequest) req;
-        HttpSession session = request.getSession(false);
-
-        boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-
-        // if we are not logged in, go to login page
-        if (session.getAttribute(WebKeys.CMS_USER) == null && !ADMIN_MODE) {
-        	Logger.warn(this.getClass(), 
-                    "Doing LoginRequiredFilter for RequestURI: " + request.getRequestURI() + "?" + request.getQueryString());
-
-            //if we don't have a redirect yet
-            session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, request.getRequestURI() + "?" + request.getQueryString());
-
-            ActionMessages ams = new ActionMessages();
-            ams.add(Globals.MESSAGE_KEY, new ActionMessage("message.login.required"));
-            session.setAttribute(Globals.MESSAGE_KEY, ams);
-            response.sendError(401);
-            return;
-        }
-
-        chain.doFilter(req, response);
-    }
-
-    public void init(FilterConfig con) throws ServletException {
-
-    }
-}
+} // LoginRequiredFilter.

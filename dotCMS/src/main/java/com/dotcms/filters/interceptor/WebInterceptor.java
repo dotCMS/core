@@ -2,9 +2,9 @@ package com.dotcms.filters.interceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.Serializable;
+
 
 /**
  * Encapsulates an Interceptor. An interceptor is a good way to extend a filter
@@ -16,15 +16,24 @@ import java.io.Serializable;
  */
 public interface WebInterceptor extends Serializable {
 
+	/**
+	 * Get the name of the interceptor by default use the class name
+	 * @return String
+     */
+	default String getName() {
+
+		return this.getClass().getName();
+	} // getName.
+
     /**
      * Called on destroy
      */
-    void destroy();
+	default void destroy() {}
 
     /**
      * Called on init
      */
-    void init();
+    default void init() {}
 
 	/**
 	 * In case you want to apply this filter just to some subset of path's
@@ -45,12 +54,10 @@ public interface WebInterceptor extends Serializable {
 	 *            - The {@link HttpServletRequest} object.
 	 * @param res
 	 *            - The {@link HttpServletResponse} object.
-	 * @return boolean If the filter chain needs to continue after the execution
-	 *         of the interceptor, returns {@code true}. Otherwise, returns,
-	 *         {@code false}.
+	 * @return Result
 	 * @throws IOException
 	 */
-    boolean intercept(HttpServletRequest req, HttpServletResponse res)
+	Result intercept(HttpServletRequest req, HttpServletResponse res)
             throws IOException;
 
 } // E:O:F:WebInterceptor.
