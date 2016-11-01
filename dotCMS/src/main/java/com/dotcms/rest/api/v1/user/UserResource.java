@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.user;
 
 import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -22,6 +24,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -42,7 +45,9 @@ import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
@@ -290,13 +295,14 @@ public class UserResource implements Serializable {
 	 *            - The parameters that can be specified in the REST call.
 	 * @return A {@link Response} containing the status of the operation. This
 	 *         will probably require a page refresh.
+	 * @throws Exception An error occurred when authenticating the request.
 	 */
 	@PUT
 	@Path("/loginas/{params:.*}")
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAs(@Context final HttpServletRequest request, @PathParam("params") final String params) {
+	public final Response loginAs(@Context final HttpServletRequest request, @PathParam("params") final String params) throws Exception {
 		InitDataObject initData = webResource.init(params, true, request, true, null);
 		final Map<String, String> urlParams = initData.getParamsMap();
 		final String loginAsUserId = getMapValue(urlParams, "userid", null);
@@ -324,7 +330,16 @@ public class UserResource implements Serializable {
 			SecurityLogger.logInfo(UserResource.class,
 					"An attempt to login as a different user was made by user ID ("
 							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
-			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+			if (UtilMethods.isSet(e.getMessageKey())) {
+				User user = initData.getUser();
+				response = Response
+						.ok(new ResponseEntityView(
+								list(new ErrorEntity("1", LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
+								map("loginAs", false)))
+						.build();
+			} else {
+				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+			}
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			SecurityLogger.logInfo(UserResource.class,
@@ -399,8 +414,8 @@ public class UserResource implements Serializable {
 	}
 
 	/**
-	 * Return all the user without the anonymous and default users, also add extra login as information,
-	 * with the follow json format:<br>
+	 * Returns all the users (without the anonymous and default users) that can
+	 * be impersonated. The format of the JSON result is:<br>
 	 *
 	 * <pre>
 	 * {
@@ -412,28 +427,36 @@ public class UserResource implements Serializable {
 	 * }
 	 * </pre>
 	 *
-	 * This service return a 500 HTTP code if anything go wrong
+	 * This service returns a 500 HTTP code if anything goes wrong. The
+	 * currently logged-in user is automatically removed from the result list.
 	 *
-	 * @return
-     */
+	 * @return The list of users that can be impersonated.
+	 */
 	@GET
 	@Path("/loginAsData")
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAsData() {
-
+	public final Response loginAsData(@Context final HttpServletRequest request) {
 		Response response = null;
-
 		try {
-			List<Map<String, Object>> loginAsUser = helper.getLoginAsUser();
-			response = Response.ok(new ResponseEntityView(map("users", loginAsUser))).build();
+			List<Map<String, Object>> loginAsUsers = this.helper.getLoginAsUsers();
+			Iterator<Map<String, Object>> iter = loginAsUsers.iterator();
+			InitDataObject initData = webResource.init(null, true, request, true, null);
+			User currentUser = initData.getUser();
+			String currentUserId = currentUser != null ? currentUser.getUserId() : "";
+			while (iter.hasNext()) {
+				Map<String, Object> user = iter.next();
+				// Removes the currently logged-in user from the result list
+				if (currentUserId.equalsIgnoreCase(user.get("userId").toString())) {
+					iter.remove();
+				}
+			}
+			response = Response.ok(new ResponseEntityView(map("users", loginAsUsers))).build();
 		} catch (Exception e) {
-			SecurityLogger.logInfo(UserResource.class, 
-					"An error occurred when processing the request." + e.getMessage());
+			SecurityLogger.logInfo(UserResource.class, "An error occurred when processing the request. " + e.getMessage());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-
 		return response;
 	}
 
