@@ -23,6 +23,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -444,7 +445,7 @@ public class UserResource implements Serializable {
 			Iterator<Map<String, Object>> iter = loginAsUsers.iterator();
 			InitDataObject initData = webResource.init(null, true, request, true, null);
 			User currentUser = initData.getUser();
-			String currentUserId = currentUser != null ? currentUser.getUserId() : "";
+			String currentUserId = currentUser != null ? currentUser.getUserId() : StringUtils.EMPTY;
 			while (iter.hasNext()) {
 				Map<String, Object> user = iter.next();
 				// Removes the currently logged-in user from the result list
