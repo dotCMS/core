@@ -49,7 +49,7 @@ public interface WebInterceptor extends Serializable {
 	/**
 	 * @return true if the {@link WebInterceptor} is activated.
 	 */
-	default boolean isActivate() {
+	default boolean isActive() {
 		return true;
 	}
 

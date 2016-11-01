@@ -46,7 +46,7 @@ public class AngularRoutingDefaultInterceptor implements WebInterceptor{
     }
 
     @Override
-    public boolean isActivate() {
+    public boolean isActive() {
         return activate.get();
     }
 
