@@ -166,6 +166,9 @@ export class LoginService extends CoreWebService {
             method: RequestMethod.Put,
             url: `${this.urls.loginAs}/${options.userId}${options.password ? `/pwd/${options.password}` : ''}`
         }).map((res) => {
+            if (!res.entity.loginAs) {
+                throw res.errorsMessages;
+            }
             let loginAsUser = this.getLoginAsUser(options.userId);
             this.setAuth({
                 loginAsUser: loginAsUser,
