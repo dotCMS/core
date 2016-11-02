@@ -1,32 +1,27 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.api.system.user.UserService;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.RestUtilTest;
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotmarketing.business.DotInvalidPasswordException;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.logConsole.model.LogMapper;
-import com.liferay.portal.ejb.UserManager;
-import com.liferay.util.LocaleUtil;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.RestUtilTest;
+import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.ejb.UserManager;
+import com.liferay.util.LocaleUtil;
 
 public class ResetPasswordResourceTest{
 
