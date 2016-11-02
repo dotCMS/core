@@ -192,32 +192,35 @@ public class UserResourceHelper implements Serializable {
 	public Map<String, Object> doLoginAs(final User currentUser, final String loginAsUserId, final String loginAsUserPwd,
 			final String serverName) throws DotDataException, NoSuchUserException, DotSecurityException {
 		if (!UtilMethods.isSet(loginAsUserId)) {
-			throw new DotDataException("The 'Login As' user ID is required.");
+			throw new DotDataException("The 'Login As' user ID is required.", "loginas.error.requireduserid");
 		}
 		if (loginAsUserId.equalsIgnoreCase(currentUser.getUserId())) {
-			throw new DotDataException("Current user [" + currentUser.getUserId() + "] trying to log in as himself.");
+			throw new DotDataException("Current user [" + currentUser.getUserId() + "] trying to log in as himself.",
+					"loginas.error.selfloginas");
 		}
 		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
 		if (!this.roleAPI.doesUserHaveRole(currentUser, loginAsRole)) {
 			// Potential hacking attempt
 			SecurityUtils.delayRequest(10, DelayStrategy.TIME_SEC);
-			throw new DotDataException("Current user [" + currentUser.getUserId()
-			+ "] does not have the proper 'Login As' role.");
+			throw new DotDataException(
+					"Current user [" + currentUser.getUserId() + "] does not have the proper 'Login As' role.",
+					"loginas.error.missingloginasrole");
 		}
 		final User systemUser = this.userAPI.getSystemUser();
 		final User loginAsUser = this.userAPI.loadUserById(loginAsUserId, systemUser, false);
 		final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(loginAsUser);
 		if ((layouts == null) || (layouts.size() == 0) || !UtilMethods.isSet(layouts.get(0).getId())) {
-			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.");
+			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.",
+					"loginas.error.nolayouts");
 		}
 		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
-		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole)
-				|| this.roleAPI.doesUserHaveRole(loginAsUser, com.dotmarketing.business.APILocator.getRoleAPI()
-						.loadCMSAdminRole())) {
+		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole) || this.roleAPI.doesUserHaveRole(loginAsUser,
+				com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
-				throw new DotDataException("The 'Login As' user password is required.");
+				throw new DotDataException("The 'Login As' user password is required.", "loginas.error.missingloginaspwd");
 			} else if (LoginFactory.passwordMatch(loginAsUserPwd, currentUser) == false) {
-				throw new DotDataException("The 'Login As' user password is invalid.");
+				throw new DotDataException("The 'Login As' user password is invalid.",
+						"loginas.error.invalidloginascredentials");
 			}
 		}
 		Host host = null;
@@ -299,7 +302,7 @@ public class UserResourceHelper implements Serializable {
 	 * @return A list of Map, each Map represent a {@link User}
 	 * @throws Exception if anything if wrong
 	 */
-	public List<Map<String, Object>> getLoginAsUser() throws Exception {
+	public List<Map<String, Object>> getLoginAsUsers() throws Exception {
 
 		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(StringPool.BLANK, 1, 30, false, false);
 

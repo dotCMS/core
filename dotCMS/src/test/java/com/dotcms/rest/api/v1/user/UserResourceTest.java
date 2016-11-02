@@ -277,6 +277,7 @@ public class UserResourceTest extends BaseMessageResources {
 
     @Test
     public void testLoginAsData() throws Exception {
+    	HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
@@ -323,7 +324,7 @@ public class UserResourceTest extends BaseMessageResources {
         UserResource userResource =
                 new UserResource(webResource, userAPI, userHelper, errorHelper);
 
-        Response response = userResource.loginAsData();
+        Response response = userResource.loginAsData(request);
 
         RestUtilTest.verifySuccessResponse( response );
 
