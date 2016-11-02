@@ -117,7 +117,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
         if (-1 != currentIndex) {
             WebInterceptor webInterceptorRemoved = this.interceptors.remove(currentIndex);
-            this.add(currentIndex, webInterceptorRemoved);
+            this.add(index, webInterceptorRemoved);
         }
     }
 
