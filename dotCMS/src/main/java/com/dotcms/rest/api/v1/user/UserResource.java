@@ -333,11 +333,9 @@ public class UserResource implements Serializable {
 							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
 			if (UtilMethods.isSet(e.getMessageKey())) {
 				User user = initData.getUser();
-				response = Response
-						.ok(new ResponseEntityView(
-								list(new ErrorEntity("1", LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
-								map("loginAs", false)))
-						.build();
+				response = Response.ok(new ResponseEntityView(
+						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
+						map("loginAs", false))).build();
 			} else {
 				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
