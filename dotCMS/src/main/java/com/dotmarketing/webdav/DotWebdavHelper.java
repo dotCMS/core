@@ -1494,7 +1494,7 @@ public class DotWebdavHelper {
 	 * @throws IOException when the language passed in the path doesn't exist the IOException will be thrown.
 	 * 
 	 */
-	public String stripMapping(String uri) throws IOException {
+	public String stripMapping(final String uri) throws IOException {
 		String r = uri;
 
 		if(legacyPath){
@@ -1535,8 +1535,8 @@ public class DotWebdavHelper {
 				r = uri.substring(uri.indexOf(splitUri[3])+splitUri[3].length(), uri.length());
 
 			} else {
-				Logger.error(DotWebdavHelper.class, "URI not expected: " + uri);
-				throw new IOException("URI not expected: " + uri);
+				Logger.warn(DotWebdavHelper.class, "URI already stripped: " + uri);
+				r = uri;
 			}
 		}
 
