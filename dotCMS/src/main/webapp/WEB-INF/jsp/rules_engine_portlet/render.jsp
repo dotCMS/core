@@ -69,9 +69,7 @@
   
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/html/js/_rulesengine?" + localeParam + "&" + siteParam;
-  
-
+  document.getElementById("rulesIframe").src = "/html/ng/fromCore/RULES_ENGINE_PORTLET?" + localeParam + "&" + siteParam;
 
 	function  resizeIframe(){
 

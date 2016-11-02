@@ -47,6 +47,13 @@ public interface WebInterceptor extends Serializable {
     }
 
 	/**
+	 * @return true if the {@link WebInterceptor} is activated.
+	 */
+	default boolean isActive() {
+		return true;
+	}
+
+	/**
 	 * Called in any request. Returns true if you want to continue the chain
 	 * call, false otherwise.
 	 * 

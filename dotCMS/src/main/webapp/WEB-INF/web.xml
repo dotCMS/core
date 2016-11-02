@@ -84,6 +84,10 @@
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
     </filter>
+	<filter>
+		<filter-name>AngularRoutingFilter</filter-name>
+		<filter-class>com.liferay.portal.servlet.AngularRoutingFilter</filter-class>
+	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -95,6 +99,10 @@
  	<!-- END FILTER-MAPPINGS -->
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
+	<filter-mapping>
+		<filter-name>AngularRoutingFilter</filter-name>
+		<url-pattern>/html/ng/*</url-pattern>
+	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -226,7 +234,6 @@
 		<servlet-name>SpeedyAssetServlet2</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet2</servlet-class>
 	</servlet>
-
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
@@ -310,7 +317,6 @@
 		<servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
 		<load-on-startup>4</load-on-startup>
 	</servlet>
-
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
@@ -396,7 +402,7 @@
  	<!-- END SERVLETS -->
  	
  	
-    <!-- TEST FRAMEWORK SERVLETS -->                                                                                     
+    <!-- TEST FRAMEWORK SERVLETS -->                                                                                        
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -409,7 +415,7 @@
 	<!-- END OF TEST FRAMEWORK SERVLETS -->
 	
     <!-- DOTCMS SERVLET-MAPPINGS -->
-    <servlet-mapping>
+	<servlet-mapping>
         <servlet-name>proxy</servlet-name>
         <url-pattern>/app/*</url-pattern>
     </servlet-mapping>
@@ -523,12 +529,10 @@
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
 	</servlet-mapping>
-
 	<servlet-mapping>
 		<servlet-name>ImageServlet</servlet-name>
 		<url-pattern>/image/*</url-pattern>
 	</servlet-mapping>
-
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
