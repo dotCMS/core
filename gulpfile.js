@@ -60,6 +60,7 @@ if(config.args.env){
 var typescriptProject = ts.createProject('./tsconfig.json');
 
 var project = {
+  configFile: 'app.constant.dev.ts',
   server: null,
 
   clean: function(cb) {
@@ -70,7 +71,12 @@ var project = {
   },
 
   compileJavascript: function(cb) {
-    cb()
+    var rename = require("gulp-rename");
+
+    gulp.src(['./src/view/' + this.configFile])
+        .pipe(ts())
+        .pipe(rename('constant.js'))
+        .pipe(gulp.dest('build/view')).on('finish', cb);
   },
 
   copyModules: function(cb) {
@@ -95,6 +101,7 @@ var project = {
   },
 
   deployResources: function(cb) {
+
     gulp.src('./src/**/*.scss')
         .pipe(sass({outputStyle: 'expanded'}))
         .pipe(gulp.dest(function(file) {return file.base})).on('finish', function() {
@@ -259,7 +266,6 @@ var project = {
    * Configure the proxy and start the webserver.
    */
   startServer: function() {
-    console.log('startServer ')
 
     var http = require('http');
     var proxy = require('proxy-middleware');
@@ -279,6 +285,17 @@ var project = {
     ]
 
     var app = connect();
+
+    app.use(function (req, res, next) {
+      if (req.url.startsWith('/build/dotCMS') || req.url.startsWith('/build/public') ||
+          req.url.startsWith('/build/fromCore')) {
+
+        req.url = '/build/index.html';
+      }
+
+      next();
+    });
+
     // proxy API requests to the node server
     proxyBasePaths.forEach(function(pathSegment) {
       var target = config.proxyHost + '/' + pathSegment;
@@ -286,6 +303,7 @@ var project = {
       proxyOptions.route = '/' + pathSegment
       proxyOptions.preserveHost = true
       app.use(function(req, res, next) {
+
         if (req.url.indexOf('/' + pathSegment + '/') === 0) {
           console.log('Forwarding request: ', req.url)
           proxy(proxyOptions)(req, res, next)
@@ -315,8 +333,56 @@ var project = {
 
   stopServer: function(callback) {
     project.server.close(callback)
+  },
+
+  publish: function(deployConfig){
+    var artifactoryUpload = require('gulp-artifactory-upload');
+    var getRev = require('git-rev')
+
+    var mvn = {
+      group: 'com.dotcms',
+      artifactId: 'core-web',
+      version: require('./package.json').version
+    }
+
+    getRev.short(function(rev) {
+      var versionStr = mvn.version + '-SNAPSHOT';
+      var baseDeployName = 'core-web-' + versionStr
+      var deployName = baseDeployName + '.zip'
+      var artifactoryUrl = deployConfig.url + '/' + mvn.group.replace('.', '/') + '/' + mvn.artifactId + '/' + versionStr
+
+      console.log('Deploying artifact: PUT ', artifactoryUrl + '/' + deployName)
+
+      var pomPath;
+
+      generatePom(baseDeployName, mvn.group, mvn.artifactId, versionStr, 'zip', function(path, err) {
+        if (err) {
+          done(err)
+          return;
+        }
+        console.log('setting pomPath to: ', path)
+        pomPath = path
+        gulp.src(['./dist/core-web.zip', pomPath])
+            .pipe(artifactoryUpload({
+              url: artifactoryUrl,
+              username: deployConfig.username,
+              password: deployConfig.password,
+              rename: function(filename) {
+                return filename.replace(mvn.artifactId, baseDeployName)
+              }
+            }))
+            .on('error', function(err) {
+              throw err
+            }).on('end', function() {
+          project.clean(function() {
+            console.log('All done.');
+          })
+        })
+      })
+    })
   }
 }
+
 
 
 gulp.task('start-server', function(done) {
@@ -366,52 +432,8 @@ gulp.task('set-build-target-to-prod', function(done){
 })
 
 gulp.task('publish-snapshot', ['package'], function(done) {
-  var artifactoryUpload = require('gulp-artifactory-upload');
-  var getRev = require('git-rev')
-  var deployConfig = require('./deploy-config.js').artifactory.snapshot
-
-  var mvn = {
-    group: 'com.dotcms',
-    artifactId: 'core-web',
-    version: require('./package.json').version
-  }
-
-  getRev.short(function(rev) {
-    var versionStr = mvn.version + '-SNAPSHOT';
-    var baseDeployName = 'core-web-' + versionStr
-    var deployName = baseDeployName + '.zip'
-    var artifactoryUrl = deployConfig.url + '/' + mvn.group.replace('.', '/') + '/' + mvn.artifactId + '/' + versionStr
-
-    console.log('Deploying artifact: PUT ', artifactoryUrl + '/' + deployName)
-
-    var pomPath;
-
-    generatePom(baseDeployName, mvn.group, mvn.artifactId, versionStr, 'zip', function(path, err) {
-      if (err) {
-        done(err)
-        return;
-      }
-      console.log('setting pomPath to: ', path)
-      pomPath = path
-      gulp.src(['./dist/core-web.zip', pomPath])
-          .pipe(artifactoryUpload({
-            url: artifactoryUrl,
-            username: deployConfig.username,
-            password: deployConfig.password,
-            rename: function(filename) {
-              return filename.replace(mvn.artifactId, baseDeployName)
-            }
-          }))
-          .on('error', function(err) {
-            throw err
-          }).on('end', function() {
-            project.clean(function() {
-              console.log('All done.');
-            })
-          })
-    })
-  })
-
+  project.publish(require('./deploy-config.js').artifactory.snapshot);
+  done();
 });
 
 gulp.task('ghPages-clone', ['package'], function(done) {
@@ -535,7 +557,9 @@ gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates', 'copy-n
   return project.watch()
 });
 
-gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function(done) {
+gulp.task('publish', ['publish-github-pages'], function(done) {
+  project.configFile = 'app.constant.prod.ts';
+  project.publish(require('./deploy-config.js').artifactory.release);
   done()
 })
 

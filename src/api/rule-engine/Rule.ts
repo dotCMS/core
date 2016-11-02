@@ -7,7 +7,8 @@ import {ServerSideFieldModel, ServerSideTypeModel} from "./ServerSideFieldModel"
 import {I18nService} from "../system/locale/I18n";
 import {CoreWebService} from "../services/core-web-service";
 import {SiteService} from "../services/site-service";
-
+import {Subject} from 'rxjs/Subject';
+import {Site} from "../services/site-service";
 
 export const RULE_CREATE = 'RULE_CREATE'
 export const RULE_DELETE = 'RULE_DELETE'
@@ -244,6 +245,7 @@ export class RuleService extends CoreWebService {
   private _conditionTypesEndpointUrl:string
   private _ruleActionTypesEndpointUrl:string
 
+  private _rules$: Subject<RuleModel[]> = new Subject();
 
   ruleActionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
   conditionTypes$:BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
@@ -257,6 +259,8 @@ export class RuleService extends CoreWebService {
   _conditionTypes:{[key:string]:ServerSideTypeModel} = {}
   private _conditionTypesAry:ServerSideTypeModel[] = []
 
+  private _rules: RuleModel[];
+
   constructor(public _apiRoot:ApiRoot, _http:Http, private _resources:I18nService, private siteService:SiteService) {
     super(_apiRoot, _http)
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
@@ -268,12 +272,24 @@ export class RuleService extends CoreWebService {
     this._preCacheCommonResources(_resources)
     this.loadActionTypes().subscribe((types:ServerSideTypeModel[])=> this.ruleActionTypes$.next(types))
     this.loadConditionTypes().subscribe((types:ServerSideTypeModel[])=> this.conditionTypes$.next(types))
+
+    if (this.siteService.currentSite) {
+      this.sendLoadRulesRequest(this.siteService.currentSite);
+    }
+
+    this.siteService.switchSite$.subscribe(site => {
+       this.sendLoadRulesRequest(site);
+    });
   }
 
   private _preCacheCommonResources(resources:I18nService) {
     resources.get('api.sites.ruleengine').subscribe((rsrc)=> {})
     resources.get('api.ruleengine.system').subscribe((rsrc)=> {})
     resources.get('api.system.ruleengine').subscribe((rsrc)=> {})
+  }
+
+  get rules(): RuleModel[]{
+    return this._rules;
   }
 
   createRule(body:RuleModel):Observable<RuleModel|CwError> {
@@ -296,11 +312,18 @@ export class RuleService extends CoreWebService {
     });
   }
 
-  loadRules( ):Observable<RuleModel[]|CwError> {
-    return this.request({
+  loadRules( ): Observable<RuleModel[]> {
+    return this._rules$.asObservable();
+  }
+
+  private sendLoadRulesRequest(site: Site): void {
+    this.request({
       method: RequestMethod.Get,
-      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}/ruleengine/rules`
-    }).map(RuleService.fromServerRulesTransformFn);
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${site.identifier}/ruleengine/rules`
+    }).subscribe(ruleMap => {
+      this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
+      this._rules$.next(this.rules);
+    });
   }
 
   loadRule(id:string):Observable<RuleModel|CwError> {

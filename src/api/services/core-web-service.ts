@@ -114,7 +114,9 @@ export class CoreWebService {
     });
 
     // https://github.com/angular/angular/issues/10612#issuecomment-238712920
-    options.body = options.body && typeof options.body !== 'string' ?  JSON.stringify(options.body) : '';
+    options.body = options.body && typeof options.body !== 'string' ?  JSON.stringify(options.body) :
+        options.body ? options.body : '';
+
     options.headers = headers;
 
     if (!options.url.startsWith('http://')) {

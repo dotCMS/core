@@ -1,5 +1,5 @@
 import {Component, ViewChild} from '@angular/core';
-import {Router} from '@angular/router';
+import {DotRouterService} from '../../../../api/services/dot-router-service';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
 
@@ -16,7 +16,7 @@ export class ToolbarUserComponent {
     private auth: Auth;
     private showMyAccount: boolean = false;
 
-    constructor(private router: Router, private loginService: LoginService) {}
+    constructor(private router: DotRouterService, private loginService: LoginService) {}
 
     ngOnInit(): void {
         this.loginService.watchUser((auth: Auth) => {
@@ -29,7 +29,7 @@ export class ToolbarUserComponent {
      */
     logout(): boolean {
         this.loginService.logOutUser().subscribe(data => {
-            this.router.navigate(['public/login']);
+            this.router.goToLogin();
         }, (error) => {
             console.log(error);
         });
@@ -39,7 +39,7 @@ export class ToolbarUserComponent {
     logoutAs($event): void {
         $event.preventDefault();
         this.loginService.logoutAs().subscribe(data => {
-            this.router.navigate(['dotCMS']);
+            this.router.goToMain();
             this.dropdown.closeIt();
         }, (error) => {
             console.log(error);

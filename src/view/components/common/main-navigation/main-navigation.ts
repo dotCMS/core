@@ -14,6 +14,10 @@ export class MainNavigation {
     private menuItems: Menu[];
 
     constructor(routingService: RoutingService) {
+        if (routingService.menus) {
+            this.menuItems = routingService.menus;
+        }
+
         routingService.menusChange$.subscribe(menu => {
             this.menuItems = menu;
         });

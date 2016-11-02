@@ -87,8 +87,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
 })
 export class RuleEngineContainer extends SiteChangeListener{
 
-  rules:RuleModel[] = []
-
+  rules: RuleModel[];
   state:RuleEngineState = new RuleEngineState()
 
   environments:IPublishEnvironment[] = []
@@ -107,13 +106,13 @@ export class RuleEngineContainer extends SiteChangeListener{
               siteService:SiteService
   ) {
     this.rules$.subscribe(( rules ) => {
-      //console.log("RuleEngineContainer", "rules$.subscribe", rules)
-      this.rules = rules
+      this.rules = rules;
     })
 
     this.bundleService.loadPublishEnvironments().subscribe((environments) => this.environments = environments);
     this.initRules()
     super( siteService );
+
   }
 
   private preCacheCommonResources(resources:I18nService) {
@@ -122,21 +121,30 @@ export class RuleEngineContainer extends SiteChangeListener{
     resources.get('api.system.ruleengine').subscribe((rsrc)=> {})
   }
 
-  private initRules() {
-    this.state.loading = true
-    this._ruleService.loadRules().subscribe((rules:RuleModel[]) => {
-      rules.sort(function (a, b) {
-        return b.priority - a.priority;
-      });
-      this.rules$.emit(rules)
-      this.state.loading = false
-    }, (err:any) => {
+  private initRules(): void {
+    this.state.loading = true;
+
+    if (this._ruleService.rules) {
+      this.loadRules(this._ruleService.rules);
+    }
+
+    this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
+      this.loadRules(rules);
+    }, (err: any) => {
       this.state.loading = false
       if (err.response.status === 403) {
         this.state.showRules = false;
-        this._handle403Error(err)
+        this._handle403Error(err);
       }
-    })
+    });
+  }
+
+  private loadRules(rules: RuleModel[]): void {
+    rules.sort(function (a, b) {
+      return b.priority - a.priority;
+    });
+    this.rules$.emit(rules);
+    this.state.loading = false;
   }
 
   changeSiteReload(): void {

@@ -16,12 +16,12 @@ export class MainComponent {
     constructor() {
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         document.body.style.backgroundColor = '';
         document.body.style.backgroundImage = '';
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.messages = null;
         this.label = null;
     }

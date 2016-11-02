@@ -1,7 +1,7 @@
 import {Component,ViewEncapsulation} from '@angular/core';
 import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
 import {LoginService} from '../../../../../api/services/login-service';
-import {Router} from '@angular/router';
+import {DotRouterService} from '../../../../../api/services/dot-router-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -28,7 +28,7 @@ export class LoginContainer{
     private resetEmail: string = '';
     private resetEmailSent: boolean = false;
 
-    constructor(private loginService: LoginService, private router: Router, private httprequestUtils: HttpRequestUtils) {
+    constructor(private loginService: LoginService, private router: DotRouterService, private httprequestUtils: HttpRequestUtils) {
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
         let queryParams: Map = this.httprequestUtils.getQueryParams();
         if (<boolean> queryParams.get('changedPassword')) {
@@ -45,7 +45,7 @@ export class LoginContainer{
 
         this.loginService.loginUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result: any) => {
             this.message = '';
-            this.router.navigate(['/dotCMS']);
+            this.router.goToMain();
          }, (error) => {
 
             if (error.response.status === 400 || error.response.status === 401) {
@@ -62,7 +62,7 @@ export class LoginContainer{
      * Display the forgot password card
      */
     showForgotPassword(): void {
-        this.router.navigate(['/public/forgotPassword']);
+        this.router.goToForgotPassword();
     }
 
 }

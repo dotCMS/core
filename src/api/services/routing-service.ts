@@ -5,7 +5,7 @@ import {LoginService} from './login-service';
 import {Observable} from 'rxjs/Rx';
 
 import {RequestMethod, Http} from '@angular/http';
-import {Router} from '@angular/router';
+import {DotRouterService} from './dot-router-service';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
@@ -16,10 +16,11 @@ export class RoutingService extends CoreWebService {
     private portlets: Map<string, string>;
 
     // TODO: I think we should be able to remove the routing injection
-    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, private router: Router) {
+    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, private router: DotRouterService) {
         super(apiRoot, http);
         this.urlMenus = 'v1/CORE_WEB/menu';
         this.portlets = new Map();
+
         loginService.watchUser(this.loadMenus.bind(this));
     }
 
@@ -40,7 +41,13 @@ export class RoutingService extends CoreWebService {
     }
 
     public goToPortlet(portletId: string): void {
-        this.router.navigate([`dotCMS/portlet/${portletId.replace(' ', '_')}`]);
+        this.router.gotoPortlet(portletId);
+    }
+
+    public isPortlet(url: string): boolean {
+        let urlSplit = url.split('/');
+        let id = urlSplit[urlSplit.length - 1];
+        return  this.portlets.get(id);
     }
 
     public setMenus(menus: Menu[]): void {
@@ -53,6 +60,7 @@ export class RoutingService extends CoreWebService {
                     let subMenuItem = menu.menuItems[k];
                     if (subMenuItem.angular) {
                         subMenuItem.url = '/dotCMS' + subMenuItem.url;
+                        this.portlets.set(subMenuItem.id, subMenuItem.url);
                     } else {
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
                     }

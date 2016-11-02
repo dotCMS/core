@@ -18,13 +18,18 @@ import {FormatDateService} from '../../api/services/format-date-service';
 import {LoginService} from '../../api/services/login-service';
 import {MessageService} from '../../api/services/messages-service';
 import {NotificationsService} from '../../api/services/notifications-service';
-import {RoutingAuthService} from '../../api/services/routing-auth-service';
+
+import {RoutingPublicAuthService} from '../../api/services/routing-public-auth-service';
+import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth-service';
+import {RoutingRootAuthService} from '../../api/services/routing-root-auth-service';
+
 import {RoutingService} from '../../api/services/routing-service';
 import {SiteService} from '../../api/services/site-service';
+import {DotRouterService} from '../../api/services/dot-router-service';
 import {StringFormat} from '../../api/util/stringFormat';
 
 // RULES ENGINE SERVICES
-import {ActionService} from '../../api/rule-engine/Action'
+import {ActionService} from '../../api/rule-engine/Action';
 import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
 import {ConditionService} from '../../api/rule-engine/Condition';
 import {GoogleMapService} from '../../api/maps/GoogleMapService';
@@ -142,6 +147,7 @@ const COMPONENTS = [
     ToolbarAddContenletComponent,
     ToolbarNotifications,
     ToolbarUserComponent,
+    MainCoreComponent
 ];
 
 const PIPES = [
@@ -165,6 +171,7 @@ import {InputTextModule} from 'primeng/primeng';
 import {CheckboxModule} from 'primeng/primeng';
 import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
+import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 
 const NGFACES_MODULES = [
     InputTextModule,
@@ -197,11 +204,14 @@ const NGFACES_MODULES = [
         CoreWebService,
         DotcmsConfig,
         DotcmsEventsService,
+        DotRouterService,
         FormatDateService,
         LoginService,
         MessageService,
         NotificationsService,
-        RoutingAuthService,
+        RoutingPublicAuthService,
+        RoutingPrivateAuthService,
+        RoutingRootAuthService,
         RoutingService,
         SiteService,
         StringFormat,
