@@ -33,13 +33,21 @@ export class LoginAsComponent extends BaseComponent {
         return false;
     }
 
+    /**
+     * Calls the back-end service that will change the appropriate request and session
+     * attributes in order to impersonate the specified user. If an error occurs, a
+     * message will be displayed to the user indicating so.
+     *
+     * @param options - The parameters required by the back-end service.
+     */
     dolLoginAs(options: any): void {
         this.loginService.loginAs(options).subscribe(data => {
             if (data) {
                 this.router.navigate(['dotCMS']);
                 this.close();
             }
-        });
+            // TODO: Replace the alert below with a modal error message.
+        }, message => alert(message));
     }
 
     userSelectedHandler($event): void {
