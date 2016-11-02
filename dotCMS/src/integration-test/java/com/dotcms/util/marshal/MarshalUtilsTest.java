@@ -12,9 +12,11 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -35,6 +37,12 @@ import static org.junit.Assert.assertTrue;
  */
 
 public class MarshalUtilsTest {
+	
+	@BeforeClass
+	public static void prepare() throws Exception{
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
     /**
      * Testing the marshall

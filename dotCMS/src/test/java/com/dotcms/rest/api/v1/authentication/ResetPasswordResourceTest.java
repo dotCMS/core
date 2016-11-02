@@ -11,6 +11,8 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.liferay.portal.ejb.UserManager;
+import com.liferay.util.LocaleUtil;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +26,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ResetPasswordResourceTest {
+import java.util.Locale;
+
+public class ResetPasswordResourceTest{
 
     HttpServletRequest request;
     ResponseUtil responseUtil;
@@ -61,17 +65,22 @@ public class ResetPasswordResourceTest {
         }
     }
 
-    //Failed
     @Test
     public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
                 "dotcms.org.1", 100000);
+        final Locale locale = LocaleUtil.getLocale(request);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        when(mResponseUtil.getFormattedMessage(null,"please-enter-a-valid-login")).thenReturn("");
+        when(mResponseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+                "please-enter-a-valid-login")).thenCallRealMethod();
+        
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
@@ -85,48 +94,61 @@ public class ResetPasswordResourceTest {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
                 "dotcms.org.1", 100000);
+        final Locale locale = LocaleUtil.getLocale(request);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        when(mResponseUtil.getFormattedMessage(null,"reset-password-token-invalid")).thenReturn("");
+        when(mResponseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+        		"reset-password-token-invalid")).thenCallRealMethod();
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
         RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
     }
 
-
-    //Failed
     @Test
     public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
                 "dotcms.org.1", 100000);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        final Locale locale = LocaleUtil.getLocale(request);
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        when(mResponseUtil.getFormattedMessage(null,"reset-password-token-expired")).thenReturn("");
+        when(mResponseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, null,
+        		"reset-password-token-expired")).thenCallRealMethod();
+        
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
         RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");
     }
 
-    //Failed
     @Test
     public void testDotInvalidPasswordException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
         UserManager userManager = getUserManagerThrowingException( new DotInvalidPasswordException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
         final JWTBean jwtBean = new JWTBean("dotcms.org.1",
                 "token",
                 "dotcms.org.1", 100000);
+        final Locale locale = LocaleUtil.getLocale(request);
         when(jsonWebTokenService.parseToken(eq("token"))).thenReturn(jwtBean);
+        when(mResponseUtil.getFormattedMessage(null,"reset-password-invalid-password")).thenReturn("");
+        when(mResponseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+        		"reset-password-invalid-password")).thenCallRealMethod();
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
 
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
