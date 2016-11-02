@@ -86,7 +86,7 @@
     </filter>
 	<filter>
 		<filter-name>AngularRoutingFilter</filter-name>
-		<filter-class>com.liferay.portal.servlet.AngularRoutingFilter</filter-class>
+		<filter-class>com.liferay.portal.servlet.angular.AngularRoutingFilter</filter-class>
 	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
