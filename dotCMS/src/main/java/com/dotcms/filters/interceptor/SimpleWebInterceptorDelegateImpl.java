@@ -113,11 +113,15 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
     }
 
     public void move(final String webInterceptorName, int index){
-        final int currentIndex = this.indexOf(webInterceptorName);
+        if (index >= 0 && index <= this.interceptors.size()) {
+            final int currentIndex = this.indexOf(webInterceptorName);
 
-        if (-1 != currentIndex) {
-            WebInterceptor webInterceptorRemoved = this.interceptors.remove(currentIndex);
-            this.add(index, webInterceptorRemoved);
+            if (-1 != currentIndex) {
+                WebInterceptor webInterceptorRemoved = this.interceptors.remove(currentIndex);
+                this.add(index, webInterceptorRemoved);
+            }
+        }else{
+            throw new IndexOutOfBoundsException();
         }
     }
 
