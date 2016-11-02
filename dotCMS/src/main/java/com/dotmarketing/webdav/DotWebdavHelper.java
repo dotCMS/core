@@ -920,10 +920,10 @@ public class DotWebdavHelper {
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
-                //This is only needed for Cyberduck, when you right click>New File
-				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+                //Avoid uploading an empty file
+				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) ){
 					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
-					FileUtil.write(fileData, " ");
+					FileUtil.write(fileData, "~DOTEMPTY");
 				}
 
 				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
@@ -931,9 +931,9 @@ public class DotWebdavHelper {
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
-				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+				/*if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					fileAsset.getMap().put("_validateEmptyFile_", false);
-				}
+				}*/
 				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -969,6 +969,12 @@ public class DotWebdavHelper {
                 final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+                
+                //Avoid uploading an empty file
+				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) ){
+					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
+					FileUtil.write(fileData, "~DOTEMPTY");
+				}
 
 				if(destinationFile instanceof File){
 				    // Save the file size
@@ -1004,9 +1010,9 @@ public class DotWebdavHelper {
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAssetCont.setLanguageId(defaultLang);
-					if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+					/*if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 						fileAssetCont.getMap().put("_validateEmptyFile_", false);
-					}
+					}*/
 					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
