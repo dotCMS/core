@@ -43,7 +43,7 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
         }).placeAt("osgiMain");
 
         myCp.attr("href", this.url);
-        myCp.refresh();
+        setTimeout(function() {myCp.refresh();},500);
 	},
 
 	refresh : function() {
@@ -62,7 +62,7 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
         }).placeAt("osgiMain");
 
         myCp.attr("href", this.url);
-        myCp.refresh();
+        setTimeout(function() {myCp.refresh();},500);
 	}
 });
 
