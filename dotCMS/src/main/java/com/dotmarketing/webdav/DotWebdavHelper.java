@@ -921,7 +921,7 @@ public class DotWebdavHelper {
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
                 //Avoid uploading an empty file
-				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) ){
+				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
 					FileUtil.write(fileData, "~DOTEMPTY");
 				}
@@ -931,9 +931,9 @@ public class DotWebdavHelper {
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
-				/*if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					fileAsset.getMap().put("_validateEmptyFile_", false);
-				}*/
+				}
 				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
@@ -1021,6 +1021,17 @@ public class DotWebdavHelper {
 				//Wiping out the thumbnails and resized versions
 				//http://jira.dotmarketing.net/browse/DOTCMS-5911
 				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
+				
+				//Wipe out empty versions that Finder creates
+				List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(identifier, user, false);
+				for(Contentlet c : versions){
+					Logger.debug(this, "inode " + c.getInode() + " size: " + c.getBinary(FileAssetAPI.BINARY_FIELD).length());
+					if(c.getBinary(FileAssetAPI.BINARY_FIELD).length() == 0){
+						Logger.debug(this, "deleting version " + c.getInode());
+						APILocator.getContentletAPI().deleteVersion(c, user, false);
+						break;
+					}
+				}
 			}
 		}
 	}
