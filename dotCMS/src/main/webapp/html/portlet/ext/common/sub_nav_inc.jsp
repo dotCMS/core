@@ -19,13 +19,12 @@
 <%@page import="com.liferay.util.ParamUtil"%>
 <%@page import="com.dotmarketing.portlets.common.bean.CrumbTrailEntry"%>
 <%@page import="java.util.ArrayList"%>
-
 <%
 
 	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) ||(UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME)));
     boolean isAngularFrame = (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getSession().getAttribute(WebKeys.FRAME)) && !UtilMethods.isSet(ParamUtil.getString(request, WebKeys.HIDE_SUBNAV));
 
-	if(!inPopupIFrame || isAngularFrame) {
+
 		UserAPI userAPI = APILocator.getUserAPI();
 		HostWebAPI hostApi = WebAPILocator.getHostWebAPI();
 	
@@ -88,135 +87,11 @@
 			}
 		}
 	
-	
-	
-	 if (showHostSelector) {
-%>
-<script type="text/javascript">
-        dojo.require('dotcms.dojo.data.HostReadStore');
-</script>
-
-<!-- START Pop-up Host Select -->
-<div id="hostSelectDialog" style="visibility: hidden; display: none;"
-	title="<%= LanguageUtil.get(pageContext, "select-host") %>"
-><%=LanguageUtil.get(pageContext, "select-host-nice-message")%>
-<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-<div style="text-align: center; padding: 15px;">
-<div class="selectHostIcon"></div>
-<select id="subNavHost" name="subNavHost" dojoType="dijit.form.FilteringSelect"
-	store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-	searchDelay="400" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>"
-	onchange="updateCMSSelectedHosts()"
-	>
-</select>
-</div>
-<div style="text-align: right;">
-<%
-	if (canManageHosts) {
-%>
-<div
-	style="float: left; font-size: 85%; padding-top: 7px; font-style: italic"
-><a href="<%=_hostManagerUrl %>"><%=LanguageUtil.get(pageContext, "manage-hosts")%></a>
-</div>
-<%
-	}
-%>
-<button dojoType="dijit.form.Button"
-	onClick="dijit.popup.close(myDialog);" iconClass="cancelIcon"
-><%=LanguageUtil.get(pageContext, "cancel")%></button>
-</div>
-</div>
-
-
-<script type="text/javascript">
-		var myDialog = new dijit.TooltipDialog({style:'display:none;'}, "hostSelectDialog");
-		myDialog.startup();
-	</script>
-<!-- END Pop-up Host Select -->
-<%
-	}
 %>
 
-<%
-	if (0 < crumbTrailEntries.size()) {
-%>
-<%
-	boolean _amITheFirst = true;
-%>
-<div class="subNavCrumbTrail" id="subNavCrumbTrail">
-<ul id="ulNav">
-	<% if (!showHostSelector) { %>
-	<% _amITheFirst = false; %>
-		<li id="selectHostDiv" style=""
-			<%if(UtilMethods.isSet(_browserCrumbUrl)){ %>
-				onclick="window.location='<%=_browserCrumbUrl%>';" 
-			<%} %>
-		>
-			<span class="hostStoppedIcon" style="float:left;margin-right:5px;"></span>
-			<%=LanguageUtil.get(pageContext, "Global-Page")%>
-		</li>
-	<% } %>
 
-	<% for (CrumbTrailEntry crumbTrailEntry : crumbTrailEntries) { %>
-	<% if (UtilMethods.isSet(crumbTrailEntry.getLink())) { %>
-		<li style="cursor: pointer" 
-			<%if(_amITheFirst){%> id="selectHostDiv"<%} %>
-		>
-			<% if (_amITheFirst) { %> 
-				<span class="publishIcon"></span> 
-			<% } %> 
-			<% _amITheFirst = false; %> 
-			<a href="
-				<%= crumbTrailEntry.getLink() %>"
-			>
-				<%=crumbTrailEntry.getTitle()%>
-			</a>
-		</li>
-	<%
-		} else {
-	%>
-	<li class="lastCrumb" id="lastCrumb"><span><%=crumbTrailEntry.getTitle()%></span></li>
-	<%
-		}
-	%>
-	<%
-		}
-	%>
-</ul>
-<%
-	if (showHostSelector) {
-%>
-<div class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
-	<span id="changeHostId"><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
-	<span class="chevronExpandIcon"></span>
-</div>
-<%
-	}
-%>
-<div class="clear"></div>
-
-</div>
-<%
-	}
-%>
 <div class="clear"></div>
 
 
 
-<script type="text/javascript">
-		
-
-	function showHostPreview() {
-		window.location = '<%=_browserCrumbUrl%>';
-	}
-	function updateCMSSelectedHosts() {
-		if( dijit.byId('subNavHost').attr('value')!=null && dijit.byId('subNavHost').attr('value')!=''){
-			window.location.href = "/html/portlet/ext/common/sub_nav_refresh_host.jsp?referer=" + escape(window.location) + "&host_id=" + dijit.byId('subNavHost').attr('value');
-		}
-	}
-	
-</script>
-<%
-	}
-%>
 
