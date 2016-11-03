@@ -109,15 +109,11 @@ export class LoginService extends CoreWebService {
      */
     public getLoginAsUsersList(): Observable<User[]> {
         return Observable.create(observer => {
-            if (this.loginAsUserList.length) {
-                observer.next(this.loginAsUserList);
-            } else {
-                this.loadLoginAsUsersList();
-                let loginAsUsersListSub = this._loginAsUsersList$.subscribe(res => {
-                    observer.next(res);
-                    loginAsUsersListSub.unsubscribe();
-                });
-            }
+            this.loadLoginAsUsersList();
+            let loginAsUsersListSub = this._loginAsUsersList$.subscribe(res => {
+                observer.next(res);
+                loginAsUsersListSub.unsubscribe();
+            });
         });
     }
 
