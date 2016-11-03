@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  * 
  */
 public class RoleIntegrityChecker extends AbstractIntegrityChecker {
-
+ 
 	private final RoleAPI roleAPI;
 	private final UserAPI userAPI;
 	private final WorkflowAPI workflowAPI;
