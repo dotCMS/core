@@ -920,10 +920,10 @@ public class DotWebdavHelper {
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
-                //This is only needed for Cyberduck, when you right click>New File
+                //Avoid uploading an empty file
 				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
-					FileUtil.write(fileData, " ");
+					FileUtil.write(fileData, "~DOTEMPTY");
 				}
 
 				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
@@ -969,6 +969,12 @@ public class DotWebdavHelper {
                 final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+                
+                //Avoid uploading an empty file
+				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) ){
+					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
+					FileUtil.write(fileData, "~DOTEMPTY");
+				}
 
 				if(destinationFile instanceof File){
 				    // Save the file size
@@ -1004,9 +1010,9 @@ public class DotWebdavHelper {
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAssetCont.setLanguageId(defaultLang);
-					if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+					/*if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 						fileAssetCont.getMap().put("_validateEmptyFile_", false);
-					}
+					}*/
 					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
@@ -1015,6 +1021,17 @@ public class DotWebdavHelper {
 				//Wiping out the thumbnails and resized versions
 				//http://jira.dotmarketing.net/browse/DOTCMS-5911
 				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
+				
+				//Wipe out empty versions that Finder creates
+				List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(identifier, user, false);
+				for(Contentlet c : versions){
+					Logger.debug(this, "inode " + c.getInode() + " size: " + c.getBinary(FileAssetAPI.BINARY_FIELD).length());
+					if(c.getBinary(FileAssetAPI.BINARY_FIELD).length() == 0){
+						Logger.debug(this, "deleting version " + c.getInode());
+						APILocator.getContentletAPI().deleteVersion(c, user, false);
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1488,7 +1505,7 @@ public class DotWebdavHelper {
 	 * @throws IOException when the language passed in the path doesn't exist the IOException will be thrown.
 	 * 
 	 */
-	public String stripMapping(String uri) throws IOException {
+	public String stripMapping(final String uri) throws IOException {
 		String r = uri;
 
 		if(legacyPath){
@@ -1529,8 +1546,8 @@ public class DotWebdavHelper {
 				r = uri.substring(uri.indexOf(splitUri[3])+splitUri[3].length(), uri.length());
 
 			} else {
-				Logger.error(DotWebdavHelper.class, "URI not expected: " + uri);
-				throw new IOException("URI not expected: " + uri);
+				Logger.warn(DotWebdavHelper.class, "URI already stripped: " + uri);
+				r = uri;
 			}
 		}
 
