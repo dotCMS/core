@@ -2702,6 +2702,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			throw new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable.getPermissionId());
 		}
 
+		final String threadName = Thread.currentThread().getName();
+		Thread.currentThread().setName(threadName + " loadPermission:" + permissionable.getPermissionId());
+
 		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
 		persistenceService.setSQLQuery(loadPermissionSQL);
 		persistenceService.setParam(permissionable.getPermissionId());
@@ -2834,6 +2837,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				bitPermissionsList = inheritedPermissions;
 			}
 		}
+		Thread.currentThread().setName(threadName);
 
 		return bitPermissionsList;
 

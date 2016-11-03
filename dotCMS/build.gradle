@@ -495,9 +495,14 @@ undeployPlugins.finalizedBy 'deployConfig'
 //Generates a no obfuscated version of the license jar
 task generateMoveCleanLicenseTomcat << {
 
-    exec {
-        workingDir "$licenseProjectHome"
-        commandLine 'ant', "-Ddotcms.release.version=$dotcmsReleaseVersion"
+    javaexec {
+        workingDir licenseProjectHome
+        main="-jar";
+        args = [
+                "$rootDir/../bin/ant/ant-launcher.jar",
+                "-Ddotcms.release.version",
+                dotcmsReleaseVersion
+        ]
     }
 
     delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
@@ -516,11 +521,16 @@ task generateMoveCleanLicenseTomcat << {
 //Generates a no obfuscated version of the enterprise jar
 task generateMoveCleanEnterpriseTomcat << {
 
-    exec {
-        workingDir "$enterpriseProjectHome"
-        commandLine 'ant', "-Ddotcms.release.version=$dotcmsReleaseVersion"
+    javaexec {
+        workingDir enterpriseProjectHome
+        main="-jar";
+        args = [
+                "$rootDir/../bin/ant/ant-launcher.jar",
+                "-Ddotcms.release.version",
+                dotcmsReleaseVersion
+        ]
     }
-
+    
     delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
         include "ee-*", "ee_*"
     }

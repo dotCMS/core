@@ -92,6 +92,47 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         this.interceptors.clear();
     } // removeAll.
 
+    @Override
+    public void remove(final String webInterceptorName, final boolean destroy) {
+
+        WebInterceptor interceptor = null;
+        final int index = this.indexOf(webInterceptorName);
+
+        if (-1 != index) {
+
+            interceptor =
+                    this.interceptors.get(index);
+
+            if (destroy) {
+
+                interceptor.destroy();
+            }
+
+            this.interceptors.remove(index);
+        }
+    }
+
+    public void move(final String webInterceptorName, int index){
+        if (index >= 0 && index <= this.interceptors.size()) {
+            final int currentIndex = this.indexOf(webInterceptorName);
+
+            if (-1 != currentIndex) {
+                WebInterceptor webInterceptorRemoved = this.interceptors.remove(currentIndex);
+                this.add(index, webInterceptorRemoved);
+            }
+        }else{
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    public void moveToFirst(final String webInterceptorName){
+        move(webInterceptorName, 0);
+    }
+
+    public void moveToLast(final String webInterceptorName){
+        move(webInterceptorName, this.interceptors.size());
+    }
+
     /**
      * Call me on destroy
      */
@@ -131,7 +172,8 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             for (WebInterceptor webInterceptor : this.interceptors) {
 
                 // if the filter applies just for some filter patterns.
-                if (this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
+                if (webInterceptor.isActive() &&
+                        this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
 
                     result          = webInterceptor.intercept(request, response);
                     shouldContinue &= (Result.SKIP_NO_CHAIN != result);

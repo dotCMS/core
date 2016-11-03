@@ -26,36 +26,39 @@ import com.liferay.portal.struts.MultiMessageResourcesFactory;
  */
 public class LanguageWebAPIImpl implements LanguageWebAPI {
 
-	private LanguageAPI langAPI;
+    private LanguageAPI langAPI;
 
-	public LanguageWebAPIImpl() {
-		langAPI = APILocator.getLanguageAPI();
-	}
-	private static final String HTMLPAGE_CURRENT_LANGUAGE = WebKeys.HTMLPAGE_LANGUAGE + ".current";
-	/**
-	 * Clear the language cache and struts cache
-	 * 
-	 * @throws DotRuntimeException
-	 */
-	public void clearCache() throws DotRuntimeException {
+    public LanguageWebAPIImpl() {
+        langAPI = APILocator.getLanguageAPI();
+    }
+    private static final String HTMLPAGE_CURRENT_LANGUAGE = WebKeys.HTMLPAGE_LANGUAGE + ".current";
+    /**
+     * Clear the language cache and struts cache
+     * 
+     * @throws DotRuntimeException
+     */
+    public void clearCache() throws DotRuntimeException {
 
-		langAPI.clearCache();
-		MultiMessageResources messages = (MultiMessageResources) MultiMessageResourcesFactory.getResources();
-		messages.reload();
+        langAPI.clearCache();
+        MultiMessageResources messages = (MultiMessageResources) MultiMessageResourcesFactory.getResources();
+        messages.reload();
 
-	}
+    }
 
 
 
-	
-	// only try internal session and attributes
-	private Language currentLanguage(HttpServletRequest httpRequest) {
+    // only try internal session and attributes
+    private Language currentLanguage(HttpServletRequest httpRequest) {
         HttpSession sessionOpt = httpRequest.getSession(false);
         Language lang = null;
       
             try{
                 if(sessionOpt !=null){
-                    lang= langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+                    if(sessionOpt.getAttribute("tm_lang")!=null){
+                        lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
+                    }else{
+                        lang= langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+                    }
                 }
                 else if(UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))){
                     lang= langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
@@ -71,20 +74,19 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
         
         
         return lang;
+    }
+    
 
-	}
-	
-
-	@Override
+    @Override
     public void checkSessionLocale(HttpServletRequest httpRequest) {
-	    getLanguage(httpRequest);
+        getLanguage(httpRequest);
         
     }
 
     private Language futureLanguage(HttpServletRequest httpRequest,Language currentLang) {
-	    Language futureLang = currentLang;
+        Language futureLang = currentLang;
         // update page language
-	    String tryId=null;
+        String tryId=null;
         if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))){
             tryId = httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE);
         }else if(UtilMethods.isSet(httpRequest.getParameter("language_id"))) {
@@ -103,7 +105,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
         }
         
         return futureLang;
-	}
+    }
         
     /**
      * Here is the order in which langauges should be checked:
@@ -112,8 +114,8 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
      * third,      is there a language in session, if so use it
      * finally     use the default language
      */
-	@Override
-	public Language getLanguage(HttpServletRequest httpRequest) {
+    @Override
+    public Language getLanguage(HttpServletRequest httpRequest) {
         final Language current = currentLanguage(httpRequest);
         final Language future = futureLanguage(httpRequest,current);
         Locale locale = new Locale(future.getLanguageCode(), future.getCountryCode());
@@ -127,20 +129,22 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
             sessionOpt = httpRequest.getSession(true);
         }
         if(sessionOpt!=null){
-            sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(future.getId()));
-            boolean ADMIN_MODE = (sessionOpt.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
-            if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
-                sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
-                httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
-            }
-            sessionOpt.setAttribute(WebKeys.LOCALE, locale);
-
+            //only set in session if we are not in a timemachine
+            if(sessionOpt.getAttribute("tm_lang")==null){
+                sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(future.getId()));
+                boolean ADMIN_MODE = (sessionOpt.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
+                if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
+                    sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
+                    httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
+                }
+                sessionOpt.setAttribute(WebKeys.LOCALE, locale);
+                }
         }
         return future;
 
-	}
-	
-	
-	
+    }
+    
+    
+    
 
 }

@@ -74,11 +74,9 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
                                                         }
                                                         try{
                                                         	Object obj = Class.forName(p.getPortletClass()).newInstance();
-	                                                        if(obj instanceof BaseRestPortlet){
+	                                                        if(obj instanceof BaseRestPortlet || obj instanceof PortletController){
 	                                                                linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
-	                                                        }else if(obj instanceof PortletController ){
-                                                                linkHREF =  "/spring/portlet/" + portletIDs.get(i);
-                                                           }
+	                                                        }
                                                         }
                                                         catch(Exception e){
                                                         	//Logger.error(this.getClass(),"error in portlet nav:" + e.getMessage());
