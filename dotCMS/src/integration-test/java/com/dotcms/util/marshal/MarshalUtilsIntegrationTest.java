@@ -29,7 +29,7 @@ import com.dotmarketing.util.json.JSONException;
  * @version 3.7
  */
 
-public class MarshalUtilsIntegrationTestTest {
+public class MarshalUtilsIntegrationTest {
 	
 	@BeforeClass
 	public static void prepare() throws Exception{
