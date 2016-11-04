@@ -13,10 +13,12 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordResourceIntegrationTest;
 import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotcms.util.marshal.MarshalUtilsIntegrationTest;
 import com.dotmarketing.business.*;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
 import com.dotmarketing.db.HibernateUtilTest;
@@ -145,7 +147,8 @@ import org.junit.runners.Suite;
     //DateUtilTest.class,
     LocaleUtilTest.class,
     //CollectionsUtilsTest.class,
-    //MarshalUtilsTest.class,
+    MarshalUtilsIntegrationTest.class,
+    ResetPasswordResourceIntegrationTest.class,
 
     //ReindexThreadTest.class,
     //ESContentletAPIHelperTest.class,

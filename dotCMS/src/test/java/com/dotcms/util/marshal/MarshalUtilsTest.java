@@ -12,9 +12,11 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -35,7 +37,7 @@ import static org.junit.Assert.assertTrue;
  */
 
 public class MarshalUtilsTest {
-
+	
     /**
      * Testing the marshall
      */
@@ -247,42 +249,4 @@ public class MarshalUtilsTest {
         assertNotNull(dotCMSSubjectBean4);
         assertEquals(subjectBean, dotCMSSubjectBean4);
     }
-
-    @Test
-    public void marshalSystemEvent() throws ParseException, JSONException {
-
-        final MarshalFactory marshalFactory =
-                MarshalFactory.getInstance();
-
-        assertNotNull(marshalFactory);
-
-        final MarshalUtils marshalUtils =
-                marshalFactory.getMarshalUtils();
-
-        assertNotNull(marshalUtils);
-
-		final NotificationData notificationData = new NotificationData(new I18NMessage("Test Title"), new I18NMessage("Notification message"),
-				CollectionsUtils.list(new NotificationAction(new I18NMessage("See More"), "#seeMore", NotificationActionType.LINK, null)));
-		final SystemEvent systemEvent = new SystemEvent("123456", SystemEventType.NOTIFICATION, new Payload(
-				new Notification("78910", NotificationType.GENERIC, NotificationLevel.INFO, "admin@dotcms.com", null,
-						false, notificationData)), new java.util.Date());
-
-        String json = marshalUtils.marshal(systemEvent);
-
-        System.out.println(json);
-
-        assertNotNull(json);
-
-        final SystemEvent systemEvent1 =
-                marshalUtils.unmarshal(json, SystemEvent.class);
-
-        assertTrue(systemEvent.equals(systemEvent1));
-        assertTrue(systemEvent.getEventType() == systemEvent1.getEventType());
-
-        System.out.println(systemEvent.getPayload().getData());
-        System.out.println(systemEvent1.getPayload().getData());
-
-        assertTrue(systemEvent.getPayload().getData().equals(systemEvent1.getPayload().getData()));
-    }
-
 }
