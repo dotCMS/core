@@ -112,7 +112,6 @@ public class ESIndexAPITest {
 	 * @throws ExecutionException
 	 */
 	@Test
-	@Ignore
 	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
 		String currentLiveIndex = getLiveIndex();
 		esIndexAPI.closeIndex(currentLiveIndex);
@@ -122,7 +121,9 @@ public class ESIndexAPITest {
 		File tempDir = new File(pathToRepo);
 		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
 		assertTrue(response);
-		esIndexAPI.openIndex("live_20161011212551");
+		esIndexAPI.closeIndex("live_20161011212551");
+		esIndexAPI.openIndex(currentLiveIndex);
+		esIndexAPI.delete("live_20161011212551");
 	}
 
 	/**
