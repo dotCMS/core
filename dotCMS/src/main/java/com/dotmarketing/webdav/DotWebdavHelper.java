@@ -109,6 +109,7 @@ public class DotWebdavHelper {
 	private static FileResourceCache fileResourceCache = new FileResourceCache();
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	private boolean legacyPath = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false);
+	private static final String emptyFileData = "~DOTEMPTY";
 
 	/**
 	 * MD5 message digest provider.
@@ -835,6 +836,12 @@ public class DotWebdavHelper {
 		}
 
 	}
+	
+	private java.io.File writeDataIfEmptyFile(Folder folder, String fileName, java.io.File fileData) throws IOException{
+		Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
+		FileUtil.write(fileData, emptyFileData);
+		return fileData;
+	}
 
 	public void setResourceContent(String resourceUri, InputStream content,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
 		resourceUri = stripMapping(resourceUri);
@@ -922,8 +929,7 @@ public class DotWebdavHelper {
                 
                 //Avoid uploading an empty file
 				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
-					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
-					FileUtil.write(fileData, "~DOTEMPTY");
+					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
 				}
 
 				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
@@ -972,8 +978,7 @@ public class DotWebdavHelper {
                 
                 //Avoid uploading an empty file
 				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) ){
-					Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
-					FileUtil.write(fileData, "~DOTEMPTY");
+					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
 				}
 
 				if(destinationFile instanceof File){
