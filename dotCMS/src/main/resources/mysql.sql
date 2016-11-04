@@ -1740,7 +1740,7 @@ CREATE TABLE `quartz_log` (`id` BIGINT  NOT NULL AUTO_INCREMENT,`JOB_NAME` VARCH
 
 
 ALTER TABLE cms_role ADD UNIQUE (role_key);
-
+alter table cms_role add constraint cms_role_name_db_fqn unique (db_fqn(1000));
 alter table cms_role add constraint fkcms_role_parent foreign key (parent) references cms_role (id) ON DELETE CASCADE;
 
 

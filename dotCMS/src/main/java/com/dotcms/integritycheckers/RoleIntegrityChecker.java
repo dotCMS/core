@@ -224,13 +224,13 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 		// Create new role with dummy role_key to ensure uniqueness
 		dc.setSQL(
 			"INSERT INTO cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, locked, system) "+
-			"SELECT '"+newRoleId+"', role_name, description, '"+newRoleId+"', db_fqn, parent, edit_permissions, edit_users, edit_layouts, locked, system "+
+			"SELECT '"+newRoleId+"', role_name, description, '"+newRoleId+"', REPLACE(db_fqn, '"+oldRoleId+"', '"+newRoleId+"'), parent, edit_permissions, edit_users, edit_layouts, locked, system "+
 			"FROM cms_role WHERE id='"+ oldRoleId +"'"
 		);
 		dc.loadResult();
 
 		// Replace references from old role to new role
-		dc.setSQL("UPDATE cms_role SET db_fqn=REPLACE(db_fqn, '"+oldRoleId+"', '"+newRoleId+"') WHERE db_fqn LIKE '%"+ oldRoleId +"%'");
+		dc.setSQL("UPDATE cms_role SET db_fqn=REPLACE(db_fqn, '"+oldRoleId+"', '"+newRoleId+"') WHERE id <> '"+ oldRoleId +"' AND db_fqn LIKE '%"+ oldRoleId +"%'");
 		dc.loadResult();
 
 		dc.setSQL("UPDATE cms_role SET parent=? WHERE parent=?");
