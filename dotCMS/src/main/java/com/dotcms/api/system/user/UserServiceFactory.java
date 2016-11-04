@@ -332,7 +332,7 @@ public class UserServiceFactory implements Serializable {
 		@Override
 		public void sendResetPassword(final String companyId,
 									  final String emailAddress,
-									  final Locale locale) throws UserEmailAddressException {
+									  final Locale locale) throws UserEmailAddressException, NoSuchUserException {
 
 			this.sendResetPassword(companyId, emailAddress, locale, ANGULAR_RESET_PASSWORD_URL_STRATEGY);
 		} // sendResetPassword.
@@ -341,7 +341,7 @@ public class UserServiceFactory implements Serializable {
 		public void sendResetPassword(final String companyId,
 									  final String emailAddressParam,
 									  final Locale locale,
-									  final UrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException {
+									  final UrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException, NoSuchUserException {
 
 			final User user;
 			final String emailAddress;
@@ -390,7 +390,9 @@ public class UserServiceFactory implements Serializable {
 				body    = LanguageUtil.format(locale, "reset-password-email-body", url, false);
 				subject = LanguageUtil.get(locale, "reset-password-email-subject");
 				this.messageService.sendMail(user, company, subject, body);
-			} catch (Exception ioe) {
+			} catch(UserException e){
+				throw new NoSuchUserException(e);
+			}catch (Exception ioe) {
 
 				Logger.error(this, ioe.getMessage(), ioe);
 				throw new UserEmailAddressException(ioe);
