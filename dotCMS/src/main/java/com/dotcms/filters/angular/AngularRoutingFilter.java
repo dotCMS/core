@@ -1,20 +1,10 @@
-package com.liferay.portal.servlet.angular;
+package com.dotcms.filters.angular;
 
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.util.Config;
+import com.dotcms.filters.interceptor.AngularRoutingDefaultInterceptor;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
 
 /**
  * If the request is a Angular routing request then it response with a 304 Http code.
