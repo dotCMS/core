@@ -838,8 +838,10 @@ public class DotWebdavHelper {
 	}
 	
 	private java.io.File writeDataIfEmptyFile(Folder folder, String fileName, java.io.File fileData) throws IOException{
-		Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
-		FileUtil.write(fileData, emptyFileData);
+		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+			Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
+			FileUtil.write(fileData, emptyFileData);
+		}
 		return fileData;
 	}
 
@@ -928,7 +930,7 @@ public class DotWebdavHelper {
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
                 //Avoid uploading an empty file
-				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) && HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+				if(HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
 				}
 
@@ -977,9 +979,7 @@ public class DotWebdavHelper {
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
                 //Avoid uploading an empty file
-				if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false) ){
-					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
-				}
+				fileData = writeDataIfEmptyFile(folder, fileName, fileData);
 
 				if(destinationFile instanceof File){
 				    // Save the file size
