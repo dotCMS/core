@@ -1,4 +1,4 @@
-package com.liferay.portal.servlet.angular;
+package com.dotcms.filters.interceptor;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
