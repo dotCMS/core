@@ -2,7 +2,7 @@ package com.dotcms.filters.angular;
 
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
-import com.dotcms.filters.interceptor.AngularRoutingDefaultInterceptor;
+import com.dotcms.filters.interceptor.angular.AngularRoutingDefaultInterceptor;
 
 import javax.servlet.*;
 
