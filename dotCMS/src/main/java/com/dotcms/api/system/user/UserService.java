@@ -8,6 +8,7 @@ import com.dotcms.rest.api.v1.authentication.url.AngularResetPasswordUrlStrategy
 import com.dotcms.rest.api.v1.authentication.url.DefaultResetPasswordUrlStrategy;
 import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.model.User;
 
@@ -104,7 +105,7 @@ public interface UserService extends Serializable {
 	 * @param emailAddress String
 	 * @param locale Locale
      */
-	public void sendResetPassword(String companyId, String emailAddress, Locale locale) throws UserEmailAddressException;
+	public void sendResetPassword(String companyId, String emailAddress, Locale locale) throws UserEmailAddressException, NoSuchUserException;
 
 	/**
 	 * Sends a reset password to the user and stores the token on the user data.
@@ -113,5 +114,5 @@ public interface UserService extends Serializable {
 	 * @param locale Locale
 	 * @param resetPasswordUrlStrategy {@link UrlStrategy}
 	 */
-	public void sendResetPassword(String companyId, String emailAddress, Locale locale, UrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException;
+	public void sendResetPassword(String companyId, String emailAddress, Locale locale, UrlStrategy resetPasswordUrlStrategy) throws UserEmailAddressException, NoSuchUserException;
 } // E:O:F:UserService.
