@@ -37,6 +37,7 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -110,6 +111,7 @@ public class DotWebdavHelper {
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	private boolean legacyPath = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false);
 	private static final String emptyFileData = "~DOTEMPTY";
+	private ContentletAPI conAPI = APILocator.getContentletAPI();
 
 	/**
 	 * MD5 message digest provider.
@@ -335,7 +337,7 @@ public class DotWebdavHelper {
     		Identifier id  = APILocator.getIdentifierAPI().find(host, url);
     		if(id!=null && InodeUtils.isSet(id.getId())) {
     		    if(id.getAssetType().equals("contentlet")){
-    		        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
+    		        Contentlet cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
     	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
     	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
     	            }
@@ -627,7 +629,7 @@ public class DotWebdavHelper {
 				Identifier identifier  = APILocator.getIdentifierAPI().find(children[i].getHost(), destinationPath + "/" + children[i].getName());
 				Permissionable destinationFile = null;
  				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
- 					destinationFile = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), live, defaultLang, user, false);
+ 					destinationFile = conAPI.findContentletByIdentifier(identifier.getId(), live, defaultLang, user, false);
 				}else{
 					destinationFile = fileAPI.getFileByURI(destinationPath + "/" + children[i].getName(), children[i].getHost(), live, user, false);
 				}
@@ -878,7 +880,7 @@ public class DotWebdavHelper {
 			Contentlet fileAssetCont = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-				List<Contentlet> list = APILocator.getContentletAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);	
+				List<Contentlet> list = conAPI.findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);	
 				long langContentlet = list.get(0).getLanguageId();
 				if(langContentlet != defaultLang){
 					for(Contentlet c : list){
@@ -888,13 +890,13 @@ public class DotWebdavHelper {
 						}
 					}
 				}
-				fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, langContentlet, user, false);
+				fileAssetCont = conAPI.findContentletByIdentifier(identifier.getId(), false, langContentlet, user, false);
 				workingFile = fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD);
 				destinationFile = APILocator.getFileAssetAPI().fromContentlet(fileAssetCont);
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
 
 				if(fileAssetCont.isArchived()) {
-				    APILocator.getContentletAPI().unarchive(fileAssetCont, user, false);
+				    conAPI.unarchive(fileAssetCont, user, false);
 				}
 			}else if(identifier!=null && InodeUtils.isSet(identifier.getId())){
 				destinationFile = fileAPI.getFileByURI(path, host, false, user, false);
@@ -942,20 +944,20 @@ public class DotWebdavHelper {
 				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					fileAsset.getMap().put("_validateEmptyFile_", false);
 				}
-				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
+				fileAsset=conAPI.checkin(fileAsset, user, false);
 
 				//Validate if the user have the right permission before
 				if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
-					APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-					APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 					throw new DotSecurityException("User does not have permission to publish contentlets");
 		        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
-		        	APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-					APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+		        	conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 					throw new DotSecurityException("User does not have permission to edit contentlets");
 		        }
 				if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
-				    APILocator.getContentletAPI().publish(fileAsset, user, false);
+				    conAPI.publish(fileAsset, user, false);
 
 				    Date currentDate = new Date();
 				    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
@@ -1015,12 +1017,9 @@ public class DotWebdavHelper {
 					fileAssetCont.setFolder(parent.getInode());
 					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 					fileAssetCont.setLanguageId(defaultLang);
-					/*if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
-						fileAssetCont.getMap().put("_validateEmptyFile_", false);
-					}*/
-					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
+					fileAssetCont = conAPI.checkin(fileAssetCont, user, false);
 					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
-					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
+					    conAPI.publish(fileAssetCont, user, false);
 				}
 
 				//Wiping out the thumbnails and resized versions
@@ -1028,12 +1027,12 @@ public class DotWebdavHelper {
 				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
 				
 				//Wipe out empty versions that Finder creates
-				List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(identifier, user, false);
+				List<Contentlet> versions = conAPI.findAllVersions(identifier, user, false);
 				for(Contentlet c : versions){
 					Logger.debug(this, "inode " + c.getInode() + " size: " + c.getBinary(FileAssetAPI.BINARY_FIELD).length());
 					if(c.getBinary(FileAssetAPI.BINARY_FIELD).length() == 0){
 						Logger.debug(this, "deleting version " + c.getInode());
-						APILocator.getContentletAPI().deleteVersion(c, user, false);
+						conAPI.deleteVersion(c, user, false);
 						break;
 					}
 				}
@@ -1175,7 +1174,7 @@ public class DotWebdavHelper {
 				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
 
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-					Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+					Contentlet fileAssetCont = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 					if(!destinationExists) {
     					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
     						String fileName = getFileName(toPath);
@@ -1189,9 +1188,9 @@ public class DotWebdavHelper {
 					}
 					else {
 					    // if the destination exists lets just create a new version and delete the original file
-					    Contentlet origin = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
-					    Contentlet toContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
-					    Contentlet newversion = APILocator.getContentletAPI().checkout(toContentlet.getInode(), user, false);
+					    Contentlet origin = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+					    Contentlet toContentlet = conAPI.findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
+					    Contentlet newversion = conAPI.checkout(toContentlet.getInode(), user, false);
 
 					    // get a copy in a tmp folder to avoid filename change
 					    java.io.File tmpDir=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
@@ -1201,15 +1200,15 @@ public class DotWebdavHelper {
 
 					    newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
 					    newversion.setLanguageId(defaultLang);
-					    newversion = APILocator.getContentletAPI().checkin(newversion, user, false);
+					    newversion = conAPI.checkin(newversion, user, false);
 					    if(autoPublish) {
-					        APILocator.getContentletAPI().publish(newversion, user, false);
+					        conAPI.publish(newversion, user, false);
 					    }
 
-					    APILocator.getContentletAPI().unlock(newversion, user, false);
+					    conAPI.unlock(newversion, user, false);
 
-					    APILocator.getContentletAPI().delete(origin, APILocator.getUserAPI().getSystemUser(), false);
-					    while(APILocator.getContentletAPI().isInodeIndexed(origin.getInode(),1));
+					    conAPI.delete(origin, APILocator.getUserAPI().getSystemUser(), false);
+					    while(conAPI.isInodeIndexed(origin.getInode(),1));
 					}
 				}else{
 					File f = fileAPI.getFileByURI(getPath(fromPath), host, false, user, false);
@@ -1366,7 +1365,7 @@ public class DotWebdavHelper {
 			}
 
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-			    Contentlet fileAssetCont = APILocator.getContentletAPI()
+			    Contentlet fileAssetCont = conAPI
 			    		.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 
 			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
@@ -1376,7 +1375,7 @@ public class DotWebdavHelper {
 			    			&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
 
 			    	try{
-				        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
+				        conAPI.archive(fileAssetCont, user, false);
 				    }catch (Exception e) {
 				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				        throw new DotDataException(e.getMessage(), e);
@@ -1752,7 +1751,7 @@ public class DotWebdavHelper {
 			java.io.File workingFile  = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-                Contentlet cont  = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+                Contentlet cont  = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 			    workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
 			}else{
 				File file = fileAPI.getFileByURI(path, host, false, user, false);
