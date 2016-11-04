@@ -1,4 +1,4 @@
-package com.dotcms.filters.interceptor;
+package com.dotcms.filters.interceptor.angular;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
