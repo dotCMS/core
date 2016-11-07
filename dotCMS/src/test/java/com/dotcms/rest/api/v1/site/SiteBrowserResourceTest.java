@@ -1,5 +1,29 @@
 package com.dotcms.rest.api.v1.site;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.mapAll;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -10,7 +34,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -20,23 +44,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
  * {@link SiteBrowserResource} test
@@ -48,13 +55,10 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
     public void testNullAndEmptyFilter() throws JSONException, DotSecurityException, DotDataException {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
@@ -149,7 +153,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
 
         Response response1 = siteBrowserResource.sites(request, null, false);
@@ -207,13 +211,10 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
     public void testPreffixFilter() throws JSONException, DotSecurityException, DotDataException {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
@@ -346,7 +347,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
 
         Response response1 = siteBrowserResource.sites(request, "demo", false);
@@ -390,13 +391,10 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
     public void testSwitchNullEmptyAndInvalidFilter() throws JSONException, DotSecurityException, DotDataException {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
@@ -528,7 +526,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
 
         Response response1 = siteBrowserResource.switchSite(request, null);
@@ -565,13 +563,10 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
     public void testSwitchExistingHost() throws JSONException, DotSecurityException, DotDataException {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final UserAPI userAPI = mock(UserAPI.class);
         final WebResource webResource       = mock(WebResource.class);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
@@ -731,7 +726,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
         );
 
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
 
         Response response1 = siteBrowserResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
@@ -752,7 +747,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
     public void testCurrentSites() throws DotSecurityException, DotDataException {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         RestUtilTest.initMockContext();
-        LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final UserAPI userAPI = mock(UserAPI.class);
         User user = new User();
         WebResource webResource = RestUtilTest.getMockWebResource( user, request );
 
@@ -767,7 +762,7 @@ public class SiteBrowserResourceTest extends BaseMessageResources {
                 .thenReturn( currentSite );
 
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), layoutAPI, I18NUtil.INSTANCE);
+                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
         Response response = siteBrowserResource.currentSite(request);
 

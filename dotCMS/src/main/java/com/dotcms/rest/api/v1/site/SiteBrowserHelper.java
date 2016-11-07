@@ -1,7 +1,16 @@
 package com.dotcms.rest.api.v1.site;
 
+import static com.dotmarketing.util.Logger.error;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -12,15 +21,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static com.dotmarketing.util.Logger.error;
-
 /**
  * Just a helper {@link SiteBrowserResource}
  *
@@ -28,7 +28,9 @@ import static com.dotmarketing.util.Logger.error;
  */
 public class SiteBrowserHelper implements Serializable {
 
-    private final HostAPI hostAPI;
+	private static final long serialVersionUID = 1L;
+	
+	private final HostAPI hostAPI;
     private final static HostNameComparator HOST_NAME_COMPARATOR =
             new HostNameComparator();
 
@@ -58,7 +60,7 @@ public class SiteBrowserHelper implements Serializable {
 
 
     /**
-     * Check if a Host is archived or not, keeping the exception quietly
+     * Check if a Site is archived or not, keeping the exception quietly
      * @param showArchived {@link Boolean}
      * @param host {@link Host}
      * @return Boolean
@@ -95,40 +97,71 @@ public class SiteBrowserHelper implements Serializable {
         return null;
     } // getHostManagerUrl.
 
-    /**
-     * Return the list of host that the given user has permissions to see.
-     *
-     * @param showArchived if it is false the archived host aren't returned
-     * @param user
-     * @param filter if it is not a empty String then just the hosts with a hostName starting by 'filter' are returned
-     * @return List of host that the given user has permissions to see and filter by filter
-     * @throws DotDataException if one is thrown when the sites are search
-     * @throws DotSecurityException if one is thrown when the sites are search
-     */
-    public List<Host> getOrderedHost(boolean showArchived, User user, String filter) throws DotDataException, DotSecurityException {
-        return this.hostAPI.findAll(user, Boolean.TRUE)
-                .stream().sorted(HOST_NAME_COMPARATOR)
-                .filter (host ->
-                        !host.isSystemHost() && checkArchived(showArchived, host) &&
-                                (host.getHostname().toLowerCase().startsWith(filter.toLowerCase())))
-                .collect(Collectors.toList());
+	/**
+	 * Returns the list of sites that the given user has access to.
+	 *
+	 * @param showArchived
+	 *            - Is set to {@code true}, archived sites will be returned.
+	 *            Otherwise, set to {@code false}.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param filter
+	 *            - (Optional) If specified, returns the sites whose name starts
+	 *            with the value of the {@code filter} variable.
+	 * @return The list of sites that the given user has permissions to access.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the sites' data.
+	 * @throws DotSecurityException
+	 *             A system error occurred.
+	 */
+    public List<Host> getOrderedSites(final boolean showArchived, final User user, final String filter) throws DotDataException, DotSecurityException {
+    	return getOrderedSites(showArchived, user, filter, Boolean.FALSE);
     }
 
+	/**
+	 * Returns the list of sites that the given user has access to.
+	 *
+	 * @param showArchived
+	 *            - Is set to {@code true}, archived sites will be returned.
+	 *            Otherwise, set to {@code false}.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param filter
+	 *            - (Optional) If specified, returns the sites whose name starts
+	 *            with the value of the {@code filter} variable.
+	 * @param respectFrontendRoles
+	 *            -
+	 * @return The list of sites that the given user has permissions to access.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the sites' data.
+	 * @throws DotSecurityException
+	 *             A system error occurred.
+	 */
+    public List<Host> getOrderedSites(final boolean showArchived, final User user, final String filter, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    	final String sanitizedFilter = filter != null ? filter : StringUtils.EMPTY;
+    	return this.hostAPI.findAll(user, respectFrontendRoles)
+                .stream().sorted(HOST_NAME_COMPARATOR)
+                .filter (site ->
+                        !site.isSystemHost() && checkArchived(showArchived, site) &&
+                                (site.getHostname().toLowerCase().startsWith(sanitizedFilter.toLowerCase())))
+                .collect(Collectors.toList());
+    }
+    
     /**
-     * Return a host by user and host's id
+     * Return a site by user and site id
      *
      * @param user User to filter the host to return
-     * @param hostId Id to filter the host to return
+     * @param siteId Id to filter the host to return
      * @return host that the given user has permissions and with id equal to hostId, if any exists then return null
      * @throws DotSecurityException if one is thrown when the sites are search
      * @throws DotDataException if one is thrown when the sites are search
      */
-    public Host getHost(User user, String hostId) throws DotSecurityException, DotDataException {
-        Optional<Host> hostOptional = this.hostAPI.findAll(user, Boolean.TRUE)
-                .stream().filter(host -> !host.isSystemHost() && hostId.equals(host.getIdentifier()))
+    public Host getSite(User user, String siteId) throws DotSecurityException, DotDataException {
+        Optional<Host> siteOptional = this.hostAPI.findAll(user, Boolean.TRUE)
+                .stream().filter(site -> !site.isSystemHost() && siteId.equals(site.getIdentifier()))
                 .findFirst();
 
-        return hostOptional.isPresent() ? hostOptional.get() : null;
+        return siteOptional.isPresent() ? siteOptional.get() : null;
     }
 
 } // E:O:F:SiteBrowserHelper
