@@ -3,6 +3,7 @@ package com.dotcms.contenttype.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.List;
 
 import org.junit.BeforeClass;
@@ -14,6 +15,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotcms.repackage.org.apache.tika.io.IOUtils;
 
 public class JsonContentTypeTransformerTest {
 
@@ -32,10 +34,7 @@ public class JsonContentTypeTransformerTest {
             String json = null;
             try {
                 json = new JsonContentTypeTransformer(type).json();
-
                 type2 = new JsonContentTypeTransformer(json).from();
-
-
 
                 assertThat("ContentType == ContentType2", type.equals(type2));
             } catch (Throwable t) {
@@ -121,4 +120,20 @@ public class JsonContentTypeTransformerTest {
             throw t;
         }
     }
+
+    @Test
+    public void testJsonToContentType() throws Exception {
+
+
+        InputStream stream = this.getClass()
+                .getResourceAsStream("/com/dotcms/contenttype/test/content-type.json");
+        String json = IOUtils.toString(stream);
+        stream.close();
+        ContentType type = new JsonContentTypeTransformer(json).from();
+
+
+    }
+
+
+
 }
