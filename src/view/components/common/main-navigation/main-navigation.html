@@ -11,7 +11,7 @@
                             <a [routerLink]="[menuItem.url]" *ngIf="menuItem.angular && !menuItem.ajax">
                                 {{menuItem.name}}
                             </a>
-                            <a [routerLink]="['/dotCMS/portlet/' + menuItem.url]" *ngIf="menuItem.ajax">
+                            <a [routerLink]="['portlet/' + menuItem.id]" *ngIf="menuItem.url && menuItem.ajax">
                                 {{menuItem.name}}
                             </a>
                         </template>
