@@ -1,0 +1,171 @@
+// -*- coding: utf-8; mode: groovy -*-
+
+import jp.classmethod.aws.gradle.ec2.AmazonEC2PluginExtension;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2ImportKeyTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2RunInstanceTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2StartInstanceTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2StopInstanceTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2TerminateInstanceTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2WaitInstanceStatusTask;
+
+import com.amazonaws.AmazonServiceException
+import com.amazonaws.services.ec2.AmazonEC2
+import com.amazonaws.services.ec2.model.CreateTagsRequest
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest
+import com.amazonaws.services.ec2.model.DescribeInstancesResult
+import com.amazonaws.services.ec2.model.Instance
+import com.amazonaws.services.ec2.model.Tag
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+	}
+	dependencies {
+		classpath "jp.classmethod.aws:gradle-aws-plugin:0.+"
+		classpath "org.hidetake:gradle-ssh-plugin:2.7.0"
+		classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
+	}
+}
+
+
+apply plugin: "java"
+apply plugin: "jp.classmethod.aws.ec2"
+apply plugin: "org.hidetake.ssh"
+
+
+dependencies {
+    compile 'com.amazonaws:aws-java-sdk-s3'
+}
+
+
+aws {
+	profileName = "default"
+	region = "us-west-2"
+}
+
+
+ssh.settings {
+	knownHosts = allowAnyHosts
+}
+
+remotes {
+	web01 {
+		host = "ec2-35-163-132-165.us-west-2.compute.amazonaws.com"
+		user = "ec2-user"
+		identity = file("aws-dev-2016.pem")
+	}
+}
+
+
+task importKey(type: AmazonEC2ImportKeyTask) {
+	keyName "aws-dev-2016"
+	publicKeyMaterial "AAAAB3NzaC1yc2EAAAADAQABAAABAQDBaI1i7fdnfh9cUNiqrHVH181BMaWleQDLCi3DWdxzJWJIkWsP2oo+K7nWFKaWIdhzp7BobxInyo09/28YjZxJA4qomAjSF68KVKxvBPlgrkOgaTJnQh7srxtdot2adnLu1jwMzNbQOGHwvV2JdP4q8c56s7GuoG22VeiJ4GncbTidnsc3zwKh8mN7TvMv8U8RtsqQK/js7j0nqDGybobZfuDusIaL1DKX1NlfJ0fuWh8OBuVzDyxFZ58EJwJhSHpNsiVV1i0llueDUJ/ccdExZCxsiidiZI2bxfnIj/SMp6jjBvO5wC/g/jBVH0rtZNq7ALLwMWgNOxG+vlwkuX67"
+	ifNotExists true
+}
+
+if (hasProperty('instanceId') == false) { ext.instanceId = 'i-12345678' }
+
+
+task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
+	ami "ami-f717b797"
+	keyName "aws-dev-2016"
+	instanceType "m3.medium"
+	userData "#! /bin/bash\nyum -y update"
+
+	securityGroupIds = new java.util.ArrayList<String>()
+	securityGroupIds += "sg-957235ec"
+
+	doLast {
+		project.instanceId = runInstancesResult.getReservation().getInstances().get(0).instanceId
+
+		println("Launched Instance = "+ runInstancesResult.getReservation().getInstances().get(0))
+	}
+}
+
+
+task stopInstance(type: AmazonEC2StopInstanceTask) {
+	instanceIds += project.instanceId
+}
+
+task startInstance(type: AmazonEC2StartInstanceTask) {
+	instanceIds += project.instanceId
+}
+
+task terminateInstance(type: AmazonEC2TerminateInstanceTask) {
+	doFirst {
+		instanceIds += project.instanceId
+	}
+
+	doLast {
+		println("Terminated Instance = "+ instanceIds)
+	}
+}
+
+
+task waitInstanceStatusLaunched(type: AmazonEC2WaitInstanceStatusTask) {
+	loopWait = 2
+
+	doFirst {
+		instanceId = project.instanceId
+	}
+
+	doLast {
+		println("Launched Instance = "+ instanceId)
+	}
+}
+
+task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
+	loopWait = 2
+
+	doFirst {
+		instanceId = project.instanceId
+	}
+
+	doLast {
+		println("Terminated Instance = "+ instanceId)
+	}
+}
+
+
+task setupInstance {
+	doLast {
+		String publicDnsName = getInstancePublicDnsName(project.instanceId)
+
+		println("Described Instance = "+ publicDnsName )
+
+		setInstanceTagName(project.instanceId)
+	}
+}
+
+
+task executeRemoteInstance << {
+	ssh.run {
+		session(remotes.web01) {
+			def result = execute "ls -al"
+
+			println("Result = "+ result)
+		}
+	}
+}
+
+
+String getInstancePublicDnsName(String instanceId) {
+	DescribeInstancesResult describeInstancesResult = getAmazonEC2Client().describeInstances(
+		new DescribeInstancesRequest().withInstanceIds( instanceId )
+	)
+
+	return describeInstancesResult.reservations.instances.get(0).publicDnsName
+}
+
+void setInstanceTagName(String instanceId) {
+	CreateTagsRequest request = new CreateTagsRequest()
+
+    getAmazonEC2Client().createTags(
+    	request.withResources( instanceId ).withTags( new Tag( "Name", "AWS Dev-Test Slave" ) )
+    )
+}
+
+AmazonEC2 getAmazonEC2Client() {
+	return project.extensions.getByType( AmazonEC2PluginExtension.class ).client
+}
