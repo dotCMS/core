@@ -26,7 +26,6 @@ public class DateUtilTest extends BaseMessageResources {
         final SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
 
         format.setLenient(true);
-        format.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 
         final Date now    = format.parse("2016/02/01");
         final Date newDay = DateUtil.addDate(now, Calendar.DAY_OF_MONTH, 2);
@@ -72,7 +71,6 @@ public class DateUtilTest extends BaseMessageResources {
         final SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
 
         format.setLenient(true);
-        format.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 
         final Date oldDate    = format.parse("2015/01/01");
 
@@ -95,7 +93,7 @@ public class DateUtilTest extends BaseMessageResources {
         assertTrue(!resultMap.isEmpty());
         System.out.println(resultMap);
         assertTrue(resultMap.get(DateUtil.DIFF_YEARS) == 1L);
-        assertTrue(resultMap.get(DateUtil.DIFF_MONTHS) == 13L);
+        assertTrue(resultMap.get(DateUtil.DIFF_MONTHS) == 12L);
         assertTrue(resultMap.get(DateUtil.DIFF_DAYS) == 396L);
         assertTrue(resultMap.get(DateUtil.DIFF_HOURS) == 9504L);
         assertTrue(resultMap.get(DateUtil.DIFF_MINUTES) == 0L);
@@ -135,7 +133,6 @@ public class DateUtilTest extends BaseMessageResources {
         final SimpleDateFormat format = new SimpleDateFormat("yyyy/MMM/dd");
 
         format.setLenient(true);
-        format.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 
         final Date toDate    = format.parse("2016/Apr/01");
         Date date    = format.parse("2015/Mar/01");

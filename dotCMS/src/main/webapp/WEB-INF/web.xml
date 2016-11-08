@@ -86,7 +86,7 @@
     </filter>
 	<filter>
 		<filter-name>AngularRoutingFilter</filter-name>
-		<filter-class>com.liferay.portal.servlet.angular.AngularRoutingFilter</filter-class>
+		<filter-class>com.dotcms.filters.angular.AngularRoutingFilter</filter-class>
 	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
@@ -99,10 +99,6 @@
  	<!-- END FILTER-MAPPINGS -->
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
-	<filter-mapping>
-		<filter-name>AngularRoutingFilter</filter-name>
-		<url-pattern>/html/ng/*</url-pattern>
-	</filter-mapping>
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -154,6 +150,10 @@
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>AngularRoutingFilter</filter-name>
+		<url-pattern>/html/ng/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	

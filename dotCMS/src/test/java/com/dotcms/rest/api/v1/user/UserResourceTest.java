@@ -1,13 +1,41 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.junit.Test;
+
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.rest.*;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.site.SiteBrowserResource;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -15,23 +43,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 
 /**
  * {@link SiteBrowserResource} test
@@ -288,6 +300,7 @@ public class UserResourceTest extends BaseMessageResources {
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
         final LoginService loginService= mock(LoginService.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
 
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
@@ -295,12 +308,25 @@ public class UserResourceTest extends BaseMessageResources {
 
         String userId1 = "admin.role.id";
         String userId2 = "login.as.id";
+        String userId3 = "admin";
 
+        Map<String,Object> user1Map = new HashMap<String,Object>();
+        user1Map.put("userId", userId1);
         User user1 = mock(User.class);
         when( user1.getUserId() ).thenReturn( userId1 );
+        when( user1.toMap() ).thenReturn(user1Map);
 
+        Map<String,Object> user2Map = new HashMap<String,Object>();
+        user2Map.put("userId", userId2);
         User user2 = mock(User.class);
         when( user2.getUserId() ).thenReturn( userId2 );
+        when( user2.toMap() ).thenReturn(user2Map);
+        
+        Map<String,Object> user3Map = new HashMap<String,Object>();
+        user3Map.put("userId", userId3);
+        User user3 = mock(User.class);
+        when( user3.getUserId() ).thenReturn( userId3 );
+        when( user3.toMap() ).thenReturn(user3Map);
 
         List<User> users = list(user1, user2);
 
@@ -320,6 +346,9 @@ public class UserResourceTest extends BaseMessageResources {
         when( roleAPI.loadCMSAdminRole() ).thenReturn( loginAsRole );
         when( roleAPI.doesUserHaveRoles(userId1, rolesId) ).thenReturn( true ) ;
         when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
+        when( webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when( initDataObject.getUser()).thenReturn(user3);
+
 
         UserResource userResource =
                 new UserResource(webResource, userAPI, userHelper, errorHelper);
