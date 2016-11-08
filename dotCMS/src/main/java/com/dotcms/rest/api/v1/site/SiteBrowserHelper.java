@@ -4,25 +4,26 @@ import static com.dotmarketing.util.Logger.error;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.portlet.PortletURLImpl;
 
 /**
- * Just a helper {@link SiteBrowserResource}
+ * Provides all the utility methods used by the {@link SiteBrowserResource}
+ * class to provide the required data to the UI layer or any other type of
+ * client.
  *
  * @author jsanca
  */
@@ -41,6 +42,9 @@ public class SiteBrowserHelper implements Serializable {
         this.hostAPI = hostAPI;
     }
 
+    /**
+     * Private constructor for the singleton holder.
+     */
     private SiteBrowserHelper () {
         this.hostAPI = APILocator.getHostAPI();
     }
@@ -54,7 +58,6 @@ public class SiteBrowserHelper implements Serializable {
      * @return JsonWebTokenFactory
      */
     public static SiteBrowserHelper getInstance() {
-
         return SiteBrowserHelper.SingletonHolder.INSTANCE;
     } // getInstance.
 
@@ -66,7 +69,6 @@ public class SiteBrowserHelper implements Serializable {
      * @return Boolean
      */
     public boolean checkArchived (final boolean showArchived, final Host host) {
-
         boolean checkArchived = false;
         try {
 
@@ -77,25 +79,6 @@ public class SiteBrowserHelper implements Serializable {
 
         return checkArchived;
     } // checkArchived.
-
-    public String getHostManagerUrl(final HttpServletRequest req, final List<Layout> userHasLayouts) {
-
-        List<String> portletIds = null;
-
-        for (Layout layout : userHasLayouts) {
-
-            portletIds = layout.getPortletIds();
-            for (String porletId : portletIds) {
-
-                if (EXT_HOSTADMIN.equals(porletId)) {
-
-                    return  new PortletURLImpl(req, porletId, layout.getId(), false).toString();
-                }
-            }
-        }
-
-        return null;
-    } // getHostManagerUrl.
 
 	/**
 	 * Returns the list of sites that the given user has access to.
@@ -160,8 +143,39 @@ public class SiteBrowserHelper implements Serializable {
         Optional<Host> siteOptional = this.hostAPI.findAll(user, Boolean.TRUE)
                 .stream().filter(site -> !site.isSystemHost() && siteId.equals(site.getIdentifier()))
                 .findFirst();
-
         return siteOptional.isPresent() ? siteOptional.get() : null;
     }
 
-} // E:O:F:SiteBrowserHelper
+	/**
+	 * Determines what site is to be marked as "selected" by a user. If the
+	 * currently selected site in the HTTP Session is part of the sites that a
+	 * user (actual or impersonated user) has access to, the Identifier of such
+	 * a site is returned. If the site in the session is not in the list of
+	 * sites, the Identifier of the first site in the list must be returned.
+	 * 
+	 * @param siteList
+	 *            - The list of sites (their metadata) that a user has access
+	 *            to.
+	 * @param siteInSession
+	 *            - The Identifier of the site that is marked as selected in the
+	 *            current user session.
+	 * @return The Identifier of the site that will be marked as "selected".
+	 */
+	public String getSelectedSite(final List<Map<String, Object>> siteList, final String siteInSession) {
+		String selectedSite = UtilMethods.isSet(siteInSession) ? siteInSession : StringUtils.EMPTY;
+		boolean siteFound = false;
+		if (siteList != null && !siteList.isEmpty()) {
+			for (Map<String, Object> siteData : siteList) {
+				if (siteData.get(Contentlet.IDENTIFIER_KEY).equals(siteInSession)) {
+					siteFound = true;
+					break;
+				}
+			}
+			if (!siteFound) {
+				selectedSite = siteList.get(0).get(Contentlet.IDENTIFIER_KEY).toString();
+			}
+		}
+		return selectedSite;
+	}
+
+}

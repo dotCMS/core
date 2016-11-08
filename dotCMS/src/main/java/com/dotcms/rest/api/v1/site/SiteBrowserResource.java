@@ -31,7 +31,6 @@ import com.dotcms.util.I18NUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -104,21 +103,8 @@ public class SiteBrowserResource implements Serializable {
                     .stream()
                     .map(site -> site.getMap())
                     .collect(Collectors.toList());
-            String currentSite = (String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
-            boolean siteFound = false;
-			if (siteList != null && !siteList.isEmpty()) {
-				// If the currently selected site in session is not present in
-				// the result list, just to use the first one in it
-				for (Map<String, Object> siteData : siteList) {
-					if (siteData.get(Contentlet.IDENTIFIER_KEY).equals(currentSite)) {
-						siteFound = true;
-						break;
-					}
-				}
-				if (!siteFound) {
-					currentSite = siteList.get(0).get(Contentlet.IDENTIFIER_KEY).toString();
-				}
-			}
+			final String currentSite = this.siteBrowserHelper.getSelectedSite(siteList,
+					(String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID));
             response = Response.ok( new ResponseEntityView( map("sites", siteList,
                     "currentSite", currentSite))).build();
         } catch (Exception e) {
