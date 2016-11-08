@@ -27,8 +27,14 @@ public interface ContentTypeApi {
 
 	ContentType findByVarName(String varName, User user) throws DotSecurityException, DotDataException;
 
+	// based on a condition
 	int count(String condition) throws DotDataException;
+	
+	// based on a condition and a user
 	int count(String condition,User user) throws DotDataException;
+	
+	// all
+    int count() throws DotDataException;
 	String suggestVelocityVar(String tryVar) throws DotDataException;
 
 	ContentType setAsDefault(ContentType type, User user) throws DotDataException, DotSecurityException;
@@ -58,6 +64,10 @@ public interface ContentTypeApi {
 	
 	
 	Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "html page", "menu link", "virtual link", "container", "template", "user" );
+
+
+
+
 
 	
 	

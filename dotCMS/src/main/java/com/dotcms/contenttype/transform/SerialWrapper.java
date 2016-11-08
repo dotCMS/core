@@ -10,9 +10,9 @@ public class SerialWrapper<T> implements Serializable{
     final private T inner;
     final private Class implClass;
 
-    public SerialWrapper(T inner, Class field) {
+    public SerialWrapper(T inner, Class clazz) {
         this.inner = inner;
-        this.implClass = field;
+        this.implClass = clazz;
     }
 
     public T getInner() {

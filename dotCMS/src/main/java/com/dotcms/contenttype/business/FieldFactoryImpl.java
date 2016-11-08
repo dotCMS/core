@@ -142,10 +142,14 @@ public class FieldFactoryImpl implements FieldFactory {
 
     private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
-        if (!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType())) {
-            throw new DotDataValidationException("Field Type:" + throwAwayField.type()
-                    + " does not accept datatype " + throwAwayField.dataType(),
-                    "field.validation.incorrect.datatype");
+
+        if(throwAwayField.modDate().after(new Date(2016,10,10, 0, 0, 0))){
+            if (!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType()) 
+                    && (throwAwayField.acceptedDataTypes().size()>0 && throwAwayField.acceptedDataTypes().get(0) != DataTypes.SYSTEM)) {
+                throw new DotDataValidationException("Field Type:" + throwAwayField.type()
+                        + " does not accept datatype " + throwAwayField.dataType() + ":" + throwAwayField,
+                        "field.validation.incorrect.datatype");
+            }
         }
         if (throwAwayField.contentTypeId() == null) {
             throw new DotDataValidationException(
@@ -158,7 +162,10 @@ public class FieldFactoryImpl implements FieldFactory {
 
         Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
         FieldBuilder builder = FieldBuilder.builder(throwAwayField).modDate(modDate);
-
+        
+        if(throwAwayField.acceptedDataTypes().size()==1 && throwAwayField.acceptedDataTypes().get(0) == DataTypes.SYSTEM){
+            builder.dataType(DataTypes.SYSTEM);
+        }
 
 
         Field oldField = null;

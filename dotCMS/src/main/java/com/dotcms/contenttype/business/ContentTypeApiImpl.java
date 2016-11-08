@@ -150,7 +150,12 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     public int count(String condition) throws DotDataException {
         return this.fac.searchCount(condition);
     }
-
+    
+    @Override
+    public int count() throws DotDataException {
+        return this.count("1=1");
+    }
+    
     @Override
     public int count(String condition, User user) throws DotDataException {
         return find(condition, user, false).size();
