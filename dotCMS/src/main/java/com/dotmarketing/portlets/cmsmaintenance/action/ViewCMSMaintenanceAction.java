@@ -700,73 +700,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = null;
 			_bout = null;
 
-			/* Roles */
-//			_list = RoleManagerUtil.findAll();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/" + Role.class.getName() + ".xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-
-			/* Groups */
-//			_list = new ArrayList<Group>();
-//			for (Company company : companies) {
-//				_list.addAll(CompanyLocalManagerUtil.getGroups(CompanyUtils.getDefaultCompany().getCompanyId()));
-//			}
-//			List<Group> groups = new ArrayList<Group>(_list);
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/" + Group.class.getName() + ".xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-
-			/* Layouts */
-//			_list = LayoutManagerUtil.findAll();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/" + Layout.class.getName() + ".xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
 
 			/* users_roles */
 			DotConnect dc = new DotConnect();
-//			dc.setSQL("select * from users_roles");
-//			_list = dc.getResults();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/Users_Roles.xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-//
-//			/* users_groups */
-//			dc.setSQL("select * from users_groups");
-//			_list = dc.getResults();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/Users_Groups.xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-//
-//			/* users_groups */
-//			dc.setSQL("select * from groups_roles");
-//			_list = dc.getResults();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/Groups_Roles.xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
 
 			/* counter */
 			dc.setSQL("select * from counter");
