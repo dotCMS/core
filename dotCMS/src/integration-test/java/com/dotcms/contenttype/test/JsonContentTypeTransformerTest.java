@@ -15,7 +15,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 
-public class JsonTransformerTest {
+public class JsonContentTypeTransformerTest {
 
     final ContentTypeFactory factory = new ContentTypeFactoryImpl();
 
@@ -29,9 +29,9 @@ public class JsonTransformerTest {
         List<ContentType> types = factory.findAll();
         for (ContentType type : types) {
             ContentType type2 = null;
-            String json=null;
+            String json = null;
             try {
-                json = new JsonContentTypeTransformer(type).asJson();
+                json = new JsonContentTypeTransformer(type).json();
 
                 type2 = new JsonContentTypeTransformer(json).from();
 
@@ -47,17 +47,40 @@ public class JsonTransformerTest {
         }
     }
 
+    @Test
+    public void testContentTypeArraySerialization() throws Exception {
+        List<ContentType> types = factory.findAll();
+
+        List<ContentType> types2 = null;
+        String json = null;
+        try {
+            json = new JsonContentTypeTransformer(types).json();
+            types2 = new JsonContentTypeTransformer(json).asList();
+
+            for (int i = 0; i < types.size(); i++) {
+                assertThat("ContentType == ContentType2", types.get(i).equals(types2.get(i)));
+            }
+
+
+
+        } catch (Throwable t) {
+            System.out.println(types);
+            System.out.println(types2);
+            System.out.println(json);
+            throw t;
+        }
+    }
 
     @Test
     public void testFieldSerialization() throws Exception {
         List<ContentType> types = factory.findAll();
         for (ContentType type : types) {
             Field field2 = null;
-            String json=null;
+            String json = null;
             for (Field field : type.fields()) {
 
                 try {
-                    json = new JsonFieldTransformer(field).asJson();
+                    json = new JsonFieldTransformer(field).json();
 
                     field2 = new JsonFieldTransformer(json).from();
 
@@ -74,4 +97,28 @@ public class JsonTransformerTest {
         }
     }
 
+    @Test
+    public void testFieldArraySerialization() throws Exception {
+        List<ContentType> types = factory.findAll();
+
+        List<Field> fields = null;
+        String json = null;
+        try {
+            for (ContentType type : types) {
+                json = new JsonFieldTransformer(type.fields()).json();
+                fields = new JsonFieldTransformer(json).asList();
+
+                for (int i = 0; i < type.fields().size(); i++) {
+                    assertThat("Field1 == Field2", fields.get(i).equals(type.fields().get(i)));
+                }
+            }
+
+
+
+        } catch (Throwable t) {
+            System.out.println(fields);
+            System.out.println(json);
+            throw t;
+        }
+    }
 }
