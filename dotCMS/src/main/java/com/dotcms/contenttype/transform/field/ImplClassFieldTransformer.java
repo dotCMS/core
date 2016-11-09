@@ -24,8 +24,9 @@ public class ImplClassFieldTransformer implements FieldTransformer{
 	@Override
 	public Field from() throws DotStateException {
 		if(this.genericFields.size()==0) throw new DotStateException("0 results");
-		return  impleClass(this.genericFields.get(0));
-
+		Field field=  impleClass(this.genericFields.get(0));
+		field.fieldVariables();
+		return field;
 
 	}
 	

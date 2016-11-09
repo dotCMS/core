@@ -364,7 +364,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
 
-        if (throwAway.id().equals(FieldVariable.NOT_PERSISTED)) {
+        if (!UtilMethods.isSet(throwAway.id()) || throwAway.id().equals(FieldVariable.NOT_PERSISTED)) {
             builder.id(UUID.randomUUID().toString());
         }
 

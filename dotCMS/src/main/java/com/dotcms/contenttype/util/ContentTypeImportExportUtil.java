@@ -45,7 +45,7 @@ public class ContentTypeImportExportUtil {
     ContentTypeApi tapi = APILocator.getContentTypeAPI2();
     FieldApi fapi = APILocator.getFieldAPI2();
     final int limit = 1000;
-    final String fileExtension="-contenttypes.json";
+    public static final String CONTENT_TYPE_FILE_EXTENSION="-contenttypes.json";
 
     public void exportContentTypes(File directory) throws IOException, DotDataException {
 
@@ -53,30 +53,29 @@ public class ContentTypeImportExportUtil {
         int count = tapi.count();
         int runs  =count / limit;
         for (int i = 0; i <= count / limit; i++) {
-            File file = new File(parent, "dotCMSContentTypes-" + i + fileExtension);
+            File file = new File(parent, "dotCMSContentTypes-" + i + CONTENT_TYPE_FILE_EXTENSION);
             streamingJsonExport(file, i);
         }
 
     }
 
-    public void importContentTypes(File directory) throws IOException, DotDataException {
+    public void importContentTypes(File fileOrDirectory) throws IOException, DotDataException {
 
-        File parent = (directory.isDirectory()) ? directory : directory.getParentFile();
+        if(!fileOrDirectory.isDirectory()){
+            streamingJsonImport(fileOrDirectory);
+        }else{
+            String[] files =fileOrDirectory.list(new FilenameFilter() {
+                
+                @Override
+                public boolean accept(File dir, String name) {
+                    return (name.endsWith(CONTENT_TYPE_FILE_EXTENSION));
+                }
+            });
 
-        String[] files =parent.list(new FilenameFilter() {
-            
-            @Override
-            public boolean accept(File dir, String name) {
-                return (name.endsWith(fileExtension));
+            for (String fileStr : files) {
+                File file = new File(fileOrDirectory,fileStr);
+                streamingJsonImport(file);
             }
-        });
-        
-        
-        
-
-        for (String fileStr : files) {
-            File file = new File(parent,fileStr);
-            streamingJsonImport(file);
         }
 
     }

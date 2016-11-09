@@ -1,10 +1,12 @@
 package com.dotcms.contenttype.transform.field;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
-
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.SerialWrapper;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -13,8 +15,10 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonFieldTransformer implements FieldTransformer {
@@ -32,7 +36,7 @@ public class JsonFieldTransformer implements FieldTransformer {
         // are we an array?
         try {
             fields = fromJsonArrayStr(json);
-        } catch (JSONException ex) {
+        } catch (Exception ex) {
             fields = ImmutableList.of(fromJsonStr(json));
         }
         this.list = ImmutableList.copyOf(fields);
@@ -44,13 +48,21 @@ public class JsonFieldTransformer implements FieldTransformer {
         this.list = ImmutableList.copyOf(list);
     }
 
-    private List<Field> fromJsonArrayStr(String input) throws JSONException {
+    private List<Field> fromJsonArrayStr(String input) throws JSONException, JsonParseException, JsonMappingException, IOException {
         List<Field> fields = new ArrayList<>();
 
         JSONArray jarr = new JSONArray(input);
         for (int i = 0; i < jarr.length(); i++) {
             JSONObject jo = jarr.getJSONObject(i);
-            fields.add(fromJsonStr(jo.toString()));
+            if(jo.has("fields")){
+                return fromJsonArrayStr(jo.getJSONArray("fields").toString());
+            }
+            Field f = fromJsonStr(jo.toString());
+            if(jo.has("fieldVariables")){
+                List<FieldVariable> vars = mapper.readValue(jo.getString("fieldVariables"), mapper.getTypeFactory().constructCollectionType(List.class, FieldVariable.class));
+                f.constructFieldVariables(vars);
+            }
+            fields.add(f);
         }
 
 

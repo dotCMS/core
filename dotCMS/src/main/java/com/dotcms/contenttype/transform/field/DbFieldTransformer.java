@@ -189,7 +189,7 @@ public class DbFieldTransformer implements FieldTransformer {
 			}
 
 		};
-
+		
 		return new ImplClassFieldTransformer(field).from();
 
 	}

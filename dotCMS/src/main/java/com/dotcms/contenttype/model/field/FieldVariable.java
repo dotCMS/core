@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize
 @Value.Immutable
 public interface FieldVariable extends Serializable, IFieldVar {
-    static final String NOT_PERSISTED="NOT_PERSISTED";
+    public static final String NOT_PERSISTED="NOT_PERSISTED";
     @Value.Default
     default String id(){
         return NOT_PERSISTED;

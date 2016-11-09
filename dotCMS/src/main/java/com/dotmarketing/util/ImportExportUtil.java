@@ -39,6 +39,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
@@ -60,6 +61,7 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 
 
@@ -100,7 +102,7 @@ public class ImportExportUtil {
     private List<File> contentletsXML = new ArrayList<File>();
     private List<File> menuLinksXML = new ArrayList<File>();
     private List<File> pagesXML = new ArrayList<File>();
-    private List<File> structuresXML = new ArrayList<File>();
+    private List<File> contentTypeJson = new ArrayList<File>();
     private List<File> containersXML = new ArrayList<File>();
     private List<File> identifiersXML = new ArrayList<File>();
     private List<File> foldersXML = new ArrayList<File>();
@@ -260,8 +262,8 @@ public class ImportExportUtil {
                 pagesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.links.model.Link_")){
                 menuLinksXML.add(new File(_importFile.getPath()));
-            }else if(_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Structure_")){
-                structuresXML.add(new File(_importFile.getPath()));
+            }else if(_importFile.getName().endsWith(ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION)){
+                contentTypeJson.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.business.LayoutsRoles_")){
                 rolesLayoutsXML = new File(_importFile.getPath());
             }else if(_importFile.getName().contains("com.dotmarketing.business.UsersRoles_")){
@@ -521,11 +523,11 @@ public class ImportExportUtil {
             // we need structures before contentlets
             // but structures have references to folders and hosts identifiers
             // so, here is the place to do it
-            for (File file : structuresXML) {
+            for (File file : contentTypeJson) {
                 try {
-                    doXMLFileImport(file, out);
+                    new ContentTypeImportExportUtil().importContentTypes(file);
                 } catch (Exception e) {
-                    Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
+                    throw new DotStateException("Unable to load contenttypes: " + file,e);
                 }
             }
 

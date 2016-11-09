@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -129,11 +130,26 @@ public abstract class Field implements FieldIf, Serializable {
 
     @Value.Lazy
     public List<FieldVariable> fieldVariables() {
-        try {
-            return FactoryLocator.getFieldFactory2().loadVariables(this);
-        } catch (DotDataException e) {
-            throw new DotStateException("unable to load field variables:" + e.getMessage(), e);
+        if(innerFieldVariables!=null){
+            try {
+                innerFieldVariables= FactoryLocator.getFieldFactory2().loadVariables(this);
+                return innerFieldVariables;
+            } catch (DotDataException e) {
+                throw new DotStateException("unable to load field variables:" + e.getMessage(), e);
+            }
         }
+
+        return innerFieldVariables;
+        
+    }
+    
+    private List<FieldVariable> innerFieldVariables = new ArrayList<>();
+    
+    public void constructFieldVariables(List<FieldVariable> fieldVariables){
+        if(innerFieldVariables!=null){
+            throw new DotStateException("FieldVariables are final");
+        }
+        innerFieldVariables=fieldVariables;
     }
 
 

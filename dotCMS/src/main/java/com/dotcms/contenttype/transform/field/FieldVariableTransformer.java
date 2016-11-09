@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.IFieldVar;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.UtilMethods;
 
 
 public class FieldVariableTransformer {
@@ -74,9 +75,15 @@ public class FieldVariableTransformer {
     private static FieldVariable transformToNew(
             com.dotmarketing.portlets.structure.model.FieldVariable oldVar) {
 
+        
+        
+        String id = (UtilMethods.isSet(oldVar.getId()))
+                ? oldVar.getId() 
+                        : FieldVariable.NOT_PERSISTED;
+
         return ImmutableFieldVariable.builder()
                 .fieldId( oldVar.getFieldId())
-                .id(oldVar.getId())
+                .id(id)
                 .key(oldVar.getKey())
                 .name(oldVar.getName())
                 .modDate(oldVar.getLastModDate())

@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldIf;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
@@ -233,7 +234,11 @@ public class LegacyFieldTransformer implements FieldTransformer {
 				return LegacyFieldTypes.getImplClass(fieldType);
 
 			}
+            @Override
+            public List<FieldVariable> fieldVariables() {
+                return null;
 
+            }
 			@Override
 			public String typeName() {
 				// TODO Auto-generated method stub

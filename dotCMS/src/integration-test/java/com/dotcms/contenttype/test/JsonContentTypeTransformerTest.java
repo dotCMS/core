@@ -12,10 +12,12 @@ import org.junit.Test;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.org.apache.tika.io.IOUtils;
+import com.dotmarketing.business.APILocator;
 
 public class JsonContentTypeTransformerTest {
 
@@ -130,8 +132,13 @@ public class JsonContentTypeTransformerTest {
         String json = IOUtils.toString(stream);
         stream.close();
         ContentType type = new JsonContentTypeTransformer(json).from();
-
-
+        List<Field> fields = new JsonFieldTransformer(json).asList();
+        List<FieldVariable> vars = fields.get(0).fieldVariables();
+        
+        
+        
+        APILocator.getContentTypeAPI2().save(type, APILocator.systemUser() );
+        
     }
 
 

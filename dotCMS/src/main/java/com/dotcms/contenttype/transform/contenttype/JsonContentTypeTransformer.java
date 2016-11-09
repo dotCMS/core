@@ -21,13 +21,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer {
     final List<ContentType> list;
-    ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public JsonContentTypeTransformer(ContentType type) {
         this.list = ImmutableList.of(type);
     }
 
+    
     public JsonContentTypeTransformer(String json) {
         List<ContentType> types = new ArrayList<>();
         // are we an array?
@@ -36,18 +36,16 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         } catch (JSONException ex) {
             types = ImmutableList.of(fromJsonStr(json));
         }
-
         this.list = ImmutableList.copyOf(types);
-
     }
 
+    
     public JsonContentTypeTransformer(List<ContentType> list) {
         this.list = ImmutableList.copyOf(list);
     }
 
-
+    
     private JsonNode asNode(ContentType type) {
-
         ObjectNode typeNode = mapper.valueToTree(new SerialWrapper<>(type, type.getClass()));
         typeNode.put("implClass", type.getClass().getCanonicalName().replaceAll(".Immutable","."));
 
@@ -61,6 +59,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         return typeNode;
     }
 
+    
     private ContentType fromJsonStr(String input) {
         try {
             return (ContentType) mapper.readValue(input, JsonHelper.resolveClass(input));
@@ -69,6 +68,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         }
     }
 
+    
     private List<ContentType> fromJsonArrayStr(String input) throws JSONException {
         List<ContentType> types = new ArrayList<>();
         JSONArray jarr = new JSONArray(input);
@@ -76,11 +76,10 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
             JSONObject jo = jarr.getJSONObject(i);
             types.add(fromJsonStr(jo.toString()));
         }
-
-
         return types;
     }
 
+    
     @Override
     public ContentType from() throws DotStateException {
         return this.list.get(0);
@@ -91,16 +90,11 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         return this.list;
     }
 
-
     public String json() throws DotStateException {
-        
-        
         ArrayNode outerArray = mapper.createArrayNode();
-
         for (ContentType type : list) {
             outerArray.add(asNode(type));
         }
-        System.out.println(outerArray.toString());
         return outerArray.toString();
    
     }

@@ -168,7 +168,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	@Override
 	public ContentType save(ContentType type) throws DotDataException {
-	
+	    
 			return LocalTransaction.wrapReturn(() -> {
 				ContentType returnType = dbSaveUpdate(type);
 				cache.remove(returnType);
