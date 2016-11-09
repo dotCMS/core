@@ -15,6 +15,7 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -180,12 +181,21 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	@Value.Lazy
 	public Permissionable getParentPermissionable()  {
 		try {
-			Permissionable parent =  (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) 
-					? APILocator.getHostAPI().find(this.host(), APILocator.systemUser(), false)
-							: APILocator.getFolderAPI().find(this.folder(), APILocator.systemUser(), false);
-					
-			
-			return parent;
+		    
+		    PermissionableProxy pp = new PermissionableProxy();
+		    
+		    if(FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
+		        pp.setIdentifier(this.host());
+		        pp.setInode(this.host());
+		        pp.setType(Host.class.getCanonicalName());
+		    }
+		    else{
+                pp.setIdentifier(this.folder());
+                pp.setInode(this.folder());
+                pp.setType(Folder.class.getCanonicalName());
+		    }
+
+			return pp;
 		} catch (Exception e) {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}

@@ -65,6 +65,8 @@ import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -466,6 +468,9 @@ public class CMSMaintenanceAjax {
 				BufferedOutputStream _bout = null;
 
 				for (Class clazz : _tablesToDump) {
+				    if(clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz.equals(FieldVariable.class)){
+				        continue;
+				    }
 					//http://jira.dotmarketing.net/browse/DOTCMS-5031
 	                if(PermissionReference.class.equals(clazz)){
 	                	continue;

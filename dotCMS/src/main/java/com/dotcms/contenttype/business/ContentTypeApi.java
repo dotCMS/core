@@ -63,8 +63,9 @@ public interface ContentTypeApi {
 	    
 	
 	
-	Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "html page", "menu link", "virtual link", "container", "template", "user" );
+	Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file","forms", "html page", "menu link", "virtual link", "container", "template", "user" );
 
+    Set<String> reservedStructureVars = ImmutableSet.of("host", "folder", "file", "forms","htmlpage", "menulink", "virtuallink", "container", "template", "user", "calendarEvent" );
 
 
 

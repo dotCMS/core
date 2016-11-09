@@ -291,7 +291,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		ContentTypeBuilder builder = ContentTypeBuilder.builder(saveType)
 				.modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
+		boolean isNew=false;
 		if(saveType.inode()==null){
+		    isNew=true;
 			builder.inode(UUID.randomUUID().toString()).build();
 		}
 		
@@ -320,16 +322,26 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		if (!existsInDb) {
 			dbInodeInsert(retType);
 			dbInsert(retType);
-			// set up default fields;
-			List<Field> fields = retType.requiredFields();
-			FieldApi fapi = new FieldApiImpl().instance();
-			for (Field f : fields) {
-				f = FieldBuilder.builder(f).contentTypeId(retType.inode()).build();
-				try {
-					fapi.save(f, APILocator.systemUser());
-				} catch (DotSecurityException e) {
-					throw new DotStateException(e);
-				}
+			
+			if(isNew){
+                if(ContentTypeApi.reservedStructureNames.contains(retType.name().toLowerCase())){
+                    throw new DotDataException("cannot save a structure with name:" + retType.name());
+                }
+                if(ContentTypeApi.reservedStructureVars.contains(retType.variable().toLowerCase())){
+                    throw new DotDataException("cannot save a structure with name:" + retType.name());
+                }
+                
+    			// set up default fields;
+    			List<Field> fields = retType.requiredFields();
+    			FieldApi fapi = new FieldApiImpl().instance();
+    			for (Field f : fields) {
+    				f = FieldBuilder.builder(f).contentTypeId(retType.inode()).build();
+    				try {
+    					fapi.save(f, APILocator.systemUser());
+    				} catch (DotSecurityException e) {
+    					throw new DotStateException(e);
+    				}
+    			}
 			}
 			return retType;
 
@@ -381,9 +393,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	private void dbInsert(ContentType type) throws DotDataException {
 		
-		if(ContentTypeApi.reservedStructureNames.contains(type.name().toLowerCase())){
-			throw new DotDataException("cannot save a structure with name:" + type.name());
-		}
+
 		
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.INSERT_TYPE);

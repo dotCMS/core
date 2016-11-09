@@ -13,7 +13,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 
-@WebFilter(filterName = "DotAdminFilter", urlPatterns = {"/dotadmin*", "/dotAdmin*"})
+@WebFilter(filterName = "DotAdminFilter", urlPatterns = {"/dotadmin", "/dotAdmin"})
 public class DotAdminFilter implements Filter {
 
     
