@@ -33,7 +33,7 @@ public class Payload implements Serializable {
 	}
 
 	/**
-	 * Creates a payload object.
+	 * Creates a payload object. If the data is null then the payload is set with data null and type Object
 	 * 
 	 * @param data {@link Object}
 	 *            - Any Java object that represents the payload.
@@ -46,12 +46,16 @@ public class Payload implements Serializable {
 				   final Visibility visibility,
 				   final String visibilityId) {
 
-		this.type = data.getClass().getName();
+		if(null == data){
+			this.type = Object.class.getName();
+		}else{
+			this.type = data.getClass().getName();
+		}
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityId = visibilityId;
 	}
-
+	
 	/**
 	 * Returns the type (fully qualified name) of the Java class representing
 	 * the payload of the System Event.
