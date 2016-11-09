@@ -16,14 +16,18 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.translate.TranslationService;
+import com.dotcms.translate.TranslationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
@@ -76,7 +80,16 @@ import com.liferay.portal.model.User;
 
 public class RoleAjax {
 
-	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private final SystemEventsAPI systemEventsAPI;
+    	
+	public RoleAjax(){
+		this(APILocator.getSystemEventsAPI());
+	}
+	
+	@VisibleForTesting
+	protected RoleAjax(SystemEventsAPI systemEventsAPI) {
+		this.systemEventsAPI = systemEventsAPI;
+    }
 	
 	public List<Map<String, Object>> getRolesTreeFiltered(boolean onlyUserAssignableRoles, String excludeRoles) throws DotDataException{
 		return getRolesTree (onlyUserAssignableRoles, excludeRoles, false);
@@ -527,7 +540,9 @@ public class RoleAjax {
 			}
 		}
 		
-		pushPortletLayoutChangeEvent();
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+				
 	}
 
 	/**
@@ -576,7 +591,10 @@ public class RoleAjax {
 		layoutAPI.saveLayout(newLayout);
 
 		layoutAPI.setPortletIdsToLayout(newLayout, portletIds);
-		pushPortletLayoutChangeEvent();
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+				
 		Map<String, Object> layoutMap =  newLayout.toMap();
 		layoutMap.put("portletTitles", getPorletTitlesFromLayout(newLayout));
 		return layoutMap;
@@ -594,7 +612,10 @@ public class RoleAjax {
 		layoutAPI.saveLayout(layout);
 
 		layoutAPI.setPortletIdsToLayout(layout, portletIds);
-		pushPortletLayoutChangeEvent();
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+				
 	}
 	
 	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
@@ -602,7 +623,9 @@ public class RoleAjax {
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
 		layoutAPI.removeLayout(layout);
-		pushPortletLayoutChangeEvent();
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());	
 	}
 
 	/**
@@ -945,23 +968,5 @@ public class RoleAjax {
 		return ret;
 
 	}
-
-	/**
-	 * This method send an event to indicate to the angular frame that there is a portlet 
-	 * layouts change, and that the angular frame should refresh the 
-	 * menu options for the users
-	 * 
-	 */
-	private void pushPortletLayoutChangeEvent() {
-
-		SystemEventType systemEventType = SystemEventType.UPDATE_PORTLET_LAYOUTS;
-
-		try {
-	 		systemEventsAPI.push(systemEventType, new Payload(null));
-		} catch (DotDataException e) {
-			throw new RuntimeException( e );
-		}
-	}
-
-
+	
 }
