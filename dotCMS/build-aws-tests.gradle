@@ -44,15 +44,32 @@ aws {
 	region = "us-west-2"
 }
 
-
 ssh.settings {
 	knownHosts = allowAnyHosts
 }
 
+def custom = [
+	keys : [
+		keyName: "aws-dev-2016",
+		publicKeyMaterial: "AAAAB3NzaC1yc2EAAAADAQABAAABAQDBaI1i7fdnfh9cUNiqrHVH181BMaWleQDLCi3DWdxzJWJIkWsP2oo+K7nWFKaWIdhzp7BobxInyo09/28YjZxJA4qomAjSF68KVKxvBPlgrkOgaTJnQh7srxtdot2adnLu1jwMzNbQOGHwvV2JdP4q8c56s7GuoG22VeiJ4GncbTidnsc3zwKh8mN7TvMv8U8RtsqQK/js7j0nqDGybobZfuDusIaL1DKX1NlfJ0fuWh8OBuVzDyxFZ58EJwJhSHpNsiVV1i0llueDUJ/ccdExZCxsiidiZI2bxfnIj/SMp6jjBvO5wC/g/jBVH0rtZNq7ALLwMWgNOxG+vlwkuX67",
+		privateKeyFile: "aws-dev-2016.pem",
+	],
+	aws : [
+		securityGroupId: "sg-957235ec",
+
+		instanceAmi: "ami-f717b797",
+		instanceType: "m3.medium",
+		instanceName: "AWS Dev-Test Slave",
+	],
+	ssh : [
+		username: "ec2-user",
+	]
+]
+
 
 task importKey(type: AmazonEC2ImportKeyTask) {
-	keyName "aws-dev-2016"
-	publicKeyMaterial "AAAAB3NzaC1yc2EAAAADAQABAAABAQDBaI1i7fdnfh9cUNiqrHVH181BMaWleQDLCi3DWdxzJWJIkWsP2oo+K7nWFKaWIdhzp7BobxInyo09/28YjZxJA4qomAjSF68KVKxvBPlgrkOgaTJnQh7srxtdot2adnLu1jwMzNbQOGHwvV2JdP4q8c56s7GuoG22VeiJ4GncbTidnsc3zwKh8mN7TvMv8U8RtsqQK/js7j0nqDGybobZfuDusIaL1DKX1NlfJ0fuWh8OBuVzDyxFZ58EJwJhSHpNsiVV1i0llueDUJ/ccdExZCxsiidiZI2bxfnIj/SMp6jjBvO5wC/g/jBVH0rtZNq7ALLwMWgNOxG+vlwkuX67"
+	keyName custom.keys.keyName
+	publicKeyMaterial custom.keys.publicKeyMaterial
 	ifNotExists true
 }
 
@@ -61,13 +78,14 @@ if (hasProperty('instancePublicDnsName') == false) { ext.instancePublicDnsName =
 
 
 task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
-	ami "ami-f717b797"
-	keyName "aws-dev-2016"
-	instanceType "m3.medium"
+	ami custom.aws.instanceAmi
+	keyName custom.keys.keyName
+	instanceType custom.aws.instanceType
+
 	userData "#! /bin/bash\nyum -y update"
 
 	securityGroupIds = new java.util.ArrayList<String>()
-	securityGroupIds += "sg-957235ec"
+	securityGroupIds += custom.aws.securityGroupId
 
 	doLast {
 		project.instanceId = runInstancesResult.getReservation().getInstances().get(0).instanceId
@@ -127,9 +145,9 @@ task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 
 task setupInstance {
 	doLast {
-		setInstanceTagName(project.instanceId)
+		setInstanceTagName(project.instanceId, custom.aws.instanceName)
 
-		sleep(45* 1000)
+		sleep(60 * 1000)
 	}
 }
 
@@ -147,7 +165,7 @@ task describeInstance {
 task executeRemoteInstance(dependsOn: describeInstance) {
 	doLast {
 		ssh.run {
-			session(host: project.instancePublicDnsName, user: "ec2-user", identity: file("aws-dev-2016.pem")) {
+			session(host: project.instancePublicDnsName, user: custom.ssh.username, identity: file(custom.keys.privateKeyFile)) {
 				def result = execute "ls -al"
 	
 				println("Result = "+ result)
@@ -167,11 +185,11 @@ String getInstancePublicDnsName(String instanceId) {
 	return instancePublicDnsName.substring(1, instancePublicDnsName.length() - 1);
 }
 
-void setInstanceTagName(String instanceId) {
+void setInstanceTagName(String instanceId, String instanceName) {
 	CreateTagsRequest request = new CreateTagsRequest()
 
     getAmazonEC2Client().createTags(
-    	request.withResources( instanceId ).withTags( new Tag( "Name", "AWS Dev-Test Slave" ) )
+    	request.withResources( instanceId ).withTags( new Tag( "Name", instanceName ) )
     )
 }
 
