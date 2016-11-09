@@ -113,6 +113,7 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
+	@Ignore
 	@Test
 	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
 		String currentLiveIndex = getLiveIndex();
@@ -132,6 +133,7 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
+	@Ignore
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
 		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");

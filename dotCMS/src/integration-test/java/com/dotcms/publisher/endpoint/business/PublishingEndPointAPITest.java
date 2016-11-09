@@ -15,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import org.junit.BeforeClass;
 import org.junit.AfterClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -79,6 +80,7 @@ public class PublishingEndPointAPITest extends TestBase{
 
 	
 	// There should not be any end points at the beginning of the test
+	@Ignore
 	@Test
 	public void test() throws DotDataException {
 		try {

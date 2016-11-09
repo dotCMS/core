@@ -40,6 +40,7 @@ configurations.all({
 apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
+apply plugin: 'idea'
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -49,6 +50,7 @@ repositories {
 
 testSets {
     integrationTest { dirName = 'integration-test' }
+    functionalTest { dirName = 'functional-test' }
 }
 
 
@@ -64,6 +66,20 @@ project.integrationTest {
 //Avoid skipping running tests when the test task is invoked
 project.test {
     outputs.upToDateWhen { false }
+}
+
+idea {
+
+    module {
+        //and some extra test source dirs
+        testSourceDirs += file('integration-test/java')
+
+        testSourceDirs += file('functional-test/java')
+
+        //if you prefer different SDK than the one inherited from IDEA project
+        jdkName = '1.8'
+
+    }
 }
 
 // Import and apply the dependencies from the dependencies scripts.
@@ -104,7 +120,7 @@ compileJava {
 
 jar{
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
+        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
     }
 }
 

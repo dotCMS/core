@@ -3,6 +3,7 @@ package com.dotmarketing.viewtools.navigation;
 import com.dotcms.TestBase;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -29,6 +30,7 @@ public class NavToolTest extends TestBase{
         IntegrationTestInitService.getInstance().init();
 	}
 
+	@Ignore
     @Test
     public void testAboutUs() throws Exception { // https://github.com/dotCMS/core/issues/7678
 
