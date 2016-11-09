@@ -11,23 +11,18 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.translate.TranslationService;
-import com.dotcms.translate.TranslationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
