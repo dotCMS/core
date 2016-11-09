@@ -60,10 +60,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		String workingInode = vinfo.getWorkingInode();
 		
 		try{
-			if(HTMLPage.class.equals(clazz)){
-				ver= APILocator.getHTMLPageAPI().loadLivePageById(id, user, true);
-			}
-			else if(Container.class.equals(clazz)){
+			if(Container.class.equals(clazz)){
 				ver= APILocator.getContainerAPI().getWorkingContainerById(id, user, true);
 			}
 			else if(Template.class.equals(clazz)){
@@ -72,8 +69,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			else if(File.class.equals(clazz)){
 				ver= APILocator.getFileAPI().find(workingInode, user, true);
 			}
-			else if(Contentlet.class.equals(clazz)){
-				ver= APILocator.getContentletAPI().find(workingInode, user, true);
+			else if(HTMLPage.class.equals(clazz)){
+				ver= APILocator.getHTMLPageAPI().loadWorkingPageById(id, user, true);
 			}
 			// ignore Links, WorkflowMessages and Inode
 			} catch(Exception e){
@@ -82,7 +79,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		
 		
 		if(ver == null){
-			Logger.error(this.getClass(), "Versionable NULL when finding working version " + clazz.getName() + " Trying old method.");
+			Logger.error(this.getClass(), "Versionable null when finding working version " + clazz.getName() + " Trying old method.");
 			HibernateUtil dh = new HibernateUtil(clazz);
 			dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
 			dh.setParam(vinfo.getWorkingInode());
@@ -117,28 +114,25 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			if(UtilMethods.isSet(vinfo.getLiveInode())){
 				String liveInode = vinfo.getLiveInode();
 				try{
-				if(HTMLPage.class.equals(clazz)){
-					ver= APILocator.getHTMLPageAPI().loadLivePageById(id, user, true);
-				}
-				else if(Container.class.equals(clazz)){
-					ver= APILocator.getContainerAPI().getLiveContainerById(id, user, true);
-				}
-				else if(Template.class.equals(clazz)){
-					ver= APILocator.getTemplateAPI().find(liveInode, user, true);
-				}
-				else if(File.class.equals(clazz)){
-					ver= APILocator.getFileAPI().find(liveInode, user, true);
-				}
-				else if(Contentlet.class.equals(clazz)){
-					ver= APILocator.getContentletAPI().find(liveInode, user, true);
-				}
+					if(Container.class.equals(clazz)){
+						ver= APILocator.getContainerAPI().getLiveContainerById(id, user, true);
+					}
+					else if(Template.class.equals(clazz)){
+						ver= APILocator.getTemplateAPI().find(liveInode, user, true);
+					}
+					else if(File.class.equals(clazz)){
+						ver= APILocator.getFileAPI().find(liveInode, user, true);
+					}
+					else if(HTMLPage.class.equals(clazz)){
+						ver= APILocator.getHTMLPageAPI().loadLivePageById(id, user, true);
+					}
 				// ignore Links, WorkflowMessages and Inode
 				} catch(Exception e){
 					Logger.error(this.getClass(), "Error finding the live version of " + clazz + ", with Identifier: " + id);
 				}
 
 				if(ver==null){
-					Logger.error(this.getClass(), "Versionable NULL when finding live version " + clazz.getName() + " Trying old method.");
+					Logger.error(this.getClass(), "Versionable null when finding live version " + clazz.getName() + " Trying old method.");
 					HibernateUtil dh = new HibernateUtil(clazz);
 					dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
 					dh.setParam(vinfo.getLiveInode());
