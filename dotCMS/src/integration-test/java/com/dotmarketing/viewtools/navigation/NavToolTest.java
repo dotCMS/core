@@ -1,10 +1,6 @@
 package com.dotmarketing.viewtools.navigation;
 
 import com.dotcms.TestBase;
-
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -13,6 +9,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +29,6 @@ public class NavToolTest extends TestBase{
         IntegrationTestInitService.getInstance().init();
 	}
 
-	@Ignore
     @Test
     public void testAboutUs() throws Exception { // https://github.com/dotCMS/core/issues/7678
 

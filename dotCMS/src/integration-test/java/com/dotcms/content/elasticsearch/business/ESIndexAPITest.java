@@ -1,23 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipFile;
-
-import org.elasticsearch.ElasticsearchException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -26,6 +8,21 @@ import com.dotmarketing.util.ConfigTestHelper;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
+
+import org.elasticsearch.ElasticsearchException;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipFile;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ESIndexAPITest {
 
@@ -113,7 +110,6 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	@Ignore
 	@Test
 	public void uploadSnapshotTest() throws IOException, InterruptedException, ExecutionException{
 		String currentLiveIndex = getLiveIndex();
@@ -133,7 +129,7 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	@Ignore
+
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
 		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");

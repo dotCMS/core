@@ -1,19 +1,18 @@
 package org.apache.velocity.runtime.parser.node;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.ObjectOutputStream;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.VelocityUtil;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.ObjectOutputStream;
 
 public class SimpleNodeTest {
 
@@ -23,7 +22,6 @@ public class SimpleNodeTest {
         IntegrationTestInitService.getInstance().init();
 	}
 
-	@Ignore
     @Test
     public void serializeTest() throws Exception {
         CacheLocator.getCacheAdministrator().flushAlLocalOnly();

@@ -356,7 +356,6 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
-    @Ignore
     @Test
     public void findContentletsByHost () throws DotDataException, DotSecurityException {
 
@@ -2084,7 +2083,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getStructureAPI().delete(testStructure, user);
     }
 
-    @Ignore
     @Test
     public void widgetInvalidateAllLang() throws Exception {
 

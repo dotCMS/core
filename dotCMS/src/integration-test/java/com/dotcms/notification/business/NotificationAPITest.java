@@ -1,16 +1,5 @@
 package com.dotcms.notification.business;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.dotcms.TestBase;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -24,6 +13,16 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * 
@@ -41,7 +40,6 @@ public class NotificationAPITest extends TestBase  {
 	}
 
 	//This one still fails
-	@Ignore
 	@Test
 	public void testSaveDeleteNotification() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();

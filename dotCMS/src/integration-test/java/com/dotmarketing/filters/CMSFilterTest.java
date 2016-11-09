@@ -9,13 +9,11 @@ import com.dotmarketing.servlets.SpeedyAssetServlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.ClientVelocityServlet;
 import com.dotmarketing.velocity.VelocityServlet;
+
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -23,9 +21,23 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.FilterChain;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
+
 public class CMSFilterTest {
 
-	@Ignore
 	@Test
 	public void shouldWorkVirtualLink() throws IOException {
 
@@ -181,7 +193,6 @@ public class CMSFilterTest {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void shouldWorkVirtualLinkCMSHomePage() throws IOException {
 
@@ -315,9 +326,7 @@ public class CMSFilterTest {
 		shouldRedirect401() ;
 		shouldWorkVirtualLinkCMSHomePage();
 	}
-	
 
-	@Ignore
 	@Test
 	public void shouldReturnStrutsPage() throws IOException {
 
@@ -404,7 +413,6 @@ public class CMSFilterTest {
 	 * This tests if the cms filter correctly redirects a user from /home to
 	 * /home/
 	 */
-	@Ignore
 	@Test
 	public void shouldRedirectToFolderIndex() throws IOException {
 		Logger.info(this.getClass(), "/home should redirect to /home/");
