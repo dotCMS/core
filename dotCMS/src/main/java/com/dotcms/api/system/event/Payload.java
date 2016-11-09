@@ -31,9 +31,41 @@ public class Payload implements Serializable {
 
 		this(data, Visibility.GLOBAL, (String) null);
 	}
+	
+	/**
+	 * Creates a payload object without data. This method generates an empty 
+	 * object payload using an empty Void generic class object. This allows 
+	 * to send events that doesn't requires any data input on their payload.
+	 *
+	 */
+	public Payload() {
+
+		this(new Void(), Visibility.GLOBAL, (String) null);
+	}
+	
+	/**
+	 * Creates a payload object without data, but allowing to set the visility 
+	 * and visibilityid. This method generates an empty object payload using an 
+	 * empty Void generic class object. This allows to send events that doesn't 
+	 * requires any data input on their payload.
+	 * 
+	 * @param visibility {@link Visibility}
+	 * 			  - If the event should be apply just for a specific user, role or global
+	 * @param visibilityId {@link String}
+	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
+	 */
+	public Payload(final Visibility visibility,
+				   final String visibilityId) {
+
+		Void emptyVoidInstance = new Void();
+		this.type = emptyVoidInstance.getClass().getName();
+		this.data = emptyVoidInstance;
+		this.visibility = visibility;
+		this.visibilityId = visibilityId;
+	}
 
 	/**
-	 * Creates a payload object. If the data is null then the payload is set with data null and type Object
+	 * Creates a payload object.
 	 * 
 	 * @param data {@link Object}
 	 *            - Any Java object that represents the payload.
@@ -46,11 +78,7 @@ public class Payload implements Serializable {
 				   final Visibility visibility,
 				   final String visibilityId) {
 
-		if(null == data){
-			this.type = Object.class.getName();
-		}else{
-			this.type = data.getClass().getName();
-		}
+		this.type = data.getClass().getName();
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityId = visibilityId;
