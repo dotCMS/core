@@ -15,7 +15,7 @@ export class RoutingPrivateAuthService implements CanActivate {
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
 
         return new Promise(resolve => {
-             if (this.loginService.isLogin) {
+            if (this.loginService.isLogin) {
                 resolve(this.checkAccess(state.url));
             } else {
                 this.loginService.loadAuth().subscribe(() => {
