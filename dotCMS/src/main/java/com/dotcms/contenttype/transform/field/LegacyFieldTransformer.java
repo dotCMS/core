@@ -234,11 +234,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 				return LegacyFieldTypes.getImplClass(fieldType);
 
 			}
-            @Override
-            public List<FieldVariable> fieldVariables() {
-                return null;
 
-            }
 			@Override
 			public String typeName() {
 				// TODO Auto-generated method stub

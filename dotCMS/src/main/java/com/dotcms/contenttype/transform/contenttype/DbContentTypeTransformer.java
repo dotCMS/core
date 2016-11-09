@@ -134,10 +134,6 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 				return base;
 			}
 
-			@Override
-			public List<Field> fields() {
-				return ImmutableList.of();
-			}
 			
 			
 			private Date convertSQLDate(Date d){

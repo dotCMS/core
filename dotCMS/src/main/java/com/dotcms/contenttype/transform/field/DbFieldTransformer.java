@@ -189,7 +189,7 @@ public class DbFieldTransformer implements FieldTransformer {
 			}
 
 		};
-		
+
 		return new ImplClassFieldTransformer(field).from();
 
 	}
@@ -198,6 +198,7 @@ public class DbFieldTransformer implements FieldTransformer {
 	public List<Field> asList() throws DotStateException {
 		List<Field> list = new ArrayList<Field>();
 		for (Map<String, Object> map : results) {
+		    Field f  = fromMap(map);
 			list.add(fromMap(map));
 		}
 

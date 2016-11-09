@@ -190,10 +190,6 @@ public class StructureTransformer implements ContentTypeTransformer  {
 			public BaseContentType baseType() {
 				return BaseContentType.getBaseContentType(struct.getStructureType());
 			}
-			@Override
-			public List<Field> fields() {
-				return ImmutableList.of();
-			}
 
 		};
 

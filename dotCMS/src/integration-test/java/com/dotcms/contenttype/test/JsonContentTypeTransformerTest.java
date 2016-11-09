@@ -103,15 +103,24 @@ public class JsonContentTypeTransformerTest {
         List<ContentType> types = factory.findAll();
 
         List<Field> fields = null;
+        List<Field> fields2 = null;
         String json = null;
         try {
             for (ContentType type : types) {
+                fields = type.fields();
+                
+                
                 json = new JsonFieldTransformer(type.fields()).json();
-                fields = new JsonFieldTransformer(json).asList();
+                fields2 = new JsonFieldTransformer(json).asList();
 
                 for (int i = 0; i < type.fields().size(); i++) {
                     assertThat("Field1 == Field2", fields.get(i).equals(type.fields().get(i)));
                 }
+                for (int i = 0; i < type.fields().size(); i++) {
+                    assertThat("Field1 == Field2", fields2.get(i).equals(type.fields().get(i)));
+                }
+                
+                
             }
 
 
@@ -124,11 +133,11 @@ public class JsonContentTypeTransformerTest {
     }
 
     @Test
-    public void testJsonToContentType() throws Exception {
+    public void testJsonToContentTypeArray() throws Exception {
 
 
         InputStream stream = this.getClass()
-                .getResourceAsStream("/com/dotcms/contenttype/test/content-type.json");
+                .getResourceAsStream("/com/dotcms/contenttype/test/content-type-array.json");
         String json = IOUtils.toString(stream);
         stream.close();
         ContentType type = new JsonContentTypeTransformer(json).from();
@@ -140,7 +149,23 @@ public class JsonContentTypeTransformerTest {
         APILocator.getContentTypeAPI2().save(type, APILocator.systemUser() );
         
     }
+    @Test
+    public void testJsonToContentTypeObject() throws Exception {
 
+
+        InputStream stream = this.getClass()
+                .getResourceAsStream("/com/dotcms/contenttype/test/content-type-object.json");
+        String json = IOUtils.toString(stream);
+        stream.close();
+        ContentType type = new JsonContentTypeTransformer(json).from();
+        List<Field> fields = new JsonFieldTransformer(json).asList();
+        List<FieldVariable> vars = fields.get(0).fieldVariables();
+        
+        
+        
+        APILocator.getContentTypeAPI2().save(type, APILocator.systemUser() );
+        
+    }
 
 
 }

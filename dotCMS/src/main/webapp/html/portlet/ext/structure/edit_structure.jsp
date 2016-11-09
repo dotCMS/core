@@ -689,7 +689,8 @@ function disableFormFields(){
                                     <%= LanguageUtil.get(pageContext, "HTMLPage") %>
                                 <%} else if(form.getStructureType() ==6){%>
                                 	<%= LanguageUtil.get(pageContext, "Persona") %>
-                            	<%}%>
+                            	<%}%>&nbsp;
+                            	<a target="_blank" href="/api/v1/contenttype/<%=structure.getInode() %>">json</a>
 							<%}else{ %>
 								<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>
@@ -701,6 +702,11 @@ function disableFormFields(){
 									<% } %>
 								</select>
 							<%} %>
+							
+							
+							
+							
+							
 						<html:hidden property="system" styleId="system" />
 					</dd>
 

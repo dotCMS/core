@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.SerialWrapper;
@@ -13,6 +14,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,10 +51,22 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         ObjectNode typeNode = mapper.valueToTree(new SerialWrapper<>(type, type.getClass()));
         typeNode.put("implClass", type.getClass().getCanonicalName().replaceAll(".Immutable","."));
 
+        typeNode.remove("permissionType");
+        typeNode.remove("permissionId");
+        typeNode.remove("versionable");
+        typeNode.remove("multilingualable");
+        
+        
         ArrayNode fieldArray = mapper.createArrayNode();
         for(Field field : type.fields()){
            ObjectNode fieldNode = mapper.valueToTree(new SerialWrapper<>(field, field.getClass()));
-           fieldNode.putArray("fieldVariables").addAll((ArrayNode) mapper.valueToTree(field.fieldVariables()));
+           
+           fieldNode.put("implClass", field.getClass().getCanonicalName().replaceAll(".Immutable","."));
+           fieldNode.remove("acceptedDataTypes");
+           List<FieldVariable> vars=field.fieldVariables();
+           
+           
+           //fieldNode.putArray("fieldVariables").addAll((ArrayNode) mapper.valueToTree(var));
            fieldArray.add(fieldNode);
         }
         typeNode.putArray("fields").addAll(fieldArray);
@@ -82,20 +96,31 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
     
     @Override
     public ContentType from() throws DotStateException {
-        return this.list.get(0);
+        return asList().get(0);
     }
 
     @Override
     public List<ContentType> asList() throws DotStateException {
+        for(ContentType type:this.list){
+            for(Field f : type.fields()){
+                f.fieldVariables();
+            }
+            
+        }
         return this.list;
     }
 
     public String json() throws DotStateException {
         ArrayNode outerArray = mapper.createArrayNode();
-        for (ContentType type : list) {
+        for (ContentType type : asList()) {
             outerArray.add(asNode(type));
         }
-        return outerArray.toString();
+        try {
+            return  mapper.writerWithDefaultPrettyPrinter().writeValueAsString(outerArray);
+        } catch (JsonProcessingException e) {
+            throw new DotStateException(e);
+        }
+
    
     }
 

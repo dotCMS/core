@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.SerialWrapper;
@@ -32,34 +31,54 @@ public class JsonFieldTransformer implements FieldTransformer {
     }
 
     public JsonFieldTransformer(String json) {
-        List<Field> fields;
+        List<Field> l = new ArrayList<>();
         // are we an array?
         try {
-            fields = fromJsonArrayStr(json);
-        } catch (Exception ex) {
-            fields = ImmutableList.of(fromJsonStr(json));
+            JSONObject jo = new JSONObject(json);
+            if (jo.has("fields")) {
+                l = fromJsonArray(jo.getJSONArray("fields"));
+            }
+        } catch (Exception e) {
+            try {
+                JSONArray jarr = new JSONArray(json);
+                if(jarr.size()>0){
+                    JSONObject jo = jarr.getJSONObject(0);
+                    if(jo.has("fields")){
+                        l = fromJsonArray(jo.getJSONArray("fields"));
+                    }else{
+                        l = fromJsonArrayStr(json);
+                    }
+                }
+            } catch (Exception ex) {
+                throw new DotStateException(ex);
+            }
         }
-        this.list = ImmutableList.copyOf(fields);
-
-
+        this.list = ImmutableList.copyOf(l);
     }
 
     public JsonFieldTransformer(List<Field> list) {
         this.list = ImmutableList.copyOf(list);
     }
 
-    private List<Field> fromJsonArrayStr(String input) throws JSONException, JsonParseException, JsonMappingException, IOException {
-        List<Field> fields = new ArrayList<>();
 
-        JSONArray jarr = new JSONArray(input);
+    private List<Field> fromJsonArrayStr(String json)
+            throws JSONException, JsonParseException, JsonMappingException, IOException {
+        return fromJsonArray(new JSONArray(json));
+
+    }
+
+    private List<Field> fromJsonArray(JSONArray jarr)
+            throws JSONException, JsonParseException, JsonMappingException, IOException {
+        List<Field> fields = new ArrayList<>();
         for (int i = 0; i < jarr.length(); i++) {
             JSONObject jo = jarr.getJSONObject(i);
-            if(jo.has("fields")){
-                return fromJsonArrayStr(jo.getJSONArray("fields").toString());
-            }
+
             Field f = fromJsonStr(jo.toString());
-            if(jo.has("fieldVariables")){
-                List<FieldVariable> vars = mapper.readValue(jo.getString("fieldVariables"), mapper.getTypeFactory().constructCollectionType(List.class, FieldVariable.class));
+            if (jo.has("fieldVariables")) {
+
+                List<FieldVariable> vars = mapper.readValue(
+                        jo.getJSONArray("fieldVariables").toString(), mapper.getTypeFactory()
+                                .constructCollectionType(List.class, FieldVariable.class));
                 f.constructFieldVariables(vars);
             }
             fields.add(f);
@@ -69,14 +88,6 @@ public class JsonFieldTransformer implements FieldTransformer {
         return fields;
     }
 
-    private String toJsonStr(Field field) throws DotStateException {
-        SerialWrapper<Field> input = new SerialWrapper<>(field, field.getClass());
-        try {
-            return mapper.writeValueAsString(input);
-        } catch (JsonProcessingException e) {
-            throw new DotStateException(e);
-        }
-    }
 
     private Field fromJsonStr(String input) throws DotStateException {
 

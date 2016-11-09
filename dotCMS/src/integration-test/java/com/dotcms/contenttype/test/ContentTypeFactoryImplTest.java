@@ -402,9 +402,6 @@ public class ContentTypeFactoryImplTest {
 				.owner("owner")
 				.variable("velocityVarNameTesting" + i);
 				
-		if(inode!=null){
-			builder.inode(inode);
-		}
 		
 		ContentType type = builder.build(); 
 		type = factory.save(type);
@@ -421,8 +418,17 @@ public class ContentTypeFactoryImplTest {
 		}
 		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
 		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
-		assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
-
+    try {
+		    assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
+		}
+        catch(Throwable e){
+            System.out.println(e.getMessage());
+            System.out.println("Saved  db: " + fields);
+            System.out.println("not saved: " + baseTypeFields);
+            System.out.println("\n");
+            throw e;
+            
+          }
 		for (int j = 0; j < fields.size(); j++) {
 			Field field = fields.get(j);
 			Field baseField = null;
@@ -501,8 +507,8 @@ public class ContentTypeFactoryImplTest {
 					.dataType(dt)
 					.build();
 				APILocator.getFieldAPI2().save(savedField, APILocator.systemUser());
-				numFields++;
-			}
-		}
-	}
+        numFields++;
+      }
+    }
+  }
 }
