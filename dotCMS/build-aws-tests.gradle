@@ -8,13 +8,26 @@ import jp.classmethod.aws.gradle.ec2.AmazonEC2StopInstanceTask;
 import jp.classmethod.aws.gradle.ec2.AmazonEC2TerminateInstanceTask;
 import jp.classmethod.aws.gradle.ec2.AmazonEC2WaitInstanceStatusTask;
 
+import jp.classmethod.aws.gradle.rds.AmazonRDSPluginExtension;
+import jp.classmethod.aws.gradle.rds.AmazonRDSCreateDBInstanceTask;
+import jp.classmethod.aws.gradle.rds.AmazonRDSDeleteDBInstanceTask;
+import jp.classmethod.aws.gradle.rds.AmazonRDSWaitInstanceStatusTask;
+
+
 import com.amazonaws.AmazonServiceException
+
 import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.model.CreateTagsRequest
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest
 import com.amazonaws.services.ec2.model.DescribeInstancesResult
 import com.amazonaws.services.ec2.model.Instance
 import com.amazonaws.services.ec2.model.Tag
+
+import com.amazonaws.services.rds.AmazonRDS;
+import com.amazonaws.services.rds.model.DBInstance;
+import com.amazonaws.services.rds.model.DescribeDBInstancesRequest;
+import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
+
 
 buildscript {
 	repositories {
@@ -31,6 +44,7 @@ buildscript {
 
 apply plugin: "java"
 apply plugin: "jp.classmethod.aws.ec2"
+apply plugin: "jp.classmethod.aws.rds"
 apply plugin: "org.hidetake.ssh"
 
 
@@ -67,14 +81,17 @@ def custom = [
 ]
 
 
+//---------------------------------------------- AWS/SSH Instances ----------------------------------------------//
+
+if (hasProperty('instanceId') == false) { ext.instanceId = "" }
+if (hasProperty('instancePublicDnsName') == false) { ext.instancePublicDnsName = "" }
+
+
 task importKey(type: AmazonEC2ImportKeyTask) {
 	keyName custom.keys.keyName
 	publicKeyMaterial custom.keys.publicKeyMaterial
 	ifNotExists true
 }
-
-if (hasProperty('instanceId') == false) { ext.instanceId = "" }
-if (hasProperty('instancePublicDnsName') == false) { ext.instancePublicDnsName = "" }
 
 
 task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
@@ -195,4 +212,177 @@ void setInstanceTagName(String instanceId, String instanceName) {
 
 AmazonEC2 getAmazonEC2Client() {
 	return project.extensions.getByType( AmazonEC2PluginExtension.class ).client
+}
+
+
+//---------------------------------------------- AWS/RDS Instances ----------------------------------------------//
+
+if (hasProperty('dbInstanceIdentifier') == false) { ext.dbInstanceIdentifier = "" }
+if (hasProperty('dbInstanceEndpoint') == false) { ext.dbInstanceEndpoint = "" }
+
+
+task createDBInstancePostgreSQL(type: AmazonRDSCreateDBInstanceTask) {
+	engine = "postgres"
+	dbInstanceClass = "db.m3.medium"
+
+	engineVersion = "9.5.4"
+	port = 5432
+	licenseModel = "postgresql-license"
+	publiclyAccessible = true
+	allocatedStorage = 5
+
+	dbName = "dotcms"
+	masterUsername = "THEUSER"
+	masterUserPassword = "adminadmin"
+
+	backupRetentionPeriod = 0
+	multiAZ = false
+	autoMinorVersionUpgrade = false
+
+	vpcSecurityGroupIds = new java.util.ArrayList<String>()
+	vpcSecurityGroupIds += custom.aws.securityGroupId
+
+	doFirst {
+		dbInstanceIdentifier = project.dbInstanceIdentifier
+	}
+
+	doLast {
+		println("Created Database = "+ dbInstance)
+	}
+}
+
+task createDBInstanceMySQL(type: AmazonRDSCreateDBInstanceTask) {
+	engine = "mysql"
+	dbInstanceClass = "db.m3.medium"
+
+	engineVersion = "5.6.27"
+	port = 3306
+	licenseModel = "general-public-license"
+	publiclyAccessible = true
+	allocatedStorage = 5
+
+	dbName = "dotcms"
+	masterUsername = "THEUSER"
+	masterUserPassword = "adminadmin"
+
+	backupRetentionPeriod = 0
+	multiAZ = false
+	autoMinorVersionUpgrade = false
+
+	vpcSecurityGroupIds = new java.util.ArrayList<String>()
+	vpcSecurityGroupIds += custom.aws.securityGroupId
+
+	doFirst {
+		dbInstanceIdentifier = project.dbInstanceIdentifier
+	}
+
+	doLast {
+		println("Created Database = "+ dbInstance)
+	}
+}
+
+task createDBInstanceSQLServer(type: AmazonRDSCreateDBInstanceTask) {
+	engine = "sqlserver-ex"
+	dbInstanceClass = "db.m1.small"
+
+	engineVersion = "12.00.4422.0.v1"
+	port = 1433
+	licenseModel = "license-included"
+	publiclyAccessible = true
+	allocatedStorage = 20
+
+	masterUsername = "THEUSER"
+	masterUserPassword = "adminadmin"
+
+	backupRetentionPeriod = 0
+	multiAZ = false
+	autoMinorVersionUpgrade = false
+
+	vpcSecurityGroupIds = new java.util.ArrayList<String>()
+	vpcSecurityGroupIds += custom.aws.securityGroupId
+
+	doFirst {
+		dbInstanceIdentifier = project.dbInstanceIdentifier
+	}
+
+	doLast {
+		println("Created Database = "+ dbInstance)
+	}
+}
+
+task createDBInstanceOracle(type: AmazonRDSCreateDBInstanceTask) {
+	engine = "oracle-ee"
+	dbInstanceClass = "db.m3.medium"
+
+	engineVersion = "12.1.0.2.v5"
+	port = 1521
+	licenseModel = "bring-your-own-license"
+	publiclyAccessible = true
+	allocatedStorage = 10
+
+	dbName = "ORCL"
+	masterUsername = "THEUSER"
+	masterUserPassword = "adminadmin"
+
+	backupRetentionPeriod = 0
+	multiAZ = false
+	autoMinorVersionUpgrade = false
+
+	vpcSecurityGroupIds = new java.util.ArrayList<String>()
+	vpcSecurityGroupIds += custom.aws.securityGroupId
+
+	doFirst {
+		dbInstanceIdentifier = project.dbInstanceIdentifier
+	}
+
+	doLast {
+		println("Created Database = "+ dbInstance)
+	}
+}
+
+
+task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
+	skipFinalSnapshot = true
+
+	doFirst {
+		dbInstanceIdentifier = project.dbInstanceIdentifier
+	}
+}
+
+task waitDBInstanceStatusCreated(type: AmazonRDSWaitInstanceStatusTask) {
+	loopWait = 2
+
+	successStatuses = [ "available", "terminated" ]
+
+	waitStatuses = [ "backing-up", "creating", "deleting", "modifying", "rebooting", "renaming", "resetting-master-credentials" ]
+
+	doFirst {
+		dbInstanceIdentifier = project.dbInstanceIdentifier
+	}
+}
+
+
+task describeDBInstance {
+	doLast {
+		String endpoint = getDBInstanceEndpoint(project.dbInstanceIdentifier)
+
+		project.dbInstanceEndpoint = endpoint;
+
+		println("Described DB Instance = "+ endpoint )
+	}
+}
+
+
+String getDBInstanceEndpoint(String dbInstanceIdentifier) {
+	DescribeDBInstancesResult describeDBInstancesResult = getAmazonRDSClient().describeDBInstances(
+		new DescribeDBInstancesRequest().withDBInstanceIdentifier(dbInstanceIdentifier)
+	);
+
+	String endpoint = describeDBInstancesResult.getDBInstances().get(0).getEndpoint();
+
+	return endpoint.replaceAll("^\\{.*Address:\\s*([^,]+).*\\}\$", "\$1");
+}
+
+AmazonRDS getAmazonRDSClient() {
+	return project.extensions.getByType( AmazonRDSPluginExtension.class ).client
 }
