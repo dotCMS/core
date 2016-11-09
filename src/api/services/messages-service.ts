@@ -9,7 +9,7 @@ import {RequestMethod, Http} from '@angular/http';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
-export class MessageService extends CoreWebService {
+export class MessageService {
     private _messageMap$: Subject<any> = new Subject<any>();
     private doMessageLoad;
     private i18nUrl: string;
@@ -17,8 +17,8 @@ export class MessageService extends CoreWebService {
     private messageKeys: Array;
     private messagesLoaded: any;
 
-    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, private formatDateService: FormatDateService) {
-        super(apiRoot, http);
+    constructor(loginService: LoginService, private formatDateService: FormatDateService,
+                private coreWebService: CoreWebService) {
 
         // There are tons of components asking for messages at the same time, when messages are not loaded yet
         // instead of doing tons of request, we acumulate the keys every component is asking for and then do one
@@ -77,7 +77,7 @@ export class MessageService extends CoreWebService {
      * Do the request to the server to get messages
      */
     private requestMessages(): void {
-        this.requestView({
+        this.coreWebService.requestView({
             body: {
                 messagesKey: this.messageKeys
             },

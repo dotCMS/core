@@ -2,44 +2,44 @@ import {Injectable} from '@angular/core';
 import {CoreWebService} from '../services/core-web-service';
 import {Http, RequestMethod} from '@angular/http';
 import {ApiRoot} from '../persistence/ApiRoot';
+import {Observable} from 'rxjs/Rx';
 
 export interface INotification {
-    title:string,
-    message:string
+    title: string;
+    message: string;
 }
 
 @Injectable()
-export class NotificationsService extends CoreWebService {
+export class NotificationsService {
     private urls: any;
 
-    constructor(_apiRoot: ApiRoot, _http: Http) {
-        super(_apiRoot, _http);
+    constructor(private coreWebService: CoreWebService) {
         this.urls = {
-            getNotificationsUrl: 'v1/notification/getNotifications/offset/0/limit/25',
             dismissNotificationsUrl: 'v1/notification/delete',
+            getNotificationsUrl: 'v1/notification/getNotifications/offset/0/limit/25',
             markAsReadNotificationsUrl: 'v1/notification/markAsRead'
         };
     }
 
-    getNotifications() {
-        return this.request({
-            url: this.urls.getNotificationsUrl,
-            method: RequestMethod.Get
+    getNotifications(): Observable<any> {
+        return this.coreWebService.request({
+            method: RequestMethod.Get,
+            url: this.urls.getNotificationsUrl
         });
     }
 
-    dismissNotifications(items:Object) {
-        return this.request({
-            url: this.urls.dismissNotificationsUrl,
+    dismissNotifications(items: Object): Observable<any>  {
+        return this.coreWebService.request({
+            body: items,
             method: RequestMethod.Put,
-            body: items
+            url: this.urls.dismissNotificationsUrl,
         });
     }
 
-    markAllAsRead() {
-        return this.request({
+    markAllAsRead(): Observable<any>  {
+        return this.coreWebService.request({
+            method: RequestMethod.Put,
             url: this.urls.markAsReadNotificationsUrl,
-            method: RequestMethod.Put
         });
     }
 

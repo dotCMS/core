@@ -18,6 +18,8 @@ import {FormatDateService} from '../../api/services/format-date-service';
 import {LoginService} from '../../api/services/login-service';
 import {MessageService} from '../../api/services/messages-service';
 import {NotificationsService} from '../../api/services/notifications-service';
+import {CoreWebService} from '../../api/services/core-web-service';
+import {NotLicensedService} from '../../api/services/not-licensed-service';
 
 import {RoutingPublicAuthService} from '../../api/services/routing-public-auth-service';
 import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth-service';
@@ -64,6 +66,7 @@ import {SiteSelectorComponent} from './site-selector/dot-site-selector-component
 import {ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent} from './toolbar-add-contentlet/toolbar-add-contentlet';
 import {ToolbarNotifications} from './common/toolbar-notifications/toolbar-notifications';
 import {ToolbarUserComponent} from './common/toolbar-user/toolbar-user';
+import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
 
 // RULES ENGINE COMPONENTS
 import {AddToBundleDialogComponent} from "./common/push-publish/add-to-bundle-dialog-component";
@@ -147,7 +150,8 @@ const COMPONENTS = [
     ToolbarAddContenletComponent,
     ToolbarNotifications,
     ToolbarUserComponent,
-    MainCoreComponent
+    MainCoreComponent,
+    NotLicensedComponent
 ];
 
 const PIPES = [
@@ -198,10 +202,11 @@ const NGFACES_MODULES = [
         ...NGFACES_MODULES,
     ],
     providers: [
+        CoreWebService,
+        NotLicensedService,
         AccountService,
         ApiRoot,
         BundleService,
-        CoreWebService,
         DotcmsConfig,
         DotcmsEventsService,
         DotRouterService,

@@ -239,7 +239,7 @@ export const DEFAULT_RULE:IRule = {
 }
 
 @Injectable()
-export class RuleService extends CoreWebService {
+export class RuleService {
   private _rulesEndpointUrl:string
   private _actionsEndpointUrl:string
   private _conditionTypesEndpointUrl:string
@@ -261,8 +261,9 @@ export class RuleService extends CoreWebService {
 
   private _rules: RuleModel[];
 
-  constructor(public _apiRoot:ApiRoot, _http:Http, private _resources:I18nService, private siteService:SiteService) {
-    super(_apiRoot, _http)
+  constructor(public _apiRoot:ApiRoot, private _resources:I18nService, private siteService:SiteService,
+              private coreWebService: CoreWebService) {
+
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
     this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
     this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`
@@ -272,14 +273,6 @@ export class RuleService extends CoreWebService {
     this._preCacheCommonResources(_resources)
     this.loadActionTypes().subscribe((types:ServerSideTypeModel[])=> this.ruleActionTypes$.next(types))
     this.loadConditionTypes().subscribe((types:ServerSideTypeModel[])=> this.conditionTypes$.next(types))
-
-    if (this.siteService.currentSite) {
-      this.sendLoadRulesRequest(this.siteService.currentSite);
-    }
-
-    this.siteService.switchSite$.subscribe(site => {
-       this.sendLoadRulesRequest(site);
-    });
   }
 
   private _preCacheCommonResources(resources:I18nService) {
@@ -293,7 +286,7 @@ export class RuleService extends CoreWebService {
   }
 
   createRule(body:RuleModel):Observable<RuleModel|CwError> {
-    return this.request({
+    return this.coreWebService.request({
       body: RuleService.fromClientRuleTransformFn(body),
       method: RequestMethod.Post,
       url: this._rulesEndpointUrl
@@ -304,7 +297,7 @@ export class RuleService extends CoreWebService {
   }
 
   deleteRule(ruleId:string):Observable<{success:boolean}|CwError> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Delete,
       url: `${this._rulesEndpointUrl}/${ruleId}`
     }).map((result)=> {
@@ -316,18 +309,28 @@ export class RuleService extends CoreWebService {
     return this._rules$.asObservable();
   }
 
-  private sendLoadRulesRequest(site: Site): void {
-    this.request({
+  public requestRules(): Observable<any> {
+    if (this.siteService.currentSite) {
+      return this.sendLoadRulesRequest(this.siteService.currentSite);
+    }
+  }
+
+  private sendLoadRulesRequest(site: Site): Observable<any> {
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: `${this._apiRoot.baseUrl}api/v1/sites/${site.identifier}/ruleengine/rules`
-    }).subscribe(ruleMap => {
+    }).map(ruleMap => {
       this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
       this._rules$.next(this.rules);
+
+      this.siteService.switchSite$.subscribe(site => {
+        this.sendLoadRulesRequest(site);
+      });
     });
   }
 
   loadRule(id:string):Observable<RuleModel|CwError> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: `${this._rulesEndpointUrl}/${id}`
     }).map((result)=> {
@@ -341,7 +344,7 @@ export class RuleService extends CoreWebService {
       result = this.createRule(rule)
     }
     else {
-      result = this.request({
+      result = this.coreWebService.request({
         body: RuleService.fromClientRuleTransformFn(rule),
         method: RequestMethod.Put,
         url: `${this._rulesEndpointUrl}/${id}`
@@ -355,14 +358,14 @@ export class RuleService extends CoreWebService {
   }
 
   getConditionTypes():Observable<ServerSideTypeModel[]> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: this._conditionTypesEndpointUrl,
     }).map(RuleService.fromServerServersideTypesTransformFn)
   }
 
   getRuleActionTypes():Observable<ServerSideTypeModel[]> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: this._ruleActionTypesEndpointUrl,
     }).map(RuleService.fromServerServersideTypesTransformFn)
@@ -380,7 +383,7 @@ export class RuleService extends CoreWebService {
   }
 
   _doLoadRuleActionTypes():Observable<ServerSideTypeModel[]> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: this._ruleActionTypesEndpointUrl,
     }).map(RuleService.fromServerServersideTypesTransformFn)
@@ -421,7 +424,7 @@ export class RuleService extends CoreWebService {
   }
 
   _doLoadConditionTypes():Observable<ServerSideTypeModel[]> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: this._conditionTypesEndpointUrl,
     }).map(RuleService.fromServerServersideTypesTransformFn)

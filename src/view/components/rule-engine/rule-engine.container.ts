@@ -85,7 +85,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
     ></cw-rule-engine>
 `
 })
-export class RuleEngineContainer extends SiteChangeListener{
+export class RuleEngineContainer {
 
   rules: RuleModel[];
   state:RuleEngineState = new RuleEngineState()
@@ -102,8 +102,7 @@ export class RuleEngineContainer extends SiteChangeListener{
               private _conditionGroupService:ConditionGroupService,
               private _conditionService:ConditionService,
               private _resources:I18nService,
-              public bundleService:BundleService,
-              siteService:SiteService
+              public bundleService:BundleService
   ) {
     this.rules$.subscribe(( rules ) => {
       this.rules = rules;
@@ -111,7 +110,6 @@ export class RuleEngineContainer extends SiteChangeListener{
 
     this.bundleService.loadPublishEnvironments().subscribe((environments) => this.environments = environments);
     this.initRules()
-    super( siteService );
 
   }
 
@@ -124,18 +122,13 @@ export class RuleEngineContainer extends SiteChangeListener{
   private initRules(): void {
     this.state.loading = true;
 
-    if (this._ruleService.rules) {
-      this.loadRules(this._ruleService.rules);
-    }
-
-    this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
+    this._ruleService.requestRules().subscribe( (rules: RuleModel[]) => {
+      console.log('requestRules success', rules);
       this.loadRules(rules);
-    }, (err: any) => {
-      this.state.loading = false
-      if (err.response.status === 403) {
-        this.state.showRules = false;
-        this._handle403Error(err);
-      }
+
+      this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
+        this.loadRules(rules);
+      });
     });
   }
 
@@ -145,10 +138,6 @@ export class RuleEngineContainer extends SiteChangeListener{
     });
     this.rules$.emit(rules);
     this.state.loading = false;
-  }
-
-  changeSiteReload(): void {
-    this.initRules();
   }
 
   alphaSort(key) {
@@ -577,23 +566,6 @@ export class RuleEngineContainer extends SiteChangeListener{
   prioritySortFn(a:any, b:any) {
     return a.priority - b.priority;
   }
-
-  private _handle403Error(e:CwError) {
-    let handled = false;
-    try{
-      if (e && e.response.status == 403) {
-        let errorJson = e.response.json()
-        if (errorJson && errorJson.error) {
-          this.state.globalError = errorJson.error.replace('dotcms.api.error.forbidden: ', '')
-          handled = true
-        }
-      }
-    } catch (e) {
-      console.error("Error while processing invalid response: ", e)
-    }
-    return handled
-  }
-
 }
 
 

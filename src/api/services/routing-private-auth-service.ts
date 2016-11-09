@@ -9,13 +9,13 @@ import {DotRouterService} from './dot-router-service';
 
 @Injectable()
 export class RoutingPrivateAuthService implements CanActivate {
-    constructor(private router: DotRouterService, private rutingService: RoutingService,
+    constructor(private router: DotRouterService, private routingService: RoutingService,
                 private loginService: LoginService, private dotcmsConfig: DotcmsConfig) {}
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
 
         return new Promise(resolve => {
-            if (this.loginService.isLogin) {
+             if (this.loginService.isLogin) {
                 resolve(this.checkAccess(state.url));
             } else {
                 this.loginService.loadAuth().subscribe(() => {
@@ -40,11 +40,13 @@ export class RoutingPrivateAuthService implements CanActivate {
     private checkAccess(url: string): boolean {
         let isRouteLoaded = true;
 
-        if (this.rutingService.currentMenu && url !== '/dotCMS/pl') {
-            isRouteLoaded = this.rutingService.isPortlet(url);
+        if (this.routingService.currentMenu && url !== '/dotCMS/pl') {
+            isRouteLoaded = this.routingService.isPortlet(url);
 
             if (!isRouteLoaded) {
                 this.router.goToLogin();
+            }else {
+                this.routingService.setCurrentPortlet(url);
             }
         }
 

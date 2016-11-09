@@ -36,6 +36,6 @@ export class SiteSelectorComponent extends BaseComponent {
     switchSite(option: any): void {
         this.siteService.switchSite(option.value).subscribe(response => {
 
-        }, error => alert(error.errorsMessages));
+        });
     }
 }

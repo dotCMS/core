@@ -1,6 +1,8 @@
 import {Http, Response, Request, Headers, RequestOptionsArgs} from '@angular/http'
 import {Observable} from 'rxjs/Rx';
 import {Injectable} from '@angular/core';
+import {Subject} from 'rxjs/Subject';
+import {Observable} from 'rxjs/Rx';
 
 import {
     hasContent, CwError, NETWORK_CONNECTION_ERROR, UNKNOWN_RESPONSE_ERROR,
@@ -8,6 +10,7 @@ import {
 } from '../system/http-response-util';
 import {ApiRoot} from '../persistence/ApiRoot';
 import {ResponseView} from './response-view';
+import {HttpErrorHandler} from './http-error-handler';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -36,8 +39,9 @@ export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR';
 @Injectable()
 export class CoreWebService {
 
-  constructor(private _apiRoot: ApiRoot, private _http: Http) {
-  }
+  private httpErrosSubjects: Subject<any>[] = [];
+
+  constructor(private _apiRoot: ApiRoot, private _http: Http) {}
 
   request(options: any): Observable<any> {
     let request = this.getRequestOpts( options );
@@ -49,20 +53,15 @@ export class CoreWebService {
         })
         .catch((response: Response, original: Observable<any>): Observable<any> => {
           if (response) {
+            this.handleHttpError(response);
             if (response.status === 500) {
               if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
                 throw new CwError(NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR], request, response, source);
               } else {
                 throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
               }
-            } else if (response.status === 403) {
-              console.error('Could not execute request: 403 user not authorized', options.url);
-              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
-            } else if (response.status === 404) {
+            }  else if (response.status === 404) {
               console.error('Could not execute request: 404 path not valid.', options.url);
-              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
-            } else {
-              console.log('Could not execute request: Response status code: ', response.status, 'error:', response, options.url);
               throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
             }
           }
@@ -100,10 +99,19 @@ export class CoreWebService {
             }
           },
           resp => {
+            this.handleHttpError(resp);
             observer.error( new ResponseView( resp ) );
           }
       );
     });
+  }
+
+  public subscribeTo(httpErrorCode: number): Observable<any> {
+    if (!this.httpErrosSubjects[httpErrorCode]) {
+      this.httpErrosSubjects[httpErrorCode] = new Subject();
+    }
+
+    return this.httpErrosSubjects[httpErrorCode].asObservable();
   }
 
   private getRequestOpts(options: any): Request {
@@ -124,6 +132,14 @@ export class CoreWebService {
     }
 
     return new Request(options);
+  }
+
+  private handleHttpError(response): void {
+    if (!this.httpErrosSubjects[response.status]) {
+      this.httpErrosSubjects[response.status] = new Subject();
+    }
+
+    this.httpErrosSubjects[response.status].next(response);
   }
 }
 

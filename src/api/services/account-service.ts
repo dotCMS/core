@@ -4,15 +4,16 @@ import {Http} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
 import {ResponseView} from './response-view';
+import {Injectable} from '@angular/core';
 
-export class AccountService extends CoreWebService {
+@Injectable()
+export class AccountService  {
 
-    constructor(apiRoot: ApiRoot, http: Http) {
-        super(apiRoot, http);
+    constructor(private coreWebService: CoreWebService) {
     }
 
     public updateUser(user: AccountUser): Observable<ResponseView> {
-        return this.requestView({
+        return this.coreWebService.requestView({
             body: user,
             method: RequestMethod.Put,
             url: 'v1/users/current',
