@@ -49,14 +49,6 @@ ssh.settings {
 	knownHosts = allowAnyHosts
 }
 
-remotes {
-	web01 {
-		host = "ec2-35-163-132-165.us-west-2.compute.amazonaws.com"
-		user = "ec2-user"
-		identity = file("aws-dev-2016.pem")
-	}
-}
-
 
 task importKey(type: AmazonEC2ImportKeyTask) {
 	keyName "aws-dev-2016"
@@ -64,7 +56,8 @@ task importKey(type: AmazonEC2ImportKeyTask) {
 	ifNotExists true
 }
 
-if (hasProperty('instanceId') == false) { ext.instanceId = 'i-12345678' }
+if (hasProperty('instanceId') == false) { ext.instanceId = "" }
+if (hasProperty('instancePublicDnsName') == false) { ext.instancePublicDnsName = "" }
 
 
 task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
@@ -85,11 +78,15 @@ task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
 
 
 task stopInstance(type: AmazonEC2StopInstanceTask) {
-	instanceIds += project.instanceId
+	doFirst {
+		instanceIds += project.instanceId
+	}
 }
 
 task startInstance(type: AmazonEC2StartInstanceTask) {
-	instanceIds += project.instanceId
+	doFirst {
+		instanceIds += project.instanceId
+	}
 }
 
 task terminateInstance(type: AmazonEC2TerminateInstanceTask) {
@@ -130,21 +127,31 @@ task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 
 task setupInstance {
 	doLast {
+		setInstanceTagName(project.instanceId)
+
+		sleep(45* 1000)
+	}
+}
+
+task describeInstance {
+	doLast {
 		String publicDnsName = getInstancePublicDnsName(project.instanceId)
 
-		println("Described Instance = "+ publicDnsName )
+		project.instancePublicDnsName = publicDnsName;
 
-		setInstanceTagName(project.instanceId)
+		println("Described Instance = "+ publicDnsName )
 	}
 }
 
 
-task executeRemoteInstance << {
-	ssh.run {
-		session(remotes.web01) {
-			def result = execute "ls -al"
-
-			println("Result = "+ result)
+task executeRemoteInstance(dependsOn: describeInstance) {
+	doLast {
+		ssh.run {
+			session(host: project.instancePublicDnsName, user: "ec2-user", identity: file("aws-dev-2016.pem")) {
+				def result = execute "ls -al"
+	
+				println("Result = "+ result)
+			}
 		}
 	}
 }
@@ -155,7 +162,9 @@ String getInstancePublicDnsName(String instanceId) {
 		new DescribeInstancesRequest().withInstanceIds( instanceId )
 	)
 
-	return describeInstancesResult.reservations.instances.get(0).publicDnsName
+	String instancePublicDnsName = describeInstancesResult.reservations.instances.get(0).publicDnsName;
+
+	return instancePublicDnsName.substring(1, instancePublicDnsName.length() - 1);
 }
 
 void setInstanceTagName(String instanceId) {
