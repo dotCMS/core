@@ -1806,7 +1806,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 		var fileAssetDialog = new dijit.Dialog({
 			id   : "addFileAssetDialog",
             title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addfile.dialog")) %>",
-            style: "width: 420px; height:130px; overflow: auto"
+            style: "height:130px; overflow: auto"
         });
 		var dialogHtml = getFileAssetDialogHtml(folderMap, fileAssetTypeMap);
 
