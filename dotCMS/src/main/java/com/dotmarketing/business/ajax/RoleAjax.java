@@ -11,6 +11,11 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -71,6 +76,8 @@ import com.liferay.portal.model.User;
 
 public class RoleAjax {
 
+	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	
 	public List<Map<String, Object>> getRolesTreeFiltered(boolean onlyUserAssignableRoles, String excludeRoles) throws DotDataException{
 		return getRolesTree (onlyUserAssignableRoles, excludeRoles, false);
 	}
@@ -519,6 +526,8 @@ public class RoleAjax {
 				roleAPI.addLayoutToRole(layout, role);
 			}
 		}
+		
+		pushPortletLayoutChangeEvent();
 	}
 
 	/**
@@ -567,11 +576,10 @@ public class RoleAjax {
 		layoutAPI.saveLayout(newLayout);
 
 		layoutAPI.setPortletIdsToLayout(newLayout, portletIds);
-
+		pushPortletLayoutChangeEvent();
 		Map<String, Object> layoutMap =  newLayout.toMap();
 		layoutMap.put("portletTitles", getPorletTitlesFromLayout(newLayout));
 		return layoutMap;
-
 	}
 
 
@@ -586,14 +594,15 @@ public class RoleAjax {
 		layoutAPI.saveLayout(layout);
 
 		layoutAPI.setPortletIdsToLayout(layout, portletIds);
-
+		pushPortletLayoutChangeEvent();
 	}
+	
 	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
 		layoutAPI.removeLayout(layout);
-
+		pushPortletLayoutChangeEvent();
 	}
 
 	/**
@@ -937,7 +946,22 @@ public class RoleAjax {
 
 	}
 
+	/**
+	 * This method send an event to indicate to the angular frame that there is a portlet 
+	 * layouts change, and that the angular frame should refresh the 
+	 * menu options for the users
+	 * 
+	 */
+	private void pushPortletLayoutChangeEvent() {
 
+		SystemEventType systemEventType = SystemEventType.UPDATE_PORTLET_LAYOUTS;
+
+		try {
+	 		systemEventsAPI.push(systemEventType, new Payload(null));
+		} catch (DotDataException e) {
+			throw new RuntimeException( e );
+		}
+	}
 
 
 }
