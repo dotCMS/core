@@ -11,6 +11,10 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -71,6 +75,17 @@ import com.liferay.portal.model.User;
 
 public class RoleAjax {
 
+	private final SystemEventsAPI systemEventsAPI;
+    	
+	public RoleAjax(){
+		this(APILocator.getSystemEventsAPI());
+	}
+	
+	@VisibleForTesting
+	protected RoleAjax(SystemEventsAPI systemEventsAPI) {
+		this.systemEventsAPI = systemEventsAPI;
+    }
+	
 	public List<Map<String, Object>> getRolesTreeFiltered(boolean onlyUserAssignableRoles, String excludeRoles) throws DotDataException{
 		return getRolesTree (onlyUserAssignableRoles, excludeRoles, false);
 	}
@@ -519,6 +534,10 @@ public class RoleAjax {
 				roleAPI.addLayoutToRole(layout, role);
 			}
 		}
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+				
 	}
 
 	/**
@@ -567,11 +586,13 @@ public class RoleAjax {
 		layoutAPI.saveLayout(newLayout);
 
 		layoutAPI.setPortletIdsToLayout(newLayout, portletIds);
-
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+				
 		Map<String, Object> layoutMap =  newLayout.toMap();
 		layoutMap.put("portletTitles", getPorletTitlesFromLayout(newLayout));
 		return layoutMap;
-
 	}
 
 
@@ -586,14 +607,20 @@ public class RoleAjax {
 		layoutAPI.saveLayout(layout);
 
 		layoutAPI.setPortletIdsToLayout(layout, portletIds);
-
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+				
 	}
+	
 	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
 		layoutAPI.removeLayout(layout);
-
+		
+		//Send a websocket event to notificate a layout change  
+		systemEventsAPI.push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());	
 	}
 
 	/**
@@ -936,8 +963,5 @@ public class RoleAjax {
 		return ret;
 
 	}
-
-
-
-
+	
 }
