@@ -62,23 +62,14 @@ ssh.settings {
 	knownHosts = allowAnyHosts
 }
 
-def custom = [
-	keys : [
-		keyName: "aws-dev-2016",
-		publicKeyMaterial: "AAAAB3NzaC1yc2EAAAADAQABAAABAQDBaI1i7fdnfh9cUNiqrHVH181BMaWleQDLCi3DWdxzJWJIkWsP2oo+K7nWFKaWIdhzp7BobxInyo09/28YjZxJA4qomAjSF68KVKxvBPlgrkOgaTJnQh7srxtdot2adnLu1jwMzNbQOGHwvV2JdP4q8c56s7GuoG22VeiJ4GncbTidnsc3zwKh8mN7TvMv8U8RtsqQK/js7j0nqDGybobZfuDusIaL1DKX1NlfJ0fuWh8OBuVzDyxFZ58EJwJhSHpNsiVV1i0llueDUJ/ccdExZCxsiidiZI2bxfnIj/SMp6jjBvO5wC/g/jBVH0rtZNq7ALLwMWgNOxG+vlwkuX67",
-		privateKeyFile: "aws-dev-2016.pem",
-	],
-	aws : [
-		securityGroupId: "sg-957235ec",
 
-		instanceAmi: "ami-f717b797",
-		instanceType: "m3.medium",
-		instanceName: "AWS Dev-Test Slave",
-	],
-	ssh : [
-		username: "ec2-user",
-	]
-]
+if (hasProperty('instanceTargetDb') == false) { ext.instanceTargetDb = "MySQL" }
+if (hasProperty('propertiesFile') == false) { ext.propertiesFile = "build-aws-tests.properties" }
+if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" }
+
+
+Properties properties = new Properties()
+properties.load(new FileInputStream(project.propertiesFile))
 
 
 //---------------------------------------------- AWS/SSH Instances ----------------------------------------------//
@@ -88,21 +79,21 @@ if (hasProperty('instancePublicDnsName') == false) { ext.instancePublicDnsName =
 
 
 task importKey(type: AmazonEC2ImportKeyTask) {
-	keyName custom.keys.keyName
-	publicKeyMaterial custom.keys.publicKeyMaterial
+	keyName properties.getProperty("keysKeyName")
+	publicKeyMaterial properties.getProperty("keysPublicKeyMaterial")
 	ifNotExists true
 }
 
 
 task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
-	ami custom.aws.instanceAmi
-	keyName custom.keys.keyName
-	instanceType custom.aws.instanceType
+	ami properties.getProperty("awsInstanceAmi")
+	keyName properties.getProperty("keysKeyName")
+	instanceType properties.getProperty("awsInstanceType")
 
 	userData "#! /bin/bash\nyum -y update"
 
 	securityGroupIds = new java.util.ArrayList<String>()
-	securityGroupIds += custom.aws.securityGroupId
+	securityGroupIds += properties.getProperty("awsSecurityGroupId")
 
 	doLast {
 		project.instanceId = runInstancesResult.getReservation().getInstances().get(0).instanceId
@@ -162,7 +153,9 @@ task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 
 task setupInstance {
 	doLast {
-		setInstanceTagName(project.instanceId, custom.aws.instanceName)
+		setInstanceTagName( project.instanceId,
+			properties.getProperty("awsInstanceName") +" ("+ project.instanceTargetDb +")"
+		)
 
 		sleep(60 * 1000)
 	}
@@ -182,8 +175,11 @@ task describeInstance {
 task executeRemoteInstance(dependsOn: describeInstance) {
 	doLast {
 		ssh.run {
-			session( host: project.instancePublicDnsName, user: custom.ssh.username, identity: file( custom.keys.privateKeyFile ) ) {
-				executeScript( file( "build-aws-tests.sh" ), logging: "none", interaction: {
+			session(
+				host: project.instancePublicDnsName, user: properties.getProperty("sshUsername"),
+				identity: file( properties.getProperty("keysPrivateKeyFile") )
+			) {
+				executeScript( file( project.scriptFile ), logging: "none", interaction: {
 					when(line: _, from: standardOutput) { line -> println( line ) }
 					when(line: _, from: standardError) { line -> println( line ) }
 				})
@@ -218,122 +214,32 @@ AmazonEC2 getAmazonEC2Client() {
 
 //---------------------------------------------- AWS/RDS Instances ----------------------------------------------//
 
-if (hasProperty('dbInstanceIdentifier') == false) { ext.dbInstanceIdentifier = "" }
 if (hasProperty('dbInstanceEndpoint') == false) { ext.dbInstanceEndpoint = "" }
 
 
-task createDBInstancePostgreSQL(type: AmazonRDSCreateDBInstanceTask) {
-	engine = "postgres"
-	dbInstanceClass = "db.m3.medium"
-
-	engineVersion = "9.5.4"
-	port = 5432
-	licenseModel = "postgresql-license"
-	publiclyAccessible = true
-	allocatedStorage = 5
-
-	dbName = "dotcms"
-	masterUsername = "THEUSER"
-	masterUserPassword = "adminadmin"
-
-	backupRetentionPeriod = 0
-	multiAZ = false
-	autoMinorVersionUpgrade = false
-
-	vpcSecurityGroupIds = new java.util.ArrayList<String>()
-	vpcSecurityGroupIds += custom.aws.securityGroupId
-
+task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
-		dbInstanceIdentifier = project.dbInstanceIdentifier
-	}
+		dbInstanceIdentifier = properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb )
 
-	doLast {
-		println("Created Database = "+ dbInstance)
-	}
-}
+		engine = properties.getProperty( "dbEngine" + project.instanceTargetDb )
+		dbInstanceClass = properties.getProperty( "dbInstanceClass" + project.instanceTargetDb )
 
-task createDBInstanceMySQL(type: AmazonRDSCreateDBInstanceTask) {
-	engine = "mysql"
-	dbInstanceClass = "db.m3.medium"
+		engineVersion = properties.getProperty( "dbEngineVersion" + project.instanceTargetDb )
+		port = properties.getProperty( "dbPort" + project.instanceTargetDb ).toInteger()
+		licenseModel = properties.getProperty( "dbLicenseModel" + project.instanceTargetDb )
+		publiclyAccessible = properties.getProperty( "dbPubliclyAccessible" + project.instanceTargetDb ).toBoolean()
+		allocatedStorage = properties.getProperty( "dbAllocatedStorage" + project.instanceTargetDb ).toInteger()
 
-	engineVersion = "5.6.27"
-	port = 3306
-	licenseModel = "general-public-license"
-	publiclyAccessible = true
-	allocatedStorage = 5
+		dbName = properties.getProperty( "dbDbName" + project.instanceTargetDb )
+		masterUsername = properties.getProperty( "dbMasterUsername" + project.instanceTargetDb )
+		masterUserPassword = properties.getProperty( "dbMasterUserPassword" + project.instanceTargetDb )
 
-	dbName = "dotcms"
-	masterUsername = "THEUSER"
-	masterUserPassword = "adminadmin"
+		backupRetentionPeriod = properties.getProperty( "dbBackupRetentionPeriod" + project.instanceTargetDb ).toInteger()
+		multiAZ = properties.getProperty( "dbMultiAZ" + project.instanceTargetDb ).toBoolean()
+		autoMinorVersionUpgrade = properties.getProperty( "dbAutoMinorVersionUpgrade" + project.instanceTargetDb ).toBoolean()
 
-	backupRetentionPeriod = 0
-	multiAZ = false
-	autoMinorVersionUpgrade = false
-
-	vpcSecurityGroupIds = new java.util.ArrayList<String>()
-	vpcSecurityGroupIds += custom.aws.securityGroupId
-
-	doFirst {
-		dbInstanceIdentifier = project.dbInstanceIdentifier
-	}
-
-	doLast {
-		println("Created Database = "+ dbInstance)
-	}
-}
-
-task createDBInstanceSQLServer(type: AmazonRDSCreateDBInstanceTask) {
-	engine = "sqlserver-ex"
-	dbInstanceClass = "db.m1.small"
-
-	engineVersion = "12.00.4422.0.v1"
-	port = 1433
-	licenseModel = "license-included"
-	publiclyAccessible = true
-	allocatedStorage = 20
-
-	masterUsername = "THEUSER"
-	masterUserPassword = "adminadmin"
-
-	backupRetentionPeriod = 0
-	multiAZ = false
-	autoMinorVersionUpgrade = false
-
-	vpcSecurityGroupIds = new java.util.ArrayList<String>()
-	vpcSecurityGroupIds += custom.aws.securityGroupId
-
-	doFirst {
-		dbInstanceIdentifier = project.dbInstanceIdentifier
-	}
-
-	doLast {
-		println("Created Database = "+ dbInstance)
-	}
-}
-
-task createDBInstanceOracle(type: AmazonRDSCreateDBInstanceTask) {
-	engine = "oracle-ee"
-	dbInstanceClass = "db.m3.medium"
-
-	engineVersion = "12.1.0.2.v5"
-	port = 1521
-	licenseModel = "bring-your-own-license"
-	publiclyAccessible = true
-	allocatedStorage = 10
-
-	dbName = "ORCL"
-	masterUsername = "THEUSER"
-	masterUserPassword = "adminadmin"
-
-	backupRetentionPeriod = 0
-	multiAZ = false
-	autoMinorVersionUpgrade = false
-
-	vpcSecurityGroupIds = new java.util.ArrayList<String>()
-	vpcSecurityGroupIds += custom.aws.securityGroupId
-
-	doFirst {
-		dbInstanceIdentifier = project.dbInstanceIdentifier
+		vpcSecurityGroupIds = new java.util.ArrayList<String>()
+		vpcSecurityGroupIds += properties.getProperty("awsSecurityGroupId")
 	}
 
 	doLast {
@@ -346,7 +252,7 @@ task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
 	skipFinalSnapshot = true
 
 	doFirst {
-		dbInstanceIdentifier = project.dbInstanceIdentifier
+		dbInstanceIdentifier = properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb )
 	}
 }
 
@@ -358,18 +264,25 @@ task waitDBInstanceStatusCreated(type: AmazonRDSWaitInstanceStatusTask) {
 	waitStatuses = [ "backing-up", "creating", "deleting", "modifying", "rebooting", "renaming", "resetting-master-credentials" ]
 
 	doFirst {
-		dbInstanceIdentifier = project.dbInstanceIdentifier
+		dbInstanceIdentifier = properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb )
 	}
 }
 
 
 task describeDBInstance {
 	doLast {
-		String endpoint = getDBInstanceEndpoint(project.dbInstanceIdentifier)
+		String endpoint = getDBInstanceEndpoint( properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb ) )
 
 		project.dbInstanceEndpoint = endpoint;
 
 		println("Described DB Instance = "+ endpoint )
+	}
+}
+
+
+task setupDBInstance(dependsOn: describeDBInstance) {
+	doLast {
+		// TODO: To create actual database
 	}
 }
 
