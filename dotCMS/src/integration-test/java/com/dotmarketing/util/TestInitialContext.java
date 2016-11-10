@@ -2,6 +2,10 @@ package com.dotmarketing.util;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
@@ -12,26 +16,21 @@ import javax.naming.NamingException;
  */
 public class TestInitialContext extends InitialContext {
 
-    private final String driver = "org.postgresql.Driver";
-    private final String url = "jdbc:postgresql://localhost/dotcms";
-    private final String username = "postgres";
-    private final String password = "postgres";
-    private final int maxTotal = 60;
-    private final int maxIdle = 10;
+    private BasicDataSource dataSource;
+    private Properties prop;
     private static TestInitialContext context;
 
-    private BasicDataSource dataSource;
-
     private TestInitialContext() throws NamingException {
+        loadProperties();
         dataSource = new BasicDataSource();
-        dataSource.setDriverClassName(driver);
-        dataSource.setUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
+        dataSource.setDriverClassName(prop.getProperty("db.driver"));
+        dataSource.setUrl(prop.getProperty("db.base.url"));
+        dataSource.setUsername(prop.getProperty("db.username"));
+        dataSource.setPassword(prop.getProperty("db.password"));
         dataSource.setRemoveAbandoned(true);
         dataSource.setLogAbandoned(true);
-        dataSource.setMaxIdle(maxIdle);
-        dataSource.setMaxActive(maxTotal);
+        dataSource.setMaxIdle(Integer.parseInt(prop.getProperty("db.max.idle")));
+        dataSource.setMaxActive(Integer.parseInt(prop.getProperty("db.max.total")));
     }
 
     public static TestInitialContext getInstance() throws NamingException {
@@ -50,5 +49,19 @@ public class TestInitialContext extends InitialContext {
         }
 
         throw new NamingException("Unable to find datasource: " + name);
+    }
+
+    /**
+     * Load properties file with DB connection details
+     * @throws NamingException
+     */
+    private void loadProperties() throws NamingException {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        prop = new Properties();
+        try (InputStream resourceStream = loader.getResourceAsStream("db-config.properties")) {
+            prop.load(resourceStream);
+        } catch (IOException e) {
+            throw new NamingException("Unable to properties from db-config.properties");
+        }
     }
 }
