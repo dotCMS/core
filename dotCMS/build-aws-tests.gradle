@@ -182,10 +182,11 @@ task describeInstance {
 task executeRemoteInstance(dependsOn: describeInstance) {
 	doLast {
 		ssh.run {
-			session(host: project.instancePublicDnsName, user: custom.ssh.username, identity: file(custom.keys.privateKeyFile)) {
-				def result = execute "ls -al"
-	
-				println("Result = "+ result)
+			session( host: project.instancePublicDnsName, user: custom.ssh.username, identity: file( custom.keys.privateKeyFile ) ) {
+				executeScript( file( "build-aws-tests.sh" ), logging: "none", interaction: {
+					when(line: _, from: standardOutput) { line -> println( line ) }
+					when(line: _, from: standardError) { line -> println( line ) }
+				})
 			}
 		}
 	}
