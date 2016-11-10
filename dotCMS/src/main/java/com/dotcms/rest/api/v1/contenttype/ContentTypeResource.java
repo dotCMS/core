@@ -104,7 +104,11 @@ public class ContentTypeResource implements Serializable {
         final User user = initData.getUser();
 
 
-        Response response = Response.ok(new JsonContentTypeTransformer(APILocator.getContentTypeAPI2().find(id, user)).json()).build();
+        
+        ContentType type = APILocator.getContentTypeAPI2().find(id, user);
+        
+        
+        Response response = Response.ok(new JsonContentTypeTransformer(type).json()).build();
         return response;
     }
     

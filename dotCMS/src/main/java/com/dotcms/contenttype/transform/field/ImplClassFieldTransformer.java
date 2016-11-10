@@ -26,7 +26,6 @@ public class ImplClassFieldTransformer implements FieldTransformer {
     if (this.genericFields.size() == 0)
       throw new DotStateException("0 results");
     Field field = impleClass(this.genericFields.get(0));
-    field.fieldVariables();
     return field;
 
   }

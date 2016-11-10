@@ -5,20 +5,27 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
+import com.dotmarketing.viewtools.DotTemplateTool;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 /**
@@ -47,7 +54,14 @@ public class ContainerServices {
     	StringBuilder sb = new StringBuilder();
 
         boolean isDynamic = UtilMethods.isSet(container.getLuceneQuery());
-
+        
+        List<ContainerStructure> csList = new ArrayList<>();
+        try{
+            csList = APILocator.getContainerAPI().getContainerStructures(container);
+        }catch(DotSecurityException | DotDataException e){
+            throw new DotStateException(e);
+        }
+        
         //  let's write this puppy out to our file
         sb.append("#set ($SERVER_NAME =\"$host.getHostname()\" ) ");
         sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '" ).append(identifier.getInode() ).append( "')");
@@ -178,9 +192,6 @@ public class ContainerServices {
                 String code = (container.getCode() != null ? container.getCode() : "");
                 
 
-                sb.append("#set ($structureCode" ).append(
-                		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
-
 
                 //### HEADER ###
                 String startTag = "${contentletStart}";
@@ -220,9 +231,13 @@ public class ContainerServices {
                 sb.append("#if($isWidget == true)");
                 	sb.append("$widgetCode");
                 sb.append(" #else ");
-//                	sb.append(code );
-//                	sb.append("$structureCode" );
-                	sb.append("$structureCode" );
+
+                for (ContainerStructure cs : csList) {
+                  sb.append("#if($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
+                  sb.append(cs.getCode());
+                  sb.append("#end");
+                }
+                
                 sb.append(" #end ");
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974

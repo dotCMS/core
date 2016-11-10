@@ -1,7 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -12,13 +11,13 @@ import org.immutables.value.Value.Derived;
 
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 
 public abstract class Field implements FieldIf, Serializable {
@@ -129,9 +128,10 @@ public abstract class Field implements FieldIf, Serializable {
   }
 
   @Value.Lazy
-  final public List<FieldVariable> fieldVariables() {
+  public List<FieldVariable> fieldVariables() {
     if (innerFieldVariables == null) {
       try {
+        //System.err.println("loading field.variables:" + this.variable() + ":"+ System.identityHashCode(this));
         innerFieldVariables = FactoryLocator.getFieldFactory2().loadVariables(this);
       } catch (DotDataException e) {
         throw new DotStateException("unable to load field variables:" + e.getMessage(), e);

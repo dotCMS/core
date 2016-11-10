@@ -136,9 +136,9 @@ public abstract class ContentType implements Serializable, Permissionable,Conten
 	
 	@JsonIgnore
 	@Value.Lazy
-	final public  List<Field> fields(){
+	public  List<Field> fields(){
 		try {
-			//System.out.println("loading fields:" + this);
+			//System.err.println("loading content.fields:" + this.variable() + ":"+ System.identityHashCode(this));
 			return APILocator.getFieldAPI2().byContentTypeId(this.inode());
 		} catch (DotDataException e) {
 			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);

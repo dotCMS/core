@@ -66,7 +66,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
            List<FieldVariable> vars=field.fieldVariables();
            
            
-           //fieldNode.putArray("fieldVariables").addAll((ArrayNode) mapper.valueToTree(var));
+           fieldNode.putArray("fieldVariables").addAll((ArrayNode) mapper.valueToTree(vars));
            fieldArray.add(fieldNode);
         }
         typeNode.putArray("fields").addAll(fieldArray);
