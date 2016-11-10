@@ -5,14 +5,18 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -47,7 +51,14 @@ public class ContainerServices {
     	StringBuilder sb = new StringBuilder();
 
         boolean isDynamic = UtilMethods.isSet(container.getLuceneQuery());
-
+        
+        List<ContainerStructure> csList = new ArrayList<>();
+        try{
+            csList = APILocator.getContainerAPI().getContainerStructures(container);
+        }catch(Exception e){
+            throw new DotStateException(e.getMessage());
+        }
+        
         //  let's write this puppy out to our file
         sb.append("#set ($SERVER_NAME =\"$host.getHostname()\" ) ");
         sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '" ).append(identifier.getInode() ).append( "')");
@@ -88,12 +99,12 @@ public class ContainerServices {
             String luceneQuery = container.getLuceneQuery();
             sb.append("#set ($CONTENTS_PER_PAGE = \"$CONTAINER_MAX_CONTENTLETS\")");
             sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
-            sb.append("     #set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
-            sb.append(" #end ");
+            sb.append("#set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
+            sb.append("#end ");
             sb.append("#set ($CURRENT_PAGE = \"1\")");
             sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))");
-            sb.append("     #set ($CURRENT_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))");
-            sb.append(" #end ");
+            sb.append("#set ($CURRENT_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))");
+            sb.append("#end");
             sb.append("#set ($LUCENE_QUERY = \"" ).append( luceneQuery ).append( "\")");
         }
 
@@ -104,67 +115,48 @@ public class ContainerServices {
 
             // To edit the look, see WEB-INF/velocity/static/preview/container_controls.vtl
             sb.append("<div class='dotContainer'> ");
-            sb.append(" #end ");
+            sb.append("#end");
 
             // pre loop if it exists
             if(UtilMethods.isSet(container.getPreLoop())){
                 sb.append(container.getPreLoop());
             }
 
-            //let's do the search of contentlets using lucene query
-            if (isDynamic) {
-            	// commented by issue-2093
-//                Structure containerStructure = CacheLocator.getContentTypeCache().getStructureByInode(container.getStructureInode());
-//                   sb.append("#set ($contentletResultsMap" ).append( identifier.getInode() ).append(
-//                        " = $contents.searchWithLuceneQuery(\"").append( containerStructure.getInode() ).append("\", " ).append(
-//                                "\"$LUCENE_QUERY\", " ).append(
-//                                "\"$SORT_PAGE\", " ).append(
-//                                "$CURRENT_PAGE, $CONTENTS_PER_PAGE)) ");
-//                sb.append("#set ($contentletList" ).append( identifier.getInode() ).append(
-//                        " = $contents.getContentIdentifiersFromLuceneHits($contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"assets\")))");
-//
-//                sb.append("#set ($HAS_NEXT_PAGE = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"has_next_page\"))");
-//                sb.append("#set ($HAS_PREVIOUS_PAGE = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"has_previous_page\"))");
-//                sb.append("#set ($TOTAL_CONTENTS = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"total_records_int\"))");
-//                sb.append("#set ($TOTAL_PAGES = $contentletResultsMap" ).append( identifier.getInode() ).append( ".get(\"total_pages_int\"))");
-//                sb.append("#set ($CONTENTLETS = $contentletList" ).append( identifier.getInode() ).append( ")");
-//                sb.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize" ).append( identifier.getInode() ).append( ")");
-            }
 
-            sb.append("\n#foreach ($contentletId in $contentletList" ).append( identifier.getInode() ).append( ")");
+            sb.append("#foreach ($contentletId in $contentletList" ).append( identifier.getInode() ).append( ")");
 
        		//##Checking of contentlet is parseable and not throwing errors
            	if (EDIT_MODE) {
            		  sb.append("#if($webapi.canParseContent($contentletId,true))");
            	}
            	    //sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
-           	    sb.append(" #set($_show_working_=false) ");
+           	    sb.append("#set($_show_working_=false) ");
 
            	    // if timemachine future enabled
            	    sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
-           	    sb.append("  #set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\")))) ");
-           	    sb.append("  #set($_ident=$webapi.findIdentifierById($contentletId)) ");
+           	    sb.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\")))) ");
+           	    sb.append("#set($_ident=$webapi.findIdentifierById($contentletId)) ");
 
            	    // if the content has expired we rewrite the identifier so it isn't loaded
-           	    sb.append("  #if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-           	    sb.append("   #set($contentletId='') ");
-           	    sb.append("  #end ");
+           	    sb.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
+           	    sb.append("#set($contentletId='') ");
+           	    sb.append("#end ");
 
            	    // if the content should be published then force to show the working version
-           	    sb.append("  #if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
-           	    sb.append("   #set($_show_working_=true) ");
-           	    sb.append("  #end ");
+           	    sb.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
+           	    sb.append("#set($_show_working_=true) ");
+           	    sb.append("#end ");
 
-           	    sb.append("  #if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_) ")
-           	      .append("   #set($contentletId='')") // working contentlet still not published
-           	      .append("  #end ");
+           	    sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_) ")
+           	      .append("#set($contentletId='')") // working contentlet still not published
+           	      .append("#end ");
 
-           	    sb.append(" #end ");
+           	    sb.append("#end ");
 
            		sb.append("#set($CONTENT_INODE = '')");
-           		sb.append(" #if($contentletId != '') ");
-           	    sb.append("  #getContentDetail($contentletId) ");
-           	    sb.append(" #end ");
+           		sb.append("#if($contentletId != '') ");
+           	    sb.append("#getContentDetail($contentletId) ");
+           	    sb.append("#end ");
            	    sb.append("#if($CONTENT_INODE != '')");
 
                	if (!EDIT_MODE) {
@@ -173,13 +165,8 @@ public class ContainerServices {
                		sb.append("#if($_hasPermissionToViewContent)");
                	}
 
-               	//Assigns empty string in case is null
-               	//Oracle has null instead empty string
-                String code = (container.getCode() != null ? container.getCode() : "");
+                String code = "";
                 
-
-                sb.append("#set ($structureCode" ).append(
-                		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
 
 
                 //### HEADER ###
@@ -206,8 +193,7 @@ public class ContainerServices {
                 //### BODY ###
                 String endTag = "${contentletEnd}";
                 boolean containsEndTag = code.contains(endTag);
-                if(containsEndTag)
-                {
+                if(containsEndTag){
                 	String footerString = "#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1) " +
                 			"$velutil.mergeTemplate('static/preview_mode/content_controls.vtl') " +
                 			" #end " +
@@ -219,11 +205,29 @@ public class ContainerServices {
 
                 sb.append("#if($isWidget == true)");
                 	sb.append("$widgetCode");
-                sb.append(" #else ");
-//                	sb.append(code );
-//                	sb.append("$structureCode" );
-                	sb.append("$structureCode" );
-                sb.append(" #end ");
+                sb.append(" #else");
+                /*
+                  for (ContainerStructure cs : csList) {
+                    sb.append("#if($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
+                    sb.append(cs.getCode());
+                    sb.append("#end");
+                  }
+                  */
+                  for (int i=0;i<csList.size();i++) {
+                    ContainerStructure cs = csList.get(i);
+                    String ifelse = (i==0) ? "if" : "elseif";
+                    sb.append("#"+ifelse+ "($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
+                    sb.append(cs.getCode());
+                  }
+                  if(csList.size()>0){
+                    sb.append("#end");
+                  }
+                  
+                  
+                  
+                  
+                  
+                sb.append("#end");
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974
             	sb.append("#if($EDIT_MODE)");
