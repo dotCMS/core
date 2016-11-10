@@ -175,6 +175,7 @@ import {InputTextModule} from 'primeng/primeng';
 import {CheckboxModule} from 'primeng/primeng';
 import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
+import {AutoCompleteModule} from 'primeng/primeng';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 
 const NGFACES_MODULES = [
@@ -182,6 +183,7 @@ const NGFACES_MODULES = [
     CheckboxModule,
     ButtonModule,
     DropdownModule,
+    AutoCompleteModule,
 ];
 
 @NgModule({
