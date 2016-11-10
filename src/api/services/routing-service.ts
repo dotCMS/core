@@ -3,6 +3,7 @@ import {CoreWebService} from './core-web-service';
 import {Injectable} from '@angular/core';
 import {LoginService} from './login-service';
 import {Observable} from 'rxjs/Rx';
+import {DotcmsEventsService} from './dotcms-events-service';
 
 import {RequestMethod, Http} from '@angular/http';
 import {DotRouterService} from './dot-router-service';
@@ -17,12 +18,18 @@ export class RoutingService {
     private _currentPortletId: string;
 
     // TODO: I think we should be able to remove the routing injection
+
     constructor(loginService: LoginService, private router: DotRouterService,
-                private coreWebService: CoreWebService) {
+                private coreWebService: CoreWebService, dotcmsEventsService: DotcmsEventsService) {
+
         this.urlMenus = 'v1/CORE_WEB/menu';
         this.portlets = new Map();
 
         loginService.watchUser(this.loadMenus.bind(this));
+
+        dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe( () => {
+            this.loadMenus();
+        });
     }
 
     get currentPortletId(): string{
