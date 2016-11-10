@@ -1,28 +1,12 @@
 package com.dotcms.concurrent;
 
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.json.JSONException;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
-
 import java.util.stream.IntStream;
-
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 
 public class DotConcurrentFactoryTest {
-	
-	@BeforeClass
-	public static void prepare() throws Exception{
-		//Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-	}
-
-
-    public DotConcurrentFactoryTest() {
-
-	}
 
     @Test
     public void testDefaultOne() throws JSONException{
