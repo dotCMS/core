@@ -240,7 +240,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				HibernateUtil _dh = null;
 
 				_className = f.getName().substring(0, f.getName().lastIndexOf("."));
-				_xstream = new XStream(new DomDriver());
+				_xstream = new XStream(new DomDriver(CHARSET));
 				_importClass = Class.forName(_className);
 				out.println("Importing:\t" + _className);
 				if (_importClass.equals(User.class)) {
@@ -337,7 +337,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			BufferedWriter _bout = null;
 
 			for (Class clazz : _tablesToDump) {
-				_xstream = new XStream(new DomDriver());
+				_xstream = new XStream(new DomDriver(CHARSET));
 
 				/*
 				 * String _shortClassName =
@@ -364,7 +364,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			/* Run Liferay's Tables */
 			/* Companies */
 			_list = PublicCompanyFactory.getCompanies();
-			_xstream = new XStream(new DomDriver());
+			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
 			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
 			_xstream.toXML(_list, _bout);
@@ -374,7 +374,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 
 			/* Users */
 			_list = APILocator.getUserAPI().findAllUsers();
-			_xstream = new XStream(new DomDriver());
+			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
 			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
 			_xstream.toXML(_list, _bout);

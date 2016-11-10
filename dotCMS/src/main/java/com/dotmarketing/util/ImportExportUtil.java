@@ -357,7 +357,7 @@ public class ImportExportUtil {
                 return;
             }
 
-            _xstream = new XStream(new DomDriver());
+            _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
                 charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
@@ -456,7 +456,7 @@ public class ImportExportUtil {
              */
 
             final List<Identifier> folderIdents=new ArrayList<Identifier>();
-            final XStream xstream = new XStream(new DomDriver());
+            final XStream xstream = new XStream(new DomDriver(CHARSET));
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
@@ -1146,7 +1146,7 @@ public class ImportExportUtil {
                     return;
                 }
             }
-            _xstream = new XStream(new DomDriver());
+            _xstream = new XStream(new DomDriver(CHARSET));
             out.println("Importing:\t" + _className);
             Logger.info(this, "Importing:\t" + _className);
 
