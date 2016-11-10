@@ -10,15 +10,17 @@ import {DotRouterService} from './dot-router-service';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
-export class RoutingService extends CoreWebService {
+export class RoutingService {
     private _menusChange$: Subject<Menu[]> = new Subject();
     private menus: Menu[];
     private urlMenus: string;
     private portlets: Map<string, string>;
+    private _currentPortletId: string;
 
     // TODO: I think we should be able to remove the routing injection
-    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, private router: DotRouterService, dotcmsEventsService: DotcmsEventsService) {
-        super(apiRoot, http);
+    constructor(loginService: LoginService, private router: DotRouterService,
+                private coreWebService: CoreWebService, dotcmsEventsService: DotcmsEventsService) {
+
         this.urlMenus = 'v1/CORE_WEB/menu';
         this.portlets = new Map();
 
@@ -27,6 +29,10 @@ export class RoutingService extends CoreWebService {
         dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe( () => {
             this.loadMenus();
         });
+    }
+
+    get currentPortletId(): string{
+        return this._currentPortletId;
     }
 
     get currentMenu(): Menu[] {
@@ -47,18 +53,27 @@ export class RoutingService extends CoreWebService {
 
     public goToPortlet(portletId: string): void {
         this.router.gotoPortlet(portletId);
+        this._currentPortletId = portletId;
     }
 
     public isPortlet(url: string): boolean {
         let urlSplit = url.split('/');
         let id = urlSplit[urlSplit.length - 1];
-        return  this.portlets.get(id);
+        return this.portlets.has(id);
+    }
+
+    public setCurrentPortlet(url: string): void {
+        let urlSplit = url.split('/');
+        let id = urlSplit[urlSplit.length - 1];
+        this._currentPortletId = id;
     }
 
     public setMenus(menus: Menu[]): void {
         this.menus = menus;
 
         if (this.menus.length) {
+            this.portlets = new Map();
+
             for (let i = 0; i < this.menus.length; i++) {
                 let menu = this.menus[i];
                 for (let k = 0; k < menu.menuItems.length; k++) {
@@ -71,12 +86,13 @@ export class RoutingService extends CoreWebService {
                     }
                 }
             }
+
             this._menusChange$.next(this.menus);
         }
     }
 
     private loadMenus(): void {
-        this.requestView({
+        this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.urlMenus,
         }).subscribe(response => {

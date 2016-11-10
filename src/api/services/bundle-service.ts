@@ -24,7 +24,7 @@ export interface IPublishEnvironment {
 }
 
 @Injectable()
-export class BundleService extends CoreWebService {
+export class BundleService {
   private _bundleStoreUrl: string;
   private _loggedUserUrl: string;
   private _addToBundleUrl: string;
@@ -36,8 +36,7 @@ export class BundleService extends CoreWebService {
   private _bundlesAry:IBundle[] = [];
   private _environmentsAry:IDBEnvironment[] = [];
 
-  constructor(public _apiRoot:ApiRoot, _http:Http) {
-    super(_apiRoot, _http);
+  constructor(public _apiRoot:ApiRoot, private coreWebService: CoreWebService) {
     this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid`;
     this._loggedUserUrl = `${this._apiRoot.baseUrl}api/v1/users/current/`;
     this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
@@ -46,7 +45,7 @@ export class BundleService extends CoreWebService {
   }
 
   getLoggedUser():Observable<IUser> {
-    return this.request({
+    return this.coreWebService.request({
       method: RequestMethod.Get,
       url: this._loggedUserUrl,
     })
@@ -69,7 +68,7 @@ export class BundleService extends CoreWebService {
 
   _doLoadBundleStores():Observable<IBundle[]> {
     return this.getLoggedUser().flatMap((user:IUser) => {
-      return this.request({
+      return this.coreWebService.request({
         method: RequestMethod.Get,
         url: `${this._bundleStoreUrl}/${user.userId}`,
       }).map(BundleService.fromServerBundleTransformFn)
@@ -91,7 +90,7 @@ export class BundleService extends CoreWebService {
 
   _doLoadPublishEnvironments():Observable<IPublishEnvironment[]> {
     return this.getLoggedUser().flatMap((user:IUser) => {
-      return this.request({
+      return this.coreWebService.request({
         method: RequestMethod.Get,
         url: `${this._pushEnvironementsUrl}/${user.roleId}/?name=0`,
       }).map(BundleService.fromServerEnvironmentTransformFn)
@@ -100,7 +99,7 @@ export class BundleService extends CoreWebService {
 
 
   addRuleToBundle(ruleId:string, bundle:IBundle):Observable<{errorMessages:string[],total:number,errors:number}> {
-    return this.request({
+    return this.coreWebServicerequest({
       body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
       method: RequestMethod.Post,
       headers: {
@@ -134,7 +133,7 @@ export class BundleService extends CoreWebService {
   }
 
   pushPublishRule(ruleId:string, environmentId:string):Observable<{errorMessages:string[],total:number,bundleId:string,errors:number}> {
-    return this.request({
+    return this.coreWebService.request({
       body: this.getPublishRuleData(ruleId, environmentId),
       method: RequestMethod.Post,
       headers: {

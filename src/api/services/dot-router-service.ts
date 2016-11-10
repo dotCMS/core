@@ -50,4 +50,8 @@ export class DotRouterService {
     public goToForgotPassword(): void {
         this.router.navigate(['/public/forgotPassword']);
     }
+
+    public goToNotLicensed(): void {
+        this.router.navigate(['dotCMS/notLicensed']);
+    }
 }

@@ -9,12 +9,13 @@ import {Subject} from 'rxjs/Subject';
 import {DotcmsEventsService} from './dotcms-events-service';
 
 @Injectable()
-export class ContentletService extends CoreWebService {
+export class ContentletService {
     private structureTypeView: StructureTypeView[];
     private _structureTypeView$: Subject<StructureTypeView[]> = new Subject<StructureTypeView[]>();
 
-    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
-        super(apiRoot, http);
+    constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
+                private coreWebService: CoreWebService) {
+
         loginService.watchUser(this.loadContentTypes.bind(this));
 
         dotcmsEventsService.subscribeTo('SAVE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeView => {
@@ -45,7 +46,7 @@ export class ContentletService extends CoreWebService {
     }
 
     private loadContentTypes(): void {
-        this.requestView({
+        this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: 'v1/content/types'
         }).pluck('entity').subscribe(

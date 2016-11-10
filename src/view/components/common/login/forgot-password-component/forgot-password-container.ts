@@ -33,7 +33,7 @@ export class ForgotPasswordContainer {
         this.loginService.recoverPassword(forgotPasswordLogin).subscribe((resp: ResponseView) => {
             this.goToLogin();
         }, (resp: ResponseView) => {
-            if (!resp.existError('a-new-password-has-been-sent-to-x')){
+            if (!resp.existError('a-new-password-has-been-sent-to-x')) {
                 this.message = resp.errorsMessages;
             } else {
                 this.goToLogin();

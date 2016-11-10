@@ -14,6 +14,7 @@ import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth
 import {RuleEngineContainer} from './rule-engine/rule-engine.container';
 import {CONSTANT} from '../constant';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
+import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
 
 let angularComponents: any[] = [];
 angularComponents.push({component: RuleEngineContainer, id: 'RULES_ENGINE_PORTLET'});
@@ -29,12 +30,13 @@ let mainComponentChildren = [
                                     path: 'pl'
                                 },
                                 {
-                                    component: IframeLegacyComponent,
-                                    path: 'portlet/:id'
+                                    component: NotLicensedComponent,
+                                    path: 'notLicensed'
                                 },
                                 {
-                                    component: RuleEngineContainer,
-                                    path: 'html/ng/p/RULES_ENGINE_PORTLET',
+                                    canActivate: [RoutingPrivateAuthService],
+                                    component: IframeLegacyComponent,
+                                    path: 'portlet/:id',
                                 }
                             ];
 
@@ -42,11 +44,13 @@ let fromCoreChildren: any[] = [];
 
 angularComponents.forEach( component => {
     mainComponentChildren.push({
+        canActivate: [RoutingPrivateAuthService],
         component: component.component,
         path: `html/ng/p/${component.id}`
     });
 
     fromCoreChildren.push({
+        canActivate: [RoutingPrivateAuthService],
         component: component.component,
         path: component.id
     });

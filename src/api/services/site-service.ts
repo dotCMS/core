@@ -8,7 +8,7 @@ import {LoginService} from './login-service';
 import {DotcmsEventsService} from './dotcms-events-service';
 
 @Injectable()
-export class SiteService extends CoreWebService {
+export class SiteService {
     private _sites$: Subject<Site[]> = new Subject();
     private _switchSite$: Subject<Site> = new Subject();
     private site: Site;
@@ -20,9 +20,8 @@ export class SiteService extends CoreWebService {
     private _archivedCurrentSite$: Subject<Site> = new Subject();
     private urls: any;
 
-    constructor(apiRoot: ApiRoot, http: Http, loginService: LoginService, dotcmsEventsService: DotcmsEventsService) {
-
-        super(apiRoot, http);
+    constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
+                private coreWebService: CoreWebService) {
         this.urls = {
             allSiteUrl: 'v1/site/currentSite',
             switchSiteUrl: 'v1/site/switch'
@@ -70,7 +69,7 @@ export class SiteService extends CoreWebService {
     }
 
     switchSite(siteId: String): Observable<any> {
-        return this.requestView({
+        return this.coreWebService.requestView({
             method: RequestMethod.Put,
             url: `${this.urls.switchSiteUrl}/${siteId}`,
         }).map(response => {
@@ -101,7 +100,7 @@ export class SiteService extends CoreWebService {
     }
 
     private loadSites(): void {
-        this.requestView({
+        this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.urls.allSiteUrl,
         }).subscribe(response => {

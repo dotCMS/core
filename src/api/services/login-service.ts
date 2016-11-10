@@ -11,12 +11,13 @@ import {RequestMethod} from '@angular/http';
 import {Router} from '@angular/router';
 import {Subject} from 'rxjs/Subject';
 
+
 /**
  * This Service get the server configuration to display in the login component
  * and execute the login and forgot password routines
  */
 @Injectable()
-export class LoginService extends CoreWebService {
+export class LoginService {
 
     private _auth$: Subject<Auth> = new Subject<Auth>();
     private _auth: Auth;
@@ -26,8 +27,7 @@ export class LoginService extends CoreWebService {
     private loginAsUserList: User[];
     private urls: any;
 
-    constructor(apiRoot: ApiRoot, http: Http, private router: Router) {
-        super(apiRoot, http);
+    constructor(private router: Router, private coreWebService: CoreWebService) {
 
         this._loginAsUsersList$ = <Subject<User[]>>new Subject();
         this.loginAsUserList = [];
@@ -42,6 +42,8 @@ export class LoginService extends CoreWebService {
             serverInfo: 'v1/loginform',
             userAuth: 'v1/authentication'
         };
+
+        coreWebService.subscribeTo(401).subscribe(() => this.logOutUser().subscribe(() => {}));
     }
 
     get loginAsUsersList$(): Observable<User[]> {
@@ -65,7 +67,7 @@ export class LoginService extends CoreWebService {
      * @returns {Observable<any>}
      */
     public loadAuth(): Observable<Auth> {
-        return this.requestView({
+        return this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.urls.getAuth
         }).pluck('entity').map(auth => {
@@ -87,7 +89,7 @@ export class LoginService extends CoreWebService {
     public changePassword(password: string, token: string): Observable<any> {
         let body = JSON.stringify({'password': password, 'token': token});
 
-        return this.requestView({
+        return this.coreWebService.requestView({
             body: body,
             method: RequestMethod.Post,
             url: this.urls.changePassword,
@@ -126,7 +128,7 @@ export class LoginService extends CoreWebService {
     public getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<any> {
         this.setLanguage(language);
 
-        return this.requestView({
+        return this.coreWebService.requestView({
             body: {'messagesKey': i18nKeys, 'language': this.lang, 'country': this.country},
             method: RequestMethod.Post,
             url: this.urls.serverInfo,
@@ -137,7 +139,7 @@ export class LoginService extends CoreWebService {
      * Request and store the login as _auth list.
      */
     public loadLoginAsUsersList(): void {
-        this.requestView({
+        this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.urls.loginAsUserList
         }).pluck('entity', 'users').subscribe(data => {
@@ -162,7 +164,7 @@ export class LoginService extends CoreWebService {
      */
     // TODO: password in the url is a no-no, fix asap. Sanchez and Jose have an idea.
     public loginAs(options: any): Observable<any> {
-        return this.requestView({
+        return this.coreWebService.requestView({
             method: RequestMethod.Put,
             url: `${this.urls.loginAs}/${options.userId}${options.password ? `/pwd/${options.password}` : ''}`
         }).map((res) => {
@@ -189,7 +191,7 @@ export class LoginService extends CoreWebService {
     public loginUser(login: string, password: string, rememberMe: boolean, language: string): Observable<User> {
         this.setLanguage(language);
 
-        return this.requestView({
+        return this.coreWebService.requestView({
             body: {'userId': login, 'password': password, 'rememberMe': rememberMe, 'language': this.lang, 'country': this.country},
             method: RequestMethod.Post,
             url: this.urls.userAuth,
@@ -208,7 +210,7 @@ export class LoginService extends CoreWebService {
      * @returns {Observable<R>}
      */
     public logoutAs(): Observable<any> {
-        return this.requestView({
+        return this.coreWebService.requestView({
             method: RequestMethod.Put,
             url: `${this.urls.logoutAs}`
         }).map((res) => {
@@ -226,7 +228,7 @@ export class LoginService extends CoreWebService {
      */
     public logOutUser(): Observable<any> {
 
-        return this.requestView({
+        return this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.urls.logout,
         }).map(response => {
@@ -248,7 +250,7 @@ export class LoginService extends CoreWebService {
     public recoverPassword(login: string): Observable<any> {
         let body = JSON.stringify({'userId': login});
 
-        return this.requestView({
+        return this.coreWebService.requestView({
             body: {'userId': login},
             method: RequestMethod.Post,
             url: this.urls.recoverPassword,
