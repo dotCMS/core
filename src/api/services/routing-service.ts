@@ -18,7 +18,6 @@ export class RoutingService {
     private _currentPortletId: string;
 
     // TODO: I think we should be able to remove the routing injection
-
     constructor(loginService: LoginService, private router: DotRouterService,
                 private coreWebService: CoreWebService, dotcmsEventsService: DotcmsEventsService) {
 

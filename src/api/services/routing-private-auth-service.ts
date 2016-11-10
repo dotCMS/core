@@ -10,7 +10,7 @@ import {DotRouterService} from './dot-router-service';
 @Injectable()
 export class RoutingPrivateAuthService implements CanActivate {
     constructor(private router: DotRouterService, private routingService: RoutingService,
-                private loginService: LoginService, private dotcmsConfig: DotcmsConfig) {}
+             private loginService: LoginService, private dotcmsConfig: DotcmsConfig) {}
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
 
@@ -20,7 +20,7 @@ export class RoutingPrivateAuthService implements CanActivate {
             } else {
                 this.loginService.loadAuth().subscribe(() => {
                     if (this.loginService.isLogin) {
-                        this.dotcmsConfig.getConfig().subscribe( () => {
+                        this.dotcmsConfig.getConfig().then( dotcmsConfig => {
                             if (this.checkAccess(state.url)) {
                                 resolve(true);
                             } else {

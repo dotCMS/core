@@ -14,6 +14,7 @@ import {Observable} from "rxjs";
 @Injectable()
 export class DotcmsConfig extends CoreWebService {
 
+    private waiting: any[] = [];
     private configParams: any;
     private configUrl: string;
 
@@ -25,15 +26,27 @@ export class DotcmsConfig extends CoreWebService {
     constructor(apiRoot: ApiRoot, http: Http) {
         super(apiRoot, http);
         this.configUrl = 'v1/appconfiguration';
+        this.loadConfig();
     }
 
-    // TODO: try to make this a promise
-    getConfig(): Observable {
-        return this.requestView({
+    getConfig(): Promise {
+        if (this.configParams) {
+            return new Promise(resolve => resolve(this));
+        } else {
+            return new Promise(resolve => {
+                this.waiting.push(resolve);
+            });
+        }
+    }
+
+    loadConfig(): void {
+        this.requestView({
             method: RequestMethod.Get,
             url: this.configUrl
-        }).pluck('entity').map(res => {
+        }).pluck('entity').subscribe(res => {
             this.configParams = res;
+            this.waiting.forEach(resolve => resolve(this));
+            this.waiting = null;
             return res;
         });
     }

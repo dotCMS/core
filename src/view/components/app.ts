@@ -21,11 +21,4 @@ export class AppComponent {
     constructor(private dotcmsConfig: DotcmsConfig, notLicensedService: NotLicensedService) {
         notLicensedService.init();
     }
-
-    ngOnInit(): void {
-
-        this.dotcmsConfig.getConfig().subscribe(() => {
-
-        });
-    }
 }

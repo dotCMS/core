@@ -19,7 +19,7 @@ export class RoutingPublicAuthService implements CanActivate {
             } else {
                 this.loginService.loadAuth().subscribe(() => {
                     if (this.loginService.isLogin) {
-                        this.dotcmsConfig.getConfig().subscribe( () => {
+                        this.dotcmsConfig.getConfig().then( dotcmsConfig => {
                             this.router.goToMain();
                             resolve(false);
                         });

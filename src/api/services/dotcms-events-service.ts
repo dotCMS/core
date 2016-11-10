@@ -25,12 +25,14 @@ export class DotcmsEventsService {
      *                        the Websocket parameters.
      */
     constructor(private dotcmsConfig: DotcmsConfig) {
-        this.protocol = dotcmsConfig.getWebsocketProtocol();
-        this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
-        this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
-        this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
+        dotcmsConfig.getConfig().then(dotcmsConfig => {
+            this.protocol = dotcmsConfig.getWebsocketProtocol();
+            this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
+            this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
+            this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
 
-        this.connectWithSocket();
+            this.connectWithSocket();
+        });
     }
 
     /**
@@ -46,7 +48,7 @@ export class DotcmsEventsService {
             this.ws.getDataStream().subscribe(
                 res => {
                     let data = (JSON.parse(res.data));
-
+                    console.log('data', data);
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
