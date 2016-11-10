@@ -61,7 +61,7 @@ public class TestInitialContext extends InitialContext {
         try (InputStream resourceStream = loader.getResourceAsStream("db-config.properties")) {
             prop.load(resourceStream);
         } catch (IOException e) {
-            throw new NamingException("Unable to properties from db-config.properties");
+            throw new NamingException("Unable to get properties from db-config.properties");
         }
     }
 }
