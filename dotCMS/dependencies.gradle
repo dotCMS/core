@@ -278,6 +278,7 @@ dependencies {
 
     }
     testCompile "org.powermock:powermock-module-junit4:1.6.5"
+    testCompile group: 'com.google.collections', name: 'google-collections', version: '1.0'
 
     /**
      * Order matters here: OSGI-Core must come after felix.
@@ -317,5 +318,7 @@ dependencies {
 	compile 'org.immutables:value:2.3.3'
 
     integrationTestCompile sourceSets.test.output
+    functionalTestCompile sourceSets.test.output
+    functionalTestCompile sourceSets.integrationTest.output
 
 }
