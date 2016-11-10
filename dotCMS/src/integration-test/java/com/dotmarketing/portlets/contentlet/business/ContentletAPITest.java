@@ -13,6 +13,7 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.org.apache.solr.handler.SnapPuller;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
@@ -54,10 +55,13 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.viewtools.navigation.NavResult;
+import com.dotmarketing.viewtools.navigation.NavTool;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -2302,5 +2306,95 @@ public class ContentletAPITest extends ContentletBaseTest {
     	assertNotNull( resultSpanish );
     	
     	fileAssetDataGen.remove(resultSpanish);
+    }
+    
+    /**
+     * Deletes a list of contents
+     * @throws Exception
+     */
+    @Test
+    public void deleteMultipleContents() throws Exception { // https://github.com/dotCMS/core/issues/7678
+
+    	// languages
+    	int english = 1;
+    	int spanish = 2;
+        //Using System User.
+        User user = APILocator.getUserAPI().getSystemUser();
+        // new template
+        Template template = new TemplateDataGen().nextPersisted();
+        // new test folder
+		Folder testFolder = new FolderDataGen().nextPersisted();
+		// sample pages
+		HTMLPageAsset pageEnglish1 = new HTMLPageDataGen(testFolder, template).languageId(english).nextPersisted();
+		HTMLPageAsset pageEnglish2 = new HTMLPageDataGen(testFolder, template).languageId(english).nextPersisted();
+		contentletAPI.publish(pageEnglish1, user, false);
+		contentletAPI.publish(pageEnglish2, user, false);
+        // delete counter
+        int deleted = 0;
+        // Page list
+        List<HTMLPageAsset> liveHTMLPages = new ArrayList<HTMLPageAsset>();
+        // List of contentlets created for this test.
+        List<Contentlet> contentletsCreated = new ArrayList<Contentlet>();
+        
+        liveHTMLPages.add(pageEnglish1);
+        liveHTMLPages.add(pageEnglish2);
+               
+        //We need to create a new copy of pages for Spanish.
+        for(HTMLPageAsset liveHTMLPage : liveHTMLPages){
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( liveHTMLPage.getInode(), user, false );
+
+            //As a copy we need to remove this info to do a clean checkin.
+            htmlPageContentlet.getMap().remove("modDate");
+            htmlPageContentlet.getMap().remove("lastReview");
+            htmlPageContentlet.getMap().remove("owner");
+            htmlPageContentlet.getMap().remove("modUser");
+
+            htmlPageContentlet.getMap().put("inode", "");
+            htmlPageContentlet.getMap().put("languageId", new Long(spanish));
+
+            //Checkin and Publish.
+            Contentlet working = APILocator.getContentletAPI().checkin(htmlPageContentlet, user, false);
+            APILocator.getContentletAPI().publish(working, user, false);
+            APILocator.getContentletAPI().isInodeIndexed(working.getInode(), true);
+
+            contentletsCreated.add(working);
+        }
+
+        //Now remove all the pages that we created for this tests.
+        APILocator.getContentletAPI().unpublish(contentletsCreated, user, false);
+        APILocator.getContentletAPI().archive(contentletsCreated, user, false);
+        APILocator.getContentletAPI().delete(contentletsCreated, user, false);
+        
+        for(Contentlet contentlet: contentletsCreated){
+        	if(APILocator.getContentletAPI().find(contentlet.getInode(), user, false) == null){
+        		deleted++;
+        	}
+        }
+        // 2 Spanish pages created, 2 should have been deleted
+        assertEquals(2, deleted);
+        
+        List<Contentlet> liveEnglish = new ArrayList<Contentlet>();
+        for(IHTMLPage page:liveHTMLPages){
+        	liveEnglish.add(APILocator.getContentletAPI().find( page.getInode(), user, false ));
+        }
+        
+        APILocator.getContentletAPI().unpublish(liveEnglish, user, false);
+        APILocator.getContentletAPI().archive(liveEnglish, user, false);
+        APILocator.getContentletAPI().delete(liveEnglish, user, false);
+        
+        deleted = 0;
+        for(Contentlet contentlet: liveEnglish){
+        	if(APILocator.getContentletAPI().find(contentlet.getInode(), user, false) == null){
+        		deleted++;
+        	}
+        }
+        
+        // 2 English pages created, 2 should have been deleted
+        assertEquals(2, deleted);
+
+        // dispose other objects
+		FolderDataGen.remove(testFolder);
+		TemplateDataGen.remove(template);
+		
     }
 }
