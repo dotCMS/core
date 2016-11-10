@@ -21,16 +21,22 @@ public class TestInitialContext extends InitialContext {
     private static TestInitialContext context;
 
     private TestInitialContext() throws NamingException {
+        String dbType = "";
+
+        if (System.getProperty("databaseType")!=null){
+            dbType = System.getProperty("databaseType") + ".";
+        }
+
         loadProperties();
         dataSource = new BasicDataSource();
-        dataSource.setDriverClassName(prop.getProperty("db.driver"));
-        dataSource.setUrl(prop.getProperty("db.base.url"));
-        dataSource.setUsername(prop.getProperty("db.username"));
-        dataSource.setPassword(prop.getProperty("db.password"));
+        dataSource.setDriverClassName(prop.getProperty(dbType + "db.driver"));
+        dataSource.setUrl(prop.getProperty(dbType + "db.base.url"));
+        dataSource.setUsername(prop.getProperty(dbType + "db.username"));
+        dataSource.setPassword(prop.getProperty(dbType + "db.password"));
         dataSource.setRemoveAbandoned(true);
         dataSource.setLogAbandoned(true);
-        dataSource.setMaxIdle(Integer.parseInt(prop.getProperty("db.max.idle")));
-        dataSource.setMaxActive(Integer.parseInt(prop.getProperty("db.max.total")));
+        dataSource.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
+        dataSource.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
     }
 
     public static TestInitialContext getInstance() throws NamingException {
