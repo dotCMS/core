@@ -38,6 +38,8 @@ buildscript {
 		classpath "jp.classmethod.aws:gradle-aws-plugin:0.+"
 		classpath "org.hidetake:gradle-ssh-plugin:2.7.0"
 		classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
+
+		classpath fileTree("../libs/buildlibs").include('jtds-*.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 	}
 }
 
@@ -230,7 +232,10 @@ task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 		publiclyAccessible = properties.getProperty( "dbPubliclyAccessible" + project.instanceTargetDb ).toBoolean()
 		allocatedStorage = properties.getProperty( "dbAllocatedStorage" + project.instanceTargetDb ).toInteger()
 
-		dbName = properties.getProperty( "dbDbName" + project.instanceTargetDb )
+		if ( ! "MSSQL".equalsIgnoreCase( project.instanceTargetDb ) ) {
+			dbName = properties.getProperty( "dbDbName" + project.instanceTargetDb )
+		}
+
 		masterUsername = properties.getProperty( "dbMasterUsername" + project.instanceTargetDb )
 		masterUserPassword = properties.getProperty( "dbMasterUserPassword" + project.instanceTargetDb )
 
@@ -282,7 +287,63 @@ task describeDBInstance {
 
 task setupDBInstance(dependsOn: describeDBInstance) {
 	doLast {
-		// TODO: To create actual database
+		String dbDriverClassName = properties.getProperty( "dbDriver" + project.instanceTargetDb )
+		String dbInstanceEndpoint = project.dbInstanceEndpoint;
+		String dbInstanceName = properties.getProperty( "dbDbName" + project.instanceTargetDb )
+		String dbInstancePort = properties.getProperty( "dbPort" + project.instanceTargetDb )
+		String dbInstanceUsername = properties.getProperty( "dbMasterUsername" + project.instanceTargetDb )
+		String dbInstancePassword = properties.getProperty( "dbMasterUserPassword" + project.instanceTargetDb )
+		String dbInstanceSlaveUsername = properties.getProperty( "dbSlaveUsername" + project.instanceTargetDb )
+		String dbInstanceSlavePassword = properties.getProperty( "dbSlaveUserPassword" + project.instanceTargetDb )
+
+		Class.forName( dbDriverClassName, true, GroovyObject.class.classLoader )
+
+		switch( project.instanceTargetDb ) {
+
+			case "MySQL":
+				String dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8"
+
+				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
+					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
+				)
+
+				sql.execute( "ALTER DATABASE "+ dbInstanceName +" CHARACTER SET utf8 COLLATE utf8_general_ci;" )
+
+				break;
+
+			case "MSSQL":
+				String dbInstanceUrl = "jdbc:jtds:sqlserver://${dbInstanceEndpoint}:${dbInstancePort};databaseName=master";
+
+				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
+					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
+				)
+
+				sql.execute( "CREATE DATABASE "+ dbInstanceName )
+				sql.execute( "ALTER DATABASE "+ dbInstanceName +" SET READ_COMMITTED_SNAPSHOT ON;" )
+				sql.execute( "ALTER DATABASE "+ dbInstanceName +" SET ALLOW_SNAPSHOT_ISOLATION ON;" )				
+
+				break;
+
+			case "Oracle":
+				String dbInstanceUrl = "jdbc:oracle:thin:@${dbInstanceEndpoint}:${dbInstancePort}:${dbInstanceName}";
+
+				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
+					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
+				)
+
+				sql.execute( "CREATE USER \""+ dbInstanceSlaveUsername +"\" PROFILE \"DEFAULT\" IDENTIFIED BY \""+ dbInstanceSlavePassword +"\"" )
+				sql.execute( "GRANT DBA TO "+ dbInstanceSlaveUsername )
+				sql.execute( "GRANT CONNECT, RESOURCE TO "+ dbInstanceSlaveUsername )
+
+
+				groovy.sql.Sql sql2 = groovy.sql.Sql.newInstance(
+					dbInstanceUrl, dbInstanceSlaveUsername, dbInstanceSlavePassword, dbDriverClassName
+				)
+
+				sql2.execute( "CREATE OR REPLACE TRIGGER WORKAROUNDORA9965278 AFTER LOGON ON DATABASE BEGIN EXECUTE IMMEDIATE \'ALTER SESSION SET \"_replace_virtual_columns\"=false\'; END" )
+
+				break;
+		}
 	}
 }
 
