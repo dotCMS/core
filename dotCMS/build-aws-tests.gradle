@@ -65,8 +65,8 @@ properties.load(new FileInputStream(project.propertiesFile))
 
 
 aws {
-	profileName = properties.getProperty("awsCredentialsProfile")
-	region = properties.getProperty("awsRegion")
+	profileName = properties.getProperty("aws.credentials.profile")
+	region = properties.getProperty("aws.region")
 }
 
 ssh.settings {
@@ -81,21 +81,21 @@ if (hasProperty('instancePublicDnsName') == false) { ext.instancePublicDnsName =
 
 
 task importKey(type: AmazonEC2ImportKeyTask) {
-	keyName properties.getProperty("keysKeyName")
-	publicKeyMaterial properties.getProperty("keysPublicKeyMaterial")
+	keyName properties.getProperty("security.key.name")
+	publicKeyMaterial properties.getProperty("security.key.public.material")
 	ifNotExists true
 }
 
 
 task launchInstance(type: AmazonEC2RunInstanceTask, dependsOn: importKey) {
-	ami properties.getProperty("awsInstanceAmi")
-	keyName properties.getProperty("keysKeyName")
-	instanceType properties.getProperty("awsInstanceType")
+	ami properties.getProperty("aws.instance.ami")
+	keyName properties.getProperty("security.key.name")
+	instanceType properties.getProperty("aws.instance.type")
 
 	userData "#! /bin/bash\nyum -y update"
 
 	securityGroupIds = new java.util.ArrayList<String>()
-	securityGroupIds += properties.getProperty("awsSecurityGroupId")
+	securityGroupIds += properties.getProperty("aws.securityGroupId")
 
 	doLast {
 		project.instanceId = runInstancesResult.getReservation().getInstances().get(0).instanceId
@@ -156,7 +156,7 @@ task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 task setupInstance {
 	doLast {
 		setInstanceTagName( project.instanceId,
-			properties.getProperty("awsInstanceName") +" ("+ project.instanceTargetDb +")"
+			properties.getProperty("aws.instance.name") +" ("+ project.instanceTargetDb +")"
 		)
 
 		sleep(60 * 1000)
@@ -178,8 +178,8 @@ task executeRemoteInstance(dependsOn: describeInstance) {
 	doLast {
 		ssh.run {
 			session(
-				host: project.instancePublicDnsName, user: properties.getProperty("sshUsername"),
-				identity: file( properties.getProperty("keysPrivateKeyFile") )
+				host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
+				identity: file( properties.getProperty("security.key.private.file") )
 			) {
 				executeScript( file( project.scriptFile ), logging: "none", interaction: {
 					when(line: _, from: standardOutput) { line -> println( line ) }
@@ -221,30 +221,30 @@ if (hasProperty('dbInstanceEndpoint') == false) { ext.dbInstanceEndpoint = "" }
 
 task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
-		dbInstanceIdentifier = properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb )
+		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb )
 
-		engine = properties.getProperty( "dbEngine" + project.instanceTargetDb )
-		dbInstanceClass = properties.getProperty( "dbInstanceClass" + project.instanceTargetDb )
+		engine = getDatabaseProperty( properties, "engine", project.instanceTargetDb )
+		dbInstanceClass = getDatabaseProperty( properties, "instance.class", project.instanceTargetDb )
 
-		engineVersion = properties.getProperty( "dbEngineVersion" + project.instanceTargetDb )
-		port = properties.getProperty( "dbPort" + project.instanceTargetDb ).toInteger()
-		licenseModel = properties.getProperty( "dbLicenseModel" + project.instanceTargetDb )
-		publiclyAccessible = properties.getProperty( "dbPubliclyAccessible" + project.instanceTargetDb ).toBoolean()
-		allocatedStorage = properties.getProperty( "dbAllocatedStorage" + project.instanceTargetDb ).toInteger()
+		engineVersion = getDatabaseProperty( properties, "engine.version", project.instanceTargetDb )
+		port = getDatabaseProperty( properties, "port", project.instanceTargetDb ).toInteger()
+		licenseModel = getDatabaseProperty( properties, "license", project.instanceTargetDb )
+		publiclyAccessible = getDatabaseProperty( properties, "public", project.instanceTargetDb ).toBoolean()
+		allocatedStorage = getDatabaseProperty( properties, "storage", project.instanceTargetDb ).toInteger()
 
 		if ( ! "MSSQL".equalsIgnoreCase( project.instanceTargetDb ) ) {
-			dbName = properties.getProperty( "dbDbName" + project.instanceTargetDb )
+			dbName = getDatabaseProperty( properties, "name", project.instanceTargetDb )
 		}
 
-		masterUsername = properties.getProperty( "dbMasterUsername" + project.instanceTargetDb )
-		masterUserPassword = properties.getProperty( "dbMasterUserPassword" + project.instanceTargetDb )
+		masterUsername = getDatabaseProperty( properties, "user.master.username", project.instanceTargetDb )
+		masterUserPassword = getDatabaseProperty( properties, "user.master.password", project.instanceTargetDb )
 
-		backupRetentionPeriod = properties.getProperty( "dbBackupRetentionPeriod" + project.instanceTargetDb ).toInteger()
-		multiAZ = properties.getProperty( "dbMultiAZ" + project.instanceTargetDb ).toBoolean()
-		autoMinorVersionUpgrade = properties.getProperty( "dbAutoMinorVersionUpgrade" + project.instanceTargetDb ).toBoolean()
+		backupRetentionPeriod = getDatabaseProperty( properties, "backupRetentionPeriod", project.instanceTargetDb ).toInteger()
+		multiAZ = getDatabaseProperty( properties, "multiAZ", project.instanceTargetDb ).toBoolean()
+		autoMinorVersionUpgrade = getDatabaseProperty( properties, "autoMinorVersionUpgrade", project.instanceTargetDb ).toBoolean()
 
 		vpcSecurityGroupIds = new java.util.ArrayList<String>()
-		vpcSecurityGroupIds += properties.getProperty("awsSecurityGroupId")
+		vpcSecurityGroupIds += properties.getProperty("aws.securityGroupId")
 	}
 
 	doLast {
@@ -257,7 +257,7 @@ task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
 	skipFinalSnapshot = true
 
 	doFirst {
-		dbInstanceIdentifier = properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb )
+		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb )
 	}
 }
 
@@ -269,14 +269,14 @@ task waitDBInstanceStatusCreated(type: AmazonRDSWaitInstanceStatusTask) {
 	waitStatuses = [ "backing-up", "creating", "deleting", "modifying", "rebooting", "renaming", "resetting-master-credentials" ]
 
 	doFirst {
-		dbInstanceIdentifier = properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb )
+		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb )
 	}
 }
 
 
 task describeDBInstance {
 	doLast {
-		String endpoint = getDBInstanceEndpoint( properties.getProperty( "dbInstanceIdentifier" + project.instanceTargetDb ) )
+		String endpoint = getDBInstanceEndpoint( getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb ) )
 
 		project.dbInstanceEndpoint = endpoint;
 
@@ -287,20 +287,20 @@ task describeDBInstance {
 
 task setupDBInstance(dependsOn: describeDBInstance) {
 	doLast {
-		String dbDriverClassName = properties.getProperty( "dbDriver" + project.instanceTargetDb )
+		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.instanceTargetDb )
 		String dbInstanceEndpoint = project.dbInstanceEndpoint;
-		String dbInstanceName = properties.getProperty( "dbDbName" + project.instanceTargetDb )
-		String dbInstancePort = properties.getProperty( "dbPort" + project.instanceTargetDb )
-		String dbInstanceUsername = properties.getProperty( "dbMasterUsername" + project.instanceTargetDb )
-		String dbInstancePassword = properties.getProperty( "dbMasterUserPassword" + project.instanceTargetDb )
-		String dbInstanceSlaveUsername = properties.getProperty( "dbSlaveUsername" + project.instanceTargetDb )
-		String dbInstanceSlavePassword = properties.getProperty( "dbSlaveUserPassword" + project.instanceTargetDb )
+		String dbInstanceName = getDatabaseProperty( properties, "name", project.instanceTargetDb )
+		String dbInstancePort = getDatabaseProperty( properties, "port", project.instanceTargetDb )
+		String dbInstanceUsername = getDatabaseProperty( properties, "user.master.username", project.instanceTargetDb )
+		String dbInstancePassword = getDatabaseProperty( properties, "user.master.password", project.instanceTargetDb )
+		String dbInstanceSlaveUsername = getDatabaseProperty( properties, "user.slave.username", project.instanceTargetDb )
+		String dbInstanceSlavePassword = getDatabaseProperty( properties, "user.slave.password", project.instanceTargetDb )
 
 		Class.forName( dbDriverClassName, true, GroovyObject.class.classLoader )
 
-		switch( project.instanceTargetDb ) {
+		switch( project.instanceTargetDb.toUpperCase() ) {
 
-			case "MySQL":
+			case "MYSQL":
 				String dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8"
 
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
@@ -324,7 +324,7 @@ task setupDBInstance(dependsOn: describeDBInstance) {
 
 				break;
 
-			case "Oracle":
+			case "ORACLE":
 				String dbInstanceUrl = "jdbc:oracle:thin:@${dbInstanceEndpoint}:${dbInstancePort}:${dbInstanceName}";
 
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
@@ -360,4 +360,11 @@ String getDBInstanceEndpoint(String dbInstanceIdentifier) {
 
 AmazonRDS getAmazonRDSClient() {
 	return project.extensions.getByType( AmazonRDSPluginExtension.class ).client
+}
+
+
+//---------------------------------------------- Utilities ----------------------------------------------//
+
+String getDatabaseProperty(Properties properties, String propertyName, String instanceTargetDb) {
+	return properties.getProperty( "db."+ instanceTargetDb.toLowerCase() +"."+ propertyName );
 }
