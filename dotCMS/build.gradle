@@ -124,6 +124,11 @@ jar{
     }
 }
 
+task copyTestRuntimeLibs(type: Copy) {
+	into "build/libs/test"
+	from configurations.testCompile - configurations.compile
+}
+
 // Expand the release properties.
 processResources {
     filesMatching("release.properties") {
