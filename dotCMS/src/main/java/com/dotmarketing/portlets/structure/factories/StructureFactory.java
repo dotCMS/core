@@ -9,8 +9,7 @@ import java.util.Map;
 
 import java.util.*;
 
-
-
+import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -76,7 +75,7 @@ public class StructureFactory {
 	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 	private static final HttpServletRequestThreadLocal httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
 	private static final ContentTypeUtil contentTypeUtil = ContentTypeUtil.getInstance();
-
+	private static final ContentTypeApi typeAPI = APILocator.getContentTypeAPI2(APILocator.systemUser());
 
 	//### READ ###
 
@@ -87,7 +86,7 @@ public class StructureFactory {
 	 */
 	public static Structure getStructureByInode(String inode) {
 		try {
-			return new StructureTransformer(APILocator.getContentTypeAPI2().find(inode,APILocator.systemUser())).asStructure();
+			return new StructureTransformer(typeAPI.find(inode)).asStructure();
 		} catch (Exception e) {
 			return new Structure();
 		}
@@ -102,7 +101,7 @@ public class StructureFactory {
 		type = SQLUtil.sanitizeParameter(type);
 		String condition = " name = '" + type + "'";
 		try {
-			return new StructureTransformer(APILocator.getContentTypeAPI2().find(condition, "mod_date", 1, 0, "desc", APILocator.systemUser(), false)).asStructure();
+			return new StructureTransformer(typeAPI.search(condition, "mod_date desc", 1, 0)).asStructure();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
 		}
@@ -117,7 +116,7 @@ public class StructureFactory {
 	{
 
 		try {
-			return new StructureTransformer(APILocator.getContentTypeAPI2().findByVarName(varName,APILocator.systemUser())).asStructure();
+			return new StructureTransformer(typeAPI.find(varName)).asStructure();
 		} catch (Exception e) {
 			throw new DotStateException(e);
 		}
@@ -126,7 +125,7 @@ public class StructureFactory {
 	public static Structure getDefaultStructure()
 	{
 		try {
-			return new StructureTransformer(APILocator.getContentTypeAPI2().findDefault(APILocator.systemUser())).asStructure();
+			return new StructureTransformer(typeAPI.findDefault()).asStructure();
 		} catch (Exception e) {
 			throw new DotStateException(e);
 		}
@@ -152,7 +151,7 @@ public class StructureFactory {
 	
 	@Deprecated
 	public static List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException{
-		return APILocator.getContentTypeAPI2().findStructureURLMapPatterns();
+		return typeAPI.findStructureURLMapPatterns();
 	}
 
 	/**
@@ -179,7 +178,8 @@ public class StructureFactory {
 	 */
 	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly)
 			throws DotDataException {
-		List<ContentType> types = APILocator.getContentTypeAPI2().findAll(user, respectFrontendRoles);
+	  
+		List<ContentType> types = APILocator.getContentTypeAPI2(user, respectFrontendRoles).findAll();
 		return new StructureTransformer(types).asStructureList();
 	}
 
@@ -221,7 +221,7 @@ public class StructureFactory {
 			String condition, String orderBy, int limit, int offset, String direction) throws DotStateException {
 		
 		try {
-			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, orderBy, limit, offset, direction, user, false);
+			List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, orderBy + " " + direction, limit, offset);
 			return new StructureTransformer(types).asStructureList();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
@@ -231,7 +231,7 @@ public class StructureFactory {
 	public static List<Structure> getStructures()
 	{
 		try {
-			return new StructureTransformer(APILocator.getContentTypeAPI2().find("1=1", "name", 10000, 0, "desc", APILocator.systemUser(), false)).asStructureList();
+			return new StructureTransformer(typeAPI.search("1=1", "name desc", 10000, 0)).asStructureList();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
 		}
@@ -253,7 +253,7 @@ public class StructureFactory {
     {
 		BaseContentType type = BaseContentType.getBaseContentType(structureType);
 		try {
-			return new StructureTransformer(APILocator.getContentTypeAPI2().findByType(type, APILocator.systemUser(),false)).asStructureList();
+			return new StructureTransformer(typeAPI.findByType(type)).asStructureList();
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotStateException(e);
 		}
@@ -270,7 +270,7 @@ public class StructureFactory {
 
 		try {
 			
-			List<Structure>  structs= new StructureTransformer(APILocator.getContentTypeAPI2().findAll(APILocator.systemUser(),false)).asStructureList();
+			List<Structure>  structs= new StructureTransformer(APILocator.getContentTypeAPI2(user,respectFrontendRoles).findAll()).asStructureList();
 			return APILocator.getPermissionAPI().filterCollection(structs,PermissionAPI.PERMISSION_WRITE, respectFrontendRoles, user);
 		
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
@@ -282,7 +282,7 @@ public class StructureFactory {
 	{
 		try {
 			
-			return new StructureTransformer(APILocator.getContentTypeAPI2().findAll(user,respectFrontendRoles)).asStructureList();
+			return new StructureTransformer(typeAPI.findAll()).asStructureList();
 	
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
@@ -294,7 +294,7 @@ public class StructureFactory {
 		String orderBy = "structuretype,upper(name)";
 		int limit = -1;
 		String condition = " structure.system= " + DbConnectionFactory.getDBFalse();
-		List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, orderBy, limit, 0, "asc", user, respectFrontendRoles);
+		List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, orderBy, limit, 0);
 		return new StructureTransformer(types).asStructureList();
 
 	}
@@ -307,7 +307,7 @@ public class StructureFactory {
 		try{
 			String condition = " host = ?";
 			int limit = -1;
-			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, "mod_date", limit, 0, "desc", user, respectFrontendRoles);
+			List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
 			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
@@ -323,7 +323,7 @@ public class StructureFactory {
 		try{
 			String condition = " structure.inode exists (select structure_id from workflow_scheme_x_structure where workflow_scheme_x_structure.scheme_id = ' "  + scheme.getId() + "')";
 			int limit = -1;
-			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, "name", limit, 0, "asc", user, respectFrontendRoles);
+			List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
 			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
@@ -365,7 +365,7 @@ public class StructureFactory {
         }
 
 		try{
-			List<ContentType> types = APILocator.getContentTypeAPI2().find(condition, orderBy, limit, offset, direction, APILocator.systemUser(), false);
+			List<ContentType> types = typeAPI.search(condition, orderBy + " " +direction, limit, offset);
 			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
@@ -389,7 +389,7 @@ public class StructureFactory {
         boolean isNew = !UtilMethods.isSet(structure.getInode());
 		try {
 			ContentType type = new StructureTransformer(structure).from();
-			type = APILocator.getContentTypeAPI2().save(type, APILocator.systemUser());
+			type = typeAPI.save(type);
 			structure.setInode(type.inode());
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
@@ -407,7 +407,7 @@ public class StructureFactory {
 		try {
 
 	 		String actionUrl = contentTypeUtil.getActionUrl(type);
-			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
 			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
                             String.valueOf(PermissionAPI.PERMISSION_READ)));
 		} catch (DotDataException e) {
@@ -418,7 +418,7 @@ public class StructureFactory {
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
 	{
 		try {
-			ContentType type = APILocator.getContentTypeAPI2().save(new StructureTransformer(structure).from(), APILocator.systemUser());
+			ContentType type = typeAPI.save(new StructureTransformer(structure).from());
 			structure.setInode(type.inode());
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
@@ -435,16 +435,10 @@ public class StructureFactory {
 	public static void deleteStructure(Structure structure) throws DotDataException
 	{
 
-		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
-		wff.deleteSchemeForStruct(structure.getInode());
 		ContentType type=new StructureTransformer(structure).from();
 
 		try {
-			APILocator.getContentTypeAPI2().delete(type, APILocator.systemUser());
-	          String actionUrl = contentTypeUtil.getActionUrl(type);
-	            ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
-	            systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-	                    String.valueOf(PermissionAPI.PERMISSION_READ)));
+			typeAPI.delete(type);
 		} catch (DotStateException | DotSecurityException e) {
 			Logger.error(StructureFactory.class, e.getMessage(), e);
 			throw new BaseRuntimeInternationalizationException( e );
@@ -641,19 +635,6 @@ public class StructureFactory {
 
 
 
-
-	public static void updateFolderFileAssetReferences(Structure st) throws DotDataException{
-		Structure defaultFileAssetStructure = getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-		if(defaultFileAssetStructure!=null &&
-				UtilMethods.isSet(defaultFileAssetStructure.getInode())){
-			DotConnect dc = new DotConnect();
-			dc.setSQL("update folder set default_file_type = ? where default_file_type = ?");
-			dc.addParam(defaultFileAssetStructure.getInode());
-			dc.addParam(st.getInode());
-			dc.loadResult();
-		}
-
-	}
 
 	public static List<Structure> findStructuresUserCanUse(User user, String query, Integer structureType, int offset, int limit) throws DotDataException, DotSecurityException {
 		return PermissionedWebAssetUtil.findStructuresForLimitedUser(query, structureType, "name", offset, limit, PermissionAPI.PERMISSION_READ, user, false);

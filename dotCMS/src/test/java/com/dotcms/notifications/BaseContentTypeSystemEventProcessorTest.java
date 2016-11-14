@@ -6,6 +6,9 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -22,24 +25,25 @@ public class BaseContentTypeSystemEventProcessorTest {
     @Test
     public void testProcess(){
         SystemEvent event = mock(SystemEvent.class);
-        Structure structure = mock(Structure.class);
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class)
+            .id("3b276d59-46e3-4196-9169-639ddfe6677f")
+            .name("test structure")
+            .variable("testtestingStructure").build();
         Payload payload = mock(Payload.class);
         SessionWrapper session = mock(SessionWrapper.class);
         User user = new User();
         SystemEventType systemEventType = SystemEventType.SAVE_BASE_CONTENT_TYPE;
 
-        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper("http://localhost:8080", structure);
+        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper("http://localhost:8080", type);
 
         when(session.getUser()).thenReturn(user);
         when(event.getId()).thenReturn("1");
         when(event.getEventType()).thenReturn(systemEventType);
         when(event.getPayload()).thenReturn(payload);
-        when(payload.getData()).thenReturn(structure);
+        when(payload.getData()).thenReturn(type);
         when(payload.getRawData()).thenReturn(contentTypePayloadDataWrapper);
         when(payload.getVisibilityId()).thenReturn("1");
-        when(structure.getStructureType()).thenReturn(BaseContentType.CONTENT.getType());
-        when(structure.getName()).thenReturn("test structure");
-        when(structure.getInode()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");
+
 
         BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor = new BaseContentTypeSystemEventProcessor();
         SystemEvent result = baseContentTypeSystemEventProcessor.process(event, session);

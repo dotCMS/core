@@ -132,7 +132,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 			}
             structures = APILocator.getStructureAPI().find(user, false, false, queryCondition, orderby, limit, offset, direction);
 
-			count = APILocator.getContentTypeAPI2().count(queryCondition,user);
+			count = APILocator.getContentTypeAPI2(user).count(queryCondition);
 			req.setAttribute(countWebKey, new Integer(count));
 			req.setAttribute(viewWebKey, structures);
 		} catch (Exception e) {

@@ -10,6 +10,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -17,7 +18,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -239,9 +240,10 @@ public class StructuresWebAPI implements ViewTool {
 	 * Retrieve the list of relationships associated to the structure
 	 * @param st The Structure
 	 * @return List<Relationship>
+	 * @throws DotDataException 
 	 */
-	public List<Relationship> getStructureRelationShips(Structure st){
-		return RelationshipFactory.getAllRelationshipsByStructure(st);
+	public List<Relationship> getStructureRelationShips(Structure st) throws DotDataException{
+		return FactoryLocator.getRelationshipFactory().byContentType(st);
 	}
 
 	/**
@@ -266,7 +268,7 @@ public class StructuresWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfStructure(String structureInode, boolean hasParent) {
 		Structure st = (Structure) InodeFactory.getInode(structureInode, Structure.class);
-		return RelationshipFactory.getAllRelationshipsByStructure(st, hasParent);
+		return FactoryLocator.getRelationshipFactory().byContentType(st, hasParent);
 	}
 
 	public boolean isFieldConstant(Field field){

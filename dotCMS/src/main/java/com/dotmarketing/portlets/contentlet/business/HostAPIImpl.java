@@ -78,7 +78,7 @@ public class HostAPIImpl implements HostAPI {
 
     
     private ContentType hostType() throws DotDataException, DotSecurityException{
-        return APILocator.getContentTypeAPI2().findByVarName("Host", APILocator.systemUser());
+        return APILocator.getContentTypeAPI2(APILocator.systemUser()).find("Host");
     }
     /**
      *
@@ -101,7 +101,7 @@ public class HostAPIImpl implements HostAPI {
         }
 
         try {
-            ContentType type =APILocator.getContentTypeAPI2().findByVarName("Host", APILocator.systemUser());
+            ContentType type =APILocator.getContentTypeAPI2(user,true).find("Host");
 
             List<Contentlet> list = null;
             try{
@@ -317,7 +317,7 @@ public class HostAPIImpl implements HostAPI {
             if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
                 String hostInode=vinfo.getWorkingInode();
                 Contentlet cont= APILocator.getContentletAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-                ContentType type =APILocator.getContentTypeAPI2().findByVarName("Host", APILocator.systemUser());
+                ContentType type =APILocator.getContentTypeAPI2(user, respectFrontendRoles).find("Host");
                 if(cont.getStructureInode().equals(type.inode())) {
                     host=new Host(cont);
                     hostCache.add(host);
@@ -661,7 +661,7 @@ public class HostAPIImpl implements HostAPI {
                 }
 
                 // Remove Structures
-                List<ContentType> types = APILocator.getContentTypeAPI2().find(" host = '" + host.getIdentifier() + "'", APILocator.systemUser(), false);
+                List<ContentType> types = APILocator.getContentTypeAPI2(user, respectFrontendRoles).search(" host = '" + host.getIdentifier() + "'");
 
                 for (ContentType type : types) {
                     List<Contentlet> structContent = contentAPI.findByStructure(new StructureTransformer(type).asStructure(), APILocator.systemUser(), false, 0, 0);
@@ -670,7 +670,7 @@ public class HostAPIImpl implements HostAPI {
                         c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
                         contentAPI.delete(c, user, respectFrontendRoles);
                     }
-                    APILocator.getContentTypeAPI2().delete(type, APILocator.systemUser());
+                    APILocator.getContentTypeAPI2(user, respectFrontendRoles).delete(type);
                 }
 
                 // wipe bad old containers

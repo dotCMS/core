@@ -27,7 +27,7 @@ public class FieldsCache {
     }
     public static List<Field> getFieldsByStructureInode(String inode){
         try {
-            return new LegacyFieldTransformer(APILocator.getContentTypeAPI2().find(inode, APILocator.systemUser()).fields()).asOldFieldList();
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), true).find(inode).fields()).asOldFieldList();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
@@ -55,7 +55,7 @@ public class FieldsCache {
     @SuppressWarnings("unchecked")
 	public static List<Field> getFieldsByStructureVariableName(String velocityVarName){
         try {
-            return new LegacyFieldTransformer(APILocator.getContentTypeAPI2().findByVarName(velocityVarName, APILocator.systemUser()).fields()).asOldFieldList();
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), true).find(velocityVarName).fields()).asOldFieldList();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }

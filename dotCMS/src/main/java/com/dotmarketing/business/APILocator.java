@@ -729,21 +729,35 @@ public class APILocator extends Locator<APIIndex>{
     public static VisitorAPI getVisitorAPI () {
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
-    public static ContentTypeApi getContentTypeAPI2 () {
-		return new ContentTypeApiImpl();
+    public static ContentTypeApi getContentTypeAPI2 (User user, boolean respectFrontendRoles) {
+		return new ContentTypeApiImpl(user, respectFrontendRoles);
 	}
 
+    public static ContentTypeApi getContentTypeAPI2 (User user) {
+      return new ContentTypeApiImpl(user, false);
+  }
 
 
     public static FieldApi getFieldAPI2() {
 		return new FieldApiImpl();
 	}
-    public static User systemUser() throws DotDataException {
-		return getUserAPI().getSystemUser();
+    public static User systemUser()  {
+      try{
+        return getUserAPI().getSystemUser();
+      }
+      catch(Exception e){
+        throw new DotStateException(e);
+      }
 	}
     
-    public static Host systemHost() throws DotDataException {
-		return getHostAPI().findSystemHost();
+    
+    public static Host systemHost()  {
+      try{
+        return getHostAPI().findSystemHost();
+      }
+      catch(Exception e){
+        throw new DotStateException(e);
+      }
 	}
     
 

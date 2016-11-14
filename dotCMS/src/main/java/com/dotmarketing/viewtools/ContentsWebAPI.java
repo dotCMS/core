@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 
@@ -23,6 +24,7 @@ import org.elasticsearch.search.SearchHits;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -39,7 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -62,7 +64,7 @@ public class ContentsWebAPI implements ViewTool {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 	private static int MAX_LIMIT = 100;
-
+	private static ContentTypeApi tapi = APILocator.getContentTypeAPI2(APILocator.systemUser());
 	// private HttpServletRequest request;
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
@@ -139,7 +141,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
 	public Structure getStructureByType(String structureType) throws DotStateException, DotSecurityException, DotDataException {
-		return new StructureTransformer(APILocator.getContentTypeAPI2().findByVarName(structureType, user)).asStructure();
+		return new StructureTransformer(tapi.find(structureType)).asStructure();
 	}
 
 	/**
@@ -154,7 +156,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @since 1.5
 	 */
 	public Structure getStructureByInode(String structureInode) throws DotStateException, DotSecurityException, DotDataException {
-		return new StructureTransformer(APILocator.getContentTypeAPI2().find(structureInode, user)).asStructure();
+		return new StructureTransformer(tapi.find(structureInode)).asStructure();
 	}
 
 	/**
@@ -277,7 +279,7 @@ public class ContentsWebAPI implements ViewTool {
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
 	public Field getFieldByInode(String structureInode, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
-		Structure st =  new StructureTransformer(APILocator.getContentTypeAPI2().find(structureInode, user)).asStructure();
+		Structure st =  new StructureTransformer(tapi.find(structureInode)).asStructure();
 		return getFieldByName(st, fieldName);
 	}
 
@@ -596,7 +598,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * relationship name
 	 */
 	public Relationship getRelationshipByName(String relationshipName) {
-		return RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
+		return FactoryLocator.getRelationshipFactory().byTypeValue(relationshipName);
 	}
 
 	/**
@@ -619,7 +621,7 @@ public class ContentsWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfContentlet(String contentletInode) throws DotDataException, DotSecurityException {
 		Contentlet cont = conAPI.find(contentletInode, user, true);
-		return RelationshipFactory.getAllRelationshipsByStructure(cont.getStructure());
+		return FactoryLocator.getRelationshipFactory().byContentType(cont.getStructure());
 	}
 
 	/**
@@ -645,7 +647,7 @@ public class ContentsWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfContentlet(String contentletInode, boolean hasParent) throws DotDataException, DotSecurityException {
 		Contentlet cont = conAPI.find(contentletInode, user, true);
-		return RelationshipFactory.getAllRelationshipsByStructure(cont.getStructure(), hasParent);
+		return FactoryLocator.getRelationshipFactory().byContentType(cont.getStructure(), hasParent);
 	}
 
 	/**
@@ -671,146 +673,10 @@ public class ContentsWebAPI implements ViewTool {
 	@Deprecated
 	public List<Relationship> getRelationshipsOfStructure(String structureInode, boolean hasParent) {
 		Structure st = (Structure) InodeFactory.getInode(structureInode, Structure.class);
-		return RelationshipFactory.getAllRelationshipsByStructure(st, hasParent);
+		return FactoryLocator.getRelationshipFactory().byContentType(st, hasParent);
 	}
 
-	/**
-	 * This methods retrieve the list of related contentlets in a relationship
-	 * of a given contentlet
-	 *
-	 * @param relationship
-	 *            The relationship
-	 * @param cont
-	 *            The contentlet
-	 * @param hasParent
-	 *            true Find the related children contentlets where the given
-	 *            contentlet is the parent, false Find the related parents
-	 *            contentlets where the given contentlet is a child
-	 * @return The list of related contentlets
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
-	public static List<Contentlet> getRelatedContentlets(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotStateException, DotDataException {
-		return RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, hasParent, true,"");
-	}
-    @Deprecated
-	public List<Contentlet> getRelatedContentlets(long relationshipInode, long contentletInode, boolean hasParent) throws DotDataException, DotSecurityException {
-		return getRelatedContentlets(String.valueOf(relationshipInode), String.valueOf(contentletInode),hasParent);
-	}
 
-	public List<Contentlet> getRelatedContentlets(String relationshipInode, String contentletInode, boolean hasParent) throws DotDataException, DotSecurityException {
-		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
-		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		return RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, hasParent, true,"");
-	}
-
-	public List<Contentlet> getRelatedChildContent(String relationshipName, String contentletInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
-		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		return RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, true, true,"");
-	}
-
-	public List<Contentlet> getRelatedParentContent(String relationshipName, String contentletInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
-		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		return RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, false, true,"");
-	}
-
-	public List<Contentlet> getAllRelatedContent(String relationshipName, String contentletInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
-		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		Set<Contentlet> contSet = new HashSet();
-		contSet.addAll(RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, false));
-		contSet.addAll(RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, true));
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		List<Contentlet> conts = new ArrayList();
-		conts.addAll(contSet);
-		return conts;
-	}
-
-	public List<Contentlet> getRelatedContentletsByCondition(String relationshipInode, String contentletInode, boolean hasParent, String condition) throws DotDataException, DotSecurityException {
-		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
-		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		return RelationshipFactory.getAllRelationshipRecords(relationship, contentlet, hasParent, true, condition);
-	}
-
-	/**
-	 * This method is used by the pullRelatedContent macro to retrieve related content and display it in a page
-	 * @param relationshipName
-	 * @param contentletInode
-	 * @param limit
-	 * @param orderBy
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public List<Contentlet> pullRelatedContent (String relationshipName, String contentletInode, String limit, String orderBy) throws DotDataException, DotSecurityException  {
-
-		int limitI = 0;
-		try { limitI = Integer.parseInt(limit); } catch (Exception e) { }
-
-		return pullRelatedContent(relationshipName, contentletInode, limitI, orderBy);
-	}
-
-	/**
-	 * This method is used by the pullRelatedContent macro to retrieve related content and display it in a page
-	 * @param relationshipName
-	 * @param contentletInode
-	 * @param limit
-	 * @param orderBy
-	 * @deprecated
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public List<Contentlet> pullRelatedContent (String relationshipName, long contentletInode, int limit, String orderBy) {
-		return pullRelatedContent (relationshipName, String.valueOf(contentletInode), limit, orderBy);
-	}
-
-	/**
-	 * This method is used by the pullRelatedContent macro to retrieve related content and display it in a page
-	 * @param relationshipName
-	 * @param contentletInode
-	 * @param limit
-	 * @param orderBy
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public List<Contentlet> pullRelatedContent (String relationshipName, String contentletInode, int limit, String orderBy) {
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-
-		Contentlet contentlet = null;
-		try {
-			contentlet = conAPI.find(contentletInode, APILocator.getUserAPI().getSystemUser(), true);
-		} catch (DotSecurityException e) {
-			Logger.info(this, "Unable to look up content because of a problem getting the system user");
-		} catch (DotDataException de) {
-			Logger.info(this, "Unable to retrieve content with inode = " + contentletInode);
-		}
-		Relationship relationship = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
-		if(contentlet == null || !InodeUtils.isSet(contentlet.getInode()) || relationship == null || !InodeUtils.isSet(relationship.getInode()))
-			return new ArrayList<Contentlet>();
-
-		if(UtilMethods.isSet(orderBy)) {
-			String[] orderBySplitted = orderBy != null?orderBy.split("[,\\s]+"):new String[0];
-			for (String orderBySeg : orderBySplitted) {
-				orderBySeg = orderBySeg.trim();
-				if(orderBySeg.toLowerCase().equals("desc") || orderBySeg.toLowerCase().equals("asc"))
-					continue;
-				if(orderBySeg.toLowerCase().equals("moddate")) {
-					orderBy = orderBy.replaceAll("(?i)moddate", "mod_date");
-					continue;
-				}
-				Field field = FieldFactory.getFieldByVariableName(contentlet.getStructureInode(), orderBySeg);
-				if (field != null && InodeUtils.isSet(field.getInode()))
-					orderBy = orderBy.replaceAll(orderBySeg, field.getFieldContentlet());
-			}
-		}
-		return RelationshipFactory.getRelatedContentlets(relationship, contentlet, orderBy, null, true, limit);
-
-	}
 
 	/**
 	 * This methods checks if the given contentlet has the role of parent of the
@@ -822,20 +688,20 @@ public class ContentsWebAPI implements ViewTool {
 	 *            The relationship
 	 * @return true If the contentlet has the role of parent, false otherwise
 	 */
-	public static boolean isParentOfTheRelationship(Contentlet contentlet, Relationship relationship) {
+	public static boolean isParent(Contentlet contentlet, Relationship relationship) {
 		Structure contStructure = contentlet.getStructure();
 		return relationship.getParentStructure().getInode().equalsIgnoreCase(contStructure.getInode());
 	}
 
     @Deprecated
-	public boolean isParentOfTheRelationship(long contentletInode, long relationshipInode) throws DotDataException, DotSecurityException {
-		return isParentOfTheRelationship(String.valueOf(contentletInode), String.valueOf(relationshipInode));
+	public boolean isParent(long contentletInode, long relationshipInode) throws DotDataException, DotSecurityException {
+		return isParent(String.valueOf(contentletInode), String.valueOf(relationshipInode));
 	}
 
-	public boolean isParentOfTheRelationship(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
+	public boolean isParent(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
 		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
 		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		return isParentOfTheRelationship(contentlet, relationship);
+		return isParent(contentlet, relationship);
 	}
 
 	/**
@@ -848,20 +714,20 @@ public class ContentsWebAPI implements ViewTool {
 	 *            The relationship
 	 * @return true If the contentlet has the role of child, false otherwise
 	 */
-	public static boolean isChildOfTheRelationship(Contentlet contentlet, Relationship relationship) {
+	public static boolean isChild(Contentlet contentlet, Relationship relationship) {
 		Structure contStructure = contentlet.getStructure();
 		return relationship.getChildStructure().getInode().equalsIgnoreCase(contStructure.getInode());
 	}
 
     @Deprecated
-	public boolean isChildOfTheRelationship(long contentletInode, long relationshipInode) throws DotDataException, DotSecurityException {
-		return isChildOfTheRelationship(String.valueOf(contentletInode), String.valueOf(relationshipInode));
+	public boolean isChild(long contentletInode, long relationshipInode) throws DotDataException, DotSecurityException {
+		return isChild(String.valueOf(contentletInode), String.valueOf(relationshipInode));
 	}
 
-	public boolean isChildOfTheRelationship(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
+	public boolean isChild(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
 		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
 		Contentlet contentlet = conAPI.find(contentletInode, user, true);
-		return isChildOfTheRelationship(contentlet, relationship);
+		return isChild(contentlet, relationship);
 	}
 	/*
 	 * Used to pull dynamic lists of content in the form of maps

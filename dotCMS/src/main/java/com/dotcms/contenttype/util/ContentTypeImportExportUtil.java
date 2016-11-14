@@ -42,7 +42,7 @@ public class ContentTypeImportExportUtil {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    ContentTypeApi tapi = APILocator.getContentTypeAPI2();
+    ContentTypeApi tapi = APILocator.getContentTypeAPI2(APILocator.systemUser(), true);
     FieldApi fapi = APILocator.getFieldAPI2();
     final int limit = 1000;
     public static final String CONTENT_TYPE_FILE_EXTENSION="-contenttypes.json";
@@ -87,8 +87,7 @@ public class ContentTypeImportExportUtil {
             jg.writeStartArray();
             for (int i = 0; i < 1000; i++) {
                 int offset = limit * i;
-                List<ContentType> exporting = tapi.find(null, "mod_date", limit, offset, "desc",
-                        APILocator.systemUser(), false);
+                List<ContentType> exporting = tapi.search(null, "mod_date", limit, offset);
                 for (ContentType type : exporting) {
                     mapper.writeValue(jg, new SerialWrapper<>(type, type.getClass()));
 
@@ -126,7 +125,7 @@ public class ContentTypeImportExportUtil {
                 Class clazz = JsonHelper.resolveClass(json);
                 obj = mapper.readValue(json, clazz);
                 if (obj instanceof ContentType) {
-                    tapi.save((ContentType) obj, user);
+                    tapi.save((ContentType) obj);
                 } else if (obj instanceof Field) {
                     fapi.save((Field) obj, user);
                 } else {

@@ -207,7 +207,7 @@
         "permissionId": "4c441ada-944a-43af-a653-9bb4f3f0cb2b",
         "permissionType": "com.dotmarketing.portlets.structure.model.Structure",
         "system": false,
-        "variable": "Banner",
+        "variable": "Banner2",
         "versionable": true
     }
 ]

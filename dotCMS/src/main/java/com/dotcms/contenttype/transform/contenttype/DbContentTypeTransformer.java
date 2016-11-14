@@ -75,7 +75,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			}
 
 			@Override
-			public String inode() {
+			public String id() {
 				return (String) map.get("inode");
 			}
 

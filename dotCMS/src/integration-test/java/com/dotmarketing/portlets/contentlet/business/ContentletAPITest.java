@@ -1,5 +1,32 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -25,6 +52,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -45,7 +73,6 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -61,33 +88,6 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Jonathan Gamba.
@@ -1716,7 +1716,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletAPI.relateContent( parentContentlet, contentletRelationshipRecords, user, false );
         }
 
-        Boolean hasParent = RelationshipFactory.isParentOfTheRelationship( testRelationship, parentContentlet.getStructure() );
+        Boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( testRelationship, parentContentlet.getStructure() );
 
         //Now test this delete
         contentletAPI.deleteRelatedContent( parentContentlet, testRelationship, hasParent, user, false );
@@ -1856,7 +1856,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Try to find the related Contentlet
         //List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
 
-        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( parentContentlet.getStructure() );
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType( parentContentlet.getStructure() );
         //Validations
         assertTrue( relationships != null && !relationships.isEmpty() );
 
@@ -1898,9 +1898,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Relate the content
         contentletAPI.relateContent( parentContentlet, testRelationship, contentRelationships, user, false );
 
-        Boolean hasParent = RelationshipFactory.isParentOfTheRelationship( testRelationship, parentContentlet.getStructure() );
+        Boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( testRelationship, parentContentlet.getStructure() );
 
-        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( parentContentlet.getStructure() );
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType( parentContentlet.getStructure() );
         //Validations
         assertTrue( relationships != null && !relationships.isEmpty() );
 

@@ -15,7 +15,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder from(ContentType field);
 
-	ContentTypeBuilder inode(String inode);
+	ContentTypeBuilder id(String inode);
 
 	ContentTypeBuilder modDate(Date date);
 

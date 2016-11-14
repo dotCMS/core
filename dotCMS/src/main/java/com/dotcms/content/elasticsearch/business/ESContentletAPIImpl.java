@@ -56,6 +56,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
@@ -108,7 +109,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -1068,14 +1069,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
         Structure structure = contentlet.getStructure();
         List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
-        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(structure);
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(structure);
 
         for (Relationship relationship : relationships) {
 
             ContentletRelationshipRecords records = null;
             List<Contentlet> contentletList = null;
 
-            if (RelationshipFactory.isSameStructureRelationship(relationship, structure)) {
+            if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
 
                 //If it's a same structure kind of relationship we need to pull all related content
                 //on both roles as parent and a child of the relationship
@@ -1103,7 +1104,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 matches.add(records);
 
             } else
-            if (RelationshipFactory.isChildOfTheRelationship(relationship, structure)) {
+            if (FactoryLocator.getRelationshipFactory().isChild(relationship, structure)) {
 
                 records = cRelationships.new ContentletRelationshipRecords(relationship, false);
                 try{
@@ -1115,7 +1116,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 matches.add(records);
 
             } else
-            if (RelationshipFactory.isParentOfTheRelationship(relationship, structure)) {
+            if (FactoryLocator.getRelationshipFactory().isParent(relationship, structure)) {
                 records = cRelationships.new ContentletRelationshipRecords(relationship, true);
                 try{
                     contentletList = getRelatedContent(contentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
@@ -1419,7 +1420,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			// Remove category associations
 			catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
 			catAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-			List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
+			List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
 			// Remove related contents
 			for (Relationship relationship : rels) {
 				deleteRelatedContent(con, relationship, user, respectFrontendRoles);
@@ -1659,7 +1660,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet con : contentlets) {
             catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             catAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
+            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }
@@ -1728,7 +1729,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (Contentlet con : contentlets) {
             catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             catAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
+            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }
@@ -2225,7 +2226,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public void deleteRelatedContent(Contentlet contentlet,Relationship relationship, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException,DotContentletStateException {
-        deleteRelatedContent(contentlet, relationship, RelationshipFactory.isParentOfTheRelationship(relationship, contentlet.getStructure()), user, respectFrontendRoles);
+        deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory().isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
     }
 
     @Override
@@ -2233,13 +2234,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot edit Contentlet");
         }
-        List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(contentlet.getStructure());
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         if(!rels.contains(relationship)){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") + " does not have passed in relationship");
         }
         List<Contentlet> cons = getRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles);
         cons = perAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        RelationshipFactory.deleteRelationships(contentlet, relationship, cons);
+        FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
         
         // We need to refresh all related contentlets, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
@@ -2256,7 +2257,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        boolean hasParent = RelationshipFactory.isParentOfTheRelationship(rel, st);
+        boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(rel, st);
         ContentletRelationshipRecords related = new ContentletRelationships(contentlet).new ContentletRelationshipRecords(rel, hasParent);
         related.setRecords(records);
         relateContent(contentlet, related, user, respectFrontendRoles);
@@ -2268,7 +2269,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") 
             		+ " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(contentlet.getStructure());
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         if(!rels.contains(related.getRelationship())){
             throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") 
             		+ " does not have passed in relationship");
@@ -2294,7 +2295,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	        Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
 	
 	        Relationship rel = related.getRelationship();
-	        List<Contentlet> conRels = RelationshipFactory.getAllRelationshipRecords(related.getRelationship(), contentlet, related.isHasParent());
+	        List<Contentlet> conRels = getRelatedContent(contentlet,related.getRelationship(), related.isHasParent(), user,respectFrontendRoles) ;
 	
 	        int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
 	        int positionInParent = 1;
@@ -2594,7 +2595,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = (Relationship) relEntry.getKey();
-            boolean hasParent = RelationshipFactory.isParentOfTheRelationship(relationship, st);
+            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
@@ -2615,7 +2616,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = (Relationship) relEntry.getKey();
-            boolean hasParent = RelationshipFactory.isParentOfTheRelationship(relationship, st);
+            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
@@ -3420,9 +3421,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentRelationships == null){
             contentRelationships = new ContentletRelationships(toContentlet);
         }
-        List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(fromContentlet.getStructure());
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
         for (Relationship r : rels) {
-            if(RelationshipFactory.isSameStructureRelationship(r, fromContentlet.getStructure())) {
+            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(r)) {
                 ContentletRelationshipRecords selectedRecords = null;
 
                 //First all relationships as parent
@@ -3475,7 +3476,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         break;
                     }
                 }
-                boolean hasParent = RelationshipFactory.isParentOfTheRelationship(r, fromContentlet.getStructure());
+                boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(r, fromContentlet.getStructure());
                 if (selectedRecords == null) {
                     selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, hasParent);
                     contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, hasParent));
@@ -4252,7 +4253,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = (Relationship) relEntry.getKey();
-            boolean hasParent = RelationshipFactory.isParentOfTheRelationship(relationship, st);
+            boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
         }
@@ -4512,7 +4513,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
         if(contentlet == null)
             return contentRelationships;
-        List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(contentlet.getStructure());
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         for (Relationship r : rels) {
             if(!contentRelationships.containsKey(r)){
                 contentRelationships.put(r, new ArrayList<Contentlet>());
@@ -4731,7 +4732,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<com.dotcms.contenttype.model.field.Field> fields;
         try {
-            fields = APILocator.getContentTypeAPI2().findByVarName(query.getFromClause(), APILocator.systemUser()).fields();
+            fields = APILocator.getContentTypeAPI2(APILocator.systemUser()).find(query.getFromClause()).fields();
         } catch (DotSecurityException e) {
            throw new DotStateException(e);
         }

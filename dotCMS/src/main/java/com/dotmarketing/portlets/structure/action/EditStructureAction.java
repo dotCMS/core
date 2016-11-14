@@ -181,7 +181,7 @@ public class EditStructureAction extends DotPortletAction {
 		ContentType type;
 		Structure struc = new Structure();
 		try{
-			type= APILocator.getContentTypeAPI2().find(inodeString, user);
+			type= APILocator.getContentTypeAPI2(user).find(inodeString);
 			struc = new StructureTransformer(type).asStructure();
 		}
 		catch(NotFoundInDbException nodb){
@@ -194,7 +194,7 @@ public class EditStructureAction extends DotPortletAction {
 			if(type.baseType() == BaseContentType.WIDGET
 					&& type.variable().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
 						type = ContentTypeBuilder.builder(type).fixed(true).build();
-						APILocator.getContentTypeAPI2().save(type, user);
+						APILocator.getContentTypeAPI2(user).save(type);
 			}
 		}
 
@@ -358,13 +358,13 @@ public class EditStructureAction extends DotPortletAction {
 
 			if (newStructure) {
 				String structureVelocityName = VelocityUtil.convertToVelocityVariable(structure.getName(), true);
-				structureVelocityName = new ContentTypeApiImpl().suggestVelocityVar(structureVelocityName);
+				structureVelocityName = APILocator.getContentTypeAPI2(APILocator.systemUser()).suggestVelocityVar(structureVelocityName);
 				structure.setVelocityVarName(structureVelocityName);
 			}
 
 
 			// If there is no default structure this would be it
-			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI2().findDefault(user)).asStructure();
+			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI2(user).findDefault()).asStructure();
 			if (!InodeUtils.isSet(defaultStructure.getInode())) {
 				structure.setDefaultStructure(true);
 			}
@@ -541,7 +541,7 @@ public class EditStructureAction extends DotPortletAction {
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
 			User user = _getUser(req);
-			APILocator.getContentTypeAPI2().setAsDefault(new StructureTransformer(structure).from(), user);
+			APILocator.getContentTypeAPI2(user).setAsDefault(new StructureTransformer(structure).from());
 			String message = "message.structure.defaultstructure";
 			SessionMessages.add(req, "message", message);
 		} catch (Exception ex) {

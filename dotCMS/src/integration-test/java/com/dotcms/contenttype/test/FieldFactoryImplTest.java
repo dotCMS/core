@@ -230,8 +230,8 @@ public class FieldFactoryImplTest {
 
     @Test
     public void testDeleteingFields() throws Exception {
-        for (ContentType type : APILocator.getContentTypeAPI2()
-                .findAll(APILocator.getUserAPI().getSystemUser(), true)) {
+        for (ContentType type : APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), true)
+                .findAll()) {
             for (Field field : factory.byContentType(type)) {
                 if (field.variable().startsWith(TEST_VAR_PREFIX)) {
                     deleteFields(ImmutableList.of(field));

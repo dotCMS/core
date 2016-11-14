@@ -14,9 +14,7 @@ public interface ContentTypeFactory {
 		return new ContentTypeFactoryImpl();
 	}
 
-	ContentType find(String id) throws DotDataException;
-	
-	ContentType findByVar(String id) throws DotDataException;
+	ContentType find(String idOrVar) throws DotDataException;
 
 	List<ContentType> findAll() throws DotDataException;
 
@@ -35,7 +33,7 @@ public interface ContentTypeFactory {
 
 	List<ContentType> search(String search, String orderBy, int limit) throws DotDataException;
 	
-	List<ContentType> search(String search, String orderBy, int offset,int limit) throws DotDataException;
+	List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException;
 
 
 	List<ContentType> search(String search) throws DotDataException;
@@ -47,9 +45,9 @@ public interface ContentTypeFactory {
 	int searchCount(String search, int baseType) throws DotDataException;
 
 
-	List<ContentType> search(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException;
+	List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset) throws DotDataException;
 	
-	List<ContentType> search(String search, BaseContentType type, String orderBy, int offset, int limit) throws DotDataException;
+	List<ContentType> search(String search, BaseContentType type, String orderBy, int limit, int offset) throws DotDataException;
 
 
 	int searchCount(String search, BaseContentType baseType) throws DotDataException;

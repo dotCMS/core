@@ -86,8 +86,8 @@ public class ContentTypeFactoryImplTest {
 	public void testFindMethodEquals() throws Exception {
 		List<ContentType> types = factory.findAll();
 		for (ContentType type : types) {
-			ContentType contentType = factory.find(type.inode());
-			ContentType contentType2 = factory.findByVar(type.variable());
+			ContentType contentType = factory.find(type.id());
+			ContentType contentType2 = factory.find(type.variable());
 			try {
 				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
@@ -253,24 +253,24 @@ public class ContentTypeFactoryImplTest {
 
 		int totalCount = factory.searchCount(null);
 
-		List<ContentType> types=factory.search(null, BaseContentType.ANY, "name", 0, 100);
+		List<ContentType> types=factory.search(null, BaseContentType.ANY, "name", 100,0);
 		assertThat("we have at least 40 content types", types.size() > 20);
-		types = factory.search(null, BaseContentType.ANY, "name", 0, 5);
+		types = factory.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
-			types = factory.search(null, BaseContentType.ANY, "name", x, 5);
+			types = factory.search(null, BaseContentType.ANY, "name",  5, x);
 			assertThat("we have max five content types", types.size() < 6);
 		}
 
 		for (int i = 0; i < BaseContentType.values().length; i++) {
-			types = factory.search(null, BaseContentType.getBaseContentType(i), "name", 0, 1000);
+			types = factory.search(null, BaseContentType.getBaseContentType(i), "name", 1000, 0);
 			assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
 			int count = factory.searchCount(null,  BaseContentType.getBaseContentType(i));
 			assertThat("Count works as well", types.size() == count);
 		}
 
 		for (int i = 0; i < searchTerms.length; i++) {
-			types = factory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 0, 1000);
+			types = factory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 1000, 0);
 			assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
 			int count = factory.searchCount(searchTerms[i],  BaseContentType.ANY);
 			assertThat("Count works as well", types.size() == count);
@@ -322,7 +322,7 @@ public class ContentTypeFactoryImplTest {
 	
 
 	private void testDeleting() throws Exception{
-		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 0, 500);
+		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
 		assertThat(types +" search is working", types.size() > 0);
 		for(ContentType type : types){
 			delete(type);
@@ -332,10 +332,10 @@ public class ContentTypeFactoryImplTest {
 	
 	
 	private void testUpdating() throws Exception {
-		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 0, 500);
+		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
 		assertThat(types +" search is working", types.size() > 0);
 		for(ContentType type : types){
-			ContentType testing = factory.find(type.inode());
+			ContentType testing = factory.find(type.id());
 			assertThat("contenttype is in db", testing.equals(type) );
 			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 
@@ -356,7 +356,7 @@ public class ContentTypeFactoryImplTest {
 			type=factory.save(builder.build());
 			
 			try{
-				testing = factory.find(type.inode());
+				testing = factory.find(type.id());
 				assertThat("Type is updated", testing.equals(type));
 			}
 			catch(Throwable t){
@@ -372,12 +372,12 @@ public class ContentTypeFactoryImplTest {
 
 	private void delete(ContentType type) throws Exception {
 
-		ContentType test1 = factory.find(type.inode());
+		ContentType test1 = factory.find(type.id());
 		assertThat("factory find works", test1.equals(type) );
 		Exception e=null;
 		try{
 			factory.delete(type);
-			test1 = factory.find(type.inode());
+			test1 = factory.find(type.id());
 		}
 		catch(Exception e2){
 			e=e2;
@@ -406,7 +406,7 @@ public class ContentTypeFactoryImplTest {
 		ContentType type = builder.build(); 
 		type = factory.save(type);
 
-		ContentType type2 = factory.find(type.inode());
+		ContentType type2 = factory.find(type.id());
 		try{
 			assertThat("Type saved correctly", type2.equals(type));
 		}
@@ -416,7 +416,7 @@ public class ContentTypeFactoryImplTest {
 			System.out.println(type2);
 			throw t;
 		}
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.inode());
+		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.id());
 		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
     try {
 		    assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
@@ -488,7 +488,7 @@ public class ContentTypeFactoryImplTest {
 
 		int numFields = 0;
 		for(Class clazz : APILocator.getFieldAPI2().fieldTypes()){
-			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.inode()).build();
+			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.id()).build();
 			boolean save = true;
 			if(fakeField instanceof OnePerContentType){
 				for(Field field : type.fields()){
@@ -503,7 +503,7 @@ public class ContentTypeFactoryImplTest {
 				Field savedField = FieldBuilder.builder(clazz)
 					.name("test field" + numFields)
 					.variable(TEST_VAR_PREFIX + "textField" + numFields)
-					.contentTypeId(type.inode())
+					.contentTypeId(type.id())
 					.dataType(dt)
 					.build();
 				APILocator.getFieldAPI2().save(savedField, APILocator.systemUser());

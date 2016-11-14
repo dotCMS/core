@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.content;
+package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -82,31 +82,31 @@ public class ContentTypeHelper implements Serializable {
         final InitDataObject initData = this.webResource.init(null, true, request, true, null); // should logged in
         final User user = initData.getUser();
 
-        List<ContentType> types = APILocator.getContentTypeAPI2(user,true).findAll();
+        List<ContentType> types = APILocator.getContentTypeAPI2(user, true).findAll();
         List<BaseContentTypesView> result = list();
 
 
-        Locale locale = LocaleUtil.getLocale(request);
-        Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
-        BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
+            Locale locale = LocaleUtil.getLocale(request);
+            Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
+            BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
 
-        types.stream()
-                .forEach(type -> {
+            types.stream()
+                    .forEach(type -> {
 
-                    baseContentTypesViewCollection.add(new ContentTypeView(
-                            type.baseType().toString(), 
-                            type.name(), 
-                            type.inode(),
-                            contentTypeUtil.getActionUrl(request, type, user)
-                        ));
+                        baseContentTypesViewCollection.add(new ContentTypeView(
+                                type.baseType().toString(), 
+                                type.name(), 
+                                type.id(),
+                                contentTypeUtil.getActionUrl(request, type, user)
+                            ));
 
-                            
-                });
+                                
+                    });
 
-        result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
+            result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
 
-        addRecents(request, user, BaseContentType.CONTENT, result);
-        addRecents(request, user, BaseContentType.WIDGET, result);
+            addRecents(request, user, BaseContentType.CONTENT, result);
+            addRecents(request, user, BaseContentType.WIDGET, result);
         
 
         return result;
@@ -119,9 +119,9 @@ public class ContentTypeHelper implements Serializable {
         Locale locale = LocaleUtil.getLocale(request);
         
         List<ContentTypeView> recentsContent = new ArrayList<>();
-        List<ContentType> types = APILocator.getContentTypeAPI2(user).recentlyUsed(baseType,  -1);
+        List<ContentType> types = APILocator.getContentTypeAPI2(user, true).recentlyUsed(baseType, -1);
         for(ContentType type : types){
-            recentsContent.add(  new ContentTypeView(type,contentTypeUtil.getActionUrl(request, type.inode(), user)));
+            recentsContent.add(  new ContentTypeView(type,contentTypeUtil.getActionUrl(request, type.id(), user)));
         }
 
         if (!recentsContent.isEmpty()){

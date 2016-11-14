@@ -13,6 +13,7 @@ import org.quartz.StatefulJob;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -26,7 +27,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
@@ -212,7 +213,7 @@ public class UpdateRatingThread implements StatefulJob {
 						List<Category> cats = catAPI.getParents(c, user, true);
 						Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
 
-						List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(c.getStructure());
+						List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(c.getStructure());
 						for (Relationship r : rels) {
 							if(!contentRelationships.containsKey(r)){
 								contentRelationships.put(r, new ArrayList<Contentlet>());

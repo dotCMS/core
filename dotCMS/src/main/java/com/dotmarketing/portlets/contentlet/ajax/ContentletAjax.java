@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -39,7 +40,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -1790,8 +1791,7 @@ public class ContentletAjax {
 		try{
 			HibernateUtil.startTransaction();
 			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-			List<Relationship> rels = RelationshipFactory
-			.getAllRelationshipsByStructure(structure);
+			List<Relationship> rels =  FactoryLocator.getRelationshipFactory().byContentType(structure);
 			for (Relationship r : rels) {
 				if (!contentRelationships.containsKey(r)) {
 					contentRelationships
@@ -1967,17 +1967,15 @@ public class ContentletAjax {
 			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
 			contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
 
-			relationship = CacheLocator.getRelationshipCache().getRelationshipByInode(relationshipInode);
-			if(relationship == null)
-				relationship = RelationshipFactory.getRelationshipByInode(relationshipInode);
+			relationship =  FactoryLocator.getRelationshipFactory().byInode(relationshipInode);
 
 			conList.add(contentletToUnrelate);
-			RelationshipFactory.deleteRelationships(currentContentlet, relationship, conList);
+			FactoryLocator.getRelationshipFactory().deleteByContent(currentContentlet, relationship, conList);
 
 			//if contentletToUnrelate is related as new content, there exists the below relation which also needs to be deleted.
 			conList.clear();
 			conList.add(currentContentlet);
-			RelationshipFactory.deleteRelationships(contentletToUnrelate, relationship, conList);
+			FactoryLocator.getRelationshipFactory().deleteByContent(contentletToUnrelate, relationship, conList);
 
 			conAPI.refresh(currentContentlet);
 			conAPI.refresh(contentletToUnrelate);
@@ -1986,8 +1984,6 @@ public class ContentletAjax {
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage());
 		} catch (DotSecurityException e) {
-			Logger.error(this, e.getMessage());
-		} catch (DotCacheException e) {
 			Logger.error(this, e.getMessage());
 		} catch (LanguageException e) {
 			Logger.error(this, e.getMessage());

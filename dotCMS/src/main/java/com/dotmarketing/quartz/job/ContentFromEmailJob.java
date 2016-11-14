@@ -13,6 +13,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -26,7 +27,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -300,7 +300,8 @@ public class ContentFromEmailJob implements Job {
 			return new ContentletRelationships(contentlet);
 
 		Relationship relationship = new Relationship();
-		relationship = RelationshipFactory.getRelationshipByRelationTypeValue(relName);
+
+		relationship = FactoryLocator.getRelationshipFactory().byTypeValue(relName);
 		if(relationship == null)
 			return new ContentletRelationships(contentlet);
 

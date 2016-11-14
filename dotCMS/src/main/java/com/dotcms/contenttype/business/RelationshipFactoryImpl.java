@@ -8,6 +8,7 @@ import java.util.List;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -35,17 +37,17 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 	static RelationshipSQL sql= RelationshipSQL.getInstance();
 	
 	@Override
-	public void deleteByContentType(ContentType type) throws DotDataException{
+	public void deleteByContentType(ContentTypeIf type) throws DotDataException{
 		DotConnect dc = new DotConnect();
 		dc.setSQL(sql.DELETE_RELATIONSHIP);
-		dc.addParam(type.inode());
-		dc.addParam(type.inode());
+		dc.addParam(type.id());
+		dc.addParam(type.id());
 		dc.loadResults();
 
 	}
 	private static RelationshipCache cache = CacheLocator.getRelationshipCache();
 
-    // ### READ ###
+    @Override
     public  Relationship byInode(String inode) {
 		Relationship rel = null;
 		try {
@@ -53,7 +55,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 			if(rel != null)
 				return rel;
 		} catch (DotCacheException e) {
-			Logger.debug(RelationshipFactory.class, "Unable to access the cache to obtaion the relationship", e);
+			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
 		}
 
 		rel = (Relationship) InodeFactory.getInode(inode, Relationship.class);
@@ -62,9 +64,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 		return rel;
     }
 
-
+    @Override
     @SuppressWarnings("unchecked")
-	public  List<Relationship> byParent (ContentType parent) throws DotHibernateException {
+	public  List<Relationship> byParent (ContentTypeIf parent) throws DotHibernateException {
         List<Relationship> list =new ArrayList<Relationship>();
         String query = "select {relationship.*} from relationship, inode relationship_1_ "
                 + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
@@ -72,14 +74,15 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     	HibernateUtil dh = new HibernateUtil(Relationship.class);
 		dh.setSQLQuery(query);
-		dh.setParam(parent.inode());
+		dh.setParam(parent.id());
 		list = dh.list();
 
         return list;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
-	public  List<Relationship> byChild (ContentType child) throws DotHibernateException {
+	public  List<Relationship> byChild (ContentTypeIf child) throws DotHibernateException {
         List<Relationship> list = new ArrayList<Relationship>();
         String query = "select {relationship.*} from relationship, inode relationship_1_ "
                 + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
@@ -87,12 +90,12 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     	HibernateUtil dh = new HibernateUtil(Relationship.class);
 		dh.setSQLQuery(query);
-		dh.setParam(child.inode());
+		dh.setParam(child.id());
 		list = dh.list();
 
         return list;
     }
-
+    
     public  List<Relationship> dbAll() throws DotHibernateException {
         String orderBy = "inode";
         return dbAll(orderBy,"all");
@@ -121,7 +124,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
         return list;
     }
-
+    @Override
     public  Relationship byTypeValue(String typeValue) {
 		Relationship rel = null;
 		try {
@@ -129,7 +132,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 			if(rel != null)
 				return rel;
 		} catch (DotCacheException e) {
-			Logger.debug(RelationshipFactory.class, "Unable to access the cache to obtaion the relationship", e);
+			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
 		}
 
 		rel = (Relationship) InodeFactory.getInodeOfClassByCondition(Relationship.class, "relation_type_value = '"
@@ -139,16 +142,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 		return rel;
 
     }
-
+    @Override
     @SuppressWarnings("unchecked")
-    public  List<Relationship> byContentType(ContentType type) throws DotDataException {
+    public  List<Relationship> byContentType(ContentTypeIf type) throws DotDataException {
     	
         List<Relationship> list = null;
         
         try {
 			list = cache.getRelationshipsByType(type);
 		} catch (DotCacheException e1) {
-			//Logger.debug(RelationshipFactory.class,e1.getMessage(),e1);
+			//Logger.debug(this.getClass(),e1.getMessage(),e1);
 		}
         if(list ==null){
 	        String query = "select {relationship.*} from relationship, inode relationship_1_ "
@@ -157,8 +160,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
 				HibernateUtil dh = new HibernateUtil(Relationship.class);
 				dh.setSQLQuery(query);
-				dh.setParam(type.inode());
-				dh.setParam(type.inode());
+				dh.setParam(type.id());
+				dh.setParam(type.id());
 				list = dh.list();
 	
 					
@@ -170,26 +173,66 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return list;
         
     }
-
+    @Override
     @SuppressWarnings("unchecked")
-	public  List<Relationship> byContentType(Structure st, boolean hasParent) throws DotHibernateException {
+	public  List<Relationship> byContentType(ContentTypeIf st, boolean hasParent)  {
         List<Relationship> list = new ArrayList<Relationship>();
         String query = "select {relationship.*} from relationship, inode relationship_1_ "
                 + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and ";
-		if (hasParent)
+		if (hasParent){
                 query += "(relationship.parent_structure_inode = ?)";
-        else
+		}
+        else{
             query += "(relationship.child_structure_inode = ?)";
-
+        }
+		try{
 			HibernateUtil dh = new HibernateUtil(Relationship.class);
 			dh.setSQLQuery(query);
-			dh.setParam(st.getInode());
+			dh.setParam(st.id());
 			list = dh.list();
+		}
+		catch(Exception e){
+		  throw new DotStateException(e);
+		}
 
         return list;
     }
-
-    public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotStateException, DotDataException {
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Relationship> byContentType(ContentTypeIf type, String orderBy) {
+      orderBy = SQLUtil.sanitizeSortBy(orderBy);
+      List<Relationship> list = new ArrayList<Relationship>();
+      String query;
+      if (type.id().equals("all")) {
+        query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
+            + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
+            + "relationship.parent_structure_inode = parentstruct.inode and "
+            + "relationship.child_structure_inode = childstruct.inode order by " + orderBy;
+      } else {
+        query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
+            + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
+            + "relationship.parent_structure_inode = parentstruct.inode and "
+            + "relationship.child_structure_inode = childstruct.inode and (relationship.parent_structure_inode = '"
+            + type.id() + "' or relationship.child_structure_inode = '" + type.id() + "')  order by " + orderBy;
+      }
+      try {
+        HibernateUtil dh = new HibernateUtil(Relationship.class);
+        dh.setSQLQuery(query);
+        list = dh.list();
+      } catch (DotHibernateException e) {
+        Logger.error(OldRelationshipFactory.class, e.getMessage(), e);
+      }
+      return list;
+    }
+    
+    
+    
+    
+    
+    
+    
+    @Override
+    public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException {
         String stInode = contentlet.getStructure().getInode();
         List<Contentlet> matches = new ArrayList<Contentlet>();
         if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
@@ -201,11 +244,11 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-            boolean hasParent) throws DotStateException, DotDataException {
+            boolean hasParent) throws  DotDataException {
         return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order");
     }
-
-    public  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet) throws DotStateException, DotDataException {
+    @Override
+    public  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet) throws  DotDataException {
         String stInode = contentlet.getStructure().getInode();
         List<Tree> matches = new ArrayList<Tree>();
         if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
@@ -215,9 +258,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         }
         return matches;
     }
-
+    @Override
     @SuppressWarnings("deprecation")
-	public  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotStateException, DotDataException {
+	public  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet, boolean hasParent) throws  DotDataException {
         List<Tree> matches = new ArrayList<Tree>();
         List<Tree> trees = new ArrayList<Tree>();
         Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
@@ -237,7 +280,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @SuppressWarnings("deprecation")
 	public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-            boolean hasParent, boolean live, String orderBy) throws DotStateException, DotDataException {
+            boolean hasParent, boolean live, String orderBy) throws  DotDataException {
         List<Contentlet> matches = new ArrayList<Contentlet>();
 
         if(contentlet == null || !InodeUtils.isSet(contentlet.getInode()))
@@ -246,7 +289,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         try{
         	iden = APILocator.getIdentifierAPI().find(contentlet).getInode();
         }catch(DotHibernateException dhe){
-        	Logger.error(RelationshipFactory.class, "Unable to retrive Identifier", dhe);
+        	Logger.error(this.getClass(), "Unable to retrive Identifier", dhe);
         }
 
         if(!InodeUtils.isSet(iden))
@@ -268,29 +311,36 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return matches;
     }
 
-
-    public  boolean isParent(Relationship rel, Structure st) {
-        if (rel.getParentStructureInode().equalsIgnoreCase(st.getInode()) &&
+    @Override
+    public  boolean isParent(Relationship rel, ContentTypeIf st) {
+        if (rel.getParentStructureInode().equalsIgnoreCase(st.id()) &&
                 !(rel.getParentRelationName().equals(rel.getChildRelationName()) && rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode())))
             return true;
         return false;
     }
-
-    public  boolean isChild(Relationship rel, Structure st) {
-        if (rel.getChildStructureInode().equalsIgnoreCase(st.getInode()) &&
+    @Override
+    public  boolean isChild(Relationship rel, ContentTypeIf st) {
+        if (rel.getChildStructureInode().equalsIgnoreCase(st.id()) &&
                 !(rel.getParentRelationName().equals(rel.getChildRelationName()) && rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode())))
             return true;
         return false;
     }
-
+    @Override
     public  boolean sameParentAndChild(Relationship rel) {
         if (rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode()) )
             return true;
         return false;
     }
+    
+    public static boolean isSameStructureRelationship(Relationship rel, Structure st) {
+      if (rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode())  )
+          return true;
+      return false;
+  }
+    
 
-    // ### CREATE AND UPDATE
-    public  void saveRelationship(Relationship relationship) throws DotHibernateException {
+    @Override
+    public  void save(Relationship relationship) throws DotHibernateException {
     	HibernateUtil.saveOrUpdate(relationship);
     	CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
     	try{
@@ -298,7 +348,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
     	}
     	catch(Exception e){
-    		Logger.error(RelationshipFactory.class, e.getMessage(),e);
+    		Logger.error(this.getClass(), e.getMessage(),e);
     	}
 
     	
@@ -306,31 +356,32 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     	
     }
     
-
-	public  void saveRelationship(Relationship relationship, String inode) throws DotHibernateException {
+    @Override
+	public  void save(Relationship relationship, String inode) throws DotHibernateException {
 		Date now = new Date();
 		relationship.setiDate(now);
 		HibernateUtil.saveWithPrimaryKey(relationship, inode);
 	}    
 
-    // ### DELETE ###
-    public  void deleteRelationship(String inode) throws DotHibernateException {
+   @Override
+    public void delete(String inode) throws DotHibernateException {
         Relationship relationship = byInode(inode);
-        deleteRelationship(relationship);
+        delete(relationship);
     }
-
-    public  void deleteRelationship(Relationship relationship) throws DotHibernateException {
+   @Override
+    public void delete(Relationship relationship) throws DotHibernateException {
         InodeFactory.deleteInode(relationship);
         CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
         try {
-			CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
-			CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
-		} catch (DotCacheException e) {
-			Logger.error(RelationshipFactory.class, e.getMessage(),e);
-		}
+            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
+            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
+        } catch (DotCacheException e) {
+            Logger.error(this.getClass(), e.getMessage(),e);
+            
+        }
     }
 
-    @SuppressWarnings("unchecked")
+
 	public  List<Contentlet> dbRelatedContentByParent(String parentInode, String relationType, boolean live, String orderBy) throws DotDataException {
 
             HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
@@ -348,9 +399,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             }
 
 
-            Logger.debug(RelationshipFactory.class, "sql:  " + sql + "\n");
-            Logger.debug(RelationshipFactory.class, "parentInode:  " + parentInode + "\n");
-            Logger.debug(RelationshipFactory.class, "relationType:  " + relationType + "\n");
+            Logger.debug(this.getClass(), "sql:  " + sql + "\n");
+            Logger.debug(this.getClass(), "parentInode:  " + parentInode + "\n");
+            Logger.debug(this.getClass(), "relationType:  " + relationType + "\n");
             dh.setSQLQuery(sql);
             dh.setParam(parentInode);
             dh.setParam(relationType);
@@ -376,7 +427,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
      * @param relationType
      * @return the max in the sort order
      */
-	public  int maxSortOrder(String parentInode, String relationType) {
+    @Override
+  public int maxSortOrder(String parentInode, String relationType) {
 
 
         DotConnect db = new DotConnect();
@@ -421,9 +473,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
            		sql = sql + " order by tree.tree_order";
            	}
 
-            Logger.debug(RelationshipFactory.class, "sql:  " + sql + "\n");
-            Logger.debug(RelationshipFactory.class, "childInode:  " + childInode + "\n");
-            Logger.debug(RelationshipFactory.class, "relationType:  " + relationType + "\n");
+            Logger.debug(this.getClass(), "sql:  " + sql + "\n");
+            Logger.debug(this.getClass(), "childInode:  " + childInode + "\n");
+            Logger.debug(this.getClass(), "relationType:  " + relationType + "\n");
             dh.setSQLQuery(sql);
             dh.setParam(childInode);
             dh.setParam(relationType);
@@ -444,7 +496,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-            boolean hasParent, boolean live) throws DotStateException, DotDataException {
+            boolean hasParent, boolean live) throws  DotDataException {
     	return dbRelatedContent(relationship, contentlet, hasParent, live,"");
     }
 
@@ -469,7 +521,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
      * @param relatedContentlets
      * @throws DotDataException
      */
-    public  void deleteRelationships(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets) throws DotDataException{
+    @Override
+    public  void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets) throws DotDataException{
     	Tree t = new Tree();
 		for (Contentlet con : relatedContentlets) {
 
@@ -530,7 +583,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
        		sql = sql + " order by relationshipTree.tree_order";
        	}
 
-        Logger.debug(RelationshipFactory.class, "sql:  " + sql + "\n");
+        Logger.debug(this.getClass(), "sql:  " + sql + "\n");
 
         dh.setSQLQuery(sql);
         dh.setParam(iden.getInode());
@@ -554,9 +607,22 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 		}
 
         return new ArrayList<Contentlet> (new LinkedHashSet<Contentlet>(conResult));
-
-
-
     }
+
+    
+    @Override
+    public void addRelationship(String parent,String child, String relationType)throws DotDataException {       
+        Tree tree = TreeFactory.getTree(parent, child,relationType);
+        if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+            tree.setParent(parent);
+            tree.setChild(child);
+            tree.setRelationType(relationType);
+            TreeFactory.saveTree(tree);
+        } else {
+            tree.setRelationType(relationType);
+            TreeFactory.saveTree(tree);
+        }
+    }
+    
 
 }

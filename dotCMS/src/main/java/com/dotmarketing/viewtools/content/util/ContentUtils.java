@@ -7,12 +7,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,7 +19,6 @@ import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -470,7 +468,7 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 */
 		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort, User user, String tmDate) {	
-			Relationship rel = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
+			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relationshipName);
 			String relNameForQuery = "";
 			if(rel.getParentStructureInode().equals(rel.getChildStructureInode())){
 				if(pullParents){

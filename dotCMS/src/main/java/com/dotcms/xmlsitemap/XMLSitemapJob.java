@@ -175,7 +175,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	public void generateSitemapPerHost() throws DotDataException, DotSecurityException {
 
 		List<Host> hostsList = hostAPI.findAll(systemUser, false);
-		List<ContentType> types = APILocator.getContentTypeAPI2().findAll(APILocator.systemUser(), false) ;
+		List<ContentType> types = APILocator.getContentTypeAPI2(APILocator.systemUser()).findAll() ;
 
 		for (Host host : hostsList) {
 

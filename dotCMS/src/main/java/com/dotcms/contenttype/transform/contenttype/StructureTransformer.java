@@ -135,7 +135,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 			}
 
 			@Override
-			public String inode() {
+			public String id() {
 				return UtilMethods.isSet(struct.getInode()) ? struct.getInode() : null;
 			}
 

@@ -31,194 +31,215 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 
-public abstract class ContentType implements Serializable, Permissionable,ContentTypeIf {
-	
-	
-	
-	@Value.Check
-	protected void check() {
-		if(!(this instanceof UrlMapable)){
-			Preconditions.checkArgument(detailPage()==null,"Detail Page cannot be set for " + this.getClass());
-			Preconditions.checkArgument(urlMapPattern()==null,"urlmap cannot be set for " + this.getClass());
-		}
-		if(!(this instanceof Expireable)){
-			Preconditions.checkArgument(expireDateVar()==null,"expireDateVar cannot be set for " + this.getClass());
-			Preconditions.checkArgument(publishDateVar()==null,"publishDateVar cannot be set for " + this.getClass());
-		}
-	}
+public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
 
-	static final long serialVersionUID = 1L;
 
-	public abstract String name();
 
-	@Nullable
-	public abstract String inode();
-
-	@Nullable
-	public abstract String description();
-
-	@Value.Default
-	public boolean defaultType() {
-		return false;
-	}
-	@JsonIgnore
-	@Value.Default
-	public StorageType storageType(){
-		return  ImmutableDbStorageType.of();
-	}
-
-    @Value.Default
-    @Nullable
-    public String detailPage(){
-        return null;
+  @Value.Check
+  protected void check() {
+    if (!(this instanceof UrlMapable)) {
+      Preconditions.checkArgument(detailPage() == null, "Detail Page cannot be set for " + this.getClass());
+      Preconditions.checkArgument(urlMapPattern() == null, "urlmap cannot be set for " + this.getClass());
     }
-    
-	@Value.Default
-	public boolean fixed() {
-		return false;
-	}
+    if (!(this instanceof Expireable)) {
+      Preconditions.checkArgument(expireDateVar() == null, "expireDateVar cannot be set for " + this.getClass());
+      Preconditions.checkArgument(publishDateVar() == null, "publishDateVar cannot be set for " + this.getClass());
+    }
+  }
 
-	@Value.Default
-	public Date iDate() {
-		return DateUtils.round(new Date(), Calendar.SECOND);
-	}
+  static final long serialVersionUID = 1L;
 
-	@Value.Default
-	public boolean system() {
-		return false;
-	}
-	
-	
-	@Value.Default
-	public boolean versionable(){
-		return true;
-	}
-	
-	@Value.Default
-	public boolean multilingualable(){
-		return false;
-	}
-	
-	
-	public abstract String variable();
-	@Nullable
-	@Value.Default
-	public  String urlMapPattern(){
-	    return null;
-	}
-	@Nullable
-	@Value.Default
-	public  String publishDateVar(){
-	    return null;
-	}
-	@Nullable
-	@Value.Default
-	public  String expireDateVar(){
-	    return null;
-	}
-	@Nullable
-	@Value.Default
-	public String owner(){
-	    return null;
-	}
+  public abstract String name();
 
-	@Value.Default
-	public Date modDate() {
-		return DateUtils.round(new Date(), Calendar.SECOND);
-	}
+  @Nullable
+  public abstract String id();
 
-	public abstract BaseContentType baseType();
+  
+  @Value.Lazy
+  public String inode(){
+    return id();
+  }
 
-	@Value.Default
-	public String host() {
-		return Host.SYSTEM_HOST;
-	}
-	
-	@JsonIgnore
-	@Value.Lazy
-	public  List<Field> fields(){
-		try {
-			//System.err.println("loading content.fields:" + this.variable() + ":"+ System.identityHashCode(this));
-			return APILocator.getFieldAPI2().byContentTypeId(this.inode());
-		} catch (DotDataException e) {
-			throw new DotStateException("unable to load fields:"  +e.getMessage(), e);
-		}
-	}
-	
-	@Value.Default
-	public String folder() {
-		return Folder.SYSTEM_FOLDER;
-	}
+  
+  
+  @Nullable
+  public abstract String description();
 
-	public Permissionable permissionable() {
-		return this;
-	}
+  @Value.Default
+  public boolean defaultType() {
+    return false;
+  }
 
-	@Override
-	public String getPermissionId() {
-		return inode();
-	}
+  @JsonIgnore
+  @Value.Default
+  public StorageType storageType() {
+    return ImmutableDbStorageType.of();
+  }
 
-	@Override
-	public String getOwner() {
-		return owner();
-	}
+  @Value.Default
+  @Nullable
+  public String detailPage() {
+    return null;
+  }
 
-	@Override
-	public void setOwner(String x) {
-		throw new DotStateException("Cannot change the owner for an immutable value");
-	}
-	@JsonIgnore
-	@Override
-	public List<PermissionSummary> acceptedPermissions() {
-		return ImmutableList.of(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ),
-				new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE), new PermissionSummary(
-						"publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH), new PermissionSummary(
-						"edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
+  @Value.Default
+  public boolean fixed() {
+    return false;
+  }
 
-	}
-	@JsonIgnore
-	@Value.Lazy
-	public Permissionable getParentPermissionable()  {
-		try {
-		    
-		    PermissionableProxy pp = new PermissionableProxy();
-		    
-		    if(FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
-		        pp.setIdentifier(this.host());
-		        pp.setInode(this.host());
-		        pp.setType(Host.class.getCanonicalName());
-		    }
-		    else{
-                pp.setIdentifier(this.folder());
-                pp.setInode(this.folder());
-                pp.setType(Folder.class.getCanonicalName());
-		    }
+  @Value.Default
+  public Date iDate() {
+    return DateUtils.round(new Date(), Calendar.SECOND);
+  }
 
-			return pp;
-		} catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-	}
+  @Value.Default
+  public boolean system() {
+    return false;
+  }
 
-	@Override
-	public boolean isParentPermissionable() {
-		return true;
-	}
-	@JsonIgnore
-	@Override
-	public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
-		return null;
-	}
 
-	@Override
-	public String getPermissionType() {
-		return Structure.class.getCanonicalName();
-	}
-	@JsonIgnore
-	@Default
-	public  List<Field> requiredFields(){
-		return ImmutableList.of();
-	}
+  @Value.Default
+  public boolean versionable() {
+    return true;
+  }
+
+  @Value.Default
+  public boolean multilingualable() {
+    return false;
+  }
+
+
+  public abstract String variable();
+
+  @Nullable
+  @Value.Default
+  public String urlMapPattern() {
+    return null;
+  }
+
+  @Nullable
+  @Value.Default
+  public String publishDateVar() {
+    return null;
+  }
+
+  @Nullable
+  @Value.Default
+  public String expireDateVar() {
+    return null;
+  }
+
+  @Nullable
+  @Value.Default
+  public String owner() {
+    return null;
+  }
+
+  @Value.Default
+  public Date modDate() {
+    return DateUtils.round(new Date(), Calendar.SECOND);
+  }
+
+  public abstract BaseContentType baseType();
+
+  @Value.Default
+  public String host() {
+    return Host.SYSTEM_HOST;
+  }
+
+  @JsonIgnore
+  @Value.Lazy
+  public List<Field> fields() {
+    try {
+      // System.err.println("loading content.fields:" + this.variable() + ":"+
+      // System.identityHashCode(this));
+      return APILocator.getFieldAPI2().byContentTypeId(this.id());
+    } catch (DotDataException e) {
+      throw new DotStateException("unable to load fields:" + e.getMessage(), e);
+    }
+  }
+
+
+  @Value.Default
+  public String folder() {
+    return Folder.SYSTEM_FOLDER;
+  }
+  
+  @JsonIgnore
+  public Permissionable permissionable() {
+    return this;
+  }
+  
+  @JsonIgnore
+  @Override
+  public String getPermissionId() {
+    return id();
+  }
+
+  @Override
+  public String getOwner() {
+    return owner();
+  }
+
+  @Override
+  public void setOwner(String x) {
+    throw new DotStateException("Cannot change the owner for an immutable value");
+  }
+
+  @JsonIgnore
+  @Override
+  public List<PermissionSummary> acceptedPermissions() {
+    return ImmutableList.of(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ),
+        new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE),
+        new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH),
+        new PermissionSummary("edit-permissions", "edit-permissions-permission-description",
+            PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
+
+  }
+
+  @JsonIgnore
+  @Value.Lazy
+  public Permissionable getParentPermissionable() {
+    try {
+
+      PermissionableProxy pp = new PermissionableProxy();
+
+      if (FolderAPI.SYSTEM_FOLDER.equals(this.folder())) {
+        pp.setIdentifier(this.host());
+        pp.setInode(this.host());
+        pp.setType(Host.class.getCanonicalName());
+      } else {
+        pp.setIdentifier(this.folder());
+        pp.setInode(this.folder());
+        pp.setType(Folder.class.getCanonicalName());
+      }
+
+      return pp;
+    } catch (Exception e) {
+      throw new DotRuntimeException(e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public boolean isParentPermissionable() {
+    return true;
+  }
+
+  @JsonIgnore
+  @Override
+  public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
+    return null;
+  }
+
+  @Override
+  public String getPermissionType() {
+    return Structure.class.getCanonicalName();
+  }
+
+  @JsonIgnore
+  @Default
+  public List<Field> requiredFields() {
+    return ImmutableList.of();
+  }
 
 }

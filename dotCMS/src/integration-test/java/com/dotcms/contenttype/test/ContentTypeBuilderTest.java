@@ -33,7 +33,7 @@ public class ContentTypeBuilderTest {
 		for(BaseContentType  type : BaseContentType.values()){
 			if(type==BaseContentType.ANY)continue;
 			ContentTypeBuilder.instanceOf(type.immutableClass());
-			ContentTypeBuilder.builder(type.immutableClass()).inode("asd");
+			ContentTypeBuilder.builder(type.immutableClass()).id("asd");
 			
 		}
 	}

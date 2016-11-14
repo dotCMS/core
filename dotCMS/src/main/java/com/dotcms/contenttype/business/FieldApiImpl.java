@@ -53,8 +53,8 @@ public class FieldApiImpl implements FieldApi {
 
   @Override
 	public Field save(Field field, User user) throws DotDataException, DotSecurityException {
-		ContentTypeApi tapi = APILocator.getContentTypeAPI2();
-		ContentType type = tapi.find(field.contentTypeId(), user) ;
+		ContentTypeApi tapi = APILocator.getContentTypeAPI2(user );
+		ContentType type = tapi.find(field.contentTypeId()) ;
 		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
 		
 
@@ -63,10 +63,10 @@ public class FieldApiImpl implements FieldApi {
   
   @Override
   public FieldVariable save(FieldVariable var, User user) throws DotDataException, DotSecurityException {
-      ContentTypeApi tapi = APILocator.getContentTypeAPI2();
+      ContentTypeApi tapi = APILocator.getContentTypeAPI2(user);
       Field field = fac.byId(var.fieldId());
 
-      ContentType type = tapi.find(field.contentTypeId(), user) ;
+      ContentType type = tapi.find(field.contentTypeId()) ;
       APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
       
 

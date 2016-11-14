@@ -72,4 +72,9 @@ public abstract class ContentTypeSql {
 	
 	
 	public final String SELECT_CONTENTLET_PROXIES = "select inode, identifier,language_id from contentlet where structure_inode=?";
+
+
+
+	public final String SELECT_CONTENTLET_IDS_BY_TYPE = "select distinct(identifier) from contentlet where structure_inode = ?"; 
+
 }

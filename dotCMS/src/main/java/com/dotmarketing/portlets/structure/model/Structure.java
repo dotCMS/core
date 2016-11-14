@@ -107,6 +107,11 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
         this.pagedetail = pagedetail;
     }
 
+    @Override
+    public String id(){
+      return this.getInode();
+    }
+    
     public Structure () {
         
        

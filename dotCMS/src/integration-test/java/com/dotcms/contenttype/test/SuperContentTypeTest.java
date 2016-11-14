@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -18,6 +19,7 @@ import com.dotmarketing.util.ConfigTestHelper;
 	@SuiteClasses({ 
 		ContentTypeBuilderTest.class, 
 		ContentTypeFactoryImplTest.class, 
+		ContentTypeAPIImplTest.class, 
 		FieldFactoryImplTest.class, 
 		FieldBuilderTest.class ,
 		JsonContentTypeTransformerTest.class

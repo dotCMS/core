@@ -55,7 +55,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
     @Override
     public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
-        return byContentTypeIdFieldVar(type.inode(), var);
+        return byContentTypeIdFieldVar(type.id(), var);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
     @Override
     public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-        System.err.println("loading field:" + field.variable() + ":" + System.identityHashCode(field));
+        //System.err.println("loading field:" + field.variable() + ":" + System.identityHashCode(field));
         List<FieldVariable> l = selectFieldVarsInDb(field);
         return l;
     }
@@ -108,7 +108,7 @@ public class FieldFactoryImpl implements FieldFactory {
         Field f = byId(fieldVar.fieldId());
         ContentType t;
         try {
-            t = APILocator.getContentTypeAPI2().find(f.contentTypeId(), APILocator.systemUser());
+            t = APILocator.getContentTypeAPI2(APILocator.systemUser()).find(f.contentTypeId());
             if (t != null) {
                 CacheLocator.getContentTypeCache2().remove(t);
             }
@@ -134,7 +134,7 @@ public class FieldFactoryImpl implements FieldFactory {
         Field f = LocalTransaction.wrapReturn(() -> {
             return dbSaveUpdate(throwAwayField);
         });
-        ContentType t = CacheLocator.getContentTypeCache2().byInode(f.contentTypeId());
+        ContentType t = CacheLocator.getContentTypeCache2().byVarOrInode(f.contentTypeId());
         if (t != null)
             CacheLocator.getContentTypeCache2().remove(t);
         return f;

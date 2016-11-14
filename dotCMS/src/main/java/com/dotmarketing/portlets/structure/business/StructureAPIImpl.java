@@ -7,8 +7,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.ESSeachAPI;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -36,7 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -60,12 +58,12 @@ public class StructureAPIImpl implements StructureAPI {
 
 	@Override
 	public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2().delete(new StructureTransformer(st).from(), user);
+		APILocator.getContentTypeAPI2(user).delete(new StructureTransformer(st).from());
 	}
 	
 	@Override
 	public void save(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2().save(new StructureTransformer(st).from(), user);
+		APILocator.getContentTypeAPI2(user).save(new StructureTransformer(st).from());
 	}
 
 	private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
@@ -106,11 +104,12 @@ public class StructureAPIImpl implements StructureAPI {
         // deleting fields
         for(Field field : FieldFactory.getFieldsByStructure(st.getInode()))
             FieldFactory.deleteField(field);
-
+        ContentletAPI conAPI=APILocator.getContentletAPI();
         // delete related contentlets
+        /*
         int limit = 200;
         int offset = 0;
-        ContentletAPI conAPI=APILocator.getContentletAPI();
+       
         List<Contentlet> contentlets=null;
         do {
             contentlets = conAPI.findByStructure(st, user, false, limit, offset);
@@ -120,6 +119,8 @@ public class StructureAPIImpl implements StructureAPI {
             conAPI.delete(contentlets, user, false);
         } while(contentlets.size()>0);
 
+        */
+        
         //delete bad data contents
        // deleteStructureContentlets(st.getInode());
         
@@ -134,19 +135,15 @@ public class StructureAPIImpl implements StructureAPI {
                         "", user, false), user, false);
             }
         }
-
-        // make sure folders don't refer to this structure as default fileasset structure
-        if (st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
-            StructureFactory.updateFolderFileAssetReferences(st);
-
+/*
         // delete relationships where the structure is child or parent
-        List<Relationship> relationships = RelationshipFactory.getRelationshipsByParent(st);
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().getRelationshipsByParent(st);
         for (Relationship rel : relationships)
-            RelationshipFactory.deleteRelationship(rel);
-        relationships = RelationshipFactory.getRelationshipsByChild(st);
+          FactoryLocator.getRelationshipFactory().deleteRelationship(rel);
+        relationships = FactoryLocator.getRelationshipFactory().getRelationshipsByChild(st);
         for (Relationship rel : relationships)
-            RelationshipFactory.deleteRelationship(rel);
-
+          FactoryLocator.getRelationshipFactory().deleteRelationship(rel);
+*/
         // remove structure permissions
         perAPI.removePermissions(st);
 
@@ -166,14 +163,14 @@ public class StructureAPIImpl implements StructureAPI {
 	@Override
 	public Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2().find(inode, user)).asStructure();
+		return new StructureTransformer(APILocator.getContentTypeAPI2(user).find(inode)).asStructure();
 
 	}
 
 	@Override
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly) throws DotDataException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2().findAll(user, respectFrontendRoles)).asStructureList();
+		return new StructureTransformer(APILocator.getContentTypeAPI2(user, respectFrontendRoles).findAll()).asStructureList();
 
 	}
 
@@ -181,15 +178,15 @@ public class StructureAPIImpl implements StructureAPI {
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly, String condition, String orderBy,
 			int limit, int offset, String direction) throws DotDataException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2().find(condition, orderBy, limit,
-				offset, direction,user, respectFrontendRoles)).asStructureList();
+		return new StructureTransformer(APILocator.getContentTypeAPI2(user, respectFrontendRoles).search(condition, orderBy + " " + direction, limit,
+				offset)).asStructureList();
 
 	}
 
 	@Override
 	public Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2().findByVarName(varName, user)).asStructure();
+		return new StructureTransformer(APILocator.getContentTypeAPI2(user).find(varName)).asStructure();
 
 	}
 
@@ -203,7 +200,7 @@ public class StructureAPIImpl implements StructureAPI {
 	@Override
 	public int countStructures(String condition) {
 		try {
-			return APILocator.getContentTypeAPI2().count(condition);
+			return APILocator.getContentTypeAPI2(APILocator.systemUser()).count(condition);
 		} catch (DotDataException dde) {
 			throw new DotStateException(dde.getMessage(), dde);
 		}

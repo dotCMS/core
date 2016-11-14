@@ -3,13 +3,11 @@ package com.dotcms.contenttype.business;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
-import org.hamcrest.generator.qdox.junit.APITestCase;
+import org.elasticsearch.indices.IndexMissingException;
 
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -20,28 +18,29 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.FormContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -57,23 +56,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 	@Override
 	public ContentType find(String id) throws DotDataException {
-		ContentType type = cache.byInode(id);
+		ContentType type = cache.byVarOrInode(id);
 		if(type==null){
-			type= dbById(id);
+			type= (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
+			System.err.println("found type by db:" + type.name());
 			cache.add(type);
 		}
 		return type;
-	}
-
-	@Override
-	public ContentType findByVar(final String var) throws DotDataException {
-		ContentType type = cache.byVar(var);
-		if(type==null){
-			type= dbByVar(var);
-			cache.add(type);
-		}
-		return type;
-
 	}
 
 	@Override
@@ -98,47 +87,47 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	
 	@Override
 	public List<ContentType> findUrlMapped() throws DotDataException {
-		return dbSearch(" url_map_pattern is not null ",BaseContentType.ANY.getType(), "mod_date",0,10000);
+		return dbSearch(" url_map_pattern is not null ",BaseContentType.ANY.getType(), "mod_date",10000,0);
 	}
 
 	@Override
-	public List<ContentType> search(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException {
-		return dbSearch(search, baseType, orderBy, offset, limit);
+	public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset) throws DotDataException {
+		return dbSearch(search, baseType, orderBy, limit, offset);
 	}
 
 	@Override
-	public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int offset, int limit)
+	public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int limit, int offset)
 			throws DotDataException {
-		return dbSearch(search, baseType.getType(), orderBy, offset, limit);
+		return dbSearch(search, baseType.getType(), orderBy, limit, offset);
 	}
 
 	@Override
-	public List<ContentType> search(String search, String orderBy, int offset, int limit) throws DotDataException {
-		return search(search, 0, orderBy, offset, limit);
+	public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
+		return search(search, BaseContentType.ANY, orderBy, limit, offset);
 	}
 
 	@Override
 	public List<ContentType> search(String search, String orderBy) throws DotDataException {
-		return search(search, 0, orderBy, 0, Config.getIntProperty("PER_PAGE", 50));
+		return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50),0);
 	}
 
 	@Override
 	public List<ContentType> search(String search) throws DotDataException {
-		return search(search, 0, "mod_date desc", 0, Config.getIntProperty("PER_PAGE", 50));
+		return search(search, BaseContentType.ANY, "mod_date desc", Config.getIntProperty("PER_PAGE", 50),0);
 	}
 	
 	@Override
 	public List<ContentType> search(String search, int limit) throws DotDataException {
-		return search(search, 0, "mod_date desc", 0, limit);
+		return search(search, BaseContentType.ANY, "mod_date desc",limit,0);
 	}
 	@Override
 	public List<ContentType> search(String search, String orderBy, int limit) throws DotDataException {
-		return search(search, 0, orderBy, 0, limit);
+		return search(search, BaseContentType.ANY, orderBy, limit,0);
 	}
 
 	@Override
 	public int searchCount(String search) throws DotDataException {
-		return dbCount(search, 0);
+		return dbCount(search, BaseContentType.ANY.getType());
 	}
 
 	@Override
@@ -292,9 +281,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 				.modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
 		boolean isNew=false;
-		if(saveType.inode()==null){
+		if(saveType.id()==null){
 		    isNew=true;
-			builder.inode(UUID.randomUUID().toString()).build();
+			builder.id(UUID.randomUUID().toString()).build();
 		}
 		
 		if(!(saveType instanceof UrlMapable)){
@@ -310,11 +299,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		
 		boolean existsInDb = false;
 		try{
-			dbById(saveType.inode());
+			dbById(saveType.id());
 			existsInDb=true;
 		}
 		catch(NotFoundInDbException notThere){
-			Logger.debug(getClass(), "structure inode not found in db:" + saveType.inode());
+			Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
 		}
 		
 		ContentType retType=builder.build();
@@ -335,7 +324,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     			List<Field> fields = retType.requiredFields();
     			FieldApi fapi = new FieldApiImpl().instance();
     			for (Field f : fields) {
-    				f = FieldBuilder.builder(f).contentTypeId(retType.inode()).build();
+    				f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
     				try {
     					fapi.save(f, APILocator.systemUser());
     				} catch (DotSecurityException e) {
@@ -357,14 +346,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
 		dc.addParam(type.owner());
-		dc.addParam(type.inode());
+		dc.addParam(type.id());
 		dc.loadResult();
 	}
 
 	private void dbInodeInsert(final ContentType type) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.INSERT_TYPE_INODE);
-		dc.addParam(type.inode());
+		dc.addParam(type.id());
 		dc.addParam(type.iDate());
 		dc.addParam(type.owner());
 		dc.loadResult();
@@ -387,7 +376,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		dc.addParam(type.expireDateVar());
 		dc.addParam(type.publishDateVar());
 		dc.addParam(type.modDate());
-		dc.addParam(type.inode());
+		dc.addParam(type.id());
 		dc.loadResult();
 	}
 
@@ -397,7 +386,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		
 		DotConnect dc = new DotConnect();
 		dc.setSQL(this.contentTypeSql.INSERT_TYPE);
-		dc.addParam(type.inode());
+		dc.addParam(type.id());
 		dc.addParam(type.name());
 		dc.addParam(type.description());
 		dc.addParam(type.defaultType());
@@ -428,26 +417,40 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		// deleting fields
 		APILocator.getFieldAPI2().deleteFieldsByContentType(type);
 
-		// make sure folders don't refer to this structure as default fileasset
-		// structure
-		if (type instanceof FileAssetContentType) {
-			updateFolderFileAssetReferences((FileAssetContentType) type);
-		}
+		// make sure folders don't refer to this structure as default fileasset structure
 
+		updateFolderFileAssetReferences(type);
+		
+
+        // delete container structures
+        APILocator.getContainerAPI().deleteContainerStructureByContentType(type);
+        
+        // delete contentlets
 		deleteContentletsByType(type);
+		
+		// delete workflow schema references
+		deleteWorkflowSchemeReference(type);
+		
 		// remove structure permissions
 		APILocator.getPermissionAPI().removePermissions(type);
+		
+		
+		// delete relationships
+		deleteRelationships(type);
+		
+		
 
 		// remove structure itself
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.inode()).loadResult();
-		dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.inode()).loadResult();
+		dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.id()).loadResult();
+		dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
 		return true;
 	}
 
-	private List<ContentType> dbSearch(String search, int baseType, String orderBy, int offset, int limit) throws DotDataException {
+	private List<ContentType> dbSearch(String search, int baseType, String orderBy, int limit, int offset) throws DotDataException {
 		int bottom = (baseType == 0) ? 0 : baseType;
 		int top = (baseType == 0) ? 100000 : baseType;
+		if(limit==0) throw new DotDataException("limit param must be more than 0");
 		limit = (limit <0) ? 10000:limit;
 		// our legacy code passes in raw sql conditions and so we need to detect
 		// and handle those
@@ -482,15 +485,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		return dc.getInt("test");
 	}
 
-	private void updateFolderFileAssetReferences(FileAssetContentType type) throws DotDataException {
-		ContentType defaultFileAssetStructure = findByVar(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+	private void updateFolderFileAssetReferences(ContentType type) throws DotDataException {
+	    if (!(type instanceof FileAssetContentType)) return;
+		ContentType defaultFileAssetStructure = find(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 		DotConnect dc = new DotConnect();
 		dc.setSQL("update folder set default_file_type = ? where default_file_type = ?");
-		dc.addParam(defaultFileAssetStructure.inode());
-		dc.addParam(type.inode());
+		dc.addParam(defaultFileAssetStructure.id());
+		dc.addParam(type.id());
 		dc.loadResult();
 	}
-
+	
+    private void deleteWorkflowSchemeReference(ContentType type) throws DotDataException {
+      WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
+      wff.deleteSchemeForStruct(type.id());
+    }
 
 	private void deleteContentletsByType(ContentType type) throws DotDataException {
 		// permissions have already been checked at this point
@@ -499,18 +507,40 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 		List<Contentlet> contentlets = new ArrayList<>();
 		
 		try {
-			contentlets = conAPI.findByStructure(type.inode(), APILocator.systemUser(), false, limit, 0);
+			contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
 
 			while(contentlets.size()>0){
 				conAPI.destroy(contentlets, APILocator.systemUser(), false);
-				contentlets = conAPI.findByStructure(type.inode(), APILocator.systemUser(), false, limit, 0);
+				contentlets = conAPI.findByStructure(type.id(), APILocator.systemUser(), false, limit, 0);
 			}
 		} catch (DotSecurityException e) {
 			throw new DotDataException(e);
 		}
+		catch(RuntimeException ex){
+		  Throwable root = ex.getCause();
+		  if(root instanceof IndexMissingException){
+		    
+		  }
+		}
 		
 	}
 
+	private void deleteRelationships(ContentType type) throws DotDataException{
+
+      // delete relationships where the structure is child or parent
+      List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byParent(type);
+      for (Relationship rel : relationships)
+        FactoryLocator.getRelationshipFactory().delete(rel);
+      relationships = FactoryLocator.getRelationshipFactory().byChild(type);
+      for (Relationship rel : relationships){
+        FactoryLocator.getRelationshipFactory().delete(rel);
+      }
+	  
+	}
+	
+	
+	
+	
 	/**
 	 * parses legacy conditions passed in as raw sql
 	 * @author root

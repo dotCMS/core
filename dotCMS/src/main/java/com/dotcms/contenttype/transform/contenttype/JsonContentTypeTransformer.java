@@ -47,7 +47,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
     }
 
     
-    private JsonNode asNode(ContentType type) {
+    public JsonNode asNode(ContentType type) {
         ObjectNode typeNode = mapper.valueToTree(new SerialWrapper<>(type, type.getClass()));
         typeNode.put("implClass", type.getClass().getCanonicalName().replaceAll(".Immutable","."));
 
@@ -88,6 +88,9 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         JSONArray jarr = new JSONArray(input);
         for (int i = 0; i < jarr.length(); i++) {
             JSONObject jo = jarr.getJSONObject(i);
+            if(jo.has("inode") && ! jo.has("id")){
+              jo.put("id", jo.get("inode"));
+            }
             types.add(fromJsonStr(jo.toString()));
         }
         return types;
@@ -120,8 +123,6 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
         } catch (JsonProcessingException e) {
             throw new DotStateException(e);
         }
-
-   
     }
 
 }

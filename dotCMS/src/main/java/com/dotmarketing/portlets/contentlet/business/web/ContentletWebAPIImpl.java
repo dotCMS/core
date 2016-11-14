@@ -23,6 +23,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -56,7 +57,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -563,7 +564,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					for(ContentletRelationshipRecords records : recordsList) {
 						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
 							continue;
-						if(RelationshipFactory.isSameStructureRelationship(records.getRelationship()) &&
+						if(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
 								((!records.isHasParent() && relationHasParent.equals("no")) ||
 								 (records.isHasParent() && relationHasParent.equals("yes"))))
 							continue;
@@ -599,8 +600,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}else{
 				 // Existing contentlet auto save
 				Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-				List<Relationship> rels = RelationshipFactory
-											.getAllRelationshipsByStructure( currentContentlet
+				List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+											.byContentType( currentContentlet
                                                     .getStructure() );
 				for (Relationship r : rels) {
 					if (!contentRelationships.containsKey(r)) {

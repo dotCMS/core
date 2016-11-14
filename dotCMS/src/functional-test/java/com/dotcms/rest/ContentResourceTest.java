@@ -40,7 +40,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
@@ -578,7 +578,7 @@ public class ContentResourceTest extends TestBase {
         APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
         
         Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
-        RelationshipFactory.saveRelationship(rel);
+        FactoryLocator.getRelationshipFactory().saveRelationship(rel);
 
         Response response = webTarget.path("/publish/1")
                 .request()

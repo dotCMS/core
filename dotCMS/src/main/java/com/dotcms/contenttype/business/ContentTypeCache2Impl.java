@@ -25,9 +25,8 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
 	
     @Override
     public void add(ContentType type){
-
-		cache.put(primaryGroup + type.inode(), type, primaryGroup);
-        cache.put(primaryGroup + type.variable().toLowerCase(), type, primaryGroup);
+		cache.put(type.id(), type, primaryGroup);
+        cache.put( type.variable(), type, primaryGroup);
     }
 
     @Override
@@ -88,25 +87,15 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
 
     @Override
 	public void remove(ContentType type) {
-        cache.remove(primaryGroup + type.inode(),primaryGroup);
-        cache.remove(primaryGroup + type.variable(),primaryGroup);
+        cache.remove( type.id(),primaryGroup);
+        cache.remove( type.variable(),primaryGroup);
         clearURLMasterPattern();
 	}
 
     @Override
-	public ContentType byInode(String inode) {
-		try {
-			return (ContentType) cache.get(primaryGroup + inode, primaryGroup);
-		} catch (DotCacheException e) {
-			Logger.debug(ContentTypeCache2.class,"Cache Entry not found", e);
-			return null;
-		}
-	}
-
-    @Override
-	public ContentType byVar(String var) {
+	public ContentType byVarOrInode(String varOrInode) {
         try{
-        	return (ContentType) cache.get(primaryGroup + var.toLowerCase(),primaryGroup);
+        	return (ContentType) cache.get(varOrInode, primaryGroup);
         }catch (Exception e) {
 			Logger.debug(ContentTypeCache2.class,"Cache Entry not found", e);
 			return null;

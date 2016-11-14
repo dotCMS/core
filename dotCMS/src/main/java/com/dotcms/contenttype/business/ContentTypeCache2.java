@@ -16,10 +16,6 @@ public interface ContentTypeCache2 extends Cachable {
 
 	void remove(ContentType type);
 
-	ContentType byInode(String inode);
-
-	ContentType byVar(String var);
-
 	void removeContainerStructures(String containerIdentifier, String containerInode);
 
 	List<ContainerStructure> getContainerStructures(String containerIdentifier, String containerInode);
@@ -33,4 +29,6 @@ public interface ContentTypeCache2 extends Cachable {
 	String getURLMasterPattern() throws DotCacheException;
 
 	void add(ContentType type);
+
+    ContentType byVarOrInode(String varOrInode);
 }
