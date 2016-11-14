@@ -13,6 +13,7 @@ import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
@@ -36,9 +37,10 @@ public class HostAPITest {
         IntegrationTestInitService.getInstance().init();
 
         LicenseTestUtil.getLicense();
+        DotInitScheduler.start();
     }
 
-	@Ignore("Temporarily ignore this test method")
+	//@Ignore("Temporarily ignore this test method")
     @Test
     public void testDeleteHost() throws Exception {
         User user=APILocator.getUserAPI().getSystemUser();
@@ -126,6 +128,7 @@ public class HostAPITest {
     }
     
     @Test
+    @Ignore
     public void makeDefault() throws Exception {
     	User user=APILocator.getUserAPI().getSystemUser();
     	/*
