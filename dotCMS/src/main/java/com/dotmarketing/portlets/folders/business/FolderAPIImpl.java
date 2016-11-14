@@ -546,7 +546,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		folder.setModDate(new Date());
 		ffac.save(folder, existingId);
 
-		SystemEventType systemEventType = existingId != null ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+		SystemEventType systemEventType = existingId == null ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.PERMISSION,
 				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}

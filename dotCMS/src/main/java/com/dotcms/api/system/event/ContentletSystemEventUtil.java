@@ -26,8 +26,8 @@ public class ContentletSystemEventUtil {
 
     private static final String SAVE_EVENT_PREFIX = "SAVE";
     private static final String UPDATE_EVENT_PREFIX = "UPDATE";
-    private static final String ARCHIVED_EVENT_PREFIX = "ARCHIVED";
-    private static final String UN_ARCHIVED_EVENT_PREFIX = "UN_SAVE";
+    private static final String ARCHIVED_EVENT_PREFIX = "ARCHIVE";
+    private static final String UN_ARCHIVED_EVENT_PREFIX = "UN_ARCHIVE";
 
     private static final String SITE_EVENT_SUFFIX= "SITE";
 

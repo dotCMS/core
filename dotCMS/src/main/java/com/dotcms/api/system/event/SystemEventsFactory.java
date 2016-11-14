@@ -9,10 +9,16 @@ import java.util.Map;
 
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +26,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This singleton class provides access to the {@link SystemEventsAPI} class.
@@ -34,6 +42,9 @@ public class SystemEventsFactory implements Serializable {
 
 	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
 	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
+	private final LoginService loginService = LoginServiceFactory.getInstance().getLoginService();
+	private final HttpServletRequestThreadLocal httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
+	private final UserAPI userAPI = APILocator.getUserAPI();
 
 	/**
 	 * Private constructor for singleton creation.
@@ -100,6 +111,16 @@ public class SystemEventsFactory implements Serializable {
 				throw new IllegalArgumentException(msg);
 			}
 			try {
+				HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
+				User user = null;
+
+				if (request == null){
+					user = 	userAPI.getSystemUser();
+				}else {
+					user = loginService.getLogInUser(request);
+				}
+				systemEvent.getPayload().setUser(user);
+
 				this.systemEventsDAO.add(new SystemEventDTO(systemEvent.getId(), systemEvent.getEventType().name(),
 						this.marshalUtils.marshal(systemEvent.getPayload()), systemEvent.getCreationDate().getTime()));
 			} catch (DotDataException e) {

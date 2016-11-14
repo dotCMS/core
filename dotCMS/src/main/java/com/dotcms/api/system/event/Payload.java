@@ -1,7 +1,11 @@
 package com.dotcms.api.system.event;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 
 /**
@@ -20,6 +24,7 @@ public class Payload implements Serializable {
 	private final Object data;
 	private final Visibility visibility;
 	private final String  visibilityId; // user id, role uid or permission, if it is global, this is not need
+	private User user;
 
 	/**
 	 * Creates a payload object.
@@ -133,5 +138,19 @@ public class Payload implements Serializable {
 
 	public boolean verified(SessionWrapper session) {
 		return visibility.verified(session, this);
+	}
+
+	/**
+	 * return the user who fire the event, if the user was fired by a Job and not by a User's action then the user
+	 * is the System User
+	 *
+	 * @return
+     */
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
 	}
 } // E:O:F:Payload.
