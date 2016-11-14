@@ -65,16 +65,14 @@ export class LoginAsComponent extends BaseComponent {
      * @param event - The event with the query parameter to filter the users
      */
     filterUsers(event): void {
-        this.filteredLoginAsUsersResults = [];
-        for(let i = 0; i < this.userLists.length; i++) {
-            let user = this.userLists[i];
-            if(user.fullName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0) {
-                this.filteredLoginAsUsersResults.push({
-                    label: user.fullName,
-                    value: user.userId,
-                });
-            }
-        }
+        this.filteredLoginAsUsersResults = this.userLists.
+        filter( user => user.fullName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0)
+            .map( user => {
+                return {
+                label: user.fullName,
+                value: user.userId,
+                };
+            });
     }
 
     /**
@@ -83,16 +81,14 @@ export class LoginAsComponent extends BaseComponent {
      *
      * @param event - The click event to display the dropdown options
      */
-    handleLoginAsUsersDropdownClick(event): void {
-        this.filteredLoginAsUsersResults = [];
+    handleLoginAsUsersDropdownClick(): void {
         setTimeout(() => {
-            for(let i = 0; i < this.userLists.length; i++) {
-                let user = this.userLists[i];
-                this.filteredLoginAsUsersResults.push({
+            this.filteredLoginAsUsersResults = this.userLists.map( user => {
+                return {
                     label: user.fullName,
                     value: user.userId,
-                });
-            }
+                };
+            });
         }, 100);
     }
 

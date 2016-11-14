@@ -52,16 +52,14 @@ export class SiteSelectorComponent extends BaseComponent {
      * @param event - The event with the query parameter to filter the users
      */
     filterSites(event): void {
-        this.filteredSitesResults = [];
-        for(let i = 0; i < this.sites.length; i++) {
-            let site = this.sites[i];
-            if(site.hostName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0) {
-                this.filteredSitesResults.push({
+        this.filteredSitesResults = this.sites.
+        filter( site => site.hostName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0)
+            .map( site => {
+                return {
                     label: site.hostName,
                     value: site.identifier,
-                });
-            }
-        }
+                };
+            });
     }
 
     /**
@@ -71,15 +69,13 @@ export class SiteSelectorComponent extends BaseComponent {
      * @param event - The click event to display the dropdown options
      */
     handleSitesDropdownClick(event): void {
-        this.filteredSitesResults = [];
         setTimeout(() => {
-            for(let i = 0; i < this.sites.length; i++) {
-                let site = this.sites[i];
-                this.filteredSitesResults.push({
-                    label: site.hostName,
-                    value: site.identifier,
+            this.filteredSitesResults = this.sites.map( site => {
+                    return {
+                        label: site.hostName,
+                        value: site.identifier,
+                    };
                 });
-            }
         }, 100);
     }
 }
