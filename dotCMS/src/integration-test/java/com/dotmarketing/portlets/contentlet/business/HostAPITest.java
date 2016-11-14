@@ -40,7 +40,6 @@ public class HostAPITest {
         DotInitScheduler.start();
     }
 
-	//@Ignore("Temporarily ignore this test method")
     @Test
     public void testDeleteHost() throws Exception {
         User user=APILocator.getUserAPI().getSystemUser();
@@ -128,7 +127,6 @@ public class HostAPITest {
     }
     
     @Test
-    @Ignore
     public void makeDefault() throws Exception {
     	User user=APILocator.getUserAPI().getSystemUser();
     	/*
