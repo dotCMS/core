@@ -17,10 +17,10 @@ export class LoginAsComponent extends BaseComponent {
 
     private needPassword: boolean = false;
     private userLists: Array<User>;
-    private filteredLoginAsUsersResults: Array<User>;
+    private filteredLoginAsUsersResults: Array<any>;
 
     constructor(private loginService: LoginService, private router: DotRouterService, private messageService: MessageService) {
-        super(['change', 'cancel', 'password','loginas.select.loginas.user'], messageService);
+        super(['change', 'cancel', 'password', 'loginas.select.loginas.user'], messageService);
     }
 
     ngOnInit(): void {
@@ -83,7 +83,7 @@ export class LoginAsComponent extends BaseComponent {
      *
      * @param event - The click event to display the dropdown options
      */
-    handleDropdownClick(event) : void {
+    handleLoginAsUsersDropdownClick(event): void {
         this.filteredLoginAsUsersResults = [];
         setTimeout(() => {
             for(let i = 0; i < this.userLists.length; i++) {

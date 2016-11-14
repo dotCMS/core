@@ -70,7 +70,7 @@ export class SiteSelectorComponent extends BaseComponent {
      *
      * @param event - The click event to display the dropdown options
      */
-    handleSitesDropdownClick(event) : void {
+    handleSitesDropdownClick(event): void {
         this.filteredSitesResults = [];
         setTimeout(() => {
             for(let i = 0; i < this.sites.length; i++) {

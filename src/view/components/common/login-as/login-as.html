@@ -6,7 +6,7 @@
             <div class="form-group">
                 <p-autoComplete name="user" id="userId"  ngModel required [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" [size]="30"
                     (onSelect)="userSelectedHandler($event)" field="label" [minLength]="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
-                                [dropdown]="true" (onDropdownClick)="handleDropdownClick($event)">
+                                [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
                 </p-autoComplete>
             </div>
             <div class="form-group" *ngIf="needPassword">
