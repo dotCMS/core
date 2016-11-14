@@ -26,6 +26,8 @@ public class ContentletSystemEventUtil {
 
     private static final String SAVE_EVENT_PREFIX = "SAVE";
     private static final String UPDATE_EVENT_PREFIX = "UPDATE";
+    private static final String ARCHIVED_EVENT_PREFIX = "ARCHIVED";
+    private static final String UN_ARCHIVED_EVENT_PREFIX = "UN_SAVE";
 
     private static final String SITE_EVENT_SUFFIX= "SITE";
 
@@ -48,8 +50,13 @@ public class ContentletSystemEventUtil {
         return ContentletSystemEventUtil.SingletonHolder.INSTANCE;
     }
 
-    public void pushSaveEvent(User user, Contentlet contentlet, boolean isNew){
-        SystemEventType systemEventType = getSystemEventType(contentlet, isNew);
+    public void pushSaveEvent(Contentlet contentlet, boolean isNew){
+        String actionName = getActionName(contentlet, isNew);
+        sendEvent(contentlet, actionName);
+    }
+
+    private void sendEvent(Contentlet contentlet, String action) {
+        SystemEventType systemEventType = getSystemEventType(contentlet, action);
 
         if (systemEventType != null) {
             Payload payload = new Payload(contentlet, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ));
@@ -62,9 +69,19 @@ public class ContentletSystemEventUtil {
         }
     }
 
-    private SystemEventType getSystemEventType(Contentlet contentlet, boolean isNew) {
+    public void pushArchiveEvent(Contentlet contentlet){
+        sendEvent(contentlet, ARCHIVED_EVENT_PREFIX);
+    }
 
-        String methodName = isNew ? SAVE_EVENT_PREFIX : UPDATE_EVENT_PREFIX;
+    public void pushUnArchiveEvent(Contentlet contentlet){
+        sendEvent(contentlet, UN_ARCHIVED_EVENT_PREFIX);
+    }
+
+    private String getActionName(Contentlet contentlet, boolean isNew) {
+        return isNew ? SAVE_EVENT_PREFIX : UPDATE_EVENT_PREFIX;
+    }
+
+    private SystemEventType getSystemEventType(Contentlet contentlet, String methodName) {
         String contentType = getType(contentlet);
         String eventName = String.format("%s_%s", methodName, contentType);
 
@@ -76,7 +93,7 @@ public class ContentletSystemEventUtil {
     }
 
     private String getType(Contentlet contentlet) {
-        return contentlet != null && contentlet.isHost() ? SITE_EVENT_SUFFIX : contentlet.getStructure().getName();
+        return contentlet != null && contentlet.isHost() ? SITE_EVENT_SUFFIX : contentlet.getStructure().getName().replace(" ", "_").toUpperCase();
     }
 
 }

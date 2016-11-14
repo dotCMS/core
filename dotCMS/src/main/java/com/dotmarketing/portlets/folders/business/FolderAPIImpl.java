@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import com.dotcms.api.system.event.*;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
@@ -53,6 +54,7 @@ import com.liferay.portal.model.User;
 public class FolderAPIImpl implements FolderAPI  {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -372,6 +374,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			// delete folder itself
 			ffac.delete(folder);
 
+			systemEventsAPI.push(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.PERMISSION,
+					String.valueOf(PermissionAPI.PERMISSION_READ)));
+
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
 				// RefreshMenus.deleteMenus();
@@ -539,11 +544,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		folder.setModDate(new Date());
-
 		ffac.save(folder, existingId);
 
+		SystemEventType systemEventType = existingId != null ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
-
 
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 

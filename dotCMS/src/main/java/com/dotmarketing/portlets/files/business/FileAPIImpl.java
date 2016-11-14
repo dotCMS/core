@@ -9,6 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -59,7 +63,8 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 	private VersionableAPI vapi;
 	private FileFactory ffac;
 	private FileCache fcache;
-	
+	private SystemEventsAPI systemEventsAPI;
+
 	public FileAPIImpl() {
 		permissionAPI = APILocator.getPermissionAPI();
 		ffac = FactoryLocator.getFileFactory();
@@ -67,6 +72,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		folderAPI = APILocator.getFolderAPI();
 		vapi = APILocator.getVersionableAPI();
 		fcache = CacheLocator.getFileCache();
+		systemEventsAPI = APILocator.getSystemEventsAPI();
 	}
 
 	public File copy(File source, Folder destination, boolean forceOverwrite, User user, boolean respectFrontendRoles)
@@ -147,6 +153,8 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			throw new DotRuntimeException("An error ocurred trying to copy the file.", e);
 		}
 
+		systemEventsAPI.push(SystemEventType.COPY_FILE_ASSET, new Payload(newFile, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 		return newFile;
 	}
 
@@ -629,11 +637,17 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
             throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
         }
 
-        if ( parent != null ) {
-            return ffac.moveFile(file, parent);
-        } else {
-            return ffac.moveFile( file, host );
+		Boolean result = false;
+
+		if ( parent != null ) {
+			result = ffac.moveFile(file, parent);
+		} else {
+			result = ffac.moveFile( file, host );
         }
+
+		this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		return result;
 	}
 
 	public void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException,

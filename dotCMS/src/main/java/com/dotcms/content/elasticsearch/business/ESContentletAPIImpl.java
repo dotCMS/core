@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotmarketing.cache.ContentTypeCache;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -154,8 +155,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
 
-    private final NotificationAPI notificationAPI;
-    private final ESContentletAPIHelper esContentletAPIHelper;
+    private final ContentletSystemEventUtil contentletSystemEventUtil;
 
 	private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
@@ -192,8 +192,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         lanAPI = APILocator.getLanguageAPI();
         distAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
-        this.notificationAPI = APILocator.getNotificationAPI();
-        this.esContentletAPIHelper = ESContentletAPIHelper.INSTANCE;
+        contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
     }
 
     @Override
@@ -1843,6 +1842,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         		ContentletServices.invalidateAll(contentlet);
         		publishRelatedHtmlPages(contentlet);
+                contentletSystemEventUtil.pushArchiveEvent(contentlet);
         	}else{
         		throw new DotContentletStateException("Contentlet is locked: Unable to archive");
         	}
@@ -2183,6 +2183,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	ContentletServices.invalidateAll(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
+            contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
         	ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
         			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
