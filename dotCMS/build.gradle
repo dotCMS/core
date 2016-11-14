@@ -49,6 +49,7 @@ repositories {
 }
 
 testSets {
+    individualTest { dirName = 'test' }
     integrationTest { dirName = 'integration-test' }
     functionalTest { dirName = 'functional-test' }
 }
