@@ -55,5 +55,6 @@ public enum SystemEventType {
 	COPY_FILE_ASSET,
 	//MOVE_PAGE_ASSET,
 	//COPY_PAGE_ASSET,
-
+	
+	UPDATE_PORTLET_LAYOUTS,
 }

@@ -1,7 +1,22 @@
 package com.dotcms.rest.api.v1.site;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -15,92 +30,87 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.util.HostNameComparator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections.sort;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.Logger.error;
-
-
 /**
- * Site Browser Resource, retrieve the sites and change sites.
+ * This resource provides all the different end-points associated to information
+ * and actions that the front-end can perform on the Site Browser page.
+ * 
  * @author jsanca
  */
 @Path("/v1/site")
 public class SiteBrowserResource implements Serializable {
 
-    private static final String NO_FILTER = "*";
+	private static final long serialVersionUID = 1L;
 
+	private static final String NO_FILTER = "*";
+
+	private final UserAPI userAPI;
     private final WebResource webResource;
     private final SiteBrowserHelper siteBrowserHelper;
-    private final LayoutAPI layoutAPI;
     private final I18NUtil i18NUtil;
 
     public SiteBrowserResource() {
         this(new WebResource(),
                 SiteBrowserHelper.getInstance(),
-                APILocator.getLayoutAPI(),
-                I18NUtil.INSTANCE);
+                I18NUtil.INSTANCE, APILocator.getUserAPI());
     }
 
     @VisibleForTesting
     public SiteBrowserResource(final WebResource webResource,
                                final SiteBrowserHelper siteBrowserHelper,
-                               final LayoutAPI layoutAPI,
-                               final I18NUtil i18NUtil) {
-
+                               final I18NUtil i18NUtil, final UserAPI userAPI) {
         this.webResource = webResource;
         this.siteBrowserHelper  = siteBrowserHelper;
-        this.layoutAPI   = layoutAPI;
         this.i18NUtil    = i18NUtil;
+        this.userAPI = userAPI;
     }
 
+	/**
+	 * Returns the list of Sites that the currently logged-in user has access
+	 * to. In the front-end, this list is displayed in the Site Selector
+	 * component. Its contents will also be refreshed when performing the "Login
+	 * As".
+	 * <p>
+	 * The site that will be selected in the UI component will be retrieved from
+	 * the HTTP session. If such a site does not exist in the list of sites, the
+	 * first site in it will be selected.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The {@link Response} containing the list of Sites.
+	 */
     @GET
     @Path ("/currentSite")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response currentSite(@Context final HttpServletRequest req) {
-        final List<Map<String, Object>> hostResults;
+        final List<Map<String, Object>> siteList;
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-        final User user = initData.getUser();
+        this.webResource.init(null, true, req, true, null);
         final HttpSession session = req.getSession();
-
         try {
-
-            Locale locale = LocaleUtil.getLocale(user, req);
-            hostResults = siteBrowserHelper.getOrderedHost(false, user, StringUtils.EMPTY)
+			// Get user from session, not request. This is required to make this
+			// work with the 'Login As' user as well.
+			final User user = this.userAPI
+					.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
+            siteList = siteBrowserHelper.getOrderedSites(false, user, StringUtils.EMPTY)
                     .stream()
-                    .map(host -> host.getMap())
+                    .map(site -> site.getMap())
                     .collect(Collectors.toList());
-
-            String currentSite = (String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
-
-            response = Response.ok( new ResponseEntityView( map("sites", hostResults,
-                    "currentSite", currentSite))).build(); // 200
-        } catch (Exception e) { // this is an unknown error, so we report as a 500.
-
+			final String currentSite = this.siteBrowserHelper.getSelectedSite(siteList,
+					(String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID));
+            response = Response.ok( new ResponseEntityView( map("sites", siteList,
+                    "currentSite", currentSite))).build();
+        } catch (Exception e) {
+        	// Unknown error, so we report it as a 500
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-
         return response;
     }
 
@@ -117,7 +127,7 @@ public class SiteBrowserResource implements Serializable {
 
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-        final List<Map<String, Object>> hostResults;
+        final List<Map<String, Object>> siteResults;
         final User user = initData.getUser();
          final String filter;
 
@@ -129,13 +139,13 @@ public class SiteBrowserResource implements Serializable {
                     filterParam.substring(0, filterParam.length() - 1):
                     (null != filterParam)? filterParam: StringUtils.EMPTY;
 
-            hostResults = siteBrowserHelper.getOrderedHost(showArchived, user, filter)
+            siteResults = siteBrowserHelper.getOrderedSites(showArchived, user, filter)
                     .stream()
-                    .map(host -> host.getMap())
-                    .collect(Collectors.toList());;
+                    .map(site -> site.getMap())
+                    .collect(Collectors.toList());
 
             response = Response.ok(new ResponseEntityView
-                    (map(   "result",         hostResults
+                    (map(   "result",         siteResults
                             //,"hostManagerUrl", getHostManagerUrl(req, this.layoutAPI.loadLayoutsForUser(user)) // NOTE: this is not needed yet.
                             ),
                      this.i18NUtil.getMessagesMap(locale, "select-host",
@@ -173,7 +183,7 @@ public class SiteBrowserResource implements Serializable {
             if (UtilMethods.isSet(hostId)) {
 
                 // we verified if the host id pass by parameter is one of the user's hosts
-                hostFound = siteBrowserHelper.getHost( user, hostId);
+                hostFound = siteBrowserHelper.getSite( user, hostId);
 
                 if (hostFound != null) {
 
