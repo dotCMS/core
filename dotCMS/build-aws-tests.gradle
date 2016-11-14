@@ -38,10 +38,13 @@ buildscript {
 		classpath "jp.classmethod.aws:gradle-aws-plugin:0.+"
 		classpath "org.hidetake:gradle-ssh-plugin:2.7.0"
 		classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
-
-		classpath fileTree("../libs/buildlibs").include('jtds-*.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 	}
 }
+
+fileTree("../libs/buildlibs").include('jtds-*.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar').visit( { element ->
+	GroovyObject.class.classLoader.addURL(element.file.toURI().toURL());
+})
+
 
 
 apply plugin: "java"
