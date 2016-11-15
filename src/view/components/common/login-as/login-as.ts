@@ -82,6 +82,19 @@ export class LoginAsComponent extends BaseComponent {
      * @param event - The click event to display the dropdown options
      */
     handleLoginAsUsersDropdownClick(): void {
+        this.filteredLoginAsUsersResults = [];
+
+        /**
+         * This time out is included to imitate a remote call and
+         * avoid that the suggestion box is not displayed, because
+         * the autocomplete hide method is execute after the the show
+         * method.
+         *
+         * TODO - remove the setTimeout when we add the pagination option
+         * making a call to the login service to get a subset of login as users
+         * paginated to display on the dropdown sugestions pannel.
+         *
+         */
         setTimeout(() => {
             this.filteredLoginAsUsersResults = this.userLists.map( user => {
                 return {

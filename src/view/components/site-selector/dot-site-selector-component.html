@@ -1,4 +1,4 @@
-<p-autoComplete *ngIf="sites && sites.length > 1"  [(ngModel)]="currentSite"
+<p-autoComplete *ngIf="sites && sites.length > 1"  id="selectedSite" name="selectedSite" [(ngModel)]="currentSite"
                 [suggestions]="filteredSitesResults" (completeMethod)="filterSites($event)" [size]="30"
                 (onSelect)="switchSite($event)" field="label" [minLength]="1"
                 [dropdown]="true" (onDropdownClick)="handleSitesDropdownClick($event)"

@@ -69,6 +69,19 @@ export class SiteSelectorComponent extends BaseComponent {
      * @param event - The click event to display the dropdown options
      */
     handleSitesDropdownClick(event): void {
+        this.filteredSitesResults = [];
+
+        /**
+         * This time out is included to imitate a remote call and
+         * avoid that the suggestion box is not displayed, because
+         * the autocomplete hide method is execute after the the show
+         * method.
+         *
+         * TODO - remove the setTimeout when we add the pagination option
+         * making a call to the site service to get a subset of sites paginated
+         * to display on the dropdown sugestions pannel.
+         *
+         */
         setTimeout(() => {
             this.filteredSitesResults = this.sites.map( site => {
                     return {
@@ -77,5 +90,5 @@ export class SiteSelectorComponent extends BaseComponent {
                     };
                 });
         }, 100);
-    }
+
 }
