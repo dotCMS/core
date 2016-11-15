@@ -44,7 +44,3 @@ sed -i "s,PUBLISHER_QUEUE_MAX_TRIES=3,PUBLISHER_QUEUE_MAX_TRIES=1,g" dotserver/t
 
 # Run End-2-End tests
 ant -f build-tests.xml test-dotcms
-
-# Run Integration tests
-cd core/dotCMS
-./gradlew integrationTest
