@@ -148,7 +148,7 @@ public class ReindexThread extends Thread {
 					String defaultMsg = "An error has occurred during the indexing process, please check your logs and retry later";
 
                     //Generate and send an user notification
-					sendNotification(languageKey, null, defaultMsg);
+					sendNotification(languageKey, null, defaultMsg, true);
 				} catch ( DotDataException | LanguageException e ) {
 					Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
 				}
@@ -240,7 +240,7 @@ public class ReindexThread extends Thread {
 						reindexSwitchover(false);
 
                         //Generate and send an user notification
-						sendNotification("notification.reindexing.success", null, null);
+						sendNotification("notification.reindexing.success", null, null, false);
 					} else if (remoteQ.size() == 0 && ESReindexationProcessStatus.inFullReindexation()
 							&& jAPI.recordsLeftToIndexForServer() > 0) {
 						// Fill the re-index queue with failed records now after
@@ -315,7 +315,7 @@ public class ReindexThread extends Thread {
 											+ "'. The record is in a bad state or can be associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and re-start the reindex.";
 
                                     //Generate and send an user notification
-									sendNotification("notification.reindexing.error.processrecord", new Object[] {identToIndex}, msg);
+									sendNotification("notification.reindexing.error.processrecord", new Object[] {identToIndex}, msg, true);
 									this.notifiedFailingRecords.add(identToIndex);
 								}
 
@@ -799,13 +799,16 @@ public class ReindexThread extends Thread {
 	 *            - If set, the default message in case the key does not exist
 	 *            in the properties file. Otherwise, the message key will be
 	 *            returned.
-	 * @throws DotDataException
+     * @param error - true if we want to send an error notification
+     * @throws DotDataException
 	 *             The notification could not be posted to the system.
 	 * @throws LanguageException
 	 *             The language properties could not be retrieved.
 	 */
-	protected void sendNotification(final String key, final Object[] msgParams, final String defaultMsg)
+	protected void sendNotification(final String key, final Object[] msgParams, final String defaultMsg, boolean error)
 			throws DotDataException, LanguageException {
+
+        NotificationLevel notificationLevel = error? NotificationLevel.ERROR: NotificationLevel.INFO;
 
 		//Search for the CMS Admin role and System User
 		final Role cmsAdminRole = this.roleAPI.loadCMSAdminRole();
@@ -815,7 +818,7 @@ public class ReindexThread extends Thread {
 				new I18NMessage("notification.reindex.error.title"), // title = Reindex Notification
 				new I18NMessage(key, defaultMsg, msgParams),
 				null, // no actions
-				NotificationLevel.ERROR,
+                notificationLevel,
 				NotificationType.GENERIC,
 				Visibility.ROLE,
 				cmsAdminRole.getId(),

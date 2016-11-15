@@ -93,7 +93,7 @@ public class ReindexThreadTest extends BaseMessageResources {
                 new I18NMessage("notification.reindex.error.title"),
                 new I18NMessage("notification.reindexing.error.processrecord", msg, identToIndex),
                 null,
-                NotificationLevel.ERROR,
+                NotificationLevel.INFO,
                 NotificationType.GENERIC,
                 Visibility.ROLE,
                 cmsAdminRoleId,
@@ -104,7 +104,7 @@ public class ReindexThreadTest extends BaseMessageResources {
         //Execute the notification call
         reindexThread.sendNotification
                 ("notification.reindexing.error.processrecord",
-                        new Object[] {identToIndex}, msg);
+                        new Object[] {identToIndex}, msg, false);
 
         //Validate
         assertTrue(this.testGenerateNotification);
