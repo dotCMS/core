@@ -4,16 +4,23 @@ import com.dotcms.LicenseTestUtil;
 import junit.framework.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
 
 import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -24,6 +31,9 @@ public class ConditionletOSGIFTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
+        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT); 
+        OSGIUtil.getInstance().initializeFramework(context);
     }
 
     @Test

@@ -29,7 +29,7 @@ public class ConfigTestHelper extends Config {
             Mockito.when(context.getInitParameter("company_id")).thenReturn("dotcms.org");
 
             final String topPath = Files.createTempDir().getCanonicalPath();
-            Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
+            Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
                     String path = (String) invocation.getArguments()[0];
@@ -39,6 +39,7 @@ public class ConfigTestHelper extends Config {
                 }
             });
             Config.CONTEXT = context;
+            Config.CONTEXT_PATH = context.getRealPath("/");
 
         }
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
