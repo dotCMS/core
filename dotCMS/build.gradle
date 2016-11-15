@@ -165,6 +165,15 @@ war {
 }
 war.finalizedBy 'undeployPlugins'
 
+integrationTest{
+    doFirst
+    {
+        if (project.hasProperty('databaseType')){
+            systemProperty "databaseType", "$databaseType"
+        }
+    }
+}
+
 // Delete ROOT under tomcat8/webapps
 task undeployWarTomcat(type: Delete) {
     delete tomcatInstallLocation + webAppRootFolder
