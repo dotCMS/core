@@ -234,7 +234,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
 		"		 identifier.id not in (select asset_id from permission_reference where " +
-		"			permission_type = '" + Template.class.getCanonicalName() + "'))"
+		"			permission_type = '" + Template.class.getCanonicalName() + "')) x where ident.id = x.id"
 		:
 		DbConnectionFactory.isOracle() ?
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -244,7 +244,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
 		"		 identifier.id not in (select asset_id from permission_reference where " +
-		"			permission_type = '" + Template.class.getCanonicalName() + "'))"
+		"			permission_type = '" + Template.class.getCanonicalName() + "')) x where ident.id = x.id"
 		:
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 		"select nextval('permission_reference_seq'), ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
@@ -253,7 +253,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"		 identifier.id not in (select inode_id from permission " +
 		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
 		"		 identifier.id not in (select asset_id from permission_reference where " +
-		"			permission_type = '" + Template.class.getCanonicalName() + "'))";
+		"			permission_type = '" + Template.class.getCanonicalName() + "')) x where ident.id = x.id";
 
 	/*
 	 * To load container identifiers that are children of a host
@@ -575,7 +575,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"		li.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
+				"	) all_ids where identifier.id = all_ids.li_id " +
 				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 		DbConnectionFactory.isOracle() ?
@@ -591,7 +591,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"		li.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
+				"	) all_ids where identifier.id = all_ids.li_id " +
 				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -606,7 +606,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"		li.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
+				"	) all_ids where identifier.id = all_ids.li_id " +
 				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
@@ -717,8 +717,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+				"	) t1 " +
+                "   WHERE identifier.id = t1.i_id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -734,8 +735,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+				"	) t1 " +
+                "   WHERE identifier.id = t1.i_id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select nextval('permission_reference_seq'), identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
@@ -750,8 +752,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"	) t1 " +
+                "   WHERE identifier.id = t1.i_id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load link identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -859,8 +862,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+				"	) x where identifier.id = x.id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 		DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -876,8 +879,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"	
+				"	) x where identifier.id = x.id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select nextval('permission_reference_seq'), identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
@@ -892,8 +895,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"	) x where identifier.id = x.id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load content identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -1041,8 +1044,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+				"	) x " +
+                "WHERE identifier.id = x.id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 		DbConnectionFactory.isOracle()?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -1057,8 +1061,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"		identifier.id not in (" +
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-				"		) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+				"		) x " +
+                "WHERE identifier.id = x.id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select nextval('permission_reference_seq'), identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
@@ -1073,8 +1078,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"			select inode_id from permission where " +
 				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
-				"	) " +
-				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"	) x " +
+                "WHERE identifier.id = x.id " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
