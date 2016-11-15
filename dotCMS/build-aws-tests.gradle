@@ -177,23 +177,6 @@ task describeInstance {
 }
 
 
-task executeRemoteInstance(dependsOn: describeInstance) {
-	doLast {
-		ssh.run {
-			session(
-				host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
-				identity: file( properties.getProperty("security.key.private.file") )
-			) {
-				executeScript( file( project.scriptFile ), logging: "none", interaction: {
-					when(line: _, from: standardOutput) { line -> println( line ) }
-					when(line: _, from: standardError) { line -> println( line ) }
-				})
-			}
-		}
-	}
-}
-
-
 String getInstancePublicDnsName(String instanceId) {
 	DescribeInstancesResult describeInstancesResult = getAmazonEC2Client().describeInstances(
 		new DescribeInstancesRequest().withInstanceIds( instanceId )
@@ -220,7 +203,15 @@ AmazonEC2 getAmazonEC2Client() {
 //---------------------------------------------- AWS/RDS Instances ----------------------------------------------//
 
 if (hasProperty('dbInstanceEndpoint') == false) { ext.dbInstanceEndpoint = "" }
-
+if (hasProperty('dbDriverClassName') == false) { ext.dbDriverClassName = "" }
+if (hasProperty('dbInstanceName') == false) { ext.dbInstanceName = "" }
+if (hasProperty('dbInstancePort') == false) { ext.dbInstancePort = "" }
+if (hasProperty('dbInstanceUsername') == false) { ext.dbInstanceUsername = "" }
+if (hasProperty('dbInstancePassword') == false) { ext.dbInstancePassword = "" }
+if (hasProperty('dbInstanceSlaveUsername') == false) { ext.dbInstanceSlaveUsername = "" }
+if (hasProperty('dbInstanceSlavePassword') == false) { ext.dbInstanceSlavePassword = "" }
+if (hasProperty('dbInstanceUrl') == false) { ext.dbInstanceUrl = "" }
+if (hasProperty('validationQuery') == false) { ext.validationQuery = "" }
 
 task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
@@ -279,19 +270,9 @@ task waitDBInstanceStatusCreated(type: AmazonRDSWaitInstanceStatusTask) {
 
 task describeDBInstance {
 	doLast {
-		String endpoint = getDBInstanceEndpoint( getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb ) )
+		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb ) )
 
-		project.dbInstanceEndpoint = endpoint;
-
-		println("Described DB Instance = "+ endpoint )
-	}
-}
-
-
-task setupDBInstance(dependsOn: describeDBInstance) {
-	doLast {
 		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.instanceTargetDb )
-		String dbInstanceEndpoint = project.dbInstanceEndpoint;
 		String dbInstanceName = getDatabaseProperty( properties, "name", project.instanceTargetDb )
 		String dbInstancePort = getDatabaseProperty( properties, "port", project.instanceTargetDb )
 		String dbInstanceUsername = getDatabaseProperty( properties, "user.master.username", project.instanceTargetDb )
@@ -299,13 +280,65 @@ task setupDBInstance(dependsOn: describeDBInstance) {
 		String dbInstanceSlaveUsername = getDatabaseProperty( properties, "user.slave.username", project.instanceTargetDb )
 		String dbInstanceSlavePassword = getDatabaseProperty( properties, "user.slave.password", project.instanceTargetDb )
 
+		String dbInstanceUrl = null;
+		String validationQuery = null;
+		switch( project.instanceTargetDb.toUpperCase() ) {
+
+			case "POSTGRES":
+				dbInstanceUrl = "jdbc:postgresql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}"
+				validationQuery = "SELECT 1"
+				break;
+
+			case "MYSQL":
+				dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8"
+				validationQuery = "SELECT 1"
+				break;
+
+			case "MSSQL":
+				dbInstanceUrl = "jdbc:jtds:sqlserver://${dbInstanceEndpoint}:${dbInstancePort};databaseName=master";
+				validationQuery = "SELECT 1"
+				break;
+
+			case "ORACLE":
+				dbInstanceUrl = "jdbc:oracle:thin:@${dbInstanceEndpoint}:${dbInstancePort}:${dbInstanceName}";
+				validationQuery = "SELECT 1 FROM DUAL"
+				break;
+		}
+
+		project.dbInstanceEndpoint = dbInstanceEndpoint;
+		project.dbDriverClassName = dbDriverClassName;
+		project.dbInstanceName = dbInstanceName;
+		project.dbInstancePort = dbInstancePort;
+		project.dbInstanceUsername = dbInstanceUsername;
+		project.dbInstancePassword = dbInstancePassword;
+		project.dbInstanceSlaveUsername = dbInstanceSlaveUsername;
+		project.dbInstanceSlavePassword = dbInstanceSlavePassword;
+		project.dbInstanceUrl = dbInstanceUrl;
+		project.validationQuery = validationQuery;
+
+		println("Described DB Instance = "+ project.dbInstanceEndpoint )
+	}
+}
+
+
+task setupDBInstance(dependsOn: describeDBInstance) {
+	doLast {
+		String dbInstanceEndpoint = project.dbInstanceEndpoint
+		String dbDriverClassName = project.dbDriverClassName
+		String dbInstanceName = project.dbInstanceName
+		String dbInstancePort = project.dbInstancePort
+		String dbInstanceUsername = project.dbInstanceUsername
+		String dbInstancePassword = project.dbInstancePassword
+		String dbInstanceSlaveUsername = project.dbInstanceSlaveUsername
+		String dbInstanceSlavePassword = project.dbInstanceSlavePassword
+		String dbInstanceUrl = project.dbInstanceUrl
+		String validationQuery = project.validationQuery
+
 		Class.forName( dbDriverClassName, true, GroovyObject.class.classLoader )
 
 		switch( project.instanceTargetDb.toUpperCase() ) {
 
 			case "MYSQL":
-				String dbInstanceUrl = "jdbc:mysql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}?characterEncoding=UTF-8"
-
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
 					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
 				)
@@ -315,8 +348,6 @@ task setupDBInstance(dependsOn: describeDBInstance) {
 				break;
 
 			case "MSSQL":
-				String dbInstanceUrl = "jdbc:jtds:sqlserver://${dbInstanceEndpoint}:${dbInstancePort};databaseName=master";
-
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
 					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
 				)
@@ -328,8 +359,6 @@ task setupDBInstance(dependsOn: describeDBInstance) {
 				break;
 
 			case "ORACLE":
-				String dbInstanceUrl = "jdbc:oracle:thin:@${dbInstanceEndpoint}:${dbInstancePort}:${dbInstanceName}";
-
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
 					dbInstanceUrl, dbInstanceUsername, dbInstancePassword, dbDriverClassName
 				)
@@ -363,6 +392,61 @@ String getDBInstanceEndpoint(String dbInstanceIdentifier) {
 
 AmazonRDS getAmazonRDSClient() {
 	return project.extensions.getByType( AmazonRDSPluginExtension.class ).client
+}
+
+
+//---------------------------------------------- Script Execution ----------------------------------------------//
+
+task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
+	doLast {
+		String instanceTargetDb = project.instanceTargetDb
+
+		String dbInstanceEndpoint = project.dbInstanceEndpoint
+		String dbDriverClassName = project.dbDriverClassName
+		String dbInstanceName = project.dbInstanceName
+		String dbInstancePort = project.dbInstancePort
+		String dbInstanceUsername = project.dbInstanceUsername
+		String dbInstancePassword = project.dbInstancePassword
+		String dbInstanceSlaveUsername = project.dbInstanceSlaveUsername
+		String dbInstanceSlavePassword = project.dbInstanceSlavePassword
+		String dbInstanceUrl = project.dbInstanceUrl
+		String validationQuery = project.validationQuery
+
+		def variables = [
+			"DB_DRIVER": dbDriverClassName,
+			"DB_URL": dbInstanceUrl,
+			"DB_USERNAME": dbInstanceSlaveUsername,
+			"DB_PASSWORD": dbInstanceSlavePassword,
+			"DB_VALIDATION_QUERY": validationQuery,
+			"ESCLUSTER": "dotCMS"+ instanceTargetDb,
+		]
+
+		String instanceScriptFile = File.createTempFile('tempExecuteScript', '.sh').absolutePath
+
+		new File( instanceScriptFile ).withWriter { w ->
+			new File( project.scriptFile ).eachLine { line ->
+				String interpolatedLine = line
+
+				variables.each{ k, v ->
+					interpolatedLine = interpolatedLine.replaceAll( java.util.regex.Pattern.quote( '$'+ k ), v )
+				}
+
+				w << interpolatedLine + System.getProperty("line.separator")
+  			}
+		}
+
+		ssh.run {
+			session(
+				host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
+				identity: file( properties.getProperty("security.key.private.file") )
+			) {
+				executeScript( file( instanceScriptFile ), logging: "none", interaction: {
+					when(line: _, from: standardOutput) { line -> println( line ) }
+					when(line: _, from: standardError) { line -> println( line ) }
+				})
+			}
+		}
+	}
 }
 
 
