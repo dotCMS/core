@@ -1,16 +1,6 @@
 package com.dotmarketing.common.reindex;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -19,13 +9,7 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.I18NMessage;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.business.journal.IndexJournal;
@@ -40,8 +24,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.client.Client;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in
@@ -93,6 +87,8 @@ public class ReindexThread extends Thread {
     private final CopyOnWriteArrayList<String> notifiedFailingRecords = new CopyOnWriteArrayList<String>();
 	private final DistributedJournalAPI<String> jAPI;
 	private final NotificationAPI notificationAPI;
+	private final RoleAPI roleAPI;
+	private final UserAPI userAPI;
 
 	private static ReindexThread instance;
 
@@ -107,16 +103,22 @@ public class ReindexThread extends Thread {
 
 	public ReindexThread() {
 
-		this(APILocator.getDistributedJournalAPI(), APILocator.getNotificationAPI());
+		this(APILocator.getDistributedJournalAPI(),
+                APILocator.getNotificationAPI(),
+                APILocator.getUserAPI(),
+                APILocator.getRoleAPI());
 	}
 
 	@VisibleForTesting
 	public ReindexThread(final DistributedJournalAPI<String> jAPI,
-						 final NotificationAPI notificationAPI) {
+						 final NotificationAPI notificationAPI,
+                         final UserAPI userAPI,
+						 final RoleAPI roleAPI) {
 
 		this.jAPI = jAPI;
 		this.notificationAPI = notificationAPI;
-
+        this.userAPI = userAPI;
+		this.roleAPI = roleAPI;
 	}
 
 	private void finish() {
@@ -145,8 +147,8 @@ public class ReindexThread extends Thread {
 					String languageKey = "notification.reindexing.error";
 					String defaultMsg = "An error has occurred during the indexing process, please check your logs and retry later";
 
-					final User systemUser = APILocator.getUserAPI().getSystemUser();
-					sendNotification(languageKey, null, defaultMsg, systemUser);
+                    //Generate and send an user notification
+					sendNotification(languageKey, null, defaultMsg);
 				} catch ( DotDataException | LanguageException e ) {
 					Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
 				}
@@ -236,8 +238,9 @@ public class ReindexThread extends Thread {
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsLeftToIndexForServer()==0) {
 						// The re-indexation process has finished successfully
 						reindexSwitchover(false);
-						final User systemUser = APILocator.getUserAPI().getSystemUser();
-						sendNotification("notification.reindexing.success", null, null, systemUser);
+
+                        //Generate and send an user notification
+						sendNotification("notification.reindexing.success", null, null);
 					} else if (remoteQ.size() == 0 && ESReindexationProcessStatus.inFullReindexation()
 							&& jAPI.recordsLeftToIndexForServer() > 0) {
 						// Fill the re-index queue with failed records now after
@@ -307,11 +310,12 @@ public class ReindexThread extends Thread {
 									// The record was not able to be re-indexed,
 									// so a notification will be generated and
 									// the record will not be processed anymore
-									final User systemUser = APILocator.getUserAPI().getSystemUser();
 									String msg = "Could not re-index record with the Identifier '"
 											+ identToIndex
 											+ "'. The record is in a bad state or can be associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and re-start the reindex.";
-									sendNotification("notification.reindexing.error.processrecord", new Object[] { identToIndex }, msg, systemUser);
+
+                                    //Generate and send an user notification
+									sendNotification("notification.reindexing.error.processrecord", new Object[] {identToIndex}, msg);
 									this.notifiedFailingRecords.add(identToIndex);
 								}
 
@@ -795,15 +799,17 @@ public class ReindexThread extends Thread {
 	 *            - If set, the default message in case the key does not exist
 	 *            in the properties file. Otherwise, the message key will be
 	 *            returned.
-	 * @param systemUser
-	 * 			  - The user is needed to get the default locale for the messages.
 	 * @throws DotDataException
 	 *             The notification could not be posted to the system.
 	 * @throws LanguageException
 	 *             The language properties could not be retrieved.
 	 */
-	protected void sendNotification(final String key, final Object[] msgParams, final String defaultMsg, final User systemUser) throws DotDataException,
-			LanguageException {
+	protected void sendNotification(final String key, final Object[] msgParams, final String defaultMsg)
+			throws DotDataException, LanguageException {
+
+		//Search for the CMS Admin role and System User
+		final Role cmsAdminRole = this.roleAPI.loadCMSAdminRole();
+		final User systemUser = this.userAPI.getSystemUser();
 
 		this.notificationAPI.generateNotification(
 				new I18NMessage("notification.reindex.error.title"), // title = Reindex Notification
@@ -811,6 +817,8 @@ public class ReindexThread extends Thread {
 				null, // no actions
 				NotificationLevel.ERROR,
 				NotificationType.GENERIC,
+				Visibility.ROLE,
+				cmsAdminRole.getId(),
 				systemUser.getUserId(),
 				systemUser.getLocale()
 		);
