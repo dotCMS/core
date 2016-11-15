@@ -598,7 +598,7 @@
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
                             "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
-                            "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
+                            "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
                             "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
                             "</div>"
                         ].join("");
@@ -1276,7 +1276,7 @@
                         if(type=='host or folder'){
                            hasHostField = true;
                         }
-                        htmlstr += "<dl>";
+                        htmlstr += "<dl class='vertical'>";
                         htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
                         htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
@@ -2456,25 +2456,6 @@
           }
         }
     }
-
-        function  resizeBrowser(){
-                var viewport = dijit.getViewport();
-                var viewport_height = viewport.h;
-
-                var  e =  dojo.byId("borderContainer");
-                dojo.style(e, "height", viewport_height -150+ "px");
-
-                var  e =  dojo.byId("filterWrapper");
-                dojo.style(e, "height", viewport_height -195+ "px");
-
-                var  e =  dojo.byId("contentWrapper");
-                dojo.style(e, "height", viewport_height -230+ "px");
-
-                dijit.byId('borderContainer').resize()
-        }
-
-        //dojo.addOnLoad(resizeBrowser);
-        dojo.connect(window, "onresize", this, "resizeBrowser");
 
         function disableButtonRow() {
 

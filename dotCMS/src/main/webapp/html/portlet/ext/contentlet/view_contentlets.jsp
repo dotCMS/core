@@ -376,10 +376,10 @@
 <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
 <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
 <!-- START Split Screen -->
-<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">
+<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox">
 
 <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 350px;overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;" class="lineRight" >
+        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 251px;overflow-y:auto; overflow-x:hidden;" class="lineRight" >
 
 
 
@@ -392,7 +392,7 @@
 
                         <!-- START Advanced Search-->
                         <div id="advancedSearch">
-                                <dl>
+                                <dl class="vertical">
 	                        		<dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
 	                        		<dd><span id="structSelectBox"></span></dd>
 	                        		<div class="clear"></div>
@@ -403,38 +403,39 @@
 
                                 <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 
-	                                <div class="clear"></div>
 									<%if (languages.size() > 1) { %>
-	                                <!-- Language search fields  --->
-	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-                                    <dd>
-                                        <div id="combo_zone2">
-                                            <input id="language_id"/>
-                                        </div>
+                                        <dl class="vertical">
+                                            <!-- Language search fields  --->
+                                            <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+                                            <dd>
+                                                <div id="combo_zone2">
+                                                    <input id="language_id"/>
+                                                </div>
 
-                                        <%@include file="languages_select_inc.jsp" %>
-                                    </dd>
-                            <%} else { %>
-                                    <% long langId = languages.get(0).getId(); %>
-                                    <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
-                            <% } %>
+                                                <%@include file="languages_select_inc.jsp" %>
+                                            </dd>
+                                        </dl>
+                                    <%} else { %>
+                                        <% long langId = languages.get(0).getId(); %>
+                                        <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
+                                    <% } %>
 
 
 	                                <!-- Ajax built search fields  --->
-	                                        <div id="search_fields_table"></div>
-											<div class="clear"></div>
+                                    <div id="search_fields_table"></div>
+                                    <div class="clear"></div>
 	                                <!-- /Ajax built search fields  --->
 
 	 								<!-- Ajax built Categories   --->
-	                        		<dl id="search_categories_list"></dl>
+	                        		<dl class="vertical" id="search_categories_list"></dl>
 									<div class="clear"></div>
 									<!-- /Ajax built Categories   --->
 
-	                                <dl>
+	                                <dl class="vertical">
 	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
 	                                     <dd>
 
-	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+	                                     	<select name="showingSelect" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
                                                 <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
                                                 <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
                                                 <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
@@ -446,7 +447,7 @@
 
 	                                <div class="clear"></div>
 
-	                                <dl id="filterSystemHostTable" style="display: ">
+	                                <dl class="vertical" id="filterSystemHostTable">
 	                                    <dt></dt>
 	                                    <dd>
 	                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
@@ -495,7 +496,7 @@
 
 
 <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
 
                         <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
                                 <!-- START Listing Results -->
@@ -664,11 +665,6 @@
 	</table>
 
 </div>
-
-
-<script type="text/javascript">
-dojo.ready(resizeBrowser);
-</script>
 
 <form id="remotePublishForm">
 	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
