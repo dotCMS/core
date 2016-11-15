@@ -2,6 +2,7 @@ package com.dotcms.api.system.event;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.dotcms.util.marshal.Exclude;
 
 import java.io.Serializable;
 
@@ -20,8 +21,10 @@ public class Payload implements Serializable {
 	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-    private final PayloadVerifierFactory verifierFactory;
     private final String visibilityId; // user id, role uid or permission, if it is global, this is not need
+
+    @Exclude
+    private final PayloadVerifierFactory verifierFactory;
 
 	/**
 	 * Creates a payload object.
