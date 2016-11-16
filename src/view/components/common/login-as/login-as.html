@@ -4,9 +4,10 @@
         <!--TODO: manage errors on required fields and errors messages -->
         <form action="" #loginAsForm="ngForm" (submit)="dolLoginAs(loginAsForm.value)">
             <div class="form-group">
-                <dot-select name="userId" id="user-list" (change)="userSelectedHandler($event)" ngModel required id="dot-login-as-select">
-                    <dot-option *ngFor="let user of userLists" value={{user.userId}}>{{user.fullName}}</dot-option>
-                </dot-select>
+                <p-autoComplete name="user" id="userId"  ngModel required [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" [size]="30"
+                    (onSelect)="userSelectedHandler($event)" field="label" [minLength]="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
+                                [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
+                </p-autoComplete>
             </div>
             <div class="form-group" *ngIf="needPassword">
                 <md-input name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel></md-input>
