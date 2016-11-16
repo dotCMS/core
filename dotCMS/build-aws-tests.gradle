@@ -402,6 +402,10 @@ AmazonRDS getAmazonRDSClient() {
 //---------------------------------------------- Script Execution ----------------------------------------------//
 
 task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
+	doFirst {
+		mkdir buildDir
+	}
+
 	doLast {
 		String database = project.database
 
