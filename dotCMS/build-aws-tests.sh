@@ -49,6 +49,10 @@ sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF
 sed -i "s,CLUSTER_AUTOWIRE=true,CLUSTER_AUTOWIRE=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,PUBLISHER_QUEUE_MAX_TRIES=3,PUBLISHER_QUEUE_MAX_TRIES=1,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotmarketing-config.properties
 
+sed -i "s,^db.driver=.*$,db.driver=$DB_DRIVER,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^db.base.url=.*$,db.base.url=$DB_URL,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^db.username=.*$,db.username=$DB_USERNAME,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^db.password=.*$,db.password=$DB_PASSWORD,g" core/dotCMS/src/integration-test/resources/db-config.properties
 
 # Create output directory
 mkdir tests
@@ -57,6 +61,13 @@ mkdir tests
 # Run End-2-End tests
 ant -f build-tests.xml test-dotcms
 cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
+
+
+# Run Integration tests
+cd core/dotCMS
+./gradlew integrationTest --no-daemon || true
+cd ../..
+cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
 
 # Create output zip file
