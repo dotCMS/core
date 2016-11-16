@@ -65,10 +65,10 @@ if (hasProperty('propertiesFile') == false) { ext.propertiesFile = "build-aws-te
 if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" }
 if (hasProperty('outputFile') == false) { ext.outputFile = "build-aws-tests.zip" }
 
-
 Properties properties = new Properties()
 properties.load(new FileInputStream(project.propertiesFile))
 
+if (hasProperty('keyFile') == false) { ext.keyFile = properties.getProperty("security.key.private.file") }
 
 aws {
 	profileName = properties.getProperty("aws.credentials.profile")
@@ -454,7 +454,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 		ssh.run {
 			session(
 				host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
-				identity: file( properties.getProperty("security.key.private.file") )
+				identity: file( project.keyFile )
 			) {
 				// Transfer temporal script as an executable file into remote home directory
 				put( from: file( instanceScriptFilePath ), into: "/home/"+ properties.getProperty("ssh.username") )
