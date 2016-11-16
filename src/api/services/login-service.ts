@@ -20,6 +20,7 @@ import {Subject} from 'rxjs/Subject';
 export class LoginService {
 
     private _auth$: Subject<Auth> = new Subject<Auth>();
+    private _logout$: Subject<> = new Subject<>();
     private _auth: Auth;
     private _loginAsUsersList$: Subject<User[]>;
     private country: string = '';
@@ -52,6 +53,10 @@ export class LoginService {
 
     get auth$(): Observable<Auth> {
         return this._auth$.asObservable();
+    }
+
+    get logout$(): Observable<> {
+        return this._logout$.asObservable();
     }
 
     get auth(): Auth {
@@ -280,6 +285,11 @@ export class LoginService {
     private setAuth(auth: Auth): void {
         this._auth = auth;
         this._auth$.next(auth);
+
+        // When not logged user we need to fire the observable chain
+        if (!auth.user) {
+            this._logout$.next();
+        }
     }
 
     /**

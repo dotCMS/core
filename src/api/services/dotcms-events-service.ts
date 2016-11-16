@@ -2,7 +2,7 @@ import {DotcmsConfig} from './system/dotcms-config';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
-import {Auth, User} from './login-service';
+import {LoginService} from './login-service';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
@@ -14,6 +14,8 @@ export class DotcmsEventsService {
     private protocol: String;
     private endPoint: String;
 
+    private closedOnLogout: boolean = false;
+
     private subjects: Subject<any>[] = [];
     private timeWaitToReconnect: number;
 
@@ -24,14 +26,35 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(private dotcmsConfig: DotcmsConfig) {
+    constructor(private dotcmsConfig: DotcmsConfig, loginService: LoginService) {
         dotcmsConfig.getConfig().then(dotcmsConfig => {
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
             this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
+        });
 
-            this.connectWithSocket();
+        // Subscribe to changes on the logged user, only start the socket connection when the user is authenticated
+        loginService.watchUser(auth => {
+            if (auth.user) {
+                // The user exist, lets try to create the socket connection
+                this.connectWithSocket();
+            }
+        });
+
+        // Subscribe to changes in order to know when there is not a logged user
+        loginService.logout$.subscribe(() => {
+
+            // On logout, meaning no authenticated user lets try to close the socket
+            if (this.ws) {
+
+                /*
+                 We need to turn on this closedOnLogout flag in order to avoid reconnections as we explicitly
+                 closed the socket
+                 */
+                this.closedOnLogout = true;
+                this.ws.close(true);
+            }
         });
     }
 
@@ -43,7 +66,18 @@ export class DotcmsEventsService {
             this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}`);
             this.ws.connect();
 
-            this.ws.onClose(() => setTimeout(this.reconnect.bind(this), this.timeWaitToReconnect));
+            this.ws.onClose(() => {
+
+                if (this.closedOnLogout) { // We explicitly closed the socket
+
+                    // If we closed the socket for a logout we need to reset the closedOnLogout flag
+                    this.closedOnLogout = false;
+                    this.ws = null; // Cleaning up the socket as we explicitly closed the socket
+
+                } else { // Something happened and we need to try a reconnection
+                    setTimeout(this.reconnect.bind(this), this.timeWaitToReconnect);
+                }
+            });
 
             this.ws.getDataStream().subscribe(
                 res => {
