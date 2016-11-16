@@ -58,9 +58,12 @@ dependencies {
 }
 
 
-if (hasProperty('instanceTargetDb') == false) { ext.instanceTargetDb = "MySQL" }
+if (hasProperty('database') == false) { throw new GradleException( "Required project property \'database\' was not set" ) }
+if (hasProperty('branch') == false) { throw new GradleException( "Required project property \'branch\' was not set" ) }
+
 if (hasProperty('propertiesFile') == false) { ext.propertiesFile = "build-aws-tests.properties" }
 if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" }
+if (hasProperty('outputFile') == false) { ext.outputFile = "build-aws-tests.zip" }
 
 
 Properties properties = new Properties()
@@ -159,7 +162,7 @@ task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 task setupInstance {
 	doLast {
 		setInstanceTagName( project.instanceId,
-			properties.getProperty("aws.instance.name") +" ("+ project.instanceTargetDb +")"
+			properties.getProperty("aws.instance.name") +" ("+ project.database +")"
 		)
 
 		sleep(60 * 1000)
@@ -215,27 +218,27 @@ if (hasProperty('validationQuery') == false) { ext.validationQuery = "" }
 
 task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
-		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb )
+		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.database )
 
-		engine = getDatabaseProperty( properties, "engine", project.instanceTargetDb )
-		dbInstanceClass = getDatabaseProperty( properties, "instance.class", project.instanceTargetDb )
+		engine = getDatabaseProperty( properties, "engine", project.database )
+		dbInstanceClass = getDatabaseProperty( properties, "instance.class", project.database )
 
-		engineVersion = getDatabaseProperty( properties, "engine.version", project.instanceTargetDb )
-		port = getDatabaseProperty( properties, "port", project.instanceTargetDb ).toInteger()
-		licenseModel = getDatabaseProperty( properties, "license", project.instanceTargetDb )
-		publiclyAccessible = getDatabaseProperty( properties, "public", project.instanceTargetDb ).toBoolean()
-		allocatedStorage = getDatabaseProperty( properties, "storage", project.instanceTargetDb ).toInteger()
+		engineVersion = getDatabaseProperty( properties, "engine.version", project.database )
+		port = getDatabaseProperty( properties, "port", project.database ).toInteger()
+		licenseModel = getDatabaseProperty( properties, "license", project.database )
+		publiclyAccessible = getDatabaseProperty( properties, "public", project.database ).toBoolean()
+		allocatedStorage = getDatabaseProperty( properties, "storage", project.database ).toInteger()
 
-		if ( ! "MSSQL".equalsIgnoreCase( project.instanceTargetDb ) ) {
-			dbName = getDatabaseProperty( properties, "name", project.instanceTargetDb )
+		if ( ! "MSSQL".equalsIgnoreCase( project.database ) ) {
+			dbName = getDatabaseProperty( properties, "name", project.database )
 		}
 
-		masterUsername = getDatabaseProperty( properties, "user.master.username", project.instanceTargetDb )
-		masterUserPassword = getDatabaseProperty( properties, "user.master.password", project.instanceTargetDb )
+		masterUsername = getDatabaseProperty( properties, "user.master.username", project.database )
+		masterUserPassword = getDatabaseProperty( properties, "user.master.password", project.database )
 
-		backupRetentionPeriod = getDatabaseProperty( properties, "backupRetentionPeriod", project.instanceTargetDb ).toInteger()
-		multiAZ = getDatabaseProperty( properties, "multiAZ", project.instanceTargetDb ).toBoolean()
-		autoMinorVersionUpgrade = getDatabaseProperty( properties, "autoMinorVersionUpgrade", project.instanceTargetDb ).toBoolean()
+		backupRetentionPeriod = getDatabaseProperty( properties, "backupRetentionPeriod", project.database ).toInteger()
+		multiAZ = getDatabaseProperty( properties, "multiAZ", project.database ).toBoolean()
+		autoMinorVersionUpgrade = getDatabaseProperty( properties, "autoMinorVersionUpgrade", project.database ).toBoolean()
 
 		vpcSecurityGroupIds = new java.util.ArrayList<String>()
 		vpcSecurityGroupIds += properties.getProperty("aws.securityGroupId")
@@ -251,7 +254,7 @@ task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
 	skipFinalSnapshot = true
 
 	doFirst {
-		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb )
+		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.database )
 	}
 }
 
@@ -263,26 +266,26 @@ task waitDBInstanceStatusCreated(type: AmazonRDSWaitInstanceStatusTask) {
 	waitStatuses = [ "backing-up", "creating", "deleting", "modifying", "rebooting", "renaming", "resetting-master-credentials" ]
 
 	doFirst {
-		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb )
+		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.database )
 	}
 }
 
 
 task describeDBInstance {
 	doLast {
-		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabaseProperty( properties, "instance.identifier", project.instanceTargetDb ) )
+		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabaseProperty( properties, "instance.identifier", project.database ) )
 
-		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.instanceTargetDb )
-		String dbInstanceName = getDatabaseProperty( properties, "name", project.instanceTargetDb )
-		String dbInstancePort = getDatabaseProperty( properties, "port", project.instanceTargetDb )
-		String dbInstanceUsername = getDatabaseProperty( properties, "user.master.username", project.instanceTargetDb )
-		String dbInstancePassword = getDatabaseProperty( properties, "user.master.password", project.instanceTargetDb )
-		String dbInstanceSlaveUsername = getDatabaseProperty( properties, "user.slave.username", project.instanceTargetDb )
-		String dbInstanceSlavePassword = getDatabaseProperty( properties, "user.slave.password", project.instanceTargetDb )
+		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.database )
+		String dbInstanceName = getDatabaseProperty( properties, "name", project.database )
+		String dbInstancePort = getDatabaseProperty( properties, "port", project.database )
+		String dbInstanceUsername = getDatabaseProperty( properties, "user.master.username", project.database )
+		String dbInstancePassword = getDatabaseProperty( properties, "user.master.password", project.database )
+		String dbInstanceSlaveUsername = getDatabaseProperty( properties, "user.slave.username", project.database )
+		String dbInstanceSlavePassword = getDatabaseProperty( properties, "user.slave.password", project.database )
 
 		String dbInstanceUrl = null;
 		String validationQuery = null;
-		switch( project.instanceTargetDb.toUpperCase() ) {
+		switch( project.database.toUpperCase() ) {
 
 			case "POSTGRES":
 				dbInstanceUrl = "jdbc:postgresql://${dbInstanceEndpoint}:${dbInstancePort}/${dbInstanceName}"
@@ -336,7 +339,7 @@ task setupDBInstance(dependsOn: describeDBInstance) {
 
 		Class.forName( dbDriverClassName, true, GroovyObject.class.classLoader )
 
-		switch( project.instanceTargetDb.toUpperCase() ) {
+		switch( project.database.toUpperCase() ) {
 
 			case "MYSQL":
 				groovy.sql.Sql sql = groovy.sql.Sql.newInstance(
@@ -400,7 +403,7 @@ AmazonRDS getAmazonRDSClient() {
 
 task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 	doLast {
-		String instanceTargetDb = project.instanceTargetDb
+		String database = project.database
 
 		String dbInstanceEndpoint = project.dbInstanceEndpoint
 		String dbDriverClassName = project.dbDriverClassName
@@ -413,18 +416,28 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 		String dbInstanceUrl = project.dbInstanceUrl
 		String validationQuery = project.validationQuery
 
+
+		// Define the variables supported on script
 		def variables = [
+			"BRANCH": project.branch,
+
 			"DB_DRIVER": dbDriverClassName,
 			"DB_URL": dbInstanceUrl,
 			"DB_USERNAME": dbInstanceSlaveUsername,
 			"DB_PASSWORD": dbInstanceSlavePassword,
 			"DB_VALIDATION_QUERY": validationQuery,
-			"ESCLUSTER": "dotCMS"+ instanceTargetDb,
+			"ESCLUSTER": "dotCMS"+ database,
+
+			"OUTPUT_FILE": project.outputFile,
 		]
 
-		String instanceScriptFile = File.createTempFile('tempExecuteScript', '.sh').absolutePath
 
-		new File( instanceScriptFile ).withWriter { w ->
+		// Create temporal script file with all variables interpolated
+		String instanceScriptFilePath = File.createTempFile('tempExecuteScript', '.sh').absolutePath
+		String[] instanceScriptFileParts = instanceScriptFilePath.split("/")
+		String instanceScriptFileName = instanceScriptFileParts[ instanceScriptFileParts.length - 1 ]
+
+		new File( instanceScriptFilePath ).withWriter { w ->
 			new File( project.scriptFile ).eachLine { line ->
 				String interpolatedLine = line
 
@@ -436,15 +449,25 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
   			}
 		}
 
+
+		// Open SSH session in order to run the interpolated script and transfer its output
 		ssh.run {
 			session(
 				host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
 				identity: file( properties.getProperty("security.key.private.file") )
 			) {
-				executeScript( file( instanceScriptFile ), logging: "none", interaction: {
+				// Transfer temporal script as an executable file into remote home directory
+				put( from: file( instanceScriptFilePath ), into: "/home/"+ properties.getProperty("ssh.username") )
+				execute( "chmod 777 "+ instanceScriptFileName )
+
+				// Execute temporal script transferred to remote home directory
+				execute( "./"+ instanceScriptFileName, logging: "none", interaction: {
 					when(line: _, from: standardOutput) { line -> println( line ) }
 					when(line: _, from: standardError) { line -> println( line ) }
 				})
+
+				// Transfer output file into local build directory
+				get( from: variables.OUTPUT_FILE, into: buildDir )
 			}
 		}
 	}
@@ -453,6 +476,6 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 
 //---------------------------------------------- Utilities ----------------------------------------------//
 
-String getDatabaseProperty(Properties properties, String propertyName, String instanceTargetDb) {
-	return properties.getProperty( "db."+ instanceTargetDb.toLowerCase() +"."+ propertyName );
+String getDatabaseProperty(Properties properties, String propertyName, String database) {
+	return properties.getProperty( "db."+ database.toLowerCase() +"."+ propertyName );
 }
