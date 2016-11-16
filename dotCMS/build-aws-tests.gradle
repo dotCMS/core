@@ -62,10 +62,10 @@ if (hasProperty('instanceTargetDb') == false) { ext.instanceTargetDb = "MySQL" }
 if (hasProperty('propertiesFile') == false) { ext.propertiesFile = "build-aws-tests.properties" }
 if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" }
 
-
 Properties properties = new Properties()
 properties.load(new FileInputStream(project.propertiesFile))
 
+if (hasProperty('keyFile') == false) { ext.keyFile = properties.getProperty("security.key.private.file") }
 
 aws {
 	profileName = properties.getProperty("aws.credentials.profile")
@@ -439,7 +439,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 		ssh.run {
 			session(
 				host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
-				identity: file( properties.getProperty("security.key.private.file") )
+				identity: file( project.keyFile )
 			) {
 				executeScript( file( instanceScriptFile ), logging: "none", interaction: {
 					when(line: _, from: standardOutput) { line -> println( line ) }
