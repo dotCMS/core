@@ -2,12 +2,17 @@ package com.dotmarketing.util;
 
 import com.dotcms.repackage.com.google.common.io.Files;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.URL;
 
 import javax.servlet.ServletContext;
@@ -44,6 +49,21 @@ public class ConfigTestHelper extends Config {
         }
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
+
+        setToolboxPath();
+
+        mockStrutsActionModule();
+    }
+
+    private static void mockStrutsActionModule() {
+        ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
+        ModuleConfig config = factoryObject.createModuleConfig("");
+        Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
+    }
+
+    private static void setToolboxPath() throws FileNotFoundException {
+        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
+        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
     }
 
     /**
