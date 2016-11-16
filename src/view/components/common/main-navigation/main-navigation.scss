@@ -1,15 +1,45 @@
+@import "../../../../scss/variables";
+
 md-nav-list {
     a {
         display: block;
         padding: 5px 0;
     }
-}
 
-.md-nav-list__submenu {
-    font-size: 14px;
-    padding: 5px 0 10px 0;
+    .md-nav-list__submenu {
+        padding: 0 30px 10px 52px;
 
-    a {
-        color: gray;
+        a {
+            color: $gray-dark;
+
+            &:hover {
+                color: $body-font-color;
+            }
+        }
+    }
+
+    .accordion-group__title {
+        border-left: solid 3px transparent;
+        padding: 10px 30px;
+        transition: background-color 0.15s ease-in;
+
+        &:hover {
+            background-color: $gray-lightest;
+        }
+
+        &.is-active {
+            border-left: solid 3px $primary;
+            font-weight: bold;
+            background-color: $gray-lightest;
+        }
+    }
+
+    .accordion-group__content {
+        border-left: solid 3px $primary;
+        background-color: $gray-lightest;
+    }
+
+    .accordion-group__title-text {
+        margin-left: 6px; // with the space it's 10px
     }
 }

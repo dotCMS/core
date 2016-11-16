@@ -8,6 +8,7 @@ md-sidenav-layout[fullscreen] {
 }
 
 md-toolbar {
+  font-family: $base-font-family !important;
   position: relative;
   z-index: 1;
 
