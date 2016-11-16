@@ -2090,16 +2090,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void widgetInvalidateAllLang() throws Exception {
 
-        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
         HttpServletRequest requestProxy = new MockInternalRequest().request();
         HttpServletResponse responseProxy = new BaseResponse().response();
-
-        ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
-        ModuleConfig config = factoryObject.createModuleConfig("");
-
-        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
-
-        Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
 
         initMessages();
 
