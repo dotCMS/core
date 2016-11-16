@@ -1,19 +1,31 @@
 package com.dotmarketing.filters;
 
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.repackage.com.lowagie.text.pdf.codec.Base64.InputStream;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.servlets.SpeedyAssetServlet;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.velocity.ClientVelocityServlet;
 import com.dotmarketing.velocity.VelocityServlet;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import static org.mockito.Matchers.startsWith;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -24,6 +36,7 @@ import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
@@ -37,6 +50,27 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
 public class CMSFilterTest {
+	
+	@BeforeClass
+    public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
+        Mockito.when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return (String) invocation.getArguments()[0];
+            }
+        });
+        
+        Mockito.when(Config.CONTEXT.getResourceAsStream(startsWith("/"))).thenAnswer(new Answer<FileInputStream>() {
+            @Override
+            public FileInputStream answer(InvocationOnMock invocation) throws Throwable {
+                return new FileInputStream((String) invocation.getArguments()[0]);
+            }
+        });
+        //ServletToolboxManager
+    }
 
 	@Test
 	public void shouldWorkVirtualLink() throws IOException {
@@ -294,6 +328,7 @@ public class CMSFilterTest {
 			public void forward(ServletRequest arg0, ServletResponse arg1) throws ServletException, IOException {
 				
 				VelocityServlet servlet = new ClientVelocityServlet() ;
+				servlet.init(null);
 				servlet.service(arg0, arg1);
 			}
 		});
