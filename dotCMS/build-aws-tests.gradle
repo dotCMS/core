@@ -470,6 +470,8 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 				get( from: variables.OUTPUT_FILE, into: buildDir )
 			}
 		}
+
+		println( "Saved Tests Results in \'"+ buildDir.absolutePath +"/"+ variables.OUTPUT_FILE +"\'" )
 	}
 }
 
