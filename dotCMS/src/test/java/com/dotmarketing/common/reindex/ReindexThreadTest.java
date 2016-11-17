@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.PayloadVerifierFactory;
 import com.dotcms.api.system.event.Visibility;
@@ -48,9 +49,12 @@ public class ReindexThreadTest extends BaseMessageResources {
         final DistributedJournalAPI<String> jAPI = mock(DistributedJournalAPI.class);
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
+        String cmsAdminRoleId = UUID.randomUUID().toString();
+
         //Getting the original version of the Verifier in order to restore it after the test
         PayloadVerifierFactory payloadVerifierFactory = PayloadVerifierFactory.getInstance();
-        this.originalRoleVerifier = payloadVerifierFactory.getVerifier(Visibility.ROLE);
+        Payload payload = new Payload(Visibility.ROLE, cmsAdminRoleId);
+        this.originalRoleVerifier = payloadVerifierFactory.getVerifier(payload);
 
         //Mocking the Notification Visibility
         PayloadVerifier roleVerifier = new RoleVerifier(roleAPI);
@@ -70,7 +74,6 @@ public class ReindexThreadTest extends BaseMessageResources {
 
         //Mock the CMS Admin Role
         final Role cmsAdminRole = new Role();
-        String cmsAdminRoleId = UUID.randomUUID().toString();
         cmsAdminRole.setId(cmsAdminRoleId);
         cmsAdminRole.setName("CMS Administrator");
         cmsAdminRole.setRoleKey("CMS Administrator");

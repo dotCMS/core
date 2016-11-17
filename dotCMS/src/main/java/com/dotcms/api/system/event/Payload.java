@@ -1,9 +1,5 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
-import com.dotcms.util.marshal.Exclude;
-
 import java.io.Serializable;
 
 /**
@@ -22,9 +18,6 @@ public class Payload implements Serializable {
 	private final Object data;
 	private final Visibility visibility;
     private final String visibilityId; // user id, role uid or permission, if it is global, this is not need
-
-    @Exclude
-    private final PayloadVerifierFactory verifierFactory;
 
 	/**
 	 * Creates a payload object.
@@ -79,31 +72,10 @@ public class Payload implements Serializable {
                    final Visibility visibility,
                    final String visibilityId) {
 
-        this(data, visibility, visibilityId, PayloadVerifierFactory.getInstance());
-    }
-
-	/**
-	 * Creates a payload object.
-	 * 
-	 * @param data {@link Object}
-	 *            - Any Java object that represents the payload.
-	 * @param visibility {@link Visibility}
-	 * 			  - If the event should be apply just for a specific user, role or global
-	 * @param visibilityId {@link String}
-	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
-     * @param verifierFactory Factory class to create {@link PayloadVerifier}'s based on {@link Visibility}
-     */
-    @VisibleForTesting
-    public Payload(final Object data,
-                   final Visibility visibility,
-                   final String visibilityId,
-                   final PayloadVerifierFactory verifierFactory) {
-
-		this.type = data.getClass().getName();
-		this.data = data;
+        this.type = data.getClass().getName();
+        this.data = data;
         this.visibility = visibility;
         this.visibilityId = visibilityId;
-        this.verifierFactory = verifierFactory;
     }
 
     /**
@@ -152,25 +124,5 @@ public class Payload implements Serializable {
 	public String getVisibilityId() {
 		return visibilityId;
 	}
-
-    /**
-     * Verifies if the current user has the "visibility" rights to use this payload
-     *
-     * @param session Session wrapper needed in order to obtain the current user information
-     * @return true the current user has "visibility" rights on this payload
-     */
-    public boolean verified(SessionWrapper session) {
-
-        boolean result = true;
-
-        if ( visibility != null ) {
-            //Get the verifier for this Payload visibility
-            final PayloadVerifier payloadVerifier = this.verifierFactory.getVerifier(visibility);
-            //Verify is we have the "visibility" to use this payload
-            result = payloadVerifier.verified(this, session);
-        }
-
-        return result;
-    }
 
 } // E:O:F:Payload.

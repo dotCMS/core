@@ -1,18 +1,11 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.api.system.event.SystemEventProcessor;
-import com.dotcms.api.system.event.SystemEventProcessorFactory;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.api.system.event.*;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import javax.websocket.OnClose;
@@ -22,8 +15,6 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -48,25 +39,27 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	private final Queue<Session> queue;
 	private final UserAPI userAPI;
 	private final SystemEventProcessorFactory systemEventProcessorFactory;
-
+    private final PayloadVerifierFactory payloadVerifierFactory;
 
 	public SystemEventsWebSocketEndPoint() {
 
 		this(new ConcurrentLinkedQueue<Session>(),
 				APILocator.getUserAPI(),
-				SystemEventProcessorFactory.getInstance());
-	}
+                SystemEventProcessorFactory.getInstance(),
+                PayloadVerifierFactory.getInstance());
+    }
 
 	@VisibleForTesting
 	public SystemEventsWebSocketEndPoint(final Queue<Session> queue,
-										 final UserAPI userAPI,
-										 final SystemEventProcessorFactory systemEventProcessorFactory) {
+                                         final UserAPI userAPI,
+                                         final SystemEventProcessorFactory systemEventProcessorFactory,
+                                         final PayloadVerifierFactory payloadVerifierFactory) {
 
 		this.queue      = queue;
 		this.userAPI    = userAPI;
-		this.systemEventProcessorFactory =
-				systemEventProcessorFactory;
-	}
+        this.systemEventProcessorFactory = systemEventProcessorFactory;
+        this.payloadVerifierFactory = payloadVerifierFactory;
+    }
 
 	@OnOpen
 	public void open(final Session session) {
@@ -152,6 +145,26 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 		return null != processor? processor.process(event, session): event;
 	} // processEvent.
 
+    /**
+     * Verifies if the current user has the "visibility" rights to use this given payload
+     *
+     * @param session Session wrapper needed in order to obtain the current user information
+     * @param payload Payload to validate
+     * @return true the current user has "visibility" rights on this payload
+     */
+    private boolean validPayload(final SessionWrapper session,
+                                 final Payload payload) {
+
+        //Get the verifier associated to this Payload
+        final PayloadVerifier verifier = this.payloadVerifierFactory.getVerifier(payload);
+        if ( null != verifier ) {
+            //Check if we have the "visibility" rights to use this payload
+            return verifier.verified(payload, session);
+        }
+
+        return true;
+    }
+
 	private boolean apply(final SystemEvent event,
 						  final Session session) throws DotDataException  {
 
@@ -165,11 +178,11 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				if (session instanceof SessionWrapper) {
 
 					if (null != SessionWrapper.class.cast(session).getUser()) {
-						apply = payload.verified((SessionWrapper) session);
-					}
-				}
-			}
-		} else {
+                        apply = this.validPayload((SessionWrapper) session, payload);
+                    }
+                }
+            }
+        } else {
 
 			apply = false; // if the payload is null, must not send to the session.
 		}

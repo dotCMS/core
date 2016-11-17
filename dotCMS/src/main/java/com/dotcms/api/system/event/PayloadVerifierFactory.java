@@ -48,13 +48,13 @@ public class PayloadVerifierFactory implements Serializable {
      * Returns the verifier associated to the given {@link Visibility}, if there is not verifier registered a
      * {@link GlobalVerifier} will be returned
      *
-     * @param visibility Visibility of the verifier we want to obtain
+     * @param payload Payload of the verifier we want to obtain
      * @return The verifier related to the given visibility
      */
-    public PayloadVerifier getVerifier(final Visibility visibility) {
+    public PayloadVerifier getVerifier(final Payload payload) {
 
-        return this.verifiersInstancesMap.containsKey(visibility) ?
-                this.verifiersInstancesMap.get(visibility) : GLOBAL_VERIFIER;
+        return this.verifiersInstancesMap.containsKey(payload.getVisibility()) ?
+                this.verifiersInstancesMap.get(payload.getVisibility()) : GLOBAL_VERIFIER;
     }
 
 }
