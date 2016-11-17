@@ -134,7 +134,7 @@ task terminateInstance(type: AmazonEC2TerminateInstanceTask) {
 }
 
 
-task waitInstanceStatusLaunched(type: AmazonEC2WaitInstanceStatusTask) {
+task waitInstanceLaunched(type: AmazonEC2WaitInstanceStatusTask) {
 	loopWait = 2
 
 	doFirst {
@@ -146,7 +146,7 @@ task waitInstanceStatusLaunched(type: AmazonEC2WaitInstanceStatusTask) {
 	}
 }
 
-task waitInstanceStatusTerminated(type: AmazonEC2WaitInstanceStatusTask) {
+task waitInstanceTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 	loopWait = 2
 
 	doFirst {
@@ -258,7 +258,7 @@ task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
 	}
 }
 
-task waitDBInstanceStatusCreated(type: AmazonRDSWaitInstanceStatusTask) {
+task waitDBInstanceCreated(type: AmazonRDSWaitInstanceStatusTask) {
 	loopWait = 2
 
 	successStatuses = [ "available", "terminated" ]
