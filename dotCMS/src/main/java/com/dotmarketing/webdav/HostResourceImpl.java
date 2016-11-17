@@ -270,18 +270,11 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-
-	public LockToken createAndLock(String name, LockTimeout arg1, LockInfo arg2)
+	
+	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
 			throws NotAuthorizedException {
-		try {
-            Resource resource = createNew(name, new ByteArrayInputStream(new byte[0]), 0L, null);
-            if(resource instanceof LockableResource) {
-                return ((LockableResource)resource).lock(arg1, arg2).getLockToken();
-            }
-        } catch (Exception e) {
-            Logger.warn(this, "can't createAndLock resource "+name+" on host "+this.getName(),e);
-        } 
-		return null;
+		createCollection(name);
+		return lock(timeout, lockInfo).getLockToken();
 	}
 
     public LockToken getCurrentLock() {
@@ -289,12 +282,10 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
         return null;
     }
 
-    public LockResult lock(LockTimeout arg0, LockInfo arg1)
-            throws NotAuthorizedException, PreConditionFailedException,
-            LockedException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
+		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
+//		return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
+	}
 
     public LockResult refreshLock(String arg0) throws NotAuthorizedException,
             PreConditionFailedException {
