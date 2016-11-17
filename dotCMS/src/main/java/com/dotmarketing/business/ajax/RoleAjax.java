@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
@@ -814,6 +815,12 @@ public class RoleAjax {
 				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
 			}
 
+			if(permissionable instanceof Host){	
+				//Send a websocket event to notificate a site permission change  
+				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+						new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+			}
+			
 			HibernateUtil.commitTransaction();
 
 		} catch (Exception e) {

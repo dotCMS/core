@@ -10,6 +10,11 @@ import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -36,6 +41,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -63,6 +69,17 @@ import com.liferay.portal.model.User;
  */
 public class PermissionAjax {
 
+	private final SystemEventsAPI systemEventsAPI;
+	
+	public PermissionAjax(){
+		this(APILocator.getSystemEventsAPI());
+	}
+	
+	@VisibleForTesting
+	protected PermissionAjax(SystemEventsAPI systemEventsAPI) {
+		this.systemEventsAPI = systemEventsAPI;
+    }
+	
 	/**
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
@@ -286,6 +303,13 @@ public class PermissionAjax {
 			} else {
 				permissionAPI.removePermissions(asset);
 			}
+		
+			if(asset instanceof Host){	
+				//Send a websocket event to notificate a site permission change  
+				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+						new Payload(asset, Visibility.GLOBAL,	(String) null));
+			}
+			
 			HibernateUtil.commitTransaction();
 		} catch (Exception e) {
 		    Logger.warn(this, e.getMessage(), e);
@@ -313,6 +337,12 @@ public class PermissionAjax {
 			Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 			permissionAPI.removePermissions(asset);
 
+			if(asset instanceof Host){	
+				//Send a websocket event to notificate a site permission change  
+				Contentlet c = APILocator.getContentletAPI().find(((Host) asset).getInode(), user, respectFrontendRoles);
+				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+						new Payload(c, Visibility.GLOBAL,	(String) null));
+			}			
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;
