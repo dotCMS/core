@@ -339,9 +339,8 @@ public class PermissionAjax {
 
 			if(asset instanceof Host){	
 				//Send a websocket event to notificate a site permission change  
-				Contentlet c = APILocator.getContentletAPI().find(((Host) asset).getInode(), user, respectFrontendRoles);
 				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
-						new Payload(c, Visibility.GLOBAL,	(String) null));
+						new Payload(asset, Visibility.GLOBAL,	(String) null));
 			}			
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
