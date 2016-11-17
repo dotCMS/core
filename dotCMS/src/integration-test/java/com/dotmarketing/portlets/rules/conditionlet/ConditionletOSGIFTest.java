@@ -1,11 +1,19 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.LicenseTestUtil;
-import junit.framework.Assert;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+import java.util.Map;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
@@ -17,12 +25,6 @@ import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 
-import java.util.Map;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class ConditionletOSGIFTest {
 
@@ -46,11 +48,11 @@ public class ConditionletOSGIFTest {
 
             conditionletActivator.start(context);
 
-            Assert.assertNotNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
+            assertNotNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
 
             conditionletActivator.stop(context);
 
-            Assert.assertNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
+            assertNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
 
         } catch(Exception e) {
             Logger.error(ConditionletOSGIFTest.class, "Error starting/stopping ConditionletActivator", e);
