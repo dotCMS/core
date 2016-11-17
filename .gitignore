@@ -30,6 +30,7 @@ jspm_bundles/
 # IntelliJ Idea (this is actually including IntelliJ files!)
 #################
 .idea/
+*.iml
 
 #################
 ## Eclipse
