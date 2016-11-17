@@ -1,7 +1,6 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.repackage.com.lowagie.text.pdf.codec.Base64.InputStream;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -11,7 +10,6 @@ import com.dotmarketing.servlets.SpeedyAssetServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.OSGIUtil;
 import com.dotmarketing.velocity.ClientVelocityServlet;
 import com.dotmarketing.velocity.VelocityServlet;
 
@@ -24,7 +22,6 @@ import org.mockito.stubbing.Answer;
 
 import static org.mockito.Matchers.startsWith;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,7 +33,6 @@ import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
@@ -250,10 +246,6 @@ public class CMSFilterTest {
 			cmsHomePage.setUrl("/cmsHomePage");
 			HibernateUtil.save(cmsHomePage);
 
-			
-			
-			
-			
 			CMSFilter cmsFilter = new CMSFilter();
 			HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
 			MockResponseWrapper response = new MockResponseWrapper(res);
@@ -271,9 +263,6 @@ public class CMSFilterTest {
 			HibernateUtil.delete(cmsHomePage);
 			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
 
-			
-			
-			
 			cmsHomePage = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/cmsHomePage");
 
 			cmsHomePage = new VirtualLink();
@@ -282,6 +271,8 @@ public class CMSFilterTest {
 			cmsHomePage.setUri("/about-us/"+CMSFilter.CMS_INDEX_PAGE);
 			cmsHomePage.setUrl("demo.dotcms.com:/cmsHomePage");
 			HibernateUtil.save(cmsHomePage);
+			// need to remove the _NOT_FOUND_ entry for this uri created in the previous test
+			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
 			
 			
 			Logger.info(this.getClass(), "demo.dotcms.com:/cmsHomePage should forward to /about-us/"+CMSFilter.CMS_INDEX_PAGE);
@@ -293,18 +284,19 @@ public class CMSFilterTest {
 			Logger.info(this.getClass(), "looking for /about-us"+CMSFilter.CMS_INDEX_PAGE+", got;" + request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
 			Assert.assertEquals("/about-us/"+CMSFilter.CMS_INDEX_PAGE, request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
 
-			HibernateUtil.delete(cmsHomePage);
-			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
-			
-		
-		
 		} catch (Exception e) {
 
 			e.printStackTrace();
 			Assert.fail();
 
 		} finally {
-
+			try {
+				HibernateUtil.delete(cmsHomePage);
+				VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
+			} catch (DotHibernateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 		}
 	}
