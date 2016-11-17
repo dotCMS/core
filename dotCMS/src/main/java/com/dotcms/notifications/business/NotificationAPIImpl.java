@@ -107,12 +107,27 @@ public class NotificationAPIImpl implements NotificationAPI {
 	public void generateNotification(String title, String message, List<NotificationAction> actions,
 									 NotificationLevel level, NotificationType type, String userId) throws DotDataException {
 
-		this.generateNotification(new I18NMessage(title), new I18NMessage(message), actions, level, type, userId, null);
+		this.generateNotification(new I18NMessage(title), new I18NMessage(message), actions, level, type, Visibility.USER, userId, userId, null);
+	}
+
+    @Override
+    public void generateNotification(final I18NMessage title, final I18NMessage message, final List<NotificationAction> actions,
+                                     final NotificationLevel level, final NotificationType type, final String userId, final Locale locale) throws DotDataException {
+        this.generateNotification(title, message, actions, level, type, Visibility.USER, userId, userId, locale);
+    }
+
+	@Override
+	public void generateNotification(final String title, final String message, final List<NotificationAction> actions,
+									 final NotificationLevel level, final NotificationType type, Visibility visibility,
+									 final String visibilityId, final String userId, final Locale locale) throws DotDataException {
+
+		this.generateNotification(new I18NMessage(title), new I18NMessage(message), actions, level, type, visibility, visibilityId, userId, locale);
 	}
 
 	@Override
 	public void generateNotification(final I18NMessage title, final I18NMessage message, final List<NotificationAction> actions,
-									 final NotificationLevel level, final NotificationType type, final String userId, final Locale locale) throws DotDataException {
+									 final NotificationLevel level, final NotificationType type, Visibility visibility,
+                                     final String visibilityId, final String userId, final Locale locale) throws DotDataException {
 
 		// since the notification is not a priory process on the current thread, we decided to execute it async
 		this.dotSubmitter.execute(() -> {
@@ -140,7 +155,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 				// Adding notification to System Events table
 				final Notification notificationBean  = new Notification(level, userId, data);
-				final Payload payload 				 = new Payload(notificationBean, Visibility.USER, userId);
+				final Payload payload 				 = new Payload(notificationBean, visibility, visibilityId);
 
 				notificationBean.setId(dto.getId());
 				notificationBean.setTimeSent(new Date());

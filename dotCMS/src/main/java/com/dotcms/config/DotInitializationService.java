@@ -1,5 +1,6 @@
 package com.dotcms.config;
 
+import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.repackage.org.apache.commons.lang.time.StopWatch;
 import com.dotcms.util.ReflectionUtils;
@@ -94,9 +95,16 @@ public class DotInitializationService implements Serializable {
         initializers.forEach(this::initService);
     } // initialize.
 
+    /**
+     * Returns a list of internal components to initialize
+     *
+     * @return List with the {@link DotInitializer} elements to initialize
+     */
     private Set<DotInitializer> getInternalInitializers() {
 
-        return linkSet(new SystemEventProcessorFactoryInitializer());
+        return linkSet(
+                new SystemEventProcessorFactoryInitializer(),
+                new PayloadVerifierFactoryInitializer());
     } // getInternalInitializers.
 
     private Set<DotInitializer> getServiceLoaderInitializers() {
