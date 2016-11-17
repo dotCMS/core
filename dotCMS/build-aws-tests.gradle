@@ -147,7 +147,8 @@ task waitInstanceLaunched(type: AmazonEC2WaitInstanceStatusTask) {
 }
 
 task waitInstanceTerminated(type: AmazonEC2WaitInstanceStatusTask) {
-	loopWait = 2
+	loopWait = 10
+	loopTimeout = 1800
 
 	doFirst {
 		instanceId = project.instanceId
@@ -259,7 +260,8 @@ task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
 }
 
 task waitDBInstanceCreated(type: AmazonRDSWaitInstanceStatusTask) {
-	loopWait = 2
+	loopWait = 10
+	loopTimeout = 1800
 
 	successStatuses = [ "available", "terminated" ]
 
