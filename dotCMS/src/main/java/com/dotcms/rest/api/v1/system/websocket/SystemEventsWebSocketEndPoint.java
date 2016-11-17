@@ -157,12 +157,9 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
         //Get the verifier associated to this Payload
         final PayloadVerifier verifier = this.payloadVerifierFactory.getVerifier(payload);
-        if ( null != verifier ) {
-            //Check if we have the "visibility" rights to use this payload
-            return verifier.verified(payload, session);
-        }
 
-        return true;
+        //Check if we have the "visibility" rights to use this payload
+        return (null != verifier) ? verifier.verified(payload, session) : true;
     }
 
 	private boolean apply(final SystemEvent event,
