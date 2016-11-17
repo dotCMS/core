@@ -1,7 +1,5 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
-
 import java.io.Serializable;
 
 /**
@@ -19,7 +17,7 @@ public class Payload implements Serializable {
 	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-	private final String  visibilityId; // user id, role uid or permission, if it is global, this is not need
+    private final String visibilityId; // user id, role uid or permission, if it is global, this is not need
 
 	/**
 	 * Creates a payload object.
@@ -57,40 +55,36 @@ public class Payload implements Serializable {
 	public Payload(final Visibility visibility,
 				   final String visibilityId) {
 
-		Void emptyVoidInstance = new Void();
-		this.type = emptyVoidInstance.getClass().getName();
-		this.data = emptyVoidInstance;
-		this.visibility = visibility;
-		this.visibilityId = visibilityId;
-	}
+        this(new Void(), visibility, visibilityId);
+    }
 
-	/**
-	 * Creates a payload object.
-	 * 
-	 * @param data {@link Object}
-	 *            - Any Java object that represents the payload.
-	 * @param visibility {@link Visibility}
-	 * 			  - If the event should be apply just for a specific user, role or global
-	 * @param visibilityId {@link String}
-	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
-	 */
-	public Payload(final Object data,
-				   final Visibility visibility,
-				   final String visibilityId) {
+    /**
+     * Creates a payload object.
+     *
+     * @param data         {@link Object}
+     *                     - Any Java object that represents the payload.
+     * @param visibility   {@link Visibility}
+     *                     - If the event should be apply just for a specific user, role or global
+     * @param visibilityId {@link String}
+     *                     - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
+     */
+    public Payload(final Object data,
+                   final Visibility visibility,
+                   final String visibilityId) {
 
-		this.type = data.getClass().getName();
-		this.data = data;
-		this.visibility = visibility;
-		this.visibilityId = visibilityId;
-	}
-	
-	/**
-	 * Returns the type (fully qualified name) of the Java class representing
-	 * the payload of the System Event.
-	 * 
-	 * @return The fully qualified name of the payload class.
-	 */
-	public String getType() {
+        this.type = data.getClass().getName();
+        this.data = data;
+        this.visibility = visibility;
+        this.visibilityId = visibilityId;
+    }
+
+    /**
+     * Returns the type (fully qualified name) of the Java class representing
+     * the payload of the System Event.
+     *
+     * @return The fully qualified name of the payload class.
+     */
+    public String getType() {
 		return type;
 	}
 
@@ -131,7 +125,4 @@ public class Payload implements Serializable {
 		return visibilityId;
 	}
 
-	public boolean verified(SessionWrapper session) {
-		return visibility.verified(session, this);
-	}
 } // E:O:F:Payload.
