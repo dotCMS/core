@@ -50,7 +50,7 @@ import org.junit.runners.Suite;
     CSSPreProcessServletTest.class, //Needs Enterprise License
     LessCompilerTest.class,
     SassCompilerTest.class,
-/*    RemotePublishAjaxActionTest.class, //Needs Enterprise License
+    RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ActionResourceFTest.class,
     ConditionGroupResourceFTest.class,
     RuleResourceFTest.class,
@@ -70,7 +70,7 @@ import org.junit.runners.Suite;
     ContentResourceTest.class, //Needs Enterprise License
     RoleResourceTest.class,
     WebResourceTest.class,
-    UserAPITest.class, //Needs Enterprise License.
+//    UserAPITest.class, //Needs Enterprise License.
     PermissionAPITest.class,
     FileAssetTest.class,
     PersonaActionletFTest.class, //Needs Enterprise License.
@@ -86,6 +86,5 @@ import org.junit.runners.Suite;
     WorkflowAPITest.class,
     SiteSearchAjaxActionTest.class,
     WebDavTest.class
-*/
 })
 public class AllTestsSuite {}
