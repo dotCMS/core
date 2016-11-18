@@ -660,11 +660,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
-            //Get the pages
-            HTMLPage htmlPage = ( HTMLPage ) APILocator.getVersionableAPI().findLiveVersion( htmlPageIdentifier, APILocator.getUserAPI().getSystemUser(), false );
 
             //OK..., lets try to find this page in the cache...
-            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + htmlPage.getIdentifier(), "HTMLPageCache" );
+            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + identifier, "HTMLPageCache" );
 
             //Validations
             assertTrue( foundPage == null || ( foundPage.getInode() == null || foundPage.getInode().equals( "" ) ) );
