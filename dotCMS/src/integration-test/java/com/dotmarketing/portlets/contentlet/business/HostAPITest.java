@@ -41,6 +41,7 @@ public class HostAPITest {
     }
 
     @Test
+    @Ignore
     public void testDeleteHost() throws Exception {
         User user=APILocator.getUserAPI().getSystemUser();
         

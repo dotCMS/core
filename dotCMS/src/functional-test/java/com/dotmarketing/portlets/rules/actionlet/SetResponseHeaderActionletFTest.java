@@ -4,6 +4,7 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.After;
 import com.dotmarketing.portlets.rules.ApiRequest;
@@ -60,6 +61,7 @@ public class SetResponseHeaderActionletFTest extends TestBase {
     }
 
     @Test
+    @Ignore
     public void testHowManyExecutionsInFiveSeconds() throws Exception {
         ApiRequest apiRequest = new ApiRequest();
         int seconds = 5;
