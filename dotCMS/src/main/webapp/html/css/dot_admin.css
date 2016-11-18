@@ -126,7 +126,7 @@
 .catPreview a:hover{color:#cc0000;}
 
 /* PORTLET STYLES 2.0 */
-.portlet-wrapper {background:#fff;margin:0px;}
+.portlet-wrapper {background:#fff;margin:0 10px;}
 .portlet-toolbar {padding:5px 8px;}
 .portlet-toolbar a{text-decoration:none;}
 #tablemessage{font-size:80%;color:#cc0000;}
