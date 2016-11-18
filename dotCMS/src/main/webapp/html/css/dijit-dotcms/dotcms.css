@@ -1087,19 +1087,31 @@ hr {
   margin: 0 auto;
   width: 100%;
 }
-.listingTable tr.selected {
+.listingTable tr .selected {
   background-color: #E0E9F6;
 }
 .listingTable th, .listingTable td {
   padding: 9px;
   border-bottom: 1px solid #ECEDEE;
 }
+.listingTable th:first-child, .listingTable td:first-child {
+  padding-left: 27px;
+}
+.listingTable th:last-child, .listingTable td:last-child {
+  padding-right: 27px;
+}
 .listingTable th {
   font-weight: bold;
-  background: #ececec;
+  background-color: #FAFAFA;
+}
+.listingTable th:last-child {
+  text-align: right;
 }
 .listingTable td a {
   text-decoration: none;
+}
+.listingTable td table td:first-child, .listingTable td table td:last-child {
+  padding: 0;
 }
 .listingTable td table tr {
   border: none;
@@ -3367,7 +3379,6 @@ div#_dotHelpMenu {
 .appleIcon,
 .appMonitorIcon,
 .archiveIcon,
-.archivedIcon,
 .arrowLeftIcon,
 .arrowRightIcon,
 .assignWorkflowIcon,
@@ -3427,7 +3438,6 @@ div#_dotHelpMenu {
 .gearMinusIcon,
 .gearPencilIcon,
 .gearPlusIcon,
-.greyDotIcon,
 .helpIcon,
 .hideIcon,
 .hintIcon,
@@ -3443,8 +3453,6 @@ div#_dotHelpMenu {
 .linkIcon,
 .linkAddIcon,
 .listViewIcon,
-.liveIcon,
-.lockIcon,
 .loginIcon,
 .loginAsIcon,
 .mailListIcon,
@@ -3524,6 +3532,10 @@ div#_dotHelpMenu {
   display: inline;
 }
 
+.actionIcon:before {
+  content: "";
+}
+
 .addIcon:before {
   content: "";
 }
@@ -3545,7 +3557,7 @@ div#_dotHelpMenu {
 }
 
 .archivedIcon:before {
-  content: "";
+  content: "";
 }
 
 .arrowLeftIcon:before {
@@ -3785,7 +3797,7 @@ div#_dotHelpMenu {
 }
 
 .greyDotIcon:before {
-  content: "";
+  content: "";
 }
 
 .helpIcon:before {
@@ -3845,7 +3857,7 @@ div#_dotHelpMenu {
 }
 
 .liveIcon:before {
-  content: "";
+  content: "";
 }
 
 .lockIcon:before {
@@ -4100,6 +4112,23 @@ div#_dotHelpMenu {
   *display: inline;
   height: 1px;
   width: 12px;
+}
+
+.liveIcon {
+  color: #4A9D51;
+}
+
+.lockIcon {
+  color: #F3762A;
+}
+
+.greyDotIcon {
+  opacity: 1 !important;
+  color: #ECEDEE;
+}
+
+.archivedIcon {
+  color: #CB3927;
 }
 
 #file-type-icons, .uknIcon, .pageIcon, .linkIcon, .bmpIcon,
@@ -4605,51 +4634,17 @@ input[type="text"].dijitReset {
   margin: 10px -20px 0 0;
 }
 
-/* PORTLET STYLES 2.0 */
-.portlet-wrapper {
-  height: 100%;
-}
-.portlet-toolbar {
-  margin: 9px 0;
-}
-.portlet-toolbar a {
+.advanced-search-button {
+  display: block;
+  background: #ECEDEE;
+  padding: 9px;
+  text-align: center;
   text-decoration: none;
-}
-.portlet-content-search {
-  margin: 0 !important;
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-.content-search-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-}
-.content-search-pagination .pagination-results {
-  align-self: center;
-  flex: 1;
-}
-
-.dotcms .dijitContentPane {
-  padding: 18px;
-}
-.dotcms .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
-  padding: 0;
+  margin: 18px -18px 0;
 }
 
 .contentIdentifier {
   margin: 0 0 9px;
-}
-
-#tablemessage {
-  font-size: 80%;
-  color: #cc0000;
-}
-
-.portlet-body {
-  padding: 5px 15px 15px 15px;
 }
 
 .formRow {
@@ -4684,19 +4679,56 @@ input[type="text"].dijitReset {
   padding: 0;
 }
 
-.lineRight {
-  border-right: 1px solid #ECEDEE;
+/* PORTLET STYLES 2.0 */
+.portlet-main {
+  padding: 18px 0;
+}
+.portlet-sidebar {
+  padding: 18px 18px 0;
+}
+.portlet-sidebar-wrapper {
+  background-color: #FAFAFA;
+  border-right: solid 1px #ECEDEE;
+}
+.portlet-wrapper {
+  height: 100%;
+}
+.portlet-pagination, .portlet-toolbar, .portlet-toolbar__actions, .portlet-toolbar__info {
+  display: flex;
+  justify-content: space-between;
+}
+.portlet-pagination {
+  margin: 18px;
+}
+.portlet-pagination__results {
+  flex: 1;
+  align-self: center;
+}
+.portlet-toolbar {
+  margin: 0 18px 18px;
+}
+.portlet-toolbar a {
+  text-decoration: none;
+}
+.portlet-toolbar__actions .export-button {
+  margin-right: 18px;
+}
+.portlet-toolbar__info {
+  flex: 1;
+  align-self: center;
+}
+.portlet-toolbar__info .contentlet-results {
+  color: #8A8A8A;
+  margin-right: 18px;
+  flex: 1;
+  text-align: right;
+}
+.portlet .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
+  padding: 0;
 }
 
-.lineCenter {
-  background: url("http://localhost:8080/html/images/skin/yuiBackgroundLine.gif") repeat-y center top;
-}
-
-.roundBox {
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border: 1px solid #d0d0d0;
-  padding: 5px;
+#tablemessage {
+  color: #cc0000;
 }
 
 #addFileAssetDialog .dijitComboBox {
@@ -4963,31 +4995,10 @@ div.calendar {
   color: #0f0;
 }
 
-#font-icon-base, .arrowLeftIcon,
-.arrowRightIcon,
-.chevronExpandIcon,
-.deleteIcon,
-.editIcon,
-.folderIcon,
-.folderOpenIcon,
-.folderSelectedIcon,
-.toggleCloseIcon,
-.toggleOpenIcon, .dijitIcon, .dijitIconCopy {
-  font: normal normal normal 14px/1 FontAwesome;
-  text-rendering: auto;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transform: translate(0, 0);
-}
-
 html, body {
   font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 13px;
   color: #161616;
-}
-
-html {
-  box-sizing: border-box;
 }
 
 *, *:before, *:after {
@@ -5002,12 +5013,30 @@ html {
   padding: 0;
 }
 
-.dijitIcon {
+#font-icon-base, .arrowLeftIcon,
+.arrowRightIcon,
+.chevronExpandIcon,
+.deleteIcon,
+.editIcon,
+.folderIcon,
+.folderOpenIcon,
+.folderSelectedIcon,
+.toggleCloseIcon,
+.toggleOpenIcon, #dijit-icon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pagePropIcon, .pasteIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .dijitIcon, .dijitIconCopy {
+  font: normal normal normal 14px/1 FontAwesome;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform: translate(0, 0);
+}
+
+#dijit-icon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pagePropIcon, .pasteIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .dijitIcon {
   width: 16px;
   height: 16px;
   margin-right: 4.5px;
   line-height: 16px;
 }
+
 .dijitIconTask:before {
   content: "";
 }
@@ -5277,7 +5306,7 @@ table.dijitComboButton {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #C5C5C5;
+  border-top: 5px solid #ECEDEE;
   content: "";
   height: 0;
   width: 0;
@@ -5417,7 +5446,7 @@ table.dijitComboButton {
   border-top-color: #CB3927;
 }
 .dijitSpinnerDisabled {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   border: solid 1px #E3E4E6;
 }
 .dijitSpinnerDisabled .dijitSpinnerButtonContainer {
@@ -5428,13 +5457,13 @@ table.dijitComboButton {
 }
 .dijitSpinnerDisabled .dijitArrowButton {
   border-left: solid 1px #E3E4E6;
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
 }
 .dijitSpinnerDisabled .dijitArrowButton:before {
   border-top-color: #C5C5C5;
 }
 .dijitSpinnerDisabled .dijitInputInner {
-  color: #C5C5C5;
+  color: #ECEDEE;
 }
 .dijitSpinnerError {
   border: solid 1px #D0021B;
@@ -5505,7 +5534,7 @@ table.dijitComboButton {
   display: none;
 }
 .dijitButtonHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   border: solid 1px transparent;
   color: #161616;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -5550,7 +5579,7 @@ table.dijitComboButton {
   width: 0;
 }
 .dijitDropDownButtonHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   border: solid 1px transparent;
   color: #161616;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -5646,7 +5675,7 @@ table.dijitComboButton {
   width: 0;
 }
 .dijitComboButtonHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   border: solid 1px transparent;
   color: #161616;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -5756,7 +5785,7 @@ table.dijitComboButton {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 .dijitToggleButtonHover, .dijitToggleButtonHoverFocused, .dijitToggleButtonCheckedHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   border: solid 1px transparent;
   color: #161616;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -5815,7 +5844,7 @@ table.dijitComboButton {
 }
 .dijitRadioDisabled {
   background-color: transparent;
-  border: solid 2px #C5C5C5;
+  border: solid 2px #ECEDEE;
   position: relative;
 }
 .dijitRadioDisabled:before {
@@ -6013,10 +6042,10 @@ table.dijitComboButton {
   width: 0;
 }
 .dijitComboBoxDisabled .dijitPlaceHolder {
-  color: #C5C5C5;
+  color: #ECEDEE;
 }
 .dijitComboBoxDisabled .dijitInputInner {
-  color: #C5C5C5;
+  color: #ECEDEE;
 }
 .dijitComboBoxError {
   border: solid 1px #D0021B;
@@ -6056,15 +6085,15 @@ table.dijitComboButton {
   -o-transition: border-color, 0.1s;
   -webkit-transition: border-color, 0.1s;
   transition: border-color, 0.1s;
-  border: solid 1px #C5C5C5;
+  border: solid 1px #ECEDEE;
 }
 .dijitSliderProgressBar, .dijitSliderBottomBumper, .dijitSliderLeftBumper {
   background: #1DAED6;
-  border-color: #C5C5C5;
+  border-color: #ECEDEE;
 }
 .dijitSliderRemainingBar, .dijitSliderTopBumper, .dijitSliderRightBumper {
   background: #fff;
-  border-color: #C5C5C5;
+  border-color: #ECEDEE;
 }
 .dijitSliderLeftBumper {
   border-left-width: 1px;
@@ -6145,7 +6174,7 @@ table.dijitComboButton {
   -webkit-border-radius: 6.5px;
   border-radius: 6.5px;
   background-color: #fff;
-  border: solid 1px #C5C5C5;
+  border: solid 1px #ECEDEE;
   height: 13px;
   top: -5px;
   width: 13px;
@@ -6177,26 +6206,26 @@ table.dijitComboButton {
   border: solid 1px #5B5B5B;
 }
 .dijitSliderDisabled .dijitRuleLabel {
-  color: #C5C5C5;
+  color: #ECEDEE;
 }
 .dijitSliderDisabled .dijitRuleMark {
-  border: solid 1px #C5C5C5;
+  border: solid 1px #ECEDEE;
 }
 .dijitSliderDisabled .dijitSliderBottomBumper,
 .dijitSliderDisabled .dijitSliderProgressBar,
 .dijitSliderDisabled .dijitSliderLeftBumper {
-  background: #ECEDEE;
-  border-color: #ECEDEE;
+  background: #FAFAFA;
+  border-color: #FAFAFA;
 }
 .dijitSliderDisabled .dijitSliderRemainingBar,
 .dijitSliderDisabled .dijitSliderTopBumper,
 .dijitSliderDisabled .dijitSliderRightBumper {
   background: #fff;
-  border-color: #ECEDEE;
+  border-color: #FAFAFA;
 }
 .dijitSliderDisabled .dijitSliderImageHandle {
-  background-color: #ECEDEE;
-  border: solid 1px #ECEDEE;
+  background-color: #FAFAFA;
+  border: solid 1px #FAFAFA;
 }
 .dijitSliderDisabled .dijitSliderDecrementIconH,
 .dijitSliderDisabled .dijitSliderIncrementIconH,
@@ -6218,33 +6247,33 @@ table.dijitComboButton {
   padding: 9px;
 }
 .dijitAccordionInnerContainerSelected .dijitAccordionTitleHover {
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
 }
 .dijitAccordionTitle {
   -moz-transition: background-color, color, border, 0.1s;
   -o-transition: background-color, color, border, 0.1s;
   -webkit-transition: background-color, color, border, 0.1s;
   transition: background-color, color, border, 0.1s;
-  background-color: #ECEDEE;
-  border: solid 1px #C5C5C5;
+  background-color: #FAFAFA;
+  border: solid 1px #ECEDEE;
   border-bottom: none;
   height: 36px;
   line-height: 36px;
   padding: 0 9px;
 }
 .dijitAccordionTitle:last-child {
-  border-bottom: solid 1px #C5C5C5;
+  border-bottom: solid 1px #ECEDEE;
 }
 .dijitAccordionTitleHover {
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
 }
 .dijitAccordionTitleSelected {
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
   font-weight: bold;
 }
 .dijitAccordionChildWrapper {
-  border-left: solid 1px #C5C5C5;
-  border-right: solid 1px #C5C5C5;
+  border-left: solid 1px #ECEDEE;
+  border-right: solid 1px #ECEDEE;
 }
 
 .dijitTitlePane {
@@ -6368,10 +6397,10 @@ table.dijitComboButton {
 }
 
 .dijitSplitter {
-  background: rgba(236, 237, 238, 0.25);
+  background: rgba(250, 250, 250, 0.25);
 }
 .dijitSplitterHover {
-  background: rgba(236, 237, 238, 0.5);
+  background: rgba(250, 250, 250, 0.5);
 }
 .dijitSplitterHover .dijitSplitterThumb {
   background: #8A8A8A;
@@ -6383,7 +6412,7 @@ table.dijitComboButton {
   background: #8A8A8A;
 }
 .dijitSplitterThumb {
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
 }
 .dijitSplitterV {
   width: 6px;
@@ -6440,7 +6469,7 @@ table.dijitComboButton {
 .dijitTabCloseIcon {
   width: 13px;
   height: 13px;
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
   position: absolute;
   right: 0;
   top: 0;
@@ -6627,10 +6656,6 @@ html, body {
   color: #161616;
 }
 
-html {
-  box-sizing: border-box;
-}
-
 *, *:before, *:after {
   outline: none;
   box-sizing: border-box;
@@ -6743,17 +6768,17 @@ html {
   line-height: 36px;
 }
 .dijitCalendarMonthLabelHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
 }
 .dijitCalendarMonthLabel:last-child {
   border-bottom: none;
 }
 .dijitCalendarPreviousMonth, .dijitCalendarNextMonth {
-  background-color: #ECEDEE;
-  color: #C5C5C5;
+  background-color: #FAFAFA;
+  color: #ECEDEE;
 }
 .dijitCalendarPreviousMonth.dijitCalendarHoveredDate, .dijitCalendarNextMonth.dijitCalendarHoveredDate {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   color: #8A8A8A;
 }
 .dijitCalendarNextYear, .dijitCalendarPreviousYear {
@@ -6799,11 +6824,11 @@ html {
   border-bottom: none;
 }
 .dijitMenu .dijitMenuItemHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   color: #5B5B5B;
 }
 .dijitMenu .dijitMenuItemSelected {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   color: #5B5B5B;
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
@@ -6836,7 +6861,7 @@ html {
   border-bottom: none;
 }
 .dijitTimePickerItemHover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
   color: #5B5B5B;
 }
 .dijitTimePickerItemSelected .dijitTimePickerItemInner {
@@ -6848,7 +6873,7 @@ html {
 }
 .dijitTimePickerMarker {
   font-weight: bold;
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
 }
 
 .dijitProgressBar {
@@ -6869,7 +6894,7 @@ html {
   line-height: 28px;
 }
 .dijitProgressBarTile {
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
   height: 100%;
 }
 
