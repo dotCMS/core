@@ -47,12 +47,35 @@ sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-
 
 sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,CLUSTER_AUTOWIRE=true,CLUSTER_AUTOWIRE=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
+
 sed -i "s,PUBLISHER_QUEUE_MAX_TRIES=3,PUBLISHER_QUEUE_MAX_TRIES=1,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotmarketing-config.properties
 
 sed -i "s,^db.driver=.*$,db.driver=$DB_DRIVER,g" core/dotCMS/src/integration-test/resources/db-config.properties
 sed -i "s,^db.base.url=.*$,db.base.url=$DB_URL,g" core/dotCMS/src/integration-test/resources/db-config.properties
 sed -i "s,^db.username=.*$,db.username=$DB_USERNAME,g" core/dotCMS/src/integration-test/resources/db-config.properties
 sed -i "s,^db.password=.*$,db.password=$DB_PASSWORD,g" core/dotCMS/src/integration-test/resources/db-config.properties
+
+sed -i "s,^es.cluster.name *=.*$,es.cluster.name=$ESCLUSTER_3x,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^es.path.data *=.*$,es.path.data=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^es.path.work *=.*$,es.path.work=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/work,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^es.path.repo *=.*$,es.path.repo=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/essnapshot/snaphosts,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+sed -i "s,^es.path.logs *=.*$,es.path.logs=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+echo "
+CLUSTER_AUTOWIRE=false
+" >> core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+
+sed -i "s,^ASSET_REAL_PATH *=.*$,ASSET_REAL_PATH=$PWD/dotserver/tomcat/webapps/ROOT/assets,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+sed -i "s,^DYNAMIC_CONTENT_PATH *=.*$,DYNAMIC_CONTENT_PATH=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+sed -i "s,^VELOCITY_ROOT *=.*$,VELOCITY_ROOT=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/velocity,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+echo "
+GEOIP2_CITY_DATABASE_PATH_OVERRIDE=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/geoip2/GeoLite2-City.mmdb
+" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+echo "
+TOOLBOX_MANAGER_PATH=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/toolbox.xml
+" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+echo "
+context.path.felix=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
+" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
 
 
 # Create output directory

@@ -12,6 +12,7 @@ import com.dotmarketing.util.IntegrationTestInitService;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -82,6 +83,7 @@ public class PublishingEndPointAPITest extends TestBase{
 
 	// There should not be any end points at the beginning of the test
 	@Test
+	@Ignore
 	public void test() throws DotDataException {
 		try {
 			HibernateUtil.startTransaction();
