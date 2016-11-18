@@ -1,5 +1,30 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.datagen.ContainerDataGen;
@@ -13,9 +38,6 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -60,33 +82,6 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Jonathan Gamba.
@@ -656,11 +651,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
-            //Get the pages
-            HTMLPage htmlPage = ( HTMLPage ) APILocator.getVersionableAPI().findLiveVersion( htmlPageIdentifier, APILocator.getUserAPI().getSystemUser(), false );
 
             //OK..., lets try to find this page in the cache...
-            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + htmlPage.getIdentifier(), "HTMLPageCache" );
+            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + identifier, "HTMLPageCache" );
 
             //Validations
             assertTrue( foundPage == null || ( foundPage.getInode() == null || foundPage.getInode().equals( "" ) ) );
@@ -2086,16 +2079,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void widgetInvalidateAllLang() throws Exception {
 
-        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
         HttpServletRequest requestProxy = new MockInternalRequest().request();
         HttpServletResponse responseProxy = new BaseResponse().response();
-
-        ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
-        ModuleConfig config = factoryObject.createModuleConfig("");
-
-        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
-
-        Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
 
         initMessages();
 
@@ -2302,5 +2287,95 @@ public class ContentletAPITest extends ContentletBaseTest {
     	assertNotNull( resultSpanish );
     	
     	fileAssetDataGen.remove(resultSpanish);
+    }
+    
+    /**
+     * Deletes a list of contents
+     * @throws Exception
+     */
+    @Test
+    public void deleteMultipleContents() throws Exception { // https://github.com/dotCMS/core/issues/7678
+
+    	// languages
+    	int english = 1;
+    	int spanish = 2;
+        //Using System User.
+        User user = APILocator.getUserAPI().getSystemUser();
+        // new template
+        Template template = new TemplateDataGen().nextPersisted();
+        // new test folder
+		Folder testFolder = new FolderDataGen().nextPersisted();
+		// sample pages
+		HTMLPageAsset pageEnglish1 = new HTMLPageDataGen(testFolder, template).languageId(english).nextPersisted();
+		HTMLPageAsset pageEnglish2 = new HTMLPageDataGen(testFolder, template).languageId(english).nextPersisted();
+		contentletAPI.publish(pageEnglish1, user, false);
+		contentletAPI.publish(pageEnglish2, user, false);
+        // delete counter
+        int deleted = 0;
+        // Page list
+        List<HTMLPageAsset> liveHTMLPages = new ArrayList<HTMLPageAsset>();
+        // List of contentlets created for this test.
+        List<Contentlet> contentletsCreated = new ArrayList<Contentlet>();
+        
+        liveHTMLPages.add(pageEnglish1);
+        liveHTMLPages.add(pageEnglish2);
+               
+        //We need to create a new copy of pages for Spanish.
+        for(HTMLPageAsset liveHTMLPage : liveHTMLPages){
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( liveHTMLPage.getInode(), user, false );
+
+            //As a copy we need to remove this info to do a clean checkin.
+            htmlPageContentlet.getMap().remove("modDate");
+            htmlPageContentlet.getMap().remove("lastReview");
+            htmlPageContentlet.getMap().remove("owner");
+            htmlPageContentlet.getMap().remove("modUser");
+
+            htmlPageContentlet.getMap().put("inode", "");
+            htmlPageContentlet.getMap().put("languageId", new Long(spanish));
+
+            //Checkin and Publish.
+            Contentlet working = APILocator.getContentletAPI().checkin(htmlPageContentlet, user, false);
+            APILocator.getContentletAPI().publish(working, user, false);
+            APILocator.getContentletAPI().isInodeIndexed(working.getInode(), true);
+
+            contentletsCreated.add(working);
+        }
+
+        //Now remove all the pages that we created for this tests.
+        APILocator.getContentletAPI().unpublish(contentletsCreated, user, false);
+        APILocator.getContentletAPI().archive(contentletsCreated, user, false);
+        APILocator.getContentletAPI().delete(contentletsCreated, user, false);
+        
+        for(Contentlet contentlet: contentletsCreated){
+        	if(APILocator.getContentletAPI().find(contentlet.getInode(), user, false) == null){
+        		deleted++;
+        	}
+        }
+        // 2 Spanish pages created, 2 should have been deleted
+        assertEquals(2, deleted);
+        
+        List<Contentlet> liveEnglish = new ArrayList<Contentlet>();
+        for(IHTMLPage page:liveHTMLPages){
+        	liveEnglish.add(APILocator.getContentletAPI().find( page.getInode(), user, false ));
+        }
+        
+        APILocator.getContentletAPI().unpublish(liveEnglish, user, false);
+        APILocator.getContentletAPI().archive(liveEnglish, user, false);
+        APILocator.getContentletAPI().delete(liveEnglish, user, false);
+        
+        deleted = 0;
+        for(Contentlet contentlet: liveEnglish){
+        	if(APILocator.getContentletAPI().find(contentlet.getInode(), user, false) == null){
+        		deleted++;
+        	}
+        }
+        
+        // 2 English pages created, 2 should have been deleted
+        assertEquals(2, deleted);
+
+        // dispose other objects
+		FolderDataGen.remove(testFolder);
+		TemplateDataGen.remove(template);
+		
     }
 }
