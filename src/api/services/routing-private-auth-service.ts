@@ -15,32 +15,47 @@ export class RoutingPrivateAuthService implements CanActivate {
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
 
         return new Promise(resolve => {
-            if (this.loginService.isLogin) {
-                resolve(this.checkAccess(state.url));
-            } else {
+            if (!this.loginService.isLogin) {
                 this.loginService.loadAuth().subscribe(() => {
-                    if (this.loginService.isLogin) {
-                        this.dotcmsConfig.getConfig().then( dotcmsConfig => {
-                            if (this.checkAccess(state.url)) {
-                                resolve(true);
-                            } else {
-                                this.router.goToMain();
-                                resolve(false);
-                            }
-                        });
-                    } else {
-                        this.router.goToLogin();
-                        resolve(false);
-                    }
+                    this.checkAccessLoginUser(resolve, state.url);
                 });
+            } else {
+                this.checkAccessLoginUser(resolve, state.url);
             }
         });
     }
 
-    private checkAccess(url: string): boolean {
+    private checkAccessLoginUser(resolve, url: string): void {
+        if (this.loginService.isLogin) {
+            this.dotcmsConfig.getConfig().then( dotcmsConfig => {
+                this.checkAccess(url).then(checkAccess => {
+                    if (!checkAccess) {
+                        this.router.goToMain();
+                    }
+
+                    resolve(checkAccess);
+                });
+            });
+        } else {
+            this.router.goToLogin();
+            resolve(false);
+        }
+    }
+
+    private checkAccess(url: string): Promise<boolean> {
+        return new Promise( resolve => {
+            if (this.routingService.currentMenu) {
+                resolve(this.check.bind(this)(url));
+            } else {
+                this.routingService.menusChange$.subscribe(() => resolve(this.check.bind(this)(url)));
+            }
+        });
+    }
+
+    private check(url: string): boolean {
         let isRouteLoaded = true;
 
-        if (this.routingService.currentMenu && url !== '/dotCMS/pl') {
+        if (url !== '/dotCMS/pl') {
             isRouteLoaded = this.routingService.isPortlet(url);
 
             if (!isRouteLoaded) {

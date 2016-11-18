@@ -65,6 +65,7 @@ export class RoutingService {
     public setCurrentPortlet(url: string): void {
         let urlSplit = url.split('/');
         let id = urlSplit[urlSplit.length - 1];
+        console.log('ID', id);
         this._currentPortletId = id;
     }
 

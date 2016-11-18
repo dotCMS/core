@@ -5,6 +5,7 @@ import {RoutingService} from '../../../../api/services/routing-service';
 import {SafeResourceUrl, DomSanitizer} from '@angular/platform-browser';
 import {SiteChangeListener} from '../../../../api/util/site-change-listener';
 import {SiteService} from '../../../../api/services/site-service';
+import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -17,10 +18,10 @@ export class IframeLegacyComponent extends SiteChangeListener {
     iframe: SafeResourceUrl;
     iframeElement;
     private loadingInProgress: boolean = true;
-    private currentId: string;
 
     constructor(private route: ActivatedRoute, private routingService: RoutingService, private siteService: SiteService,
-                private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService) {
+                private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService,
+                private dotcmsEventsService: DotcmsEventsService) {
         super(siteService);
     }
 
@@ -30,14 +31,29 @@ export class IframeLegacyComponent extends SiteChangeListener {
         this.initComponent();
 
         this.iframeElement.onload = () => this.loadingInProgress = false;
-  }
+        let events: string[] = [
+            'SAVE_FOLDER', 'UPDATE_FOLDER', 'DELETE_FOLDER', 'SAVE_PAGE_ASSET', 'UPDATE_PAGE_ASSET',
+            'ARCHIVE_PAGE_ASSET', 'UN_ARCHIVE_PAGE_ASSET', 'SAVE_FILE_ASSET', 'UPDATE_FILE_ASSET', 'ARCHIVE_FILE_ASSET',
+            'UN_ARCHIVE_FILE_ASSET', 'RENAME_FILE_ASSET', 'SAVE_LINK', 'UPDATE_LINK', 'ARCHIVE_LINK', 'UN_ARCHIVE_LINK',
+            'MOVE_LINK', 'COPY_LINK', 'MOVE_FOLDER', 'MOVE_FILE_ASSET', 'COPY_FILE_ASSET', 'MOVE_PAGE_ASSET', 'COPY_PAGE_ASSET'
+        ];
+
+        this.dotcmsEventsService.subscribeToEvents(events).subscribe( content => {
+            console.log('iframe event reload', content, this.routingService.currentPortletId);
+            console.log('content.user.userId', content.user.userId);
+            console.log('this.loginService.auth.user.id', this.loginService.auth.user.userId);
+            if (this.routingService.currentPortletId === 'EXT_BROWSER' &&
+                    content.user.userId !== this.loginService.auth.user.userId) {
+
+                this.iframeElement.contentWindow.location.reload();
+            }
+        });
+    }
 
     initComponent(): void {
-        this.route.params.pluck<string>('id').subscribe(res => {
-            this.currentId = res;
-
+        this.route.params.pluck<string>('id').subscribe(id => {
             setTimeout(() => {
-                    this.iframe = this.loadURL(this.routingService.getPortletURL(this.currentId) + '&in_frame=true&frame=detailFrame');
+                    this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
                 },
             1);
         });
@@ -45,7 +61,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
     changeSiteReload(): void {
         if (this.iframeElement && this.iframeElement.contentWindow
-            && this.currentId !== 'EXT_HOSTADMIN') {
+            && this.routingService.currentPortletId !== 'EXT_HOSTADMIN') {
 
             this.loadingInProgress = true;
             this.iframeElement.contentWindow.location.reload();
