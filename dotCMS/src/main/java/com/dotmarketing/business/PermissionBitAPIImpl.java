@@ -16,7 +16,6 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -59,6 +58,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	PermissionFactory permissionFactory;
 	private SystemEventsAPI systemEventsAPI;
 
+	public PermissionBitAPIImpl() {
+	}
+	
 	/**
 	 * Builds a PermissionAPI initialized with its dependent objects.
 	 * @return PermissionFactory service reference
