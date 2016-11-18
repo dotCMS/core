@@ -1,6 +1,9 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -65,7 +68,7 @@ public class CMSFilterTest {
                 return new FileInputStream((String) invocation.getArguments()[0]);
             }
         });
-        //ServletToolboxManager
+        IntegrationTestInitService.getInstance().mockStrutsActionModule();
     }
 
 	@Test
