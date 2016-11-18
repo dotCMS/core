@@ -49,6 +49,7 @@ repositories {
 }
 
 testSets {
+    individualTest { dirName = 'test' }
     integrationTest { dirName = 'integration-test' }
     functionalTest { dirName = 'functional-test' }
 }
@@ -122,6 +123,11 @@ jar{
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
     }
+}
+
+task copyTestRuntimeLibs(type: Copy) {
+	into "build/libs/test"
+	from configurations.testCompile - configurations.compile
 }
 
 // Expand the release properties.
