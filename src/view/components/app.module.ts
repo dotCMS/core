@@ -43,9 +43,6 @@ import {UserModel} from '../../api/auth/UserModel';
 import {AppComponent} from './app';
 import {Accordion, AccordionGroup} from './common/accordion/accordion';
 import {CustomTimeComponent} from './common/custom-time/custom-time';
-import {DotSelect, DotOption} from './common/dot-select/dot-select';
-import {DotSelect, DotOption} from './common/dot-select/dot-select';
-import {DropdownComponent} from "./common/dropdown-component/dropdown-component";
 import {DropdownComponent} from './common/dropdown-component/dropdown-component';
 import {ForgotPasswordComponent} from './common/login/forgot-password-component/forgot-password-component';
 import {ForgotPasswordContainer} from './common/login/forgot-password-component/forgot-password-container';
@@ -126,8 +123,6 @@ const COMPONENTS = [
     AccordionGroup,
     AppComponent,
     CustomTimeComponent,
-    DotOption,
-    DotSelect,
     DropdownComponent,
     ForgotPasswordComponent,
     ForgotPasswordContainer,
@@ -175,6 +170,7 @@ import {InputTextModule} from 'primeng/primeng';
 import {CheckboxModule} from 'primeng/primeng';
 import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
+import {AutoCompleteModule} from 'primeng/primeng';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 
 const NGFACES_MODULES = [
@@ -182,6 +178,7 @@ const NGFACES_MODULES = [
     CheckboxModule,
     ButtonModule,
     DropdownModule,
+    AutoCompleteModule,
 ];
 
 @NgModule({
