@@ -7,7 +7,6 @@ import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.liferay.portal.model.User;
-
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Map;
@@ -27,8 +26,9 @@ public class Payload implements Serializable {
 	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-	private final String  visibilityId; // user id, role uid or permission, if it is global, this is not need
 	private final Map<String, Object> user;
+    private final String visibilityId; // user id, role uid or permission, if it is global, this is not need
+
 
 	/**
 	 * Creates a payload object.
@@ -65,7 +65,6 @@ public class Payload implements Serializable {
 	 */
 	public Payload(final Visibility visibility,
 				   final String visibilityId) {
-
 		this(new Void(), visibility, visibilityId, null);
 	}
 
@@ -102,13 +101,13 @@ public class Payload implements Serializable {
 		}
 	}
 
-	/**
-	 * Returns the type (fully qualified name) of the Java class representing
-	 * the payload of the System Event.
-	 * 
-	 * @return The fully qualified name of the payload class.
-	 */
-	public String getType() {
+    /**
+     * Returns the type (fully qualified name) of the Java class representing
+     * the payload of the System Event.
+     *
+     * @return The fully qualified name of the payload class.
+     */
+    public String getType() {
 		return type;
 	}
 
@@ -149,10 +148,6 @@ public class Payload implements Serializable {
 		return visibilityId;
 	}
 
-	public boolean verified(SessionWrapper session) {
-		return visibility.verified(session, this);
-	}
-
 	/**
 	 * return the user who fire the event, if the user was fired by a Job and not by a User's action then the user
 	 * is the System User
@@ -162,4 +157,5 @@ public class Payload implements Serializable {
 	public Map<String, Object> getUser() {
 		return user;
 	}
+
 } // E:O:F:Payload.
