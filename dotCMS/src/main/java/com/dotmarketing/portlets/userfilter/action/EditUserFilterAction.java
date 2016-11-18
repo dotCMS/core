@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
@@ -210,19 +211,20 @@ public class EditUserFilterAction extends DotPortletAction {
 		// write permission
 		String[] writePermissions = req.getParameterValues("writeRole");
 		//adding roles to user filter
-		Permission permission = null;
+		List<Permission> newSetOfPermissions = new ArrayList<Permission>();
 		if (readPermissions != null) {
 			for (int n = 0; n < readPermissions.length; n++) {
-				permission = new Permission(uf.getInode(), readPermissions[n], PERMISSION_READ);
-				perAPI.save(permission, uf, user, false);
+				newSetOfPermissions.add(new Permission(uf.getInode(), readPermissions[n], PERMISSION_READ));
 			}
 		}
 
 		if (writePermissions != null) {
 			for (int n = 0; n < writePermissions.length; n++) {
-				permission = new Permission(uf.getInode(), writePermissions[n],	PERMISSION_WRITE);
-				perAPI.save(permission, uf, user, false);
+				newSetOfPermissions.add(new Permission(uf.getInode(), writePermissions[n],	PERMISSION_WRITE));
 			}
+		}
+		if(newSetOfPermissions.size() > 0){
+			perAPI.save(newSetOfPermissions, uf, user, false);
 		}
 		mlForm.setUserFilterListInode(uf.getInode());
 		SessionMessages.add(req, "message", "message.userfilter.save");

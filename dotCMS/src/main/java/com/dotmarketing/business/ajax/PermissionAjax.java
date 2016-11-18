@@ -68,18 +68,7 @@ import com.liferay.portal.model.User;
  *
  */
 public class PermissionAjax {
-
-	private final SystemEventsAPI systemEventsAPI;
-	
-	public PermissionAjax(){
-		this(APILocator.getSystemEventsAPI());
-	}
-	
-	@VisibleForTesting
-	protected PermissionAjax(SystemEventsAPI systemEventsAPI) {
-		this.systemEventsAPI = systemEventsAPI;
-    }
-	
+		
 	/**
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
@@ -302,13 +291,7 @@ public class PermissionAjax {
 				}
 			} else {
 				permissionAPI.removePermissions(asset);
-			}
-		
-			if(asset instanceof Host){	
-				//Send a websocket event to notificate a site permission change  
-				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
-						new Payload(asset, Visibility.GLOBAL,	(String) null));
-			}
+			}		
 			
 			HibernateUtil.commitTransaction();
 		} catch (Exception e) {
@@ -336,12 +319,7 @@ public class PermissionAjax {
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 			Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 			permissionAPI.removePermissions(asset);
-
-			if(asset instanceof Host){	
-				//Send a websocket event to notificate a site permission change  
-				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
-						new Payload(asset, Visibility.GLOBAL,	(String) null));
-			}			
+						
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;

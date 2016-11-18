@@ -814,12 +814,6 @@ public class RoleAjax {
 				CascadePermissionsJob.triggerJobImmediately(permissionable, role);
 				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
 			}
-
-			if(permissionable instanceof Host){	
-				//Send a websocket event to notificate a site permission change  
-				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
-						new Payload(permissionable, Visibility.GLOBAL,	(String) null));
-			}
 			
 			HibernateUtil.commitTransaction();
 
