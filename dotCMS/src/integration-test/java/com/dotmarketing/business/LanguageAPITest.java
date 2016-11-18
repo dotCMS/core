@@ -26,9 +26,10 @@ public class LanguageAPITest {
 	 */
 	@Test
 	public void languageCache() throws Exception{
-		
+
+		int existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
 		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
-		Assert.assertEquals(2,CacheLocator.getLanguageCache().getLanguages().size());		
+		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());
 		
 		Language lan = APILocator.getLanguageAPI().getLanguage(102);
 		lan = new Language();
