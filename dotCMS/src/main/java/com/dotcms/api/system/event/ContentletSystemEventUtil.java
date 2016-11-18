@@ -24,9 +24,12 @@ import java.util.Map;
  */
 public class ContentletSystemEventUtil {
 
+    private static final String DELETE_EVENT_PREFIX = "DELETE";
     private static final String SAVE_EVENT_PREFIX = "SAVE";
     private static final String UPDATE_EVENT_PREFIX = "UPDATE";
     private static final String ARCHIVED_EVENT_PREFIX = "ARCHIVE";
+    private static final String PUBLISH_EVENT_PREFIX = "PUBLISH";
+    private static final String UN_PUBLISH_EVENT_PREFIX = "UN_PUBLISH";
     private static final String UN_ARCHIVED_EVENT_PREFIX = "UN_ARCHIVE";
     private static final String COPY_EVENT_PREFIX = "COPY";
     private static final String MOVE_EVENT_PREFIX = "MOVE";
@@ -68,6 +71,17 @@ public class ContentletSystemEventUtil {
                 throw new CanNotPushSystemEventException(e);
             }
         }
+    }
+
+    public void pushDeleteEvent(Contentlet contentlet){
+        sendEvent(contentlet, DELETE_EVENT_PREFIX);
+    }
+
+    public void pushPublishEvent(Contentlet contentlet){
+        sendEvent(contentlet, PUBLISH_EVENT_PREFIX);
+    }
+    public void pushUnpublishEvent(Contentlet contentlet){
+        sendEvent(contentlet, UN_PUBLISH_EVENT_PREFIX);
     }
 
     public void pushCopyEvent(Contentlet contentlet){

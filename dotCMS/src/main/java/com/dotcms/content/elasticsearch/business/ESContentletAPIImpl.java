@@ -452,6 +452,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
+                contentletSystemEventUtil.pushPublishEvent(contentlet);
             } catch(DotDataException | DotStateException | DotSecurityException e) {
                 ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
                         + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -1622,6 +1623,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
             deletedIdentifiers.add(con.getIdentifier());
+            contentletSystemEventUtil.pushDeleteEvent(con);
         }
 
         return noErrors;
@@ -2105,7 +2107,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	ContentletServices.invalidateLive(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
-
+            contentletSystemEventUtil.pushUnpublishEvent(contentlet);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
         	ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
         			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 

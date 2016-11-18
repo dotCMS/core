@@ -525,6 +525,10 @@ public class WebAssetFactory {
 		}
 		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 
+
+		systemEventsAPI.push(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
+
 		return livewebasset;
 	}
 
@@ -730,6 +734,8 @@ public class WebAssetFactory {
 
 				LiveCache.removeAssetFromCache(currWebAsset);
 
+				systemEventsAPI.push(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.PERMISSION,
+						String.valueOf(PermissionAPI.PERMISSION_READ)));
 				return true;
 			} catch (Exception e) {
 				return false;
@@ -1700,6 +1706,9 @@ public class WebAssetFactory {
 			APILocator.getIdentifierAPI().delete(identifier);
 			//### Delete the Identifier ###
 			returnValue = true;
+
+			systemEventsAPI.push(SystemEventType.DELETE_LINK, new Payload(currWebAsset, Visibility.PERMISSION,
+					String.valueOf(PermissionAPI.PERMISSION_READ)));
 		}
 		else
 		{
