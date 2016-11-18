@@ -1,12 +1,16 @@
 package com.dotcms.api.system.event;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * This class wraps the payload of a System Event, specifying its type (i.e.,
@@ -24,7 +28,7 @@ public class Payload implements Serializable {
 	private final Object data;
 	private final Visibility visibility;
 	private final String  visibilityId; // user id, role uid or permission, if it is global, this is not need
-	private User user;
+	private final Map<String, Object> user;
 
 	/**
 	 * Creates a payload object.
@@ -34,7 +38,7 @@ public class Payload implements Serializable {
 	 */
 	public Payload(final Object data) {
 
-		this(data, Visibility.GLOBAL, (String) null);
+		this(data, Visibility.GLOBAL, (String) null, null);
 	}
 	
 	/**
@@ -45,7 +49,7 @@ public class Payload implements Serializable {
 	 */
 	public Payload() {
 
-		this(new Void(), Visibility.GLOBAL, (String) null);
+		this(new Void(), Visibility.GLOBAL, (String) null, null);
 	}
 	
 	/**
@@ -62,11 +66,13 @@ public class Payload implements Serializable {
 	public Payload(final Visibility visibility,
 				   final String visibilityId) {
 
-		Void emptyVoidInstance = new Void();
-		this.type = emptyVoidInstance.getClass().getName();
-		this.data = emptyVoidInstance;
-		this.visibility = visibility;
-		this.visibilityId = visibilityId;
+		this(new Void(), visibility, visibilityId, null);
+	}
+
+	public Payload(final Object data,
+				   final Visibility visibility,
+				   final String visibilityId) {
+		this(data, visibility, visibilityId, null);
 	}
 
 	/**
@@ -81,14 +87,21 @@ public class Payload implements Serializable {
 	 */
 	public Payload(final Object data,
 				   final Visibility visibility,
-				   final String visibilityId) {
+				   final String visibilityId,
+				   final Map<String, Object> user) {
 
 		this.type = data.getClass().getName();
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityId = visibilityId;
+
+		if (user == null || user.isEmpty()) {
+			this.user = LoginServiceFactory.getInstance().getLoginService().getLogInUser().toMap();
+		}else{
+			this.user = user;
+		}
 	}
-	
+
 	/**
 	 * Returns the type (fully qualified name) of the Java class representing
 	 * the payload of the System Event.
@@ -146,11 +159,7 @@ public class Payload implements Serializable {
 	 *
 	 * @return
      */
-	public User getUser() {
+	public Map<String, Object> getUser() {
 		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
 	}
 } // E:O:F:Payload.

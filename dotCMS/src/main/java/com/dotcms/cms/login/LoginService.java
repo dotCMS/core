@@ -207,4 +207,11 @@ public interface LoginService extends Serializable {
      * @return login user
      */
     User getLogInUser( HttpServletRequest req );
+
+    /**
+     * Return the current login user.
+     *
+     * @return login user, if a user is login otherwise return System User
+     */
+    User getLogInUser( );
 } // E:O:F:LoginService.

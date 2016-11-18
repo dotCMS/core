@@ -280,6 +280,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		ffac.copy(folderToCopy, newParentFolder);
+
+		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 
@@ -294,6 +297,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		ffac.copy(folderToCopy, newParentHost);
+
+		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 
@@ -543,10 +549,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + parentFolder.getPath());
 		}
 
+		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
 		ffac.save(folder, existingId);
 
-		SystemEventType systemEventType = existingId == null ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.PERMISSION,
 				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
@@ -785,7 +792,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
-		return ffac.move(folderToMove, newParentFolder);
+		boolean move = ffac.move(folderToMove, newParentFolder);
+
+		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
+
+		return move;
 	}
 
 
@@ -797,7 +809,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
-		return ffac.move(folderToMove, newParentHost);
+		boolean move = ffac.move(folderToMove, newParentHost);
+
+		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
+
+		return move;
 	}
 
 	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{

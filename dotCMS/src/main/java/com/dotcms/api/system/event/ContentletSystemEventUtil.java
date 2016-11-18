@@ -28,7 +28,8 @@ public class ContentletSystemEventUtil {
     private static final String UPDATE_EVENT_PREFIX = "UPDATE";
     private static final String ARCHIVED_EVENT_PREFIX = "ARCHIVE";
     private static final String UN_ARCHIVED_EVENT_PREFIX = "UN_ARCHIVE";
-
+    private static final String COPY_EVENT_PREFIX = "COPY";
+    private static final String MOVE_EVENT_PREFIX = "MOVE";
     private static final String SITE_EVENT_SUFFIX= "SITE";
 
     private final SystemEventsAPI systemEventsAPI;
@@ -67,6 +68,13 @@ public class ContentletSystemEventUtil {
                 throw new CanNotPushSystemEventException(e);
             }
         }
+    }
+
+    public void pushCopyEvent(Contentlet contentlet){
+        sendEvent(contentlet, COPY_EVENT_PREFIX);
+    }
+    public void pushMoveEvent(Contentlet contentlet){
+        sendEvent(contentlet, MOVE_EVENT_PREFIX);
     }
 
     public void pushArchiveEvent(Contentlet contentlet){

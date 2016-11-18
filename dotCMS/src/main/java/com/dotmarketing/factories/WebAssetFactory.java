@@ -9,6 +9,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Host;
@@ -112,6 +116,7 @@ public class WebAssetFactory {
 	private static ContainerAPI containerAPI = APILocator.getContainerAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
+	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	private static final int ITERATION_LIMIT = 500;
 	private final static int MAX_LIMIT_COUNT = 100;
@@ -144,6 +149,9 @@ public class WebAssetFactory {
 		webasset.setIdentifier(id.getId());
 		HibernateUtil.saveOrUpdate(webasset);
         APILocator.getVersionableAPI().setWorking(webasset);
+
+		systemEventsAPI.push(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Host host) throws DotDataException, DotStateException, DotSecurityException {
@@ -162,6 +170,9 @@ public class WebAssetFactory {
 		HibernateUtil.saveOrUpdate(webasset);
 
 		APILocator.getVersionableAPI().setWorking(webasset);
+
+		systemEventsAPI.push(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
@@ -604,6 +615,9 @@ public class WebAssetFactory {
 			// persists the webasset
 			HibernateUtil.saveOrUpdate(workingwebasset);
 
+			systemEventsAPI.push(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset, Visibility.PERMISSION,
+					String.valueOf(PermissionAPI.PERMISSION_READ)));
+
 			return true;
 		}
 		return false;
@@ -632,6 +646,9 @@ public class WebAssetFactory {
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		// gets the identifier for this asset
 		APILocator.getVersionableAPI().setDeleted(currWebAsset, false);
+
+		systemEventsAPI.push(SystemEventType.UN_ARCHIVE_SITE, new Payload(currWebAsset, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 	}
 
 	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Inode parent) throws DotStateException, DotDataException, DotSecurityException {
@@ -791,6 +808,10 @@ public class WebAssetFactory {
 		}
 
 		 APILocator.getVersionableAPI().setWorking(newWebAsset);
+
+		SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
+		systemEventsAPI.push(systemEventType, new Payload(newWebAsset, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
 
 		return newWebAsset;
 	}

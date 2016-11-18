@@ -346,7 +346,7 @@ public class User extends UserModel implements Recipient {
         setModified(true);
     }
 
-	public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	public Map<String, Object> toMap() {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("active", this.getActive());
 		map.put("actualCompanyId", this.getActualCompanyId());

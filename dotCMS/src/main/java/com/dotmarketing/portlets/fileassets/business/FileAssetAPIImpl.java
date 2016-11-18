@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -55,12 +59,14 @@ import com.liferay.util.FileUtil;
  */
 public class FileAssetAPIImpl implements FileAssetAPI {
 
+	private SystemEventsAPI systemEventsAPI;
 	ContentletAPI contAPI;
 	PermissionAPI perAPI;
 
 	public FileAssetAPIImpl() {
 		contAPI = APILocator.getContentletAPI();
 		perAPI = APILocator.getPermissionAPI();
+		systemEventsAPI = APILocator.getSystemEventsAPI();
 	}
 
 	/**
@@ -424,6 +430,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
                 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
+
+				this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.PERMISSION,
+						String.valueOf(PermissionAPI.PERMISSION_READ)));
 
                 return true;
             }

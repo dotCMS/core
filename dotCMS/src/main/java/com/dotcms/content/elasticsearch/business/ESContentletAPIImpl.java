@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.api.system.event.*;
 import com.dotmarketing.cache.ContentTypeCache;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -155,9 +155,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
 
-    private final ContentletSystemEventUtil contentletSystemEventUtil;
-
-	private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
+    private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
 	
 	private static final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
@@ -174,6 +172,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private int MAX_LIMIT = 100000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + java.io.File.separator + "contentlets";
+
+    private ContentletSystemEventUtil contentletSystemEventUtil;
 
     public static enum QueryType {
 		search, suggest, moreLike, Facets
@@ -4990,6 +4990,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	        APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
     	    }
     	}
+
+        this.contentletSystemEventUtil.pushCopyEvent(resultContentlet);
 
     	return resultContentlet;
     }

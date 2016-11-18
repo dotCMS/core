@@ -1,5 +1,6 @@
 package com.dotcms.cms.login;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
@@ -158,17 +159,24 @@ public class LoginServiceFactory implements Serializable {
         private final Log log = LogFactory.getLog(LoginService.class);
         private final UserWebAPI userWebAPI;
         private final JsonWebTokenUtils jsonWebTokenUtils;
+        private final HttpServletRequestThreadLocal httpServletRequestThreadLocal;
+        private final UserAPI userAPI;
 
         @VisibleForTesting
         public LoginServiceImpl(final ApiProvider apiProvider,
-                                final JsonWebTokenUtils jsonWebTokenUtils){
+                                final JsonWebTokenUtils jsonWebTokenUtils,
+                                final HttpServletRequestThreadLocal httpServletRequestThreadLocal,
+                                final UserAPI userAPI){
 
             this.userWebAPI        = apiProvider.userWebAPI();
             this.jsonWebTokenUtils = jsonWebTokenUtils;
+            this.httpServletRequestThreadLocal = httpServletRequestThreadLocal;
+            this.userAPI = userAPI;
         }
 
         public LoginServiceImpl(){
-            this(new ApiProvider(), JsonWebTokenUtils.getInstance());
+            this(new ApiProvider(), JsonWebTokenUtils.getInstance(), HttpServletRequestThreadLocal.INSTANCE,
+                    APILocator.getUserAPI());
         }
 
         @Override
@@ -459,6 +467,25 @@ public class LoginServiceFactory implements Serializable {
             }
             return user;
         }
+
+        public User getLogInUser( ){
+            HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
+            User user = null;
+
+            try {
+                if (request == null) {
+                    user = userAPI.getSystemUser();
+                } else {
+                    user = this.getLogInUser(request);
+                }
+            }catch (DotDataException e){
+                throw new RuntimeException(e);
+            }
+
+            return user;
+        }
     }
+
+
 
 } // E:O:F:LoginServiceFactory.

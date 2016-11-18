@@ -153,8 +153,6 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			throw new DotRuntimeException("An error ocurred trying to copy the file.", e);
 		}
 
-		systemEventsAPI.push(SystemEventType.COPY_FILE_ASSET, new Payload(newFile, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
 		return newFile;
 	}
 
@@ -595,11 +593,17 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
             throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
         }
 
+		File result = null;
+
         if ( parent != null ) {
-            return ffac.copyFile( file, parent );
+			result = ffac.copyFile( file, parent );
         } else {
-            return ffac.copyFile( file, host );
+			result = ffac.copyFile( file, host );
         }
+
+		systemEventsAPI.push(SystemEventType.COPY_FILE_ASSET, new Payload(file, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		return result;
     }
 
 	public boolean renameFile(File file, String newName, User user, boolean respectFrontendRoles) throws DotStateException,
@@ -612,7 +616,12 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 
-		return ffac.renameFile(file, newName);
+		boolean b = ffac.renameFile(file, newName);
+
+		this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.PERMISSION,
+				String.valueOf(PermissionAPI.PERMISSION_READ)));
+
+		return b;
 	}
 
 	public boolean moveFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
@@ -637,17 +646,11 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
             throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
         }
 
-		Boolean result = false;
-
 		if ( parent != null ) {
-			result = ffac.moveFile(file, parent);
+			return ffac.moveFile(file, parent);
 		} else {
-			result = ffac.moveFile( file, host );
+			return ffac.moveFile( file, host );
         }
-
-		this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
-		return result;
 	}
 
 	public void publishFile(File file, User user, boolean respectFrontendRoles) throws WebAssetException, DotSecurityException,
