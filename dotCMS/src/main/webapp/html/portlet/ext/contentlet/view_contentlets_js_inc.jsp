@@ -598,7 +598,7 @@
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
                             "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
-                            "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
+                            "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
                             "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
                             "</div>"
                         ].join("");
@@ -1276,7 +1276,7 @@
                         if(type=='host or folder'){
                            hasHostField = true;
                         }
-                        htmlstr += "<dl>";
+                        htmlstr += "<dl class='vertical'>";
                         htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
                         htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
@@ -1776,7 +1776,6 @@
                 for (var i = 0; i < data.length; i++) {
                         var row = table.insertRow(table.rows.length);
 
-                        row.setAttribute("height","30");
                         row.setAttribute("valign","top");
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
@@ -2201,11 +2200,14 @@
 
 
 
-
+        var exportContentButton;
         function showMatchingResults (num,begin,end,totalPages) {
-
+                        if (exportContentButton) {
+                            exportContentButton.destroyRendering();
+                        }
 
                         var div = document.getElementById("metaMatchingResultsDiv");
+
                         div.style.display='';
 
                     //Top Matching Results
@@ -2214,20 +2216,25 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div class=\"yui-gb portlet-toolbar\"><div class=\"yui-u first\"><%= LanguageUtil.get(pageContext, "showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div><div id=\"tablemessage\" class=\"yui-u\" style=\"text-align:center;\">&nbsp</div><div class=\"yui-u\" style=\"text-align:right;\">";
-                        if(num >0 && structureInode != "_all"){
-                                strbuff+= "<a href='javascript:donwloadToExcel();'><%= LanguageUtil.get(pageContext, "Export") %></a> <a href='javascript:donwloadToExcel();'><img src='/html/images/icons/csv.png' border='0' alt='export results' align='absbottom'></a>";
+                        var strbuff = "<div id=\"tablemessage\" style=\"text-align:center;\">&nbsp</div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        if (num > 0 && structureInode != "_all") {
+                            exportContentButton = new dijit.form.Button({
+                                label: "<%= LanguageUtil.get(pageContext, "Export") %>",
+                                class: "export-button",
+                                onClick: donwloadToExcel,
+                            });
+                            dojo.byId("portletActions").insertBefore(exportContentButton.domNode, dojo.byId("archiveButtonDiv"));
+
                         }
-                        strbuff+= "</div></div>";
                         div.innerHTML = strbuff;
                         div.style.display = "";
 
                         //Bottom Matching Results
                         var div = document.getElementById("matchingResultsBottomDiv")
-                        var strbuff = "<table border='0' width=\"100%\"><tr><td align='center' nowrap='true'><b><%= LanguageUtil.get(pageContext, "showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
+                        var strbuff = "<table border='0' width=\"100%\"><tr><td align='center' nowrap='true'><b><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
                         if(num > 0)
                         {
-                                strbuff += " | <%= LanguageUtil.get(pageContext, "pages") %> ";
+                                strbuff += " | <%= LanguageUtil.get(pageContext, "Pages") %> ";
                                 for(i = 4;i >= 1;i--)
                                 {
                                         var auxPage = currentPage - i;
@@ -2364,11 +2371,14 @@
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
                 if (showArchive) {
+                    dijit.byId('archiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('unArchiveButton').setAttribute("disabled", false);
                     dijit.byId('deleteButton').setAttribute("disabled", false);
                     dijit.byId('archiveUnlockButton').setAttribute("disabled", false);
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false);":"") %>
                 } else {
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('archiveButton').setAttribute("disabled", false);
                     dijit.byId('publishButton').setAttribute("disabled", false);
                     <% if ( enterprise ) { %>
@@ -2391,11 +2401,13 @@
 
         // nothing selected
        	if (showArchive) {
+                    dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
                     dijit.byId("unArchiveButton").setAttribute("disabled", true);
                     dijit.byId("deleteButton").setAttribute("disabled", true);
                     dijit.byId("archiveUnlockButton").setAttribute("disabled", true);
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", true);":"") %>
         } else {
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", true);
                     dijit.byId('archiveButton').setAttribute("disabled", true);
                     dijit.byId('publishButton').setAttribute("disabled", true);
                     <% if ( enterprise ) { %>
@@ -2457,26 +2469,9 @@
         }
     }
 
-        function  resizeBrowser(){
-                var viewport = dijit.getViewport();
-                var viewport_height = viewport.h;
-
-                var  e =  dojo.byId("borderContainer");
-                dojo.style(e, "height", viewport_height -150+ "px");
-
-                var  e =  dojo.byId("filterWrapper");
-                dojo.style(e, "height", viewport_height -195+ "px");
-
-                var  e =  dojo.byId("contentWrapper");
-                dojo.style(e, "height", viewport_height -230+ "px");
-
-                dijit.byId('borderContainer').resize()
-        }
-
-        //dojo.addOnLoad(resizeBrowser);
-        dojo.connect(window, "onresize", this, "resizeBrowser");
-
         function disableButtonRow() {
+                if(dijit.byId("archiveDropDownButton"))
+                        dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
 
                 if(dijit.byId("unArchiveButton"))
                         dijit.byId("unArchiveButton").attr("disabled", true);
@@ -2489,6 +2484,9 @@
 
                 if(dijit.byId("archiveUnlockButton"))
                         dijit.byId("archiveUnlockButton").attr("disabled", true);
+
+                if(dijit.byId("unArchiveDropDownButton"))
+                        dijit.byId("unArchiveDropDownButton").attr("disabled", true);
 
                 if(dijit.byId("publishButton"))
                         dijit.byId("publishButton").attr("disabled", true);

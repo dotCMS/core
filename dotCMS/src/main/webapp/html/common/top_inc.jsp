@@ -38,10 +38,8 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
 	<style type="text/css">
-		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+        @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
 		@import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
 	</style>
 
@@ -170,10 +168,4 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 
-<%if(UtilMethods.isSet(request.getParameter(WebKeys.POPUP)) || UtilMethods.isSet(request.getAttribute(WebKeys.POPUP)) || (UtilMethods.isSet(request.getParameter(WebKeys.IN_FRAME)) && "true".equals((String) request.getParameter(WebKeys.IN_FRAME)))|| (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))){ %>
-<%} %>
-
-
-	<body class="dmundra" style="visibility:hidden;overflow:hidden;">
-
-
+<body class="dotcms" style="background:white url();visibility:hidden;">

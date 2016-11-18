@@ -327,310 +327,263 @@
         });
         menu.addChild(menuItem2);
 
-        var button = new dijit.form.ComboButton({
-            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>",
-                        iconClass: "plusIcon",
-                        dropDown: menu,
-                        onClick: function() {
-                addNewContentlet();
-            }
-        });
-        dojo.byId("addNewMenu").appendChild(button.domNode);
+
     });
 </script>
 
-
-<!-- START Button Row -->
-        <div class="buttonBoxLeft">
-
-        </div>
-
-        <div class="buttonBoxRightTopPadding">
-             <div id="addNewMenu"></div>
-        </div>
-
-<!-- END Button Row -->
-
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
-<input type="hidden" name="fullCommand" id="fullCommand" value="">
-<input type="hidden" name="expiredInodes" id="expiredInodes" value=""/>
-<input type="hidden" name="expireDateReset" id="expireDateReset" value=""/>
-<input type="hidden" name="luceneQuery" id="luceneQuery" value="">
-<input type="hidden" name="structureInode" id="structureInode" value="">
-<input type="hidden" name="fieldsValues" id="fieldsValues" value="">
-<input type="hidden" name="categoriesValues" id="categoriesValues" value="">
-<input type="hidden" name="showDeleted" id="showDeleted" value="<%= showDeleted %>">
-<input type="hidden" name="filterSystemHost" id="filterSystemHost" value="<%= filterSystemHost %>">
-<input type="hidden" name="filterLocked" id="filterLocked" value="<%= filterLocked %>">
-<input type="hidden" name="filterUnpublish" id="filterUnpublish" value="<%= filterUnpublish %>">
-<input type="hidden" name="currentPage" id="currentPage" value="">
-<input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
-<input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
-<input type="hidden" value="" name="lastModDateTo"  id="lastModDateTo" size="10" maxlength="10" readonly="true"/>
-<input type="hidden" name="structureVelocityVarNames" id="structureVelocityVarNames" value="<%= structureVelocityVarNames %>">
-<input type="hidden" name="structureInodesList" id="structureInodesList" value="<%= structureInodesList %>">
-<input type="hidden" name="hostField" id="hostField" value="<%= conHostValue %>"/>
-<input type="hidden" name="folderField" id="folderField" value="<%= conFolderValue %>"/>
-<input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
-<input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
-<input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
-<!-- START Split Screen -->
-<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">
+    <input type="hidden" name="fullCommand" id="fullCommand" value="">
+    <input type="hidden" name="expiredInodes" id="expiredInodes" value=""/>
+    <input type="hidden" name="expireDateReset" id="expireDateReset" value=""/>
+    <input type="hidden" name="luceneQuery" id="luceneQuery" value="">
+    <input type="hidden" name="structureInode" id="structureInode" value="">
+    <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
+    <input type="hidden" name="categoriesValues" id="categoriesValues" value="">
+    <input type="hidden" name="showDeleted" id="showDeleted" value="<%= showDeleted %>">
+    <input type="hidden" name="filterSystemHost" id="filterSystemHost" value="<%= filterSystemHost %>">
+    <input type="hidden" name="filterLocked" id="filterLocked" value="<%= filterLocked %>">
+    <input type="hidden" name="filterUnpublish" id="filterUnpublish" value="<%= filterUnpublish %>">
+    <input type="hidden" name="currentPage" id="currentPage" value="">
+    <input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
+    <input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
+    <input type="hidden" value="" name="lastModDateTo"  id="lastModDateTo" size="10" maxlength="10" readonly="true"/>
+    <input type="hidden" name="structureVelocityVarNames" id="structureVelocityVarNames" value="<%= structureVelocityVarNames %>">
+    <input type="hidden" name="structureInodesList" id="structureInodesList" value="<%= structureInodesList %>">
+    <input type="hidden" name="hostField" id="hostField" value="<%= conHostValue %>"/>
+    <input type="hidden" name="folderField" id="folderField" value="<%= conFolderValue %>"/>
+    <input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
+    <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
+    <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
+    <!-- START Split Screen -->
+    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox">
 
-<!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 350px;overflow-y:auto; overflow-x:hidden;margin:43px 0 0 5px;" class="lineRight" >
+        <!-- START Left Column -->
+        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 251px;" class="portlet-sidebar-wrapper" >
+            <div class="portlet-sidebar">
+                <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
+                <% if((readStructs.size() == 0)){%>
+                    <div align="center" style="text-align:center;">
+                        <dt><FONT COLOR="#FF0000"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions" )) %></FONT></dt>
+                    </div>
+                <%}%>
 
-
-
-                        <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
-                        <% if((readStructs.size() == 0)){%>
-                                <div align="center" style="text-align:center;">
-                                        <dt><FONT COLOR="#FF0000"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions" )) %></FONT></dt>
-                                </div>
-                        <%}%>
-
-                        <!-- START Advanced Search-->
-                        <div id="advancedSearch">
-                                <dl>
-	                        		<dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
-	                        		<dd><span id="structSelectBox"></span></dd>
-	                        		<div class="clear"></div>
-
-	                        		<dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
-	                        		<dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
-                                </dl>
-
-                                <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
-
-	                                <div class="clear"></div>
-									<%if (languages.size() > 1) { %>
-	                                <!-- Language search fields  --->
-	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-                                    <dd>
-                                        <div id="combo_zone2" style="width:215px; height:20px;">
-                                            <input id="language_id"/>
-                                        </div>
-
-                                        <%@include file="languages_select_inc.jsp" %>
-                                    </dd>
-                            <%} else { %>
-                                    <% long langId = languages.get(0).getId(); %>
-                                    <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
-                            <% } %>
-
-
-	                                <!-- Ajax built search fields  --->
-	                                        <div id="search_fields_table"></div>
-											<div class="clear"></div>
-	                                <!-- /Ajax built search fields  --->
-
-	 								<!-- Ajax built Categories   --->
-	                        		<dl id="search_categories_list"></dl>
-									<div class="clear"></div>
-									<!-- /Ajax built Categories   --->
-
-	                                <dl>
-	                                     <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
-	                                     <dd>
-
-	                                     	<select name="showingSelect" style="width:150px;" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
-                                                <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
-                                                <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
-                                                <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
-                                                <option value="archived" <% if (showDeleted) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Archived") %></option>
-	                                     	</select>
-
-	                                     </dd>
-	                                </dl>
-
-	                                <div class="clear"></div>
-
-	                                <dl id="filterSystemHostTable" style="display: ">
-	                                    <dt></dt>
-	                                    <dd>
-	                                       <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
-	                                       <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
-	                                   </dd>
-	                                </dl>
-
-	                                <div id="measureTheHeightOfSearchTools" class="clear"></div>
-								</div>
-
-
-
-
-
-                        </div>
-                        <!-- END Advanced Search-->
-
-
-
-                        <div class="buttonRow" style='margin-top:10px;'>
-                                <span id="searchButton"></span>
-
-                                <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
-                                        <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
-                                        <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
-                                                <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
-                                                <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
-                                        </div>
-                                </button>
-
-                                <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon">
-                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
-                                </button>
-                        </div>
-
-	                   <a href="javascript:toggleAdvancedSearchDiv()" style="display:block;background:#f1f1f1;border-top:1px solid #ddd;padding:8px 10px;text-align:center;text-decoration:none;">
-	                       	<div id="toggleDivText">
-	                       		<%= LanguageUtil.get(pageContext, "Advanced") %>
-	                       	</div>
-	                   </a>
-
-
-
-        </div>
-<!-- END Left Column -->
-
-
-<!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
-
-                        <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
-                                <!-- START Listing Results -->
-                                        <input type="hidden" name="referer" value="<%=referer%>">
-                                        <input type="hidden" name="cmd" value="prepublish">
-                                        <div id="matchingResultsDiv" style="display: none"></div>
-                                        <table id="results_table" class="listingTable"></table>
-                                        <div id="results_table_popup_menus"></div>
-                                        <div class="clear"></div>
-                                <!-- END Listing Results -->
-                        </div>
-
-                        <!-- Start Pagination -->
-                                <div class="yui-gb buttonRow">
-                                        <div class="yui-u first" style="text-align:left; width: 10%;">
-                                                <div id="previousDiv" style="display: none;">
-                                                        <button dojoType="dijit.form.Button" onClick="previousPage();return false;" iconClass="previousIcon" id="previousDivButton">
-                                                                <%= LanguageUtil.get(pageContext, "Previous")%>
-                                                        </button>
-                                                </div>&nbsp;
-                                        </div>
-                                        <div id="pagesdiv" class="yui-u" style="width:75%;">
-                                                <div id="matchingResultsBottomDiv"></div>
-                                        </div>
-                                        <div class="yui-u" style="text-align:right; width: 10%;">
-                                                <div id="nextDiv" style="display: none;">
-                                                        <button dojoType="dijit.form.Button" onClick="nextPage();return false;" iconClass="nextIcon" id="nextDivButton">
-                                                                <%= LanguageUtil.get(pageContext, "Next")%>
-                                                        </button>
-                                                </div>&nbsp;
-                                        </div>
-                                </div>
-                        <!-- END Pagination -->
+                <!-- START Advanced Search-->
+                <div id="advancedSearch">
+                    <dl class="vertical">
+                        <dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
+                        <dd><span id="structSelectBox"></span></dd>
                         <div class="clear"></div>
 
+                        <dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
+                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
+                    </dl>
 
-                <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
-                <div class="clear"></div>
+                    <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
+
+                        <%if (languages.size() > 1) { %>
+                            <dl class="vertical">
+                                <!-- Language search fields  --->
+                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+                                <dd>
+                                    <div id="combo_zone2">
+                                        <input id="language_id"/>
+                                    </div>
+
+                                    <%@include file="languages_select_inc.jsp" %>
+                                </dd>
+                            </dl>
+                        <%} else { %>
+                            <% long langId = languages.get(0).getId(); %>
+                            <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
+                        <% } %>
 
 
-        </div>
+                        <!-- Ajax built search fields  --->
+                        <div id="search_fields_table"></div>
+                        <div class="clear"></div>
+                        <!-- /Ajax built search fields  --->
 
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="bottom" id="buttonsWrapper">
-          <!-- START Buton Row -->
-                        <div class="buttonRow">
-                                <div id="archiveButtonDiv" style="display:none">
-                                        <button dojoType="dijit.form.Button" id="unArchiveButton" onClick="unArchiveSelectedContentlets()" iconClass="unarchiveIconDis" disabled="true" >
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Un-Archive")) %>
-                                        </button>
+                        <!-- Ajax built Categories   --->
+                        <dl class="vertical" id="search_categories_list"></dl>
+                        <div class="clear"></div>
+                        <!-- /Ajax built Categories   --->
 
-                                        <button dojoType="dijit.form.Button" id="deleteButton" onClick="deleteSelectedContentlets()" iconClass="deleteIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete"))%>
-                                        </button>
+                        <dl class="vertical">
+                            <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
+                            <dd>
+                                <select name="showingSelect" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+                                    <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
+                                    <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
+                                    <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
+                                    <option value="archived" <% if (showDeleted) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Archived") %></option>
+                                </select>
+                            </dd>
+                        </dl>
 
+                        <div class="clear"></div>
 
-                                         <button dojoType="dijit.form.Button" id="archiveUnlockButton" onClick="unlockSelectedContentlets()" iconClass="unlockIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
-                                        </button>
+                        <dl class="vertical" id="filterSystemHostTable">
+                            <dt></dt>
+                            <dd>
+                               <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
+                               <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
+                           </dd>
+                        </dl>
 
-                                        <% if(canReindexContentlets){ %>
-                                                <button dojoType="dijit.form.Button" id="archiveReindexButton" onClick="reindexSelectedContentlets()" iconClass="reindexIconDis">
-                                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
-                                                </button>
-                                        <% } %>
-                                </div>
+                        <div id="measureTheHeightOfSearchTools" class="clear"></div>
+                    </div>
 
-                                <div id="unArchiveButtonDiv">
-                                        <button dojoType="dijit.form.Button" id="publishButton"  onClick="publishSelectedContentlets()" iconClass="publishIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
-                                        </button>
+                </div>
+                <!-- END Advanced Search-->
 
-                                        <% if ( enterprise ) { %>
-                                            <% if ( sendingEndpoints ) { %>
-                                                <button dojoType="dijit.form.Button" id="pushPublishButton"  onClick="pushPublishSelectedContentlets()" iconClass="publishIconDis" disabled="true">
-                                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
-                                                </button>
-                                            <% } %>
+                <div class="buttonRow">
+                    <span id="searchButton"></span>
 
-                                            <button dojoType="dijit.form.Button" id="addToBundleButton"  onClick="addToBundleSelectedContentlets()" iconClass="publishIconDis" disabled="true">
-                                                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
-                                            </button>
-
-                                        <% } %>
-
-                                        <button dojoType="dijit.form.Button"  id="unPublishButton" onClick="unPublishSelectedContentlets()" iconClass="unpublishIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>
-                                        </button>
-
-                                        <button dojoType="dijit.form.Button" id="archiveButton" onClick="archiveSelectedContentlets()" iconClass="archiveIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
-                                        </button>
-
-                                         <button dojoType="dijit.form.Button" id="unlockButton" onClick="unlockSelectedContentlets()" iconClass="unlockIconDis" disabled="true">
-                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
-                                        </button>
-
-                                        <% if(canReindexContentlets){ %>
-                                                <button dojoType="dijit.form.Button" id="reindexButton" onClick="reindexSelectedContentlets()" iconClass="reindexIconDis" disabled="true">
-                                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
-                                                </button>
-                                        <% } %>
-                                </div>
+                    <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
+                        <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
+                        <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
+                            <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
+                            <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
                         </div>
-                <!-- END Buton Row -->
+                    </button>
+
+                    <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
+                    </button>
+                </div>
+
+               <a href="javascript:toggleAdvancedSearchDiv()" class="advanced-search-button">
+                    <div id="toggleDivText">
+                        <%= LanguageUtil.get(pageContext, "Advanced") %>
+                    </div>
+               </a>
+
+            </div>
+
         </div>
-    </div>
-<!-- END Right Column -->
+        <!-- END Left Column -->
 
+        <!-- START Right Column -->
+        <%boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
+            <div class="portlet-main">
+                <div id="metaMatchingResultsDiv" style="display:none;">
+                    <!-- START Listing Results -->
+                    <input type="hidden" name="referer" value="<%=referer%>">
+                    <input type="hidden" name="cmd" value="prepublish">
+                    <div class="portlet-toolbar">
+                        <div class="portlet-toolbar__info" id="matchingResultsDiv" style="display: none"></div>
+                        <div class="portlet-toolbar__actions" id="portletActions">
+                            <div id="archiveButtonDiv" style="display:none">
+                                <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon"'>
+                                    <span></span>
 
+                                    <div data-dojo-type="dijit/Menu">
+                                        <div id="unArchiveButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unArchiveSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Un-Archive")) %>
+                                        </div>
+                                        <div id="deleteButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete"))%>
+                                        </div>
+                                        <div id="archiveUnlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
+                                        </div>
+                                        <% if(canReindexContentlets){ %>
+                                            <div id="archiveReindexButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: reindexSelectedContentlets">
+                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="unArchiveButtonDiv">
+                                <div id="unArchiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon"'>
+                                    <span></span>
 
-<!-- START Show Query -->
+                                    <div data-dojo-type="dijit/Menu">
+                                        <div id="publishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: publishSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
+                                        </div>
+                                            <% if ( enterprise ) { %>
+                                            <% if ( sendingEndpoints ) { %>
+                                        <div id="pushPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: pushPublishSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+                                        </div>
+                                            <% } %>
+                                        <div id="addToBundleButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
+                                        </div>
+                                            <% } %>
+                                        <div id="unPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unPublishSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>
+                                        </div>
+                                        <div id="archiveButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: archiveSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
+                                        </div>
+                                        <div id="unlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
+                                        </div>
+                                        <% if(canReindexContentlets){ %>
+                                            <div id="reindexButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: reindexSelectedContentlets">
+                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reindex")) %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="results_table" class="listingTable"></table>
+                    <div id="results_table_popup_menus"></div>
+                    <!-- END Listing Results -->
+                </div>
+
+                <!-- Start Pagination -->
+                <div class="portlet-pagination">
+                    <div id="previousDiv" style="display: none;">
+                        <button dojoType="dijit.form.Button" onClick="previousPage();return false;" iconClass="previousIcon" id="previousDivButton">
+                            <%= LanguageUtil.get(pageContext, "Previous")%>
+                        </button>
+                    </div>&nbsp;
+                    <div id="matchingResultsBottomDiv" class="portlet-pagination__results"></div>
+                    <div id="nextDiv" style="display: none;">
+                        <button dojoType="dijit.form.Button" onClick="nextPage();return false;" iconClass="nextIcon" id="nextDivButton">
+                                <%= LanguageUtil.get(pageContext, "Next")%>
+                        </button>
+                    </div>&nbsp;
+                </div>
+            <!-- END Pagination -->
+            </div>
+
+        </div>
+        <!-- END Right Column -->
+
+        <!-- START Show Query -->
         <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;padding-top:15px\9;">
-                <div id="queryResults"></div>
+            <div id="queryResults"></div>
         </div>
-<!-- END Show Query -->
+        <!-- END Show Query -->
 
-<!-- START Search Hint -->
+        <!-- START Search Hint -->
         <div id="hintsdiv" dojoType="dijit.Dialog" style="display: none">
-                <b><%= LanguageUtil.get(pageContext, "Search-Hints") %></b>
-                <ul style="list-style:none; margin:0px; padding:0px;">
-                        <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text1") %></li>
-                        <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text2") %></li>
-                        <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text3") %></li>
-                        <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text4") %></li>
-                </ul>
+            <b><%= LanguageUtil.get(pageContext, "Search-Hints") %></b>
+            <ul style="list-style:none; margin:0px; padding:0px;">
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text1") %></li>
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text2") %></li>
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text3") %></li>
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text4") %></li>
+            </ul>
         </div>
-<!-- START Search Hint -->
+        <!-- START Search Hint -->
 
+        <div id="popups"></div>
 
-<div id="popups"></div>
-
-<%if(UtilMethods.isSet(structureSelected) && structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){ %>
-        <input type="hidden" name="contentStructureType" value="3"/>
-<% } %>
+        <%if(UtilMethods.isSet(structureSelected) && structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){ %>
+            <input type="hidden" name="contentStructureType" value="3"/>
+        <% } %>
+    </div>
 
 </form>
 
@@ -664,11 +617,6 @@
 	</table>
 
 </div>
-
-
-<script type="text/javascript">
-dojo.ready(resizeBrowser);
-</script>
 
 <form id="remotePublishForm">
 	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">

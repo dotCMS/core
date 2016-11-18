@@ -69,6 +69,13 @@ public class ContentTypeUtil {
 
         return getActionUrl(request, ContentType, user);
     }
+    
+    public String getActionUrl(final ContentType ContentType, final User user) {
+      HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
+      return getActionUrl(request, ContentType, user);
+  }
+    
+    
     /**
      * Get the action url for the ContentType
      * @param ContentType

@@ -6,15 +6,14 @@
             {
                 "contentTypeId": "4c441ada-944a-43af-a653-9bb4f3f0cb2b",
                 "dataType": "SYSTEM",
-                "dbColumn": "system_field1",
                 "fieldVariales": [],
                 "fixed": false,
-                "iDate": 1308941714000,
+
                 "implClass": "com.dotcms.contenttype.model.field.ImmutableHostFolderField",
                 "indexed": true,
                 "inode": "ee91a37d-9d9f-4488-a1ce-50516e5309dc",
                 "listed": false,
-                "modDate": 1478557845000,
+
                 "name": "Host/Folder",
                 "readOnly": false,
                 "required": true,

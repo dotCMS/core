@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -23,10 +24,12 @@ import com.dotmarketing.business.APILocator;
 public class JsonContentTypeTransformerTest {
 
   final ContentTypeFactory factory = new ContentTypeFactoryImpl();
-
+  static ContentTypeApi api ;
+  
   @BeforeClass
   public static void SetUpTests() throws FileNotFoundException, Exception {
     SuperContentTypeTest.SetUpTests();
+    api =APILocator.getContentTypeAPI2(APILocator.systemUser());
   }
 
   @Test
@@ -137,8 +140,8 @@ public class JsonContentTypeTransformerTest {
   public void testJsonToContentTypeArray() throws Exception {
 
     try{
-      ContentType type = APILocator.getContentTypeAPI2(APILocator.systemUser()).find("banner");
-      APILocator.getContentTypeAPI2(APILocator.systemUser()).delete(type);
+      ContentType type = api.find("banner");
+      api.delete(type);
     }
     catch(NotFoundInDbException e){
       
@@ -154,16 +157,17 @@ public class JsonContentTypeTransformerTest {
 
 
 
-    APILocator.getContentTypeAPI2(APILocator.systemUser()).save(type);
+    api.save(type);
 
   }
 
   @Test
   public void testJsonToContentTypeObject() throws Exception {
+    ContentType type;
 
     try{
-      ContentType type = APILocator.getContentTypeAPI2(APILocator.systemUser()).find("banner");
-      APILocator.getContentTypeAPI2(APILocator.systemUser()).delete(type);
+       type = api.find("banner");
+       api.delete(type);
     }
     catch(NotFoundInDbException e){
       
@@ -172,13 +176,16 @@ public class JsonContentTypeTransformerTest {
     InputStream stream = this.getClass().getResourceAsStream("/com/dotcms/contenttype/test/content-type-object.json");
     String json = IOUtils.toString(stream);
     stream.close();
-    ContentType type = new JsonContentTypeTransformer(json).from();
+     type = new JsonContentTypeTransformer(json).from();
     List<Field> fields = new JsonFieldTransformer(json).asList();
     List<FieldVariable> vars = fields.get(0).fieldVariables();
-
-
-
-    APILocator.getContentTypeAPI2(APILocator.systemUser()).save(type);
+    
+    type = api.save(type);
+    api.save(type, fields);
+    
+    
+    
+    
 
   }
 

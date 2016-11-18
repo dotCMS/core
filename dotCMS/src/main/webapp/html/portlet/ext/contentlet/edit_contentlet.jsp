@@ -130,7 +130,7 @@
 	request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
 
 
-	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 0, 100,"asc");
+	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
 
 
 

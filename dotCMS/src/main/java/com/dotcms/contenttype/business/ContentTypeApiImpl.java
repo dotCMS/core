@@ -85,8 +85,10 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     List<Map<String, Object>> ids = null;
 
     // test permissions over content
+    int maxRows=100;
+    int offset=0;
     do {
-      ids = dc.setSQL(ContentTypeSql.getInstance().SELECT_CONTENTLET_IDS_BY_TYPE).setMaxRows(100).addParam(type.id())
+      ids = dc.setSQL(ContentTypeSql.getInstance().SELECT_CONTENTLET_IDS_BY_TYPE).setMaxRows(100).setStartRow(offset).addParam(type.id())
           .loadObjectResults();
       for (Map<String, Object> id : ids) {
         PermissionableProxy proxy = new PermissionableProxy();
@@ -96,20 +98,25 @@ public class ContentTypeApiImpl implements ContentTypeApi {
         proxy.setType(new Contentlet().getType());
         APILocator.getPermissionAPI().checkPermission(proxy, PermissionLevel.PUBLISH, user);
       }
-
+      offset+=maxRows;
     } while (ids.size() > 0);
 
 
 
-    fac.delete(type);
 
-    try {
-      delete(type);
-      String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type);
+
+    try{
+      fac.delete(type);
+    } catch (DotStateException | DotDataException e) {
+      Logger.error(ContentType.class, e.getMessage(), e);
+      throw new BaseRuntimeInternationalizationException(e);
+    }
+    try{
+      String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
       ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
       APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
           contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
-    } catch (DotStateException | DotSecurityException e) {
+    } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);
       throw new BaseRuntimeInternationalizationException(e);
     }

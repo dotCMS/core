@@ -27,11 +27,6 @@
 
 </script>
 
-<style type="text/css">
-    table{font-size:12px;}
-    td{font-size:12px;}
-    dt{font-size:12px;padding-top:12px;}
-</style>
 
 <table class="listingTable shadowBox" style="font-size:12px;">
     <tr>
@@ -53,7 +48,7 @@
 
                 <dt>Background Color</dt>
                 <dd style="position:relative;">
-                    <div id="colorBlock" style="position:absolute;left:143px;border-left:1px solid #b3b3b3;top:9px;width:50px;height:26px;display:inline-block;margin:0 0 -5px 10px;"></div>
+                    <div id="colorBlock" style="position:absolute;left:129px;border-left:1px solid #b3b3b3;top:1px;width:50px;height:27px;display:inline-block;margin:0 0 -5px 10px;"></div>
                     <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getSize() %>">
                     <button id="buttonOne" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
                         Color Picker

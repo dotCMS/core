@@ -54,10 +54,11 @@ public class ContentTypeAPIImplTest {
 
   @BeforeClass
   public static void SetUpTests() throws FileNotFoundException, Exception {
+    SuperContentTypeTest.SetUpTests();
     user = APILocator.systemUser();
     api = APILocator.getContentTypeAPI2(user);
     fac = new ContentTypeFactoryImpl();
-    SuperContentTypeTest.SetUpTests();
+
   }
 
   @Test
@@ -259,24 +260,24 @@ public class ContentTypeAPIImplTest {
 
     int totalCount = api.count();
 
-    List<ContentType> types = api.search(null, BaseContentType.ANY, "name", 0, 100);
+    List<ContentType> types = api.search(null, BaseContentType.ANY, "name", 100, 0);
     assertThat("we have at least 40 content types", types.size() > 20);
     types = api.search(null, BaseContentType.ANY, "name", 5, 0);
     assertThat("limit works and we have max five content types", types.size() < 6);
     for (int x = 0; x < totalCount; x = x + 5) {
-      types = api.search(null, BaseContentType.ANY, "name asc", 0, 5);
+      types = api.search(null, BaseContentType.ANY, "name asc", 5,0);
       assertThat("we have max five content types", types.size() < 6);
     }
 
     for (int i = 0; i < BaseContentType.values().length; i++) {
-      types = api.search(null, BaseContentType.getBaseContentType(i), "name", 0, 1000);
+      types = api.search(null, BaseContentType.getBaseContentType(i), "name",  1000, 0);
       assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
       int count = api.count(null, BaseContentType.getBaseContentType(i));
       assertThat("Count works as well", types.size() == count);
     }
 
     for (int i = 0; i < searchTerms.length; i++) {
-      types = api.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 0, 1000);
+      types = api.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 1000, 0);
       assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
       int count = api.count(searchTerms[i], BaseContentType.ANY);
       assertThat("Count works as well", types.size() == count);

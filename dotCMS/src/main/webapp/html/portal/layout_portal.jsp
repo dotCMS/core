@@ -12,14 +12,12 @@
 %>
 
 <%if(inPortal ) {%>
+    <div class="portlet-wrapper" >
         <% if (Validator.isNotNull(tilesPortletSubNav) ) {%>
-                <div class="portlet-wrapper" >
-                        <liferay:include page="<%= Constants.TEXT_HTML_DIR + tilesPortletSubNav %>" flush="true" />
-                </div>
+            <liferay:include page="<%= Constants.TEXT_HTML_DIR + tilesPortletSubNav %>" flush="true" />
         <%}%>
-        <div class="portlet-wrapper" >
-                <jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
-        </div>
+        <jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
+    </div>
         
 <%}else if(inPopupIFrame) { %>
         <%@ include file="/html/common/top_inc.jsp" %>

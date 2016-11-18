@@ -1,12 +1,19 @@
 package com.dotcms.contenttype.test;
 import java.io.FileNotFoundException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.mock.request.BaseRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -39,6 +46,16 @@ import com.dotmarketing.util.ConfigTestHelper;
 				return;
 			}
 			inited=true;
+			
+	        HttpServletRequest pageRequest = new MockSessionRequest(
+                new MockAttributeRequest(
+                    new MockHttpRequest("localhost", "/").request()
+                 ).request())
+            .request();
+	        HttpServletRequestThreadLocal.INSTANCE.setRequest(pageRequest);
+			
+			
+			
 	        new com.dotmarketing.util.TestingJndiDatasource().init();
 	        ConfigTestHelper._setupFakeTestingContext();
 
