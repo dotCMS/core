@@ -2,6 +2,9 @@ package com.dotmarketing.portlets;
 
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -54,6 +57,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import org.junit.BeforeClass;
+import org.mockito.Mockito;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -200,6 +204,8 @@ public class ContentletBaseTest extends TestBase {
         }
         newContentlet = createContentlet( testStructure2, language, true );
         contentlets.add( newContentlet );
+        
+        IntegrationTestInitService.getInstance().mockStrutsActionModule();
     }
 
     //@AfterClass

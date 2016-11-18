@@ -26,9 +26,10 @@ public class LanguageAPITest {
 	 */
 	@Test
 	public void languageCache() throws Exception{
-		
+
+		int existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
 		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
-		Assert.assertEquals(2,CacheLocator.getLanguageCache().getLanguages().size());		
+		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());
 		
 		Language lan = APILocator.getLanguageAPI().getLanguage(102);
 		lan = new Language();
@@ -40,14 +41,12 @@ public class LanguageAPITest {
 		
 		CacheLocator.getLanguageCache().clearCache();
 		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
-		Assert.assertEquals(3, CacheLocator.getLanguageCache().getLanguages().size());
+		Assert.assertEquals(existingLanguagesCount+1, CacheLocator.getLanguageCache().getLanguages().size());
 		
 		APILocator.getLanguageAPI().deleteLanguage(lan);
 		
 		CacheLocator.getLanguageCache().clearCache();
 		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
-		Assert.assertEquals(2,CacheLocator.getLanguageCache().getLanguages().size());
-		
-		
+		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());		
 	}
 }
