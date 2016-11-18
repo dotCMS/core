@@ -196,7 +196,9 @@ public class NotificationAPIImpl implements NotificationAPI {
 						return convertNotificationDTO(record);
 					});
 
-					this.newNotificationCache.addNotification(notification);
+					if(notification!=null){
+						this.newNotificationCache.addNotification(notification);
+					}
 				}
 			}
 		}

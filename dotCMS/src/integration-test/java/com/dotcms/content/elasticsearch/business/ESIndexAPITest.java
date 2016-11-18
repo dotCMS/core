@@ -100,10 +100,11 @@ public class ESIndexAPITest {
 		if(snapshot!=null){
 			snapshot.delete();
 		}
+		esIndexAPI.openIndex(indexName);
 	}
 
 	/**
-	 * Uploading a sample index snapshot file, index live_20161011134043 (on a sample zip file)
+	 * Uploading a sample index snapshot file, index live_20161011212551 (on a sample zip file)
 	 * The current live index is removed
 	 * The new one is uploaded
 	 * @throws IOException
@@ -120,6 +121,9 @@ public class ESIndexAPITest {
 		File tempDir = new File(pathToRepo);
 		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
 		assertTrue(response);
+		esIndexAPI.closeIndex("live_20161011212551");
+		esIndexAPI.openIndex(currentLiveIndex);
+		esIndexAPI.delete("live_20161011212551");
 	}
 
 	/**

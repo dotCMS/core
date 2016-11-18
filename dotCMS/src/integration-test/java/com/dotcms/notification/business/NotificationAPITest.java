@@ -39,26 +39,23 @@ public class NotificationAPITest extends TestBase  {
         IntegrationTestInitService.getInstance().init();
 	}
 
-	//This one still fails
 	@Test
 	public void testSaveDeleteNotification() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();
 		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
-		//Notification n = new Notification("NotificationTest1", NotificationLevel.ERROR, sysuser.getUserId());
 		NotificationDTO notificationDTO = new NotificationDTO(UUID.randomUUID().toString(), "Notification message",
 				NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), sysuser.getUserId(), new Date(),
 				Boolean.FALSE);
-		//n.setId(UUID.randomUUID().toString());
 
 		try {
 			HibernateUtil.startTransaction();
 			FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
 			Notification lastest = APILocator.getNotificationAPI().findNotification(notificationDTO.getId());
-			assertTrue(notificationDTO.getMessage().equals(lastest.getMessage()));
+			assertTrue(notificationDTO.getMessage().equals(lastest.getMessage().getKey()));
 
-			APILocator.getNotificationAPI().deleteNotification(lastest.getUserId(), lastest.getId());
-			assertNull(APILocator.getNotificationAPI().findNotification(lastest.getId()));
+			APILocator.getNotificationAPI().deleteNotification(lastest.getUserId(), lastest.getId());			
 			HibernateUtil.commitTransaction();
+			assertNull(APILocator.getNotificationAPI().findNotification(lastest.getId()));
 		} catch (DotDataException e) {
 			try {
 				HibernateUtil.rollbackTransaction();

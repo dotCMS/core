@@ -2,12 +2,17 @@ package com.dotmarketing.util;
 
 import com.dotcms.repackage.com.google.common.io.Files;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.URL;
 
 import javax.servlet.ServletContext;
@@ -30,6 +35,7 @@ public class ConfigTestHelper extends Config {
 
             final String topPath = Files.createTempDir().getCanonicalPath();
             Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
+            //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
                     String path = (String) invocation.getArguments()[0];
@@ -39,10 +45,18 @@ public class ConfigTestHelper extends Config {
                 }
             });
             Config.CONTEXT = context;
+            Config.CONTEXT_PATH = context.getRealPath("/");
 
         }
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
+
+        setToolboxPath();
+    }
+
+    private static void setToolboxPath() throws FileNotFoundException {
+        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
+        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
     }
 
     /**
