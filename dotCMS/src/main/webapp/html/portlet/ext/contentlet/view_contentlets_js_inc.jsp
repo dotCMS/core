@@ -1323,7 +1323,7 @@
                                 if(dijit.byId(selectId)){
                                         dijit.byId(selectId).destroy();
                                 }
-                                var selectObj = "<select dojoType='dijit.form.MultiSelect' class='width-equals-200' multiple='true' name=\"categories\" id=\"" + selectId + "\"></select>";
+                                var selectObj = "<select dojoType='dijit.form.MultiSelect' multiple='true' name=\"categories\" id=\"" + selectId + "\"></select>";
 
                                 dojo.create("dd", { innerHTML: selectObj }, searchCategoryList);
 
