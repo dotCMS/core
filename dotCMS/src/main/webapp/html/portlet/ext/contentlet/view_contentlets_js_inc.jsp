@@ -1288,7 +1288,7 @@
                         } else {
                             htmlstr += "<dl class='vertical'>";
                         }
-                        htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
+                        htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
                         htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
                         htmlstr += "<div class='clear'></div>";
