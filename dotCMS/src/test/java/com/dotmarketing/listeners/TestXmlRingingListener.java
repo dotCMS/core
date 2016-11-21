@@ -127,7 +127,9 @@ public class TestXmlRingingListener extends RunListener {
      */
     @Override
     public void testStarted ( Description description ) throws Exception {
-        this.t1 = System.currentTimeMillis();
+    	originalOut.print(description.getClassName() +" > "+ description.getMethodName());
+
+    	this.t1 = System.currentTimeMillis();
     }
 
     /**
@@ -137,6 +139,7 @@ public class TestXmlRingingListener extends RunListener {
      */
     @Override
     public void testFinished ( Description description ) throws Exception {
+    	originalOut.println( (currentFailureNode != null) ? " FAILED" : " PASSED");
 
         long time = System.currentTimeMillis() - t1;
 

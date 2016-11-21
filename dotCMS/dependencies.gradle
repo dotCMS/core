@@ -309,6 +309,7 @@ dependencies {
     compile group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5'
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 
+<<<<<<< HEAD
 
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.0'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'
@@ -317,6 +318,9 @@ dependencies {
 	compile 'org.immutables:generator:2.3.3'
 	compile 'org.immutables:value:2.3.3'
 
+=======
+    individualTestCompile sourceSets.test.output
+>>>>>>> origin/master-3.7
     integrationTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.integrationTest.output

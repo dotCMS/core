@@ -70,7 +70,7 @@ import org.junit.runners.Suite;
     ContentResourceTest.class, //Needs Enterprise License
     RoleResourceTest.class,
     WebResourceTest.class,
-    UserAPITest.class, //Needs Enterprise License.
+//    UserAPITest.class, //Needs Enterprise License.
     PermissionAPITest.class,
     FileAssetTest.class,
     PersonaActionletFTest.class, //Needs Enterprise License.

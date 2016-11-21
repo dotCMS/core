@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.TestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
@@ -16,14 +17,14 @@ import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-public class FileAssetTest extends ContentletBaseTest {
+public class FileAssetTest extends TestBase {
 	
 	Client client;
 	WebTarget webTarget;
@@ -50,9 +51,11 @@ public class FileAssetTest extends ContentletBaseTest {
         
   	  	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
   	  	Contentlet fileInSpanish = fileAssetDataGen.languageId(spanish).nextPersisted();
-  	  	Contentlet result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, user, false);
-  	  	contentletAPI.publish(result, user, false);
-  	  
+  	  	ContentletAPI contentletAPI = APILocator.getContentletAPI();
+  	  	User systemUser = APILocator.getUserAPI().getSystemUser();
+  	  	Contentlet result = contentletAPI.findContentletByIdentifier(fileInSpanish.getIdentifier(), false, spanish, systemUser , false);
+  	  	contentletAPI.publish(result, systemUser, false);
+
   	  	//Request by Resource Link (SpeedyAssetServlet)
   	  	Response response = webTarget.path(result.getTitle()).queryParam("language_id", result.getLanguageId()).request().get();
       	Assert.assertEquals(HttpStatus.SC_OK, response.getStatus());
@@ -105,8 +108,10 @@ public class FileAssetTest extends ContentletBaseTest {
         
   	  	FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
   	  	Contentlet fileInEnglish = fileAssetDataGen.languageId(english).nextPersisted();
-  	  	Contentlet result = contentletAPI.findContentletByIdentifier(fileInEnglish.getIdentifier(), false, english, user, false);
-  	  	contentletAPI.publish(result, user, false);
+  	  	ContentletAPI contentletAPI = APILocator.getContentletAPI();
+  	  	User systemUser = APILocator.getUserAPI().getSystemUser();
+  	  	Contentlet result = contentletAPI.findContentletByIdentifier(fileInEnglish.getIdentifier(), false, english, systemUser, false);
+  	  	contentletAPI.publish(result, systemUser, false);
   	  
   	  	//Request by Resource Link (SpeedyAssetServlet)
   	  	Response response = webTarget.path(result.getTitle()).queryParam("language_id", spanish).request().get();

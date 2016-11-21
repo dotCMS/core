@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeatur
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -78,6 +79,7 @@ public class ContentResourceTest extends TestBase {
     }
     
     @Test
+    @Ignore
     public void singlePUT() throws Exception {
         Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
         Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
