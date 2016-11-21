@@ -429,6 +429,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 			"BRANCH": project.branch,
 			"COMMIT": project.commit,
 
+			"DB_TYPE": project.database.toLowerCase(),
 			"DB_DRIVER": dbDriverClassName,
 			"DB_URL": dbInstanceUrl,
 			"DB_USERNAME": dbInstanceSlaveUsername,
