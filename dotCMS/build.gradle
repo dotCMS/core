@@ -49,6 +49,7 @@ repositories {
 }
 
 testSets {
+    individualTest { dirName = 'test' }
     integrationTest { dirName = 'integration-test' }
     functionalTest { dirName = 'functional-test' }
 }
@@ -124,6 +125,11 @@ jar{
     }
 }
 
+task copyTestRuntimeLibs(type: Copy) {
+	into "build/libs/test"
+	from configurations.testCompile - configurations.compile
+}
+
 // Expand the release properties.
 processResources {
     filesMatching("release.properties") {
@@ -179,6 +185,8 @@ task undeployWarTomcat(type: Delete) {
     delete tomcatInstallLocation + webAppRootFolder
     followSymlinks = true
 }
+undeployWarTomcat.group='dotCMS Util'
+undeployWarTomcat.description='Removes /tomcat8/webapps folder. (reset tomcat)'
 
 undeployWarTomcat.mustRunAfter 'backupWarTomcatData'
 
@@ -187,6 +195,8 @@ task deployWarTomcat(type: DeployWarTomcatTask) {
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
+deployWarTomcat.group='dotCMS Development'
+deployWarTomcat.description='Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
 
 
 //Same as the deploy-war-tomcat except that it will backup the assets, dotsecure, META-INF and H2 folders
@@ -197,6 +207,8 @@ task deployWarTomcatBackup(type: DeployWarTomcatTask){
     tomcatPath = tomcatInstallLocation
 }
 deployWarTomcatBackup.finalizedBy 'restoreBackupWarTomcatData'
+deployWarTomcatBackup.group='dotCMS Development'
+deployWarTomcatBackup.description='Same as deployWarTomcat but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)'
 
 
 //Executes deployWarTomcat task compiling tests as well
@@ -204,12 +216,16 @@ task deployWarTomcatTests(type: DeployWarTomcatTask){
     dependsOn 'war', 'clonePullTomcat', 'undeployWarTomcat'
     tomcatPath = tomcatInstallLocation
 }
+deployWarTomcatTests.group='dotCMS Development'
+deployWarTomcatTests.description='Same as deployWarTomcat but also includes the junit tests.'
 
 //Executes deployWarTomcat task from dist version
 task deployWarTomcatDist(type: DeployWarTomcatTask) {
     dependsOn 'war'
     tomcatPath = tomcatDistBase
 }
+deployWarTomcatDist.group='dotCMS Util'
+deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
 
 //Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
 //(Useful for development)
@@ -217,17 +233,22 @@ task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 
 }
 deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
+deployWarTomcatDev.group='dotCMS Development'
+deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
 
 }
+clonePullTomcat.group='dotCMS Util'
+clonePullTomcat.description='Clones or pull /tomcat8 folder.'
 
 //Executes clonePullTomcat task from dist version
 task clonePullTomcatDist(type: ClonePullTomcatTask) {
     tomcatLocation = tomcatDistBase
 }
-
+clonePullTomcatDist.group='dotCMS Util'
+clonePullTomcatDist.description='Clones or pull /tomcat8 folder to be used on on the distribution.'
 
 //Creates the final distribution files for dotCMS.
 task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
@@ -278,8 +299,9 @@ task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
     }
 
 }
-
 createDist.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
+createDist.group='dotCMS Development'
+createDist.description='Creates the final distribution files for dotCMS.'
 
 //Task used to create a .zip file from the distribution
 task zip(type: Zip) {
@@ -287,6 +309,8 @@ task zip(type: Zip) {
     destinationDir file("$outputDistLocation")
     baseName 'dotcms_'+dotcmsReleaseVersion
 }
+zip.group='dotCMS Util'
+zip.description='Creates distribution as a .zip file.'
 
 //Task used to create a tar.gz from the distribution
 task tgzTask(type: Tar) {
@@ -304,10 +328,14 @@ task tgzTask(type: Tar) {
         compression = Compression.GZIP
     }
 }
+tgzTask.group='dotCMS Util'
+tgzTask.description='Creates distribution as a .tgz file.'
 
 task removeDistFolder(type: Delete){
     delete "$distLocation"
 }
+removeDistFolder.group='dotCMS Util'
+removeDistFolder.description='Removes the distribution folder.'
 
 removeDistFolder.mustRunAfter 'zip', 'tgzTask'
 
@@ -321,6 +349,8 @@ task customDistWar(type: War) {
     baseName "dotcms"
     destinationDir = file("../WAR")
 }
+customDistWar.group='dotCMS Development'
+customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
 
 // This task finds all th plugins and runs 'ant build' inside each one.
 // In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
@@ -356,6 +386,8 @@ task buildPlugins(dependsOn: 'jar') << {
 
     }
 }
+buildPlugins.group='dotCMS Development'
+buildPlugins.description='Compiles and Builds all the plugins but does not deploy.'
 
 // TODO I think there are variables for this paths.
 // This task will copy what is used to be src-conf (now under resources)
@@ -377,6 +409,8 @@ task deployConfig(type: Copy) {
         expand( project.properties )
     }
 }
+deployConfig.group='dotCMS Util'
+deployConfig.description='This task will copy what is used to be src-conf to webapp/WEB-INF/classes in order to be merged with the plugins.'
 
 //TODO Need to check ROOT folder functionality is working.
 // This task will:
@@ -420,6 +454,8 @@ task deployPlugins(dependsOn: ['buildPlugins']) << {
         dotcmsHome: "$webAppFolder",
         plugins: "$webAppFolder/WEB-INF/lib")
 }
+deployPlugins.group='dotCMS Development'
+deployPlugins.description='Builds and deploys all the plugins under /plugins folder.'
 
 // This task will:
 // 1. Call the and task def com.dotmarketing.plugin.ant.UndeployTask to remove
@@ -450,6 +486,8 @@ task undeployPlugins << {
     delete "$webAppFolder/WEB-INF/classes/plugins.xml"
     delete "$webAppFolder/html/plugins"
 }
+undeployPlugins.group='dotCMS Development'
+undeployPlugins.description='Undeploys all plugins, returns overridden files to default state. This task does not need to be executed as a pre-condition of deployPlugins because that task executes it automatically.'
 
 //Creates a backup of assets, dotsecure, META-INF and H2_Database
 task backupWarTomcatData << {
@@ -479,6 +517,8 @@ task backupWarTomcatData << {
         include "*.db"
     }
 }
+backupWarTomcatData.group='dotCMS Util'
+backupWarTomcatData.description='Creates a backup of assets, dotsecure, META-INF and H2_Database.'
 
 //Restores content of assets, dotsecure, META-INF and H2_Database (copy back to webapps/ROOT)
 task restoreBackupWarTomcatData << {
@@ -514,6 +554,8 @@ task restoreBackupWarTomcatData << {
     FileUtils.cleanDirectory(new File("$tomcatInstallLocation/temp"));
     delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
 }
+restoreBackupWarTomcatData.group='dotCMS Util'
+restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, META-INF and H2_Database.'
 
 undeployPlugins.finalizedBy 'deployConfig'
 
@@ -540,8 +582,9 @@ task generateMoveCleanLicenseTomcat << {
         include "eelic_clean.jar"
     }
 
-
 }
+generateMoveCleanLicenseTomcat.group='dotCMS Util'
+generateMoveCleanLicenseTomcat.description='Creates a no-obfuscated license JAR and moves it into WEB-INF/lib .'
 
 //Generates a no obfuscated version of the enterprise jar
 task generateMoveCleanEnterpriseTomcat << {
@@ -566,6 +609,8 @@ task generateMoveCleanEnterpriseTomcat << {
         include "ee_clean.jar"
     }
 }
+generateMoveCleanEnterpriseTomcat.group='dotCMS Util'
+generateMoveCleanEnterpriseTomcat.description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
 
 // Util methods.
 def getDate() {
