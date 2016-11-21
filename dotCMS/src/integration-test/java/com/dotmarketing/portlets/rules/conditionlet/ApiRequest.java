@@ -1,13 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotmarketing.servlets.test.ServletTestRunner;
-
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created by freddy on 27/01/16.

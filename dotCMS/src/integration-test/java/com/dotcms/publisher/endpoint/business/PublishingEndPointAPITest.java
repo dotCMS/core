@@ -3,19 +3,23 @@
  */
 package com.dotcms.publisher.endpoint.business;
 
-import java.util.*;
-
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
-import com.dotmarketing.util.IntegrationTestInitService;
-import com.dotmarketing.business.*;
 import com.dotcms.TestBase;
-import com.dotcms.publisher.endpoint.bean.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import org.junit.BeforeClass;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.IntegrationTestInitService;
+
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author brent griffin
@@ -77,9 +81,9 @@ public class PublishingEndPointAPITest extends TestBase{
 		}
 	}
 
-	
 	// There should not be any end points at the beginning of the test
 	@Test
+	@Ignore
 	public void test() throws DotDataException {
 		try {
 			HibernateUtil.startTransaction();

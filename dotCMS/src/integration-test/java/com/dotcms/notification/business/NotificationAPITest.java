@@ -1,15 +1,5 @@
 package com.dotcms.notification.business;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.TestBase;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -23,6 +13,16 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * 
@@ -39,26 +39,23 @@ public class NotificationAPITest extends TestBase  {
         IntegrationTestInitService.getInstance().init();
 	}
 
-	//This one still fails
 	@Test
 	public void testSaveDeleteNotification() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();
 		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
-		//Notification n = new Notification("NotificationTest1", NotificationLevel.ERROR, sysuser.getUserId());
 		NotificationDTO notificationDTO = new NotificationDTO(UUID.randomUUID().toString(), "Notification message",
 				NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), sysuser.getUserId(), new Date(),
 				Boolean.FALSE);
-		//n.setId(UUID.randomUUID().toString());
 
 		try {
 			HibernateUtil.startTransaction();
 			FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
 			Notification lastest = APILocator.getNotificationAPI().findNotification(notificationDTO.getId());
-			assertTrue(notificationDTO.getMessage().equals(lastest.getMessage()));
+			assertTrue(notificationDTO.getMessage().equals(lastest.getMessage().getKey()));
 
-			APILocator.getNotificationAPI().deleteNotification(lastest.getUserId(), lastest.getId());
-			assertNull(APILocator.getNotificationAPI().findNotification(lastest.getId()));
+			APILocator.getNotificationAPI().deleteNotification(lastest.getUserId(), lastest.getId());			
 			HibernateUtil.commitTransaction();
+			assertNull(APILocator.getNotificationAPI().findNotification(lastest.getId()));
 		} catch (DotDataException e) {
 			try {
 				HibernateUtil.rollbackTransaction();

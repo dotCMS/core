@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
 
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationAction;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -53,84 +54,104 @@ public interface NotificationAPI extends Serializable {
 	 */
 	void error(String message, String userId);
 
-	/**
-	 * Sends a customized message to the Notification queue.
-	 * 
-	 * @param message
-	 *            - The message that will be displayed to the user.
-	 * @param level
-	 *            - The urgency level of the message according to the
-	 *            {@link NotificationLevel} class.
-	 * @param userId
-	 *            - The ID of the user that triggered this notification.
-	 * @throws DotDataException
-	 *             An error occurred when saving the message in the database.
-	 */
-	void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException;
+    /**
+     * Sends a customized message to the Notification queue.
+     *
+     * @param message The message that will be displayed to the user.
+     * @param level   The urgency level of the message according to the
+     *                {@link NotificationLevel} class.
+     * @param userId  The ID of the user that triggered this notification. When not Visibility is send for the notification
+     *                this user Id will be use to as the Visibility id where the {@link Visibility} is of type User.
+     * @throws DotDataException An error occurred when saving the message in the database.
+     */
+    void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException;
 
-	/**
-	 * Sends a customized message to the Notification queue.
-	 *
-	 * @param message
-	 *            - The message that will be displayed to the user.
-	 * @param level
-	 *            - The urgency level of the message according to the
-	 *            {@link NotificationLevel} class.
-	 *
-	 * @param type
-	 * 			  - The type of the notification, by default is gonna be generic
-	 * @param userId
-	 *            - The ID of the user that triggered this notification.
-	 * @throws DotDataException
-	 *             An error occurred when saving the message in the database.
-	 */
-	void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException;
+    /**
+     * Sends a customized message to the Notification queue.
+     *
+     * @param message The message that will be displayed to the user.
+     * @param level   The urgency level of the message according to the
+     *                {@link NotificationLevel} class.
+     * @param type    The type of the notification, by default is gonna be generic
+     * @param userId  The ID of the user that triggered this notification. When not Visibility is send for the notification
+     *                this user Id will be use to as the Visibility id where the {@link Visibility} is of type User.
+     * @throws DotDataException An error occurred when saving the message in the database.
+     */
+    void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException;
 
-	/**
-	 * Sends a customized message to the Notification queue.
-	 * @param title
-	 *            - title for the message
-	 * @param message
-	 *            - The message that will be displayed to the user.
-	 * @param actions
-	 * 			  - {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
-	 * @param level
-	 *            - The urgency level of the message according to the
-	 *            {@link NotificationLevel} class.
-	 *
-	 * @param type
-	 * 			  - The type of the notification, by default is gonna be generic
-	 * @param userId
-	 *            - The ID of the user that triggered this notification.
-	 * @throws DotDataException
-	 *             An error occurred when saving the message in the database.
-	 */
-	 void generateNotification(String title, String message, List<NotificationAction> actions,
-									 NotificationLevel level, NotificationType type, String userId) throws DotDataException;
+    /**
+     * Sends a customized message to the Notification queue.
+     *
+     * @param title   Title for the message
+     * @param message The message that will be displayed to the user.
+     * @param actions {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+     * @param level   The urgency level of the message according to the
+     *                {@link NotificationLevel} class.
+     * @param type    The type of the notification, by default is gonna be generic
+     * @param userId  The ID of the user that triggered this notification. When not Visibility is send for the notification
+     *                this user Id will be use to as the Visibility id where the {@link Visibility} is of type User.
+     * @throws DotDataException An error occurred when saving the message in the database.
+     */
+    void generateNotification(String title, String message, List<NotificationAction> actions,
+                              NotificationLevel level, NotificationType type, String userId) throws DotDataException;
 
-	/**
-	 * Sends a customized message to the Notification queue.
-	 * @param title
-	 *            - title for the message
-	 * @param message
-	 *            - The message that will be displayed to the user.
-	 * @param actions
-	 * 			  - {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
-	 * @param level
-	 *            - The urgency level of the message according to the
-	 *            {@link NotificationLevel} class.
-	 *
-	 * @param type
-	 * 			  - The type of the notification, by default is gonna be generic
-	 * @param userId
-	 *            - The ID of the user that triggered this notification.
-	 * @param locale
-	 * 			  - if you send a locale will be used to create the pretty message, otherwise will use the company default.
-	 * @throws DotDataException
-	 *             An error occurred when saving the message in the database.
-	 */
-	void generateNotification(I18NMessage title, I18NMessage message, List<NotificationAction> actions,
-							  NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException;
+    /**
+     * Sends a customized message to the Notification queue.
+     *
+     * @param title   Title for the message
+     * @param message The message that will be displayed to the user.
+     * @param actions {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+     * @param level   The urgency level of the message according to the
+     *                {@link NotificationLevel} class.
+     * @param type    The type of the notification, by default is gonna be generic
+     * @param userId  The ID of the user that triggered this notification. When not Visibility is send for the notification
+     *                this user Id will be use to as the Visibility id where the {@link Visibility} is of type User.
+     * @param locale  if you send a locale will be used to create the pretty message, otherwise will use the company default.
+     * @throws DotDataException An error occurred when saving the message in the database.
+     */
+    void generateNotification(I18NMessage title, I18NMessage message, List<NotificationAction> actions,
+                              NotificationLevel level, NotificationType type, String userId, Locale locale) throws DotDataException;
+
+    /**
+     * Sends a customized message to the Notification queue.
+     *
+     * @param title        Title for the message
+     * @param message      The message that will be displayed to the user.
+     * @param actions      {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+     * @param level        The urgency level of the message according to the
+     *                     {@link NotificationLevel} class.
+     * @param type         The type of the notification, by default is gonna be generic
+     * @param visibility   The visibility of the notification
+     * @param visibilityId The visibility Id of the notification, this visibility id is related to the {@link Visibility} type,
+     *                     for example, if it is a ROLE {@link Visibility} the visibility id will be a Role id
+     * @param userId       The ID of the user that triggered this notification.
+     * @param locale       if you send a locale will be used to create the pretty message, otherwise will use the company default.
+     * @throws DotDataException An error occurred when saving the message in the database.
+     */
+    void generateNotification(String title, String message, List<NotificationAction> actions,
+                              NotificationLevel level, NotificationType type, Visibility visibility, String visibilityId,
+                              String userId, Locale locale) throws DotDataException;
+
+    /**
+     * Sends a customized message to the Notification queue.
+     *
+     * @param title        Title for the message
+     * @param message      The message that will be displayed to the user.
+     * @param actions      {@link List} of {@link NotificationAction} encapsulate the actions for notifications.
+     * @param level        The urgency level of the message according to the
+     *                     {@link NotificationLevel} class.
+     * @param type         The type of the notification, by default is gonna be generic
+     * @param visibility   The visibility of the notification
+     * @param visibilityId The visibility Id of the notification, this visibility id is related to the {@link Visibility} type,
+     *                     for example, if it is a ROLE {@link Visibility} the visibility id will be a Role id
+     * @param userId       The ID of the user that triggered this notification.
+     * @param locale       if you send a locale will be used to create the pretty message, otherwise will use the company default.
+     * @throws DotDataException An error occurred when saving the message in the database.
+     */
+    void generateNotification(I18NMessage title, I18NMessage message, List<NotificationAction> actions,
+                              NotificationLevel level, NotificationType type, Visibility visibility, String visibilityId,
+                              String userId, Locale locale) throws DotDataException;
+
 	/**
 	 * Returns a notification based on its ID.
 	 * 

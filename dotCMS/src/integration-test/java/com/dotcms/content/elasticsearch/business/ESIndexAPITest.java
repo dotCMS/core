@@ -1,23 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipFile;
-
-import org.elasticsearch.ElasticsearchException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -26,6 +8,21 @@ import com.dotmarketing.util.ConfigTestHelper;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
+
+import org.elasticsearch.ElasticsearchException;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipFile;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ESIndexAPITest {
 
@@ -103,10 +100,11 @@ public class ESIndexAPITest {
 		if(snapshot!=null){
 			snapshot.delete();
 		}
+		esIndexAPI.openIndex(indexName);
 	}
 
 	/**
-	 * Uploading a sample index snapshot file, index live_20161011134043 (on a sample zip file)
+	 * Uploading a sample index snapshot file, index live_20161011212551 (on a sample zip file)
 	 * The current live index is removed
 	 * The new one is uploaded
 	 * @throws IOException
@@ -123,6 +121,9 @@ public class ESIndexAPITest {
 		File tempDir = new File(pathToRepo);
 		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
 		assertTrue(response);
+		esIndexAPI.closeIndex("live_20161011212551");
+		esIndexAPI.openIndex(currentLiveIndex);
+		esIndexAPI.delete("live_20161011212551");
 	}
 
 	/**
@@ -132,6 +133,7 @@ public class ESIndexAPITest {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
+
 	@Test(expected = ElasticsearchException.class)
 	public void uploadSnapshotTest_noSnapshotFound() throws IOException, InterruptedException, ExecutionException{
 		String path = ConfigTestHelper.getPathToTestResource("failing-test.zip");
