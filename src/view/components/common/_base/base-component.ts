@@ -13,12 +13,15 @@ export class BaseComponent {
     public i18nMessages = {};
 
     constructor(i18nKeys:string[], private messageService: MessageService) {
-        this.messageMapSubscription = this.messageService.getMessages(i18nKeys).subscribe(res => {
-            this.i18nMessages = _.pick(res, i18nKeys);
-        });
+        if (messageService !== null) {
+            this.messageMapSubscription = this.messageService.getMessages(i18nKeys).subscribe(res => {
+                console.log('i18nMessages', res);
+                this.i18nMessages = _.pick(res, i18nKeys);
+            });
+        }
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.messageMapSubscription.unsubscribe();
     }
 }

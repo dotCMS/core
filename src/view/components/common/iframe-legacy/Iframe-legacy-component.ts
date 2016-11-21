@@ -6,6 +6,7 @@ import {SafeResourceUrl, DomSanitizer} from '@angular/platform-browser';
 import {SiteChangeListener} from '../../../../api/util/site-change-listener';
 import {SiteService} from '../../../../api/services/site-service';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
+import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -21,8 +22,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
     constructor(private route: ActivatedRoute, private routingService: RoutingService, private siteService: SiteService,
                 private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService,
-                private dotcmsEventsService: DotcmsEventsService) {
-        super(siteService);
+                private dotcmsEventsService: DotcmsEventsService, messageService: MessageService) {
+        super(siteService, ['ask-reload-page-message'], messageService);
     }
 
     ngOnInit(): void {
@@ -41,13 +42,12 @@ export class IframeLegacyComponent extends SiteChangeListener {
         ];
 
         this.dotcmsEventsService.subscribeToEvents(events).subscribe( content => {
-            console.log('iframe event reload', content, this.routingService.currentPortletId);
-            console.log('content.user.userId', content.user.userId);
-            console.log('this.loginService.auth.user.id', this.loginService.auth.user.userId);
             if (this.routingService.currentPortletId === 'EXT_BROWSER' &&
                     content.user.userId !== this.loginService.auth.user.userId) {
 
-                this.iframeElement.contentWindow.location.reload();
+                if (confirm(this.i18nMessages['ask-reload-page-message'])) {
+                    this.iframeElement.contentWindow.location.reload();
+                }
             }
         });
     }
