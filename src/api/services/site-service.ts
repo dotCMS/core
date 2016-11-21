@@ -65,6 +65,10 @@ export class SiteService {
             this._sites$.next(this.sites);
         });
 
+        dotcmsEventsService.subscribeTo('UPDATE_SITE_PERMISSIONS').pluck('data').subscribe(updatedSite => {
+            this.loadSites();
+        });
+
         loginService.watchUser(this.loadSites.bind(this));
     }
 
