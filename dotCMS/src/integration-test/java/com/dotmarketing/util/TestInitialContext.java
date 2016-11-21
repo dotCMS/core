@@ -21,10 +21,12 @@ public class TestInitialContext extends InitialContext {
     private static TestInitialContext context;
 
     private TestInitialContext() throws NamingException {
-        String dbType = "";
+        String dbType = "postgres.";
 
         if (System.getProperty("databaseType")!=null){
             dbType = System.getProperty("databaseType") + ".";
+        } else if(System.getenv("databaseType")!=null){
+        	dbType = System.getenv("databaseType") + ".";
         }
 
         loadProperties();
