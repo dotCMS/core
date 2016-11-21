@@ -13,6 +13,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -601,8 +602,8 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			result = ffac.copyFile( file, host );
         }
 
-		systemEventsAPI.push(SystemEventType.COPY_FILE_ASSET, new Payload(file, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		systemEventsAPI.push(SystemEventType.COPY_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 		return result;
     }
 
@@ -618,8 +619,8 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 
 		boolean b = ffac.renameFile(file, newName);
 
-		this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return b;
 	}

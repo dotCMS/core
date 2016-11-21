@@ -105,4 +105,20 @@ public class Payload implements Serializable {
 	public Object getVisibilityValue() {
 		return visibilityValue;
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Payload payload = (Payload) o;
+
+		return data != null ? data.equals(payload.data) : payload.data == null;
+
+	}
+
+	@Override
+	public int hashCode() {
+		return data != null ? data.hashCode() : 0;
+	}
 } // E:O:F:Payload.

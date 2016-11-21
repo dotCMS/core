@@ -10,6 +10,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -365,8 +366,8 @@ public class HTMLPageFactory {
         workingWebAsset.setModUser( user.getUserId() );
         HibernateUtil.saveOrUpdate( workingWebAsset );
 
-        systemEventsAPI.push(SystemEventType.MOVE_PAGE_ASSET, new Payload(currentHTMLPage, Visibility.PERMISSION,
-                String.valueOf(PermissionAPI.PERMISSION_READ)));
+        systemEventsAPI.push(SystemEventType.MOVE_PAGE_ASSET, new Payload(currentHTMLPage, Visibility.EXCLUDE_OWNER,
+                new ExcludeOwnerVerifierBean(currentHTMLPage.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
         return true;
     }
 
@@ -477,8 +478,8 @@ public class HTMLPageFactory {
         //Copy permissions
         permissionAPI.copyPermissions( currentHTMLPage, newHTMLPage );
 
-        systemEventsAPI.push(SystemEventType.COPY_PAGE_ASSET, new Payload(currentHTMLPage, Visibility.PERMISSION,
-                String.valueOf(PermissionAPI.PERMISSION_READ)));
+        systemEventsAPI.push(SystemEventType.COPY_PAGE_ASSET, new Payload(currentHTMLPage, Visibility.EXCLUDE_OWNER,
+                new ExcludeOwnerVerifierBean(currentHTMLPage.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return newHTMLPage;
     }

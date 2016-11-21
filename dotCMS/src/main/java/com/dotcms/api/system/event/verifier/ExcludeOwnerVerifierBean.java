@@ -2,6 +2,9 @@ package com.dotcms.api.system.event.verifier;
 
 import com.dotcms.api.system.event.Visibility;
 
+/**
+ * Visibility value for {@link ExcludeOwnerVerifier}
+ */
 public class ExcludeOwnerVerifierBean {
     private String userId;
     private Object visibilityValue;
