@@ -5,10 +5,10 @@ package com.dotcms.publisher.endpoint.business;
 
 import com.dotcms.TestBase;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

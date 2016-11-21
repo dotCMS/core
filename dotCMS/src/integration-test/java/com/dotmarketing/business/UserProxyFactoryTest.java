@@ -1,8 +1,8 @@
 package com.dotmarketing.business;
 
 import com.dotcms.repackage.org.apache.hadoop.util.hash.Hash;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 import org.junit.Assert;

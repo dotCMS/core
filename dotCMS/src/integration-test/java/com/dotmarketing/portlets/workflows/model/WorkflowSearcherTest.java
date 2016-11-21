@@ -6,8 +6,8 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 public class WorkflowSearcherTest {
 	

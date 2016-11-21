@@ -15,13 +15,13 @@ import org.mockito.Mockito;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 

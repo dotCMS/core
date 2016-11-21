@@ -21,6 +21,8 @@ import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.impl.dataobjec
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.CallContext;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -32,7 +34,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;

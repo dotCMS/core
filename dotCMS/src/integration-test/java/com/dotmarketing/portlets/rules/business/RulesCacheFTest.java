@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -15,7 +17,6 @@ import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 import java.util.*;
 

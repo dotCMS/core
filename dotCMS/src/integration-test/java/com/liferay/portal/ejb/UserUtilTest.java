@@ -1,12 +1,12 @@
 package com.liferay.portal.ejb;
 
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;

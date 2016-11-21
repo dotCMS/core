@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.folder.business;
 
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -18,7 +19,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 

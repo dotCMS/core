@@ -17,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
@@ -25,7 +27,6 @@ import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionlet.Insta
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.WebKeys;
 
 public class VisitedUrlConditionletTest {
