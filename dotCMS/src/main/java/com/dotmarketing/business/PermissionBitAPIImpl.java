@@ -12,6 +12,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -52,16 +57,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 	PermissionFactory permissionFactory;
+	private SystemEventsAPI systemEventsAPI;
 
 	public PermissionBitAPIImpl() {
+		this(FactoryLocator.getPermissionFactory(),APILocator.getSystemEventsAPI());
 	}
-
+	
 	/**
 	 * Builds a PermissionAPI initialized with its dependent objects.
 	 * @return PermissionFactory service reference
 	 */
-	public PermissionBitAPIImpl(PermissionFactory serviceRef) {
+	@VisibleForTesting
+	public PermissionBitAPIImpl(PermissionFactory serviceRef, SystemEventsAPI systemEventsAPI) {
 		setPermissionFactory(serviceRef);
+		this.systemEventsAPI = systemEventsAPI;
 	}
 
 
@@ -447,7 +456,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void removePermissions(Permissionable permissionable) throws DotDataException {
 
 		permissionFactory.removePermissions(permissionable);
-
+		
+		if(permissionable instanceof Host){	
+			//Send a websocket event to notificate a site permission change  
+			systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+		}
 	}
 
 	//This method can be used later
@@ -583,14 +597,44 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     public void addPermissionsToCache ( Permissionable permissionable ) throws DotDataException {
         permissionFactory.addPermissionsToCache( permissionable );
     }
+    
+    public void save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        
+    	for (Permission permission: permissions ) {
+            save(permission, permissionable, user, respectFrontendRoles, false);
+        }
 
-	/**
+        if(permissionable instanceof Host){	
+			//Send a websocket event to notificate a site permission change  
+			systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+		}
+    }
+
+    /**
+     * Saves passed in permission
 	 * @param Permission to save
-	 * Saves passed in permission
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
 	public void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		save(permission, permissionable, user, respectFrontendRoles, true);
+	}
+	
+	/**
+	 * Saves passed  permission and send a system notification if the 
+	 * create event parameter is set true
+	 * 
+	 * @param permission A list of permissions to apply
+	 * @param permissionable The object where the permsiions will be applied
+	 * @param user current user
+     * @param respectFrontendRoles indicates if should be respected front end roles
+	 * @param createEvent indicate if a system event should be notified
+	 * 
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
 		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
 			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
 
@@ -621,6 +665,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		} catch (DataAccessException e) {
 			Logger.error(getClass(), "save failed on daving the permission: " + permission.toString(), e);
 			throw e;
+		}
+		
+		if(createEvent){
+			if(permissionable instanceof Host){	
+				//Send a websocket event to notificate a site permission change  
+				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+						new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+			}
 		}
 
 	}
@@ -673,6 +725,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		permissionFactory.assignPermissions(includingLockedRolePermissions, permissionable);
 
+		if(permissionable instanceof Host){	
+			//Send a websocket event to notificate a site permission change  
+			systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+		}
+		
 		AdminLogger.log(PermissionBitAPIImpl.class, "assign Permissions Action", "Assigning permissions to :"+permissionable.getPermissionId(),user);
 	}
 

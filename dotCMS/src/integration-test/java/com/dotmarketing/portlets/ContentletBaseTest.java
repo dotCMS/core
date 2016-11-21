@@ -554,11 +554,13 @@ public class ContentletBaseTest extends TestBase {
         Collection<Permission> permissions = new ArrayList<Permission>();
         permissions.add( new Permission( "", roleAPI.loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ ) );
 
-        Permission newPermission;
+        List<Permission> newSetOfPermissions = new ArrayList<Permission>();
         for ( Permission permission : permissions ) {
-            newPermission = new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true );
-            permissionAPI.save( newPermission, htmlPage, user, false );
+        	newSetOfPermissions.add(new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true ));
         }
+        if(newSetOfPermissions.size() > 0){   
+        	permissionAPI.save( newSetOfPermissions, htmlPage, user, false );
+     	}
 
         //Save the multi tree
         MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), contentlet.getIdentifier() ) );

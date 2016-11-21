@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.com.google.gson.*;
 import com.dotcms.util.deserializer.ContentletDeserializer;
 import com.dotcms.util.deserializer.PayloadDeserializer;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import static com.dotcms.util.ReflectionUtils.getClassFor;
@@ -22,6 +23,7 @@ public class CustomDotCmsTypeGsonConfigurator implements GsonConfigurator {
 
         gsonBuilder.registerTypeAdapter( Payload.class, new PayloadDeserializer() );
         gsonBuilder.registerTypeAdapter(Contentlet.class, new ContentletDeserializer() );
+        gsonBuilder.registerTypeAdapter(Host.class, new ContentletDeserializer() );
     }
 
     @Override
