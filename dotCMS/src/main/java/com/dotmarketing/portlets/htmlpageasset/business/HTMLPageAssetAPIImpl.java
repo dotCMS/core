@@ -17,6 +17,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.I18NMessage;
@@ -660,8 +661,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 }
             }
 
-            systemEventsAPI.push(SystemEventType.MOVE_PAGE_ASSET, new Payload(page, Visibility.PERMISSION,
-                    String.valueOf(PermissionAPI.PERMISSION_READ)));
+            systemEventsAPI.push(SystemEventType.MOVE_PAGE_ASSET, new Payload(page, Visibility.EXCLUDE_OWNER,
+                    new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
             return true;
         }

@@ -60,9 +60,9 @@ class AuthenticationHelper {
         User loginAsUser = null;
 
         if (principalUser == null){
-            principalUser = this.loginService.getLogInUser( request );
+            principalUser = this.loginService.getLoggedInUser( request );
         }else{
-            loginAsUser = this.loginService.getLogInUser( request );
+            loginAsUser = this.loginService.getLoggedInUser( request );
         }
 
         return map(AuthenticationResource.USER, principalUser != null ? principalUser.toMap() : null, AuthenticationResource.LOGIN_AS_USER,

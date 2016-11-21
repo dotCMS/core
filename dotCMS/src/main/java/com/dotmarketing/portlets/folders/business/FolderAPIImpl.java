@@ -12,6 +12,7 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
@@ -281,8 +282,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		ffac.copy(folderToCopy, newParentFolder);
 
-		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 
@@ -298,8 +299,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		ffac.copy(folderToCopy, newParentHost);
 
-		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 
@@ -380,8 +381,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			// delete folder itself
 			ffac.delete(folder);
 
-			systemEventsAPI.push(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.PERMISSION,
-					String.valueOf(PermissionAPI.PERMISSION_READ)));
+			systemEventsAPI.push(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
@@ -554,8 +555,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		ffac.save(folder, existingId);
 
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
-		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
@@ -794,8 +795,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		boolean move = ffac.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return move;
 	}
@@ -811,8 +812,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		boolean move = ffac.move(folderToMove, newParentHost);
 
-		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return move;
 	}

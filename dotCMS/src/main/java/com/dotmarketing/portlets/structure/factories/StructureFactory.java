@@ -569,7 +569,7 @@ public class StructureFactory {
 	 		String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
 			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-                            String.valueOf(PermissionAPI.PERMISSION_READ)));
+                            PermissionAPI.PERMISSION_READ));
 		} catch (DotDataException e) {
 			throw new RuntimeException( e );
 		}
@@ -603,7 +603,7 @@ public class StructureFactory {
 			String actionUrl = contentTypeUtil.getActionUrl(structure);
 			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 			systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-					String.valueOf(PermissionAPI.PERMISSION_READ)));
+					PermissionAPI.PERMISSION_READ));
 		} catch (DotDataException e) {
 			throw new BaseRuntimeInternationalizationException( e );
 		}

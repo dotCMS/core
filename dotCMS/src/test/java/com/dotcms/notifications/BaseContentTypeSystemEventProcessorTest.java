@@ -35,7 +35,7 @@ public class BaseContentTypeSystemEventProcessorTest {
         when(event.getPayload()).thenReturn(payload);
         when(payload.getData()).thenReturn(structure);
         when(payload.getRawData()).thenReturn(contentTypePayloadDataWrapper);
-        when(payload.getVisibilityId()).thenReturn("1");
+        when(payload.getVisibilityValue()).thenReturn("1");
         when(structure.getStructureType()).thenReturn(Structure.Type.CONTENT.getType());
         when(structure.getName()).thenReturn("test structure");
         when(structure.getInode()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");

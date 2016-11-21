@@ -22,7 +22,8 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
 
     public static final String TYPE = "type";
     public static final String VISIBILITY = "visibility";
-    public static final String VISIBILITY_ID = "visibilityId";
+    public static final String VISIBILITY_VALUE = "visibilityValue";
+    public static final String VISIBILITY_TYPE = "visibilityType";
     public static final String DATA = "data";
     public static final String USER = "user";
 
@@ -35,8 +36,7 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
         Object payloadData = null;
         Visibility visibility = null;
         String visibilityName = null;
-        String visibilityId = null;
-        final Map<String, Object> user = new HashMap<>();
+        Object visibilityValue = null;
 
         if (null != json) {
 
@@ -52,14 +52,10 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
                             (VISIBILITY).getAsString();
                 }
 
-                if(jsonObject.has(VISIBILITY_ID)) {
-                    visibilityId = jsonObject.getAsJsonPrimitive
-                            (VISIBILITY_ID).getAsString();
-                }
-
-                if(jsonObject.has(USER)) {
-                    ((JsonObject) jsonObject.get(USER)).entrySet().stream().
-                            forEach(entry -> user.put(entry.getKey(), entry.getValue().getAsString()));
+                if(jsonObject.has(VISIBILITY_VALUE)) {
+                    String visibilityType = jsonObject.getAsJsonPrimitive
+                            (VISIBILITY_TYPE).getAsString();
+                    visibilityValue = context.deserialize(jsonObject.get(VISIBILITY_VALUE), getClassFor(visibilityType));
                 }
 
                 if (null != visibilityName) {
@@ -70,7 +66,7 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
 
                 clazz = getClassFor(payloadType);
                 payloadData = context.deserialize(jsonObject.get(DATA), clazz);
-                payload = new Payload(payloadData, visibility, visibilityId, user);
+                payload = new Payload(payloadData, visibility, visibilityValue);
             }
         }
 
@@ -80,20 +76,12 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
     @Override
     public JsonElement serialize(Payload payload, Type type, JsonSerializationContext jsonSerializationContext) {
         JsonObject jsonElement = new JsonObject();
-        jsonElement.addProperty(TYPE, payload.getType());
+        jsonElement.addProperty(TYPE, payload.getData().getClass().getName());
         jsonElement.addProperty(VISIBILITY, payload.getVisibility().name());
-        jsonElement.addProperty(VISIBILITY_ID, payload.getVisibilityId());
+        Object visibilityValue = payload.getVisibilityValue();
+        jsonElement.add(VISIBILITY_VALUE,  jsonSerializationContext.serialize(visibilityValue));
+        jsonElement.addProperty(VISIBILITY_TYPE,  visibilityValue.getClass().getName());
         jsonElement.add(DATA, jsonSerializationContext.serialize(payload.getData()));
-
-        JsonObject user = new JsonObject();
-        payload.getUser().entrySet().stream().
-                forEach( entry -> {
-                    if (entry.getValue() != null) {
-                        user.addProperty(entry.getKey(), entry.getValue().toString());
-                    }
-                } );
-
-        jsonElement.add(USER, user);
         return jsonElement;
     }
 }

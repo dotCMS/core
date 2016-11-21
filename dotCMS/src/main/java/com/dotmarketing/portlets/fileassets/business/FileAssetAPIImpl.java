@@ -15,6 +15,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -431,8 +432,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
 
-				this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.PERMISSION,
-						String.valueOf(PermissionAPI.PERMISSION_READ)));
+				this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
                 return true;
             }

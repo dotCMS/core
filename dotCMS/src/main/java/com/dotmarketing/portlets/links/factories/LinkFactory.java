@@ -12,6 +12,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -401,8 +402,8 @@ public class LinkFactory {
         //Copy permissions
         permissionAPI.copyPermissions( currentLink, newLink );
 
-		systemEventsAPI.push(SystemEventType.COPY_LINK, new Payload(currentLink, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		systemEventsAPI.push(SystemEventType.COPY_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return newLink;
     }
@@ -507,8 +508,8 @@ public class LinkFactory {
         	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
         }
 
-		systemEventsAPI.push(SystemEventType.MOVE_LINK, new Payload(currentLink, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		systemEventsAPI.push(SystemEventType.MOVE_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return true;
     }

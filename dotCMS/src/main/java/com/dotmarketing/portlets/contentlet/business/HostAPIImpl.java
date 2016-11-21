@@ -13,6 +13,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.I18NMessage;
@@ -734,8 +735,8 @@ public class HostAPIImpl implements HostAPI {
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
 
-		systemEventsAPI.push(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		systemEventsAPI.push(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	public void unarchive(Host host, User user, boolean respectFrontendRoles)
@@ -749,8 +750,8 @@ public class HostAPIImpl implements HostAPI {
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
 
-		systemEventsAPI.push(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.PERMISSION,
-				String.valueOf(PermissionAPI.PERMISSION_READ)));
+		systemEventsAPI.push(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	private synchronized Host createDefaultHost() throws DotDataException,

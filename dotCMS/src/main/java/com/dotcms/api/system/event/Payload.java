@@ -1,15 +1,11 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
-import javax.servlet.http.HttpServletRequest;
+
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * This class wraps the payload of a System Event, specifying its type (i.e.,
@@ -23,12 +19,9 @@ import java.util.Map;
 @SuppressWarnings("serial")
 public class Payload implements Serializable {
 
-	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-	private final Map<String, Object> user;
-    private final String visibilityId; // user id, role uid or permission, if it is global, this is not need
-
+    private final Object visibilityValue; // user id, role uid or permission, if it is global, this is not need
 
 	/**
 	 * Creates a payload object.
@@ -38,7 +31,7 @@ public class Payload implements Serializable {
 	 */
 	public Payload(final Object data) {
 
-		this(data, Visibility.GLOBAL, (String) null, null);
+		this(data, Visibility.GLOBAL, (String) null);
 	}
 	
 	/**
@@ -49,7 +42,7 @@ public class Payload implements Serializable {
 	 */
 	public Payload() {
 
-		this(new Void(), Visibility.GLOBAL, (String) null, null);
+		this(new Void(), Visibility.GLOBAL, (String) null);
 	}
 	
 	/**
@@ -60,55 +53,20 @@ public class Payload implements Serializable {
 	 * 
 	 * @param visibility {@link Visibility}
 	 * 			  - If the event should be apply just for a specific user, role or global
-	 * @param visibilityId {@link String}
+	 * @param visibilityValue {@link String}
 	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
 	 */
 	public Payload(final Visibility visibility,
-				   final String visibilityId) {
-		this(new Void(), visibility, visibilityId, null);
+				   final Object visibilityValue) {
+		this(new Void(), visibility, visibilityValue);
 	}
 
 	public Payload(final Object data,
 				   final Visibility visibility,
-				   final String visibilityId) {
-		this(data, visibility, visibilityId, null);
-	}
-
-	/**
-	 * Creates a payload object.
-	 * 
-	 * @param data {@link Object}
-	 *            - Any Java object that represents the payload.
-	 * @param visibility {@link Visibility}
-	 * 			  - If the event should be apply just for a specific user, role or global
-	 * @param visibilityId {@link String}
-	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
-	 */
-	public Payload(final Object data,
-				   final Visibility visibility,
-				   final String visibilityId,
-				   final Map<String, Object> user) {
-
-		this.type = data.getClass().getName();
+				   final Object visibilityValue) {
 		this.data = data;
 		this.visibility = visibility;
-		this.visibilityId = visibilityId;
-
-		if (user == null || user.isEmpty()) {
-			this.user = LoginServiceFactory.getInstance().getLoginService().getLogInUser().toMap();
-		}else{
-			this.user = user;
-		}
-	}
-
-    /**
-     * Returns the type (fully qualified name) of the Java class representing
-     * the payload of the System Event.
-     *
-     * @return The fully qualified name of the payload class.
-     */
-    public String getType() {
-		return type;
+		this.visibilityValue = visibilityValue;
 	}
 
 	/**
@@ -141,21 +99,10 @@ public class Payload implements Serializable {
 	}
 
 	/**
-	 * Returns the visibility id
+	 * Returns the visibility value
 	 * @return Object
-     */
-	public String getVisibilityId() {
-		return visibilityId;
+	 */
+	public Object getVisibilityValue() {
+		return visibilityValue;
 	}
-
-	/**
-	 * return the user who fire the event, if the user was fired by a Job and not by a User's action then the user
-	 * is the System User
-	 *
-	 * @return
-     */
-	public Map<String, Object> getUser() {
-		return user;
-	}
-
 } // E:O:F:Payload.

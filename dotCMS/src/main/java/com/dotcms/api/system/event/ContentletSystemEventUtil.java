@@ -1,5 +1,6 @@
 package com.dotcms.api.system.event;
 
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.exception.BaseInternationalizationException;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -63,7 +64,9 @@ public class ContentletSystemEventUtil {
         SystemEventType systemEventType = getSystemEventType(contentlet, action);
 
         if (systemEventType != null) {
-            Payload payload = new Payload(contentlet, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ));
+
+            Payload payload = new Payload(contentlet, Visibility.EXCLUDE_OWNER,
+                    new ExcludeOwnerVerifierBean(contentlet.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION));
 
             try {
                 systemEventsAPI.push(new SystemEvent(systemEventType, payload));
@@ -115,7 +118,13 @@ public class ContentletSystemEventUtil {
     }
 
     private String getType(Contentlet contentlet) {
-        return contentlet != null && contentlet.isHost() ? SITE_EVENT_SUFFIX : contentlet.getStructure().getName().replace(" ", "_").toUpperCase();
+        if (contentlet.isHost()){
+            return SITE_EVENT_SUFFIX;
+        }else if (contentlet.getStructure() != null && contentlet.getStructure().getName() != null){
+            return contentlet.getStructure().getName().replace(" ", "_").toUpperCase();
+        }else{
+            throw new RuntimeException("The structure is null");
+        }
     }
-
 }
+
