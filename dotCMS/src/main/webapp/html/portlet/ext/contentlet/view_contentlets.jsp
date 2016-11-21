@@ -371,11 +371,11 @@
                 <!-- START Advanced Search-->
                 <div id="advancedSearch">
                     <dl class="vertical">
-                        <dt><%=LanguageUtil.get(pageContext, "Type") %>:</dt>
+                        <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
                         <dd><span id="structSelectBox"></span></dd>
                         <div class="clear"></div>
 
-                        <dt><%= LanguageUtil.get(pageContext, "Search") %>:</dt>
+                        <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
                         <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                     </dl>
 
@@ -384,7 +384,7 @@
                         <%if (languages.size() > 1) { %>
                             <dl class="vertical">
                                 <!-- Language search fields  --->
-                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+                                <dt><label><%= LanguageUtil.get(pageContext, "Language") %>:</label></dt>
                                 <dd>
                                     <div id="combo_zone2">
                                         <input id="language_id"/>
@@ -410,7 +410,7 @@
                         <!-- /Ajax built Categories   --->
 
                         <dl class="vertical">
-                            <dt><%= LanguageUtil.get(pageContext, "Show") %>:</dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Show") %>:</label></dt>
                             <dd>
                                 <select name="showingSelect" onchange='doSearch(1);displayArchiveButton()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
                                     <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
@@ -423,12 +423,13 @@
 
                         <div class="clear"></div>
 
-                        <dl class="vertical" id="filterSystemHostTable">
-                            <dt></dt>
+                        <dl class="radio-check-one-line" id="filterSystemHostTable">
+                            <dt><label for="filterSystemHostCB"><%= LanguageUtil.get(pageContext, "Exclude-system-host") %></label></dt>
                             <dd>
-                               <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
-                               <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
-                           </dd>
+                                <div class="checkbox">
+                                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
+                                </div>
+                            </dd>
                         </dl>
 
                         <div id="measureTheHeightOfSearchTools" class="clear"></div>
@@ -448,7 +449,7 @@
                         </div>
                     </button>
 
-                    <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon">
+                    <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
                     </button>
                 </div>
@@ -477,7 +478,7 @@
                         <div class="portlet-toolbar__info" id="matchingResultsDiv" style="display: none"></div>
                         <div class="portlet-toolbar__actions" id="portletActions">
                             <div id="archiveButtonDiv" style="display:none">
-                                <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon"'>
+                                <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                     <span></span>
 
                                     <div data-dojo-type="dijit/Menu">
@@ -499,7 +500,7 @@
                                 </div>
                             </div>
                             <div id="unArchiveButtonDiv">
-                                <div id="unArchiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon"'>
+                                <div id="unArchiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                     <span></span>
 
                                     <div data-dojo-type="dijit/Menu">
