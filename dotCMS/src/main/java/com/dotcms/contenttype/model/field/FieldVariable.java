@@ -20,7 +20,12 @@ public interface FieldVariable extends Serializable, IFieldVar {
         return NOT_PERSISTED;
     }
 
-	abstract String fieldId();
+
+  @Value.Default
+  default String fieldId() {
+    return NOT_PERSISTED;
+  }
+
 	
 	@Value.Default
 	default String name(){
@@ -44,7 +49,6 @@ public interface FieldVariable extends Serializable, IFieldVar {
 	
 	@Value.Check
 	default void check() {
-	    Preconditions.checkArgument(fieldId()!=null,"FieldVariable.fieldId cannot be null");
 		Preconditions.checkArgument(key()!=null,"FieldVariable.key cannot be null");
 		Preconditions.checkArgument(value()!=null,"FieldVariable.val cannot be null");
 	}

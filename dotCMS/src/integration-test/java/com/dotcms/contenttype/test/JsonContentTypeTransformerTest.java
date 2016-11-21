@@ -183,11 +183,12 @@ public class JsonContentTypeTransformerTest {
     type = api.save(type);
     api.save(type, fields);
     
-    
-    
-    
-
   }
 
+  
+  
+  
+  
+  
 
 }

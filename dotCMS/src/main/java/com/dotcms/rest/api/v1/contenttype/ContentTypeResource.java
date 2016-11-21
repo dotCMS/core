@@ -1,16 +1,15 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
-import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
@@ -74,15 +73,11 @@ public class ContentTypeResource implements Serializable {
     final InitDataObject initData = this.webResource.init(null, true, req, true, null);
     final User user = initData.getUser();
 
-    ContentType type = new JsonContentTypeTransformer(json).from();
-    List<Field> fields = new JsonFieldTransformer(json).asList();
-    APILocator.getContentTypeAPI2(user, true).save(type);
-
-    for (Field field : fields) {
-      APILocator.getFieldAPI2().save(field, user);
+    List<ContentType> types = new ArrayList<>();
+    for(ContentType type : new JsonContentTypeTransformer(json).asList()){
+      types.add(APILocator.getContentTypeAPI2(user, true).save(type, type.fields()));
     }
-
-    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).json())).build();
+    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(types).json())).build();
 
   }
 

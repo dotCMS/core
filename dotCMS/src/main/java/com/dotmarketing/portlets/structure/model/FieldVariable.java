@@ -8,6 +8,14 @@ import java.util.Map;
 
 import com.dotcms.contenttype.model.field.IFieldVar;
 
+/**
+ * 
+ * @deprecated As of release 3.7 use the value class
+ *  {@link com.dotcms.contenttype.model.field.FieldVariable)}
+ *  instead.  It can be constructed using an immutable builder pattern
+ *  ImmutableFieldVariable.build();
+ */
+@Deprecated
 public class FieldVariable  implements IFieldVar, Serializable  {
 
     private static final long serialVersionUID = 1L;

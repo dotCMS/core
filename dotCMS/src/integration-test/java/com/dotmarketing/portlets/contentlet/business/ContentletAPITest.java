@@ -6,10 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
-
-import java.io.FileInputStream;
-
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -28,9 +24,6 @@ import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import org.mockito.Mockito;
-
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;

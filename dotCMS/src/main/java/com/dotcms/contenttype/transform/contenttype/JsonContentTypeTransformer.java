@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.SerialWrapper;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.json.JSONArray;
@@ -91,7 +92,12 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer {
             if(jo.has("inode") && ! jo.has("id")){
               jo.put("id", jo.get("inode"));
             }
-            types.add(fromJsonStr(jo.toString()));
+            ContentType type = fromJsonStr(jo.toString());
+            if(jo.has("fields")){
+              List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
+              type.constructWithFields(fields);
+            }
+            types.add(type);
         }
         return types;
     }

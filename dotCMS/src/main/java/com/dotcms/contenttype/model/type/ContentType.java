@@ -11,6 +11,7 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
@@ -54,14 +55,14 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   public abstract String id();
 
-  
+
   @Value.Lazy
-  public String inode(){
+  public String inode() {
     return id();
   }
 
-  
-  
+
+
   @Nullable
   public abstract String description();
 
@@ -150,26 +151,34 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields() {
-    try {
-      // System.err.println("loading content.fields:" + this.variable() + ":"+
-      // System.identityHashCode(this));
-      return APILocator.getFieldAPI2().byContentTypeId(this.id());
-    } catch (DotDataException e) {
-      throw new DotStateException("unable to load fields:" + e.getMessage(), e);
+    if (innerFields == null) {
+      try {
+
+        innerFields = APILocator.getFieldAPI2().byContentTypeId(this.id());
+      } catch (DotDataException e) {
+        throw new DotStateException("unable to load fields:" + e.getMessage(), e);
+      }
     }
+    return innerFields;
   }
 
+  private List<Field> innerFields = null;
+
+  public void constructWithFields(List<Field> fields) {
+
+    innerFields = fields;
+  }
 
   @Value.Default
   public String folder() {
     return Folder.SYSTEM_FOLDER;
   }
-  
+
   @JsonIgnore
   public Permissionable permissionable() {
     return this;
   }
-  
+
   @JsonIgnore
   @Override
   public String getPermissionId() {

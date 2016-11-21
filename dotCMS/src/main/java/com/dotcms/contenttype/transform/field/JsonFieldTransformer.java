@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.SerialWrapper;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -21,104 +22,104 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonFieldTransformer implements FieldTransformer {
-    final List<Field> list;
-    ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  final List<Field> list;
+  ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 
-    public JsonFieldTransformer(Field field) {
-        this.list = ImmutableList.of(field);
-    }
+  public JsonFieldTransformer(Field field) {
+    this.list = ImmutableList.of(field);
+  }
 
-    public JsonFieldTransformer(String json) {
-        List<Field> l = new ArrayList<>();
-        // are we an array?
-        try {
-            JSONObject jo = new JSONObject(json);
-            if (jo.has("fields")) {
-                l = fromJsonArray(jo.getJSONArray("fields"));
-            }
-        } catch (Exception e) {
-            try {
-                JSONArray jarr = new JSONArray(json);
-                if(jarr.size()>0){
-                    JSONObject jo = jarr.getJSONObject(0);
-                    if(jo.has("fields")){
-                        l = fromJsonArray(jo.getJSONArray("fields"));
-                    }else{
-                        l = fromJsonArrayStr(json);
-                    }
-                }
-            } catch (Exception ex) {
-                throw new DotStateException(ex);
-            }
+  public JsonFieldTransformer(String json) {
+    List<Field> l = new ArrayList<>();
+    // are we an array?
+    try {
+      JSONObject jo = new JSONObject(json);
+      if (jo.has("fields")) {
+        l = fromJsonArray(jo.getJSONArray("fields"));
+      }
+    } catch (Exception e) {
+      try {
+        JSONArray jarr = new JSONArray(json);
+        if (jarr.size() > 0) {
+          JSONObject jo = jarr.getJSONObject(0);
+          if (jo.has("fields")) {
+            l = fromJsonArray(jo.getJSONArray("fields"));
+          } else {
+            l = fromJsonArrayStr(json);
+          }
         }
-        this.list = ImmutableList.copyOf(l);
+      } catch (Exception ex) {
+        throw new DotStateException(ex);
+      }
     }
+    this.list = ImmutableList.copyOf(l);
+  }
 
-    public JsonFieldTransformer(List<Field> list) {
-        this.list = ImmutableList.copyOf(list);
-    }
-
-
-    private List<Field> fromJsonArrayStr(String json)
-            throws JSONException, JsonParseException, JsonMappingException, IOException {
-        return fromJsonArray(new JSONArray(json));
-
-    }
-
-    private List<Field> fromJsonArray(JSONArray jarr)
-            throws JSONException, JsonParseException, JsonMappingException, IOException {
-        List<Field> fields = new ArrayList<>();
-        for (int i = 0; i < jarr.length(); i++) {
-            JSONObject jo = jarr.getJSONObject(i);
-
-            Field f = fromJsonStr(jo.toString());
-            if (jo.has("fieldVariables")) {
-
-                List<FieldVariable> vars = mapper.readValue(
-                        jo.getJSONArray("fieldVariables").toString(), mapper.getTypeFactory()
-                                .constructCollectionType(List.class, FieldVariable.class));
-                f.constructFieldVariables(vars);
-            }
-            fields.add(f);
-        }
+  public JsonFieldTransformer(List<Field> list) {
+    this.list = ImmutableList.copyOf(list);
+  }
 
 
-        return fields;
-    }
+  private List<Field> fromJsonArrayStr(String json)
+      throws JSONException, JsonParseException, JsonMappingException, IOException {
+    return fromJsonArray(new JSONArray(json));
 
+  }
 
-    private Field fromJsonStr(String input) throws DotStateException {
+  private List<Field> fromJsonArray(JSONArray jarr)
+      throws JSONException, JsonParseException, JsonMappingException, IOException {
+    List<Field> fields = new ArrayList<>();
+    for (int i = 0; i < jarr.length(); i++) {
+      JSONObject jo = jarr.getJSONObject(i);
 
-        try {
-            return (Field) mapper.readValue(input, JsonHelper.resolveClass(input));
-        } catch (Exception e) {
-            throw new DotStateException(e);
-        }
-    }
-
-    @Override
-    public Field from() throws DotStateException {
-        return this.list.get(0);
-    }
-
-    @Override
-    public List<Field> asList() throws DotStateException {
-        return this.list;
+      Field f = fromJsonStr(jo.toString());
+      if (jo.has("fieldVariables")) {
+        String varStr = jo.getJSONArray("fieldVariables").toString();
+        List<FieldVariable> vars = mapper.readValue(varStr,
+            mapper.getTypeFactory().constructCollectionType(List.class, ImmutableFieldVariable.class));
+        
+        f.constructFieldVariables(vars);
+      }
+      fields.add(f);
     }
 
 
+    return fields;
+  }
 
-    public String json() throws DotStateException, JsonProcessingException {
-        List<SerialWrapper<Field>> wrapped = new ArrayList<SerialWrapper<Field>>();
 
-        for (Field type : list) {
-            wrapped.add(new SerialWrapper<>(type, type.getClass()));
-        }
-        return mapper.writeValueAsString(wrapped);
+  private Field fromJsonStr(String input) throws DotStateException {
 
+    try {
+      return (Field) mapper.readValue(input, JsonHelper.resolveClass(input));
+    } catch (Exception e) {
+      throw new DotStateException(e);
     }
+  }
+
+  @Override
+  public Field from() throws DotStateException {
+    return this.list.get(0);
+  }
+
+  @Override
+  public List<Field> asList() throws DotStateException {
+    return this.list;
+  }
+
+
+
+  public String json() throws DotStateException, JsonProcessingException {
+    List<SerialWrapper<Field>> wrapped = new ArrayList<SerialWrapper<Field>>();
+
+    for (Field type : list) {
+      wrapped.add(new SerialWrapper<>(type, type.getClass()));
+    }
+    return mapper.writeValueAsString(wrapped);
+
+  }
 
 
 }
