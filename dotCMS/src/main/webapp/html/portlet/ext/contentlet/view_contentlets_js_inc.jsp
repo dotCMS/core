@@ -443,7 +443,7 @@
 
 
 
-                                result = result + "<input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
+                                result += "<div class=\"checkbox\"><input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
                                                         + actual_option[1] + "\" id=\"" + selectedStruct + "." + fieldContentlet + "Field"+ counter_checkbox
                                                         + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\"";
                                 for(var j = 0;j < lastChecked.length; j++){
@@ -451,7 +451,7 @@
                                                 result = result + "checked = \"checked\"";
                                         }
                                 }
-                                result = result + "><label for='"+myD+"'> " + actual_option[0] + "</label><br>\n";
+                                result = result + "><label for='"+myD+"'>" + actual_option[0] + "</label></div>";
                             checkboxesIds[counter_checkbox] = selectedStruct+"."+fieldContentlet + "Field" + counter_checkbox;
 
                             setDotFieldTypeStr = setDotFieldTypeStr
@@ -479,13 +479,13 @@
 
                        var actual_option = option[i].split("|");
                        if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-                                result = result + "<input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
+                                result = result + "<div class=\"radio\"><input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
                                                         + actual_option[1] + "\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field"+ counter_radio
                                                         + "\" name=\"" + selectedStruct+ "." + fieldContentlet + "\"";
                                         if(value == actual_option[1]){
                                         result = result + "checked = \"checked\"";
                                 }
-                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label><br>\n";
+                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label></div>";
                                 radiobuttonsIds[counter_radio] = selectedStruct+"."+fieldContentlet + "Field"+ counter_radio;
 
                                  setDotFieldTypeStr = setDotFieldTypeStr
@@ -1257,7 +1257,12 @@
                                         var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
                                 return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" label=\"" + hintLabel + "\"></div>";
                         } else {
-                                return field["fieldName"] + ":";
+                                var isOneOption = field["fieldValues"].split("\r\n").length === 1;
+                                if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
+                                    return field["fieldName"];
+                                } else {
+                                    return field["fieldName"] + ":";
+                                }
                         }
              }
         }
@@ -1276,7 +1281,13 @@
                         if(type=='host or folder'){
                            hasHostField = true;
                         }
-                        htmlstr += "<dl class='vertical'>";
+
+                        var isOneOption = data[i]["fieldValues"].split("\r\n").length === 1;
+                        if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
+                            htmlstr += "<dl class='radio-check-one-line'>";
+                        } else {
+                            htmlstr += "<dl class='vertical'>";
+                        }
                         htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
                         htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";

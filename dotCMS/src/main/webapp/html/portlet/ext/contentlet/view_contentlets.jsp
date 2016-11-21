@@ -423,12 +423,13 @@
 
                         <div class="clear"></div>
 
-                        <dl class="vertical" id="filterSystemHostTable">
-                            <dt></dt>
+                        <dl class="radio-check-one-line" id="filterSystemHostTable">
+                            <dt><label for="filterSystemHostCB"><%= LanguageUtil.get(pageContext, "Exclude-system-host") %></label></dt>
                             <dd>
-                               <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
-                               <%= LanguageUtil.get(pageContext, "Exclude-system-host") %>
-                           </dd>
+                                <div class="checkbox">
+                                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
+                                </div>
+                            </dd>
                         </dl>
 
                         <div id="measureTheHeightOfSearchTools" class="clear"></div>
