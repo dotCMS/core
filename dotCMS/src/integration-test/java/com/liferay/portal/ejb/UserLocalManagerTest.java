@@ -3,10 +3,10 @@ package com.liferay.portal.ejb;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserFirstNameException;

@@ -13,6 +13,8 @@ import com.dotcms.TestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -49,7 +51,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;

@@ -10,10 +10,10 @@ import org.junit.Test;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.util.ConfigTestHelper;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.util.ConfigTestHelper;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 public class TestShortyIdApi {
 

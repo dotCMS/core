@@ -1,13 +1,13 @@
 package com.dotmarketing.viewtools.navigation;
 
 import com.dotcms.TestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 import org.junit.BeforeClass;

@@ -19,7 +19,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.util.IntegrationTestInitService;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.json.JSONException;
 
 /**

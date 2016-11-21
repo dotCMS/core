@@ -1,12 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.util.ConfigTestHelper;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigTestHelper;
 import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 
 import org.elasticsearch.ElasticsearchException;

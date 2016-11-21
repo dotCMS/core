@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotmarketing.util.CookieTestUtil;
+import com.dotcms.util.CookieTestUtil;
 import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;

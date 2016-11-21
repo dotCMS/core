@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -12,7 +14,6 @@ import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 /**

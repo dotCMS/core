@@ -3,9 +3,10 @@ package com.dotmarketing.business;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 
 public class IdentifierAPITest {
