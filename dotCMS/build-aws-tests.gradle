@@ -60,6 +60,7 @@ dependencies {
 
 if (hasProperty('database') == false) { throw new GradleException( "Required project property \'database\' was not set" ) }
 if (hasProperty('branch') == false) { throw new GradleException( "Required project property \'branch\' was not set" ) }
+if (hasProperty('commit') == false) { ext.commit = "" }
 
 if (hasProperty('propertiesFile') == false) { ext.propertiesFile = "build-aws-tests.properties" }
 if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" }
@@ -426,6 +427,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 		// Define the variables supported on script
 		def variables = [
 			"BRANCH": project.branch,
+			"COMMIT": project.commit,
 
 			"DB_DRIVER": dbDriverClassName,
 			"DB_URL": dbInstanceUrl,

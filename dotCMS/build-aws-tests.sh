@@ -12,6 +12,11 @@ cd repo
 
 # Check out branch under working directory
 git clone -b $BRANCH https://github.com/dotCMS/core.git
+if [ -n "$COMMIT" ]; then
+	cd core
+	git checkout $COMMIT
+	cd ..
+fi
 
 
 # Build tests and distro
