@@ -310,7 +310,6 @@ export class RuleService {
   }
 
   public requestRules(): Observable<any> {
-    console.log('this.siteService.currentSite', this.siteService.currentSite);
     if (this.siteService.currentSite) {
       return this.sendLoadRulesRequest(this.siteService.currentSite);
     }

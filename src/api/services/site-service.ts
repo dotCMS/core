@@ -95,11 +95,8 @@ export class SiteService {
     }
 
     private setCurrentSiteIdentifier(siteIdentifier: string): void {
-        console.log('siteIdentifier', siteIdentifier);
-        console.log('this.sites', this.sites);
         this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
         this._switchSite$.next(this.site);
-        console.log('this.site', this.site);
     }
 
     private loadSites(): void {

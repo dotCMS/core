@@ -82,7 +82,6 @@ export class DotcmsEventsService {
             this.ws.getDataStream().subscribe(
                 res => {
                     let data = (JSON.parse(res.data));
-                    console.log('DATA', data);
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
