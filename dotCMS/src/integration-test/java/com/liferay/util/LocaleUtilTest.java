@@ -14,9 +14,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 /**
  * Locale Util test.

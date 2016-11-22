@@ -5,9 +5,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 public class DbConnectionFactoryUtilTest {
     

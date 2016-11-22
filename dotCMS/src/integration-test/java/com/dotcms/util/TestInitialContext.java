@@ -1,6 +1,7 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
+import com.dotmarketing.util.Constants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,14 +22,17 @@ public class TestInitialContext extends InitialContext {
     private static TestInitialContext context;
 
     private TestInitialContext() throws NamingException {
-        String dbType = "";
+        String dbType = "postgres.";
 
         if (System.getProperty("databaseType")!=null){
             dbType = System.getProperty("databaseType") + ".";
+        } else if(System.getenv("databaseType")!=null){
+        	dbType = System.getenv("databaseType") + ".";
         }
 
         loadProperties();
         dataSource = new BasicDataSource();
+        System.out.println("dbType = " + dbType);
         dataSource.setDriverClassName(prop.getProperty(dbType + "db.driver"));
         dataSource.setUrl(prop.getProperty(dbType + "db.base.url"));
         dataSource.setUsername(prop.getProperty(dbType + "db.username"));

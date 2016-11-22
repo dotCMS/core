@@ -12,6 +12,11 @@ cd repo
 
 # Check out branch under working directory
 git clone -b $BRANCH https://github.com/dotCMS/core.git
+if [ -n "$COMMIT" ]; then
+	cd core
+	git checkout $COMMIT
+	cd ..
+fi
 
 
 # Build tests and distro
@@ -50,10 +55,10 @@ sed -i "s,CLUSTER_AUTOWIRE=true,CLUSTER_AUTOWIRE=false,g" dotserver/tomcat/webap
 
 sed -i "s,PUBLISHER_QUEUE_MAX_TRIES=3,PUBLISHER_QUEUE_MAX_TRIES=1,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotmarketing-config.properties
 
-sed -i "s,^db.driver=.*$,db.driver=$DB_DRIVER,g" core/dotCMS/src/integration-test/resources/db-config.properties
-sed -i "s,^db.base.url=.*$,db.base.url=$DB_URL,g" core/dotCMS/src/integration-test/resources/db-config.properties
-sed -i "s,^db.username=.*$,db.username=$DB_USERNAME,g" core/dotCMS/src/integration-test/resources/db-config.properties
-sed -i "s,^db.password=.*$,db.password=$DB_PASSWORD,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^$DB_TYPE.db.driver=.*$,$DB_TYPE.db.driver=$DB_DRIVER,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^$DB_TYPE.db.base.url=.*$,$DB_TYPE.db.base.url=$DB_URL,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^$DB_TYPE.db.username=.*$,$DB_TYPE.db.username=$DB_USERNAME,g" core/dotCMS/src/integration-test/resources/db-config.properties
+sed -i "s,^$DB_TYPE.db.password=.*$,$DB_TYPE.db.password=$DB_PASSWORD,g" core/dotCMS/src/integration-test/resources/db-config.properties
 
 sed -i "s,^es.cluster.name *=.*$,es.cluster.name=$ESCLUSTER_3x,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.data *=.*$,es.path.data=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
@@ -88,7 +93,7 @@ cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
 
 # Run Integration tests
 cd core/dotCMS
-./gradlew integrationTest --no-daemon || true
+./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
 cd ../..
 cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 

@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotcms.TestBase;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -29,7 +31,6 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 

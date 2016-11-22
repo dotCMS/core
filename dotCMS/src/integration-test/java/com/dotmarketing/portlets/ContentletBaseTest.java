@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -50,7 +51,6 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -554,11 +554,13 @@ public class ContentletBaseTest extends TestBase {
         Collection<Permission> permissions = new ArrayList<Permission>();
         permissions.add( new Permission( "", roleAPI.loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ ) );
 
-        Permission newPermission;
+        List<Permission> newSetOfPermissions = new ArrayList<Permission>();
         for ( Permission permission : permissions ) {
-            newPermission = new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true );
-            permissionAPI.save( newPermission, htmlPage, user, false );
+        	newSetOfPermissions.add(new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true ));
         }
+        if(newSetOfPermissions.size() > 0){   
+        	permissionAPI.save( newSetOfPermissions, htmlPage, user, false );
+     	}
 
         //Save the multi tree
         MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), contentlet.getIdentifier() ) );

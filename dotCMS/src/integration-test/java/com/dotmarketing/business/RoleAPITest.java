@@ -1,10 +1,10 @@
 package com.dotmarketing.business;
 
 import com.dotcms.TestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;

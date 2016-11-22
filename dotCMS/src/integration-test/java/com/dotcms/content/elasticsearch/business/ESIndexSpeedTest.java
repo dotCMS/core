@@ -4,10 +4,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.liferay.portal.model.User;
 
 public class ESIndexSpeedTest extends TestBase {

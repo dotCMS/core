@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
-import com.dotmarketing.util.IntegrationTestInitService;
+import com.dotcms.util.IntegrationTestInitService;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

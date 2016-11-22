@@ -1,4 +1,4 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Config;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

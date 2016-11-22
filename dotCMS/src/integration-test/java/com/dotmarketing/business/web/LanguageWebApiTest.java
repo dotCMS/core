@@ -14,9 +14,9 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 

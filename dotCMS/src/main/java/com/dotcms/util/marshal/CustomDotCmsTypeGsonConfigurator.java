@@ -3,7 +3,12 @@ package com.dotcms.util.marshal;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.repackage.com.google.gson.*;
 import com.dotcms.util.deserializer.ContentletDeserializer;
+<<<<<<< HEAD
 import com.dotcms.util.deserializer.PayloadAdapter;
+=======
+import com.dotcms.util.deserializer.PayloadDeserializer;
+import com.dotmarketing.beans.Host;
+>>>>>>> origin/master-3.7
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
@@ -19,6 +24,7 @@ public class CustomDotCmsTypeGsonConfigurator implements GsonConfigurator {
         gsonBuilder.registerTypeAdapter( Payload.class, new PayloadAdapter() );
         gsonBuilder.registerTypeAdapter(Contentlet.class, new ContentletDeserializer() );
         gsonBuilder.registerTypeAdapter(HTMLPageAsset.class, new ContentletDeserializer() );
+        gsonBuilder.registerTypeAdapter(Host.class, new ContentletDeserializer() );
     }
 
     @Override
