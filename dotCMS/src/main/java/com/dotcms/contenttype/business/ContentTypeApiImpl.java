@@ -18,6 +18,7 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -228,36 +229,25 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
   public boolean validateFields(ContentType type, List<Field> testFields) {
 
-
-    List<Field> required = type.requiredFields();
-    boolean valid =
-        "forms".equals(type.variable()) || required.size() == 0 || type.modDate().before(FieldApi.VALIDATE_AFTER);
-
-    Field f1 = null;
-    Field f2 = null;
-
-    if (!valid) {
-      for (Field reqField : required) {
-        f1 = reqField;
-        for (Field testField : testFields) {
-          f2 = testField;
-          Date testModDate = testField.modDate();
-          Date validDate = FieldApi.VALIDATE_AFTER;
-
-          if ((testField.variable().equals(reqField.variable()) && testField.modDate().before(FieldApi.VALIDATE_AFTER))
-              || (testField.variable().equals(reqField.variable()) && (type.modDate().after(FieldApi.VALIDATE_AFTER))
-                  && testField.dataType() == reqField.dataType() && testField.type() == reqField.type())) {
-            valid = true;
-            break;
+    boolean valid = true;
+    if (!"forms".equals(type.variable())) {
+      for (Field test : type.requiredFields()) {
+        Optional<Field> optional =
+            testFields.stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
+        if (!optional.isPresent()) {
+          if (test instanceof HostFolderField) {
+            optional = testFields.stream().filter(x -> x instanceof HostFolderField).findFirst();
           }
         }
-        if (valid == false) {
-          break;
+
+        if (!optional.isPresent()) {
+          Logger.warn(this.getClass(), "ContentType does not have the required Fields: " + test);
+          valid = false;
         }
-        f1 = null;
-        f2 = null;
+
       }
     }
+
 
     return valid;
 

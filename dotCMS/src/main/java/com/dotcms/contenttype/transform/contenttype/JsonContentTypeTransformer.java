@@ -24,120 +24,123 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonTransformer {
-    final List<ContentType> list;
+  final List<ContentType> list;
 
-    public JsonContentTypeTransformer(ContentType type) {
-        this.list = ImmutableList.of(type);
-    }
-
-    
-    public JsonContentTypeTransformer(String json) {
-        List<ContentType> types = new ArrayList<>();
-        // are we an array?
-        try {
-            types = ImmutableList.copyOf(fromJsonArrayStr(json));
-        } catch (JSONException ex) {
-            types = ImmutableList.of(fromJsonStr(json));
-        }
-        this.list = ImmutableList.copyOf(types);
-    }
-
-    
-    public JsonContentTypeTransformer(List<ContentType> list) {
-        this.list = ImmutableList.copyOf(list);
-    }
-
-    @Override
-    public JSONObject jsonObject() {
-        ContentType type = from();
-        JSONObject jsonObject;
-        try {
-          jsonObject = new JSONObject(mapper.writeValueAsString(new SerialWrapper<>(type, type.baseType().immutableClass())));
+  public JsonContentTypeTransformer(ContentType type) {
+    this.list = ImmutableList.of(type);
+  }
 
 
-        jsonObject.remove("permissionType");
-        jsonObject.remove("permissionId");
-        jsonObject.remove("versionable");
-        jsonObject.remove("multilingualable");
-
-        jsonObject.put("fields", new JsonFieldTransformer(type.fields()).jsonArray());
-        
-        return jsonObject;
-        } catch (JSONException | JsonProcessingException e) {
-          throw new DotStateException(e);
-        }
-    }
-
-    
-    private ContentType fromJsonStr(String input) {
-        try {
-            return (ContentType) mapper.readValue(input, JsonHelper.resolveClass(input));
-        } catch (Exception e) {
-            throw new DotStateException(e);
-        }
-    }
-
-    
-    private List<ContentType> fromJsonArrayStr(String input) throws JSONException {
-        List<ContentType> types = new ArrayList<>();
-        JSONArray jarr = new JSONArray(input);
-        for (int i = 0; i < jarr.length(); i++) {
-            JSONObject jo = jarr.getJSONObject(i);
-            if(jo.has("inode") && ! jo.has("id")){
-              jo.put("id", jo.get("inode"));
-            }
-            HostAPI hapi = APILocator.getHostAPI();
-            ContentType type = fromJsonStr(jo.toString());
-            try {
-              Host host = UUIDUtil.isUUID(type.host()) || "SYSTEM_HOST".equalsIgnoreCase(type.host())
-                  ? hapi.find(type.host(), APILocator.systemUser(), true)
-                      : hapi.resolveHostName(type.host(), APILocator.systemUser(), true);
-                  type=ContentTypeBuilder.builder(type).host(host.getIdentifier()).build();
-            } catch (DotDataException | DotSecurityException e) {
-              throw new DotStateException("unable to resolve host:" + type.host(),e);
-            }
-            
-            if(jo.has("fields")){
-              List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
-              type.constructWithFields(fields);
-            }
-            types.add(type);
-        }
-        return types;
-    }
-
-    
-    @Override
-    public ContentType from() throws DotStateException {
-        return asList().get(0);
-    }
-
-    @Override
-    public List<ContentType> asList() throws DotStateException {
-        for(ContentType type:this.list){
-            for(Field f : type.fields()){
-                f.fieldVariables();
-            }
-            
-        }
-        return this.list;
-    }
-
-
-
-    @Override
-    public JSONArray jsonArray() {
-      JSONArray jarr = new JSONArray();
-      for (ContentType type: asList()) {
-        jarr.add(new JsonContentTypeTransformer(type).jsonObject());
+  public JsonContentTypeTransformer(String json) {
+    List<ContentType> types = new ArrayList<>();
+    // are we an array?
+    try {
+      if (json != null && json.trim().startsWith("[")) {
+        types = ImmutableList.copyOf(fromJsonArrayStr(json));
+      } else {
+        types = ImmutableList.of(fromJsonStr(json));
       }
-      return jarr;
+    } catch (JSONException arrEx) {
+      throw new DotStateException(arrEx);
+
     }
-    
-    
-    
-    
-    
+    this.list = ImmutableList.copyOf(types);
+  }
+
+
+  public JsonContentTypeTransformer(List<ContentType> list) {
+    this.list = ImmutableList.copyOf(list);
+  }
+
+  @Override
+  public JSONObject jsonObject() {
+    ContentType type = from();
+    JSONObject jsonObject;
+    try {
+      jsonObject =
+          new JSONObject(mapper.writeValueAsString(new SerialWrapper<>(type, type.baseType().immutableClass())));
+
+
+      jsonObject.remove("permissionType");
+      jsonObject.remove("permissionId");
+      jsonObject.remove("versionable");
+      jsonObject.remove("multilingualable");
+
+      jsonObject.put("fields", new JsonFieldTransformer(type.fields()).jsonArray());
+
+      return jsonObject;
+    } catch (JSONException | JsonProcessingException e) {
+      throw new DotStateException(e);
+    }
+  }
+
+
+  private ContentType fromJsonStr(String input) {
+    try {
+      return (ContentType) mapper.readValue(input, JsonHelper.resolveClass(input));
+    } catch (Exception e) {
+      throw new DotStateException(e);
+    }
+  }
+
+
+  private List<ContentType> fromJsonArrayStr(String input) throws JSONException {
+    List<ContentType> types = new ArrayList<>();
+    JSONArray jarr = new JSONArray(input);
+    for (int i = 0; i < jarr.length(); i++) {
+      JSONObject jo = jarr.getJSONObject(i);
+      if (jo.has("inode") && !jo.has("id")) {
+        jo.put("id", jo.get("inode"));
+      }
+      HostAPI hapi = APILocator.getHostAPI();
+      ContentType type = fromJsonStr(jo.toString());
+      try {
+        Host host = UUIDUtil.isUUID(type.host()) || "SYSTEM_HOST".equalsIgnoreCase(type.host())
+            ? hapi.find(type.host(), APILocator.systemUser(), true)
+            : hapi.resolveHostName(type.host(), APILocator.systemUser(), true);
+        type = ContentTypeBuilder.builder(type).host(host.getIdentifier()).build();
+      } catch (DotDataException | DotSecurityException e) {
+        throw new DotStateException("unable to resolve host:" + type.host(), e);
+      }
+
+      if (jo.has("fields")) {
+        List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
+        type.constructWithFields(fields);
+      }
+      types.add(type);
+    }
+    return types;
+  }
+
+
+  @Override
+  public ContentType from() throws DotStateException {
+    return asList().get(0);
+  }
+
+  @Override
+  public List<ContentType> asList() throws DotStateException {
+    for (ContentType type : this.list) {
+      for (Field f : type.fields()) {
+        f.fieldVariables();
+      }
+
+    }
+    return this.list;
+  }
+
+
+
+  @Override
+  public JSONArray jsonArray() {
+    JSONArray jarr = new JSONArray();
+    for (ContentType type : asList()) {
+      jarr.add(new JsonContentTypeTransformer(type).jsonObject());
+    }
+    return jarr;
+  }
+
+
 
 }
 

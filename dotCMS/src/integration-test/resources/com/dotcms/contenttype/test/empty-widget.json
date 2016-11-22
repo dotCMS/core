@@ -6,7 +6,7 @@
   "system" : false,
   "variable" : "testWidget",
   "folder" : "SYSTEM_FOLDER",
-  "host" : "SYSTEM_HOST",
+  "host" : "demo.dotcms.com",
   "implClass" : "com.dotcms.contenttype.model.type.WidgetContentType",
  
 } ]
