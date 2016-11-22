@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -20,6 +21,8 @@ public interface FieldApi {
 		return api;
 	}
 
+	public static final Date VALIDATE_AFTER = new Date(1451606400000l);
+	
 	List<Class> fieldTypes();
 
 	void registerFieldType(Field type);

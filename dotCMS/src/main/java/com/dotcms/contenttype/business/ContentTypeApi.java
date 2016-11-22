@@ -15,39 +15,38 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 
 public interface ContentTypeApi {
 
-  
+
 
   final Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "forms", "html page",
       "menu link", "virtual link", "container", "template", "user");
 
   final Set<String> reservedStructureVars = ImmutableSet.of("host", "folder", "file", "forms", "htmlpage", "menulink",
       "virtuallink", "container", "template", "user", "calendarEvent");
-  
+
   void delete(ContentType st) throws DotSecurityException, DotDataException;
 
   ContentType find(String inode) throws DotSecurityException, DotDataException;
 
   List<ContentType> findAll() throws DotDataException;
-  
+
   ContentType findDefault() throws DotDataException, DotSecurityException;
 
   List<ContentType> findByBaseType(BaseContentType type, String orderBy, int limit, int offset) throws DotDataException;
 
-  List<ContentType> findByType(BaseContentType type)
-      throws DotDataException, DotSecurityException;
-  
+  List<ContentType> findByType(BaseContentType type) throws DotDataException, DotSecurityException;
+
   List<ContentType> findAll(String orderBy) throws DotDataException;
 
   List<ContentType> findUrlMapped() throws DotDataException;
-  
+
   // based on a condition
   int count(String condition) throws DotDataException;
 
 
   // based on a condition and a user
-  int count(String condition,BaseContentType base) throws DotDataException;
+  int count(String condition, BaseContentType base) throws DotDataException;
 
-  
+
   // all
   int count() throws DotDataException;
 
@@ -73,10 +72,8 @@ public interface ContentTypeApi {
 
   List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException;
 
-  List<ContentType> search(String condition, BaseContentType base, String orderBy,  int limit,
-      int offset) throws DotDataException;
-
-
+  List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset)
+      throws DotDataException;
 
 
 

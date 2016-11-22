@@ -2,13 +2,14 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
+import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -21,11 +22,11 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.Application;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.tika.io.IOUtils;
+import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 
 public class ContentTypeResourceTest {
 
@@ -40,37 +41,41 @@ public class ContentTypeResourceTest {
 
   /**
    * BasicAuth
+   * 
    * @return
    */
   private HttpServletRequest getHttpRequest() {
-    HttpServletRequest request = new MockHeaderRequest(
-        new MockSessionRequest(
-            new MockAttributeRequest(
-                new MockHttpRequest("localhost", "/").request()).request())
-            .request(),"Authorization", "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg=="
-         ).request();
+    MockHeaderRequest request = new MockHeaderRequest(
+        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+            .request());
 
+
+
+    request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
     return request;
   }
 
-  public class MyApplication extends Application {
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> s = new HashSet<Class<?>>();
-        s.add(ContentTypeResource.class);
-        return s;
-    }
-}
-  
-  
-  
-  
-  
-  
-  @Test
-  public void testJsonToContentTypeArray() throws Exception {
+  final String base = "/com/dotcms/contenttype/test/";
 
+  @Test
+  public void jsonTests() throws Exception {
+
+    URL resource = this.getClass().getResource(base);
+    File directory = new File(resource.toURI());
+    assertThat("we have a testing directory with json in it", directory != null);
+
+    for (String file : directory.list()) {
+      if (file.endsWith(".json")) {
+        testJson(file);
+      }
+    }
+  }
+
+
+
+  public void testJson(String jsonFile) throws Exception {
+    Logger.info(this.getClass(), "testing:" + jsonFile);
     try {
       ContentType type = api.find("banner");
       api.delete(type);
@@ -78,25 +83,16 @@ public class ContentTypeResourceTest {
 
     }
 
-    MyApplication app = new MyApplication();
-    for(Object j : app.getSingletons()){
-      
-    }
-
-    InputStream stream = this.getClass().getResourceAsStream("/com/dotcms/contenttype/test/content-type-array.json");
+    InputStream stream = this.getClass().getResourceAsStream(base + jsonFile);
     String json = IOUtils.toString(stream);
     stream.close();
 
-    HttpServletRequest req = getHttpRequest();
-
-    HttpServletRequest req2 = new MockHeaderRequest(req,"wetrew","qwerewrew");
-    
     ContentTypeResource resource = new ContentTypeResource();
 
     Response response = resource.saveType(getHttpRequest(), json);
 
     int x = response.getStatus();
-    assertThat("we get a 200 back when saving content type via json", x == 200);
+    assertThat("result:200 with json " + jsonFile, x == 200);
   }
 
 

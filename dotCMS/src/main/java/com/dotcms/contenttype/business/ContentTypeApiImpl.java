@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -32,10 +34,9 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
@@ -85,11 +86,11 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     List<Map<String, Object>> ids = null;
 
     // test permissions over content
-    int maxRows=100;
-    int offset=0;
+    int maxRows = 100;
+    int offset = 0;
     do {
-      ids = dc.setSQL(ContentTypeSql.getInstance().SELECT_CONTENTLET_IDS_BY_TYPE).setMaxRows(100).setStartRow(offset).addParam(type.id())
-          .loadObjectResults();
+      ids = dc.setSQL(ContentTypeSql.getInstance().SELECT_CONTENTLET_IDS_BY_TYPE).setMaxRows(100).setStartRow(offset)
+          .addParam(type.id()).loadObjectResults();
       for (Map<String, Object> id : ids) {
         PermissionableProxy proxy = new PermissionableProxy();
         proxy.setIdentifier((String) id.get("identifier"));
@@ -98,20 +99,18 @@ public class ContentTypeApiImpl implements ContentTypeApi {
         proxy.setType(new Contentlet().getType());
         APILocator.getPermissionAPI().checkPermission(proxy, PermissionLevel.PUBLISH, user);
       }
-      offset+=maxRows;
+      offset += maxRows;
     } while (ids.size() > 0);
 
 
 
-
-
-    try{
+    try {
       fac.delete(type);
     } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);
       throw new BaseRuntimeInternationalizationException(e);
     }
-    try{
+    try {
       String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
       ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
       APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
@@ -196,18 +195,66 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 
   @Override
-  public ContentType save(ContentType type, List<Field> fields) throws DotDataException, DotSecurityException {
+  public ContentType save(final ContentType type, final List<Field> fields) throws DotDataException, DotSecurityException {
 
     Preconditions.checkNotNull(fields);
-
-    type = save(type);
-    int i = 0;
-    for (Field field : fields) {
-      field = FieldBuilder.builder(field).contentTypeId(type.id()).sortOrder(i++).build();
-      ffac.save(field);
-    }
-    return type;
+    
+    return LocalTransaction.wrapReturn(() -> {
+      ContentType retType = save(type);
+      int i = 0;
+      for (Field field : fields) {
+        
+        field = FieldBuilder.builder(field)
+            .contentTypeId(retType.id())
+            .sortOrder(i++)
+            .build();
+        
+        ffac.save(field);
+      }
+      return retType;
+    });
   }
+
+
+
+  public boolean validateFields(ContentType type, List<Field> testFields) {
+
+
+    List<Field> required = type.requiredFields();
+    boolean valid =
+        "forms".equals(type.variable()) || required.size() == 0 || type.modDate().before(FieldApi.VALIDATE_AFTER);
+
+    Field f1 = null;
+    Field f2 = null;
+
+    if (!valid) {
+      for (Field reqField : required) {
+        f1 = reqField;
+        for (Field testField : testFields) {
+          f2 = testField;
+          Date testModDate = testField.modDate();
+          Date validDate = FieldApi.VALIDATE_AFTER;
+
+          if ((testField.variable().equals(reqField.variable()) && testField.modDate().before(FieldApi.VALIDATE_AFTER))
+              || (testField.variable().equals(reqField.variable()) && (type.modDate().after(FieldApi.VALIDATE_AFTER))
+                  && testField.dataType() == reqField.dataType() && testField.type() == reqField.type())) {
+            valid = true;
+            break;
+          }
+        }
+        if (valid == false) {
+          break;
+        }
+        f1 = null;
+        f2 = null;
+      }
+    }
+
+    return valid;
+
+  }
+
+
 
   @Override
   public ContentType save(ContentType type) throws DotDataException, DotSecurityException {

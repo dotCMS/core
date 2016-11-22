@@ -35,7 +35,6 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 
@@ -144,7 +143,7 @@ public class FieldFactoryImpl implements FieldFactory {
     private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
 
-        if(throwAwayField.modDate().after(new Date(2016,10,10, 0, 0, 0))){
+        if(throwAwayField.modDate().after(FieldApi.VALIDATE_AFTER)){
             if (!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType()) 
                     && (throwAwayField.acceptedDataTypes().size()>0 && throwAwayField.acceptedDataTypes().get(0) != DataTypes.SYSTEM)) {
                 throw new DotDataValidationException("Field Type:" + throwAwayField.type()

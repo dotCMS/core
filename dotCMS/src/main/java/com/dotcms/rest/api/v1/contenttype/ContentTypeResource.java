@@ -37,9 +37,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
-/**
- * Created by jasontesser on 9/28/16.
- */
+
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
   private final WebResource webResource;
@@ -74,10 +72,10 @@ public class ContentTypeResource implements Serializable {
     final User user = initData.getUser();
 
     List<ContentType> types = new ArrayList<>();
-    for(ContentType type : new JsonContentTypeTransformer(json).asList()){
+    for (ContentType type : new JsonContentTypeTransformer(json).asList()) {
       types.add(APILocator.getContentTypeAPI2(user, true).save(type, type.fields()));
     }
-    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(types).json())).build();
+    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(types).jsonArray().toString())).build();
 
   }
 
@@ -93,8 +91,8 @@ public class ContentTypeResource implements Serializable {
     final User user = initData.getUser();
 
     ContentTypeApi tapi = APILocator.getContentTypeAPI2(user, true);
-    
-    
+
+
     ContentType type = null;
     try {
       type = tapi.find(id);
@@ -132,7 +130,7 @@ public class ContentTypeResource implements Serializable {
     Response response = Response.status(404).build();
     try {
       ContentType type = tapi.find(id);
-      response = Response.ok(new JsonContentTypeTransformer(type).json()).build();
+      response = Response.ok(new JsonContentTypeTransformer(type).jsonObject().toString()).build();
     } catch (NotFoundInDbException nfdb2) {
       // nothing to do here, will throw a 404
     }

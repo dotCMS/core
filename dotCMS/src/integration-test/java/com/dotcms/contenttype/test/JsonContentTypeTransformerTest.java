@@ -3,7 +3,6 @@ package com.dotcms.contenttype.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.List;
 
 import org.junit.BeforeClass;
@@ -12,13 +11,10 @@ import org.junit.Test;
 import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotcms.repackage.org.apache.tika.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 
 public class JsonContentTypeTransformerTest {
@@ -39,7 +35,7 @@ public class JsonContentTypeTransformerTest {
       ContentType type2 = null;
       String json = null;
       try {
-        json = new JsonContentTypeTransformer(type).json();
+        json = new JsonContentTypeTransformer(type).jsonObject().toString();
         type2 = new JsonContentTypeTransformer(json).from();
 
         assertThat("ContentType == ContentType2", type.equals(type2));
@@ -59,15 +55,12 @@ public class JsonContentTypeTransformerTest {
     List<ContentType> types2 = null;
     String json = null;
     try {
-      json = new JsonContentTypeTransformer(types).json();
+      json = new JsonContentTypeTransformer(types).jsonArray().toString();
       types2 = new JsonContentTypeTransformer(json).asList();
 
       for (int i = 0; i < types.size(); i++) {
         assertThat("ContentType == ContentType2", types.get(i).equals(types2.get(i)));
       }
-
-
-
     } catch (Throwable t) {
       System.out.println(types);
       System.out.println(types2);
@@ -85,7 +78,7 @@ public class JsonContentTypeTransformerTest {
       for (Field field : type.fields()) {
 
         try {
-          json = new JsonFieldTransformer(field).json();
+          json = new JsonFieldTransformer(field).jsonObject().toString();
 
           field2 = new JsonFieldTransformer(json).from();
 
@@ -102,6 +95,7 @@ public class JsonContentTypeTransformerTest {
     }
   }
 
+  
   @Test
   public void testFieldArraySerialization() throws Exception {
     List<ContentType> types = factory.findAll();
@@ -112,9 +106,7 @@ public class JsonContentTypeTransformerTest {
     try {
       for (ContentType type : types) {
         fields = type.fields();
-
-
-        json = new JsonFieldTransformer(type.fields()).json();
+        json = new JsonFieldTransformer(type.fields()).jsonArray().toString();
         fields2 = new JsonFieldTransformer(json).asList();
 
         for (int i = 0; i < type.fields().size(); i++) {
@@ -123,12 +115,7 @@ public class JsonContentTypeTransformerTest {
         for (int i = 0; i < type.fields().size(); i++) {
           assertThat("Field1 == Field2", fields2.get(i).equals(type.fields().get(i)));
         }
-
-
       }
-
-
-
     } catch (Throwable t) {
       System.out.println(fields);
       System.out.println(json);
@@ -136,54 +123,8 @@ public class JsonContentTypeTransformerTest {
     }
   }
 
-  @Test
-  public void testJsonToContentTypeArray() throws Exception {
+  
 
-    try{
-      ContentType type = api.find("banner");
-      api.delete(type);
-    }
-    catch(NotFoundInDbException e){
-      
-    }
-    
-
-    InputStream stream = this.getClass().getResourceAsStream("/com/dotcms/contenttype/test/content-type-array.json");
-    String json = IOUtils.toString(stream);
-    stream.close();
-    ContentType type = new JsonContentTypeTransformer(json).from();
-    List<Field> fields = new JsonFieldTransformer(json).asList();
-    List<FieldVariable> vars = fields.get(0).fieldVariables();
-
-
-
-    api.save(type);
-
-  }
-
-  @Test
-  public void testJsonToContentTypeObject() throws Exception {
-    ContentType type;
-
-    try{
-       type = api.find("banner");
-       api.delete(type);
-    }
-    catch(NotFoundInDbException e){
-      
-    }
-    
-    InputStream stream = this.getClass().getResourceAsStream("/com/dotcms/contenttype/test/content-type-object.json");
-    String json = IOUtils.toString(stream);
-    stream.close();
-     type = new JsonContentTypeTransformer(json).from();
-    List<Field> fields = new JsonFieldTransformer(json).asList();
-    List<FieldVariable> vars = fields.get(0).fieldVariables();
-    
-    type = api.save(type);
-    api.save(type, fields);
-    
-  }
 
   
   

@@ -15,6 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeApiImpl;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
@@ -46,8 +47,8 @@ import com.liferay.portal.model.User;
 
 public class ContentTypeAPIImplTest {
 
-  static ContentTypeFactory fac ;
-  static ContentTypeApi api ;
+  static ContentTypeFactory fac;
+  static ContentTypeApiImpl api;
 
 
   static User user;
@@ -56,7 +57,7 @@ public class ContentTypeAPIImplTest {
   public static void SetUpTests() throws FileNotFoundException, Exception {
     SuperContentTypeTest.SetUpTests();
     user = APILocator.systemUser();
-    api = APILocator.getContentTypeAPI2(user);
+    api = (ContentTypeApiImpl) APILocator.getContentTypeAPI2(user);
     fac = new ContentTypeFactoryImpl();
 
   }
@@ -209,8 +210,7 @@ public class ContentTypeAPIImplTest {
       }
     }
 
-    assertThat("findAll sort by Name has same size as find all",
-        api.findAll("name").size() == types.size());
+    assertThat("findAll sort by Name has same size as find all", api.findAll("name").size() == types.size());
   }
 
   @Test
@@ -265,12 +265,12 @@ public class ContentTypeAPIImplTest {
     types = api.search(null, BaseContentType.ANY, "name", 5, 0);
     assertThat("limit works and we have max five content types", types.size() < 6);
     for (int x = 0; x < totalCount; x = x + 5) {
-      types = api.search(null, BaseContentType.ANY, "name asc", 5,0);
+      types = api.search(null, BaseContentType.ANY, "name asc", 5, 0);
       assertThat("we have max five content types", types.size() < 6);
     }
 
     for (int i = 0; i < BaseContentType.values().length; i++) {
-      types = api.search(null, BaseContentType.getBaseContentType(i), "name",  1000, 0);
+      types = api.search(null, BaseContentType.getBaseContentType(i), "name", 1000, 0);
       assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
       int count = api.count(null, BaseContentType.getBaseContentType(i));
       assertThat("Count works as well", types.size() == count);
@@ -329,8 +329,8 @@ public class ContentTypeAPIImplTest {
 
 
   private void testDeleting() throws Exception {
-    List<ContentType> types = api.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY,
-        "mod_date", 500,0);
+    List<ContentType> types =
+        api.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
     assertThat(types + " search is working", types.size() > 0);
     for (ContentType type : types) {
       delete(type);
@@ -340,8 +340,8 @@ public class ContentTypeAPIImplTest {
 
 
   private void testUpdating() throws Exception {
-    List<ContentType> types = api.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY,
-        "mod_date", 500,0);
+    List<ContentType> types =
+        api.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
     assertThat(types + " search is working", types.size() > 0);
     for (ContentType type : types) {
       ContentType testing = api.find(type.id());
@@ -478,6 +478,21 @@ public class ContentTypeAPIImplTest {
     assertThat("existing velocity var will not work", !newVar.equals(tryVar));
 
   }
+
+
+  @Test
+  public void validateFields() throws DotDataException {
+    for (BaseContentType baseType : BaseContentType.values()) {
+      if (baseType == BaseContentType.ANY)
+        continue;
+      List<ContentType> types = api.search(null, baseType, "name", 100, 0);
+      for (ContentType type : types) {
+        assertThat("fields are valid\n" + type + "\n" + type.fields(), api.validateFields(type, type.fields()));
+      }
+    }
+  }
+
+
 
   private static List<Structure> getCrappyStructures() {
     return InodeFactory.getInodesOfClass(Structure.class, "name");
