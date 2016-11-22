@@ -3,12 +3,8 @@ package com.dotcms.util.marshal;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.repackage.com.google.gson.*;
 import com.dotcms.util.deserializer.ContentletDeserializer;
-<<<<<<< HEAD
 import com.dotcms.util.deserializer.PayloadAdapter;
-=======
-import com.dotcms.util.deserializer.PayloadDeserializer;
 import com.dotmarketing.beans.Host;
->>>>>>> origin/master-3.7
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
