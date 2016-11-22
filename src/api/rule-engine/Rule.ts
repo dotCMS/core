@@ -326,6 +326,8 @@ export class RuleService {
       this.siteService.switchSite$.subscribe(site => {
         this.sendLoadRulesRequest(site);
       });
+
+      return RuleService.fromServerRulesTransformFn(ruleMap);
     });
   }
 

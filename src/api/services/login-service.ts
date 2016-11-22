@@ -63,8 +63,14 @@ export class LoginService {
         return this._auth;
     }
 
-    get isLogin(): boolean{
-        return this.auth && this.auth.user;
+    get isLogin$(): Observable<boolean>{
+        return Observable.create(obs => {
+            if (this.auth && this.auth.user) {
+                obs.next(true);
+            } else {
+                this.loadAuth().subscribe(auth => obs.next(<boolean> auth.user));
+            }
+        });
     }
 
     /**

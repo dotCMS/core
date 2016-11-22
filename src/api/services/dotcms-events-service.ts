@@ -27,7 +27,7 @@ export class DotcmsEventsService {
      *                        the Websocket parameters.
      */
     constructor(private dotcmsConfig: DotcmsConfig, loginService: LoginService) {
-        dotcmsConfig.getConfig().then(dotcmsConfig => {
+        dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
@@ -114,6 +114,14 @@ export class DotcmsEventsService {
         }
 
         return this.subjects[clientEventType].asObservable();
+    }
+
+    subscribeToEvents(clientEventTypes: string[]): Observable<any> {
+        let subject: Subject = new Subject();
+
+        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data => subject.next(data)) );
+
+        return subject.asObservable();
     }
 
     private reconnect(): void {
