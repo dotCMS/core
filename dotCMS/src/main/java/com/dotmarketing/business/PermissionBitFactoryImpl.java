@@ -405,7 +405,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"where " +
 			"	identifier.host_inode = ? " +
 			"	and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-			"	and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+			"	and permission_type = '" + Folder.class.getCanonicalName() + "' " +
 			"	and reference_id = folder.inode" +
 			")" +
 			" OR EXISTS(SELECT c.inode " +
@@ -816,7 +816,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"where " +
 		" identifier.host_inode = ? " +
 		" and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		" and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		" and permission_type = '" + Folder.class.getCanonicalName() + "' " +
 		" and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
@@ -1000,7 +1000,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		" select contentlet.identifier from contentlet " +
 		" where contentlet.structure_inode = ? " +
 		" and permission_reference.asset_id = contentlet.identifier " +
-		" and permission_reference.permission_type = 'com.dotmarketing.portlets.contentlet.model.Contentlet' " +
+		" and permission_reference.permission_type = '" + Contentlet.class.getCanonicalName() + "' " +
 		" group by contentlet.identifier)";
 
 	/*
@@ -1194,7 +1194,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		"where " +
 		"identifier.host_inode = ? " +
 		"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-		"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+		"and permission_type = '" + Folder.class.getCanonicalName() + "'" +
 		"and reference_id = folder.inode" +
 		") " +
 		"OR EXISTS(SELECT c.inode " +
@@ -1215,7 +1215,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"where " +
 			"identifier.host_inode = ? " +
 			"and ("+dotFolderPath+"(parent_path,asset_name) not like ? OR "+dotFolderPath+"(parent_path,asset_name) = ?) " +
-			"and permission_type = 'com.dotmarketing.portlets.folders.model.Folder' " +
+			"and permission_type = '" + Folder.class.getCanonicalName() + "' " +
 			"and reference_id = folder.inode" +
 			") " +
 			"OR EXISTS(SELECT c.inode " +
