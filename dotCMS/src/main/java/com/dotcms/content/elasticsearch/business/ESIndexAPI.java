@@ -986,6 +986,8 @@ public class ESIndexAPI {
 	 */
 	public boolean uploadSnapshot(InputStream inputFile, boolean deleteRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
+		File outFile = null;
+		try{
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
 		File toDirectory = new File(
@@ -994,16 +996,21 @@ public class ESIndexAPI {
 			toDirectory.mkdirs();
 		}
 		// zip file extraction
-		File outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
+		outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
 		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath());
-		if(deleteRepository){
-			deleteRepository(BACKUP_REPOSITORY);
-			outFile.delete();
-		}
+		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath());		
 		return response;
+		}finally{
+			if(deleteRepository){
+				deleteRepository(BACKUP_REPOSITORY);
+				if(outFile!=null && outFile.exists()){
+					outFile.delete();
+				}
+			}
+		}
+		
 	}
 
 	/**
@@ -1029,18 +1036,26 @@ public class ESIndexAPI {
 	public boolean uploadSnapshot(ZipFile zip, String toDirectory)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		ZipUtil.extract(zip, new File(toDirectory));
-
-		File zipDirectory = new File(toDirectory);
-		String snapshotName = esIndexHelper.findSnapshotName(zipDirectory);
-		if (snapshotName == null) {
-			Logger.error(this.getClass(), "No snapshot file on the zip.");
-			throw new ElasticsearchException("No snapshot file on the zip.");
+		File zipDirectory = null;
+		try{
+			zipDirectory = new File(toDirectory);
+			String snapshotName = esIndexHelper.findSnapshotName(zipDirectory);
+			if (snapshotName == null) {
+				Logger.error(this.getClass(), "No snapshot file on the zip.");
+				throw new ElasticsearchException("No snapshot file on the zip.");
+			}
+			if (!isRepositoryExist(BACKUP_REPOSITORY)) {
+				// initial repository under the complete path
+				createRepository(toDirectory, BACKUP_REPOSITORY, true);
+			}
+			return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
+		}finally{
+			deleteRepository(BACKUP_REPOSITORY);
+			File tempZip = new File(zip.getName());
+			if(zip!=null && tempZip.exists()){
+				tempZip.delete();
+			}
 		}
-		if (!isRepositoryExist(BACKUP_REPOSITORY)) {
-			// initial repository under the complete path
-			createRepository(toDirectory, BACKUP_REPOSITORY, true);
-		}
-		return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
 	}
 
 	/**
