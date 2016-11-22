@@ -2,7 +2,7 @@ import {ApiRoot} from '../../persistence/ApiRoot';
 import {CoreWebService} from "../core-web-service";
 import {Http, RequestMethod} from '@angular/http';
 import {Injectable} from '@angular/core';
-import {Observable} from "rxjs";
+import {Observable, Observer} from 'rxjs/Rx';
 
 /**
  * Created by josecastro on 7/29/16.
@@ -14,7 +14,7 @@ import {Observable} from "rxjs";
 @Injectable()
 export class DotcmsConfig extends CoreWebService {
 
-    private waiting: any[] = [];
+    private waiting: Observer[] = [];
     private configParams: any;
     private configUrl: string;
 
@@ -29,14 +29,14 @@ export class DotcmsConfig extends CoreWebService {
         this.loadConfig();
     }
 
-    getConfig(): Promise {
-        if (this.configParams) {
-            return new Promise(resolve => resolve(this));
-        } else {
-            return new Promise(resolve => {
-                this.waiting.push(resolve);
-            });
-        }
+    getConfig(): Observable<DotcmsConfig> {
+        return Observable.create( obs => {
+            if (this.configParams) {
+                obs.next(this);
+            } else {
+                this.waiting.push(obs);
+            }
+        });
     }
 
     loadConfig(): void {
@@ -45,7 +45,7 @@ export class DotcmsConfig extends CoreWebService {
             url: this.configUrl
         }).pluck('entity').subscribe(res => {
             this.configParams = res;
-            this.waiting.forEach(resolve => resolve(this));
+            this.waiting.forEach(obs => obs.next(this));
             this.waiting = null;
             return res;
         });

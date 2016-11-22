@@ -27,7 +27,7 @@ export class DotcmsEventsService {
      *                        the Websocket parameters.
      */
     constructor(private dotcmsConfig: DotcmsConfig, loginService: LoginService) {
-        dotcmsConfig.getConfig().then(dotcmsConfig => {
+        dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
@@ -82,6 +82,8 @@ export class DotcmsEventsService {
             this.ws.getDataStream().subscribe(
                 res => {
                     let data = (JSON.parse(res.data));
+
+                    console.log('DATA', data);
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }

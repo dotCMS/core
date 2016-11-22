@@ -42,8 +42,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
         ];
 
         this.dotcmsEventsService.subscribeToEvents(events).subscribe( content => {
-            if (this.routingService.currentPortletId === 'EXT_BROWSER' &&
-                    content.user.userId !== this.loginService.auth.user.userId) {
+            if (this.routingService.currentPortletId === 'EXT_BROWSER') {
 
                 if (confirm(this.i18nMessages['ask-reload-page-message'])) {
                     this.iframeElement.contentWindow.location.reload();
