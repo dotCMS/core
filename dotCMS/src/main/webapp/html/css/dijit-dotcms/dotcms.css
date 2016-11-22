@@ -6516,6 +6516,15 @@ dd .radio > .dijit, dd .checkbox > .dijit {
   margin: 18px -18px 0;
 }
 
+.contentlet-results {
+  color: #8A8A8A;
+}
+
+.contentlet-selection {
+  flex: 1;
+  text-align: center;
+}
+
 .contentIdentifier {
   margin: 0 0 9px;
 }
@@ -6553,6 +6562,9 @@ dd .radio > .dijit, dd .checkbox > .dijit {
 }
 
 /* PORTLET STYLES 2.0 */
+.portlet .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
+  padding: 0;
+}
 .portlet-main {
   padding: 18px 0;
 }
@@ -6583,21 +6595,12 @@ dd .radio > .dijit, dd .checkbox > .dijit {
 .portlet-toolbar a {
   text-decoration: none;
 }
-.portlet-toolbar__actions .export-button {
-  margin-right: 18px;
-}
 .portlet-toolbar__info {
+  display: flex;
+  justify-content: space-between;
   flex: 1;
-  align-self: center;
-}
-.portlet-toolbar__info .contentlet-results {
-  color: #8A8A8A;
-  margin-right: 18px;
-  flex: 1;
-  text-align: right;
-}
-.portlet .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
-  padding: 0;
+  margin: 0 18px;
+  align-items: center;
 }
 
 #tablemessage {

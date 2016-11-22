@@ -475,8 +475,24 @@
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar">
-                        <div class="portlet-toolbar__info" id="matchingResultsDiv" style="display: none"></div>
-                        <div class="portlet-toolbar__actions" id="portletActions">
+                        <div class="portlet-toolbar__actions-primary">
+                            <div data-dojo-type="dijit/form/DropDownButton">
+                                <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></span>
+                                <script type="text/javascript">
+                                    function importContent() {
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&_EXT_11_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                    }
+                                </script>
+                                <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:addNewContentlet"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
+                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
+                        <div class="portlet-toolbar__actions-secondary" id="portletActions">
                             <div id="archiveButtonDiv" style="display:none">
                                 <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                     <span></span>

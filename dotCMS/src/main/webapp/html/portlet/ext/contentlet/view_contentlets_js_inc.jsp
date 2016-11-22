@@ -2227,16 +2227,25 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" style=\"text-align:center;\">&nbsp</div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
+                        var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "_all") {
-                            exportContentButton = new dijit.form.Button({
-                                label: "<%= LanguageUtil.get(pageContext, "Export") %>",
-                                class: "export-button",
-                                onClick: donwloadToExcel,
-                            });
-                            dojo.byId("portletActions").insertBefore(exportContentButton.domNode, dojo.byId("archiveButtonDiv"));
+                            if (!donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.addChild(new dijit.MenuItem({
+                                    label: "<%= LanguageUtil.get(pageContext, "Export") %>",
+                                    onClick: donwloadToExcel,
+                                    id: 'donwloadToExcel'
+                                }));
+                            }
+                        } else {
+                            if (donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.removeChild(donwloadToExcelMenuItem);
+                                donwloadToExcelMenuItem.destroy();
+                            }
 
                         }
+
                         div.innerHTML = strbuff;
                         div.style.display = "";
 
