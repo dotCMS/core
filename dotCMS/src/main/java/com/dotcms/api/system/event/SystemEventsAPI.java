@@ -29,8 +29,8 @@ import com.liferay.portal.model.User;
  * their information or payload.
  * 
  * @author Jose Castro
- * @version 3.7
- * @since Jul 11, 2016
+ * @version 3.72016
+ * @since Jul 11,
  *
  */
 public interface SystemEventsAPI {

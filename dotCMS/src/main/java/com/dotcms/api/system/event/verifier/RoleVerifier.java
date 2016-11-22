@@ -26,7 +26,7 @@ public class RoleVerifier implements PayloadVerifier {
     @Override
     public boolean verified(Payload payload, SessionWrapper session) {
         try {
-            return this.checkRoles(SessionWrapper.class.cast(session).getUser(), payload.getVisibilityId());
+            return this.checkRoles(SessionWrapper.class.cast(session).getUser(), payload.getVisibilityValue().toString());
         } catch (DotDataException e) {
             throw new VerifierException(e);
         }

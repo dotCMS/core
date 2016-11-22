@@ -13,7 +13,6 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
@@ -64,7 +63,7 @@ public class ContentTypeUtil {
 
     public String getActionUrl(final Structure structure) {
         HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
-        User user = loginService.getLogInUser(request);
+        User user = loginService.getLoggedInUser(request);
 
         return getActionUrl(request, structure, user);
     }

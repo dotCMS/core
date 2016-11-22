@@ -1,9 +1,6 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.api.system.event.verifier.GlobalVerifier;
-import com.dotcms.api.system.event.verifier.PermissionVerifier;
-import com.dotcms.api.system.event.verifier.RoleVerifier;
-import com.dotcms.api.system.event.verifier.UserVerifier;
+import com.dotcms.api.system.event.verifier.*;
 import com.dotcms.config.DotInitializer;
 
 /**
@@ -27,6 +24,7 @@ public class PayloadVerifierFactoryInitializer implements DotInitializer {
         factory.register(Visibility.ROLE, new RoleVerifier());
         factory.register(Visibility.PERMISSION, new PermissionVerifier());
         factory.register(Visibility.GLOBAL, new GlobalVerifier());
+        factory.register(Visibility.EXCLUDE_OWNER, new ExcludeOwnerVerifier());
     }
 
 }

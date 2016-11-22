@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
@@ -53,6 +55,7 @@ import com.liferay.portal.model.User;
 public class FolderAPIImpl implements FolderAPI  {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -278,6 +281,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		ffac.copy(folderToCopy, newParentFolder);
+
+		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 
@@ -292,6 +298,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		ffac.copy(folderToCopy, newParentHost);
+
+		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 
@@ -371,6 +380,9 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// delete folder itself
 			ffac.delete(folder);
+
+			systemEventsAPI.push(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
@@ -538,12 +550,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + parentFolder.getPath());
 		}
 
+		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
-
 		ffac.save(folder, existingId);
 
+		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
-
 
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
@@ -779,7 +793,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
-		return ffac.move(folderToMove, newParentFolder);
+		boolean move = ffac.move(folderToMove, newParentFolder);
+
+		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
+		return move;
 	}
 
 
@@ -791,7 +810,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
-		return ffac.move(folderToMove, newParentHost);
+		boolean move = ffac.move(folderToMove, newParentHost);
+
+		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
+		return move;
 	}
 
 	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{
