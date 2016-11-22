@@ -210,10 +210,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
             "   from identifier ident where ident.id in " +
             "       (" + selectChildrenTemplateSQL + " and " +
-            "       not exists (select * from permission " +
+            "       not exists (select permission.inode_id from permission " +
             "           where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
             "       and not exists ( " +
-            "           select * from permission_reference where permission_reference.asset_id = identifier.id " +
+            "           select permission_reference.asset_id from permission_reference where permission_reference.asset_id = identifier.id " +
             "           and permission_reference.permission_type = '" + Template.class.getCanonicalName() + "')" +
             "      )"
             :
@@ -222,10 +222,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
             "   from identifier ident where ident.id in " +
             "       (" + selectChildrenTemplateSQL + " and " +
-            "       not exists (select * from permission " +
+            "       not exists (select permission.inode_id from permission " +
             "           where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
             "       and not exists ( " +
-            "           select * from permission_reference where permission_reference.asset_id = identifier.id " +
+            "           select permission_reference.asset_id from permission_reference where permission_reference.asset_id = identifier.id " +
             "           and permission_reference.permission_type = '" + Template.class.getCanonicalName() + "')" +
             "      )"
             :
@@ -234,10 +234,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
             "   from identifier ident where ident.id in " +
             "       (" + selectChildrenTemplateSQL + " and " +
-            "       not exists (select * from permission " +
+            "       not exists (select permission.inode_id from permission " +
             "           where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
             "       and not exists ( " +
-            "           select * from permission_reference where permission_reference.asset_id = identifier.id " +
+            "           select permission_reference.asset_id from permission_reference where permission_reference.asset_id = identifier.id " +
             "           and permission_reference.permission_type = '" + Template.class.getCanonicalName() + "')" +
             "      )"
             :
@@ -245,10 +245,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "select nextval('permission_reference_seq'), ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
             "   from identifier ident where ident.id in " +
             "       (" + selectChildrenTemplateSQL + " and " +
-            "       not exists (select * from permission " +
+            "       not exists (select permission.inode_id from permission " +
             "           where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
             "       and not exists ( " +
-            "           select * from permission_reference where permission_reference.asset_id = identifier.id " +
+            "           select permission_reference.asset_id from permission_reference where permission_reference.asset_id = identifier.id " +
             "           and permission_reference.permission_type = '" + Template.class.getCanonicalName() + "')" +
             "      )";
 
@@ -312,10 +312,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	            "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 	            "   from identifier ident where ident.id in " +
 	            "       (" + selectChildrenContainerSQL + " and " +
-	            "         not exists (select * from permission" + 
+	            "         not exists (select permission.inode_id from permission" + 
 	            "             where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
 	            "        and not exists ("+
-	            "            select * from permission_reference where permission_reference.asset_id = identifier.id " +
+	            "            select permission_reference.id from permission_reference where permission_reference.asset_id = identifier.id " +
 	            "            and permission_reference.permission_type = '" + Container.class.getCanonicalName() + "')" +
 	            "       )"
 	        :
@@ -324,10 +324,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	            "select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 	            "   from identifier ident where ident.id in " +
 	            "       (" + selectChildrenContainerSQL + " and " +
-	            "         not exists (select * from permission" + 
+	            "         not exists (select permission.inode_id from permission" + 
 	            "             where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
 	            "        and not exists ("+
-	            "            select * from permission_reference where permission_reference.asset_id = identifier.id " +
+	            "            select permission_reference.id from permission_reference where permission_reference.asset_id = identifier.id " +
 	            "            and permission_reference.permission_type = '" + Container.class.getCanonicalName() + "')" +
 	            "       )"
 	        :
@@ -335,10 +335,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	            "select nextval('permission_reference_seq'), ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
 	            "   from identifier ident where ident.id in " +
 	            "       (" + selectChildrenContainerSQL + " and " +
-	            "         not exists (select * from permission" + 
+	            "         not exists (select permission.inode_id from permission" + 
 	            "             where permission.inode_id = identifier.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " +
 	            "        and not exists ("+
-	            "            select * from permission_reference where permission_reference.asset_id = identifier.id " +
+	            "            select permission_reference.id from permission_reference where permission_reference.asset_id = identifier.id " +
 	            "            and permission_reference.permission_type = '" + Container.class.getCanonicalName() + "')" +
 	            "       )";
 
@@ -437,15 +437,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     "   from folder where folder.inode in (" +
                     "       " + selectChildrenFolderSQL + " and " +
                     "       not exists (" +
-                    "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
-                    "           where permission_reference.asset_id  = folder.inode and " +
+                    "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
+                    "           where permission_reference.asset_id = folder.inode and " +
                                 dotFolderPath + "(parent_path,asset_name) like ? and permission_type = '" + Folder.class.getCanonicalName() + "'" +
                     "       ) and " +
                     "       not exists (" +
-                    "           select * from permission where permission.inode_id = folder.inode and " +
+                    "           select permission.inode_id from permission where permission.inode_id = folder.inode and " +
                     "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                     "       ) " +
-                    "   ) and not exists (SELECT * from permission_reference where asset_id = folder.inode)";
+                    "   ) and not exists (SELECT asset_id from permission_reference where asset_id = folder.inode)";
 
 	/*
 	 * To load html page identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -572,16 +572,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     "   from identifier where identifier.id in (" +
                     "       " + selectChildrenHTMLPageSQL + " and " +
                     "        not exists (" +
-                    "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                    "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
                     "           join identifier on (ref_folder.identifier = identifier.id) " +
                     "           where permission_reference.asset_id = li.id and "+dotFolderPath+"(parent_path,asset_name) like ? " +
                     "           and permission_type = '" + IHTMLPage.class.getCanonicalName() + "') and " +
                     "        not exists (" +
-                    "           select * from permission where permission.inode_id = li.id " + 
+                    "           select permission.inode_id from permission where permission.inode_id = li.id " + 
                     "           and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                     "        ) " +
                     "   ) " +
-                    "and not exists (SELECT * from permission_reference where asset_id = identifier.id)"
+                    "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
             :
             DbConnectionFactory.isOracle() ?
                     "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -589,32 +589,32 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     "   from identifier where identifier.id in (" +
                     "       " + selectChildrenHTMLPageSQL + " and " +
                     "        not exists (" +
-                    "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                    "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
                     "           join identifier on (ref_folder.identifier = identifier.id) " +
                     "           where permission_reference.asset_id = li.id and "+dotFolderPath+"(parent_path,asset_name) like ? " +
                     "           and permission_type = '" + IHTMLPage.class.getCanonicalName() + "') and " +
                     "        not exists (" +
-                    "           select * from permission where permission.inode_id = li.id " + 
+                    "           select permission.inode_id from permission where permission.inode_id = li.id " + 
                     "           and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                     "        ) " +
                     "   ) " +
-                    "and not exists (SELECT * from permission_reference where asset_id = identifier.id)"
+                    "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
             :
                 "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
                 "select nextval('permission_reference_seq'), identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
                 "   from identifier where identifier.id in (" +
                 "       " + selectChildrenHTMLPageSQL + " and " +
                 "        not exists (" +
-                "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
                 "           join identifier on (ref_folder.identifier = identifier.id) " +
                 "           where permission_reference.asset_id = li.id and "+dotFolderPath+"(parent_path,asset_name) like ? " +
                 "           and permission_type = '" + IHTMLPage.class.getCanonicalName() + "') and " +
                 "        not exists (" +
-                "           select * from permission where permission.inode_id = li.id " + 
+                "           select permission.inode_id from permission where permission.inode_id = li.id " + 
                 "           and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                 "        ) " +
                 "   ) " +
-                "and not exists (SELECT * from permission_reference where asset_id = identifier.id)";
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load file identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -716,26 +716,26 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	                 "   from identifier where identifier.id in (" +
 	                 "       " + selectChildrenFileSQL + " and " +
 	                 "       not exists (" +
-	                 "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+	                 "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 	                 "              join identifier ii on (ii.id=ref_folder.identifier) " +
 	                 "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(ii.parent_path,ii.asset_name) like ? " +
 	                 "           and permission_type = '" + File.class.getCanonicalName() + "'" +
 	                 "       ) and not exists (" +
-	                 "           select * from permission where permission.inode_id = identifier.id and " +
+	                 "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
 	                 "           permission.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 	                 "       ) " +
 	                 "   ) " +
-	                 "and not exists (SELECT * from permission_reference where asset_id = identifier.id)"
+	                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 	         :
 	          DbConnectionFactory.isOracle() ?
 	                 "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 	                 "select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
 	                 "   from identifier where identifier.id in (" +
 	                 "       " + selectChildrenFileSQL + " and" +
-	                 "       identifier.id not in (" +
-	                 "           select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+	                 "       not exists  (" +
+	                 "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 	                 "              join identifier ii on (ii.id=ref_folder.identifier) " +
-	                 "           where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+	                 "           where permission_reference.asset_id = identifier.id and "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
 	                 "       ) and " +
 	                 "       identifier.id not in (" +
 	                 "           select inode_id from permission where " +
@@ -749,16 +749,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	             "   from identifier where identifier.id in (" +
 	             "       " + selectChildrenFileSQL + " and " +
 	             "       not exists (" +
-	             "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+	             "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 	             "              join identifier ii on (ii.id=ref_folder.identifier) " +
 	             "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(ii.parent_path,ii.asset_name) like ? " +
 	             "           and permission_type = '" + File.class.getCanonicalName() + "'" +
 	             "       ) and not exists (" +
-	             "           select * from permission where permission.inode_id = identifier.id and " +
+	             "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
 	             "           permission.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 	             "       ) " +
 	             "   ) " +
-	             "and not exists (SELECT * from permission_reference where asset_id = identifier.id)";
+	             "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load link identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -858,16 +858,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	                "   from identifier where identifier.id in (" +
 	                "       " + selectChildrenLinkSQL + " and " +
 	                "        not exists (" +
-	                "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+	                "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 	                "           join identifier ii on (ii.id=ref_folder.identifier) " +
 	                "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(ii.parent_path,ii.asset_name) like ? " + 
 	                "           and permission_type = '" + Link.class.getCanonicalName() + "'" +
 	                "       ) and not exists (" +
-	                "           select * from permission where permission.inode_id = identifier.id and " +
+	                "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
 	                "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 	                "       ) " +
 	                "   ) " +
-	                "and not exists (SELECT * from permission_reference where asset_id = identifier.id)"
+	                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
 	        :
 	        DbConnectionFactory.isOracle() ?
 	                "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -875,12 +875,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	                "   from identifier where identifier.id in (" +
 	                "       " + selectChildrenLinkSQL + " and " +
 	                "        not exists (" +
-	                "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+	                "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 	                "           join identifier ii on (ii.id=ref_folder.identifier) " +
 	                "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(ii.parent_path,ii.asset_name) like ? " + 
 	                "           and permission_type = '" + Link.class.getCanonicalName() + "'" +
 	                "       ) and not exists (" +
-	                "           select * from permission where permission.inode_id = identifier.id and " +
+	                "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
 	                "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 	                "       ) " +
 	                "   ) " +
@@ -891,16 +891,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	            "   from identifier where identifier.id in (" +
 	            "       " + selectChildrenLinkSQL + " and " +
 	            "        not exists (" +
-	            "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+	            "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 	            "           join identifier ii on (ii.id=ref_folder.identifier) " +
 	            "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(ii.parent_path,ii.asset_name) like ? " + 
 	            "           and permission_type = '" + Link.class.getCanonicalName() + "'" +
 	            "       ) and not exists (" +
-	            "           select * from permission where permission.inode_id = identifier.id and " +
+	            "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
 	            "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 	            "       ) " +
 	            "   ) " +
-	            "and not exists (SELECT * from permission_reference where asset_id = identifier.id)";
+	            "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load content identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -1041,16 +1041,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     "   from identifier where identifier.id in (" +
                     "       " + selectChildrenContentByPathSQL + " and " +
                     "        not exists (" +
-                    "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                    "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
                     "           join identifier on (identifier.id=ref_folder.identifier) " +
                     "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(parent_path,asset_name) like ? " +
                     "           and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
                     "       ) and not exists (" +
-                    "           select * from permission where permission.inode_id = identifier.id and " +
+                    "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
                     "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                     "       ) " +
                     "   ) " +
-                    "and not exists (SELECT * from permission_reference where asset_id = identifier.id)"
+                    "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
             :
             DbConnectionFactory.isOracle()?
                     "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
@@ -1058,32 +1058,32 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                     "   from identifier where identifier.id in (" +
                     "       " + selectChildrenContentByPathSQL + " and " +
                     "        not exists (" +
-                    "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                    "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
                     "           join identifier on (identifier.id=ref_folder.identifier) " +
                     "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(parent_path,asset_name) like ? " +
                     "           and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
                     "       ) and not exists (" +
-                    "           select * from permission where permission.inode_id = identifier.id and " +
+                    "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
                     "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                     "       ) " +
                     "   ) " +
-                    "and not exists (SELECT * from permission_reference where asset_id = identifier.id)"
+                    "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
             :
                 "insert into permission_reference (id, asset_id, reference_id, permission_type) " +
                 "select nextval('permission_reference_seq'), identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
                 "   from identifier where identifier.id in (" +
                 "       " + selectChildrenContentByPathSQL + " and " +
                 "        not exists (" +
-                "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
                 "           join identifier on (identifier.id=ref_folder.identifier) " +
                 "           where permission_reference.asset_id = identifier.id and " + dotFolderPath + "(parent_path,asset_name) like ? " +
                 "           and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
                 "       ) and not exists (" +
-                "           select * from permission where permission.inode_id = identifier.id and " +
+                "           select permission.inode_id from permission where permission.inode_id = identifier.id and " +
                 "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                 "       ) " +
                 "   ) " +
-                "and not exists (SELECT * from permission_reference where asset_id = identifier.id)";
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
@@ -1105,14 +1105,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "   from identifier where identifier.id in (" +
             "       " + selectChildrenContentByStructureSQL + " and " +
             "       not exists (" +
-            "           select * from permission_reference where permission_reference.asset_id = identifier.id" +
+            "           select permission_reference.asset_id from permission_reference where permission_reference.asset_id = identifier.id" +
             "       ) and " +
             "       not exists (" +
-            "           select * from permission where permission.inode_id = identifier.id " +
+            "           select permission.inode_id from permission where permission.inode_id = identifier.id " +
             "           and permission.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
             "       ) " +
             "   ) " +
-            "and not exists (SELECT * from permission_reference where asset_id = identifier.id)";
+            "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load structure identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -1248,16 +1248,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "   from structure where structure.inode in (" +
             "       " + selectChildrenStructureByPathSQL + " and" +
             "        not exists (" +
-            "           select * from permission_reference join folder ref_folder on(reference_id = ref_folder.inode) " +
+            "           select permission_reference.asset_id from permission_reference join folder ref_folder on(reference_id = ref_folder.inode) " +
             "           join identifier on (ref_folder.identifier=identifier.id) where permission_reference.asset_id = structure.inode " +
             "           and "+dotFolderPath+"(parent_path,asset_name) like ? and permission_reference.permission_type = '" + Structure.class.getCanonicalName() + "'" +
             "       ) and " +
             "       not exists (" +
-            "           select * from permission where permission.inode_id = structure.inode " +
+            "           select permission.inode_id from permission where permission.inode_id = structure.inode " +
             "           and permission.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
             "       ) " +
             "   ) " +
-            "and not exists (SELECT * from permission_reference where asset_id = structure.inode)";
+            "and not exists (SELECT asset_id from permission_reference where asset_id = structure.inode)";
 
 
 	/*
@@ -1284,16 +1284,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "   from structure where structure.inode in (" +
             "       " + selectChildrenStructureByPathSQLFolder + " and" +
             "        not exists (" +
-            "           select * from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
+            "           select permission_reference.asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode) " +
             "            join identifier on (ref_folder.identifier=identifier.id) where permission_reference.asset_id = structure.inode " +
             "            and "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Structure.class.getCanonicalName() + "'" +
             "       ) and " +
             "        not exists (" +
-            "           select * from permission where permission.inode_id = structure.inode" +
+            "           select permission.inode_id from permission where permission.inode_id = structure.inode" +
             "           permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
             "       ) " +
             "   ) " +
-            "and not exists (SELECT * from permission_reference where asset_id = structure.inode)";
+            "and not exists (SELECT asset_id from permission_reference where asset_id = structure.inode)";
 
 	/*
 	 * To remove all permissions of structures under a given parent folder
