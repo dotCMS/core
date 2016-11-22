@@ -28,11 +28,9 @@ import com.dotmarketing.util.Logger;
 public class ESIndexAPITest {
 
 	final private ESIndexAPI esIndexAPI;
-	final private ContentletIndexAPI contentletIndexAPI;
 
     public ESIndexAPITest() {
 		this.esIndexAPI = APILocator.getESIndexAPI();
-		this.contentletIndexAPI = APILocator.getContentletIndexAPI();
 	}
 
 	@BeforeClass
@@ -96,7 +94,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
 		if(snapshot!=null){
 			snapshot.delete();
@@ -120,7 +118,7 @@ public class ESIndexAPITest {
 			file = new ZipFile(snapshot.getAbsolutePath());
 			String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 			tempDir = new File(pathToRepo);
-			esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+			esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		}catch(Exception e){
 			if(file != null && snapshot.exists()){
 				fail("Process did not delete zip file");
@@ -147,7 +145,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
 		esIndexAPI.closeIndex("live_20161011212551");
 		esIndexAPI.openIndex(currentLiveIndex);
@@ -168,7 +166,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 	}
 
 	/**
@@ -185,7 +183,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		if(snapshot!=null){
 			snapshot.delete();
 		}
