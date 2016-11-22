@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.business;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.elasticsearch.action.search.SearchResponse;
@@ -166,7 +168,6 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
-
   }
 
 
@@ -189,26 +190,34 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
-
   }
 
 
 
   @Override
-  public ContentType save(final ContentType type, final List<Field> fields) throws DotDataException, DotSecurityException {
-
-    Preconditions.checkNotNull(fields);
-    
+  public ContentType save(final ContentType type, final List<Field> fields)
+      throws DotDataException, DotSecurityException {
     return LocalTransaction.wrapReturn(() -> {
+      Preconditions.checkNotNull(fields);
+
+      // Im not smart enough to use lamdas
+      List<Field> saveFields = new ArrayList<>();
+
+      for (Field test : fields) {
+        Optional<Field> optional =
+            type.requiredFields().stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
+        if (!optional.isPresent()) {
+          saveFields.add(test);
+        }
+      }
+
+
       ContentType retType = save(type);
       int i = 0;
-      for (Field field : fields) {
-        
-        field = FieldBuilder.builder(field)
-            .contentTypeId(retType.id())
-            .sortOrder(i++)
-            .build();
-        
+
+
+      for (Field field : saveFields) {
+        field = FieldBuilder.builder(field).contentTypeId(retType.id()).sortOrder(i++).build();
         ffac.save(field);
       }
       return retType;

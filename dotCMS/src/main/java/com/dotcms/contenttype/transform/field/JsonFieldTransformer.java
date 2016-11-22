@@ -73,6 +73,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     for (int i = 0; i < jarr.length(); i++) {
       JSONObject jo = jarr.getJSONObject(i);
 
+      jo.remove("acceptedDataTypes");
       Field f = fromJsonStr(jo.toString());
       if (jo.has("fieldVariables")) {
         String varStr = jo.getJSONArray("fieldVariables").toString();
@@ -113,7 +114,17 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   public JSONObject jsonObject() {
     SerialWrapper<Field> wrapped = new SerialWrapper<>(from(), from().type());
     try {
-      return new JSONObject(mapper.writeValueAsString(wrapped));
+      JSONObject jo = new JSONObject(mapper.writeValueAsString(wrapped));
+      jo.remove("acceptedDataTypes");
+      //jo.remove("iDate");
+      jo.remove("dbColumn");
+      
+      
+      return jo;
+      
+      
+      
+      
     } catch (JSONException | JsonProcessingException e) {
       throw new DotStateException(e);
     }

@@ -70,12 +70,15 @@ public class ContentTypeResource implements Serializable {
       throws DotDataException, DotSecurityException {
     final InitDataObject initData = this.webResource.init(null, true, req, true, null);
     final User user = initData.getUser();
+    List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+    
+    List<ContentType> retTypes = new ArrayList<>();
 
-    List<ContentType> types = new ArrayList<>();
-    for (ContentType type : new JsonContentTypeTransformer(json).asList()) {
-      types.add(APILocator.getContentTypeAPI2(user, true).save(type, type.fields()));
+    for (ContentType type :typesToSave ) {
+      retTypes.add(APILocator.getContentTypeAPI2(user, true).save(type, type.fields()));
     }
-    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(types).jsonArray().toString())).build();
+    
+    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).jsonArray().toString())).build();
 
   }
 

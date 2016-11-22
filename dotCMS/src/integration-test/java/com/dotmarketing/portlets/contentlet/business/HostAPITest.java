@@ -10,6 +10,7 @@ import org.junit.*;
 import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.HostAssetsJobProxy;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -17,7 +18,6 @@ import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 

@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import org.junit.BeforeClass;
@@ -37,7 +38,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 

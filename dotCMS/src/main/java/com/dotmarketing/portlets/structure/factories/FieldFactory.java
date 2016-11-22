@@ -157,7 +157,7 @@ public class FieldFactory {
         try{
             com.dotcms.contenttype.model.field.Field proxy = FieldBuilder.builder(EmptyField.class)
                     .contentTypeId(structureInode)
-                    .inode(currentFieldInode)
+                    .id(currentFieldInode)
                     .name("fake")
                     .variable("fake")
 

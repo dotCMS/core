@@ -896,7 +896,7 @@ enum APIIndex
 
 	Object create() {
 		switch(this) {
-		case PERMISSION_API: return new PermissionBitAPIImpl(FactoryLocator.getPermissionFactory());
+		case PERMISSION_API: return new PermissionBitAPIImpl();
 		case ROLE_API: return new RoleAPIImpl();
 		case USER_API: return new UserAPIImpl();
 		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();

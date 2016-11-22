@@ -13,7 +13,7 @@ public interface FieldBuilder {
 	// return type becomes a Field
 	Field build();
 	FieldBuilder from(Field field);
-	FieldBuilder inode(String inode);
+	FieldBuilder id(String inode);
 	FieldBuilder dbColumn(String dbColumn);
 	FieldBuilder modDate(Date date);
 	FieldBuilder name(String name);

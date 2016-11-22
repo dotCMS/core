@@ -5,6 +5,8 @@ import java.util.List;
 
 import junit.framework.Assert;
 import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -16,7 +18,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.util.IntegrationTestInitService;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 

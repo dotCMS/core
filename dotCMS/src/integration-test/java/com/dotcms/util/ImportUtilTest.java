@@ -1,4 +1,4 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ImportUtil;
 import com.liferay.portal.model.User;
 
 import java.io.*;

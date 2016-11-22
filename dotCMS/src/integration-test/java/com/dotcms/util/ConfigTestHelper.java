@@ -1,10 +1,12 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.io.Files;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.dotmarketing.util.Config;
+
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;

@@ -1,9 +1,11 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import javax.naming.spi.InitialContextFactoryBuilder;
 import javax.naming.spi.NamingManager;
 
 import com.dotmarketing.db.DbConnectionFactory;
+
+import com.dotmarketing.util.Config;
 
 /**
  * This class will set up the data source for testing. The main purpose here

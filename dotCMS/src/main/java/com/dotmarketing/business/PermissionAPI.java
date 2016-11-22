@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -604,9 +605,28 @@ public interface PermissionAPI {
 	void removePermissionsByRole(String roleId);
 
 	/**
-	 * Saves an individual permission of a given permissionable
-	 * @param permission
-	 * @param permissionable
+     * Saves a collection of permissions for a given permissionable.
+     * This method generates system events
+     * 
+     * @param permissions A collection of permissions
+     * @param permissionable the object where the permissions will be applied 
+     * @param user  current user
+     * @param respectFrontendRoles indicates if should be respected front end roles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	
+    /**
+	 * Saves an individual permission of a given permissionable. 
+	 * If you need to save multiple permission for a permissionable use the 
+	 * save(Collection<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles)
+	 * method. This method generates system events
+	 * 
+	 * @param permission permission to apply
+     * @param permissionable The object where the permissions will be applied 
+     * @param user current user
+     * @param respectFrontendRoles indicates if should be respected front end roles
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
@@ -615,9 +635,12 @@ public interface PermissionAPI {
 	/**
 	 *
 	 * Assigns a set of permissions to a given asset, any permissions already assigned to the asset are either updated or removed to match the provided list
-	 *
-	 * @param permission
-	 * @param permissionable
+	 * This method generates system events
+	 * 
+	 * @param permission A list of permissions to apply
+	 * @param permissionable The object where the permsiions will be applied
+	 * @param user current user
+     * @param respectFrontendRoles indicates if should be respected front end roles
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */

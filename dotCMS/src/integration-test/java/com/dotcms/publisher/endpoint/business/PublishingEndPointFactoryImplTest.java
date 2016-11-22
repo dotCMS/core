@@ -4,7 +4,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotmarketing.util.IntegrationTestInitService;
+import com.dotcms.util.IntegrationTestInitService;
 
 import static com.dotcms.repackage.org.jgroups.util.Util.assertFalse;
 import static org.junit.Assert.assertNotNull;

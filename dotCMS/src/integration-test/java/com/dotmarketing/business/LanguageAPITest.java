@@ -4,8 +4,9 @@ import junit.framework.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 public class LanguageAPITest {
 	

@@ -63,7 +63,13 @@ public abstract class Field implements FieldIf, Serializable {
   public abstract String owner();
 
   @Nullable
-  public abstract String inode();
+  public abstract String id();
+
+
+  @Value.Lazy
+  public String inode() {
+    return id();
+  }
 
   @Value.Default
   public Date modDate() {
@@ -156,8 +162,9 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Nullable
   public abstract String contentTypeId();
-
+  
   @Nullable
+  @Value.Auxiliary 
   public abstract String dbColumn();
 
   @Value.Default

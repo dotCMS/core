@@ -86,7 +86,7 @@ public class FieldBuilderTest {
 	public void testAllFieldBuilders() throws Exception {
 		for(LegacyFieldTypes types : LegacyFieldTypes.values()){
 			FieldBuilder.instanceOf(types.implClass());
-			FieldBuilder.builder(types.implClass()).inode("asd");
+			FieldBuilder.builder(types.implClass()).id("asd");
 			
 		}
 	}
@@ -97,7 +97,7 @@ public class FieldBuilderTest {
     public void testImplTypeBuilder() throws Exception {
         for(LegacyFieldTypes types : LegacyFieldTypes.values()){
             FieldBuilder.instanceOf(types.implClass());
-            FieldBuilder.builder(types.implClass()).inode("asd");
+            FieldBuilder.builder(types.implClass()).id("asd");
             
         }
     }

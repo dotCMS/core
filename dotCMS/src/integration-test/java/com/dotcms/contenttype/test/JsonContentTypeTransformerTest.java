@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 
 public class JsonContentTypeTransformerTest {
 
@@ -85,6 +86,7 @@ public class JsonContentTypeTransformerTest {
 
           assertThat("Field1 == json Field2", field.equals(field2));
         } catch (Throwable t) {
+          Logger.error(this.getClass(), "Asdasdsa", t);
           System.out.println(json);
           System.out.println(field);
           System.out.println(field2);

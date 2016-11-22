@@ -140,7 +140,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 			}
 
 			@Override
-			public String inode() {
+			public String id() {
 				return StringUtils.nullEmptyStr(oldField.getInode());
 			}
 

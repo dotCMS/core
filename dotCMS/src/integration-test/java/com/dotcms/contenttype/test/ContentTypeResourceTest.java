@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -18,6 +19,7 @@ import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -49,8 +51,6 @@ public class ContentTypeResourceTest {
         new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
             .request());
 
-
-
     request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
     return request;
@@ -76,17 +76,30 @@ public class ContentTypeResourceTest {
 
   public void testJson(String jsonFile) throws Exception {
     Logger.info(this.getClass(), "testing:" + jsonFile);
-    try {
-      ContentType type = api.find("banner");
-      api.delete(type);
-    } catch (NotFoundInDbException e) {
 
-    }
-
+    
+    Logger.info(this.getClass(), "testing:" + base + jsonFile);
     InputStream stream = this.getClass().getResourceAsStream(base + jsonFile);
     String json = IOUtils.toString(stream);
     stream.close();
-
+    List<ContentType> delTypes = new JsonContentTypeTransformer(json).asList();
+      for(ContentType delType:delTypes){
+      try {
+        api.delete(api.find(delType.id()));
+      } catch (NotFoundInDbException e) {
+  
+      }
+      try {
+        api.delete(api.find(delType.variable()));
+      } catch (NotFoundInDbException ee) {
+  
+      }
+    }
+    
+    
+    
+    
+    
     ContentTypeResource resource = new ContentTypeResource();
 
     Response response = resource.saveType(getHttpRequest(), json);

@@ -7,7 +7,7 @@ import com.dotcms.repackage.org.apache.logging.log4j.core.util.UuidUtil;
 public final class UUIDUtil {
 
   public static boolean isUUID(final String uuid) {
-    return unUidIfy(uuid).matches("[a-fA-F0-9]{32}");
+    return uuid!=null && unUidIfy(uuid).matches("[a-fA-F0-9]{32}");
   }
 
 

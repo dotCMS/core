@@ -14,10 +14,12 @@ import com.dotcms.mock.request.BaseRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.util.ConfigTestHelper;
+import com.dotcms.util.TestingJndiDatasource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.util.ConfigTestHelper;
+
 
 
 
@@ -56,7 +58,7 @@ import com.dotmarketing.util.ConfigTestHelper;
 			
 			
 			
-	        new com.dotmarketing.util.TestingJndiDatasource().init();
+	        new TestingJndiDatasource().init();
 	        ConfigTestHelper._setupFakeTestingContext();
 
 

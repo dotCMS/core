@@ -52,7 +52,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
         ContentType type = from();
         JSONObject jsonObject;
         try {
-          jsonObject = new JSONObject(mapper.writeValueAsString(new SerialWrapper<>(type, type.getClass())));
+          jsonObject = new JSONObject(mapper.writeValueAsString(new SerialWrapper<>(type, type.baseType().immutableClass())));
 
 
         jsonObject.remove("permissionType");

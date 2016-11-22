@@ -814,7 +814,7 @@ public class RoleAjax {
 				CascadePermissionsJob.triggerJobImmediately(permissionable, role);
 				Logger.info(this, "Done cascading permissions for role " + roleId + " and folder/host id " + folderHostId);
 			}
-
+			
 			HibernateUtil.commitTransaction();
 
 		} catch (Exception e) {

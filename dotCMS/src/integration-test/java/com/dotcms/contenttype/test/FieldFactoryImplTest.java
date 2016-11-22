@@ -155,7 +155,7 @@ public class FieldFactoryImplTest {
 
         TextField textField = ImmutableTextField.builder().name("test field" + uu)
                 .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
-                .dataType(DataTypes.TEXT).inode(uu).build();
+                .dataType(DataTypes.TEXT).id(uu).build();
 
         Field savedField = factory.save(textField);
         String inode = savedField.inode();

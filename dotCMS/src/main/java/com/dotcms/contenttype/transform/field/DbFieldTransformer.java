@@ -79,7 +79,7 @@ public class DbFieldTransformer implements FieldTransformer {
 			}
 
 			@Override
-			public String inode() {
+			public String id() {
 				return StringUtils.nullEmptyStr((String) map.get("inode"));
 			}
 

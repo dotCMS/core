@@ -14,7 +14,6 @@ import java.util.UUID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.contenttype.business.ContentTypeApi;
 import com.dotcms.contenttype.business.ContentTypeApiImpl;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
@@ -149,6 +148,7 @@ public class ContentTypeAPIImplTest {
     File temp = File.createTempFile("test1", "obj");
     File temp2 = File.createTempFile("test2", "obj");
     ContentType origType = api.find(Constants.NEWS);
+
 
     try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(temp))) {
       oos.writeObject(origType);

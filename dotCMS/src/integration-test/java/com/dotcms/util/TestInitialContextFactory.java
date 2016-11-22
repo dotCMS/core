@@ -1,4 +1,4 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import java.util.Hashtable;
 
@@ -8,6 +8,11 @@ import javax.naming.spi.InitialContextFactory;
 import javax.naming.spi.InitialContextFactoryBuilder;
 
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.TestInitialContextH2;
+import com.dotmarketing.util.TestInitialContextMSSQL;
+import com.dotmarketing.util.TestInitialContextMySQL;
+import com.dotmarketing.util.TestInitialContextOracle;
+import com.dotmarketing.util.TestInitialContextPostgres;
 
 /**
  * Created by nollymar on 9/16/16.

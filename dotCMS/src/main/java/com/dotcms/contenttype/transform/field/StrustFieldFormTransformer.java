@@ -80,7 +80,7 @@ public class StrustFieldFormTransformer implements FieldTransformer {
 			}
 
 			@Override
-			public String inode() {
+			public String id() {
 				return StringUtils.nullEmptyStr(form.getInode());
 			}
 
