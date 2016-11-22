@@ -31,8 +31,30 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 
 	public Identifier() {
 	}
+	
+	public enum Type{
+	    CONTENTLET("contentlet"),
+	    TEMPLATE("template"),
+	    CONTAINERS("containers"),
+	    HTMLPAGE("htmlpage"),
+	    LINKS("links"),
+	    FOLDER("folder"),
+	    FILE_ASSET("file_asset");
 
-	//private String URI;
+	    private String assetType;
+
+	    Type (String assetType){
+	        this.assetType = assetType;
+	    }
+
+	    public String getValue() {
+	        return name().toLowerCase();
+	    }
+
+	    public String getAssetType() {
+	        return this.assetType;
+	    }
+	}
 	
     private String id;
     
