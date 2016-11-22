@@ -18,6 +18,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Json deserializer and serializer for {@link Payload} objects, the format of the json is the follow:<br>
+ *
+ * <code>
+ * {
+ *     type: #Payload's data fully qualified name
+ *     visibility: #Payload's {@link Visibility}'s name
+ *     visibilityValue: #Visibility value, this value is used by the {@link com.dotcms.api.system.event.PayloadVerifier}
+ *     visibilityType: #Visibility value's data fully qualified name
+ *     data: #Payload's data
+ * }
+ * </code>
+ */
 public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<Payload> {
 
     public static final String TYPE = "type";
@@ -25,7 +38,6 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
     public static final String VISIBILITY_VALUE = "visibilityValue";
     public static final String VISIBILITY_TYPE = "visibilityType";
     public static final String DATA = "data";
-    public static final String USER = "user";
 
     @Override
     public Payload deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {

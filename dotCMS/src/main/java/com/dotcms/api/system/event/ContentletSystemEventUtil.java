@@ -55,57 +55,138 @@ public class ContentletSystemEventUtil {
         return ContentletSystemEventUtil.SingletonHolder.INSTANCE;
     }
 
+    /**
+     * Push a save or update event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     * The isNew argument set the prefix of the event name, if it is true then the prefix would be SAVE, in otherwise
+     * the prefix would be UPDATE.
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a HOST then
+     * it would be SITE, for example: if isNew is equals to true and the contentlet is a Host then the event pushed would be
+     * SAVE_SITE.
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     * @param isNew
+     */
     public void pushSaveEvent(Contentlet contentlet, boolean isNew){
         String actionName = getActionName(contentlet, isNew);
         sendEvent(contentlet, actionName);
     }
 
-    private void sendEvent(Contentlet contentlet, String action) {
-        SystemEventType systemEventType = getSystemEventType(contentlet, action);
-
-        if (systemEventType != null) {
-
-            Payload payload = new Payload(contentlet, Visibility.EXCLUDE_OWNER,
-                    new ExcludeOwnerVerifierBean(contentlet.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION));
-
-            try {
-                systemEventsAPI.push(new SystemEvent(systemEventType, payload));
-            } catch (DotDataException e) {
-                throw new CanNotPushSystemEventException(e);
-            }
-        }
-    }
-
+    /**
+     * Push a delete event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a HOST then
+     * it would be SITE, and the event's name would be DELETE_SITE.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     */
     public void pushDeleteEvent(Contentlet contentlet){
         sendEvent(contentlet, DELETE_EVENT_PREFIX);
     }
 
+    /**
+     * Push a publish event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a File then
+     * it would be FILE_ASSET, and the event's name would be PUBLISH_FILE_ASSET.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     */
     public void pushPublishEvent(Contentlet contentlet){
         sendEvent(contentlet, PUBLISH_EVENT_PREFIX);
     }
+
+    /**
+     * Push a unpublish event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a File then
+     * it would be FILE_ASSET, and the event's name would be UN_PUBLISH_FILE_ASSET.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     */
     public void pushUnpublishEvent(Contentlet contentlet){
         sendEvent(contentlet, UN_PUBLISH_EVENT_PREFIX);
     }
 
+    /**
+     * Push a copy event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a File then
+     * it would be FILE_ASSET, and the event's name would be COPY_FILE_ASSET.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     */
     public void pushCopyEvent(Contentlet contentlet){
         sendEvent(contentlet, COPY_EVENT_PREFIX);
     }
+
+    /**
+     * Push a move event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a File then
+     * it would be FILE_ASSET, and the event's name would be MOVE_FILE_ASSET.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     * @param contentlet is the Payload data
+     */
     public void pushMoveEvent(Contentlet contentlet){
         sendEvent(contentlet, MOVE_EVENT_PREFIX);
     }
 
+    /**
+     * Push a archive event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a File then
+     * it would be FILE_ASSET, and the event's name would be ARCHIVE_FILE_ASSET.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     */
     public void pushArchiveEvent(Contentlet contentlet){
         sendEvent(contentlet, ARCHIVED_EVENT_PREFIX);
     }
 
+    /**
+     * Push a unarchived event, the event that is pushed depends of the {@link Contentlet}'s Content Type.
+     *
+     * The suffix of the event's name is set by the {@link Contentlet}'s Content Type, so if the contentlet is a File then
+     * it would be FILE_ASSET, and the event's name would be UN_ARCHIVED_FILE_ASSET.
+     *
+     * If not exist any event with the name built then no event is pushed.
+     *
+     * @param contentlet is the Payload data
+     */
     public void pushUnArchiveEvent(Contentlet contentlet){
         sendEvent(contentlet, UN_ARCHIVED_EVENT_PREFIX);
     }
 
+    /**
+     * Return the event's name prefix for a SAVE or UPDATE action.
+     *
+     * @param contentlet
+     * @param isNew
+     * @return
+     */
     private String getActionName(Contentlet contentlet, boolean isNew) {
         return isNew ? SAVE_EVENT_PREFIX : UPDATE_EVENT_PREFIX;
     }
 
+    /**
+     * Return the event's name according to a {@link Contentlet} and a methodName
+     *
+     * @param contentlet
+     * @param methodName
+     * @return
+     */
     private SystemEventType getSystemEventType(Contentlet contentlet, String methodName) {
         String contentType = getType(contentlet);
         String eventName = String.format("%s_%s", methodName, contentType);
@@ -123,7 +204,23 @@ public class ContentletSystemEventUtil {
         }else if (contentlet.getStructure() != null && contentlet.getStructure().getName() != null){
             return contentlet.getStructure().getName().replace(" ", "_").toUpperCase();
         }else{
-            throw new RuntimeException("The structure is null");
+            throw new IllegalStateException("The Content type is null");
+        }
+    }
+
+    private void sendEvent(Contentlet contentlet, String action) {
+        SystemEventType systemEventType = getSystemEventType(contentlet, action);
+
+        if (systemEventType != null) {
+
+            Payload payload = new Payload(contentlet, Visibility.EXCLUDE_OWNER,
+                    new ExcludeOwnerVerifierBean(contentlet.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION));
+
+            try {
+                systemEventsAPI.push(new SystemEvent(systemEventType, payload));
+            } catch (DotDataException e) {
+                throw new CanNotPushSystemEventException(e);
+            }
         }
     }
 }

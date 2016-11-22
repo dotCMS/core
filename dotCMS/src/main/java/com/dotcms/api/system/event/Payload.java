@@ -61,6 +61,16 @@ public class Payload implements Serializable {
 		this(new Void(), visibility, visibilityValue);
 	}
 
+	/**
+	 * Creates a payload object.
+	 *
+	 * @param data         {@link Object}
+	 *                     - Any Java object that represents the payload.
+	 * @param visibility   {@link Visibility}
+	 *                     - If the event should be apply just for a specific user, role or global
+	 * @param visibilityValue {@link String}
+	 *                     - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
+	 */
 	public Payload(final Object data,
 				   final Visibility visibility,
 				   final Object visibilityValue) {
