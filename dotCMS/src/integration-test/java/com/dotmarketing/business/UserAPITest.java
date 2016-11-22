@@ -1,9 +1,9 @@
 package com.dotmarketing.business;
 
-import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -77,22 +77,16 @@ import static org.junit.Assert.assertTrue;
 public class UserAPITest extends TestBase{
 
 	private static User systemUser;
-	private static DwrAuthenticationUtil dwrAuthentication = null;
 
 	@BeforeClass
 	public static void prepare () throws Exception {
+    	//Setting web app environment
+		IntegrationTestInitService.getInstance().init();
 
 		LicenseTestUtil.getLicense();
 
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
-
-		// User authentication through DWR is required for RoleAjax class
-		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", "dotcms.org.1");
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
-
 	}
 
 	/**
@@ -222,15 +216,6 @@ public class UserAPITest extends TestBase{
 		roleAPI.addRoleToUser(newRole, replacementUser);
 
 		Role replacementUserUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
-
-		/**
-		 * Login in backed as newUser to create data
-		 */
-		dwrAuthentication.shutdownWebContext();
-		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", newUser.getUserId());
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
 
 		/**
 		 * Add folder
@@ -438,15 +423,6 @@ public class UserAPITest extends TestBase{
 		versionableAPI.setLive(link);
 
 		/**
-		 * login in backend as admin
-		 */
-		dwrAuthentication.shutdownWebContext();
-		sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", "dotcms.org.1");
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
-
-		/**
 		 * validation of current user and references
 		 */
 		assertTrue(userAPI.userExistsWithEmail(newUser.getEmailAddress()));
@@ -537,8 +513,6 @@ public class UserAPITest extends TestBase{
 		CacheLocator.getFolderCache().removeFolder(ftest, identifierAPI.find(ftest.getIdentifier()));
 		ftest = folderAPI.findFolderByPath(ftest.getPath(), host, systemUser, false);
 		assertTrue(ftest.getOwner().equals(replacementUser.getUserId()));
-
-		dwrAuthentication.shutdownWebContext();
 	}
 
 	/**
