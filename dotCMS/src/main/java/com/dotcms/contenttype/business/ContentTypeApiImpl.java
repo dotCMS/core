@@ -1,8 +1,6 @@
 package com.dotcms.contenttype.business;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +20,6 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -32,6 +29,7 @@ import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
@@ -221,36 +219,20 @@ public class ContentTypeApiImpl implements ContentTypeApi {
         field = FieldBuilder.builder(field).contentTypeId(retType.id()).sortOrder(i++).build();
         ffac.save(field);
       }
+
+
+
+
+
       return retType;
     });
   }
 
 
 
-  public boolean validateFields(ContentType type, List<Field> testFields) {
+  public void validateFields(ContentType type) {
 
-    boolean valid = true;
-    if (!"forms".equals(type.variable())) {
-      for (Field test : type.requiredFields()) {
-        Optional<Field> optional =
-            testFields.stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
-        if (!optional.isPresent()) {
-          if (test instanceof HostFolderField) {
-            optional = testFields.stream().filter(x -> x instanceof HostFolderField).findFirst();
-          }
-        }
-
-        if (!optional.isPresent()) {
-          Logger.warn(this.getClass(), "ContentType does not have the required Fields: " + test);
-          valid = false;
-        }
-
-      }
-    }
-
-
-    return valid;
-
+    fac.validateFields( type);
   }
 
 
@@ -301,6 +283,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
         + " added ContentType " + type.name() + " to host id:" + type.host());
     AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + type.name(), user);
+
     return type;
 
   }

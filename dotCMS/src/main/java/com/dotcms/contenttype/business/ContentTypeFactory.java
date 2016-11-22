@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import java.util.List;
 import java.util.Observer;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
@@ -69,6 +70,8 @@ public interface ContentTypeFactory {
 
 
 	List<ContentType> search(String search, int limit) throws DotDataException;
+
+  void validateFields(ContentType type);
 	
 	
 	

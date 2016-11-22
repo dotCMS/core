@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.elasticsearch.indices.IndexMissingException;
@@ -13,6 +14,7 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -26,6 +28,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -166,6 +169,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       if (type instanceof UrlMapable) {
         cache.clearURLMasterPattern();
       }
+      validateFields(returnType);
+      
+      
       return returnType;
     });
 
@@ -591,6 +597,29 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       }
       return ret;
     }
+  }
+
+
+  @Override
+  public void validateFields(ContentType type) {
+    List<Field> testFields = type.fields();
+    if (!"forms".equals(type.variable())) {
+      for (Field test : type.requiredFields()) {
+        Optional<Field> optional =
+            testFields.stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
+        if (!optional.isPresent()) {
+          if (test instanceof HostFolderField) {
+            optional = testFields.stream().filter(x -> x instanceof HostFolderField).findFirst();
+          }
+        }
+
+        if (!optional.isPresent()) {
+          throw new DotValidationException("ContentType does not have the required Fields: " + test);
+        }
+
+      }
+    }
+    
   }
 
 }
