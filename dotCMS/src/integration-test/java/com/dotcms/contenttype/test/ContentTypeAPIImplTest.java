@@ -487,7 +487,13 @@ public class ContentTypeAPIImplTest {
         continue;
       List<ContentType> types = api.search(null, baseType, "name", 100, 0);
       for (ContentType type : types) {
-        assertThat("fields are valid\n" + type + "\n" + type.fields(), api.validateFields(type, type.fields()));
+        Exception e = null;
+        try{
+          api.validateFields(type);
+        }
+        catch(Exception ex){
+          assertThat(ex.getMessage(), false);
+        }
       }
     }
   }

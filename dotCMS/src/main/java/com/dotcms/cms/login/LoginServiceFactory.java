@@ -1,15 +1,9 @@
 package com.dotcms.cms.login;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.ReflectionUtils;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -37,11 +31,9 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
-import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.CookieUtil;
 import com.liferay.util.InstancePool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -158,17 +150,24 @@ public class LoginServiceFactory implements Serializable {
         private final Log log = LogFactory.getLog(LoginService.class);
         private final UserWebAPI userWebAPI;
         private final JsonWebTokenUtils jsonWebTokenUtils;
+        private final HttpServletRequestThreadLocal httpServletRequestThreadLocal;
+        private final UserAPI userAPI;
 
         @VisibleForTesting
         public LoginServiceImpl(final ApiProvider apiProvider,
-                                final JsonWebTokenUtils jsonWebTokenUtils){
+                                final JsonWebTokenUtils jsonWebTokenUtils,
+                                final HttpServletRequestThreadLocal httpServletRequestThreadLocal,
+                                final UserAPI userAPI){
 
             this.userWebAPI        = apiProvider.userWebAPI();
             this.jsonWebTokenUtils = jsonWebTokenUtils;
+            this.httpServletRequestThreadLocal = httpServletRequestThreadLocal;
+            this.userAPI = userAPI;
         }
 
         public LoginServiceImpl(){
-            this(new ApiProvider(), JsonWebTokenUtils.getInstance());
+            this(new ApiProvider(), JsonWebTokenUtils.getInstance(), HttpServletRequestThreadLocal.INSTANCE,
+                    APILocator.getUserAPI());
         }
 
         @Override
@@ -447,7 +446,7 @@ public class LoginServiceFactory implements Serializable {
          * @param req
          * @return login user
          */
-        public User getLogInUser( HttpServletRequest req ){
+        public User getLoggedInUser(HttpServletRequest req ){
             User user = null;
 
             if(req != null) {
@@ -459,6 +458,13 @@ public class LoginServiceFactory implements Serializable {
             }
             return user;
         }
+
+        public User getLoggedInUser( ){
+            HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
+            return this.getLoggedInUser(request);
+        }
     }
+
+
 
 } // E:O:F:LoginServiceFactory.

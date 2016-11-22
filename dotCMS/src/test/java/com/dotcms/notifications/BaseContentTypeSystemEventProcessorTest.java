@@ -42,7 +42,11 @@ public class BaseContentTypeSystemEventProcessorTest {
         when(event.getPayload()).thenReturn(payload);
         when(payload.getData()).thenReturn(type);
         when(payload.getRawData()).thenReturn(contentTypePayloadDataWrapper);
-        when(payload.getVisibilityId()).thenReturn("1");
+
+        when(payload.getVisibilityValue()).thenReturn("1");
+        when(type.baseType()).thenReturn(BaseContentType.CONTENT);
+        when(type.name()).thenReturn("test structure");
+        when(type.id()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");
 
 
         BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor = new BaseContentTypeSystemEventProcessor();

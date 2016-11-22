@@ -409,7 +409,7 @@ public class StructureFactory {
 	 		String actionUrl = contentTypeUtil.getActionUrl(type);
 			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
 			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-                            String.valueOf(PermissionAPI.PERMISSION_READ)));
+                            PermissionAPI.PERMISSION_READ));
 		} catch (DotDataException e) {
 			throw new RuntimeException( e );
 		}
@@ -438,9 +438,17 @@ public class StructureFactory {
 		ContentType type=new StructureTransformer(structure).from();
 
 		try {
+
 			typeAPI.delete(type);
+            String actionUrl = contentTypeUtil.getActionUrl(type);
+            ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+            systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION, PermissionAPI.PERMISSION_READ));
 		} catch (DotStateException | DotSecurityException e) {
 			Logger.error(StructureFactory.class, e.getMessage(), e);
+
+
+		} catch (DotDataException e) {
+
 			throw new BaseRuntimeInternationalizationException( e );
 		}
 	}

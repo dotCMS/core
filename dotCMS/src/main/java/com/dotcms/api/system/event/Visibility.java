@@ -9,6 +9,7 @@ public enum Visibility {
     USER,
     ROLE,
     PERMISSION,
+    EXCLUDE_OWNER,
     GLOBAL;
 
 }

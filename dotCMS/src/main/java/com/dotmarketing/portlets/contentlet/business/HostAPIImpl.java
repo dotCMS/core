@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,7 +12,6 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
-import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -31,7 +29,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -56,8 +53,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 /**
@@ -1027,5 +1022,6 @@ public class HostAPIImpl implements HostAPI {
         return hosts;
 
     }
+
 }
 

@@ -13,6 +13,11 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.I18NMessage;
@@ -89,6 +94,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     private UserAPI userAPI;
     private VersionableAPI versionableAPI;
     private ContentletAPI contentletAPI;
+    private SystemEventsAPI systemEventsAPI;
 
     public HTMLPageAssetAPIImpl() {
     	permissionAPI = APILocator.getPermissionAPI();
@@ -97,6 +103,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     	userAPI = APILocator.getUserAPI();
     	versionableAPI = APILocator.getVersionableAPI();
     	contentletAPI = APILocator.getContentletAPI();
+        systemEventsAPI = APILocator.getSystemEventsAPI();
     }
 
     @Override
@@ -653,6 +660,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     contentletAPI.publish(cont, user, false);
                 }
             }
+
+            systemEventsAPI.push(SystemEventType.MOVE_PAGE_ASSET, new Payload(page, Visibility.EXCLUDE_OWNER,
+                    new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
             return true;
         }

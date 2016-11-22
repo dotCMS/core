@@ -35,7 +35,7 @@ public class NotificationSystemEventProcessor implements SystemEventProcessor {
                 CONVERTER.convert(new UserNotificationPair(user, notification));
 
         return new SystemEvent(event.getId(), event.getEventType(),
-                new Payload(notificationView, payload.getVisibility(), payload.getVisibilityId()),
+                new Payload(notificationView, payload.getVisibility(), payload.getVisibilityValue()),
                 event.getCreationDate());
     } // process.
 } // E:O:F:NotificationSystemEventProcessor.
