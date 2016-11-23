@@ -162,6 +162,16 @@ public  class WebResource {
         return initData;
     }
 
+    /**
+     * Return the current login user.<br>
+     * if exist a user login by login as then return this user not the principal user
+     *
+     * @param request
+     * @param paramsMap
+     * @param rejectWhenNoUser
+     *
+     * @return the login user or the login as user if exist any
+     */
     private User getUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
 
         User user = null;
