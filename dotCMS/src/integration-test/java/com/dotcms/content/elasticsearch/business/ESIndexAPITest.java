@@ -1,5 +1,21 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipFile;
+
+import org.elasticsearch.ElasticsearchException;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -9,29 +25,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 
-import org.elasticsearch.ElasticsearchException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipFile;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 public class ESIndexAPITest {
 
 	final private ESIndexAPI esIndexAPI;
-	final private ContentletIndexAPI contentletIndexAPI;
 
     public ESIndexAPITest() {
 		this.esIndexAPI = APILocator.getESIndexAPI();
-		this.contentletIndexAPI = APILocator.getContentletIndexAPI();
 	}
 
 	@BeforeClass
@@ -95,12 +94,39 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
 		if(snapshot!=null){
 			snapshot.delete();
 		}
 		esIndexAPI.openIndex(indexName);
+	}
+	
+	/**
+	 * Downloads current live index, tries to restores it
+	 * The current live index is live so the process should fail and remove all data used
+	 */
+	@Test
+	public void uploadSnapshotTest_onExceptionCleanup(){
+		File snapshot = null;
+		ZipFile file = null;
+		File tempDir = null;
+		try{
+			String indexName = getLiveIndex();
+			
+			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+			file = new ZipFile(snapshot.getAbsolutePath());
+			String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
+			tempDir = new File(pathToRepo);
+			esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
+		}catch(Exception e){
+			if(file != null && snapshot.exists()){
+				fail("Process did not delete zip file");
+			}
+			if(tempDir != null && snapshot.exists()){
+				fail("Process did not delete repository directory");
+			}
+		}
 	}
 
 	/**
@@ -119,7 +145,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		boolean response = esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		assertTrue(response);
 		esIndexAPI.closeIndex("live_20161011212551");
 		esIndexAPI.openIndex(currentLiveIndex);
@@ -140,7 +166,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(path);
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 	}
 
 	/**
@@ -157,7 +183,7 @@ public class ESIndexAPITest {
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 		String pathToRepo = Config.getStringProperty("es.path.repo","test-resources");
 		File tempDir = new File(pathToRepo);
-		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath());
+		esIndexAPI.uploadSnapshot(file, tempDir.getAbsolutePath(),true);
 		if(snapshot!=null){
 			snapshot.delete();
 		}
