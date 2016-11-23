@@ -213,14 +213,22 @@ public class ContentletSystemEventUtil {
 
         if (systemEventType != null) {
 
-            Payload payload = new Payload(contentlet, Visibility.EXCLUDE_OWNER,
-                    new ExcludeOwnerVerifierBean(contentlet.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION));
+            Payload payload = this.getPayload(contentlet);
 
             try {
                 systemEventsAPI.push(new SystemEvent(systemEventType, payload));
             } catch (DotDataException e) {
                 throw new CanNotPushSystemEventException(e);
             }
+        }
+    }
+
+    private Payload getPayload(Contentlet contentlet){
+        if (contentlet.isHost()){
+            return new Payload(contentlet, Visibility.PERMISSION, PermissionAPI.PERMISSION_READ);
+        }else{
+            return new Payload(contentlet, Visibility.EXCLUDE_OWNER,
+                    new ExcludeOwnerVerifierBean(contentlet.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION));
         }
     }
 }
