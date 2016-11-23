@@ -82,7 +82,7 @@ export class DotcmsEventsService {
             this.ws.getDataStream().subscribe(
                 res => {
                     let data = (JSON.parse(res.data));
-
+                    console.log('DATA', data);
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
@@ -119,7 +119,10 @@ export class DotcmsEventsService {
     subscribeToEvents(clientEventTypes: string[]): Observable<any> {
         let subject: Subject = new Subject();
 
-        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data => subject.next(data)) );
+        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data => {
+            console.log('DATA_2', data);
+            subject.next(data);
+        }));
 
         return subject.asObservable();
     }
