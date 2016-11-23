@@ -220,7 +220,7 @@ if (hasProperty('validationQuery') == false) { ext.validationQuery = "" }
 
 task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
-		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.database )
+		dbInstanceIdentifier = getDatabasePropertyIdentifier( properties, project.database, project.branch )
 
 		engine = getDatabaseProperty( properties, "engine", project.database )
 		dbInstanceClass = getDatabaseProperty( properties, "instance.class", project.database )
@@ -256,7 +256,7 @@ task deleteDBInstance(type: AmazonRDSDeleteDBInstanceTask) {
 	skipFinalSnapshot = true
 
 	doFirst {
-		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.database )
+		dbInstanceIdentifier = getDatabasePropertyIdentifier( properties, project.database, project.branch )
 	}
 }
 
@@ -269,14 +269,14 @@ task waitDBInstanceCreated(type: AmazonRDSWaitInstanceStatusTask) {
 	waitStatuses = [ "backing-up", "creating", "deleting", "modifying", "rebooting", "renaming", "resetting-master-credentials" ]
 
 	doFirst {
-		dbInstanceIdentifier = getDatabaseProperty( properties, "instance.identifier", project.database )
+		dbInstanceIdentifier = getDatabasePropertyIdentifier( properties, project.database, project.branch )
 	}
 }
 
 
 task describeDBInstance {
 	doLast {
-		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabaseProperty( properties, "instance.identifier", project.database ) )
+		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabasePropertyIdentifier( properties, project.database, project.branch ) )
 
 		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.database )
 		String dbInstanceName = getDatabaseProperty( properties, "name", project.database )
@@ -486,6 +486,10 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 
 
 //---------------------------------------------- Utilities ----------------------------------------------//
+
+String getDatabasePropertyIdentifier(Properties properties, String database, String branch) {
+	return properties.getProperty( "db.instance.identifier.prefix" ) +"-"+ database.toLowerCase() +"-"+ branch.toLowerCase().replace(".", "")
+}
 
 String getDatabaseProperty(Properties properties, String propertyName, String database) {
 	return properties.getProperty( "db."+ database.toLowerCase() +"."+ propertyName );
