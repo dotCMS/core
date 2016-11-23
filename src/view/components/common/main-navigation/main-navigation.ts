@@ -28,7 +28,6 @@ export class MainNavigation {
         }
 
         routingService.menusChange$.subscribe(menu => {
-            console.log(menu);
             this.menuItems = menu;
         });
     }

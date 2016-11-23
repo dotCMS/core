@@ -3,6 +3,7 @@ import {Component, ViewEncapsulation, ElementRef} from '@angular/core';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
 import {MessageService} from '../../../../api/services/messages-service';
+import {LoginService} from '../../../../api/services/login-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -20,23 +21,25 @@ export class ToolbarNotifications extends BaseComponent{
 
 
     constructor(private dotcmsEventsService: DotcmsEventsService, private notificationService: NotificationsService,
-                myElement: ElementRef, private messageService: MessageService) {
+                myElement: ElementRef, private messageService: MessageService, private loginService: LoginService) {
         super(['notifications_dismissall', 'notifications_title'], messageService);
         this.elementRef = myElement;
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.getNotifications();
         this.subscribeToNotifications();
+
+        this.loginService.watchUser(this.getNotifications.bind(this));
     }
 
-    private clearNotitications() {
+    private clearNotitications(): void {
         this.notifications = [];
         this.notificationsUnreadCount = 0;
         this.showNotifications = false;
     }
 
-    private dismissAllNotifications():void {
+    private dismissAllNotifications(): void {
         let items = this.notifications.map(item => item.id);
         this.notificationService.dismissNotifications({'items': items}).subscribe(res => {
             // TODO: I think we should get here res and err
@@ -48,14 +51,14 @@ export class ToolbarNotifications extends BaseComponent{
         });
     }
 
-    private getNotifications() {
+    private getNotifications(): void {
         this.notificationService.getNotifications().subscribe(res => {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
         });
     }
 
-    private markAllAsRead():void {
+    private markAllAsRead(): void {
         this.notificationService.markAllAsRead().subscribe(res => {
             this.isNotificationsMarkedAsRead = true;
             this.notificationsUnreadCount = 0;
@@ -63,10 +66,10 @@ export class ToolbarNotifications extends BaseComponent{
 
     }
 
-    private onDismissNotification($event):void {
+    private onDismissNotification($event): void {
         let notificationId = $event.id;
 
-        this.notificationService.dismissNotifications({"items": [notificationId]}).subscribe(res => {
+        this.notificationService.dismissNotifications({items: [notificationId]}).subscribe(res => {
             if (res.errors.length) {
                 return;
             }
