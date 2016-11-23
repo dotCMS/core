@@ -22,6 +22,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.Company;
@@ -141,7 +142,7 @@ public  class WebResource {
             params = "";
 
         Map<String, String> paramsMap = buildParamsMap(params);
-        User user = authenticate(request, paramsMap, rejectWhenNoUser);
+        User user = getUser(request, paramsMap, rejectWhenNoUser);
 
         if(UtilMethods.isSet(requiredPortlet)) {
 
@@ -159,6 +160,34 @@ public  class WebResource {
         initData.setUser(user);
 
         return initData;
+    }
+
+    /**
+     * Return the current login user.<br>
+     * if exist a user login by login as then return this user not the principal user
+     *
+     * @param request
+     * @param paramsMap
+     * @param rejectWhenNoUser
+     *
+     * @return the login user or the login as user if exist any
+     */
+    private User getUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
+
+        User user = null;
+        HttpSession session = request.getSession();
+
+        if (session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID)  != null){
+            try {
+                user = this.userAPI.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
+            } catch (DotDataException|DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+        }else {
+            user = authenticate(request, paramsMap, rejectWhenNoUser);
+        }
+
+        return user;
     }
 
 
