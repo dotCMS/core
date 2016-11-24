@@ -7,7 +7,7 @@ md-nav-list {
     }
 
     .md-nav-list__submenu {
-        padding: 0 30px 10px 52px;
+        padding: 0 30px 10px 42px;
 
         a {
             color: $gray-dark;
@@ -20,7 +20,7 @@ md-nav-list {
 
     .accordion-group__title {
         border-left: solid 3px transparent;
-        padding: 10px 30px;
+        padding: 10px 20px;
         transition: background-color 0.15s ease-in;
 
         &:hover {
