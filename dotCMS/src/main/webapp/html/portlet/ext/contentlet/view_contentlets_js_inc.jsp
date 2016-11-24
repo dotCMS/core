@@ -1764,6 +1764,9 @@
                 th.innerHTML = "<a class=\"beta\" href=\"javascript: doSearch (1, 'modDate')\"><%= LanguageUtil.get(pageContext, "Last-Edit-Date") %></a>";
                 row.appendChild(th);
 
+                th = document.createElement('th');
+                row.appendChild(th);
+
                 var languageId;
                 var locale;
 
@@ -1787,7 +1790,6 @@
                 for (var i = 0; i < data.length; i++) {
                         var row = table.insertRow(table.rows.length);
 
-                        row.setAttribute("valign","top");
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
@@ -1842,6 +1844,9 @@
                         cell.style.textAlign="right";
                         cell.style.whiteSpace="nowrap";
                         cell.innerHTML = cellData["modDate"];
+
+                        var cell = row.insertCell (row.cells.length);
+                        cell.innerHTML = '<span class="dijitIcon actionIcon"></span>';
 
                         live = cellData["live"] == "true"?true:false;
                         working = cellData["working"] == "true"?true:false;
