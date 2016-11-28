@@ -75,7 +75,6 @@ import java.util.zip.GZIPInputStream;
  * @author Alberto
  * @version 1.0
  * @since Oct 26, 2012
- *
  */
 public class BundlePublisher extends Publisher {
 
@@ -86,56 +85,54 @@ public class BundlePublisher extends Publisher {
     private List<IHandler> handlers = new ArrayList<IHandler>();
 
     @Override
-    public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
-        if ( LicenseUtil.getLevel() < 200 ) {
-            throw new RuntimeException( "need an enterprise licence to run this" );
+    public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
+        if (LicenseUtil.getLevel() < 200) {
+            throw new RuntimeException("need an enterprise licence to run this");
         }
         handlers = new ArrayList<IHandler>();
-        handlers.add(new BundleXMLascHandler( config ));
+        handlers.add(new BundleXMLascHandler(config));
         //The order is really important
-        handlers.add( new UserHandler( config ) );
-        handlers.add( new CategoryHandler( config ) );
-        handlers.add( new HostHandler( config ) );
-        handlers.add( new FolderHandler( config ) );
-        handlers.add( new WorkflowHandler( config ) );
-        if ( Config.getBooleanProperty( "PUSH_PUBLISHING_PUSH_STRUCTURES", true) ) {
-            handlers.add( new StructureHandler( config ) );
-            handlers.add( new RelationshipHandler( config ) );
+        handlers.add(new UserHandler(config));
+        handlers.add(new CategoryHandler(config));
+        handlers.add(new HostHandler(config));
+        handlers.add(new FolderHandler(config));
+        handlers.add(new WorkflowHandler(config));
+        if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
+            handlers.add(new StructureHandler(config));
+            handlers.add(new RelationshipHandler(config));
         }
-        handlers.add( new ContainerHandler( config ) );
-        handlers.add( new TemplateHandler( config ) );
-        handlers.add( new HTMLPageHandler( config ) );
-        handlers.add( new LanguageHandler( config ) );
-        handlers.add( new LanguageVariablesHandler( config ) );
-        handlers.add( new ContentHandler( config ) );
-        handlers.add( new ContentWorkflowHandler( config ) );
-        handlers.add( new OSGIHandler( config ) );
-        handlers.add( new LinkHandler( config ) );
+        handlers.add(new ContainerHandler(config));
+        handlers.add(new TemplateHandler(config));
+        handlers.add(new HTMLPageHandler(config));
+        handlers.add(new LanguageHandler(config));
+        handlers.add(new LanguageVariablesHandler(config));
+        handlers.add(new ContentHandler(config));
+        handlers.add(new ContentWorkflowHandler(config));
+        handlers.add(new OSGIHandler(config));
+        handlers.add(new LinkHandler(config));
         handlers.add(new RuleHandler(config));
         auditAPI = PublishAuditAPI.getInstance();
-        this.config = super.init( config );
+        this.config = super.init(config);
         return this.config;
     }
 
-	/**
-	 * Processes the contents of a bundle. The process consists of uncompressing
-	 * the bundle file, and having each {@link IHandler} class analyze and
-	 * process the corresponding data files.
-	 *
-	 * @param status
-	 *            - Current status of the publishing process.
-	 * @return This bundle configuration ({@link PublisherConfig}).
-	 * @throws DotPublishingException
-	 *             An error occurred when handling the contents of this bundle.
-	 */
+    /**
+     * Processes the contents of a bundle. The process consists of uncompressing
+     * the bundle file, and having each {@link IHandler} class analyze and
+     * process the corresponding data files.
+     *
+     * @param status - Current status of the publishing process.
+     * @return This bundle configuration ({@link PublisherConfig}).
+     * @throws DotPublishingException An error occurred when handling the contents of this bundle.
+     */
     @Override
-    public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
-        if ( LicenseUtil.getLevel() < 300 ) {
-            throw new RuntimeException( "need an enterprise licence to run this" );
+    public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
+        if (LicenseUtil.getLevel() < 300) {
+            throw new RuntimeException("need an enterprise licence to run this");
         }
 
         String bundleName = config.getId();
-        String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
+        String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
         String bundlePath = ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;//FIXME
 
         //Publish the bundle extracted
@@ -144,29 +141,30 @@ public class BundlePublisher extends Publisher {
 
         try {
             //Update audit
-            currentStatusHistory = auditAPI.getPublishAuditStatus( bundleFolder ).getStatusPojo();
+            currentStatusHistory = auditAPI.getPublishAuditStatus(bundleFolder).getStatusPojo();
 
-            currentStatusHistory.setPublishStart( new Date() );
-            detail.setStatus( PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode() );
-            detail.setInfo( "Publishing bundle" );
+            currentStatusHistory.setPublishStart(new Date());
+            detail.setStatus(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
+            detail.setInfo("Publishing bundle");
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
 
-            auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.PUBLISHING_BUNDLE, currentStatusHistory );
-        } catch ( Exception e ) {
-            Logger.error( BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e );
+            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
+                currentStatusHistory);
+        } catch (Exception e) {
+            Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
         }
 
-        File folderOut = new File( bundlePath + bundleFolder );
+        File folderOut = new File(bundlePath + bundleFolder);
         folderOut.mkdir();
 
         // Extract file to a directory
         InputStream bundleIS;
         try {
-            bundleIS = new FileInputStream( bundlePath + bundleName );
-            untar( bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName );
-        } catch ( FileNotFoundException e ) {
-            throw new DotPublishingException( "Cannot extract the selected archive", e );
+            bundleIS = new FileInputStream(bundlePath + bundleName);
+            untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
+        } catch (FileNotFoundException e) {
+            throw new DotPublishingException("Cannot extract the selected archive", e);
         }
 
         Map<String, String> assetsDetails = null;
@@ -174,163 +172,164 @@ public class BundlePublisher extends Publisher {
         try {
             //Read the bundle to see what kind of configuration we need to apply
             String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleFolder;
-            File xml = new File( finalBundlePath + File.separator + "bundle.xml" );
-            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+            File xml = new File(finalBundlePath + File.separator + "bundle.xml");
+            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
 
             //Get the identifiers on this bundle
             assetsDetails = new HashMap<String, String>();
             List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
 
-            if ( bundlerAssets != null && !bundlerAssets.isEmpty() ) {
-                for ( PublishQueueElement asset : bundlerAssets ) {
-                    assetsDetails.put( asset.getAsset(), asset.getType() );
+            if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
+                for (PublishQueueElement asset : bundlerAssets) {
+                    assetsDetails.put(asset.getAsset(), asset.getType());
                 }
             }
-        } catch ( Exception e ) {
-            Logger.error( BundlePublisher.class, "Unable to get assets list from received bundle: " + e.getMessage(), e );
+        } catch (Exception e) {
+            Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle: " + e.getMessage(), e);
         }
 
         try {
-        	HibernateUtil.startTransaction();
+            HibernateUtil.startTransaction();
 
             //Execute the handlers
-            for ( IHandler handler : handlers ) {
+            for (IHandler handler : handlers) {
 
-                handler.handle( folderOut );
+                handler.handle(folderOut);
 
             }
 
             HibernateUtil.commitTransaction();
-        } catch ( Exception e ) {
+        } catch (Exception e) {
             bundleSuccess = false;
             try {
                 HibernateUtil.rollbackTransaction();
-            } catch ( DotHibernateException e1 ) {
-                Logger.error( PublisherAPIImpl.class, e.getMessage(), e1 );
+            } catch (DotHibernateException e1) {
+                Logger.error(PublisherAPIImpl.class, e.getMessage(), e1);
             }
-            Logger.error( PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e );
+            Logger.error(PublisherAPIImpl.class, "Error Publishing Bundle: " + e.getMessage(), e);
 
             //Update audit
             try {
-                detail.setStatus( PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode() );
-                detail.setInfo( "Failed to publish because an error occurred: " + e.getMessage() );
-                detail.setStackTrace( ExceptionUtils.getStackTrace( e ) );
+                detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+                detail.setInfo("Failed to publish because an error occurred: " + e.getMessage());
+                detail.setStackTrace(ExceptionUtils.getStackTrace(e));
                 String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
                 currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-                currentStatusHistory.setPublishEnd( new Date() );
-                currentStatusHistory.setAssets( assetsDetails );
+                currentStatusHistory.setPublishEnd(new Date());
+                currentStatusHistory.setAssets(assetsDetails);
 
-                auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory );
-            } catch ( DotPublisherException e1 ) {
-                throw new DotPublishingException( "Cannot update audit: ", e );
+                auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                    currentStatusHistory);
+            } catch (DotPublisherException e1) {
+                throw new DotPublishingException("Cannot update audit: ", e);
             }
-            throw new DotPublishingException( "Error Publishing: " + e, e );
+            throw new DotPublishingException("Error Publishing: " + e, e);
         }
 
         try {
             //Update audit
-            detail.setStatus( PublishAuditStatus.Status.SUCCESS.getCode() );
-            detail.setInfo( "Everything ok" );
+            detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
+            detail.setInfo("Everything ok");
             String endPointId = (String) currentStatusHistory.getEndpointsMap().keySet().toArray()[0];
             currentStatusHistory.addOrUpdateEndpoint(endPointId, endPointId, detail);
-            currentStatusHistory.setPublishEnd( new Date() );
-            currentStatusHistory.setAssets( assetsDetails );
-            auditAPI.updatePublishAuditStatus( bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory );
+            currentStatusHistory.setPublishEnd(new Date());
+            currentStatusHistory.setAssets(assetsDetails);
+            auditAPI.updatePublishAuditStatus(bundleFolder, PublishAuditStatus.Status.SUCCESS, currentStatusHistory);
             HibernateUtil.commitTransaction();
-        } catch ( Exception e ) {
-            Logger.error( BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e );
+        } catch (Exception e) {
+            Logger.error(BundlePublisher.class, "Unable to update audit table : " + e.getMessage(), e);
         }
 
         try {
             HibernateUtil.closeSession();
-        } catch ( DotHibernateException e ) {
-            Logger.warn( this, e.getMessage(), e );
+        } catch (DotHibernateException e) {
+            Logger.warn(this, e.getMessage(), e);
         } finally {
             DbConnectionFactory.closeConnection();
         }
         return config;
     }
 
-    @SuppressWarnings ("rawtypes")
+    @SuppressWarnings("rawtypes")
     @Override
-    public List<Class> getBundlers () {
+    public List<Class> getBundlers() {
         List<Class> list = new ArrayList<Class>();
 
         return list;
     }
 
-	/**
-	 * Untars the given bundle file in order process its contents.
-	 *
-	 * @param bundle
-	 *            - The {@link InputStream} containing the bundle.
-	 * @param path
-	 *            - The location where the bundle will be uncompressed.
-	 * @param fileName
-	 *            - The file name of the bundle.
-	 */
-    private void untar ( InputStream bundle, String path, String fileName ) {
+    /**
+     * Untars the given bundle file in order process its contents.
+     *
+     * @param bundle   - The {@link InputStream} containing the bundle.
+     * @param path     - The location where the bundle will be uncompressed.
+     * @param fileName - The file name of the bundle.
+     */
+    private void untar(InputStream bundle, String path, String fileName) {
         ArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
         FileOutputStream outputStream = null;
 
         try {
-        	//Clean the bundler folder if exist to clean dirty data
-        	String previousFolderPath = path.replace(fileName, "");
-        	File previousFolder = new File(previousFolderPath);
-        	if(previousFolder.exists()){
-        		FileUtils.cleanDirectory(previousFolder);
-        	}
+            //Clean the bundler folder if exist to clean dirty data
+            String previousFolderPath = path.replace(fileName, "");
+            File previousFolder = new File(previousFolderPath);
+            if (previousFolder.exists()) {
+                FileUtils.cleanDirectory(previousFolder);
+            }
             // get a stream to tar file
-            InputStream gstream = new GZIPInputStream( bundle );
-            inputStream = new TarArchiveInputStream( gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE, UtilMethods.getCharsetConfiguration() );
+            InputStream gstream = new GZIPInputStream(bundle);
+            inputStream =
+                new TarArchiveInputStream(gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE,
+                    UtilMethods.getCharsetConfiguration());
 
             // For each entry in the tar, extract and save the entry to the file
             // system
-            while ( null != (entry = inputStream.getNextEntry()) ) {
+            while (null != (entry = inputStream.getNextEntry())) {
                 // for each entry to be extracted
                 int bytesRead;
 
-                String pathWithoutName = path.substring( 0,
-                        path.indexOf( fileName ) );
+                String pathWithoutName = path.substring(0,
+                    path.indexOf(fileName));
 
                 // if the entry is a directory, create the directory
-                if ( entry.isDirectory() ) {
-                    File fileOrDir = new File( pathWithoutName + entry.getName() );
+                if (entry.isDirectory()) {
+                    File fileOrDir = new File(pathWithoutName + entry.getName());
                     fileOrDir.mkdir();
                     continue;
                 }
 
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = new FileOutputStream( pathWithoutName
-                        + entry.getName() );
-                while ( (bytesRead = inputStream.read( buf, 0, 1024 )) > -1 )
-                    outputStream.write( buf, 0, bytesRead );
+                outputStream = new FileOutputStream(pathWithoutName
+                    + entry.getName());
+                while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
+                    outputStream.write(buf, 0, bytesRead);
+                }
                 try {
-                    if ( null != outputStream ) {
+                    if (null != outputStream) {
                         outputStream.close();
                     }
-                } catch ( Exception e ) {
-                    Logger.warn( this.getClass(), "Error Closing Stream.", e );
+                } catch (Exception e) {
+                    Logger.warn(this.getClass(), "Error Closing Stream.", e);
                 }
             }// while
 
-        } catch ( Exception e ) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally { // close your streams
-            if ( inputStream != null ) {
+            if (inputStream != null) {
                 try {
                     inputStream.close();
-                } catch ( IOException e ) {
-                    Logger.warn( this.getClass(), "Error Closing Stream.", e );
+                } catch (IOException e) {
+                    Logger.warn(this.getClass(), "Error Closing Stream.", e);
                 }
             }
-            if ( outputStream != null ) {
+            if (outputStream != null) {
                 try {
                     outputStream.close();
-                } catch ( IOException e ) {
-                    Logger.warn( this.getClass(), "Error Closing Stream.", e );
+                } catch (IOException e) {
+                    Logger.warn(this.getClass(), "Error Closing Stream.", e);
                 }
             }
         }
