@@ -1590,7 +1590,7 @@ table.dijitComboButton {
   border-top-color: #C5C5C5;
 }
 .dijitTabContainerBottom-container, .dijitTabContainerTop-container, .dijitTabContainerLeft-container, .dijitTabContainerRight-container {
-  border-width: 0 1px 1px;
+  border-width: 0 0 1px;
   border-style: solid;
   border-color: #ECEDEE;
 }
@@ -1608,7 +1608,7 @@ table.dijitComboButton {
   -moz-box-sizing: content-box;
   -webkit-box-sizing: content-box;
   box-sizing: content-box;
-  border-width: 0 1px 1px;
+  border-width: 0 0 1px;
   border-style: solid;
   border-color: #ECEDEE;
   height: 42px !important;
@@ -2766,6 +2766,10 @@ select[multiple]:hover {
   background-color: #ECEDEE;
 }
 
+.dotCMSHostFileFilteringSelect .dijitTextBox {
+  width: auto;
+}
+
 /* NAV SUB STYLES 2.0 */
 #admin-banner-logo-div {
   position: absolute;
@@ -3274,11 +3278,6 @@ tr.active {
 }
 
 /* FORM STYLES 2.0 */
-.wrapperRight {
-  margin: 0 0 0 275px;
-  overflow: auto;
-}
-
 .lockedAgo {
   display: block;
   color: #999;
@@ -3287,39 +3286,13 @@ tr.active {
   line-height: 14px;
 }
 
-.required2 {
-  color: #aa0000;
-}
-
 .dijitTooltipData {
   width: 50px !important;
-}
-
-.fieldWrapperSide {
-  margin: 0 0 10px 0;
-  padding: 0;
 }
 
 .fieldNameSide {
   float: left;
   font-weight: bold;
-}
-
-table.workflowInfo {
-  margin: 10px 10px 20px 10px;
-}
-
-table.workflowInfo th {
-  vertical-align: top;
-  text-align: right;
-  padding: 0 5px 10px 0;
-  font-weight: bold;
-  white-space: nowrap;
-}
-
-table.workflowInfo td {
-  vertical-align: top;
-  width: 100%;
 }
 
 .fieldReadOnly {
@@ -3333,105 +3306,6 @@ table.workflowInfo td {
   border: 1px solid #D0D0D0;
   padding: 5px 10px;
   margin: 30px 20px 20px 0;
-}
-
-.buttonRow-left {
-  position: absolute;
-  overflow: auto;
-  left: 0px;
-  width: 250px;
-  font-size: 93%;
-  background: #eee;
-  margin-top: 0px;
-}
-
-.buttonRow-left a {
-  display: block;
-  padding: 5px 10px;
-  cursor: pointer;
-  color: #555;
-  background: #fff;
-  border: 1px solid silver;
-  margin-bottom: -1px;
-}
-
-.buttonRow-left a:hover {
-  background: #E0E9F6;
-}
-
-.buttonRow-left a span {
-  margin-right: 5px;
-}
-
-.buttonRow-left .gradient {
-  color: #555;
-  font-weight: bold;
-  padding: 6px 10px;
-  border-top: 1px solid #D0D0D0;
-  border-bottom: 1px solid #D0D0D0;
-  background: #eeeeee;
-  /* Old browsers */
-  background: -moz-linear-gradient(top, #ffffff 0%, #e3e3e3 100%);
-  /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ffffff), color-stop(100%, #e3e3e3));
-  /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(top, #ffffff 0%, #e3e3e3 100%);
-  /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(top, #ffffff 0%, #e3e3e3 100%);
-  /* Opera11.10+ */
-  background: -ms-linear-gradient(top, #ffffff 0%, #e3e3e3 100%);
-  /* IE10+ */
-  /* IE6-9 */
-  background: linear-gradient(to bottom, #ffffff 0%, #e3e3e3 100%);
-  /* W3C */
-}
-
-.gradient2 {
-  background: #eeeeee;
-  /* Old browsers */
-  background: -moz-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ffffff), color-stop(100%, #eeeeee));
-  /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* Opera11.10+ */
-  background: -ms-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* IE10+ */
-  /* IE6-9 */
-  background: linear-gradient(to bottom, #ffffff 0%, #eeeeee 100%);
-  /* W3C */
-}
-
-.buttonRow-left .title {
-  color: #555;
-  font-weight: bold;
-  padding: 6px 10px;
-  border-top: 1px solid #D0D0D0;
-  border-bottom: 1px solid #D0D0D0;
-}
-
-.buttonRow-left .basic-prop {
-  padding: 30px 10px 15px 15px;
-}
-
-.buttonRow-left .gradient {
-  background: #eeeeee;
-  /* Old browsers */
-  background: -moz-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ffffff), color-stop(100%, #e3e3e3));
-  /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* Opera11.10+ */
-  background: -ms-linear-gradient(top, #ffffff 0%, #eeeeee 100%);
-  /* IE10+ */
-  /* IE6-9 */
-  background: linear-gradient(to bottom, #ffffff 0%, #eeeeee 100%);
-  /* W3C */
 }
 
 .requiredBox {
@@ -4873,10 +4747,6 @@ table.dojoxLegendNode td {
 
 .workflowActionLink:hover {
   background: #E0E9F6;
-}
-
-#contentletActionsHanger {
-  padding: 10px;
 }
 
 #contentLockedInfo {
@@ -6350,10 +6220,6 @@ div#_dotHelpMenu {
   border: #2C548D 1px solid;
 }
 
-.fieldValue {
-  float: none;
-}
-
 .tagsWrapper {
   position: relative;
 }
@@ -6364,28 +6230,6 @@ div#_dotHelpMenu {
 
 .buttonRow {
   text-align: center;
-}
-
-.fieldWrapper {
-  margin-bottom: 16px;
-  padding: 0;
-  position: relative;
-}
-
-.fieldName {
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.fieldValue {
-  float: left;
-}
-
-.fieldValueText {
-  color: #999;
-  border: 1px solid #ddd;
-  padding: 3px 8px;
-  width: 400px;
 }
 
 .toggleEditorField,
@@ -6431,6 +6275,18 @@ div#_dotHelpMenu {
 - Extract from: base.css
 - Handle vertical and horizontal forms
 */
+#label, dl.vertical dt label, .fieldName {
+  color: #5B5B5B;
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.required2 {
+  color: #CB3927;
+  font-weight: bold;
+}
+
 .hint-text {
   font-size: 11px;
   color: #999;
@@ -6453,13 +6309,6 @@ dl.vertical dd, dl.vertical dt {
   padding: 0;
   text-align: inherit;
   width: auto;
-}
-dl.vertical dt {
-  margin-bottom: 4px;
-}
-dl.vertical dt label {
-  font-size: 12px;
-  color: #5B5B5B;
 }
 dl.vertical dd {
   margin-bottom: 16px;
@@ -6516,6 +6365,10 @@ dd .radio > .dijit, dd .checkbox > .dijit {
   margin-right: 4px;
 }
 
+.fieldWrapper {
+  margin-bottom: 16px;
+}
+
 .advanced-search-button {
   display: block;
   background: #ECEDEE;
@@ -6536,6 +6389,70 @@ dd .radio > .dijit, dd .checkbox > .dijit {
 
 .contentlet-menu-actions {
   width: 200px;
+}
+
+.edit-contentlet-portlet {
+  height: 100%;
+}
+
+.content-edit-main {
+  margin: 16px 220px 0 0;
+  width: auto;
+}
+
+.content-edit-sidebar {
+  background-color: #FAFAFA;
+  border-left: solid 1px #ECEDEE;
+  height: 100%;
+  padding: 16px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 220px;
+}
+
+.content-edit-actions,
+.content-edit-language,
+.content-edit-workflow {
+  margin-bottom: 24px;
+}
+.content-edit-actions h3,
+.content-edit-language h3,
+.content-edit-workflow h3 {
+  margin-bottom: 8px;
+}
+
+.content-edit-actions > div {
+  background-color: #fff;
+  border-radius: 2px;
+  border: solid 1px #C5C5C5;
+}
+.content-edit-actions > div a {
+  display: block;
+  padding: 8px;
+  border-bottom: solid 1px #C5C5C5;
+  cursor: pointer;
+}
+.content-edit-actions > div a:hover {
+  background-color: #ECEDEE;
+  color: #161616;
+}
+.content-edit-actions > div a:last-child {
+  border-bottom: none;
+}
+
+.content-edit-workflow table {
+  width: 100%;
+}
+.content-edit-workflow table td, .content-edit-workflow table th {
+  padding-bottom: 4px;
+  padding-top: 4px;
+}
+.content-edit-workflow table th {
+  padding-right: 8px;
+}
+.content-edit-workflow table tr {
+  border-bottom: solid 1px #ECEDEE;
 }
 
 .contentIdentifier {

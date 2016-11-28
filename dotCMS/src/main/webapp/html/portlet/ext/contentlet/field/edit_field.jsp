@@ -107,7 +107,7 @@
         );
 %>
     <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-        <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox' style='width:400px'" %>
+        <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
         value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
 <%
     }
@@ -212,7 +212,6 @@
             value="<%= selectorValue %>"/>
      <input type="hidden" name="hostId" id="hostId" value="<%=host%>"/>
      <input type="hidden" name="folderInode" id="folderInode" value="<%=folder%>"/>
-     <br />
     <%
     }
     //END of Host or Folder field
