@@ -1,22 +1,22 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
 
 import com.dotcms.LicenseTestUtil;
-import org.junit.*;
-
-import org.quartz.SimpleTrigger;
-
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.init.DotInitScheduler;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -41,7 +41,6 @@ public class HostAPITest {
     }
 
     @Test
-    @Ignore
     public void testDeleteHost() throws Exception {
         User user=APILocator.getUserAPI().getSystemUser();
         
@@ -65,37 +64,21 @@ public class HostAPITest {
         
         HostCopyOptions options=new HostCopyOptions(true);
         
-        Map<String, Object> parameters = new HashMap<String, Object>();
-        parameters.put("sourceHostId", source.getIdentifier());
-        parameters.put("destinationHostId", host.getIdentifier());
-        parameters.put("copyOptions", options);
-        
-        Calendar startTime = Calendar.getInstance();
-        SimpleScheduledTask task = new SimpleScheduledTask("setup-host-" + host.getIdentifier(), "setup-host-group", "Setups host "
-                + host.getIdentifier() + " from host " + source.getIdentifier(), HostAssetsJobProxy.class.getCanonicalName(), false,
-                "setup-host-" + source.getIdentifier() + "-trigger", "setup-host-trigger-group", startTime.getTime(), null,
-                SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT, 5, true, parameters, 0, 0);
-        
-        QuartzUtils.scheduleTask(task);
-        
-        // wait for the copy to be done. 
-        //#6084: If the license is not Enterprise it should NOT get stuck.
-        //It will wait for 15 minutes only. 
-        int milliseconds = 0;
-        int maxMilliseconds = 900000; //15 Minutes
-        
-        while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100 && milliseconds < maxMilliseconds) {
-            Thread.sleep(500);
-            milliseconds += 500;
-        }
-        
-        if (QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup()) < 0) {
-        	Assert.fail("testDeleteHost The host copy task did not start");
-        }
-        
-        if(milliseconds >= maxMilliseconds){
-        	Assert.fail("testDeleteHost is stuck waiting for QuartzUtils.scheduleTask");
-        }
+        // mocking JobExecutionContext to execute HostAssetsJobProxy
+        final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+        final JobDataMap jobDataMap = mock(JobDataMap.class);
+        final JobDetail jobDetail = mock(JobDetail.class);
+        		
+        when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
+        when(jobExecutionContext.getJobDetail().getName()).thenReturn("setup-host-" + host.getIdentifier());
+        when(jobExecutionContext.getJobDetail().getGroup()).thenReturn("setup-host-group");
+        when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+        when(jobDataMap.getString("sourceHostId")).thenReturn(source.getIdentifier());
+        when(jobDataMap.getString("destinationHostId")).thenReturn(host.getIdentifier());
+        when((HostCopyOptions) jobDataMap.get("copyOptions")).thenReturn(options);
+		
+        HostAssetsJobProxy hostAssetsJobProxy = new HostAssetsJobProxy();
+        hostAssetsJobProxy.execute(jobExecutionContext);
         
         Thread.sleep(600); // wait a bit for the index
         
