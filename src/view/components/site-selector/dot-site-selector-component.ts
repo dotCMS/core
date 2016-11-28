@@ -83,12 +83,12 @@ export class SiteSelectorComponent extends BaseComponent {
          *
          */
         setTimeout(() => {
-            this.filteredSitesResults = this.sites.map( site => {
-                    return {
-                        label: site.hostName,
-                        value: site.identifier,
-                    };
-                });
+            this.filteredSitesResults = this.sites.map(site => {
+                return {
+                    label: site.hostName,
+                    value: site.identifier,
+                };
+            });
         }, 100);
-
+    }
 }
