@@ -33,6 +33,8 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.ArchiveEntry;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.rest.BundlePublisherResource;
@@ -45,8 +47,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import org.apache.tools.tar.TarBuffer;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,7 +71,7 @@ import java.util.zip.GZIPInputStream;
  * files (i.e., a Container handler will only read Container data files),
  * retrieve the Java objects that they represent, and imports their content in
  * the destination server.
- * 
+ *
  * @author Alberto
  * @version 1.0
  * @since Oct 26, 2012
@@ -80,7 +80,7 @@ import java.util.zip.GZIPInputStream;
 public class BundlePublisher extends Publisher {
 
     private PublishAuditAPI auditAPI = null;
-    
+
     boolean bundleSuccess = true;
 
     private List<IHandler> handlers = new ArrayList<IHandler>();
@@ -195,11 +195,11 @@ public class BundlePublisher extends Publisher {
 
             //Execute the handlers
             for ( IHandler handler : handlers ) {
-            	
+
                 handler.handle( folderOut );
-                
+
             }
-            
+
             HibernateUtil.commitTransaction();
         } catch ( Exception e ) {
             bundleSuccess = false;
@@ -270,8 +270,8 @@ public class BundlePublisher extends Publisher {
 	 *            - The file name of the bundle.
 	 */
     private void untar ( InputStream bundle, String path, String fileName ) {
-        TarEntry entry;
-        TarInputStream inputStream = null;
+        ArchiveEntry entry;
+        TarArchiveInputStream inputStream = null;
         FileOutputStream outputStream = null;
 
         try {
@@ -283,7 +283,7 @@ public class BundlePublisher extends Publisher {
         	}
             // get a stream to tar file
             InputStream gstream = new GZIPInputStream( bundle );
-            inputStream = new TarInputStream( gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE, UtilMethods.getCharsetConfiguration() );
+            inputStream = new TarArchiveInputStream( gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE, UtilMethods.getCharsetConfiguration() );
 
             // For each entry in the tar, extract and save the entry to the file
             // system
