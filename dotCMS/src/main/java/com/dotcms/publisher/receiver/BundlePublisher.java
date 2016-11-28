@@ -1,21 +1,5 @@
 package com.dotcms.publisher.receiver;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
 import com.dotcms.enterprise.publishing.remote.handler.CategoryHandler;
@@ -58,6 +42,24 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
+import org.apache.tools.tar.TarBuffer;
+import org.apache.tools.tar.TarEntry;
+import org.apache.tools.tar.TarInputStream;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -281,7 +283,7 @@ public class BundlePublisher extends Publisher {
         	}
             // get a stream to tar file
             InputStream gstream = new GZIPInputStream( bundle );
-            inputStream = new TarInputStream( gstream );
+            inputStream = new TarInputStream( gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE, UtilMethods.getCharsetConfiguration() );
 
             // For each entry in the tar, extract and save the entry to the file
             // system
