@@ -167,6 +167,7 @@ const RULES_ENGINE_SERVICES = [
 ];
 
 import {InputTextModule} from 'primeng/primeng';
+import {PasswordModule} from 'primeng/primeng';
 import {CheckboxModule} from 'primeng/primeng';
 import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
@@ -175,6 +176,7 @@ import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 
 const NGFACES_MODULES = [
     InputTextModule,
+    PasswordModule,
     CheckboxModule,
     ButtonModule,
     DropdownModule,
