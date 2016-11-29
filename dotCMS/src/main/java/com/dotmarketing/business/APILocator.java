@@ -43,6 +43,7 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.ReflectionUtils;
@@ -740,14 +741,34 @@ public class APILocator extends Locator<APIIndex>{
     public static VisitorAPI getVisitorAPI () {
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
+
+	/**
+	 * Creates a single instance of the {@link ContentTypeApi} class setup with the provided arguments
+	 * 
+	 * @param user
+	 * 
+	 * @return The {@link ContentTypeApi} class.
+	 */
+    public static ContentTypeApi getContentTypeAPI2 (User user) {
+    	return getContentTypeAPI2(user, false);
+    }
+
+    /**
+	 * Creates a single instance of the {@link ContentTypeApi} class setup with the provided arguments
+	 * 
+	 * @param user
+	 * @param respectFrontendRoles
+	 * 
+	 * @return The {@link ContentTypeApi} class.
+	 */
     public static ContentTypeApi getContentTypeAPI2 (User user, boolean respectFrontendRoles) {
-		return new ContentTypeApiImpl(user, respectFrontendRoles);
+    	return getAPILocatorInstance().getContentTypeAPI2Impl(user, respectFrontendRoles);
 	}
 
-    public static ContentTypeApi getContentTypeAPI2 (User user) {
-      return new ContentTypeApiImpl(user, false);
-  }
-
+    @VisibleForTesting
+    protected ContentTypeApi getContentTypeAPI2Impl(User user, boolean respectFrontendRoles) {
+    	return new ContentTypeApiImpl(user, respectFrontendRoles);
+    }
 
     public static FieldApi getFieldAPI2() {
 		return new FieldApiImpl();
@@ -794,9 +815,20 @@ public class APILocator extends Locator<APIIndex>{
 	 *            class.
 	 * @return A singleton of the API.
 	 */
-
 	private static Object getInstance(APIIndex index) {
 
+		APILocator apiLocatorInstance = getAPILocatorInstance();
+
+		Object serviceRef = apiLocatorInstance.getServiceInstance(index);
+
+		if( Logger.isDebugEnabled(APILocator.class) ) {
+			Logger.debug(APILocator.class, apiLocatorInstance.audit(index));
+		}
+
+		return serviceRef;
+	}
+
+	private static APILocator getAPILocatorInstance() {
 		if(instance == null){
 			init();
 			if(instance == null){
@@ -804,15 +836,7 @@ public class APILocator extends Locator<APIIndex>{
 				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
 			}
 		}
-
-		Object serviceRef = instance.getServiceInstance(index);
-
-		if( Logger.isDebugEnabled(APILocator.class) ) {
-			Logger.debug(APILocator.class, instance.audit(index));
-		}
-
-		return serviceRef;
-
+		return instance;
 	}
 
 	@Override
