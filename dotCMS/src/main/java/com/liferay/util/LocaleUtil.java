@@ -256,10 +256,10 @@ public class LocaleUtil {
 
 					return (Locale) session.getAttribute(Globals.LOCALE_KEY);
 				} else {
-
-					locale = request.getLocale();
-				}
-			} else {
+                    //Trying to find a locale if there is no session or the Globals.LOCALE_KEY is not set
+                    locale = processCustomLocale(request, session);
+                }
+            } else {
 
 				final Locale.Builder builder =
 						new Locale.Builder();
@@ -301,47 +301,91 @@ public class LocaleUtil {
 		return locale;
 	}
 
-	/**
-	 * Set the locale based on the System configuration to the session, if it is a valid session.
-	 * @param request {@link HttpServletRequest}
-	 * @param session {@link HttpSession}
+    /**
+     * Method that will try to find out what locale to use when there is not session or the Globals.LOCALE_KEY is not set.
+     * <br>
+     * <br>
+     * The first method to use is to try is to get the locale based on the Cookies under the key CookieKeys.ID, if that
+     * method fails tries to get the locale based on the System configuration and if any of those methods works as fallback
+     * tries to find the request directly in the request (Browser settings).
+     * <br>
+     * <br>
+     * If a locale is found will be set it into the session.
+     *
+     * @param request
+     * @param session
+     * @return The locale if found otherwise null
+     * @throws SystemException
+     * @throws PortalException
+     * @throws DotDataException
+     * @throws DotSecurityException
      */
-	public static void processLocaleCompanySettings(final HttpServletRequest request,
-													 final HttpSession session) throws SystemException, PortalException {
+    public static Locale processCustomLocale(HttpServletRequest request, HttpSession session) throws SystemException, PortalException, DotDataException, DotSecurityException {
+
+        //Set the locale based on the Cookies under the key CookieKeys.ID to the session, if it is a valid session.
+        Locale locale = processLocaleUserCookie(request, session);
+        if ( null == locale ) {
+            //Set the locale based on the System configuration to the session, if it is a valid session.
+            locale = processLocaleCompanySettings(request, session);
+        }
+
+        // Our final fallback....
+        if ( null == locale ) {
+            locale = request.getLocale();
+        }
+
+        if ( null == locale ) {
+            session.setAttribute(Globals.LOCALE_KEY, locale);
+        }
+
+        return locale;
+    }
+
+    /**
+     * Set the locale based on the System configuration to the session, if it is a valid session.
+     *
+     * @param request {@link HttpServletRequest}
+     * @param session {@link HttpSession}
+     * @return The locale if found otherwise null
+     */
+    private static Locale processLocaleCompanySettings(final HttpServletRequest request,
+                                                       final HttpSession session) throws SystemException, PortalException {
+
+        Locale locale = null;
 
 		if (null != session && !getUserWebAPI().isLoggedToBackend(request)) { // if it is not already logged in.
 
 			final Company company = getCompanyAPI().getCompany(request);
-			final User    user    = (null != company)?company.getDefaultUser():null;
-			Locale locale   = (null != session)?
-					(Locale) session.getAttribute(Globals.LOCALE_KEY) :null;
+            final User user = (null != company) ? company.getDefaultUser() : null;
+            locale = (null != session) ?
+                    (Locale) session.getAttribute(Globals.LOCALE_KEY) : null;
 
 			if (null == locale && null != user) {
 
 				locale = user.getLocale();
-			}
+            }
 
-			if (null != locale) {
+        }
 
-				session.setAttribute(Globals.LOCALE_KEY, locale);
-			}
-		}
-	} // processLocaleCompanySettings/
+        return locale;
+    } // processLocaleCompanySettings/
 
 	/**
 	 * Set the locale based on the Cookies under the key {@link CookieKeys}.ID to the session, if it is a valid session.
 	 * @param request {@link HttpServletRequest}
 	 * @param session {@link HttpSession}
-	 * @throws SystemException
-	 * @throws PortalException
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+     * @return The locale if found otherwise null
+     * @throws SystemException
+     * @throws PortalException
+     * @throws DotDataException
+     * @throws DotSecurityException
      */
-	public static void processLocaleUserCookie(final HttpServletRequest request, final HttpSession session)
-			throws SystemException, PortalException, DotDataException, DotSecurityException {
+    private static Locale processLocaleUserCookie(final HttpServletRequest request, final HttpSession session)
+            throws SystemException, PortalException, DotDataException, DotSecurityException {
 
-		String uId = null;
-		String cookieValue = null;
+        Locale locale = null;
+        String uId = null;
+        String cookieValue;
 
 		if (null != session) {
 
@@ -376,11 +420,13 @@ public class LocaleUtil {
 						getUserWebAPI().isLoggedToBackend(request);
 				final com.liferay.portal.model.User loggedInUser =
 						getUserAPI().loadUserById(uId, getUserAPI().getSystemUser(), respectFrontend);
-				session.setAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY,
-						loggedInUser.getLocale());
-			}
-		}
-	} // processLocaleUserCookie.
+
+                locale = loggedInUser.getLocale();
+            }
+        }
+
+        return locale;
+    } // processLocaleUserCookie.
 
 	private static final Log _log = LogFactory.getLog(LocaleUtil.class);
 
