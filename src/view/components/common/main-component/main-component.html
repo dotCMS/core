@@ -1,8 +1,8 @@
 <!--TODO: make this md-toolbar a dot-component-->
-<md-toolbar color="primary">
+<p-toolbar>
     <div class="toolbar__host">
-        <button md-icon-button (click)="sideNav.toggle()">
-            <md-icon class="md-24">menu</md-icon>
+        <button (click)="toggleSidenav()" class="btn icn">
+            <i class="material-icons">menu</i>
         </button>
         <dot-site-selector-component></dot-site-selector-component>
     </div>
@@ -12,10 +12,12 @@
         <toolbar-user></toolbar-user>
         <toolbar-add-contentlet></toolbar-add-contentlet>
     </div>
-</md-toolbar>
-<md-sidenav-layout class="layout" fullscreen>
-    <md-sidenav #sideNav mode="side" opened="true">
+</p-toolbar>
+<div class="layout" [class.collapsed]="isMenuCollapsed">
+    <div class="layout__sidebar">
         <dot-main-nav></dot-main-nav>
-    </md-sidenav>
-    <router-outlet></router-outlet>
-</md-sidenav-layout>
+    </div>
+    <div class="layout__main">
+        <router-outlet></router-outlet>
+    </div>
+</div>

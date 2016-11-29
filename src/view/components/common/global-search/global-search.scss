@@ -1,30 +1,35 @@
 @import "../../../../scss/variables";
 @import "../../../../scss/mixins";
 
-dot-global-search {
+$placeholder-color: rgba($white, 0.5);
+
+:host {
     flex: 1;
     margin: 0 50px;
 
-    md-input {
+    .global-search__textbox {
+        background-color: rgba($white, 0.2);
+        border: none;
+        color: $white;
+        font-size: $font-large;
+        height: 36px;
+        padding: 0 10px;
         width: 100%;
 
-        .md-input-placeholder {
-            color: rgba($white, 0.5);
+        &::-webkit-input-placeholder {
+            color: $placeholder-color;
         }
 
-        .md-input-table {
-            background-color: rgba($white, 0.2);
-            border-radius: 3px;
-            padding: rem-cal(5px) rem-cal(10px);
+        &:-moz-placeholder {
+            color: $placeholder-color;
         }
 
-        .md-input-underline {
-            display: none;
+        &::-moz-placeholder {
+            color: $placeholder-color;
         }
 
-        .md-input-wrapper {
-            margin: 0;
+        &:-ms-input-placeholder {
+            color: $placeholder-color;
         }
     }
 }
-

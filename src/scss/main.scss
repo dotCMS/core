@@ -2,13 +2,14 @@
 @import "mixins";
 @import "grids";
 @import "typography";
+@import "buttons";
 @import "material-design";
 @import "./deeppurple-amber.css";
 
 // PRIME NG
 @import "https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css";
 @import "./primeng.min.css";
-@import "./theme.css";
+@import "primeng-theme/base";
 
 *, *:before, *:after {
     box-sizing: border-box;

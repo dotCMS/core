@@ -1,10 +1,10 @@
 :host {
   display: block;
-  margin: 2.5rem;
+  margin: 3.07692rem;
 }
 
 :host article {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.53846rem;
 }
 
 :host md-input {
@@ -12,11 +12,11 @@
 }
 
 :host .section-buttons article {
-  margin-bottom: 2.5rem;
+  margin-bottom: 3.07692rem;
 }
 
 :host .section_desc {
-  font-size: 0.8125rem;
+  font-size: 1rem;
 }
 
 :host .section-headings .section_desc, :host .section-paragraph .section_desc {
@@ -29,7 +29,7 @@
 }
 
 :host .section-headings .section_desc {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.53846rem;
 }
 
 :host .section-headings .section_desc:last-child {
@@ -38,7 +38,7 @@
 
 :host .section__subtitle {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.92308rem;
   text-transform: uppercase;
   color: #737373;
 }

@@ -173,6 +173,7 @@ import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
 import {AutoCompleteModule} from 'primeng/primeng';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
+import {ToolbarModule} from 'primeng/primeng';
 
 const NGFACES_MODULES = [
     InputTextModule,
@@ -181,6 +182,7 @@ const NGFACES_MODULES = [
     ButtonModule,
     DropdownModule,
     AutoCompleteModule,
+    ToolbarModule
 ];
 
 @NgModule({
