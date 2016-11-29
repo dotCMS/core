@@ -32,6 +32,7 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
+import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -105,6 +106,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -133,7 +135,16 @@ public class APILocator extends Locator<APIIndex>{
 	public synchronized static void init(){
 		if(instance != null)
 			return;
-		instance = new APILocator();
+
+
+		String apiLocatorClass = Config.getStringProperty(
+			"API_LOCATOR_IMPLEMENTATION", APILocator.class.getName()
+		);
+
+		instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
+		if (instance == null) {
+			instance = new APILocator();
+		}
 	}
 
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
