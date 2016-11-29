@@ -21,7 +21,7 @@ public class Payload implements Serializable {
 
 	private final Object data;
 	private final Visibility visibility;
-    private final Object visibilityValue; // user id, role uid or permission, if it is global, this is not need
+    private final Object visibilityValue; // this could be anything: an user id, role uid or permission, or event a meta object with several things.
 
 	/**
 	 * Creates a payload object.

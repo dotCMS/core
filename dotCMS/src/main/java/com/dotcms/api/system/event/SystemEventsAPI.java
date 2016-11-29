@@ -39,14 +39,22 @@ public interface SystemEventsAPI {
 	 * Pushes a new System Event to the message queue. The {@link SystemEvent}
 	 * is supposed to contain all the information it needs.
 	 * 
-	 * @param event
+	 * @param systemEvent
 	 *            - The {@link SystemEvent} object.
 	 * @throws DotDataException
 	 *             An error occurred when saving the event.
 	 */
 	public void push(SystemEvent systemEvent) throws DotDataException;
 
+	/**
+	 * Pushg an event with a payload.
+	 * @param event {@link SystemEventType}
+	 * @param payload {@link Payload}
+	 * @throws DotDataException
+     */
 	public void push(SystemEventType event, Payload payload) throws DotDataException;
+
+	// todo:
 
 	/**
 	 * Returns a list of {@link SystemEvent} objects that were created from a
