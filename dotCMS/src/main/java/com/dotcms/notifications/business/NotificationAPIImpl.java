@@ -14,11 +14,16 @@ import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +46,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 	private final DotConcurrentFactory dotConcurrentFactory;
 	private final DotSubmitter dotSubmitter;
 	private final NewNotificationCache newNotificationCache;
+    private final RoleAPI roleAPI;
 
 	/**
 	 * Retrieve the factory class that interacts with the database.
@@ -52,16 +58,18 @@ public class NotificationAPIImpl implements NotificationAPI {
 		MarshalFactory.getInstance().getMarshalUtils(),
 		ConversionUtils.INSTANCE,
 		DotConcurrentFactory.getInstance(),
-		CacheLocator.getNewNotificationCache());
-	}
+                CacheLocator.getNewNotificationCache(),
+                APILocator.getRoleAPI());
+    }
 
 	@VisibleForTesting
 	public NotificationAPIImpl(final NotificationFactory notificationFactory,
-							   final SystemEventsAPI systemEventsAPI,
-							   final MarshalUtils marshalUtils,
-							   final ConversionUtils conversionUtils,
-							   final DotConcurrentFactory dotConcurrentFactory,
-							   final NewNotificationCache newNotificationCache) {
+                               final SystemEventsAPI systemEventsAPI,
+                               final MarshalUtils marshalUtils,
+                               final ConversionUtils conversionUtils,
+                               final DotConcurrentFactory dotConcurrentFactory,
+                               final NewNotificationCache newNotificationCache,
+                               final RoleAPI roleAPI) {
 
 		this.notificationFactory = notificationFactory;
 		this.systemEventsAPI = systemEventsAPI;
@@ -71,7 +79,8 @@ public class NotificationAPIImpl implements NotificationAPI {
 		this.dotSubmitter = // getting the thread pool for notifications.
 				this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME); // by default use the standard configuration, but it can be override via properties config.
 		this.newNotificationCache = newNotificationCache;
-	}
+        this.roleAPI = roleAPI;
+    }
 
 	@Override
 	public void info(String message, String userId) {
@@ -132,50 +141,68 @@ public class NotificationAPIImpl implements NotificationAPI {
 		// since the notification is not a priory process on the current thread, we decided to execute it async
 		this.dotSubmitter.execute(() -> {
 
-				final NotificationData data = new NotificationData(title, message, actions);
-				final String messageJson    = this.marshalUtils.marshal(data);
-				final NotificationDTO dto   = new NotificationDTO(StringUtils.EMPTY, messageJson,
-						type.name(), level.name(), userId, null, Boolean.FALSE);
+            final NotificationData data = new NotificationData(title, message, actions);
+            final String messageJson = this.marshalUtils.marshal(data);
+            final NotificationDTO dto = new NotificationDTO(StringUtils.EMPTY, messageJson,
+                    type.name(), level.name(), userId, null, Boolean.FALSE);
 
-				try {
+            boolean localTransaction = false;
 
-					Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
+            try {
 
-					this.notificationFactory.saveNotification(dto);
-				} catch (DotDataException e) {
-					if (Logger.isErrorEnabled(NotificationAPIImpl.class)) {
+                //Check for a transaction and start one if required
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-						Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
-					}
-				}
+                Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
 
-				// remove all caches associated to the user.
-				Logger.info(this, "Removing all cache associated to the user notifications: " + userId);
-				this.newNotificationCache.remove(userId);
+                //If the is Visibility.ROLE we need to create a notification for each user under that role
+                if ( visibility.equals(Visibility.ROLE) ) {
+                    //Search for all the users in the given role
+                    Collection<User> foundUsers = this.roleAPI.findUsersForRole(visibilityId);
+                    if ( foundUsers != null && !foundUsers.isEmpty() ) {
+                        this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
+                    }
+                } else {
+                    this.notificationFactory.saveNotification(dto);
+                }
 
-				// Adding notification to System Events table
-				final Notification notificationBean  = new Notification(level, userId, data);
-				final Payload payload 				 = new Payload(notificationBean, visibility, visibilityId);
+                // Adding notification to System Events table
+                final Notification notificationBean = new Notification(level, userId, data);
+                final Payload payload = new Payload(notificationBean, visibility, visibilityId);
 
-				notificationBean.setId(dto.getId());
-				notificationBean.setTimeSent(new Date());
-				notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
+                notificationBean.setId(dto.getId());
+                notificationBean.setTimeSent(new Date());
+                notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
 
-				final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+                final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+                this.systemEventsAPI.push(systemEvent);
+                Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
 
-				try {
+                //Everything ok..., committing the transaction
+                if ( localTransaction ) {
+                    HibernateUtil.commitTransaction();
+                }
 
-					Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
+            } catch (Exception e) {
 
-					this.systemEventsAPI.push(systemEvent);
-				} catch (DotDataException e) {
-					if (Logger.isErrorEnabled(NotificationAPIImpl.class)) {
+                if ( localTransaction ) {
+                    try {
+                        //On error rolling back the changes
+                        HibernateUtil.rollbackTransaction();
+                    } catch (DotHibernateException hibernateException) {
+                        if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
+                            Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
+                        }
+                    }
+                }
 
-						Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
-					}
-				}
-		});
-	} // generateNotification.
+                if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
+                    Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
+                }
+            }
+
+        });
+    } // generateNotification.
 
 	@Override
 	public Notification findNotification(final String notificationId) throws DotDataException {

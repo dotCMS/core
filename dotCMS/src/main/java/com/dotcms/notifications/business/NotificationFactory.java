@@ -1,9 +1,11 @@
 package com.dotcms.notifications.business;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
 
 /**
  * This data access object provides access to information associated to
@@ -28,6 +30,16 @@ public abstract class NotificationFactory {
 	 *             your database and/or query syntax.
 	 */
 	public abstract void saveNotification(final NotificationDTO notification) throws DotDataException;
+
+	/**
+	 * Saves a Notification for each user in the given users collection
+	 *
+	 * @param notificationTemplate Will be used as a Notification template in order to create the notification record
+	 *                             for each user on the list
+	 * @param users                For each element on this list a Notification record will be created
+	 * @throws DotDataException
+	 */
+	public abstract void saveNotificationsForUsers(final NotificationDTO notificationTemplate, Collection<User> users) throws DotDataException;
 
 	/**
 	 * Returns a notification based on its ID.

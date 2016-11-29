@@ -15,6 +15,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 /**
  * Concrete implementation of the {@link NotificationFactory} class.
@@ -27,7 +28,57 @@ import com.dotmarketing.util.UtilMethods;
 public class NotificationFactoryImpl extends NotificationFactory {
 
 	@Override
+	public void saveNotificationsForUsers(final NotificationDTO notificationTemplate, Collection<User> users) throws DotDataException {
+
+		final DotConnect dc = new DotConnect();
+		final List<Params> params = list();
+
+		//For each user lets create the notification data to be save it
+		for ( User user : users ) {
+
+			if ( !UtilMethods.isSet(notificationTemplate.getId()) ) {
+				notificationTemplate.setId(UUID.randomUUID().toString());
+			}
+			notificationTemplate.setUserId(user.getUserId());
+
+			params.add(new Params(notificationTemplate.getId(),
+					notificationTemplate.getMessage(),
+					UtilMethods.isSet(notificationTemplate.getType()) ? notificationTemplate.getType() : NotificationType.GENERIC.name(),
+					notificationTemplate.getLevel(),
+					notificationTemplate.getUserId(),
+					new Date()));
+		}
+
+		//Execute in batch all the inserts for the group of given users
+		final int[] results = dc.executeBatch("insert into notification (" +
+				"id,message,notification_type,notification_level,user_id,time_sent) "
+				+ " values(?,?,?,?,?,?)", params);
+
+		if ( results.length == users.size() ) {
+
+			if ( Logger.isDebugEnabled(this.getClass()) ) {
+				Logger.debug(this.getClass(),
+						"All the notifications: " + users + " were saved."
+				);
+			}
+		} else {
+
+			if ( Logger.isDebugEnabled(this.getClass()) ) {
+				Logger.debug(this.getClass(),
+						"Of the notifications: " + users + " were just saved: " + results.length
+				);
+			}
+		}
+
+		//And finally some cache clean up
+		for ( User user : users ) {
+			CacheLocator.getNewNotificationCache().remove(user.getUserId());
+		}
+	}
+
+	@Override
 	public void saveNotification(final NotificationDTO notification) throws DotDataException {
+
 		final DotConnect dc = new DotConnect();
 		dc.setSQL("insert into notification (id,message,notification_type,notification_level,user_id,time_sent) "
 				+ " values(?,?,?,?,?,?)");
@@ -41,39 +92,10 @@ public class NotificationFactoryImpl extends NotificationFactory {
 		dc.addParam(notification.getUserId());
 		dc.addParam(new Date());
 
-		Connection conn = null;
+		//Execute the insert
+		dc.loadResult();
 
-		try {
-			conn = DbConnectionFactory.getDataSource().getConnection();
-			conn.setAutoCommit(false);
-			dc.loadResult(conn);
-			conn.commit();
-		} catch (SQLException e) {
-			Logger.error(this, "Error creating notification.", e);
-			try {
-				if(conn!=null) {
-					conn.rollback();
-				}
-			} catch (SQLException q) {
-				Logger.error(this, "Error rolling back transaction.", e);
-			}
-		} finally {
-			if(conn!=null) {
-				try {
-					conn.setAutoCommit(true);
-				} catch (SQLException e) {
-					Logger.error(this, "Error setting autocommit to true.", e);
-				}
-
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					Logger.error(this, "Error closing db connection.", e);
-				}
-			}
-		}
-
-
+		//Clean up the cache
 		CacheLocator.getNewNotificationCache().remove(notification.getUserId());
 	}
 
