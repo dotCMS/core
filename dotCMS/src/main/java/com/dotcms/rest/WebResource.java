@@ -201,6 +201,7 @@ public  class WebResource {
     	if (session != null 
         		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
         		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
+    		isLoginAsUser=true;
     	}
     	return isLoginAsUser;
     }
