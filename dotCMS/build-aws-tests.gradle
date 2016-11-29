@@ -164,7 +164,7 @@ task waitInstanceTerminated(type: AmazonEC2WaitInstanceStatusTask) {
 task setupInstance {
 	doLast {
 		setInstanceTagName( project.instanceId,
-			properties.getProperty("aws.instance.name") +" ("+ project.database +")"
+			properties.getProperty("aws.instance.name") +" ("+ project.branch +" - "+ project.database +")"
 		)
 
 		sleep(60 * 1000)
@@ -488,7 +488,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 //---------------------------------------------- Utilities ----------------------------------------------//
 
 String getDatabasePropertyIdentifier(Properties properties, String database, String branch) {
-	return properties.getProperty( "db.instance.identifier.prefix" ) +"-"+ database.toLowerCase() +"-"+ branch.toLowerCase().replace(".", "")
+	return properties.getProperty( "db.instance.identifier.prefix" ) +"-"+ branch.toLowerCase().replace(".", "") +"-"+ database.toLowerCase()
 }
 
 String getDatabaseProperty(Properties properties, String propertyName, String database) {
