@@ -142,7 +142,7 @@ public  class WebResource {
             params = "";
 
         Map<String, String> paramsMap = buildParamsMap(params);
-        User user = getUser(request, paramsMap, rejectWhenNoUser);
+        User user = getCurrentUser(request, paramsMap, rejectWhenNoUser);
 
         if(UtilMethods.isSet(requiredPortlet)) {
 
@@ -172,12 +172,14 @@ public  class WebResource {
      *
      * @return the login user or the login as user if exist any
      */
-    private User getUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
+    private User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
 
         User user = null;
         HttpSession session = request.getSession();
 
-        if (session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID)  != null){
+        if (session != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
             try {
                 user = this.userAPI.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
             } catch (DotDataException|DotSecurityException e) {
