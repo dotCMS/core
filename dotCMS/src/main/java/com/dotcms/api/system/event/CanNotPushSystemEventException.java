@@ -4,7 +4,7 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotmarketing.exception.DotDataException;
 
 /**
- * Created by freddyrodriguez on 23/9/16.
+ * When an event can not be push on the queue, throws this exception
  */
 public class CanNotPushSystemEventException extends BaseRuntimeInternationalizationException {
     public CanNotPushSystemEventException(Throwable e) {
