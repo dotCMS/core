@@ -177,9 +177,7 @@ public  class WebResource {
         User user = null;
         HttpSession session = request.getSession();
 
-        if (session != null 
-        		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
-        		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
+        if (this.isLoggedAsUser(session)){
             try {
                 user = this.userAPI.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
             } catch (DotDataException|DotSecurityException e) {
@@ -192,6 +190,20 @@ public  class WebResource {
         return user;
     }
 
+    /**
+     * Validate if the user is logged as another user
+     * 
+     * @param session http session object
+     * @return true is the user is LoggedAs another user
+     */
+    private boolean isLoggedAsUser(HttpSession session) {
+    	boolean isLoginAsUser = false;
+    	if (session != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
+    	}
+    	return isLoginAsUser;
+    }
 
     /**
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
