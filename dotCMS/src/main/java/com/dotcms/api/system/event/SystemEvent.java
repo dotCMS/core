@@ -44,7 +44,7 @@ public class SystemEvent implements Serializable {
 	/**
 	 * Creates a System Event.
 	 * 
-	 * @param event
+	 * @param eventType
 	 *            - The {@link SystemEventType} set for this event.
 	 * @param payload
 	 *            - The information containing the details of this event.
