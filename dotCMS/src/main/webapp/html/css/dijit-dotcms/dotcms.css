@@ -9,7 +9,7 @@
   font-style: normal;
 }
 html, body {
-  font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 13px;
   color: #161616;
 }
@@ -26,7 +26,7 @@ html, body {
   padding: 0;
 }
 
-#font-icon-base, #dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .tagLink.persona:before, .dijitIconCopy {
+#font-icon-base, #dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .uknIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .dijitIconCopy {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -34,11 +34,12 @@ html, body {
   transform: translate(0, 0);
 }
 
-#dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .tagLink.persona:before {
-  width: 16px;
+#dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .uknIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before {
+  display: inline-block;
   height: 16px;
-  margin-right: 4px;
   line-height: 16px;
+  text-align: center;
+  width: 16px;
 }
 
 .dijitIconTask:before {
@@ -167,13 +168,6 @@ table.dijitComboButton {
   color: rgba(91, 91, 91, 0.4);
   font-style: normal;
   line-height: 30px;
-}
-
-.dijitTextArea {
-  font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 13px;
-  color: #161616;
-  padding: 4px 8px;
 }
 
 .dijitValidationContainer {
@@ -344,6 +338,7 @@ table.dijitComboButton {
   background-color: #fff;
   border: solid 1px #C5C5C5;
   color: #161616;
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0 8px;
 }
 .dijitTextAreaHover {
@@ -1653,7 +1648,7 @@ table.dijitComboButton {
 }
 
 html, body {
-  font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 13px;
   color: #161616;
 }
@@ -2050,52 +2045,12 @@ legend {
   color: #000;
 }
 
-input,
-button,
-textarea,
-select,
-optgroup,
-option {
-  font-family: inherit;
-  font-size: inherit;
-  font-style: inherit;
-  font-weight: inherit;
-}
-
-input,
-button,
-textarea,
-select {
-  *font-size: 100%;
-}
-
-body {
-  font: 13px/1.231 arial, helvetica, clean, sans-serif;
-  *font-size: small;
-  *font: x-small;
-}
-
-select,
-input,
-button,
-textarea,
-button {
-  font: 99% arial, helvetica, clean, sans-serif;
-}
-
-table {
-  font-size: inherit;
-  font: 100%;
-}
-
 pre,
 code,
 kbd,
 samp,
 tt {
   font-family: monospace;
-  *font-size: 108%;
-  line-height: 100%;
 }
 
 #doc {
@@ -3755,8 +3710,7 @@ a.fakeDojoButton img {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_11 a span,
-.contentIcon {
+#menu ul.dropdown li.dotCMS_EXT_11 a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1280px;
   width: 18px;
   height: 18px;
@@ -3947,283 +3901,6 @@ a.fakeDojoButton img {
 
 .red {
   color: #CB4437;
-}
-
-/* File Extensions */
-.imageIcon,
-.jpgIcon,
-.jpegIcon,
-.bmpIcon,
-.pctIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1540px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.gifIcon,
-.giffIcon,
-.pngIcon,
-.pctIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1540px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.flaIcon,
-.swfIcon,
-.flvIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1560px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.psdIcon,
-.epsIcon,
-.pxrIcon,
-.tifIcon,
-.tiffIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1560px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.pdfIcon,
-.airIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1580px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.epsIcon,
-.aiIcon,
-.drwIcon,
-.psIcon,
-.svgIcon,
-.graffleIcon,
-.vdxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1580px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.docIcon,
-.docxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1600px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.exeIcon,
-.appIcon,
-.batIcon,
-.cgiIcon,
-.comIcon,
-.jarIcon,
-.pifIcon,
-.vbIcon,
-.wsfIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1600px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.xlsIcon,
-.xlsxIcon,
-.wksIcon,
-.csvIcon,
-.numbersIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1620px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.accdbIcon,
-.dbIcon,
-.mdbIcon,
-.pdbIcon,
-.sqlIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1620px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.pptIcon,
-.pptxIcon,
-.keynote {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1640px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.wmvIcon,
-.asxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1640px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.oggIcon,
-.asfIcon,
-.aviIcon,
-.movIcon,
-.mpgIcon,
-.mp4Icon,
-.rmIcon,
-.vobIcon,
-.ogvIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1660px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.mp3Icon,
-.aacIcon,
-.aifIcon,
-.iffIcon,
-.m3uIcon,
-.midIcon,
-.mpaIcon,
-.raIcon,
-.wavIcon,
-.wmaIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1660px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.cssIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1680px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.vtlIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1680px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.phpIcon,
-.jsIcon,
-.jspIcon,
-.aspIcon,
-.xmlIcon,
-.gyIcon,
-.pyIcon,
-.rbIcon,
-.jsonIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1700px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.htmIcon,
-.htmlIcon,
-.rssIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1700px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.datIcon,
-.sdfIcon,
-.txtIcon,
-.rtfIcon,
-.pagesIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1720px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.zipIcon,
-.debIcon,
-.gzIcon,
-.pkgIcon,
-.rarIcon,
-.sitIcon,
-.sitxIcon,
-.zipxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1720px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.ttfIcon,
-.woffIcon,
-.eotIcon,
-.svgIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1840px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.twitterIcon {
-  background: url("http://localhost:8080/html/images/icons/twitter.png") no-repeat;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.icoIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1920px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.epubIcon,
-.ibooksIcon,
-.azwIcon,
-.kf8Icon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -100px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
 }
 
 .worldOn {
@@ -5117,7 +4794,6 @@ div#_dotHelpMenu {
 .chevronExpandIcon,
 .closeIcon,
 .colorIcon,
-.contentIcon,
 .copyIcon,
 .cutIcon,
 .deleteIcon,
@@ -5151,7 +4827,6 @@ div#_dotHelpMenu {
 .folderSelectedIcon,
 .formIcon,
 .formNewIcon,
-.gearIcon,
 .gearMinusIcon,
 .gearPencilIcon,
 .gearPlusIcon,
@@ -5182,7 +4857,6 @@ div#_dotHelpMenu {
 .newTaskIcon,
 .newWorkflowIcon,
 .nextIcon,
-.pageIcon,
 .pagePropIcon,
 .pasteIcon,
 .plusIcon,
@@ -5220,7 +4894,6 @@ div#_dotHelpMenu {
 .toggleCloseIcon,
 .toggleOpenIcon,
 .trashIcon,
-.uknIcon,
 .unarchiveIcon,
 .unlockIcon,
 .unpublishIcon,
@@ -5361,7 +5034,7 @@ div#_dotHelpMenu {
 }
 
 .contentIcon:before {
-  content: "";
+  content: "";
 }
 
 .copyIcon:before {
@@ -5497,7 +5170,7 @@ div#_dotHelpMenu {
 }
 
 .gearIcon:before {
-  content: "";
+  content: "";
 }
 
 .gearMinusIcon:before {
@@ -5626,6 +5299,10 @@ div#_dotHelpMenu {
 
 .nextIcon:before {
   content: "";
+}
+
+.pageIcon:before {
+  content: "";
 }
 
 .pagePropIcon:before {
@@ -5784,6 +5461,10 @@ div#_dotHelpMenu {
   content: "";
 }
 
+.uknIcon:before {
+  content: "";
+}
+
 .unarchiveIcon:before {
   content: "";
 }
@@ -5804,6 +5485,10 @@ div#_dotHelpMenu {
   content: "";
 }
 
+.vtlIcon:before {
+  content: "";
+}
+
 .windowsIcon:before {
   content: "";
 }
@@ -5822,6 +5507,158 @@ div#_dotHelpMenu {
 
 .wysiwygIcon:before {
   content: "";
+}
+
+.asfIcon:before {
+  content: "";
+}
+
+.aviIcon:before {
+  content: "";
+}
+
+.movIcon:before {
+  content: "";
+}
+
+.mp4Icon:before {
+  content: "";
+}
+
+.mpgIcon:before {
+  content: "";
+}
+
+.oggIcon:before {
+  content: "";
+}
+
+.ogvIcon:before {
+  content: "";
+}
+
+.rmIcon:before {
+  content: "";
+}
+
+.vobIcon:before {
+  content: "";
+}
+
+.csvIcon:before {
+  content: "";
+}
+
+.numbersIcon:before {
+  content: "";
+}
+
+.wksIcon:before {
+  content: "";
+}
+
+.xlsIcon:before {
+  content: "";
+}
+
+.xlsxIcon:before {
+  content: "";
+}
+
+.bmpIcon:before {
+  content: "";
+}
+
+.imageIcon:before {
+  content: "";
+}
+
+.jpegIcon:before {
+  content: "";
+}
+
+.jpgIcon:before {
+  content: "";
+}
+
+.pctIcon:before {
+  content: "";
+}
+
+.pngIcon:before {
+  content: "";
+}
+
+.gifIcon:before {
+  content: "";
+}
+
+.svgIcon:before {
+  content: "";
+}
+
+.pdfIcon:before {
+  content: "";
+}
+
+.keynoteIcon:before {
+  content: "";
+}
+
+.pptIcon:before {
+  content: "";
+}
+
+.pptxIcon:before {
+  content: "";
+}
+
+.docIcon:before {
+  content: "";
+}
+
+.docxIcon:before {
+  content: "";
+}
+
+.aacIcon:before {
+  content: "";
+}
+
+.aifIcon:before {
+  content: "";
+}
+
+.iffIcon:before {
+  content: "";
+}
+
+.m3uIcon:before {
+  content: "";
+}
+
+.midIcon:before {
+  content: "";
+}
+
+.mp3Icon:before {
+  content: "";
+}
+
+.mpaIcon:before {
+  content: "";
+}
+
+.raIcon:before {
+  content: "";
+}
+
+.wavIcon:before {
+  content: "";
+}
+
+.wmaIcon:before {
+  content: "";
 }
 
 .shimIconSmall {
@@ -5849,288 +5686,6 @@ div#_dotHelpMenu {
 
 .archivedIcon {
   color: #CB3927;
-}
-
-#file-type-icons, .uknIcon, .pageIcon, .linkIcon, .bmpIcon,
-.imageIcon,
-.jpegIcon,
-.jpgIcon,
-.pctIcon, .giffIcon,
-.gifIcon,
-.pngIcon, .flaIcon,
-.flvIcon,
-.swfIcon, .epsIcon,
-.psdIcon,
-.pxrIcon,
-.tiffIcon,
-.tifIcon, .airIcon,
-.pdfIcon, .aiIcon,
-.drwIcon,
-.graffleIcon,
-.psIcon,
-.svgIcon,
-.vdxIcon, .docIcon,
-.docxIcon, .appIcon,
-.batIcon,
-.cgiIcon,
-.comIcon,
-.exeIcon,
-.jarIcon,
-.pifIcon,
-.vbIcon,
-.wsfIcon, .csvIcon,
-.numbersIcon,
-.wksIcon,
-.xlsIcon,
-.xlsxIcon, .accdbIcon,
-.dbIcon,
-.mdbIcon,
-.pdbIcon,
-.sqlIcon, .keynote,
-.pptIcon,
-.pptxIcon, .asxIcon,
-.wmvIcon, .asfIcon,
-.aviIcon,
-.movIcon,
-.mp4Icon,
-.mpgIcon,
-.oggIcon,
-.ogvIcon,
-.rmIcon,
-.vobIcon, .aacIcon,
-.aifIcon,
-.iffIcon,
-.m3uIcon,
-.midIcon,
-.mp3Icon,
-.mpaIcon,
-.raIcon,
-.wavIcon,
-.wmaIcon, .cssIcon, .vtlIcon, .aspIcon,
-.gyIcon,
-.jsIcon,
-.jsonIcon,
-.jspIcon,
-.phpIcon,
-.pyIcon,
-.rbIcon,
-.xmlIcon, .htmIcon,
-.htmlIcon,
-.rssIcon, .datIcon,
-.pagesIcon,
-.rtfIcon,
-.sdfIcon,
-.txtIcon, .debIcon,
-.gzIcon,
-.pkgIcon,
-.rarIcon,
-.sitIcon,
-.sitxIcon,
-.zipIcon,
-.zipxIcon, .eotIcon,
-.otfIcon,
-.ttfIcon,
-.woffIcon, .icoIcon, .azwIcon,
-.epubIcon,
-.ibooksIcon,
-.kf8Icon {
-  display: inline-block;
-  vertical-align: top;
-  *vertical-align: auto;
-  *zoom: 1;
-  *display: inline;
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat;
-  height: 18px;
-  width: 18px;
-}
-
-.uknIcon {
-  background-position: -21px -2000px;
-}
-
-.pageIcon {
-  background-position: -1px -400px;
-}
-
-.linkIcon {
-  background-position: -1px -660px;
-}
-
-.bmpIcon,
-.imageIcon,
-.jpegIcon,
-.jpgIcon,
-.pctIcon {
-  background-position: -1px -1540px;
-}
-
-.giffIcon,
-.gifIcon,
-.pctIcon,
-.pngIcon {
-  background-position: -21px -1540px;
-}
-
-.flaIcon,
-.flvIcon,
-.swfIcon {
-  background-position: -1px -1560px;
-}
-
-.epsIcon,
-.psdIcon,
-.pxrIcon,
-.tiffIcon,
-.tifIcon {
-  background-position: -21px -1560px;
-}
-
-.airIcon,
-.pdfIcon {
-  background-position: -1px -1580px;
-}
-
-.aiIcon,
-.drwIcon,
-.epsIcon,
-.graffleIcon,
-.psIcon,
-.svgIcon,
-.vdxIcon {
-  background-position: -21px -1580px;
-}
-
-.docIcon,
-.docxIcon {
-  background-position: -1px -1600px;
-}
-
-.appIcon,
-.batIcon,
-.cgiIcon,
-.comIcon,
-.exeIcon,
-.jarIcon,
-.pifIcon,
-.vbIcon,
-.wsfIcon {
-  background-position: -21px -1600px;
-}
-
-.csvIcon,
-.numbersIcon,
-.wksIcon,
-.xlsIcon,
-.xlsxIcon {
-  background-position: -1px -1620px;
-}
-
-.accdbIcon,
-.dbIcon,
-.mdbIcon,
-.pdbIcon,
-.sqlIcon {
-  background-position: -21px -1620px;
-}
-
-.keynote,
-.pptIcon,
-.pptxIcon {
-  background-position: -1px -1640px;
-}
-
-.asxIcon,
-.wmvIcon {
-  background-position: -21px -1640px;
-}
-
-.asfIcon,
-.aviIcon,
-.movIcon,
-.mp4Icon,
-.mpgIcon,
-.oggIcon,
-.ogvIcon,
-.rmIcon,
-.vobIcon {
-  background-position: -1px -1660px;
-}
-
-.aacIcon,
-.aifIcon,
-.iffIcon,
-.m3uIcon,
-.midIcon,
-.mp3Icon,
-.mpaIcon,
-.raIcon,
-.wavIcon,
-.wmaIcon {
-  background-position: -21px -1660px;
-}
-
-.cssIcon {
-  background-position: -1px -1680px;
-}
-
-.vtlIcon {
-  background-position: -21px -1680px;
-}
-
-.aspIcon,
-.gyIcon,
-.jsIcon,
-.jsonIcon,
-.jspIcon,
-.phpIcon,
-.pyIcon,
-.rbIcon,
-.xmlIcon {
-  background-position: -1px -1700px;
-}
-
-.htmIcon,
-.htmlIcon,
-.rssIcon {
-  background-position: -21px -1700px;
-}
-
-.datIcon,
-.pagesIcon,
-.rtfIcon,
-.sdfIcon,
-.txtIcon {
-  background-position: -1px -1720px;
-}
-
-.debIcon,
-.gzIcon,
-.pkgIcon,
-.rarIcon,
-.sitIcon,
-.sitxIcon,
-.zipIcon,
-.zipxIcon {
-  background-position: -21px -1720px;
-}
-
-.eotIcon,
-.otfIcon,
-.svgIcon,
-.ttfIcon,
-.woffIcon {
-  background-position: -21px -1840px;
-}
-
-.icoIcon {
-  background-position: -21px -1920px;
-}
-
-.azwIcon,
-.epubIcon,
-.ibooksIcon,
-.kf8Icon {
-  background-position: -21px -100px;
 }
 
 .tagsOptions {
@@ -6552,11 +6107,9 @@ div.calendar {
 
 .calendar, .calendar table {
   border: 1px solid #556;
-  font-size: 11px;
   color: #000;
   cursor: default;
   background: #eef;
-  font-family: tahoma,verdana,sans-serif;
 }
 
 /* Header part -- contains navigation buttons and day names. */

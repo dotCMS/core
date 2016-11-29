@@ -214,26 +214,11 @@
                 <%}%>
 
                 <%boolean started = false;%>
-                <%for(Structure s : structures){
-                	String spanClass = (s.getStructureType() ==1)
-               			? "contentIcon"
-           				:	(s.getStructureType() ==2)
-               					? "gearIcon"
-           						:	(s.getStructureType() ==3)
-           						? "formIcon"
-                   						:	(s.getStructureType() ==4)
-                   						? "fileIcon"
-                              			:	(s.getStructureType() ==6)
-                              				? "personaIcon"
-                              					: "pageIcon";
-
-
-
-                %>
+                <%for(Structure s : structures){%>
                         <%=(started) ? "," :""%>
                         {
                             name: "<%=s.getInode()%>",
-                            label: "<span class='<%=spanClass%>'></span> <%=UtilMethods.javaScriptify(s.getName())%>",
+                            label: "<%=UtilMethods.javaScriptify(s.getName())%>",
                             textLabel: "<%=s.getName()%>"
                         }
                         <%started = true;%>
