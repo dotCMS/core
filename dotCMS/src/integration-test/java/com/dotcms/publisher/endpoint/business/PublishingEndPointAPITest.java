@@ -94,6 +94,9 @@ public class PublishingEndPointAPITest extends TestBase{
 						api.deleteEndPointById(endPoint.getId());
 					}
 				}
+
+				savedEndPoints = api.getAllEndPoints();
+
 				assertTrue(savedEndPoints.size() == 0);
 				
 				// Insert test end points
