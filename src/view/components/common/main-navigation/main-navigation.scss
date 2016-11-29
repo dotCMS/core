@@ -1,9 +1,11 @@
 @import "../../../../scss/variables";
 
-md-nav-list {
+accordion {
     a {
         display: block;
         padding: 5px 0;
+        color: $body-font-color;
+        text-decoration: none;
     }
 
     .md-nav-list__submenu {

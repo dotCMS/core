@@ -155,7 +155,6 @@ var project = {
   copyCssThemes: function(cb) {
     gulp.src([
       '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
-      'primeng/resources/themes/omega/theme.css',
       'primeng/resources/primeng.min.css'
     ], {cwd: 'node_modules/**'}) /* Glob required here. */
         .pipe(flatten())

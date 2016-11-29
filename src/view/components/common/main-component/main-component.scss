@@ -1,24 +1,38 @@
 @import "../../../../scss/mixins";
 @import "../../../../scss/variables";
 
-md-sidenav-layout[fullscreen] {
-  &.layout {
-    top: 64px
+.layout {
+  background-color: $gray-lightest;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  position: fixed;
+  right: 0;
+  top: $toolbar-height;
+}
+
+.layout__sidebar {
+  position: absolute;
+  background-color: $white;
+  border-right: solid 1px $gray-lighter;
+  height: 100%;
+  transition: transform $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  .collapsed & {
+    transform: translateX(-100%);
   }
 }
 
-md-toolbar {
-  font-family: $base-font-family !important;
-  position: relative;
-  z-index: 1;
+.layout__main {
+  margin-left: 188px;
+  height: 100%;
+  overflow: auto;
+  transition: margin-left $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
 
-  md-toolbar-row {
-    justify-content: space-between;
+  .collapsed & {
+    margin-left: 0;
   }
-
 }
-
-
 
 .toolbar__actions,
 .toolbar__host {

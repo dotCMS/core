@@ -3,7 +3,7 @@ import {Component, ViewEncapsulation} from '@angular/core';
 import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
+    encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName,
     selector: 'dot-global-search',
     styleUrls: ['global-search.css'],

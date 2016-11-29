@@ -1,0 +1,16 @@
+.ui-widget-header {
+  align-items: center;
+  background-color: $primary;
+  color: $white;
+  display: flex;
+  padding: 0 $basic-padding * 2;
+  height: $toolbar-height;
+
+  &.ui-corner-all {
+    border-radius: 0;
+  }
+
+  .btn {
+    color: $white;
+  }
+}
