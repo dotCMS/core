@@ -1,21 +1,18 @@
-<!--TODO: overlay have to go when we use the digalog material 2 component-->
-<div class="login-as-overlay">
-    <div class="login-as">
+<div class="login-as">
         <!--TODO: manage errors on required fields and errors messages -->
-        <form action="" #loginAsForm="ngForm" (submit)="dolLoginAs(loginAsForm.value)">
-            <div class="form-group">
-                <p-autoComplete name="user" id="userId"  ngModel required [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" [size]="30"
-                    (onSelect)="userSelectedHandler($event)" field="label" [minLength]="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
-                                [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
-                </p-autoComplete>
-            </div>
-            <div class="form-group" *ngIf="needPassword">
-                <md-input name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel></md-input>
-            </div>
-            <div class="form-group">
-                <button md-raised-button id="dot-login-as-button-change" [disabled]="!loginAsForm.valid">{{i18nMessages['change']}}</button>
-                <button md-button color="accent" id="dot-login-as-button-cancel" (click)="close($event)">{{i18nMessages['cancel']}}</button>
-            </div>
-        </form>
-    </div>
+    <form action="" #loginAsForm="ngForm" (submit)="dolLoginAs(loginAsForm.value)">
+        <div class="form-group">
+            <p-autoComplete name="user" id="userId"  ngModel required [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" [size]="30"
+                (onSelect)="userSelectedHandler($event)" field="label" [minLength]="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
+                           [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
+            </p-autoComplete>
+        </div>
+        <div class="form-group" *ngIf="needPassword">
+            <input pPassword name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel/>
+        </div>
+        <div class="form-group">
+            <button pButton id="dot-login-as-button-change" [disabled]="!loginAsForm.valid" label="{{i18nMessages['change']}}"></button>
+            <button pButton color="accent" id="dot-login-as-button-cancel" (click)="close($event)" label="{{i18nMessages['cancel']}}"></button>
+        </div>
+    </form>
 </div>
