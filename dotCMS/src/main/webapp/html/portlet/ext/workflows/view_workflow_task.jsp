@@ -249,7 +249,7 @@
 				<span></span>
 	
 				<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
-					<div id="cancel" data-dojo-type="dijit/MenuItem" data-dojo-props="">
+					<div id="cancel" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: cancel">
 	                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 	                </div>
 	                
