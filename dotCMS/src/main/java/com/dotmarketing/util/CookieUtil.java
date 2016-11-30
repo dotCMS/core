@@ -23,12 +23,13 @@ import static com.liferay.util.CookieUtil.containsCookie;
  */
 public class CookieUtil {
 
-    private static final String ALWAYS = "always";
+	private static final String ALWAYS = "always";
     private static final String HTTPS = "https";
     private static final String URI = "/";
     private static final int MAX_AGE_DAY_MILLIS = 60 * 60 * 24;
+	public static final int DEFAULT_JWT_MAX_AGE_DAYS = 14;
 
-    /**
+	/**
      * 
      * @return
      */
@@ -90,33 +91,28 @@ public class CookieUtil {
                                                 final String accessToken,
                                                 final Optional<Integer> daysMaxAge) {
 
-        Cookie cookie = null;
+		//Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsI.eyJpc3MiOiJodHRwczotcGxlL.mFrs3Zo8eaSNcxiNfvRh9dqKP4F1cB; Secure; HttpOnly;
+		final Cookie cookie = new Cookie(CookieKeys.JWT_ACCESS_TOKEN, accessToken);
 
-        // if the JSESSIONID cookie does not exists create it
-		if ( request.getCookies() == null ||
-				!containsCookie(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN) ) {
-
-			//Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsI.eyJpc3MiOiJodHRwczotcGxlL.mFrs3Zo8eaSNcxiNfvRh9dqKP4F1cB; Secure; HttpOnly;
-			cookie = new Cookie(CookieKeys.JWT_ACCESS_TOKEN, accessToken);
-
-			if ( Config.getBooleanProperty(COOKIES_HTTP_ONLY, false) ) {
-				// add secure and httpOnly flag to the cookie
-				cookie.setHttpOnly(true);
-			}
-
-			if ( ALWAYS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
-					|| HTTPS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
-                    && request.isSecure())  {
-
-				cookie.setSecure(true);
-			}
-
-			if (daysMaxAge.orElse(14) > 0) {
-				cookie.setMaxAge(MAX_AGE_DAY_MILLIS * daysMaxAge.orElse(14));
-			}
-			cookie.setPath(URI);
-			response.addCookie(cookie);
+		if ( Config.getBooleanProperty(COOKIES_HTTP_ONLY, false) ) {
+			// add secure and httpOnly flag to the cookie
+			cookie.setHttpOnly(true);
 		}
+
+		if ( ALWAYS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
+				|| HTTPS.equals(Config.getStringProperty(COOKIES_SECURE_FLAG, HTTPS))
+				&& request.isSecure())  {
+
+			cookie.setSecure(true);
+		}
+
+		if (daysMaxAge.orElse(DEFAULT_JWT_MAX_AGE_DAYS) > 0) {
+
+			cookie.setMaxAge(MAX_AGE_DAY_MILLIS * daysMaxAge.orElse(DEFAULT_JWT_MAX_AGE_DAYS));
+		}
+		cookie.setPath(URI);
+		response.addCookie(cookie);
+
 	} // createJsonWebTokenCookie.
 
 	/**
