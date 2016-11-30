@@ -5,7 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-public class RegExpToolkitTest {
+import com.dotcms.TestBase;
+
+public class RegExpToolkitTest extends TestBase {
 
     RegExpToolkit toolkit = new RegExpToolkit("/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/");
 

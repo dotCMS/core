@@ -1,5 +1,6 @@
 package com.dotcms.translate;
 
+import com.dotcms.TestBase;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -36,7 +37,7 @@ import static com.dotcms.translate.TranslateTestUtil.spanish;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
-public class GoogleTranslationServiceTest {
+public class GoogleTranslationServiceTest extends TestBase {
     private User testUser = new User();
 
     @Test(expected = NullPointerException.class)

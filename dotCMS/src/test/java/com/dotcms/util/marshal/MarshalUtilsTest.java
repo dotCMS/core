@@ -12,6 +12,7 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
+import com.dotcms.TestBase;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -23,7 +24,7 @@ import com.dotmarketing.util.json.JSONObject;
  * @version 3.7
  */
 
-public class MarshalUtilsTest {
+public class MarshalUtilsTest extends TestBase {
 	
     /**
      * Testing the marshall
