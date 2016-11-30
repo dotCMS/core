@@ -265,7 +265,7 @@ table.dijitComboButton {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #1DAED6;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
@@ -806,7 +806,7 @@ table.dijitComboButton {
 }
 .dijitCheckBoxChecked {
   border: solid 1px #161616;
-  background: #1DAED6 url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
+  background: #0E80CB url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
 }
 .dijitCheckBoxDisabled {
   border: solid 1px transparent;
@@ -823,14 +823,14 @@ table.dijitComboButton {
   width: 14px;
 }
 .dijitRadioChecked {
-  border: solid 1px #1DAED6;
+  border: solid 1px #0E80CB;
   position: relative;
 }
 .dijitRadioChecked:before {
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   border-radius: 3px;
-  background-color: #1DAED6;
+  background-color: #0E80CB;
   content: "";
   height: 6px;
   left: 50%;
@@ -1085,7 +1085,7 @@ table.dijitComboButton {
   border: solid 1px #ECEDEE;
 }
 .dijitSliderProgressBar, .dijitSliderBottomBumper, .dijitSliderLeftBumper {
-  background: #1DAED6;
+  background: #0E80CB;
   border-color: #ECEDEE;
 }
 .dijitSliderRemainingBar, .dijitSliderTopBumper, .dijitSliderRightBumper {
@@ -1185,7 +1185,7 @@ table.dijitComboButton {
 .dijitSliderHover .dijitSliderBottomBumper,
 .dijitSliderHover .dijitSliderProgressBar,
 .dijitSliderHover .dijitSliderLeftBumper {
-  background: #1DAED6;
+  background: #0E80CB;
   border-color: #5B5B5B;
 }
 .dijitSliderHover .dijitSliderRemainingBar,
@@ -1460,7 +1460,7 @@ table.dijitComboButton {
   background-color: #fff;
   border-width: 5px 1px 0 0;
   border-style: solid;
-  border-color: #1DAED6 #ECEDEE transparent transparent;
+  border-color: #0E80CB #ECEDEE transparent transparent;
   height: 43px;
 }
 .dijitTabCloseIcon {
@@ -1687,12 +1687,12 @@ html, body {
   width: 32px;
 }
 .dijitCalendarDayLabelTemplate {
-  background-color: #1DAED6;
+  background-color: #0E80CB;
   color: #fff;
   font-weight: bold;
 }
 .dijitCalendarHoveredDate {
-  background-color: rgba(29, 174, 214, 0.15);
+  background-color: rgba(14, 128, 203, 0.15);
   color: #161616;
 }
 .dijitCalendarIncrementControl {
@@ -2715,7 +2715,7 @@ select[multiple]:hover {
 .dijitButtonFlat {
   background-color: transparent;
   box-shadow: none;
-  color: #1DAED6;
+  color: #0E80CB;
 }
 .dijitButtonFlat.dijitButtonHover {
   background-color: #ECEDEE;
