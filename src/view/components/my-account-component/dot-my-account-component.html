@@ -1,4 +1,4 @@
-<div class="my-account-overlay">
+
     <div class="my-account">
 
         <div class="error-message" [innerHTML]="message" *ngIf="message" id="dot-my-account-general-error-message"></div>
@@ -24,8 +24,8 @@
                       floatingPlaceholder="false"
                       (keyup)="message=''"
                       required/>
-            <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{getRequiredMessage(i18nMessages['Last-Name'])}}</p>
             </div>
+            <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{getRequiredMessage(i18nMessages['Last-Name'])}}</p>
             <div class="my-account__form-line">
                 <input pInputText id="dot-my-account-email-input"
                       #emailInput="ngModel"
@@ -91,4 +91,3 @@
             </div>
         </form>
     </div>
-</div>

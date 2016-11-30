@@ -7,5 +7,9 @@
         <li class="user-menu__item"><a href="#" (click)="logoutAs($event)" *ngIf="auth.loginAsUser" id="dot-toolbar-user-link-logout-as" messagekey>logout-as</a></li>
     </ul>
 </dot-dropdown-component>
-<dot-login-as *ngIf="showLoginAs" (cancel)="tooggleLoginAs($event)"></dot-login-as>
-<dot-my-account *ngIf="showMyAccount" (close)='toggleMyAccount()'></dot-my-account>
+<p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="showLoginAs"  appendTo="body" modal="modal" width="300" height="300" responsive="true">
+    <dot-login-as *ngIf="showLoginAs" (cancel)="tooggleLoginAs($event)"></dot-login-as>
+</p-dialog>
+<p-dialog header="{{i18nMessages['my-account']}}" [(visible)]="showMyAccount"  appendTo="body" modal="modal" width="300" responsive="true">
+    <dot-my-account *ngIf="showMyAccount" (close)='toggleMyAccount()'></dot-my-account>
+</p-dialog>

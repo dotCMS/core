@@ -1,7 +1,9 @@
+import {BaseComponent} from '../../common/_base/base-component';
 import {Component, ViewChild} from '@angular/core';
 import {DotRouterService} from '../../../../api/services/dot-router-service';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
+import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
     moduleId: __moduleName,
@@ -10,13 +12,17 @@ import {LoginService, Auth} from '../../../../api/services/login-service';
     templateUrl: ['toolbar-user.html'],
 
 })
-export class ToolbarUserComponent {
+export class ToolbarUserComponent extends BaseComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
+
+
     private showLoginAs: boolean = false;
     private auth: Auth;
     private showMyAccount: boolean = false;
 
-    constructor(private router: DotRouterService, private loginService: LoginService) {}
+    constructor(private router: DotRouterService, private loginService: LoginService, private messageService: MessageService) {
+        super(['login-as','my-account'],messageService);
+    }
 
     ngOnInit(): void {
         this.loginService.watchUser((auth: Auth) => {
