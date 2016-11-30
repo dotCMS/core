@@ -81,12 +81,8 @@ task help(overwrite:true) << {
 help.description = 'Displays a help message'
 
 apply plugin: 'maven'
-apply plugin: 'application'
 
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
-
-//Required for gradle 2.3 and above
-mainClassName = ' '
 
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
