@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.TestBase;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.PayloadVerifierFactory;
@@ -14,7 +15,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link ReindexThread}
  * @author jsanca
  */
-public class ReindexThreadTest extends BaseMessageResources {
+public class ReindexThreadTest extends TestBase {
 
     private boolean testGenerateNotification = false;
     private PayloadVerifier originalRoleVerifier;

@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.content;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -17,7 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Test;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.TestBase;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -26,15 +28,13 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
 /**
  * Test for the {@link ContentTypeResource}
  */
-public class ContentTypeResourceTest extends BaseMessageResources {
+public class ContentTypeResourceTest extends TestBase {
 
     @Test
     public void testNoContentLetTypes() throws Exception {
@@ -59,7 +59,9 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
-        ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
+        when(contentTypeAPI.findAll()).thenReturn(new ArrayList<ContentType>());
+
+        ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper, webResource);
 
         final Response response1 = contentTypeResource.getRecentBaseTypes(request);
 
@@ -98,16 +100,10 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
-        final List<Structure> structures = getStructures();
+        final List<ContentType> contentTypes = getContentTypes();
+        when(contentTypeAPI.findAll()).thenReturn(contentTypes);
 
-        when(structureAPI.find(user, false, true)).thenReturn(structures);
-        when(structureAPI.getRecentContentType(BaseContentType.CONTENT, user, -1)).thenReturn(
-                list(map("type", 1, "name", "type_1", "inode", "123")));
-
-        when(structureAPI.getRecentContentType(BaseContentType.WIDGET, user, -1)).thenReturn(
-                list(map("type", 2, "name", "type_2", "inode", "456")));
-
-        ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper);
+        ContentTypeResource contentTypeResource = new ContentTypeResource(contentTypeHelper, webResource);
 
         final Response response1 = contentTypeResource.getRecentBaseTypes(request);
 
@@ -147,27 +143,28 @@ public class ContentTypeResourceTest extends BaseMessageResources {
         }
     }
 
-    private List<Structure> getStructures() {
-        final List<Structure> structures = new ArrayList();
+    private List<ContentType> getContentTypes() {
+        final List<ContentType> contentTypes = new ArrayList<>();
 
-        final Structure document = new Structure();
-        document.setStructureType(1);
-        document.setName("Document");
-        document.setInode("d8262b9f-84ea-46f9-88c4-0c8959271d67");
-        structures.add(document);
+        contentTypes.add(ContentTypeBuilder.builder(SimpleContentType.class)
+        	.id("d8262b9f-84ea-46f9-88c4-0c8959271d67")
+        	.name("Document")
+        	.variable("testtestingStructure")
+        	.build()
+        );
+        contentTypes.add(ContentTypeBuilder.builder(FileAssetContentType.class)
+            .id("33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d")
+            .name("File Asset")
+            .variable("testtestingStructure")
+            .build()
+        );
+        contentTypes.add(ContentTypeBuilder.builder(FileAssetContentType.class)
+        	.id("e65543eb-6b81-42e0-a59b-1bb9fd7bfce4")
+        	.name("Video")
+        	.variable("testtestingStructure")
+        	.build()
+        );
 
-        final Structure asset = new Structure();
-        asset.setStructureType(4);
-        asset.setName("File Asset");
-        asset.setInode("33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d");
-        structures.add(asset);
-
-        final Structure video = new Structure();
-        video.setStructureType(4);
-        video.setName("Video");
-        video.setInode("e65543eb-6b81-42e0-a59b-1bb9fd7bfce4");
-        structures.add(video);
-
-        return structures;
+        return contentTypes;
     }
 }

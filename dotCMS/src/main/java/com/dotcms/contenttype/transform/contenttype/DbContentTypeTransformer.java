@@ -11,12 +11,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
 
 public class DbContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
-	
-	
+
 	public DbContentTypeTransformer(Map<String, Object> map){
 		this.list = ImmutableList.of(transform(map));
 	}
@@ -29,11 +29,14 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 		this.list= ImmutableList.copyOf(newList);
 	}
 	
-	
 	private static ContentType transform(final Map<String, Object> map) throws DotStateException {
-		BaseContentType base =  BaseContentType.getBaseContentType((Integer) map.get("structuretype"));
+
+		BaseContentType base =  BaseContentType.getBaseContentType(DbConnectionFactory.getInt(map.get("structuretype").toString()));
+
 		final ContentType type = new ContentType() {
+
 			static final long serialVersionUID = 1L;
+
 			@Override
 			public String variable() {
 				return (String) map.get("velocity_var_name");
@@ -43,10 +46,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			public String urlMapPattern() {
 	             String ret = (String) map.get("url_map_pattern");
 	             return (UrlMapable.class.isAssignableFrom(base.immutableClass()) && UtilMethods.isSet(ret))  ? ret : null;
-
-				
 			}
-
 
 			@Override
 			public String publishDateVar() {
@@ -64,14 +64,12 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			public String owner() {
                 String ret = (String) map.get("owner");
                 return ( UtilMethods.isSet(ret))  ? ret : null;
-
 			}
 
 			@Override
 			public String name() {
                 String ret = (String) map.get("name");
                 return ( UtilMethods.isSet(ret))  ? ret : null;
-
 			}
 
 			@Override
@@ -91,88 +89,63 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public String expireDateVar() {
-
                 String ret = (String) map.get("expire_date_var");
                 return ( UtilMethods.isSet(ret))  ? ret : null;
 			}
 
 			@Override
 			public String description() {
-
                 String ret = (String) map.get("description");
                 return ( UtilMethods.isSet(ret))  ? ret : null;
-
 			}
 
 			@Override
 			public boolean fixed() {
-				return (Boolean) map.get("fixed");
+				return DbConnectionFactory.isDBTrue(map.get("fixed").toString());
 			}
 
 			@Override
 			public boolean system() {
-				return (Boolean) map.get("system");
+				return DbConnectionFactory.isDBTrue(map.get("system").toString());
 			}
 
 			@Override
 			public boolean defaultType() {
-				return (Boolean) map.get("default_structure");
+				return DbConnectionFactory.isDBTrue(map.get("default_structure").toString());
 			}
 
 			@Override
 			public Date modDate() {
 				return convertSQLDate((Date) map.get("mod_date"));
-
-				
 			}
+
 			@Override
 			public Date iDate() {
 				return convertSQLDate((Date) map.get("idate"));
 			}
+
 			@Override
 			public BaseContentType baseType() {
 				return base;
 			}
 
-			
-			
 			private Date convertSQLDate(Date d){
 				Date javaDate = new Date();
 				if(d!=null) javaDate.setTime(d.getTime());
 				return javaDate;
 			}
-
 		};
-		
 
-
-		
-		
 		return new ImplClassContentTypeTransformer(type).from();
-		
 	}
-	
-	
-
-	
-	
-
-
 
 	@Override
 	public ContentType from() throws DotStateException {
 		return this.list.get(0);
 	}
 
-
 	@Override
 	public List<ContentType> asList() throws DotStateException {
 		return this.list;
 	}
 }
-
-/**
- * Fields in the db inode owner idate type inode name description
- * default_structure page_detail structuretype system fixed velocity_var_name
- * url_map_pattern host folder expire_date_var publish_date_var mod_date
- **/

@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.TestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
@@ -34,7 +35,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ForgotPasswordResourceTest {
+public class ForgotPasswordResourceTest extends TestBase {
 
 
     public ForgotPasswordResourceTest() {

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.TestBase;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -25,7 +26,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @author Jonathan Gamba
  *         Date: 1/14/16
  */
-public class CurrentSessionLanguageConditionletTest {
+public class CurrentSessionLanguageConditionletTest extends TestBase {
 
     private HttpServletRequest request;
     private HttpServletResponse response;

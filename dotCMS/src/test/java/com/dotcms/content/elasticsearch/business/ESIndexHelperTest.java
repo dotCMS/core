@@ -14,11 +14,12 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 
+import com.dotcms.TestBase;
 import com.dotcms.enterprise.LicenseService;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 
-public class ESIndexHelperTest {
+public class ESIndexHelperTest extends TestBase {
 
 	/**
 	 * Process [["index","dummyIndex"]] to find "dummyIndex"

@@ -11,6 +11,7 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
+import com.dotcms.TestBase;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
@@ -25,7 +26,7 @@ import com.dotmarketing.util.json.JSONObject;
  * @author jsanca
  */
 
-public class JsonWebTokenServiceTest {
+public class JsonWebTokenServiceTest extends TestBase {
 
 
 
