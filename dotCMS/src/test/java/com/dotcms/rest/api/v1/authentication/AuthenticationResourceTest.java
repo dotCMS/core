@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.TestBase;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.Map;
 
-public class AuthenticationResourceTest {
+public class AuthenticationResourceTest extends TestBase {
 
 
     public AuthenticationResourceTest() {

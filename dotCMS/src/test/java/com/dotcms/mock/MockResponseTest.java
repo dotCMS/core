@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Test;
 
+import com.dotcms.TestBase;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.mock.response.MockHttpResponse;
 /**
@@ -14,7 +15,7 @@ import com.dotcms.mock.response.MockHttpResponse;
  * Unit test for request and resonse mock
  *
  */
-public class MockResponseTest {
+public class MockResponseTest extends TestBase {
 	
 	
 	
