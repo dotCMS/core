@@ -93,17 +93,6 @@
 <%@ include file="/html/portlet/ext/workflows/workflows_js_inc.jsp" %>
 
 
-<style>
-#savingContentDialog .dijitDialogCloseIcon{
-	display:none;
-}
-</style>
-
-
-
-
-
-
 <script language="javascript">
 
 
@@ -218,12 +207,9 @@
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Workflow-Task-Detail")) %>' />
 
-<style>
-	a.actionsMenu{display:block;padding:3px 0 3px 5px;text-decoration:none;}
-	a.actionsMenu:hover{background-color:#fcfcfc;}
-</style>
 
-<div class="yui-ge" style="margin:20px;">
+
+
 <%
 	boolean hasPermission = false;
 	ContentletAPI conApi = APILocator.getContentletAPI();
@@ -237,94 +223,138 @@
 	if (hasPermission) {
 %>
 <!-- START Task Overview -->
-	<div class="yui-u first">
 
-		<table class="listingTable">
-			<tr>
-				<th colspan="2" valign="top">
-					<div>
-						<div style="float:right;border:1px solid silver;background: white;padding:5px;">
-							<%if (contentlet.isLive()) {%>
-					            <span class="liveIcon"></span>
-					        <%} else if (contentlet.isArchived()) {%>
-					        	<span class="archivedIcon"></span>
-					        <%} else if (contentlet.isWorking()) {%>
-					            <span class="workingIcon"></span>
-					        <%}%>
-					        <%if (contentlet.isLocked()) {
-					  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false); %>
-					        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
-					   		<%} %>
+
+<table class="listingTable">
+	<tr>
+		<th style="text-align:left;">
+			<div style="display:inline-block;">
+				<% if(structure.getStructureType() ==1){ %>
+					<span class="structureIcon"></span>
+				<%}else if(structure.getStructureType() ==2){ %>
+					<span class="gearIcon"></span>
+				<%}else if(structure.getStructureType() ==3){ %>
+					<span class="formIcon"></span>
+				<%}else if(structure.getStructureType() ==4){ %>
+					<span class="documentIcon"></span>
+				<%}else if(structure.getStructureType() ==5){ %>
+					<span class="pageIcon"></span>
+			    <%} %>
+			</div>
+			<h1 style="display:block;margin:15px 0;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
+		</th>
+		<th>
+		<!-- START Actions -->					
+			<div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+				<span></span>
+	
+				<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+					<div id="cancel" data-dojo-type="dijit/MenuItem" data-dojo-props="">
+	                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+	                </div>
+	                
+	                <%--Start workflow tasks --%>
+					<%boolean hasAction = false; %>
+					<%if(canEdit) {%>
+						<%if(!scheme.isMandatory() || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
+							<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: doEdit">
+								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Content")) %>
+							</div>
+							<% hasAction = true; %>
+						<%} %>
+					<%} %>
+					
+					<%for(WorkflowAction a : actions){ %>
+						<%if(a.requiresCheckout())continue; %>
+	
+						<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
+						<% boolean hasPushPublishActionlet = false; %>
+						<% for(WorkflowActionClass actionlet : actionlets){ %>
+							<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
+								<% hasPushPublishActionlet = true; %>
+							<% } %>
+						<% } %>
+	
+						<div data-dojo-type="dijit/MenuItem" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>)">
+							<!-- <span class="<%=a.getIcon()%>"></span> -->
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
+							<% hasAction = true; %>
 						</div>
-						
-						
-						<div style="font-size:14pt;font-weight:normal;padding:5px;">
-							<% if(structure.getStructureType() ==1){ %>
-								<span class="structureIcon"></span>
-							<%}else if(structure.getStructureType() ==2){ %>
-								<span class="gearIcon"></span>
-							<%}else if(structure.getStructureType() ==3){ %>
-								<span class="formIcon"></span>
-							<%}else if(structure.getStructureType() ==4){ %>
-								<span class="documentIcon"></span>
-							<%}else if(structure.getStructureType() ==5){ %>
-								<span class="pageIcon"></span>
-						    <%} %>
-							<a href="javascript:doEdit()"><%= contentlet.getTitle() %></a>
+					<%}%>
+					
+					<%if(!hasAction){ %>
+						<div data-dojo-type="dijit/MenuItem" data-dojo-props="">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Actions")) %>
 						</div>
-						<div style="padding:5px;padding-left:10px;">
-						<%=LanguageUtil.get(pageContext, "Type") %> :
-						
-						<span style="font-size:12pt;font-weight:normal"><%=structure.getName()%>  &gt; <%=step.getName()%></span></div>
-					</div>
-				</th>
-			</tr>
+					<%} %>
+	
+				</div>
+			</div>
+		<!-- END Actions -->
+		</th>
+	</tr>
+	<tr>
+		<td>
+			<strong><%=LanguageUtil.get(pageContext, "Type") %>:</strong>
+			<%=structure.getName()%>
+		</td>
+		<td>
+			<strong><%= LanguageUtil.get(pageContext, "Status") %>: </strong>
+			<%if (contentlet.isLive()) {%>
+	            <span class="liveIcon"></span>
+	        <%} else if (contentlet.isArchived()) {%>
+	        	<span class="archivedIcon"></span>
+	        <%} else if (contentlet.isWorking()) {%>
+	            <span class="workingIcon"></span>
+	        <%}%>
+	        <%if (contentlet.isLocked()) {
+	  		  	User u = APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false); %>
+	        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
+	   		<%} %>
+	   		<%=step.getName()%>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<strong><%= LanguageUtil.get(pageContext, "by") %>:</strong>
+			<% if(createdBy != null){%>
+				<%= createdBy.getName() %>
+			<% } else  { %>
+				<%= LanguageUtil.get(pageContext, "Nobody") %>
+			<% } %>
+		</td>
 
-			<tr>
-				<td>
-					<strong><%= LanguageUtil.get(pageContext, "by") %>:</strong>
-					<% if(createdBy != null){%>
-						<%= createdBy.getName() %>
-					<% } else  { %>
-						<%= LanguageUtil.get(pageContext, "Nobody") %>
-					<% } %>
-				</td>
+		<td>
+			<strong><%= LanguageUtil.get(pageContext, "Created-on") %>:</strong>
+			<%= UtilMethods.dateToHTMLDate(task.getCreationDate()) %>
+			<%= LanguageUtil.get(pageContext, "at") %> <%= UtilMethods.dateToHTMLTime(task.getCreationDate()) %>
+		</td>
+	</tr>
 
-				<td>
-					<strong><%= LanguageUtil.get(pageContext, "Created-on") %>:</strong>
-					<%= UtilMethods.dateToHTMLDate(task.getCreationDate()) %>
-					<%= LanguageUtil.get(pageContext, "at") %> <%= UtilMethods.dateToHTMLTime(task.getCreationDate()) %>
-				</td>
+	<tr>
+		<td>
+			<strong><%= LanguageUtil.get(pageContext, "Assigned-To") %>:</strong>
+			<%= assignedRoleName%>
 
+		</td>
+		<td>
+			<strong><%= LanguageUtil.get(pageContext, "Updated") %>:</strong>
+			<%= DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %>
+		</td>
+	</tr>
+	
+	<%String latestComment = (comments != null && comments.size()>0) ? comments.get(0).getComment() :task.getDescription();  %>
+	<%if(UtilMethods.isSet(latestComment)){ %>
+		<tr>
+			<td colspan="2">
+				<strong><%= LanguageUtil.get(pageContext, "Latest-Comment") %>:</strong>
 
-			</tr>
+					<%=latestComment%>
 
-			<tr>
-				<td>
-					<strong><%= LanguageUtil.get(pageContext, "Assigned-To") %>:</strong>
-					<%= assignedRoleName%>
-
-				</td>
-
-				<td>
-					<strong><%= LanguageUtil.get(pageContext, "Updated") %>:</strong>
-					<%= DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %>
-				</td>
-
-			</tr>
-			<%String latestComment = (comments != null && comments.size()>0) ? comments.get(0).getComment() :task.getDescription();  %>
-
-
-			<%if(UtilMethods.isSet(latestComment)){ %>
-				<tr>
-					<td colspan="2">
-						<strong><%= LanguageUtil.get(pageContext, "Latest-Comment") %>:</strong>
-
-							<%=latestComment%>
-
-					</td>
-				</tr>
-			<%} %>
+			</td>
+		</tr>
+	<%} %>
+	
 	<%if (contentlet.isLocked()) {%>
 		<tr>
 			<td colspan=2>
@@ -340,141 +370,87 @@
 		</tr>
 	<%} %>
 
-		</table>
-	</div>
+</table>
 <!-- END Task Overview -->
 
-<!-- START Actions -->
-	<div class="yui-u">
-		<div class="callOutBox2" style="text-align:left;">
-		<h3><%= LanguageUtil.get(pageContext, "Available-Workflow-Actions") %></h3>
-			<div style="margin-top:10px;margin-bottom:6px;">
-				<%--Start workflow tasks --%>
-				<%boolean hasAction = false; %>
-				<%if(canEdit) {%>
-					<%if(!scheme.isMandatory() || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
-						<div class="workflowActionLink" onclick="doEdit()">
-							<span class="editIcon"></span>
-							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Content")) %>
-						</div>
-						<% hasAction = true; %>
-					<%} %>
-				<%} %>
 
-
-				<%for(WorkflowAction a : actions){ %>
-					<%if(a.requiresCheckout())continue; %>
-
-					<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
-					<% boolean hasPushPublishActionlet = false; %>
-					<% for(WorkflowActionClass actionlet : actionlets){ %>
-						<% if(actionlet.getActionlet() != null && actionlet.getActionlet().getClass().getCanonicalName().equals(PushPublishActionlet.class.getCanonicalName())){ %>
-							<% hasPushPublishActionlet = true; %>
-						<% } %>
-					<% } %>
-
-					<div class="workflowActionLink" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>)">
-
-							<span class="<%=a.getIcon()%>"></span>
-							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
-						<% hasAction = true; %>
-					</div>
-				<%}%>
-				<%if(!hasAction){ %>
-					<div class="workflowActionLink">
-
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Actions")) %>
-					</div>
-				<%} %>
-
-			</div>
-		</div>
-	</div>
-<!-- END Actions -->
-
-</div>
-<div style="margin:20px;">
+<div style="margin:40px 0;">
+	
+	
 <!-- START Tabs -->
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 		<div id="TabZero" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Preview") %>">
 
+			<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
 
 
-
-
-		<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
-
-
-
-
-
-
-
-			<div class="buttonRow" style="text-align:right;">
-				<% if (!step.isResolved()) { %>
-					<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon">
-						<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
-						<div dojoType="dijit.TooltipDialog" id="dialog1" title="Login Form" execute="addComment();">
-							<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-									<portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
-									<portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
-								</portlet:actionURL>">
-							<input type="hidden" name="referer" value="<%= referer %>">
-							<input type="hidden" name="cmd" value="add_comment">
-							
-							<textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
-							<div class="buttonRow">
-                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()" iconClass="infoIcon">
-								    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
-                                </button>
-							</div>
-							</form>
-						</div>
-					</div>
-				<%}%>
-			</div>
-
-
-			<table class="listingTable">
-				<tr>
-					<th colspan=10><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
-				</tr>
-				<%
-				    String str_style2="";
-					int y =0;
-
-					Iterator<WorkflowComment> commentsIt = comments.iterator();
-					while (commentsIt.hasNext()) {
-						WorkflowComment comment = commentsIt.next();
-
-						if(y%2==0){
-						  str_style2="class=\"alternate_1\"";
-						}
-						else{
-						  str_style2="class=\"alternate_2\"";
-						}
-						y++;
-				%>
-					<tr <%=str_style2 %>>
-						<td>
-							<p>
-								<%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
-
-								<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
-							</p>
-						</td>
-					</tr>
-				<% } %>
-
-				<%	if (comments.size() == 0) { %>
+			<div style="border:1px solid #ddd;margin: 60px 0;">
+				
+				<table class="listingTable">
 					<tr>
-						<td>
-							<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "None") %></div>
-						</td>
+						<th><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
+						<th>
+							<% if (!step.isResolved()) { %>
+								<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon">
+									<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
+									<div dojoType="dijit.TooltipDialog" id="dialog1" title="Login Form" execute="addComment();">
+										<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+												<portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
+												<portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
+											</portlet:actionURL>">
+										<input type="hidden" name="referer" value="<%= referer %>">
+										<input type="hidden" name="cmd" value="add_comment">
+										
+										<textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
+										<div class="buttonRow">
+			                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()" iconClass="infoIcon">
+											    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
+			                                </button>
+										</div>
+										</form>
+									</div>
+								</div>
+							<%}%>
+						</th>
 					</tr>
-				<% } %>
-
-			</table>
+	
+					<%
+					    String str_style2="";
+						int y =0;
+	
+						Iterator<WorkflowComment> commentsIt = comments.iterator();
+						while (commentsIt.hasNext()) {
+							WorkflowComment comment = commentsIt.next();
+	
+							if(y%2==0){
+							  str_style2="class=\"alternate_1\"";
+							}
+							else{
+							  str_style2="class=\"alternate_2\"";
+							}
+							y++;
+					%>
+						<tr <%=str_style2 %>>
+							<td colspan="2">
+								<p>
+									<%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
+	
+									<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
+								</p>
+							</td>
+						</tr>
+					<% } %>
+	
+					<%	if (comments.size() == 0) { %>
+						<tr>
+							<td>
+								<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "None") %></div>
+							</td>
+						</tr>
+					<% } %>
+	
+				</table>
+			</div>
 
 			<!-- END Comments -->
 
@@ -568,7 +544,7 @@
 		</div>
 	<!-- END History Tab -->
 </div>
-</div>
+
 <%
 	} else {
 %>
