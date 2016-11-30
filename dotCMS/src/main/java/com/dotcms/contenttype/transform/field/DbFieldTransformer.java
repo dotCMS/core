@@ -14,8 +14,8 @@ import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.StringUtils;
-
 
 public class DbFieldTransformer implements FieldTransformer {
 
@@ -33,7 +33,6 @@ public class DbFieldTransformer implements FieldTransformer {
 	public Field from() throws DotStateException {
 		if(this.results.size()==0) throw new DotStateException("0 results");
 		return fromMap(results.get(0));
-
 	}
 
 	private static Field fromMap(Map<String, Object> map) {
@@ -91,7 +90,6 @@ public class DbFieldTransformer implements FieldTransformer {
 			@Override
 			public String defaultValue() {
 			    return StringUtils.nullEmptyStr((String) map.get("default_value"));
-		
 			}
 
 			@Override
@@ -103,13 +101,13 @@ public class DbFieldTransformer implements FieldTransformer {
 			@Override
 			public String dbColumn() {
 				return StringUtils.nullEmptyStr((String) map.get("field_contentlet"));
-
 			}
 
 			@Override
 			public Date modDate() {
 				return new Date(((Date) map.get("mod_date")).getTime());
 			}
+
 			@Override
 			public void check() {
 				//no checking for a generic type
@@ -117,60 +115,52 @@ public class DbFieldTransformer implements FieldTransformer {
 			
 			@Override
 			public Date iDate() {
-
 				Date idate = (Date) map.get("idate");
 				if (idate != null) {
 					return DateUtils.round(new Date(idate.getTime()), Calendar.SECOND);
-
 				}
 				return null;
 			}
 
 			@Override
 			public boolean required() {
-				Object x  =map.get("required");
-				return (Boolean) map.get("required");
+				return DbConnectionFactory.isDBTrue(map.get("required").toString());
 			}
 
 			@Override
 			public int sortOrder() {
-				return (Integer) map.get("sort_order");
-
+				return DbConnectionFactory.getInt(map.get("sort_order").toString());
 			}
 
 			@Override
 			public boolean indexed() {
-				return (Boolean) map.get("indexed");
+				return DbConnectionFactory.isDBTrue(map.get("indexed").toString());
 			}
 
 			@Override
 			public boolean listed() {
-				return (Boolean) map.get("listed");
+                return DbConnectionFactory.isDBTrue(map.get("listed").toString());
 			}
 
 			@Override
 			public boolean fixed() {
-				return (Boolean) map.get("fixed");
+                return DbConnectionFactory.isDBTrue(map.get("fixed").toString());
 			}
 
 			@Override
 			public boolean readOnly() {
-				return (Boolean) map.get("read_only");
-
+                return DbConnectionFactory.isDBTrue(map.get("read_only").toString());
 			}
 
 			@Override
 			public boolean searchable() {
-				return (Boolean) map.get("searchable");
-
+                return DbConnectionFactory.isDBTrue(map.get("searchable").toString());
 			}
 
 			@Override
 			public boolean unique() {
-				return (Boolean) map.get("unique_");
-
+                return DbConnectionFactory.isDBTrue(map.get("unique_").toString());
 			}
-
 
 			@Override
 			public List<DataTypes> acceptedDataTypes() {
@@ -180,7 +170,6 @@ public class DbFieldTransformer implements FieldTransformer {
 			@Override
 			public Class type() {
 				return LegacyFieldTypes.getImplClass(fieldType);
-
 			}
 
 			@Override
@@ -204,8 +193,5 @@ public class DbFieldTransformer implements FieldTransformer {
 
 		return ImmutableList.copyOf(list);
 	}
-	
-	
-	
 
 }
