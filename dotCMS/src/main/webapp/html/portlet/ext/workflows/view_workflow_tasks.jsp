@@ -510,6 +510,7 @@ bottom="/html/common/box_bottom.jsp">
 			<div  id="filterTasksFrm" class="filter-tasks-frm">
 				<input type="hidden" name="cmd" value="filterTasks">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
+				<h1>BLAAA</h1>
 				<dl>
 					<dt><%=LanguageUtil.get(pageContext, "Keywords")%>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="keywords" id="keywords" value="<%=UtilMethods.webifyString(searcher.getKeywords())%>" /></dd>
