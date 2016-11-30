@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.util;
 
+import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
@@ -19,7 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @RunWith(DataProviderRunner.class)
-public class LogicalStatementTest {
+public class LogicalStatementTest extends TestBase {
 
     @DataProvider
     public static Object[][] cases() {

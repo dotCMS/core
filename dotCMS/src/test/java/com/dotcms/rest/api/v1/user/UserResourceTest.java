@@ -20,6 +20,7 @@ import javax.servlet.http.HttpSession;
 
 import org.junit.Test;
 
+import com.dotcms.TestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -40,7 +41,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
@@ -49,7 +49,7 @@ import com.liferay.portal.model.User;
  * {@link SiteBrowserResource} test
  * @author jsanca
  */
-public class UserResourceTest extends BaseMessageResources {
+public class UserResourceTest extends TestBase {
 
     @Test
     public void testUpdateUserNullValues() throws JSONException, DotSecurityException, DotDataException {

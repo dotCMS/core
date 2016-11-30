@@ -25,6 +25,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.dotcms.TestBase;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -40,7 +41,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
@@ -50,7 +50,7 @@ import com.liferay.portal.model.User;
  * {@link SiteBrowserResource} test
  * @author jsanca
  */
-public class SiteBrowserResourceTest extends BaseMessageResources {
+public class SiteBrowserResourceTest extends TestBase {
 
 	/**
 	 * Queries the list of sites associated to a user based on the value of the
