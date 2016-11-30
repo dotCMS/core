@@ -152,14 +152,12 @@ public class ContentTypeResourceTest extends TestBase {
         	.variable("testtestingStructure")
         	.build()
         );
-
         contentTypes.add(ContentTypeBuilder.builder(FileAssetContentType.class)
             .id("33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d")
             .name("File Asset")
             .variable("testtestingStructure")
             .build()
         );
-
         contentTypes.add(ContentTypeBuilder.builder(FileAssetContentType.class)
         	.id("e65543eb-6b81-42e0-a59b-1bb9fd7bfce4")
         	.name("Video")
