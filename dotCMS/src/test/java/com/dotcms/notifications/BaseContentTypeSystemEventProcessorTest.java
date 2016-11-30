@@ -12,7 +12,6 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
 import org.junit.Test;
@@ -45,9 +44,6 @@ public class BaseContentTypeSystemEventProcessorTest extends TestBase {
         when(payload.getRawData()).thenReturn(contentTypePayloadDataWrapper);
 
         when(payload.getVisibilityValue()).thenReturn("1");
-        when(type.baseType()).thenReturn(BaseContentType.CONTENT);
-        when(type.name()).thenReturn("test structure");
-        when(type.id()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");
 
 
         BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor = new BaseContentTypeSystemEventProcessor();
