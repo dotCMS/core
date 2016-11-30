@@ -1,16 +1,15 @@
 package com.dotmarketing.util;
 
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Date;
-
 import org.junit.Test;
+
+import com.dotcms.TestBase;
+
 import static org.junit.Assert.*;
 
 /**
  * Unit test for {@link UtilMethods}
  */
-public class UtilMethodsTest extends BaseMessageResources {
+public class UtilMethodsTest extends TestBase {
 
 	@Test
     public void testValidateFileName_Valid() {

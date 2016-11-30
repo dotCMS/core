@@ -1,11 +1,11 @@
 package com.dotcms.timemachine.ajax;
 
+import com.dotcms.TestBase;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link TimeMachineAjaxAction}
  * @author jsanca
  */
-public class TimeMachineAjaxActionTest extends BaseMessageResources {
+public class TimeMachineAjaxActionTest extends TestBase {
 
     private boolean testGenerateNotification = false;
 
