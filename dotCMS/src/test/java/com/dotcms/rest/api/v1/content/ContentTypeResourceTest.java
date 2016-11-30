@@ -13,6 +13,7 @@ import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.TestBase;
@@ -27,6 +28,9 @@ import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.util.ContentTypeUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -152,14 +156,12 @@ public class ContentTypeResourceTest extends TestBase {
         	.variable("testtestingStructure")
         	.build()
         );
-
         contentTypes.add(ContentTypeBuilder.builder(FileAssetContentType.class)
             .id("33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d")
             .name("File Asset")
             .variable("testtestingStructure")
             .build()
         );
-
         contentTypes.add(ContentTypeBuilder.builder(FileAssetContentType.class)
         	.id("e65543eb-6b81-42e0-a59b-1bb9fd7bfce4")
         	.name("Video")
