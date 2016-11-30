@@ -145,7 +145,7 @@ public class APILocator extends Locator<APIIndex>{
 	/**
 	 * Private constructor for the singleton.
 	 */
-	private APILocator() {
+	protected APILocator() {
 		super();
 	}
 

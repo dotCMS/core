@@ -1,12 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.TestBase;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link ESContentletAPIHelper}
  * @author jsanca
  */
-public class ESContentletAPIHelperTest extends BaseMessageResources {
+public class ESContentletAPIHelperTest extends TestBase {
 
     private boolean testGenerateNotificationStartDeleting = false;
 
