@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.TestBase;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 
 import eu.bitwalker.useragentutils.Browser;
@@ -21,7 +22,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class UsersBrowserConditionletTest {
+public class UsersBrowserConditionletTest extends TestBase {
 	
 	private HttpServletRequest request;
     private HttpServletResponse response;

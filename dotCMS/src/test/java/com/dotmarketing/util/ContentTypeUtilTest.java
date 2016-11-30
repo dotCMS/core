@@ -1,6 +1,19 @@
 package com.dotmarketing.util;
 
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.junit.Test;
+
+import com.dotcms.TestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.util.ContentTypeUtil;
@@ -12,18 +25,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.List;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertEquals;
-
-public class ContentTypeUtilTest {
+public class ContentTypeUtilTest extends TestBase {
 
     @Test
     public void testGetActionUrl() throws DotDataException {

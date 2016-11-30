@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.TestBase;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.logConsole.model.LogMapper;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by freddyrodriguez on 7/29/16.
  */
-public abstract class RestUtilTest {
+public abstract class RestUtilTest extends TestBase {
 
     public static final String DEFAULT_USER_ID = "userId";
     public static final String DEFAULT_COMPANY = "dotcms.org";
