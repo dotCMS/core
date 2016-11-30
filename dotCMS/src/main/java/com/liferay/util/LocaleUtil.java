@@ -369,8 +369,6 @@ public class LocaleUtil {
 
 			if (UtilMethods.isSet(uId)) {
 
-				session.setAttribute(WebKeys.USER_ID, uId);
-
 				//DOTCMS-4943
 				final boolean respectFrontend =
 						getUserWebAPI().isLoggedToBackend(request);
