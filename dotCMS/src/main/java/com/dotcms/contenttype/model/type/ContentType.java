@@ -56,6 +56,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public abstract String id();
 
 
+  @Nullable
   @Value.Lazy
   public String inode() {
     return id();
