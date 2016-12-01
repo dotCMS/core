@@ -278,7 +278,7 @@ dependencies {
 
     }
     testCompile "org.powermock:powermock-module-junit4:1.6.5"
-//    testCompile group: 'com.google.collections', name: 'google-collections', version: '1.0'
+    testCompile group: 'com.google.guava', name: 'guava', version: '19.0'
 
     /**
      * Order matters here: OSGI-Core must come after felix.
