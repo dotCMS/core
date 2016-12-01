@@ -1,5 +1,10 @@
 package com.dotcms.api.system.event;
 
+import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 
 /**
@@ -14,10 +19,9 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class Payload implements Serializable {
 
-	private final String type;
 	private final Object data;
 	private final Visibility visibility;
-    private final String visibilityId; // user id, role uid or permission, if it is global, this is not need
+    private final Object visibilityValue; // this could be anything: an user id, role uid or permission, or event a meta object with several things.
 
 	/**
 	 * Creates a payload object.
@@ -49,43 +53,30 @@ public class Payload implements Serializable {
 	 * 
 	 * @param visibility {@link Visibility}
 	 * 			  - If the event should be apply just for a specific user, role or global
-	 * @param visibilityId {@link String}
+	 * @param visibilityValue {@link String}
 	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
 	 */
 	public Payload(final Visibility visibility,
-				   final String visibilityId) {
+				   final Object visibilityValue) {
+		this(new Void(), visibility, visibilityValue);
+	}
 
-        this(new Void(), visibility, visibilityId);
-    }
-
-    /**
-     * Creates a payload object.
-     *
-     * @param data         {@link Object}
-     *                     - Any Java object that represents the payload.
-     * @param visibility   {@link Visibility}
-     *                     - If the event should be apply just for a specific user, role or global
-     * @param visibilityId {@link String}
-     *                     - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
-     */
-    public Payload(final Object data,
-                   final Visibility visibility,
-                   final String visibilityId) {
-
-        this.type = data.getClass().getName();
-        this.data = data;
-        this.visibility = visibility;
-        this.visibilityId = visibilityId;
-    }
-
-    /**
-     * Returns the type (fully qualified name) of the Java class representing
-     * the payload of the System Event.
-     *
-     * @return The fully qualified name of the payload class.
-     */
-    public String getType() {
-		return type;
+	/**
+	 * Creates a payload object.
+	 *
+	 * @param data         {@link Object}
+	 *                     - Any Java object that represents the payload.
+	 * @param visibility   {@link Visibility}
+	 *                     - If the event should be apply just for a specific user, role or global
+	 * @param visibilityValue {@link String}
+	 *                     - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
+	 */
+	public Payload(final Object data,
+				   final Visibility visibility,
+				   final Object visibilityValue) {
+		this.data = data;
+		this.visibility = visibility;
+		this.visibilityValue = visibilityValue;
 	}
 
 	/**
@@ -118,11 +109,26 @@ public class Payload implements Serializable {
 	}
 
 	/**
-	 * Returns the visibility id
+	 * Returns the visibility value
 	 * @return Object
-     */
-	public String getVisibilityId() {
-		return visibilityId;
+	 */
+	public Object getVisibilityValue() {
+		return visibilityValue;
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Payload payload = (Payload) o;
+
+		return data != null ? data.equals(payload.data) : payload.data == null;
+
+	}
+
+	@Override
+	public int hashCode() {
+		return data != null ? data.hashCode() : 0;
+	}
 } // E:O:F:Payload.

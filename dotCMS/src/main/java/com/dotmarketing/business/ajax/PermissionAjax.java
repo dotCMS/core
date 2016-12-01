@@ -62,7 +62,7 @@ import com.liferay.portal.model.User;
  *
  */
 public class PermissionAjax {
-
+		
 	/**
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
@@ -285,7 +285,8 @@ public class PermissionAjax {
 				}
 			} else {
 				permissionAPI.removePermissions(asset);
-			}
+			}		
+			
 			HibernateUtil.commitTransaction();
 		} catch (Exception e) {
 		    Logger.warn(this, e.getMessage(), e);
@@ -312,7 +313,7 @@ public class PermissionAjax {
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 			Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 			permissionAPI.removePermissions(asset);
-
+						
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;

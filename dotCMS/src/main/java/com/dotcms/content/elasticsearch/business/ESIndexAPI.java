@@ -971,7 +971,7 @@ public class ESIndexAPI {
 	 *            stream with the zipped repository file
 	 * @param snapshotName
 	 *            index to be restored
-	 * @param deleteRepository
+	 * @param cleanRepository
 	 * 	          defines if the respository should be deleted after the restore.
 	 *
 	 * @return true if the snapshot was restored
@@ -984,8 +984,9 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
 	 */
-	public boolean uploadSnapshot(InputStream inputFile, boolean deleteRepository)
+	public boolean uploadSnapshot(InputStream inputFile, boolean cleanRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
+		File outFile = null;
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
 		File toDirectory = new File(
@@ -994,16 +995,12 @@ public class ESIndexAPI {
 			toDirectory.mkdirs();
 		}
 		// zip file extraction
-		File outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
+		outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
 		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
 		FileUtils.copyStreamToFile(outFile, inputFile, null);
 		ZipFile zipIn = new ZipFile(outFile);
-		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath());
-		if(deleteRepository){
-			deleteRepository(BACKUP_REPOSITORY);
-			outFile.delete();
-		}
-		return response;
+		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);		
+		return response;		
 	}
 
 	/**
@@ -1026,21 +1023,31 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
 	 */
-	public boolean uploadSnapshot(ZipFile zip, String toDirectory)
+	public boolean uploadSnapshot(ZipFile zip, String toDirectory, boolean cleanRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		ZipUtil.extract(zip, new File(toDirectory));
-
-		File zipDirectory = new File(toDirectory);
-		String snapshotName = esIndexHelper.findSnapshotName(zipDirectory);
-		if (snapshotName == null) {
-			Logger.error(this.getClass(), "No snapshot file on the zip.");
-			throw new ElasticsearchException("No snapshot file on the zip.");
+		File zipDirectory = null;
+		try{
+			zipDirectory = new File(toDirectory);
+			String snapshotName = esIndexHelper.findSnapshotName(zipDirectory);
+			if (snapshotName == null) {
+				Logger.error(this.getClass(), "No snapshot file on the zip.");
+				throw new ElasticsearchException("No snapshot file on the zip.");
+			}
+			if (!isRepositoryExist(BACKUP_REPOSITORY)) {
+				// initial repository under the complete path
+				createRepository(toDirectory, BACKUP_REPOSITORY, true);
+			}
+			return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
+		}finally{
+			File tempZip = new File(zip.getName());
+			if(zip!=null && tempZip.exists()){
+				tempZip.delete();
+			}
+			if(cleanRepository){
+				deleteRepository(BACKUP_REPOSITORY);
+			}
 		}
-		if (!isRepositoryExist(BACKUP_REPOSITORY)) {
-			// initial repository under the complete path
-			createRepository(toDirectory, BACKUP_REPOSITORY, true);
-		}
-		return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
 	}
 
 	/**

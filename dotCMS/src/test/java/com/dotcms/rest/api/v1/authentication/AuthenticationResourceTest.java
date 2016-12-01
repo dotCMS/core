@@ -1,11 +1,11 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.TestBase;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
-import com.dotcms.rest.WebResource;
 import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.Map;
 
-public class AuthenticationResourceTest {
+public class AuthenticationResourceTest extends TestBase {
 
 
     public AuthenticationResourceTest() {
@@ -366,7 +366,7 @@ public class AuthenticationResourceTest {
         LoginService loginService = mock( LoginService.class );
 
         User user = UserUtilTest.createUser();
-        when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( user );
+        when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( user );
 
         AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
 
@@ -395,7 +395,7 @@ public class AuthenticationResourceTest {
         User user = UserUtilTest.createUser();
         User loginAsUser = UserUtilTest.createUser();
 
-        when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
+        when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
         when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest))).thenReturn(user);
 
         AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);

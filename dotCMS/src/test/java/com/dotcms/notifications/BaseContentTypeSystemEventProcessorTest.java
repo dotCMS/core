@@ -1,6 +1,7 @@
 package com.dotcms.notifications;
 
 
+import com.dotcms.TestBase;
 import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
@@ -16,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BaseContentTypeSystemEventProcessorTest {
+public class BaseContentTypeSystemEventProcessorTest extends TestBase {
 
     @Test
     public void testProcess(){
@@ -35,7 +36,7 @@ public class BaseContentTypeSystemEventProcessorTest {
         when(event.getPayload()).thenReturn(payload);
         when(payload.getData()).thenReturn(structure);
         when(payload.getRawData()).thenReturn(contentTypePayloadDataWrapper);
-        when(payload.getVisibilityId()).thenReturn("1");
+        when(payload.getVisibilityValue()).thenReturn("1");
         when(structure.getStructureType()).thenReturn(Structure.Type.CONTENT.getType());
         when(structure.getName()).thenReturn("test structure");
         when(structure.getInode()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");

@@ -22,6 +22,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.Company;
@@ -141,7 +142,7 @@ public  class WebResource {
             params = "";
 
         Map<String, String> paramsMap = buildParamsMap(params);
-        User user = authenticate(request, paramsMap, rejectWhenNoUser);
+        User user = getCurrentUser(request, paramsMap, rejectWhenNoUser);
 
         if(UtilMethods.isSet(requiredPortlet)) {
 
@@ -161,6 +162,49 @@ public  class WebResource {
         return initData;
     }
 
+    /**
+     * Return the current login user.<br>
+     * if exist a user login by login as then return this user not the principal user
+     *
+     * @param request
+     * @param paramsMap
+     * @param rejectWhenNoUser
+     *
+     * @return the login user or the login as user if exist any
+     */
+    private User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
+
+        User user = null;
+        HttpSession session = request.getSession();
+
+        if (this.isLoggedAsUser(session)){
+            try {
+                user = this.userAPI.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
+            } catch (DotDataException|DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+        }else {
+            user = authenticate(request, paramsMap, rejectWhenNoUser);
+        }
+
+        return user;
+    }
+
+    /**
+     * Validate if the user is logged as another user
+     * 
+     * @param session http session object
+     * @return true is the user is LoggedAs another user
+     */
+    private boolean isLoggedAsUser(HttpSession session) {
+    	boolean isLoginAsUser = false;
+    	if (session != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
+    		isLoginAsUser=true;
+    	}
+    	return isLoginAsUser;
+    }
 
     /**
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.api.web.WebSessionContext;
+import com.dotcms.TestBase;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -16,7 +16,6 @@ import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.system.AppConfigurationHelper;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationHelper;
-import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -38,7 +37,7 @@ import java.util.Map;
  * @since Jul 29, 2016
  *
  */
-public class AppContextInitResourceTest {
+public class AppContextInitResourceTest extends TestBase {
 
 	@Test
 	public void testVerifyConfigurationData() throws DotSecurityException, DotDataException, IllegalAccessException,
@@ -61,7 +60,7 @@ public class AppContextInitResourceTest {
 		LoginService loginService = mock( LoginService.class );
 
 		User user = UserUtilTest.createUser();
-		when( loginService.getLogInUser( mockHttpRequest ) ).thenReturn( user );
+		when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( user );
 
 		AppConfigurationHelper helper = new AppConfigurationHelper(configurationHelper);
 

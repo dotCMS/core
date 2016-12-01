@@ -1,6 +1,7 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
+import com.dotmarketing.util.Constants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +32,7 @@ public class TestInitialContext extends InitialContext {
 
         loadProperties();
         dataSource = new BasicDataSource();
+        System.out.println("dbType = " + dbType);
         dataSource.setDriverClassName(prop.getProperty(dbType + "db.driver"));
         dataSource.setUrl(prop.getProperty(dbType + "db.base.url"));
         dataSource.setUsername(prop.getProperty(dbType + "db.username"));

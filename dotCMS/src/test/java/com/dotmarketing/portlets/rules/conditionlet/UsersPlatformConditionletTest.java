@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMultimap;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
-public class UsersPlatformConditionletTest {
+public class UsersPlatformConditionletTest extends TestBase {
 
     static ImmutableMultimap<DeviceType, String> DEVICE_TYPE_TO_AGENT_STRINGS = new ImmutableMultimap.Builder<DeviceType, String>()
         .putAll(

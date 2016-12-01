@@ -3,7 +3,6 @@ package com.dotcms.api.system.event.verifier;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
-import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.business.APILocator;
@@ -28,8 +27,7 @@ public class PermissionVerifier implements PayloadVerifier{
     @Override
     public boolean verified(Payload payload, SessionWrapper session) {
         try {
-            return permissionAPI.doesUserHavePermission((Permissionable) payload.getData(),
-                    Integer.parseInt(payload.getVisibilityId()),
+            return permissionAPI.doesUserHavePermission((Permissionable) payload.getData(), (int) payload.getVisibilityValue(),
                     session.getUser(), false);
         } catch (DotDataException e) {
             throw new VerifierException(e);

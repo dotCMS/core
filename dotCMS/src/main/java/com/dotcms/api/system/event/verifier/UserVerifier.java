@@ -12,6 +12,6 @@ public class UserVerifier implements  PayloadVerifier{
     @Override
     public boolean verified(Payload payload, SessionWrapper session) {
         return SessionWrapper.class.cast(session).getUser().getUserId()
-                .equals(payload.getVisibilityId());
+                .equals(payload.getVisibilityValue());
     }
 }

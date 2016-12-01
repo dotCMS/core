@@ -8,6 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -55,6 +60,7 @@ public class LinkFactory {
     
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	private static HostAPI hostAPI = APILocator.getHostAPI();
+	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
 	 * @param permissionAPI the permissionAPI to set
@@ -396,6 +402,9 @@ public class LinkFactory {
         //Copy permissions
         permissionAPI.copyPermissions( currentLink, newLink );
 
+		systemEventsAPI.push(SystemEventType.COPY_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
         return newLink;
     }
 
@@ -498,6 +507,10 @@ public class LinkFactory {
         if(oldParent != null){
         	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
         }
+
+		systemEventsAPI.push(SystemEventType.MOVE_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
         return true;
     }
 

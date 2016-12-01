@@ -1,17 +1,9 @@
 package com.dotcms.notifications;
 
 import com.dotcms.api.system.event.*;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
-import com.dotcms.util.ContentTypeUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.liferay.portal.model.User;
-import org.elasticsearch.common.annotations.VisibleForTesting;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.websocket.Session;
 
 /**
@@ -31,7 +23,7 @@ public class BaseContentTypeSystemEventProcessor  implements SystemEventProcesso
         ContentTypeView contentTypeView = new ContentTypeView(structure, contentTypePayloadDataWrapper.getActionUrl());
 
         return new SystemEvent(event.getId(), event.getEventType(),
-                new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityId()),
+                new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityValue()),
                 event.getCreationDate());
     }
 }

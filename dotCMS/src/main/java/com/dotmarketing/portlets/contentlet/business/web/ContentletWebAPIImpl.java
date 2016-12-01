@@ -189,7 +189,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(autocommit)
 		    HibernateUtil.commitTransaction();
 
-		contentletSystemEventUtil.pushSaveEvent(user, cont, isNew);
+		contentletSystemEventUtil.pushSaveEvent(cont, isNew);
 
 		contentletFormData.put("cache_control", "0");
 

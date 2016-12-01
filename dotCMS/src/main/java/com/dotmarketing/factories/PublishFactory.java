@@ -371,6 +371,8 @@ public class PublishFactory {
             APILocator.getContentletAPI().publish( (HTMLPageAsset) htmlPage, user, false );
         }
 
+
+
         return true;
     }
 	

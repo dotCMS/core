@@ -5,10 +5,10 @@ package com.dotcms.publisher.endpoint.business;
 
 import com.dotcms.TestBase;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.IntegrationTestInitService;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -83,17 +83,20 @@ public class PublishingEndPointAPITest extends TestBase{
 
 	// There should not be any end points at the beginning of the test
 	@Test
-	@Ignore
 	public void test() throws DotDataException {
 		try {
 			HibernateUtil.startTransaction();
 			// Ensure proper starting state - no end points in database
 			{
 				List<PublishingEndPoint> savedEndPoints = api.getAllEndPoints();
-				assertTrue(savedEndPoints.size() == 0);
-				savedEndPoints = api.getEnabledReceivingEndPoints();
-				assertTrue(savedEndPoints.size() == 0);
+				if(savedEndPoints.size() > 0){
+					for(PublishingEndPoint endPoint : savedEndPoints){
+						api.deleteEndPointById(endPoint.getId());
+					}
+				}
+
 				savedEndPoints = api.getAllEndPoints();
+
 				assertTrue(savedEndPoints.size() == 0);
 				
 				// Insert test end points
