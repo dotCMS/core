@@ -597,10 +597,10 @@ dojo.require("dojox.layout.ContentPane");
         var viewport_height = viewport.h;
 
         var  e =  dojo.byId(editButtonRow);
-		dojo.style(e, "height", viewport_height - 185 + "px");
+		//dojo.style(e, "height", viewport_height - 185 + "px");
 
 		dojo.query(".wrapperRight").forEach(function(node, index, arr){
-		 	dojo.style(node, "height", viewport_height - 185 + "px");
+		 	//dojo.style(node, "height", viewport_height - 185 + "px");
 		});
 
     }

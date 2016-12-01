@@ -214,26 +214,11 @@
                 <%}%>
 
                 <%boolean started = false;%>
-                <%for(Structure s : structures){
-                	String spanClass = (s.getStructureType() ==1)
-               			? "contentIcon"
-           				:	(s.getStructureType() ==2)
-               					? "gearIcon"
-           						:	(s.getStructureType() ==3)
-           						? "formIcon"
-                   						:	(s.getStructureType() ==4)
-                   						? "fileIcon"
-                              			:	(s.getStructureType() ==6)
-                              				? "personaIcon"
-                              					: "pageIcon";
-
-
-
-                %>
+                <%for(Structure s : structures){%>
                         <%=(started) ? "," :""%>
                         {
                             name: "<%=s.getInode()%>",
-                            label: "<span class='<%=spanClass%>'></span> <%=UtilMethods.javaScriptify(s.getName())%>",
+                            label: "<%=UtilMethods.javaScriptify(s.getName())%>",
                             textLabel: "<%=s.getName()%>"
                         }
                         <%started = true;%>
@@ -356,10 +341,10 @@
     <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
     <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
     <!-- START Split Screen -->
-    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox">
+    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer">
 
         <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 251px;" class="portlet-sidebar-wrapper" >
+        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 200px;" class="portlet-sidebar-wrapper" >
             <div class="portlet-sidebar">
                 <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
                 <% if((readStructs.size() == 0)){%>
@@ -450,7 +435,7 @@
                     </button>
 
                     <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
                     </button>
                 </div>
 
@@ -475,13 +460,29 @@
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar">
-                        <div class="portlet-toolbar__info" id="matchingResultsDiv" style="display: none"></div>
-                        <div class="portlet-toolbar__actions" id="portletActions">
+                        <div class="portlet-toolbar__actions-primary">
+                            <div data-dojo-type="dijit/form/DropDownButton">
+                                <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></span>
+                                <script type="text/javascript">
+                                    function importContent() {
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&_EXT_11_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                    }
+                                </script>
+                                <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
+                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
+                        <div class="portlet-toolbar__actions-secondary" id="portletActions">
                             <div id="archiveButtonDiv" style="display:none">
                                 <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                     <span></span>
 
-                                    <div data-dojo-type="dijit/Menu">
+                                    <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
                                         <div id="unArchiveButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unArchiveSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Un-Archive")) %>
                                         </div>
@@ -503,26 +504,28 @@
                                 <div id="unArchiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                     <span></span>
 
-                                    <div data-dojo-type="dijit/Menu">
+                                    <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
                                         <div id="publishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: publishSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
                                         </div>
-                                            <% if ( enterprise ) { %>
-                                            <% if ( sendingEndpoints ) { %>
-                                        <div id="pushPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: pushPublishSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
-                                        </div>
-                                            <% } %>
-                                        <div id="addToBundleButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleSelectedContentlets">
-                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
-                                        </div>
-                                            <% } %>
                                         <div id="unPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unPublishSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>
                                         </div>
                                         <div id="archiveButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: archiveSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
                                         </div>
+                                        <div data-dojo-type="dijit/MenuSeparator"></div>
+                                        <% if ( enterprise ) { %>
+                                            <% if ( sendingEndpoints ) { %>
+                                                <div id="pushPublishButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: pushPublishSelectedContentlets">
+                                                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
+                                                </div>
+                                            <% } %>
+                                            <div id="addToBundleButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addToBundleSelectedContentlets">
+                                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
+                                            </div>
+                                            <div data-dojo-type="dijit/MenuSeparator"></div>
+                                        <% } %>
                                         <div id="unlockButton" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: unlockSelectedContentlets">
                                             <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
                                         </div>

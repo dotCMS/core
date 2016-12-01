@@ -1764,6 +1764,9 @@
                 th.innerHTML = "<a class=\"beta\" href=\"javascript: doSearch (1, 'modDate')\"><%= LanguageUtil.get(pageContext, "Last-Edit-Date") %></a>";
                 row.appendChild(th);
 
+                th = document.createElement('th');
+                row.appendChild(th);
+
                 var languageId;
                 var locale;
 
@@ -1787,7 +1790,6 @@
                 for (var i = 0; i < data.length; i++) {
                         var row = table.insertRow(table.rows.length);
 
-                        row.setAttribute("valign","top");
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
@@ -1842,6 +1844,9 @@
                         cell.style.textAlign="right";
                         cell.style.whiteSpace="nowrap";
                         cell.innerHTML = cellData["modDate"];
+
+                        var cell = row.insertCell (row.cells.length);
+                        cell.innerHTML = '<span class="dijitIcon actionIcon"></span>';
 
                         live = cellData["live"] == "true"?true:false;
                         working = cellData["working"] == "true"?true:false;
@@ -2227,16 +2232,25 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" style=\"text-align:center;\">&nbsp</div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
+                        var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "_all") {
-                            exportContentButton = new dijit.form.Button({
-                                label: "<%= LanguageUtil.get(pageContext, "Export") %>",
-                                class: "export-button",
-                                onClick: donwloadToExcel,
-                            });
-                            dojo.byId("portletActions").insertBefore(exportContentButton.domNode, dojo.byId("archiveButtonDiv"));
+                            if (!donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.addChild(new dijit.MenuItem({
+                                    label: "<%= LanguageUtil.get(pageContext, "Export") %>",
+                                    onClick: donwloadToExcel,
+                                    id: 'donwloadToExcel'
+                                }));
+                            }
+                        } else {
+                            if (donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.removeChild(donwloadToExcelMenuItem);
+                                donwloadToExcelMenuItem.destroy();
+                            }
 
                         }
+
                         div.innerHTML = strbuff;
                         div.style.display = "";
 

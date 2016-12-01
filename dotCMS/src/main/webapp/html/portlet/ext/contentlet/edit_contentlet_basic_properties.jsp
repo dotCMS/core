@@ -109,8 +109,6 @@
 	catch(Exception e){
 		wfActions = new ArrayList();
 	}
-	
-    boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 
 %>
 	
@@ -175,163 +173,142 @@
 		-->
 		
 		
-		<div style="padding:30px 10px 20px 10px;">
-			<div class="fieldWrapperSide">
+		<div class="content-edit-language">
 			<!-- SELECT STRUCTURE -->
-				<%if(contentletForm.isAllowChange()){%>
-					<%List structures = contentletForm.getAllStructures();%>						
-					<select name="selectedStructure" onChange="structureSelected()">
-						<option value="none"><%= LanguageUtil.get(pageContext, "Select-type") %></option>
-						<%		
-						for(int i = 0;i < structures.size();i++)
-						{									
-							Structure actualStructure = (Structure) structures.get(i);
-							if (InodeUtils.isSet(actualStructure.getInode())) {
-								String selected = (actualStructure.getInode().equalsIgnoreCase(structure.getInode()) ? "SELECTED" : "");%>
-								<option value="<%=actualStructure.getInode()%>" <%=selected%>><%=actualStructure.getName()%></option>
-							<%}%>
+			<%if(contentletForm.isAllowChange()){%>
+				<%List structures = contentletForm.getAllStructures();%>
+				<select name="selectedStructure" onChange="structureSelected()">
+					<option value="none"><%= LanguageUtil.get(pageContext, "Select-type") %></option>
+					<%
+					for(int i = 0;i < structures.size();i++)
+					{
+						Structure actualStructure = (Structure) structures.get(i);
+						if (InodeUtils.isSet(actualStructure.getInode())) {
+							String selected = (actualStructure.getInode().equalsIgnoreCase(structure.getInode()) ? "SELECTED" : "");%>
+							<option value="<%=actualStructure.getInode()%>" <%=selected%>><%=actualStructure.getName()%></option>
 						<%}%>
-					</select>
-				<%} else {%>
-					<h3>
-						<% if(structure.getStructureType() ==1){ %>
-							<span class="structureIcon"></span>
-						<%}else if(structure.getStructureType() ==2){ %>
-							<span class="gearIcon"></span>
-						<%}else if(structure.getStructureType() ==3){ %>
-							<span class="formIcon"></span>
-						<%}else if(structure.getStructureType() ==4){ %>
-							<span class="documentIcon"></span>
-						<%}else if(structure.getStructureType() ==5){ %>
-							<span class="pageIcon"></span>
-					    <%} %>
-						<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>
-					</h3>
-					<input type="hidden" name="selectedStructure" id="selectedStructure" value="<%= structure.getInode() %>">
-				<%} %>
-				</div>
+					<%}%>
+				</select>
+			<%} else {%>
+				<h3>
+					<% if(structure.getStructureType() ==1){ %>
+						<span class="structureIcon"></span>
+					<%}else if(structure.getStructureType() ==2){ %>
+						<span class="gearIcon"></span>
+					<%}else if(structure.getStructureType() ==3){ %>
+						<span class="formIcon"></span>
+					<%}else if(structure.getStructureType() ==4){ %>
+						<span class="documentIcon"></span>
+					<%}else if(structure.getStructureType() ==5){ %>
+						<span class="pageIcon"></span>
+					<%} %>
+					<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>
+				</h3>
+				<input type="hidden" name="selectedStructure" id="selectedStructure" value="<%= structure.getInode() %>">
+			<%} %>
 			<!-- END SELECT STRUCTURE -->
-		
-	
-				<!--  Start Language -->
-				<%if (languages.size() > 1 
-					&& !structure.getVelocityVarName().equalsIgnoreCase("Host")
-					&& structure.getStructureType() != Structure.STRUCTURE_TYPE_FORM
-					&& structure.getStructureType() != Structure.STRUCTURE_TYPE_PERSONA ) { %>
-					<script>
-						function changeLanguage(url){
 
-							/*
-								lang ="<%=contentletForm.getLanguageId()%>";
-								
-								if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>") <0){
-									x = url.substring(url.indexOf("lang="), url.length);
-									if(x.indexOf("&") > -1){
-										x=x.substring(5, x.indexOf("&"));
-									}
-									else{
-										x=x.substring(5, x.length);
-									}
-					
+			<!--  Start Language -->
+			<%if (languages.size() > 1
+				&& !structure.getVelocityVarName().equalsIgnoreCase("Host")
+				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_FORM
+				&& structure.getStructureType() != Structure.STRUCTURE_TYPE_PERSONA ) { %>
+				<script>
+					function changeLanguage(url){
+						/*
+							lang ="<%=contentletForm.getLanguageId()%>";
+
+							if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>") <0){
+								x = url.substring(url.indexOf("lang="), url.length);
+								if(x.indexOf("&") > -1){
+									x=x.substring(5, x.indexOf("&"));
 								}
-								var langElement = document.getElementById("languageId");
-							*/
-							if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>&") <0){
-								if(url.indexOf("host=") <0){
-									if(dojo.byId('hostId')){
-										url = url + "&host=" + dojo.byId('hostId').value;
-									}
-									if(dojo.byId('folderInode')){
-										url = url + "&folder=" + dojo.byId('folderInode').value;
-									}
+								else{
+									x=x.substring(5, x.length);
 								}
-								window.location=url;
+
 							}
+							var langElement = document.getElementById("languageId");
+						*/
+						if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>&") <0){
+							if(url.indexOf("host=") <0){
+								if(dojo.byId('hostId')){
+									url = url + "&host=" + dojo.byId('hostId').value;
+								}
+								if(dojo.byId('folderInode')){
+									url = url + "&folder=" + dojo.byId('folderInode').value;
+								}
+							}
+							window.location=url;
 						}
+					}
+				</script>
+
+				<div class="fieldWrapperSide">
+					<div id="combo_zone2">
+						<input id="langcombo" />
+					</div>
+
+					<script type="text/javascript">
+						<% StringBuffer buff = new StringBuffer();
+						   buff.append("{identifier:'id', label:'label',imageurl:'imageurl',items:[");
+
+						   boolean first=true;
+						   for (Language lang : languages) {
+							   Contentlet langContentlet= new Contentlet();
+							   ContentletAPI conAPI = APILocator.getContentletAPI();
+							   try {
+								   if(id!=null)
+									langContentlet = conAPI.findContentletForLanguage(lang.getId(), id);
+							   }
+							   catch(DotDataException e){
+								   Logger.warn(this,"Unable to find the contentlet with identifier " + contentlet.getIdentifier() + " and languageId " + lang.getId() );
+							   }
+							   final String value;
+							   if(langContentlet != null && InodeUtils.isSet(langContentlet.getInode())) {
+								   value=editURL + "&lang="+ lang.getId() + "&inode=" + langContentlet.getInode();
+							   }
+							   else {
+								   value=editURL + "&lang="+ lang.getId() + "&inode=";
+							   }
+							   final String display=lang.getLanguage() + " (" + lang.getCountryCode().trim() + ")";
+
+							   if(!first) buff.append(","); else first=false;
+							   final String ccode=lang.getLanguageCode()  + "_" + lang.getCountryCode();
+							   buff.append("{");
+							   buff.append("id:'" + lang.getId() + "',");
+							   buff.append("label:'"+display+"',");
+							   buff.append("lang:'"+display+"',");
+							   buff.append("value:'"+value+"'");
+							   buff.append("}");
+						   }
+						   buff.append("]}");
+						%>
+
+						var storeData=<%=buff.toString()%>;
+						var langStore = new dojo.data.ItemFileReadStore({data: storeData});
+						var myselect = new dijit.form.FilteringSelect({
+								 id: "langcombo",
+								 name: "lang",
+								 value: '<%=contentletForm.getLanguageId()%>',
+								 required: true,
+								 store: langStore,
+								 searchAttr: "lang",
+								 labelAttr: "label",
+								 labelType: "html",
+								 onChange: function() {
+									 var obj=dijit.byId("langcombo");
+									 changeLanguage(obj.item.value);
+								 },
+								 labelFunc: function(item, store) { return store.getValue(item, "label"); }
+							},
+							dojo.byId("langcombo"));
 					</script>
-					
-					
-					<div class="fieldWrapperSide">
-				    	<div id="combo_zone2" style="width:200px; height:20px;">
-							<input id="langcombo"/>
-	                	</div>
-				
-				    <script>
-	    <%                 StringBuffer buff = new StringBuffer();
-	                       buff.append("{identifier:'id', label:'label',imageurl:'imageurl',items:[");
-	
-	                       boolean first=true;
-	                       for (Language lang : languages) {
-	                           Contentlet langContentlet= new Contentlet();
-	                           ContentletAPI conAPI = APILocator.getContentletAPI();
-	                           try {
-	                        	   if(id!=null)
-	                                langContentlet = conAPI.findContentletForLanguage(lang.getId(), id);
-	                           }
-	                           catch(DotDataException e){
-	                               Logger.warn(this,"Unable to find the contentlet with identifier " + contentlet.getIdentifier() + " and languageId " + lang.getId() );
-	                           }
-	                           final String imgurl, value;
-	                           if(langContentlet != null && InodeUtils.isSet(langContentlet.getInode())) {
-	                               imgurl="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +".gif";
-	                               value=editURL + "&lang="+ lang.getId() + "&inode=" + langContentlet.getInode();
-	                           }
-	                           else {
-	                               imgurl="/html/images/languages/" + lang.getLanguageCode()  + "_" + lang.getCountryCode() +"_gray.gif";
-	                               value=editURL + "&lang="+ lang.getId() + "&inode=";
-	                           }
-	                           final String display=lang.getLanguage() + " (" + lang.getCountryCode().trim() + ")";
-	
-	                           if(!first) buff.append(","); else first=false;
-	                           final String ccode=lang.getLanguageCode()  + "_" + lang.getCountryCode();
-	                           buff.append("{");
-	                           buff.append("id:'" + lang.getId() + "',");
-	                           buff.append("label:'<span style=\"background-image:url("+imgurl+");width:16px;height:11px;display:inline-block;vertical-align:middle\"></span> "+display+"',");
-	                           buff.append("imageurl:'"+imgurl+"',");
-	                           buff.append("lang:'"+display+"',");
-	                           buff.append("value:'"+value+"'");
-	                           buff.append("}");
-	                       }
-	                       buff.append("]}");
-	   %>
-	                function updateSelectBoxImage(myselect) {
-	                    var imagestyle = "url('" + myselect.item.imageurl + "')";
-	                    var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
-	                    dojo.style(selField, "backgroundImage", imagestyle);
-	                    dojo.style(selField, "backgroundRepeat", "no-repeat");
-	                    dojo.style(selField, "padding", "0px 0px 0px 20px");
-	                    dojo.style(selField, "backgroundColor", "transparent");
-	                    dojo.style(selField, "backgroundPosition", "3px 6px");
-	                }
-	
-	                var storeData=<%=buff.toString()%>;
-	                var langStore = new dojo.data.ItemFileReadStore({data: storeData});
-	                var myselect = new dijit.form.FilteringSelect({
-	                         id: "langcombo",
-	                         name: "lang",
-	                         value: '<%=contentletForm.getLanguageId()%>',
-	                         required: true,
-	                         store: langStore,
-	                         searchAttr: "lang",
-	                         labelAttr: "label",
-	                         labelType: "html",
-	                         onChange: function() {
-	                             var obj=dijit.byId("langcombo");
-	                             updateSelectBoxImage(obj);
-	                             changeLanguage(obj.item.value);
-	                         },
-	                         labelFunc: function(item, store) { return store.getValue(item, "label"); }
-	                    },
-	                    dojo.byId("langcombo"));
-	                updateSelectBoxImage(myselect);
-	                
-	            </script>
-			</div>
-		<%} %>
+				</div>
+			<%} %>
 		 	<input type="hidden" name="languageId" id="languageId" 
 				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang"))) ? request.getParameter("lang") : defaultLang.getId()) %>">
-	
-		<!-- END LANGUAGE -->
+			<!-- END LANGUAGE -->
 
 
 		<!--  Content reviewing fields -->
@@ -364,32 +341,7 @@
 			<html:hidden value="false" property="reviewContent" />
 			<html:hidden value="0" property="reviewIntervalNum" />
 		<% }%>
-		
 		<!--  End reviewing fields -->
-		
 	</div>
-		
 
-		
-		<div class="gradient title"><%= LanguageUtil.get(pageContext, "Workflow") %></div>
-		<table class="workflowInfo">
-			<tr>
-				<th style="text-align:right"><%= LanguageUtil.get(pageContext, "Step") %>:</th>
-				<td><%=wfStep.getName() %></td>
-			</tr>
-			<tr>
-				<th><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
-				<td><%=(wfTask == null || wfTask.isNew() || !UtilMethods.isSet(wfTask.getAssignedTo()) || APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()) == null) ? LanguageUtil.get(pageContext, "Nobody") : APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName() %></td>
-			</tr>
-		
-			<tr id="contentLockedInfo" <%=(!isLocked) ? "style='height:0px;'" : "" %>>
-				<%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && isLocked){ %>
-					<th><%= LanguageUtil.get(pageContext, "Locked") %>:</th>
-					<td id="lockedTextInfoDiv">
-						<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
-						<span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
-					</td>
-				<%} %>
-			</tr>
-		</table>
-		
+
