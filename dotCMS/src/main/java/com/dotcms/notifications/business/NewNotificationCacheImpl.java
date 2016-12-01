@@ -1,15 +1,15 @@
 package com.dotcms.notifications.business;
 
 import com.dotcms.notifications.bean.Notification;
-import static  com.dotcms.util.CollectionsUtils.*;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * New Notification Cache.
@@ -98,7 +98,7 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
 				this.getAllNotificationsPrimaryKey(userId);
 
 		final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
-		List<String> referenceKeyList = null;
+		List<String> referenceKeyList;
 
 		try {
 
@@ -132,27 +132,27 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
 
 	///////////////////
 
-	protected String getSingleNotificationPrimaryKey (final String notificationId) {
+	protected String getSingleNotificationPrimaryKey (final String userId, final String notificationId) {
 
 		return PRIMARY_GROUP + NOTIFICATION_PREFIX
-				+ SINGLE_NOTIFICATION + notificationId;
+				+ SINGLE_NOTIFICATION + notificationId + "_" + userId;
 	}
 
 	@Override
 	protected void addNotification(final Notification notification) {
 
 		final String primaryKey   =
-				this.getSingleNotificationPrimaryKey (notification.getId());
+				this.getSingleNotificationPrimaryKey (notification.getUserId(), notification.getGroupId());
 
 		this.cache.put(primaryKey, notification, PRIMARY_GROUP);
 	} // addNotification.
 
 	@Override
-	protected Notification getNotification(final String notificationId) {
+	protected Notification getNotification(final String userId, final String groupId) {
 
 		Notification notification = null;
 		final String primaryKey   =
-				this.getSingleNotificationPrimaryKey (notificationId);
+				this.getSingleNotificationPrimaryKey (userId, groupId);
 
 		try {
 
@@ -166,10 +166,10 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
 	} // getNotification.
 
 	@Override
-	protected void removeNotification(final String notificationId) {
+	protected void removeNotification(final String userId, final String groupId) {
 
 		final String primaryKey   =
-				this.getSingleNotificationPrimaryKey (notificationId);
+				this.getSingleNotificationPrimaryKey (userId, groupId);
 
 		try {
 

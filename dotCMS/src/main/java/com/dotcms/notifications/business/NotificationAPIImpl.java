@@ -6,6 +6,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.*;
 import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NMessage;
@@ -23,10 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Concrete implementation of the {@link NotificationAPI} class.
@@ -46,20 +44,20 @@ public class NotificationAPIImpl implements NotificationAPI {
 	private final DotConcurrentFactory dotConcurrentFactory;
 	private final DotSubmitter dotSubmitter;
 	private final NewNotificationCache newNotificationCache;
-    private final RoleAPI roleAPI;
+    private RoleAPI roleAPI;//Don't access this attribute directly, use the getRoleAPI method instead
 
 	/**
 	 * Retrieve the factory class that interacts with the database.
 	 */
-	public NotificationAPIImpl() {
+    public NotificationAPIImpl() {
 
-		this(FactoryLocator.getNotificationFactory(),
-		APILocator.getSystemEventsAPI(),
-		MarshalFactory.getInstance().getMarshalUtils(),
-		ConversionUtils.INSTANCE,
-		DotConcurrentFactory.getInstance(),
+        this(FactoryLocator.getNotificationFactory(),
+                APILocator.getSystemEventsAPI(),
+                MarshalFactory.getInstance().getMarshalUtils(),
+                ConversionUtils.INSTANCE,
+                DotConcurrentFactory.getInstance(),
                 CacheLocator.getNewNotificationCache(),
-                APILocator.getRoleAPI());
+                null);
     }
 
 	@VisibleForTesting
@@ -76,10 +74,36 @@ public class NotificationAPIImpl implements NotificationAPI {
 		this.marshalUtils = marshalUtils;
 		this.conversionUtils = conversionUtils;
 		this.dotConcurrentFactory = dotConcurrentFactory;
-		this.dotSubmitter = // getting the thread pool for notifications.
-				this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME); // by default use the standard configuration, but it can be override via properties config.
-		this.newNotificationCache = newNotificationCache;
+
+		// getting the thread pool for notifications.
+        this.dotSubmitter = this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME); // by default use the standard configuration, but it can be override via properties config.
+
+        this.newNotificationCache = newNotificationCache;
         this.roleAPI = roleAPI;
+    }
+
+    /**
+     * Utility method to lazy load the RoleAPI when needed and to avoid to instantiate it on the creation of this
+     * NotificationAPI object in order to avoid cyclic references with another APIs(java.lang.StackOverflowError).
+     * <p>
+     * <br>
+     * <strong>Example of a cyclic reference:</strong> This NotificationAPI obtains an instance of the RoleAPI that
+     * at the same time obtains an instance of the UserAPI that uses the NotificationAPI resulting on a
+     * java.lang.StackOverflowError error.
+     *
+     * @return The RoleAPI reference
+     */
+    private RoleAPI getRoleAPI() {
+
+        if ( null == this.roleAPI ) {
+            synchronized (this) {
+                if ( null == this.roleAPI ) {
+                    this.roleAPI = APILocator.getRoleAPI();
+                }
+            }
+        }
+
+        return roleAPI;
     }
 
 	@Override
@@ -146,31 +170,31 @@ public class NotificationAPIImpl implements NotificationAPI {
             final NotificationDTO dto = new NotificationDTO(StringUtils.EMPTY, messageJson,
                     type.name(), level.name(), userId, null, Boolean.FALSE);
 
-            boolean localTransaction = false;
-
             try {
 
-                //Check for a transaction and start one if required
-                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+                //Start a transaction
+                HibernateUtil.startTransaction();
 
                 Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
 
                 //If the is Visibility.ROLE we need to create a notification for each user under that role
                 if ( visibility.equals(Visibility.ROLE) ) {
                     //Search for all the users in the given role
-                    Collection<User> foundUsers = this.roleAPI.findUsersForRole(visibilityId);
+                    Collection<User> foundUsers = getRoleAPI().findUsersForRole(visibilityId);
                     if ( foundUsers != null && !foundUsers.isEmpty() ) {
                         this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
                     }
-                } else {
+                } else if ( visibility.equals(Visibility.USER) ) {
                     this.notificationFactory.saveNotification(dto);
+                } else {
+                    throw new NotImplementedException("Visibility no implemented [" + visibility + "]");
                 }
 
                 // Adding notification to System Events table
                 final Notification notificationBean = new Notification(level, userId, data);
                 final Payload payload = new Payload(notificationBean, visibility, visibilityId);
 
-                notificationBean.setId(dto.getId());
+                notificationBean.setGroupId(dto.getGroupId());
                 notificationBean.setTimeSent(new Date());
                 notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
 
@@ -179,20 +203,16 @@ public class NotificationAPIImpl implements NotificationAPI {
                 Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
 
                 //Everything ok..., committing the transaction
-                if ( localTransaction ) {
-                    HibernateUtil.commitTransaction();
-                }
+                HibernateUtil.commitTransaction();
 
             } catch (Exception e) {
 
-                if ( localTransaction ) {
-                    try {
-                        //On error rolling back the changes
-                        HibernateUtil.rollbackTransaction();
-                    } catch (DotHibernateException hibernateException) {
-                        if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
-                            Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
-                        }
+                try {
+                    //On error rolling back the changes
+                    HibernateUtil.rollbackTransaction();
+                } catch (DotHibernateException hibernateException) {
+                    if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
+                        Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
                     }
                 }
 
@@ -205,10 +225,10 @@ public class NotificationAPIImpl implements NotificationAPI {
     } // generateNotification.
 
 	@Override
-	public Notification findNotification(final String notificationId) throws DotDataException {
+    public Notification findNotification(final String userId, final String groupId) throws DotDataException {
 
 		Notification notification =
-				this.newNotificationCache.getNotification(notificationId);
+                this.newNotificationCache.getNotification(userId, groupId);
 
 		if (null == notification) {
 
@@ -217,7 +237,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 				if (null == notification) {
 
 						final NotificationDTO dto =
-							this.notificationFactory.findNotification(notificationId);
+                                this.notificationFactory.findNotification(userId, groupId);
 
 					notification = this.conversionUtils.convert(dto, (NotificationDTO record) -> {
 						return convertNotificationDTO(record);
@@ -234,28 +254,26 @@ public class NotificationAPIImpl implements NotificationAPI {
 	} // findNotification.
 
 	@Override
-	public void deleteNotification(final String userId, final String notificationId) throws DotDataException {
+    public void deleteNotification(final String userId, final String groupId) throws DotDataException {
 
 		synchronized (this) {
-
-			this.notificationFactory.deleteNotification(notificationId);
-			this.newNotificationCache.removeNotification(notificationId);
-			this.newNotificationCache.remove(userId);
-		}
-	} // deleteNotification.
+            this.notificationFactory.deleteNotification(userId, groupId);
+            this.newNotificationCache.removeNotification(userId, groupId);
+            this.newNotificationCache.remove(userId);
+        }
+    } // deleteNotification.
 
 
 	@Override
-	public void deleteNotifications(final String userId, final String... notificationsId) throws DotDataException {
+    public void deleteNotifications(final String userId, final String... groupsId) throws DotDataException {
 
 		synchronized (this) {
 
-			this.notificationFactory.deleteNotification(notificationsId);
+            this.notificationFactory.deleteNotification(userId, groupsId);
 
-			for (String notificationId : notificationsId) {
-
-				this.newNotificationCache.removeNotification(notificationId);
-			}
+            for ( String groupId : groupsId ) {
+                this.newNotificationCache.removeNotification(userId, groupId);
+            }
 
 			this.newNotificationCache.remove(userId);
 		}
@@ -426,11 +444,11 @@ public class NotificationAPIImpl implements NotificationAPI {
 	 */
 	private Notification convertNotificationDTO(final NotificationDTO record) {
 
-		final String id = record.getId();
-		final String typeStr = record.getType();
-		final String levelStr = record.getLevel();
-		final NotificationType type = (UtilMethods.isSet(typeStr)) ? NotificationType.valueOf(typeStr)
-				: NotificationType.GENERIC;
+        final String group_id = record.getGroupId();
+        final String typeStr = record.getType();
+        final String levelStr = record.getLevel();
+        final NotificationType type = (UtilMethods.isSet(typeStr)) ? NotificationType.valueOf(typeStr)
+                : NotificationType.GENERIC;
 		final NotificationLevel level = (UtilMethods.isSet(levelStr)) ? NotificationLevel.valueOf(levelStr)
 				: NotificationLevel.INFO;
 		final String userId = record.getUserId();
@@ -448,7 +466,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 					new I18NMessage(record.getMessage()),
 					null);
 		}
-		return new Notification(id, type, level, userId, timeSent, wasRead, data);
-	} // convertNotificationDTO.
+        return new Notification(group_id, type, level, userId, timeSent, wasRead, data);
+    } // convertNotificationDTO.
 
 } // E:O:F:NotificationAPIImpl.

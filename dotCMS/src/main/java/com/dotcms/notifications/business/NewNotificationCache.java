@@ -36,10 +36,11 @@ public abstract class NewNotificationCache implements Cachable {
 
 	/**
 	 * Get a single notification
-	 * @param notificationId String
+	 * @param userId
+	 * @param groupId
 	 * @return Notification
      */
-	abstract protected Notification getNotification(String notificationId);
+	abstract protected Notification getNotification(String userId, String groupId);
 	/**
 	 * Adds a notification by offset and limit.
 	 * @param offset
@@ -67,9 +68,10 @@ public abstract class NewNotificationCache implements Cachable {
 
 	/**
 	 * Remove a single notification
-	 * @param notificationId {@link String}
-     */
-	protected abstract void removeNotification(String notificationId);
+	 * @param userId
+	 * @param groupId
+	 */
+	protected abstract void removeNotification(String userId, String groupId);
 
 	/**
 	 * Get the all count

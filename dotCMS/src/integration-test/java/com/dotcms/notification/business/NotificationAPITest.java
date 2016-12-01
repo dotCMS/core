@@ -50,12 +50,12 @@ public class NotificationAPITest extends TestBase  {
 		try {
 			HibernateUtil.startTransaction();
 			FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
-			Notification lastest = APILocator.getNotificationAPI().findNotification(notificationDTO.getId());
-			assertTrue(notificationDTO.getMessage().equals(lastest.getMessage().getKey()));
+			Notification latest = APILocator.getNotificationAPI().findNotification(sysuser.getUserId(), notificationDTO.getGroupId());
+			assertTrue(notificationDTO.getMessage().equals(latest.getMessage().getKey()));
 
-			APILocator.getNotificationAPI().deleteNotification(lastest.getUserId(), lastest.getId());			
+			APILocator.getNotificationAPI().deleteNotification(latest.getUserId(), latest.getGroupId());
 			HibernateUtil.commitTransaction();
-			assertNull(APILocator.getNotificationAPI().findNotification(lastest.getId()));
+			assertNull(APILocator.getNotificationAPI().findNotification(sysuser.getUserId(), latest.getGroupId()));
 		} catch (DotDataException e) {
 			try {
 				HibernateUtil.rollbackTransaction();
