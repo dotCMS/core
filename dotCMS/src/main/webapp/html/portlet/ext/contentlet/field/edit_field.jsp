@@ -107,7 +107,7 @@
         );
 %>
     <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-        <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox' style='width:400px'" %>
+        <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
         value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
 <%
     }
@@ -172,9 +172,7 @@
 <%
     if (!isReadOnly) {
  %>
-    <br />
-    <div style="padding-right:10px;width:475px;float:left;">
-    	<div style="float: left;padding-top: 10px; padding-left: 2px;">
+        <div class="toggleEditorField">
  		<%if(toggleOn){ %>
     		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
     		<%}else{ %>
@@ -182,22 +180,19 @@
         <%} %>
         	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
         </div>
-        <br /> <br />
-        <div style="float: left; position: absolute; z-index: 10;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>: <input
+        <div class="langVariablesField">
+            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>: <input
             type="text" id="glossary_term_<%= field.getVelocityVarName() %>"
             name="glossary_term_<%= field.getVelocityVarName() %>"
             class="form-text"
             onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
-            <div style="position: absolute; display: none;"
-                id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+            <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
                 <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
             </div>
             <script type="text/javascript">
                 dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
             </script>
         </div>
-    </div>
-<div class="clear"></div>
 <%
         }
     }
@@ -217,7 +212,6 @@
             value="<%= selectorValue %>"/>
      <input type="hidden" name="hostId" id="hostId" value="<%=host%>"/>
      <input type="hidden" name="folderInode" id="folderInode" value="<%=folder%>"/>
-     <br />
     <%
     }
     //END of Host or Folder field
@@ -254,7 +248,7 @@
             id="<%=field.getVelocityVarName()%>" style="width:100%; height:450px;font-family:monospace;clear:both;"><%=UtilMethods.htmlifyString(textValue)%>
 		</textarea>
 
-   		<table style="margin:10px 5px 20px 5px;">
+   		<table class="WYSIWYGTools">
             <tr>
 				<td class="WYSIWYGControls">
 	                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>')">
@@ -271,7 +265,7 @@
 	                    	class="form-text"
 							onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
 
-							<div style="display:none;position:absolute;border:1px solid #ddd;padding:5px 10px;z-index:1" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+							<div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
 	                    		<div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
 		                	</div>
 			                <script type="text/javascript">

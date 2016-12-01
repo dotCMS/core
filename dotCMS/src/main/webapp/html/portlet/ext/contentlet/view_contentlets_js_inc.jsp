@@ -443,7 +443,7 @@
 
 
 
-                                result = result + "<input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
+                                result += "<div class=\"checkbox\"><input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
                                                         + actual_option[1] + "\" id=\"" + selectedStruct + "." + fieldContentlet + "Field"+ counter_checkbox
                                                         + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\"";
                                 for(var j = 0;j < lastChecked.length; j++){
@@ -451,7 +451,7 @@
                                                 result = result + "checked = \"checked\"";
                                         }
                                 }
-                                result = result + "><label for='"+myD+"'> " + actual_option[0] + "</label><br>\n";
+                                result = result + "><label for='"+myD+"'>" + actual_option[0] + "</label></div>";
                             checkboxesIds[counter_checkbox] = selectedStruct+"."+fieldContentlet + "Field" + counter_checkbox;
 
                             setDotFieldTypeStr = setDotFieldTypeStr
@@ -479,13 +479,13 @@
 
                        var actual_option = option[i].split("|");
                        if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-                                result = result + "<input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
+                                result = result + "<div class=\"radio\"><input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
                                                         + actual_option[1] + "\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field"+ counter_radio
                                                         + "\" name=\"" + selectedStruct+ "." + fieldContentlet + "\"";
                                         if(value == actual_option[1]){
                                         result = result + "checked = \"checked\"";
                                 }
-                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label><br>\n";
+                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label></div>";
                                 radiobuttonsIds[counter_radio] = selectedStruct+"."+fieldContentlet + "Field"+ counter_radio;
 
                                  setDotFieldTypeStr = setDotFieldTypeStr
@@ -598,7 +598,7 @@
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
                             "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
-                            "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
+                            "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
                             "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
                             "</div>"
                         ].join("");
@@ -1257,7 +1257,12 @@
                                         var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
                                 return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" label=\"" + hintLabel + "\"></div>";
                         } else {
-                                return field["fieldName"] + ":";
+                                var isOneOption = field["fieldValues"].split("\r\n").length === 1;
+                                if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
+                                    return field["fieldName"];
+                                } else {
+                                    return field["fieldName"] + ":";
+                                }
                         }
              }
         }
@@ -1276,8 +1281,14 @@
                         if(type=='host or folder'){
                            hasHostField = true;
                         }
-                        htmlstr += "<dl>";
-                        htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
+
+                        var isOneOption = data[i]["fieldValues"].split("\r\n").length === 1;
+                        if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
+                            htmlstr += "<dl class='radio-check-one-line'>";
+                        } else {
+                            htmlstr += "<dl class='vertical'>";
+                        }
+                        htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
                         htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
                         htmlstr += "<div class='clear'></div>";
@@ -1323,7 +1334,7 @@
                                 if(dijit.byId(selectId)){
                                         dijit.byId(selectId).destroy();
                                 }
-                                var selectObj = "<select dojoType='dijit.form.MultiSelect' class='width-equals-200' multiple='true' name=\"categories\" id=\"" + selectId + "\"></select>";
+                                var selectObj = "<select dojoType='dijit.form.MultiSelect' multiple='true' name=\"categories\" id=\"" + selectId + "\"></select>";
 
                                 dojo.create("dd", { innerHTML: selectObj }, searchCategoryList);
 
@@ -1753,6 +1764,9 @@
                 th.innerHTML = "<a class=\"beta\" href=\"javascript: doSearch (1, 'modDate')\"><%= LanguageUtil.get(pageContext, "Last-Edit-Date") %></a>";
                 row.appendChild(th);
 
+                th = document.createElement('th');
+                row.appendChild(th);
+
                 var languageId;
                 var locale;
 
@@ -1776,8 +1790,6 @@
                 for (var i = 0; i < data.length; i++) {
                         var row = table.insertRow(table.rows.length);
 
-                        row.setAttribute("height","30");
-                        row.setAttribute("valign","top");
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
@@ -1832,6 +1844,9 @@
                         cell.style.textAlign="right";
                         cell.style.whiteSpace="nowrap";
                         cell.innerHTML = cellData["modDate"];
+
+                        var cell = row.insertCell (row.cells.length);
+                        cell.innerHTML = '<span class="dijitIcon actionIcon"></span>';
 
                         live = cellData["live"] == "true"?true:false;
                         working = cellData["working"] == "true"?true:false;
@@ -2201,11 +2216,14 @@
 
 
 
-
+        var exportContentButton;
         function showMatchingResults (num,begin,end,totalPages) {
-
+                        if (exportContentButton) {
+                            exportContentButton.destroyRendering();
+                        }
 
                         var div = document.getElementById("metaMatchingResultsDiv");
+
                         div.style.display='';
 
                     //Top Matching Results
@@ -2214,20 +2232,34 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div class=\"yui-gb portlet-toolbar\"><div class=\"yui-u first\"><%= LanguageUtil.get(pageContext, "showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div><div id=\"tablemessage\" class=\"yui-u\" style=\"text-align:center;\">&nbsp</div><div class=\"yui-u\" style=\"text-align:right;\">";
-                        if(num >0 && structureInode != "_all"){
-                                strbuff+= "<a href='javascript:donwloadToExcel();'><%= LanguageUtil.get(pageContext, "Export") %></a> <a href='javascript:donwloadToExcel();'><img src='/html/images/icons/csv.png' border='0' alt='export results' align='absbottom'></a>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
+                        var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
+                        if (num > 0 && structureInode != "_all") {
+                            if (!donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.addChild(new dijit.MenuItem({
+                                    label: "<%= LanguageUtil.get(pageContext, "Export") %>",
+                                    onClick: donwloadToExcel,
+                                    id: 'donwloadToExcel'
+                                }));
+                            }
+                        } else {
+                            if (donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.removeChild(donwloadToExcelMenuItem);
+                                donwloadToExcelMenuItem.destroy();
+                            }
+
                         }
-                        strbuff+= "</div></div>";
+
                         div.innerHTML = strbuff;
                         div.style.display = "";
 
                         //Bottom Matching Results
                         var div = document.getElementById("matchingResultsBottomDiv")
-                        var strbuff = "<table border='0' width=\"100%\"><tr><td align='center' nowrap='true'><b><%= LanguageUtil.get(pageContext, "showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
+                        var strbuff = "<table border='0' width=\"100%\"><tr><td align='center' nowrap='true'><b><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
                         if(num > 0)
                         {
-                                strbuff += " | <%= LanguageUtil.get(pageContext, "pages") %> ";
+                                strbuff += " | <%= LanguageUtil.get(pageContext, "Pages") %> ";
                                 for(i = 4;i >= 1;i--)
                                 {
                                         var auxPage = currentPage - i;
@@ -2364,11 +2396,14 @@
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
                 if (showArchive) {
+                    dijit.byId('archiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('unArchiveButton').setAttribute("disabled", false);
                     dijit.byId('deleteButton').setAttribute("disabled", false);
                     dijit.byId('archiveUnlockButton').setAttribute("disabled", false);
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false);":"") %>
                 } else {
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('archiveButton').setAttribute("disabled", false);
                     dijit.byId('publishButton').setAttribute("disabled", false);
                     <% if ( enterprise ) { %>
@@ -2391,11 +2426,13 @@
 
         // nothing selected
        	if (showArchive) {
+                    dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
                     dijit.byId("unArchiveButton").setAttribute("disabled", true);
                     dijit.byId("deleteButton").setAttribute("disabled", true);
                     dijit.byId("archiveUnlockButton").setAttribute("disabled", true);
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", true);":"") %>
         } else {
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", true);
                     dijit.byId('archiveButton').setAttribute("disabled", true);
                     dijit.byId('publishButton').setAttribute("disabled", true);
                     <% if ( enterprise ) { %>
@@ -2457,26 +2494,9 @@
         }
     }
 
-        function  resizeBrowser(){
-                var viewport = dijit.getViewport();
-                var viewport_height = viewport.h;
-
-                var  e =  dojo.byId("borderContainer");
-                dojo.style(e, "height", viewport_height -150+ "px");
-
-                var  e =  dojo.byId("filterWrapper");
-                dojo.style(e, "height", viewport_height -195+ "px");
-
-                var  e =  dojo.byId("contentWrapper");
-                dojo.style(e, "height", viewport_height -230+ "px");
-
-                dijit.byId('borderContainer').resize()
-        }
-
-        //dojo.addOnLoad(resizeBrowser);
-        dojo.connect(window, "onresize", this, "resizeBrowser");
-
         function disableButtonRow() {
+                if(dijit.byId("archiveDropDownButton"))
+                        dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
 
                 if(dijit.byId("unArchiveButton"))
                         dijit.byId("unArchiveButton").attr("disabled", true);
@@ -2489,6 +2509,9 @@
 
                 if(dijit.byId("archiveUnlockButton"))
                         dijit.byId("archiveUnlockButton").attr("disabled", true);
+
+                if(dijit.byId("unArchiveDropDownButton"))
+                        dijit.byId("unArchiveDropDownButton").attr("disabled", true);
 
                 if(dijit.byId("publishButton"))
                         dijit.byId("publishButton").attr("disabled", true);

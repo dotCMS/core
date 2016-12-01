@@ -48,8 +48,6 @@
 <%@ include file="/html/common/uservalidation.jsp"%>
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css";
-	#filterTasksFrm dt{height:30px;}
-	#filterTasksFrm dd{height:30px;}
 </style>
 
 <%
@@ -482,65 +480,56 @@
 
 </script>
 
-<style>
-	 #container {
-	   display: table;
-	   }
-	 #table-row  {
-	   display: table-row;
-	   }
-	 #cell-left, #cell-right{
-	   display: table-cell;
-	   }
-</style>
+
 <liferay:box top="/html/common/box_top.jsp"
 bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "Filtered-Tasks") %>' />
 
 
 <!-- START Button Row -->
-	<div class="buttonBoxLeft"><h3><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_21")%></h3></div>
+<!-- <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_21")%> -->
 
 <!-- END Button Row -->
 
 <!-- START Split Box -->
-<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="height:100px;">
+<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer">
 
 <!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 370px; overflow-x: scroll; overflow-y: hidden; white-space: nowrap;" class="lineRight">
-		<div style="margin-top:48px;">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 200px;" class="portlet-sidebar-wrapper" >
+		<div class="portlet-sidebar">
+			
+			<!-- START Filters -->
 			<div  id="filterTasksFrm">
+				
 				<input type="hidden" name="cmd" value="filterTasks">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
-				<dl>
-					<dt><%=LanguageUtil.get(pageContext, "Keywords")%>:</dt>
+				
+				<dl class="vertical">
+					
+					<dt><label><%=LanguageUtil.get(pageContext, "Keywords")%>:</label></dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" name="keywords" id="keywords" value="<%=UtilMethods.webifyString(searcher.getKeywords())%>" /></dd>
-					<dt><%=LanguageUtil.get(pageContext, "Assigned-To")%>:</dt>
+					<div class="clear"></div>
+					
+					<dt><label><%=LanguageUtil.get(pageContext, "Assigned-To")%>:</label></dt>
 					<dd>
-					<div id="container">
-					  <div id="table-row">
-						  <div id="cell-left">
-							<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
-						  </div>
-						  <div id="cell-right">
+						<input type="hidden" id="assignedTo" name="assignedTo" value="<%=myRole.getId() %>" />
+						<div style="padding: 5px 3px;">
 							<%if(isAdministrator) { %>
-							<input type="radio" dojoType="dijit.form.RadioButton" id="showAllLink" name="assignedto" onclick="showTasks4AllUsers()"><%=LanguageUtil.get(pageContext, "all") %> </input>
-	                        <%} %>
-	                      </div>
-					  </div>
-					  <div id="table-row">
-					  	 <div id="cell-left"> </div>
-					     <div id="cell-right">
-                       		 <input type="radio" dojoType="dijit.form.RadioButton" id="showme" name="assignedto" checked="true" onclick="assignedToMe()"><%=LanguageUtil.get(pageContext, "me") %></input>
+								<span style="display:inline-block;margin-right:8px;"><input type="radio" dojoType="dijit.form.RadioButton" id="showAllLink" name="assignedto" onclick="showTasks4AllUsers()"> <%=LanguageUtil.get(pageContext, "all") %></input></span>
+							<%} %>
+							<input type="radio" dojoType="dijit.form.RadioButton" id="showme" name="assignedto" checked="true" onclick="assignedToMe()"> <%=LanguageUtil.get(pageContext, "me") %></input>
 						</div>
-					 </div>
-					</div>
 					</dd>
-					<dt><%=LanguageUtil.get(pageContext, "Older_than_(days)") %></dt>
-					<dd>
-					   <input type="text" id="daysold" name="daysold"/>
-					</dd>
-					<dt><%=LanguageUtil.get(pageContext, "Scheme")%>:</dt>
+					<div class="clear"></div>
+					
+					
+					
+					
+					<dt><label><%=LanguageUtil.get(pageContext, "Older_than_(days)") %></label></dt>
+					<dd><input type="text" id="daysold" name="daysold"/></dd>
+					<div class="clear"></div>
+					
+					<dt><label><%=LanguageUtil.get(pageContext, "Scheme")%>:</label></dt>
 					<dd>
 						<select name="schemeId" id="schemeId" dojoType="dijit.form.FilteringSelect" value="<%=UtilMethods.webifyString(searcher.getSchemeId())%>" onChange="updateSteps();doFilter();">
 							<option value=""></option>
@@ -548,27 +537,23 @@ bottom="/html/common/box_bottom.jsp">
 								<option value="<%=scheme.getId()%>"  <%=(scheme.getId().equals(searcher.getSchemeId())) ? "selected": ""%>><%=scheme.getName()%></option>
 							<%} %>
 						</select>
-
-
 					</dd>
-					<dt><%=LanguageUtil.get(pageContext, "Step")%>:</dt>
-					<dd>
+					<div class="clear"></div>
+					
+					<dt><label><%=LanguageUtil.get(pageContext, "Step")%>:</label></dt>
+					<dd><input type="hidden" id="stepId" name="stepId"  /></dd>
+					<div class="clear"></div>
 
-						<input type="hidden" id="stepId" name="stepId"  />
-
-
-
-					</dd>
-
-					<dt><%=LanguageUtil.get(pageContext, "Show")%>:</dt>
+					<dt><label><%=LanguageUtil.get(pageContext, "Show")%>:</label></dt>
 					<dd>
 						<input dojoType="dijit.form.CheckBox" <%if(searcher.isOpen()){%> checked='checked' <%}%> type="checkbox" name="open" value="true" id="showOpen" onclick="doFilter()" /> <label for="showOpen"><%=LanguageUtil.get(pageContext, "open-tasks")%></label><br/>
 						<input dojoType="dijit.form.CheckBox" <%if(searcher.isClosed()){%> checked='checked' <%}%> type="checkbox" name="closed" value="true" id="showClosed"  onclick="doFilter()"  /> <label for="showClosed"><%=LanguageUtil.get(pageContext, "resolved-tasks")%></label><br/>
 					</dd>
+					<div class="clear"></div>
 				</dl>
 				<div class="buttonRow">
 					<button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" type="submit" onclick="doFilter()"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %></button>
-					<button dojoType="dijit.form.Button" name="resetButton"  iconClass="resetIcon" onclick="resetFilters()"><%=LanguageUtil.get(pageContext, "reset")%></button>
+					<button dojoType="dijit.form.Button" name="resetButton" iconClass="resetIcon" class="dijitButtonFlat" onclick="resetFilters()"><%=LanguageUtil.get(pageContext, "reset")%></button>
 				</div>
 			</div>
 		</div>
@@ -577,13 +562,11 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <!-- START Right Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" style="margin-top:37px;">
+	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 		<div id="hangTaskListHere">
 
 
 		</div>
-
-
 	</div>
 <!-- END Right Column -->
 

@@ -100,7 +100,7 @@
 		<div class="buttonRightInBox">
 			<div class="yui-gc">
 				<div class="yui-u first" style="text-align:left;">
-					<input type="text" dojoType="dijit.form.TextBox" style="width:250px;margin-left:15px;" name="keywordBox" id="keywordBox" size="30" />
+					<input type="text" dojoType="dijit.form.TextBox" style="width:250px;margin-left:10px;" name="keywordBox" id="keywordBox" size="30" />
 					<button dojoType="dijit.form.Button" id="moreOptionsButton"  onclick="addKeyword()" iconClass="previewIcon">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>
 					</button>

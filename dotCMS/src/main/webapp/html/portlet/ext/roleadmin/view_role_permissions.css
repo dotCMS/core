@@ -15,7 +15,7 @@
 .permissionTable, .permissionLabelTable, .permissionTableTitle  {
 	margin: 0;padding:0;
 }
-.dmundra .dijitAccordionTitle{height:23px;padding:3px;}
+.dotcms .dijitAccordionTitle{height:23px;padding:3px;}
 .permissionTable tr {
 	padding: 5px 0;
 }
