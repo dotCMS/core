@@ -469,7 +469,7 @@
                                     }
                                 </script>
                                 <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
-                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:addNewContentlet"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
                                     <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
                                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
                                     </li>
