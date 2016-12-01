@@ -74,7 +74,7 @@ public interface FieldApi {
 	void deRegisterFieldType(Field type);
 
 	/**
-	 * Deletes a field in the DB. Also deletes the field variable.
+	 * Deletes a field from a content type (as specified in the passed in Field object)
 	 * 
 	 * @param field Field that wants to be deleted.
 	 * @throws DotDataException Error occurred when performing the action.
@@ -82,7 +82,7 @@ public interface FieldApi {
 	void delete(Field field) throws DotDataException;
 
 	/**
-	 * Deletes all the fields in the DB related to a Content Type
+	 * Deletes all the fields related to the given Content Type
 	 * 
 	 * @param type Content Type that contains the fields.
 	 * @throws DotDataException Error occurred when performing the action.
@@ -109,7 +109,7 @@ public interface FieldApi {
 	Field find(String id) throws DotDataException;
 	
 	/**
-	 * Retrieves a List of Fields based on the Content Type Id (structure_inode column).
+	 * Retrieves a List of Fields based on the Content Type Id.
 	 * 
 	 * @param typeId Content Type Id to search on.
 	 * @return List of Field Objects that are related to the Content Type. 
@@ -170,7 +170,7 @@ public interface FieldApi {
 	Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException;
 
     /**
-	 * Deletes the field variable in the DB.
+	 * Deletes a field variable from a field (as specified in the passed in FieldVariable object)
 	 * 
 	 * @param field Field Variable that wants to be deleted.
 	 * @throws DotDataException Error occurred when performing the action.

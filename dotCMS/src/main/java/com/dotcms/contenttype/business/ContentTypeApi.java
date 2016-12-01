@@ -88,7 +88,7 @@ public interface ContentTypeApi {
   /**
    * Finds all the Content Types in the system filtered by the {@link BaseContentType}, orders it according the given column.
    * 
-   * @param type Base Content Type that will be search
+   * @param type Base Content Type that will be searched
    * @param orderBy Specifies an order criteria for the results
    * @param limit Amount of results
    * @param offset Start position of the resulting list
@@ -100,7 +100,7 @@ public interface ContentTypeApi {
   /**
    * Finds all the Content Types in the system filtered by the {@link BaseContentType}.
    * 
-   * @param type Base Content Type that will be search
+   * @param type Base Content Type that will be searched
    * @return List of Content Types Objects that belong to the Base Content Type specified.
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
@@ -144,9 +144,9 @@ public interface ContentTypeApi {
   int count(String condition, BaseContentType base) throws DotDataException;
 
   /**
-   * Counts the full amount of Content Types in the DB.
+   * Return the total count of content types stored in the system.
    * 
-   * @return Amount of Content Types
+   * @return Total Count of Content Types
    * @throws DotDataException Error occurred when performing the action.
    */
   int count() throws DotDataException;
