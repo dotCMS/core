@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class NotificationView implements Serializable, Cloneable {
 
-    private final String groupId;
+    private final String id;
     private final String userId;
     private final NotificationDataView notificationData;
     private final NotificationType type;
@@ -60,7 +60,7 @@ public class NotificationView implements Serializable, Cloneable {
                             final Boolean wasRead,
                             final NotificationDataView notificationData,
                             final String prettyDate) {
-        this.groupId = groupId;
+        this.id = groupId;
         this.userId = userId;
         this.notificationData = notificationData;
         this.type = type;
@@ -75,8 +75,8 @@ public class NotificationView implements Serializable, Cloneable {
      *
      * @return The notification ID.
      */
-    public String getGroupId() {
-        return groupId;
+    public String getId() {
+        return id;
     }
 
 
@@ -181,7 +181,7 @@ public class NotificationView implements Serializable, Cloneable {
 
         NotificationView that = (NotificationView) o;
 
-        if ( groupId != null ? !groupId.equals(that.groupId) : that.groupId != null ) {
+        if ( id != null ? !id.equals(that.id) : that.id != null ) {
             return false;
         }
         return true;
@@ -191,7 +191,7 @@ public class NotificationView implements Serializable, Cloneable {
     public int hashCode() {
         String title   = this.notificationData.getTitle();
         String message = this.notificationData.getMessage();
-        int result = groupId != null ? groupId.hashCode() : 0;
+        int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (title != null ? title.hashCode() : 0);
         result = 31 * result + (message != null ? message.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
@@ -204,7 +204,7 @@ public class NotificationView implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        return "Notification [groupId=" + groupId + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
+        return "Notification [groupId=" + id + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
                 + ", level=" + level + ", userId=" + userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead
                 + ", actions=" + this.getActions() + "]";
     }

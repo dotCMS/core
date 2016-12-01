@@ -1,7 +1,8 @@
 package com.dotcms.rest.api.v1.notification;
 
 import com.dotcms.notifications.NotificationConverter;
-import com.dotcms.notifications.bean.*;
+import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.view.NotificationView;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -11,14 +12,11 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import static com.dotcms.util.ConversionUtils.toLong;
-
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import static com.dotmarketing.util.DateUtil.prettyDateSince;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.language.LanguageUtil;
@@ -30,6 +28,7 @@ import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toLong;
 
 /**
  * Resource to handle the notification stuff.
@@ -166,8 +165,8 @@ public class NotificationResource {
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
         Long newNotificationsCount = 0l;
-        User user = null;
-        Response response = null;
+        User user;
+        Response response;
         final boolean allUsers = initData.getParamsMap().get(ALLUSERS) != null ?
                 Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS)) : false;
 
@@ -208,8 +207,8 @@ public class NotificationResource {
     public Response markAsRead ( @Context final HttpServletRequest request )  {
 
         InitDataObject initData = webResource.init(null, true, request, true, null);
-        Response response = null;
-        User user = null;
+        Response response;
+        User user;
 
         try {
 
@@ -234,30 +233,30 @@ public class NotificationResource {
     /**
      * Delete one notification
      * @param request
-     * @param notificationId
+     * @param groupId
      * @return Response
      */
     @DELETE
     @Path("/id/{id}")
     @Produces ("application/json")
-    public Response delete ( @Context HttpServletRequest request, @PathParam("id") String notificationId )  {
+    public Response delete(@Context HttpServletRequest request, @PathParam("id") String groupId) {
 
         InitDataObject initData = webResource.init(null, true, request, true, null);
-        Response response = null;
-        User user = null;
+        Response response;
+        User user;
 
         try {
 
             user = initData.getUser();
 
-            if (null != notificationId && null != user) {
+            if ( null != groupId && null != user ) {
 
-                this.notificationAPI.deleteNotification(user.getUserId(), notificationId); // todo: include the user id, in order to remove by id.
+                this.notificationAPI.deleteNotification(user.getUserId(), groupId); // todo: include the user id, in order to remove by id.
             }
 
             return Response.ok(new ResponseEntityView(Boolean.TRUE,
                     list(new MessageEntity(LanguageUtil.get(user.getLocale(),
-                            "notification.success.delete", notificationId)))))
+                            "notification.success.delete", groupId)))))
                     .build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
@@ -283,8 +282,8 @@ public class NotificationResource {
     public Response delete ( @Context HttpServletRequest request, final DeleteForm deleteForm )  {
 
         InitDataObject initData = webResource.init(null, true, request, true, null);
-        Response response = null;
-        User user = null;
+        Response response;
+        User user;
 
         try {
 
@@ -292,8 +291,7 @@ public class NotificationResource {
 
             if (null != deleteForm.getItems() && null != user) {
 
-                this.notificationAPI.deleteNotifications(user.getUserId(),
-                        deleteForm.getItems().toArray(new String [] {}));  // todo: include the user id, in order to remove by id.
+                this.notificationAPI.deleteNotifications(user.getUserId(), deleteForm.getItems().toArray(new String[] {}));
             }
 
             response =  Response.ok(new ResponseEntityView(Boolean.TRUE,
