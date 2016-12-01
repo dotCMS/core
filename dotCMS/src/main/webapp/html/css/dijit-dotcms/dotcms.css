@@ -42,6 +42,9 @@ html, body {
   width: 16px;
 }
 
+.dijitIcon {
+  margin-right: 4px;
+}
 .dijitIconTask:before {
   content: "";
 }
@@ -72,10 +75,8 @@ html, body {
 .dijitCheckBoxIcon:before {
   content: "";
 }
-.dijit .dijitNoIcon {
-  width: auto;
-  height: auto;
-  margin-right: 0;
+.dijitNoIcon {
+  display: none !important;
 }
 
 /*
@@ -4804,7 +4805,6 @@ div#_dotHelpMenu {
 .docNumIcon,
 .docTextIcon,
 .documentIcon,
-.downloadIcon,
 .dropIcon,
 .editIcon,
 .editScriptIcon,
