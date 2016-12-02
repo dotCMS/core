@@ -3831,7 +3831,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             // http://jira.dotmarketing.net/browse/DOTCMS-1073
             // setBinary
-            }else if(field.getFieldContentlet().startsWith("binary")){
+        }else if(field.getFieldContentlet().startsWith("binary")){
                 try{
                 	// only if the value is a file
                 	if(value.getClass()==java.io.File.class){
@@ -3840,6 +3840,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }catch (Exception e) {
                     throw new DotContentletStateException("Unable to set binary file Object",e);
                 }
+        //https://github.com/dotCMS/core/issues/10245
+        }else if(field.getFieldContentlet().startsWith("system_field")){
+        	if(value.getClass()==java.lang.String.class){
+	            try{
+	                contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
+	            }catch (Exception e) {
+	                contentlet.setStringProperty(field.getVelocityVarName(),value.toString());
+	            }
+        	}
         }else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
         }

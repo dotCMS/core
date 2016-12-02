@@ -352,10 +352,10 @@ public class ContentletBaseTest extends TestBase {
         field = new Field( "JUnit Test Binary-" + uniqueIdentifier, Field.FieldType.BINARY, Field.DataType.BINARY, jUnitTestStructure, false, false, false, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Host Folder-" + uniqueIdentifier, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Host Folder-" + uniqueIdentifier, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, true, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, true, 12, false, false, false );
         FieldFactory.saveField( field );
 
         return uniqueIdentifier;
