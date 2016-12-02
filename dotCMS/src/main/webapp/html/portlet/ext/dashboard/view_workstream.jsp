@@ -267,86 +267,86 @@ try {
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-workstream") %>' />
-<% if(LicenseUtil.getLevel() > 199){ %>	
-<form id="fm" method="post">
-	<div class="portlet-toolbar" style="white-space: nowrap">
-		<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-		<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></span>
-		<% String selectedHost =request.getParameter("hostId"); %>
-		
-		<span style="margin:0 15px 0 0;">
-			<%= LanguageUtil.get(pageContext, "Host") %>: 
-			<select id="dahboardHostSelectorWorkStream" name="dahboardHostSelectorWorkStream" dojoType="dijit.form.FilteringSelect" 
-				store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-				searchDelay="400"  <%= UtilMethods.isSet(selectedHost)?"value=\"" + selectedHost+ "\"":""  %> invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
-			</select>
-		</span>
-
-		<span style="margin:0 15px 0 0;">
-		    <%= LanguageUtil.get(pageContext, "User") %>: 
-			<select id="dashboardUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" 
-			        searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
-			</select>
-		</span>
-			
-		<span style="margin:0 15px 0 0;">
-			<%= LanguageUtil.get(pageContext, "From") %>: 
-	 		<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamFromDate" name="workStreamFromDate" value="" style="width:110px;" iconClass="calDayIcon">
-	 
-			<%= LanguageUtil.get(pageContext, "To") %>: 
-	 		<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamToDate" name="workStreamToDate" value="" style="width:110px;">
-		</span>
+<% if(LicenseUtil.getLevel() > 199){ %>
 	
+<div class="portlet-main">
+	
+	<!-- START TOOL BAR -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<form id="fm" method="post">
+				<div class="inline-form">
+					<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
+					<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></span>
+					<% String selectedHost =request.getParameter("hostId"); %>
+					
+					<%= LanguageUtil.get(pageContext, "Host") %>: 
+					<select id="dahboardHostSelectorWorkStream" name="dahboardHostSelectorWorkStream" dojoType="dijit.form.FilteringSelect" 
+						store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
+						searchDelay="400"  <%= UtilMethods.isSet(selectedHost)?"value=\"" + selectedHost+ "\"":""  %> invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+					</select>
+
+					<%= LanguageUtil.get(pageContext, "User") %>: 
+					<select id="dashboardUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" 
+					        searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
+					</select>
+			
+					<%= LanguageUtil.get(pageContext, "From") %>: 
+	 				<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamFromDate" name="workStreamFromDate" value="" style="width:110px;" iconClass="calDayIcon">
+	 
+					<%= LanguageUtil.get(pageContext, "To") %>: 
+	 				<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamToDate" name="workStreamToDate" value="" style="width:110px;">
+
+					<button dojoType="dijit.form.Button" onClick="viewWorkStreams(1,'')" iconClass="searchIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+					</button>
 		
-		<button dojoType="dijit.form.Button" onClick="viewWorkStreams(1,'')" iconClass="searchIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-		</button>
-		<button dojoType="dijit.form.Button" id="clearButtonWs" onClick="clearWsSearch();" iconClass="resetIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
-		</button>            
-		
+					<button dojoType="dijit.form.Button" id="clearButtonWs" onClick="clearWsSearch();" class="dijitButtonFlat">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+					</button>
+				</div>
+			</form>
+		</div>
 	</div>
-</form>
-
-
+	<!-- END TOOL BAR -->
 
 	<table class="listingTable">
 	    <thead>
-		<tr>
-		<th nowrap>
-			<a href="javascript:orderWs('name','desc');">
-			   <%= LanguageUtil.get(pageContext, "Name") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('hostname','desc');">
-				<%= LanguageUtil.get(pageContext, "Host") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('username','desc');">
-			    <%= LanguageUtil.get(pageContext, "User") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('action','desc');">
-			    <%= LanguageUtil.get(pageContext, "Action") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('analytic_summary_workstream.mod_date','desc');">
-			    <%= LanguageUtil.get(pageContext, "Date") %>
-			</a>
-		</th>
-	</tr>
-	</thead>
-    <tbody id="workStreams"></tbody>
-</table>
+			<tr>
+				<th nowrap>
+					<a href="javascript:orderWs('name','desc');">
+					   <%= LanguageUtil.get(pageContext, "Name") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('hostname','desc');">
+						<%= LanguageUtil.get(pageContext, "Host") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('username','desc');">
+					    <%= LanguageUtil.get(pageContext, "User") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('action','desc');">
+					    <%= LanguageUtil.get(pageContext, "Action") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('analytic_summary_workstream.mod_date','desc');">
+					    <%= LanguageUtil.get(pageContext, "Date") %>
+					</a>
+				</th>
+			</tr>
+		</thead>
+    	<tbody id="workStreams"></tbody>
+	</table>
 
-<br></br>
+	<div id="footer" class="yui-u" style="text-align:center;"></div>
+</div>
 
-<div id="footer" class="yui-u" style="text-align:center;"></div>
 <%}else{ %>
-<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
+	<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
 <% }%>
 </liferay:box>
