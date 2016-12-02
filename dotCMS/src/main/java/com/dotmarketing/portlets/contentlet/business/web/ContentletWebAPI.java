@@ -12,8 +12,32 @@ import com.liferay.portal.model.User;
  */
 public interface ContentletWebAPI {
 
+	/**
+	 * Saves the formData info, in addition sends an event if generateSaveEvent param is true.
+	 * @param formData
+	 * @param isAutoSave
+	 * @param isCheckin
+	 * @param user
+	 * @param generateSaveEvent
+	 * @return
+     * @throws Exception
+     */
+	String saveContent(Map<String,Object> formData, boolean isAutoSave,boolean isCheckin,User user, boolean generateSaveEvent)
+			throws Exception;
+
+
+	/**
+	 * Saves the formData info, in addition sends an event
+	 * @param formData
+	 * @param isAutoSave
+	 * @param isCheckin
+	 * @param user
+	 * @return
+     * @throws Exception
+     */
 	String saveContent(Map<String,Object> formData, boolean isAutoSave,boolean isCheckin,User user)
 			throws Exception;
+
 
     /**
      * Validates the new/modified page taken into account the following
