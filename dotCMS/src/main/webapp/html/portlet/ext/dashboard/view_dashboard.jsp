@@ -424,8 +424,8 @@ int periodData = dAPI.checkPeriodData(0,0);
 				<button dojoType="dijit.form.Button" type="submit" onClick="submitfm();" iconClass="searchIcon">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 				</button>
-				<button dojoType="dijit.form.Button" id="clearButtonHost" onClick="clearHostSearch();" iconClass="resetIcon">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
+				<button dojoType="dijit.form.Button" id="clearButtonHost" onClick="clearHostSearch();" class="dijitButtonFlat">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
 				</button>
 			</div>
 		</div>
