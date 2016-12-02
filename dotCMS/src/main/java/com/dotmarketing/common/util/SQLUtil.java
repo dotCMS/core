@@ -36,7 +36,7 @@ public class SQLUtil {
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
-			"mod_date,upper(name)");
+			"mod_date,upper(name)", "relation_type_value");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
