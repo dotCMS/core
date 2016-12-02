@@ -145,7 +145,7 @@ td {font-size: 100%;}
 		var sort_order = grid.store.getValue(grid.getItem(index), 'sort_order');
 
 		return new dijit.form.ValidationTextBox({
-			style : "width:60%; font-size: 11px; height: 15px",
+			style : "width:60%; font-size: 13px; height: 25px",
 			value : sort_order,
 			name: inode,
 			maxLength: 15,
@@ -801,7 +801,12 @@ td {font-size: 100%;}
 <div class="portlet-main">
 	
 	<div class="portlet-toolbar">
-    	<div class="portlet-toolbar__actions-primary">Breadcrumbs go here!</div>
+    	<div class="portlet-toolbar__actions-primary">
+    		Breadcrumbs go here!
+    		<div id="subNavCrumbTrail">
+    			<div id="ulNav"></div>
+    		</div>
+    	</div>
     	<div class="portlet-toolbar__info"></div>
     	<div class="portlet-toolbar__actions-secondary">
 
