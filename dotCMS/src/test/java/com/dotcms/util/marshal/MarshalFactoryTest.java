@@ -6,7 +6,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
-import com.dotcms.repackage.com.google.gson.Gson;
+import com.google.gson.Gson;
 import com.dotmarketing.exception.DotRuntimeException;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
