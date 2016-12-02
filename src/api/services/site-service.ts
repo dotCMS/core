@@ -24,7 +24,8 @@ export class SiteService {
                 private coreWebService: CoreWebService) {
         this.urls = {
             allSiteUrl: 'v1/site/currentSite',
-            switchSiteUrl: 'v1/site/switch'
+            switchSiteUrl: 'v1/site/switch',
+            paginatedSitesUrl: 'v1/site/paginatedSites'
         };
 
         dotcmsEventsService.subscribeTo('SAVE_SITE').pluck('data').subscribe( site => {
@@ -120,6 +121,25 @@ export class SiteService {
 
     get currentSite(): Site{
         return this.site;
+    }
+
+    /**
+     * Return the sites available for an user paginated and filtered.
+     *
+     * @param filter (String) Text to filter the site names
+     * @param archived (Boolean) Indicate if the results should include the archived sites
+     * @param page (Int) Number of the page to display
+     * @param limit (Int) number of sites to show per page
+     * @returns {Observable<R>} return a map with the list of paginated sites and if there
+     * is a previous and next page that can be displayed
+     */
+    paginateSites(filter: string, archived: boolean, page: number, limit: number): Observable<any> {
+        return this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: `${this.urls.paginatedSitesUrl}/filter/${filter}/archived/${archived}/page/${page}/limit/${limit}`,
+        }).map(response => {
+            return response.entity;
+        });
     }
 }
 

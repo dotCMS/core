@@ -93,4 +93,15 @@ export class DotcmsConfig extends CoreWebService {
     getNavigationMenu(): Array<any> {
         return this.configParams.menu;
     }
+
+    /**
+     * Returns the max number of sites to display in the dot site selecteor autocomplete.
+     * The items in the dot-site-selector depend on the roles and permissions of the
+     * logged-in user and the filter.
+     *
+     * @returns <number> The max number of sites to display after a search.
+     */
+    getSiteSelectorSitesPerPage(): number {
+        return this.configParams.config['DOTSITESELECTOR_SITES_PER_PAGE'];
+    }
 }

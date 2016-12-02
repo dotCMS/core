@@ -1,4 +1,5 @@
 import {Component, ViewEncapsulation} from '@angular/core';
+import {DotcmsConfig} from '../../../api/services/system/dotcms-config';
 import {Site} from '../../../api/services/site-service';
 import {SiteService} from '../../../api/services/site-service';
 import {MessageService} from '../../../api/services/messages-service';
@@ -18,9 +19,13 @@ export class SiteSelectorComponent extends BaseComponent {
     private sites: Site[];
     private message: string;
     private filteredSitesResults: Array<any>;
+    private paginationPage: number = 1;
+    private paginationPerPage: number;
+    private paginationQuery: string = '';
 
-    constructor(private siteService: SiteService, messageService: MessageService) {
+    constructor(private siteService: SiteService, messageService: MessageService, config: DotcmsConfig) {
         super(['updated-current-site-message', 'archived-current-site-message', 'modes.Close'], messageService);
+        this.paginationPerPage = config.getSiteSelectorSitesPerPage();
     }
 
     ngOnInit(): void {
@@ -37,6 +42,12 @@ export class SiteSelectorComponent extends BaseComponent {
         });
     }
 
+    /**
+     * This method changes the current site for the new one
+     * clicked on the site selector.
+     *
+     * @param option the selected Site identifier
+     */
     switchSite(option: any): void {
         this.siteService.switchSite(option.value).subscribe(response => {
 
@@ -52,14 +63,18 @@ export class SiteSelectorComponent extends BaseComponent {
      * @param event - The event with the query parameter to filter the users
      */
     filterSites(event): void {
-        this.filteredSitesResults = this.sites.
-        filter( site => site.hostName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0)
-            .map( site => {
-                return {
-                    label: site.hostName,
-                    value: site.identifier,
-                };
-            });
+        this.filteredSitesResults = [];
+
+        /**
+         * If the query change then clean the paginationPage
+         * and paginationQuery variables
+         */
+        if(this.paginationQuery !== event.query){
+            this.paginationPage = 1;
+            this.paginationQuery = event.query;
+        }
+
+        this.showPaginateSites();
     }
 
     /**
@@ -70,25 +85,31 @@ export class SiteSelectorComponent extends BaseComponent {
      */
     handleSitesDropdownClick(event): void {
         this.filteredSitesResults = [];
+        this.paginationPage = 1;
+        this.paginationQuery = 'all';
 
+        this.showPaginateSites();
+    }
+
+    /**
+     * Call the SiteService paginateSite method with the values set on the
+     * paginationQuery, paginationPage and paginationPerPage variables
+     */
+    private showPaginateSites(): void {
         /**
-         * This time out is included to imitate a remote call and
-         * avoid that the suggestion box is not displayed, because
-         * the autocomplete hide method is execute after the the show
-         * method.
-         *
-         * TODO - remove the setTimeout when we add the pagination option
-         * making a call to the site service to get a subset of sites paginated
-         * to display on the dropdown sugestions pannel.
-         *
+         * Call the web resource to get the subset of site results
          */
-        setTimeout(() => {
-            this.filteredSitesResults = this.sites.map(site => {
-                return {
-                    label: site.hostName,
+        this.siteService.paginateSites(this.paginationQuery, false, this.paginationPage, this.paginationPerPage).subscribe(response => {
+            /**
+            * Include the sites results for the current pagination page
+            */
+            response.sites.results.forEach(site => {
+                this.filteredSitesResults.push( {
+                    label: site.hostname,
                     value: site.identifier,
-                };
+                });
             });
-        }, 100);
+
+        });
     }
 }
