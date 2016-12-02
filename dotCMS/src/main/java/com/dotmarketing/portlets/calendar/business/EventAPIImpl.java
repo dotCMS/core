@@ -226,17 +226,13 @@ public class EventAPIImpl implements EventAPI {
 
 	}
 
-	public Structure getBuildingStructure() throws DotDataException {
-		return eventFactory.getBuildingStructure();
-	}
+
 
 	public Structure getEventStructure() throws DotDataException {
 		return eventFactory.getEventStructure();
 	}
 
-	public Structure getFacilityStructure() throws DotDataException {
-		return eventFactory.getLocationStructure();
-	}
+
 
 
 	public String createVCalendarInfo(Event event, Date recurrenceStartDate, Date recurrenceEndDate, Host host)

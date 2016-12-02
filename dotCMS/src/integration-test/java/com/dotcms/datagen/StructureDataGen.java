@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.exception.DotDataException;
@@ -15,7 +16,7 @@ import java.util.Date;
 public class StructureDataGen extends AbstractDataGen<Structure> {
 
     private long currentTime = System.currentTimeMillis();
-    private Structure.Type structureType = Structure.Type.CONTENT;
+    private BaseContentType structureType = BaseContentType.CONTENT;
     private String description = "test-structure-desc-" + currentTime;
     private boolean fixed;
     private String name = "test-structure-name-" + currentTime;
@@ -26,7 +27,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
     private String velocityVarName = "test-structure-varname-" + currentTime;
 
     @SuppressWarnings("unused")
-    public StructureDataGen structureType(Structure.Type structureType) {
+    public StructureDataGen structureType(BaseContentType structureType) {
         this.structureType = structureType;
         return this;
     }

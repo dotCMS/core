@@ -23,6 +23,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -41,6 +42,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -55,7 +57,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -577,7 +579,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					for(ContentletRelationshipRecords records : recordsList) {
 						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
 							continue;
-						if(RelationshipFactory.isSameStructureRelationship(records.getRelationship()) &&
+						if(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
 								((!records.isHasParent() && relationHasParent.equals("no")) ||
 								 (records.isHasParent() && relationHasParent.equals("yes"))))
 							continue;
@@ -613,8 +615,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}else{
 				 // Existing contentlet auto save
 				Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-				List<Relationship> rels = RelationshipFactory
-											.getAllRelationshipsByStructure( currentContentlet
+				List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+											.byContentType( currentContentlet
                                                     .getStructure() );
 				for (Relationship r : rels) {
 					if (!contentRelationships.containsKey(r)) {
@@ -742,7 +744,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private void handleEventRecurrence(Map<String, Object> contentletFormData, Contentlet contentlet) throws DotRuntimeException, ParseException{
-		if(!contentlet.getStructure().getVelocityVarName().equals("calendarEvent")){
+		if(!contentlet.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
 			return;
 		}
 		if (contentletFormData.get("recurrenceChanged") != null && Boolean.parseBoolean(contentletFormData.get("recurrenceChanged").toString())) {
@@ -877,6 +879,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				Object value = contentletFormData.get(field.getFieldContentlet());
 				String typeField = field.getFieldType();
 
+				if(field.getFieldType().equals(Field.FieldType.TAG.toString())){
+					contentlet.setStringProperty(field.getVelocityVarName(), (String) contentletFormData.get(field.getVelocityVarName()));
+				}
+
 				//http://jira.dotmarketing.net/browse/DOTCMS-5334
 				if(field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 					if(field.getFieldContentlet().startsWith("float")
@@ -926,7 +932,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString()))
 						&& APILocator.getFieldAPI().valueSettable(field)
-						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
+						&& !field.getFieldContentlet().startsWith("system")) {
 					conAPI.setContentletProperty(contentlet, field, value);
 				}
 			}

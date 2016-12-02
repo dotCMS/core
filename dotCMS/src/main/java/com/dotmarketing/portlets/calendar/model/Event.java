@@ -271,7 +271,7 @@ public class Event extends Contentlet {
 	}
 
 	public List<Field> getFields() {
-		return FieldsCache.getFieldsByStructureVariableName("calendarEvent");
+		return FieldsCache.getFieldsByStructureVariableName(EventAPI.EVENT_STRUCTURE_VAR);
 	}
 	
 	public boolean isRecurrent(){

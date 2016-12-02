@@ -91,7 +91,7 @@ ant.lifecycleLogLevel = "INFO"
 ext {
     // Open the Git repository in the current directory.
 
-    dotcmsReleaseVersion='3.7.0'
+    dotcmsReleaseVersion='3.8.0'
     dotcmsReleaseBuild = ''
     dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'

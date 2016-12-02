@@ -1,9 +1,10 @@
 package com.dotcms.rest.api.v1.content;
 
 
-import com.dotmarketing.portlets.structure.model.Structure;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -12,6 +13,7 @@ import java.util.*;
 public class BaseContentTypesViewCollection {
 
     private final Map<String, List<ContentTypeView>> contentTypeViews = new LinkedHashMap<>();
+
 
     public void add (ContentTypeView contentTypeView){
         add(contentTypeView, this.contentTypeViews);
@@ -22,6 +24,7 @@ public class BaseContentTypesViewCollection {
 
         String baseContentTypeName = contentTypeView.getType();
         List<ContentTypeView> contentTypeViews = contentTypeViewsMap.get(baseContentTypeName);
+
 
         if (contentTypeViews == null){
             contentTypeViews = new ArrayList<>();

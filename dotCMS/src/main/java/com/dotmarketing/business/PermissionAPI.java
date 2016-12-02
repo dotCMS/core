@@ -814,5 +814,14 @@ public interface PermissionAPI {
      */
     boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
 
+    /**
+     * Checks permissions and if user does not have the proper permissions, will throw a DotSecurityException
+     * @param permissionable
+     * @param level
+     * @param user
+     * @throws DotSecurityException
+     */
+	void checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException;
+
 
 }

@@ -22,4 +22,9 @@ public class DotStateException extends DotRuntimeException {
 	public DotStateException(String x, Exception e) {
 		super(x, e);
 	}
+	
+	public DotStateException(Exception ex) {
+		super(ex.getMessage() ,ex);
+	}
+	
 }

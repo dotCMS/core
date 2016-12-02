@@ -56,3 +56,7 @@ dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
 dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
 dotCMS/src/main/webapp/html/plugins/
+
+# immutables.github.io generated folder#
+###############################
+dotCMS/src/main/generated/

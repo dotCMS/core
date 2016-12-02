@@ -13,13 +13,15 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -109,7 +111,7 @@ public class EditRelationshipAction extends DotPortletAction {
 		String inodeString = req.getParameter("inode");
 		if(InodeUtils.isSet(inodeString))
 		{
-			relationship = RelationshipFactory.getRelationshipByInode(inodeString);
+			relationship = FactoryLocator.getRelationshipFactory().byInode(inodeString);
 		}
 		else
 		{
@@ -180,7 +182,7 @@ public class EditRelationshipAction extends DotPortletAction {
 					BeanUtils.copyProperties(relationship,relationshipForm);
 
 					if (!relationshipTypeValue.equals(relationship.getRelationTypeValue())) {
-						Relationship oRel = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipTypeValue);
+						Relationship oRel = FactoryLocator.getRelationshipFactory().byTypeValue(relationshipTypeValue);
 						if (InodeUtils.isSet(oRel.getInode()) && !oRel.getInode().equalsIgnoreCase(relationship.getInode())) {
 							String message = "error.relationship.same.relation.exist";
 							SessionMessages.add(req, "error",message);
@@ -195,7 +197,7 @@ public class EditRelationshipAction extends DotPortletAction {
 					}
 
 					//saves this relationship
-					RelationshipFactory.saveRelationship(relationship);
+					FactoryLocator.getRelationshipFactory().save(relationship);
 
 					String message = "message.relationship.saved";
 					SessionMessages.add(req, "message",message);
@@ -222,7 +224,11 @@ public class EditRelationshipAction extends DotPortletAction {
 		
 		TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
 		
-		RelationshipFactory.deleteRelationship(relationship);
+		try {
+          FactoryLocator.getRelationshipFactory().delete(relationship);
+        } catch (DotDataException e) {
+          throw new DotHibernateException(e.getMessage(),e);
+        }
 		
 		String message = "message.relationship.deleted";
 		SessionMessages.add(req, "message",message);				

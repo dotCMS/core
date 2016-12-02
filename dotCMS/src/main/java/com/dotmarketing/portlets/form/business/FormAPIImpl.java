@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 
@@ -76,7 +77,7 @@ public class FormAPIImpl implements FormAPI {
 		structure.setName(FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME);
 		structure.setDescription(FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME);
 		structure.setStructureType(Structure.STRUCTURE_TYPE_WIDGET);
-		structure.setVelocityVarName(VelocityUtil.convertToVelocityVariable(FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME));
+		structure.setVelocityVarName(StringUtils.camelCaseLower(FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME));
 		structure.setSystem(true);
 		structure.setDefaultStructure(false);
 		structure.setFixed(false);

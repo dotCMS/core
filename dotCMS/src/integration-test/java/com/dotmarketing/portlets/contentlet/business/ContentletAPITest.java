@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -46,6 +47,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -66,7 +68,6 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -683,7 +684,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundBinaryField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Binary-" + identifier );
+
+        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Binary-" + identifier );
+
 
         //Getting the current value for this field
         Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
@@ -722,7 +725,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a known tag field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundTagField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Tag-" + identifier );
+        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Tag-" + identifier );
 
         //Getting the current value for this field
         List<Tag> value = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
@@ -889,7 +892,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg-" + identifier );
+        Field foundWysiwygField = null;//FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg-" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -1195,7 +1198,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void getAllLanguages () throws DotSecurityException, DotDataException {
 
         Structure st=new Structure();
-        st.setStructureType(Structure.Type.CONTENT.getType());
+        st.setStructureType(BaseContentType.CONTENT.getType());
         st.setName("JUNIT-test-getAllLanguages"+System.currentTimeMillis());
         st.setVelocityVarName("testAllLanguages"+System.currentTimeMillis());
         st.setHost(defaultHost.getIdentifier());
@@ -1706,7 +1709,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletAPI.relateContent( parentContentlet, contentletRelationshipRecords, user, false );
         }
 
-        Boolean hasParent = RelationshipFactory.isParentOfTheRelationship( testRelationship, parentContentlet.getStructure() );
+        Boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( testRelationship, parentContentlet.getStructure() );
 
         //Now test this delete
         contentletAPI.deleteRelatedContent( parentContentlet, testRelationship, hasParent, user, false );
@@ -1846,7 +1849,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Try to find the related Contentlet
         //List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
 
-        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( parentContentlet.getStructure() );
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType( parentContentlet.getStructure() );
         //Validations
         assertTrue( relationships != null && !relationships.isEmpty() );
 
@@ -1888,9 +1891,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Relate the content
         contentletAPI.relateContent( parentContentlet, testRelationship, contentRelationships, user, false );
 
-        Boolean hasParent = RelationshipFactory.isParentOfTheRelationship( testRelationship, parentContentlet.getStructure() );
+        Boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( testRelationship, parentContentlet.getStructure() );
 
-        List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure( parentContentlet.getStructure() );
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType( parentContentlet.getStructure() );
         //Validations
         assertTrue( relationships != null && !relationships.isEmpty() );
 
@@ -2161,7 +2164,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         testStructure.setName( "structure2709" );
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
-        testStructure.setStructureType( Structure.Type.CONTENT.getType() );
+        testStructure.setStructureType( BaseContentType.CONTENT.getType() );
         testStructure.setType( "structure" );
         testStructure.setVelocityVarName( "structure2709" );
 

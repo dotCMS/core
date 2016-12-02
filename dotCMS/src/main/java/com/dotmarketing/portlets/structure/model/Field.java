@@ -6,11 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.field.FieldIf;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.sync.Exportable;
-import com.dotcms.sync.Importable;
-import com.dotcms.sync.exception.DotDependencyException;
+
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotHibernateException;
@@ -19,7 +19,7 @@ import com.dotmarketing.util.UtilMethods;
 
 
 
-public class Field extends Inode implements Exportable, Importable
+public class Field extends Inode implements  FieldIf
 {
 
 	public enum FieldType {
@@ -139,17 +139,6 @@ public class Field extends Inode implements Exportable, Importable
     	modDate = new Date();
     }
 
-	public boolean isDependenciesMet() throws DotDependencyException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@JsonIgnore
-	public List<Exportable> getDependencies() {
-		List<Exportable> ret =new ArrayList<Exportable>();
-		ret.add(this);
-		return ret;
-	}
 
 
 	public Field (String fieldName, FieldType fieldType, DataType dataType, Structure structure, boolean required, boolean listed, boolean indexed, int sortOrder,boolean fixed, boolean readOnly, boolean searchable) {
@@ -204,6 +193,10 @@ public class Field extends Inode implements Exportable, Importable
 		this.fieldRelationType = fieldRelationType;
 	}
 	public String getFieldType() {
+		if(fieldType.contains(".")){
+			String x = LegacyFieldTypes.getLegacyName(fieldType);
+			return LegacyFieldTypes.getLegacyName(fieldType);
+		}
 		return fieldType;
 	}
 	public void setFieldType(String fieldType) {

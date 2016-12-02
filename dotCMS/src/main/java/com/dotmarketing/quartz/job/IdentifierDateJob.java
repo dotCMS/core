@@ -18,7 +18,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
-import com.dotcms.notifications.bean.Notification;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -33,7 +33,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
@@ -56,12 +55,12 @@ public class IdentifierDateJob implements Job {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		
 		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
-		Structure structure = (Structure) map.get("structure");
+		ContentType type = (ContentType) map.get("contenttype");
 		User user = (User) map.get("user");
 		
 		try{
 			//Lucene query to be sure that I will get all fields of the contentlet
-			String luceneQuery = "+structureName:" + structure.getVelocityVarName() +
+			String luceneQuery = "+structureName:" + type.variable() +
 								" +working:true" + 
 								" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			
@@ -88,17 +87,17 @@ public class IdentifierDateJob implements Job {
 							.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentletSearch.getInode());
 					
 					//Check if the new Publish Date Var is not null
-					if(UtilMethods.isSet(structure.getPublishDateVar())){
+					if(UtilMethods.isSet(type.publishDateVar())){
 						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
-						identifier.setSysPublishDate((Date)fatty.getMap().get(structure.getPublishDateVar()));
+						identifier.setSysPublishDate((Date)fatty.getMap().get(type.publishDateVar()));
 					}else{
 						identifier.setSysPublishDate(null);
 					}
 					
 					//Check if the new Expire Date Var is not null
-					if(UtilMethods.isSet(structure.getExpireDateVar())){
+					if(UtilMethods.isSet(type.expireDateVar())){
 						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
-						identifier.setSysExpireDate((Date)fatty.getMap().get(structure.getExpireDateVar()));
+						identifier.setSysExpireDate((Date)fatty.getMap().get(type.expireDateVar()));
 					}else{
 						identifier.setSysExpireDate(null);
 					}	
@@ -159,14 +158,16 @@ public class IdentifierDateJob implements Job {
 	/**
 	 * Setup the job and trigger it immediately
 	 * 
-	 * @param structure {@link Structure}
+	 * @param ContentType {@link ContentType}
 	 * @param user      {@link User}
+
 	 */
-	public static void triggerJobImmediately (Structure structure, User user) {
+	public static void triggerJobImmediately (ContentType type, User user) {
+
 		String randomID = UUID.randomUUID().toString();
 		JobDataMap dataMap = new JobDataMap();
 		
-		dataMap.put("structure", structure);
+		dataMap.put("contenttype", type);
 		dataMap.put("user", user);
 		
 		JobDetail jd = new JobDetail("IdentifierDateJob-" + randomID, "identifier_date_job", IdentifierDateJob.class);
@@ -185,7 +186,7 @@ public class IdentifierDateJob implements Job {
 			Logger.error(IdentifierDateJob.class, "Error scheduling the Identifier Date Job", e);
 			throw new DotRuntimeException("Error scheduling the Identifier Date Job", e);
 		}
-		AdminLogger.log(IdentifierDateJob.class, "triggerJobImmediately", "Updating Identifiers Dates of: "+ structure.getName());
+		AdminLogger.log(IdentifierDateJob.class, "triggerJobImmediately", "Updating Identifiers Dates of: "+ type.name());
+	
 	}
-
 }

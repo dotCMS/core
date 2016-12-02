@@ -7,19 +7,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -69,7 +68,7 @@ public class ContentUtils {
 				inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifier);
 				Contentlet c = conAPI.find(inodeOrIdentifier, user, true);
 				if(c != null){
-					if(c.getStructure().getVelocityVarName().equals("calendarEvent")
+					if(c.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)
 							&& (recDates!=null && recDates.length==2)){
 						String startDate = recDates[0];
 						String endDate = recDates[1];
@@ -120,7 +119,7 @@ public class ContentUtils {
 								return contentlet;
 						}
 					}
-					if(l.get(0).getStructure().getVelocityVarName().equals("calendarEvent")
+					if(l.get(0).getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)
 							&& (recDates!=null && recDates.length==2)){
 						String startDate = recDates[0];
 						String endDate = recDates[1];
@@ -240,9 +239,10 @@ public class ContentUtils {
 				for(Contentlet c : contentlets)
 					ret.add(c);
 			} 
-			catch (Exception e) {
+			catch (Throwable e) {
 				String msg = e.getMessage();
-				msg = (msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
+				msg=(msg==null && e.getStackTrace().length>0)?e.getStackTrace()[0].toString() : msg;
+				msg = (msg!=null && msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
 				Logger.warn(ContentUtils.class,msg);
 				Logger.debug(ContentUtils.class,e.getMessage(),e);
 			}
@@ -468,7 +468,7 @@ public class ContentUtils {
 		 * @return Returns empty List if no results are found
 		 */
 		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort, User user, String tmDate) {	
-			Relationship rel = RelationshipFactory.getRelationshipByRelationTypeValue(relationshipName);
+			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relationshipName);
 			String relNameForQuery = "";
 			if(rel.getParentStructureInode().equals(rel.getChildStructureInode())){
 				if(pullParents){

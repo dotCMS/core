@@ -1,0 +1,167 @@
+[{
+	"name": "Simple Content Page",
+	"variable": "SimpleHtmlPage3",
+	"host": "SYSTEM_HOST",
+	"folder": "SYSTEM_FOLDER",
+	"implClass": "com.dotcms.contenttype.model.type.PageContentType",
+	"fields": [{
+		"dataType": "TEXT",
+		"searchable": true,
+		"indexed": true,
+		"listed": true,
+		"name": "Title",
+		"required": true,
+		"variable": "title",
+		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/title_custom_field.vtl')",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.CustomField"
+
+	}, {
+		"indexed": true,
+		"dataType": "SYSTEM",
+		"searchable": true,
+		"name": "Host or Folder",
+		"required": true,
+		"variable": "hostfolder",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.HostFolderField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"searchable": true,
+		"indexed": true,
+		"listed": true,
+		"inode": "1a800190-a71b-49b5-bc14-9db7ca5b3f20",
+		"name": "Url",
+		"required": true,
+		"variable": "url",
+		"implClass": "com.dotcms.contenttype.model.field.TextField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"searchable": true,
+		"indexed": true,
+		"listed": true,
+		"name": "Cache TTL",
+		"required": true,
+		"variable": "cachettl",
+		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')",
+		"regexCheck": "^[0-9]+$",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.CustomField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"searchable": true,
+		"indexed": true,
+		"name": "Template",
+		"required": true,
+		"variable": "template",
+		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/template_custom_field.vtl')",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.CustomField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"indexed": true,
+		"inode": "b4258569-abc6-4d3d-9a99-174e46a77b0f",
+		"name": "Show On Menu",
+		"variable": "showOnMenu",
+		"values": "|true",
+		"defaultValue": "false",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.CheckboxField",
+		"fieldVariables": []
+	}, {
+		"dataType": "LONG_TEXT",
+		"name": "Content",
+		"variable": "content",
+		"implClass": "com.dotcms.contenttype.model.field.WysiwygField",
+		"fieldVariables": []
+	}, {
+		"dataType": "SYSTEM",
+		"name": "Advanced Properties",
+		"variable": "advancedtab",
+		"dbColumn": "section_divider1",
+		"implClass": "com.dotcms.contenttype.model.field.TabDividerField",
+		"fieldVariables": []
+	}, {
+		"dataType": "INTEGER",
+		"searchable": true,
+		"indexed": true,
+
+		"name": "Sort Order",
+		"required": true,
+		"variable": "sortOrder",
+		"defaultValue": "0",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.TextField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"searchable": true,
+		"indexed": true,
+		"name": "Friendly Name",
+		"variable": "friendlyname",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.TextField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"searchable": true,
+
+		"indexed": true,
+		"listed": true,
+		"name": "Redirect URL",
+		"variable": "redirecturl",
+		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')",
+		"fixed": true,
+
+		"implClass": "com.dotcms.contenttype.model.field.CustomField",
+		"fieldVariables": []
+	}, {
+		"dataType": "TEXT",
+		"indexed": true,
+
+		"modDate": 1422646720000,
+		"name": "HTTPS Required",
+		"variable": "httpsreq",
+		"values": "|true",
+		"defaultValue": "false",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.CheckboxField",
+		"fieldVariables": []
+	}, {
+		"dataType": "LONG_TEXT",
+		"searchable": true,
+		"indexed": true,
+		"name": "SEO Description",
+		"variable": "seodescription",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+		"fieldVariables": []
+	}, {
+		"dataType": "LONG_TEXT",
+		"searchable": true,
+		"indexed": true,
+		"name": "SEO Keywords",
+		"variable": "seokeywords",
+		"fixed": true,
+		"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+		"fieldVariables": []
+	}, {
+		"dataType": "LONG_TEXT",
+		"searchable": true,
+
+		"indexed": true,
+
+		"name": "Page Metadata",
+
+		"variable": "pagemetadata",
+		"sortOrder": 15,
+		"fixed": true,
+
+		"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+		"fieldVariables": []
+	}]
+}]

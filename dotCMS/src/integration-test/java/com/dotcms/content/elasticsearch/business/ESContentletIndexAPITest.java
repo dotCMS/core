@@ -636,7 +636,7 @@ public class ESContentletIndexAPITest extends TestBase {
 	    	field.setVelocityVarName( "testSearchIndexByDateField" );
 	    	field.setListed( true );
 	    	FieldFactory.saveField( field );
-	    	FieldsCache.addField( field );
+
 
 	    	//Creating a test contentlet
 	    	testContent = new Contentlet();
@@ -765,7 +765,7 @@ public class ESContentletIndexAPITest extends TestBase {
         field.setVelocityVarName( "wysiwyg" );
         field.setListed( true );
         FieldFactory.saveField( field );
-        FieldsCache.addField( field );
+
 
         return testStructure;
     }

@@ -92,11 +92,7 @@ public class FieldAPIImpl implements FieldAPI {
 			DotSecurityException {		
 		return FieldFactory.getFieldVariable(id);		
 	}
-	public List<FieldVariable> getAllFieldVariables(User user,
-			boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException {		
-		return FieldFactory.getAllFieldVariables();
-	}
+
 	public List<FieldVariable> getFieldVariablesForField(String fieldId, User user,
 			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {		
@@ -107,5 +103,11 @@ public class FieldAPIImpl implements FieldAPI {
 			DotSecurityException {
 		FieldFactory.saveFieldVariable(object);
 	}
+    @Override
+    public List<FieldVariable> getAllFieldVariables(User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 	
 }

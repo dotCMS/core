@@ -5,9 +5,22 @@ import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
+
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeApiImpl;
+import com.dotcms.contenttype.business.FieldApi;
+import com.dotcms.contenttype.business.FieldApiImpl;
+
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.*;
+
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -30,6 +43,7 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.ReflectionUtils;
@@ -39,14 +53,19 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
+
+import com.dotmarketing.beans.Host;
+
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
+
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
 import com.dotmarketing.cms.polls.business.PollsAPILiferayImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
@@ -108,6 +127,7 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -137,11 +157,10 @@ public class APILocator extends Locator<APIIndex>{
 			return;
 
 
-		String apiLocatorClass = Config.getStringProperty(
-			"API_LOCATOR_IMPLEMENTATION", APILocator.class.getName()
-		);
-
-		instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
+		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null, false);
+		if (apiLocatorClass != null) {
+			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
+		}
 		if (instance == null) {
 			instance = new APILocator();
 		}
@@ -722,7 +741,59 @@ public class APILocator extends Locator<APIIndex>{
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
 
+	/**
+	 * Creates a single instance of the {@link ContentTypeApi} class setup with the provided arguments
+	 * 
+	 * @param user
+	 * 
+	 * @return The {@link ContentTypeApi} class.
+	 */
+    public static ContentTypeApi getContentTypeAPI2 (User user) {
+    	return getContentTypeAPI2(user, false);
+    }
+
+    /**
+	 * Creates a single instance of the {@link ContentTypeApi} class setup with the provided arguments
+	 * 
+	 * @param user
+	 * @param respectFrontendRoles
+	 * 
+	 * @return The {@link ContentTypeApi} class.
+	 */
+    public static ContentTypeApi getContentTypeAPI2 (User user, boolean respectFrontendRoles) {
+    	return getAPILocatorInstance().getContentTypeAPI2Impl(user, respectFrontendRoles);
+	}
+
+    @VisibleForTesting
+    protected ContentTypeApi getContentTypeAPI2Impl(User user, boolean respectFrontendRoles) {
+    	return new ContentTypeApiImpl(user, respectFrontendRoles);
+    }
+
+    public static FieldApi getFieldAPI2() {
+		return new FieldApiImpl();
+	}
+    public static User systemUser()  {
+      try{
+        return getUserAPI().getSystemUser();
+      }
+      catch(Exception e){
+        throw new DotStateException(e);
+      }
+	}
+    
+    
+    public static Host systemHost()  {
+      try{
+        return getHostAPI().findSystemHost();
+      }
+      catch(Exception e){
+        throw new DotStateException(e);
+      }
+	}
+    
+
 	public static TreeableAPI getTreeableAPI () {return new TreeableAPI();}
+
 
 	/**
 	 * Returns the System Events API that allows other pieces of the application
@@ -745,6 +816,18 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	private static Object getInstance(APIIndex index) {
 
+		APILocator apiLocatorInstance = getAPILocatorInstance();
+
+		Object serviceRef = apiLocatorInstance.getServiceInstance(index);
+
+		if( Logger.isDebugEnabled(APILocator.class) ) {
+			Logger.debug(APILocator.class, apiLocatorInstance.audit(index));
+		}
+
+		return serviceRef;
+	}
+
+	private static APILocator getAPILocatorInstance() {
 		if(instance == null){
 			init();
 			if(instance == null){
@@ -752,15 +835,7 @@ public class APILocator extends Locator<APIIndex>{
 				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
 			}
 		}
-
-		Object serviceRef = instance.getServiceInstance(index);
-
-		if( Logger.isDebugEnabled(APILocator.class) ) {
-			Logger.debug(APILocator.class, instance.audit(index));
-		}
-
-		return serviceRef;
-
+		return instance;
 	}
 
 	@Override

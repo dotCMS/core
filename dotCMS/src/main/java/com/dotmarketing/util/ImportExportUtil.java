@@ -39,6 +39,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
@@ -60,6 +61,7 @@ import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 
 
@@ -116,7 +118,7 @@ public class ImportExportUtil {
     private List<File> tagFiles = new ArrayList<File>();
     private File workflowSchemaFile = null;
     private File ruleFile = null;
-
+    private List<File> contentTypeJson = new ArrayList<File>();
     public ImportExportUtil() {
         MaintenanceUtil.flushCache();
         // Set the asset paths
@@ -262,6 +264,12 @@ public class ImportExportUtil {
                 menuLinksXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Structure_")){
                 structuresXML.add(new File(_importFile.getPath()));
+            }else if(_importFile.getName().endsWith(ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION)){
+                contentTypeJson.add(new File(_importFile.getPath()));
+
+            
+            
+            
             }else if(_importFile.getName().contains("com.dotmarketing.business.LayoutsRoles_")){
                 rolesLayoutsXML = new File(_importFile.getPath());
             }else if(_importFile.getName().contains("com.dotmarketing.business.UsersRoles_")){
@@ -528,6 +536,17 @@ public class ImportExportUtil {
                     Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
                 }
             }
+            
+            for (File file : contentTypeJson) {
+                try {
+                    new ContentTypeImportExportUtil().importContentTypes(file);
+                } catch (Exception e) {
+                    throw new DotStateException("Unable to load contenttypes: " + file,e);
+                }
+            }
+
+            
+            
 
             // updating file_type on folder now that structures were added
             DotConnect dc = new DotConnect();

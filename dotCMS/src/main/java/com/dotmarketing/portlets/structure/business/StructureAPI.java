@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -170,6 +171,10 @@ public interface StructureAPI {
     int countStructures(String condition);
 
 
+
+	void save(Structure st, User user) throws DotSecurityException, DotDataException;
+
+
 	/**
 	 * Return the structures order from who that has a the most recent created
 	 * {@link com.dotmarketing.portlets.contentlet.business.Contentlet} to who that has the less recent created
@@ -183,6 +188,7 @@ public interface StructureAPI {
 	 *         (the date of the last created contentlet)
 	 * @throws DotDataException
      */
-	public Collection<Map<String, Object>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException;
+	public Collection<Map<String, Object>> getRecentContentType(BaseContentType type, User user, int nRecents) throws DotDataException;
+
 
 }

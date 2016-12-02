@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.calendar.business.EventAPI"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotmarketing.business.VersionableAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
@@ -91,7 +92,7 @@
 		params.put("sibblingStructure", new String[] { (request.getParameter("selectedStructureFake") != null) ? request
 		.getParameter("selectedStructureFake") : "" });
 	}
-	if(structure.getVelocityVarName().equals("calendarEvent")){
+	if(structure.getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
 		params.put("struts_action",new String[] {"/ext/calendar/edit_event"});
 	}
 	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);

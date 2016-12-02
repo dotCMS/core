@@ -50,15 +50,18 @@ public class ConfigTestHelper extends Config {
             Config.CONTEXT_PATH = context.getRealPath("/");
 
         }
+
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
-
         setToolboxPath();
     }
 
     private static void setToolboxPath() throws FileNotFoundException {
         String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
-        Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
+        File toolboxManager= new File(toolboxManagerPath);
+        if(toolboxManager.exists()){
+          Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(new FileInputStream(toolboxManagerPath));
+        }
     }
 
     /**

@@ -3,21 +3,25 @@ package com.dotmarketing.exception;
 import com.dotcms.exception.BaseInternationalizationException;
 
 /**
- * @todo remove the setMessage method, replace uses with 'throw new WhateverException(message, oldException)'
+ * @todo remove the setMessage method, replace uses with 'throw new WhateverException(message,
+ *       oldException)'
  */
 public class DotDataException extends BaseInternationalizationException {
 
-	/**
+  /**
 	 * 
 	 */
+
 	private static final long serialVersionUID = -7641394178731435069L;
 
 	private String message;
-	
+	public DotDataException(Throwable t) {
+	    super(t.getMessage(), t);
+	}
 	public DotDataException(String message) {
 		this.message = message;
 	}
-	public DotDataException(String message, Exception e) {
+	public DotDataException(String message, Throwable e) {
         super(message, e);
 		this.message = message;
 	}
@@ -40,5 +44,5 @@ public class DotDataException extends BaseInternationalizationException {
 		this.message = message;
 	}
 	
-	
+
 }

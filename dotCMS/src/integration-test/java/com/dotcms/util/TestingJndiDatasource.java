@@ -3,6 +3,8 @@ package com.dotcms.util;
 import javax.naming.spi.InitialContextFactoryBuilder;
 import javax.naming.spi.NamingManager;
 
+import com.dotmarketing.db.DbConnectionFactory;
+
 import com.dotmarketing.util.Config;
 
 /**
@@ -38,6 +40,7 @@ public class TestingJndiDatasource {
     public static void init() throws Exception {
         if (builder != null && !NamingManager.hasInitialContextFactoryBuilder()) {
             NamingManager.setInitialContextFactoryBuilder(builder);
+            DbConnectionFactory.getConnection().close();
         }
     }
 }

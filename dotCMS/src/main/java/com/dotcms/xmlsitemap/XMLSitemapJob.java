@@ -16,6 +16,8 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -173,7 +175,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	public void generateSitemapPerHost() throws DotDataException, DotSecurityException {
 
 		List<Host> hostsList = hostAPI.findAll(systemUser, false);
-		List<String> structureVelocityVarNames = StructureFactory.getAllVelocityVariablesNames();
+		List<ContentType> types = APILocator.getContentTypeAPI2(APILocator.systemUser()).findAll() ;
 
 		for (Host host : hostsList) {
 
@@ -218,13 +220,13 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				 * This part generate the detail pages sitemap links per
 				 * structure
 				 */
-				for (String stVelocityVarName : structureVelocityVarNames) {
-
+				for (ContentType type : types) {
+					String stVelocityVarName = type.variable();
 					if (ignorableStructureIds.contains(stVelocityVarName.toLowerCase())) {
 						continue;
 					}
 
-					Structure st = StructureFactory.getStructureByVelocityVarName( stVelocityVarName );
+					Structure st = new StructureTransformer(type).asStructure();
 
                     //Continue only if have a detail
                     if ( !InodeUtils.isSet( st.getPagedetail() ) ) {

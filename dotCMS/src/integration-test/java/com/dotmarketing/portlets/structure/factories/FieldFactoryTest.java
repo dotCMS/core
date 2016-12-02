@@ -135,19 +135,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         Iterator<Field> iterator = fields.iterator();
         Field field = iterator.next();
 
-        //Search by the field contentlet
-        //TODO: The data type is used everywhere instead the field.getFieldContentlet() as the method name, parameter and even te query suggested...
-        Collection<Field> fieldsByContentlet = FieldFactory.getFieldsByContentletField( Field.DataType.TEXT.toString(), field.getInode(), structure.getInode() );
 
-        //Validations
-        assertTrue( fieldsByContentlet != null && !fieldsByContentlet.isEmpty() );
-
-        //Search by the field contentlet and with an Inode null
-        //TODO: The data type is used everywhere instead the field.getFieldContentlet() as the method name, parameter and even te query suggested...
-        fieldsByContentlet = FieldFactory.getFieldsByContentletField( Field.DataType.TEXT.toString(), null, structure.getInode() );
-
-        //Validations
-        assertTrue( fieldsByContentlet != null && !fieldsByContentlet.isEmpty() );
     }
 
     /**
@@ -179,34 +167,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         assertEquals( foundField.getInode(), field.getInode() );
     }
 
-    /**
-     * Testing {@link FieldFactory#getFieldByStructure(String, String)}
-     *
-     * @see FieldFactory
-     * @see FieldsCache
-     */
-    @Test
-    public void getFieldByStructure () {
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Getting the fields for this structure
-        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
-
-        //Validations
-        assertTrue( fields != null && !fields.isEmpty() );
-
-        Iterator<Field> iterator = fields.iterator();
-        Field field = iterator.next();
-
-        //Search by field name
-        Field foundField = FieldFactory.getFieldByStructure( structure.getInode(), field.getFieldName() );
-
-        //Start with the validations
-        assertNotNull( foundField );
-        assertEquals( foundField.getInode(), field.getInode() );
-    }
 
     /**
      * Testing {@link FieldFactory#getFieldByName(String, String)}
@@ -232,7 +193,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         //Search by field name
         //Field foundField = FieldFactory.getFieldByName( structure.getInode(), field.getFieldName() );
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundField = FieldFactory.getFieldByName( structure.getName(), field.getFieldName() );
+        Field foundField = null;//FieldFactory.getFieldByName( structure.getName(), field.getFieldName() );
 
         //Start with the validations
         assertNotNull( foundField );
@@ -402,13 +363,6 @@ public class FieldFactoryTest extends ContentletBaseTest {
         //++++++++++++++++++++++++++++++++++++++++++++
         //Getting all the variables for a given field
         Collection<FieldVariable> variables = FieldFactory.getFieldVariablesForField( field.getInode() );
-
-        //Validations
-        assertTrue( variables != null && !variables.isEmpty() );
-
-        //++++++++++++++++++++++++++++++++++++++++++++
-        //Getting all the variables
-        variables = FieldFactory.getAllFieldVariables();
 
         //Validations
         assertTrue( variables != null && !variables.isEmpty() );

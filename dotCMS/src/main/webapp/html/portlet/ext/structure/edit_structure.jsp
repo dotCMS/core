@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.contenttype.model.field.LegacyFieldTypes"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -607,7 +608,7 @@ function disableFormFields(){
 							<%=field.getFieldName()%>
 						</div>
 						<div class="item_cell fieldTypeCell" style="width:100px;">
-							<%=field.getFieldType()%>
+							<%=LegacyFieldTypes.getLegacyName(field.getFieldType())%>
 						</div>
 						<div class="item_cell" style="width:120px;">
 							<%=(field.getVelocityVarName()!=null) ? field.getVelocityVarName() : "&nbsp;"%>
@@ -688,7 +689,8 @@ function disableFormFields(){
                                     <%= LanguageUtil.get(pageContext, "HTMLPage") %>
                                 <%} else if(form.getStructureType() ==6){%>
                                 	<%= LanguageUtil.get(pageContext, "Persona") %>
-                            	<%}%>
+                            	<%}%>&nbsp;
+                            	<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
 							<%}else{ %>
 								<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>
@@ -700,6 +702,11 @@ function disableFormFields(){
 									<% } %>
 								</select>
 							<%} %>
+							
+							
+							
+							
+							
 						<html:hidden property="system" styleId="system" />
 					</dd>
 

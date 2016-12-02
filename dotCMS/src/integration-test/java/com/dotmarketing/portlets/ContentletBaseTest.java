@@ -41,7 +41,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -667,9 +667,9 @@ public class ContentletBaseTest extends TestBase {
      * @param structure
      * @param required
      * @return
-     * @throws DotHibernateException
+     * @throws DotDataException 
      */
-    protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotHibernateException {
+    protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotDataException {
 
         return createRelationShip( structure.getInode(), structure.getInode(), required );
     }
@@ -681,9 +681,9 @@ public class ContentletBaseTest extends TestBase {
      * @param childStrunctureInode
      * @param required
      * @return
-     * @throws DotHibernateException
+     * @throws DotDataException 
      */
-    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotHibernateException {
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotDataException {
 
         Relationship relationship = new Relationship();
         //Set Parent Info
@@ -699,7 +699,7 @@ public class ContentletBaseTest extends TestBase {
         relationship.setCardinality( 0 );
 
         //Save it
-        RelationshipFactory.saveRelationship( relationship );
+        FactoryLocator.getRelationshipFactory().save( relationship );
 
         return relationship;
     }
@@ -717,7 +717,7 @@ public class ContentletBaseTest extends TestBase {
         //Create the contentlet relationships
         ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
 
-        boolean hasParent = RelationshipFactory.isParentOfTheRelationship( relationship, structure );
+        boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( relationship, structure );
 
         //Adding the relationships records
         ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords = contentletRelationships.new ContentletRelationshipRecords( relationship, hasParent );

@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
@@ -114,7 +115,7 @@ public class EditCategoryAction extends DotPortletAction {
         int found=0;
         Boolean Proceed=false;
         if(!UtilMethods.isSet(catvelvar)){
-        	catvelvar=VelocityUtil.convertToVelocityVariable(cat.getCategoryName());
+        	catvelvar=StringUtils.camelCaseLower(cat.getCategoryName());
         	Proceed=true;
         }
 		if(!InodeUtils.isSet(cat.getInode())|| Proceed){	 
