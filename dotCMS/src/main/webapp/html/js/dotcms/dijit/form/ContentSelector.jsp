@@ -1,52 +1,53 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}">
-	<div dojoAttachPoint="dialog" dojoType="dijit.Dialog" style="height: 500px;width: 1000px;" dojoAttachEvent='onHide:_clearSearch'>
-		<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm">
-				<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:450px;" dojoAttachPoint="borderContainer" class="shadowBox headerBox">
+	<div dojoAttachPoint="dialog" dojoType="dijit.Dialog" dojoAttachEvent='onHide:_clearSearch' class="related-content-dialog">
+		<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm" class="related-content-form">
+			<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" dojoAttachPoint="borderContainer" class="related-content-container">
 
 					<!-- START Left Column -->
-					<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width:350px;" class="lineRight">
-						<input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
-						<input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
-						<div style="margin:10px 20px;">
-							<b><%= LanguageUtil.get(pageContext, "Search") %>:</b> <span dojoAttachPoint='structureName'></span>
-						</div>
-						<div class="sideMenuWrapper" style="height: 400px;overflow: auto;">
-							<input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
-							<div dojoAttachPoint="structures_select"></div>
-							<div dojoAttachPoint="search_languages_table"></div>
-							<div dojoAttachPoint="search_fields_table"></div>
-							<div dojoAttachPoint="search_categories_table">
+					<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="portlet-sidebar-wrapper">
+						<div class="portlet-sidebar">
+							<input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
+							<input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
+							<span dojoAttachPoint='structureName'></span>
+							<div class="sideMenuWrapper">
+								<input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
+								<div dojoAttachPoint="structures_select"></div>
+								<div dojoAttachPoint="search_languages_table"></div>
+								<div dojoAttachPoint="search_fields_table"></div>
+								<div dojoAttachPoint="search_categories_table">
 								<dl dojoAttachPoint="search_categories_list"></dl>
-							</div>
-							<div class="clear"></div>
-							<div class="buttonRow">
-								<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doSearchPage1' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
-								<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_clearSearch' iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Clear-Search") %></button>
+								</div>
+								<div class="clear"></div>
+								<div class="buttonRow">
+									<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doSearchPage1' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
+									<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_clearSearch' iconClass="cancelIcon" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+								</div>
 							</div>
 						</div>
 					 </div>
 
-					     <!-- START Right Column -->
-					<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
-						<div dojoAttachPoint="contentWrapper" style="overflow:auto;margin-top:36px;">
-				        	<div dojoAttachPoint="matchingResultsDiv" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
-							<table dojoAttachPoint="results_table"  class="listingTable"></table>
-						</div>
-						<div class="yui-g buttonRow">
-							<div class="yui-u first" style="text-align:left;">
-						        <div dojoAttachPoint="previousDiv" style="display: none;">
-						             <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_previousPage' iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "Previous") %></button>
-						        </div>
+					<!-- START Right Column -->
+					<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-main-wrapper">
+						<div class="portlet-main">
+							<div dojoAttachPoint="contentWrapper">
+								<div class="portlet-toolbar">
+									<div dojoAttachPoint="matchingResultsDiv" style="display: none"><%= LanguageUtil.get(pageContext, "Results") %></div>
+									<div dojoAttachPoint="relateDiv">
+										<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
+									</div>
+								</div>
+								<table dojoAttachPoint="results_table"  class="listingTable"></table>
 							</div>
-							<div class="yui-u" style="text-align:right;">
-						        <div dojoAttachPoint="nextDiv" style="display: none;">
-						             <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_nextPage' iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
-						        </div>
+							<div class="portlet-pagination">
+								<div dojoAttachPoint="previousDiv" style="display: none;">
+									<button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_previousPage' iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "Previous") %></button>
+								</div>
+								<div></div>
+								<div dojoAttachPoint="nextDiv" style="display: none;">
+									<button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_nextPage' iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
+								</div>
 							</div>
-						</div>
-						<div class="buttonRow" dojoAttachPoint="relateDiv" style="display: none">
-								<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
 						</div>
 					</div>
 
