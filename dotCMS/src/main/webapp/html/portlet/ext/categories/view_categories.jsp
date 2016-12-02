@@ -345,6 +345,11 @@ td {font-size: 100%;}
 		dijit.byId('add_category_dialog').show();
 		dijit.byId('addCatName').focus();
 	}
+	
+	// display importCategory Dialog
+	function showImportCategories() {
+		dijit.byId('importCategoriesOptions').show();
+	}
 
 	function fillVelocityVarName() {
 		var relation = dojo.byId("addCatName").value;
@@ -775,24 +780,6 @@ td {font-size: 100%;}
 
 </script>
 
-<div class="buttonBoxRight">
-		<div style="padding-right: 90px">
-		<%= LanguageUtil.get(pageContext, "Import-Options") %>:
-		 <input type="radio" dojoType="dijit.form.RadioButton" name="importMode" id="radioOne" checked />
-	    <label for="radioOne">
-	        <%= LanguageUtil.get(pageContext, "Replace") %>
-	    </label>
-	    <input type="radio" dojoType="dijit.form.RadioButton" name="importMode" id="radioTwo" />
-	    <label for="radioTwo">
-	        <%= LanguageUtil.get(pageContext, "add-edit") %>
-	    </label>
-    	</div>
-		<div class="fakefile">
-		    <input type="file" id="uploadFile" onchange="importCategories()" class="upload"  />
-			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" ><%= LanguageUtil.get(pageContext, "import") %></button>
-		</div>
-</div>
-
 <form id="remotePublishForm">
 	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
 	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
@@ -808,35 +795,66 @@ td {font-size: 100%;}
 
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp" >
-	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
-		<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false" style="width: 99%; margin-left: auto; margin-right:auto;"  >
-			<!-- START Children Tab -->
-			<div id="TabOne" dojoType="dijit.layout.ContentPane"  title="<%=LanguageUtil.get(pageContext, "children")%>" style="overflow: hidden; ">
-				<div class="buttonBoxLeftNoTop">
-					<input  name="catFilter" id="catFilter" onkeyup="doSearch();" dojoType="dijit.form.TextBox" onblur="alterFocus(document.activeElement, this);" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>"  style="width: 250px; height: 15px" />
-					<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-				</div>
-				<div id="warningDiv" style="text-align: center; height: 10px; margin-top: 15px; color: red; font-size: 11px; ">
-					<br><br>
-				</div>
-				<div class=buttonBoxRightNoTop>
-					<button dojoType="dijit.form.Button" type="button" onclick="showAddCategory(); " iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add") %></button>
-					<button dojoType="dijit.form.Button" type="button" onclick="deleteCategories()" iconClass="deleteIcon"><%= LanguageUtil.get(pageContext, "delete") %></button>
-					<button dojoType="dijit.form.Button" type="button" onclick="exportCategories()" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "export") %></button>
-					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
-				</div>
-				<br/>
-				<div id="catHolder" style="text-align: center; " class="claro"></div>
-				<div style="height: 15px; text-align: right; margin-top: 5px">
+<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
 
-                    <% if ( enterprise ) { %>
+
+<div class="portlet-main">
+	
+	<div class="portlet-toolbar">
+    	<div class="portlet-toolbar__actions-primary">Breadcrumbs go here!</div>
+    	<div class="portlet-toolbar__info"></div>
+    	<div class="portlet-toolbar__actions-secondary">
+
+			<!-- START Actions -->			
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+	            <span></span>
+	
+	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showAddCategory">
+	                    <%= LanguageUtil.get(pageContext, "Add") %>
+	                </div>
+	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteCategories">
+	                    <%= LanguageUtil.get(pageContext, "delete") %>
+	                </div>
+	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showImportCategories">
+	                	<%= LanguageUtil.get(pageContext, "import") %>
+	                </div>
+	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: exportCategories">
+	                    <%= LanguageUtil.get(pageContext, "export") %>
+	                </div>
+					<% if ( enterprise ) { %>
                         <% if ( sendingEndpoints ) { %>
-                            <button dojoType="dijit.form.Button" type="button" onClick="remoteSyncronization();" iconClass="sServerIcon"><%= LanguageUtil.get(pageContext,"Remote-Syncronization") %></button>
-                            &nbsp;
+                            <div data-dojo-type="dijit/MenuItem" onClick="remoteSyncronization();">
+                            	<%= LanguageUtil.get(pageContext,"Remote-Syncronization") %>
+                            </div>
                         <%}%>
-                        <button dojoType="dijit.form.Button" type="button" onClick="addToBundle();" iconClass="bundleIcon"><%= LanguageUtil.get(pageContext,"Add-To-Bundle") %></button>
-                        &nbsp;
+                        <div data-dojo-type="dijit/MenuItem" onClick="addToBundle();">
+                        	<%= LanguageUtil.get(pageContext,"Add-To-Bundle") %>
+                        </div>
                     <%}%>
+	            </div>
+	        </div>
+	    	<!-- END Actions -->
+	    	
+	    </div>
+	</div>
+
+
+	
+	<!--  START TABS -->
+		<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
+			
+			<!-- START Children Tab -->
+			<div id="TabOne" dojoType="dijit.layout.ContentPane"  title="<%=LanguageUtil.get(pageContext, "children")%>">
+
+				<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" onblur="alterFocus(document.activeElement, this);" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
+				<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+				<div id="warningDiv" style="text-align: center; height: 10px; margin-top: 15px; color: red; font-size: 11px; "></div>
+
+                                        
+				<div id="catHolder" style="text-align: center; " class="claro"></div>
+				
+				<div style="text-align: right; margin: 20px 15px">
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">
@@ -844,9 +862,8 @@ td {font-size: 100%;}
 			<!-- END Children Tab -->
 
 			<!-- START Properties Tab -->
-            <div id="TabTwo" dojoType="dijit.layout.ContentPane"
-                 title="<%=LanguageUtil.get(pageContext, "properties")%>">
-            <div id="propertiesNA" style="height: 300px; text-align: center;  position:relative">
+            <div id="TabTwo" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "properties")%>">
+            	<div id="propertiesNA" style="height: 300px; text-align: center;  position:relative">
 					<span style="position:absolute; top:50%; left: 50%; height:10em; margin-top:-2em; margin-left:-10em"><%= LanguageUtil.get(pageContext, "message.category.toplevel.na") %></span>
 				</div>
 				<div id="propertiesDiv" style="display: none">
@@ -881,15 +898,14 @@ td {font-size: 100%;}
 						</dl>
 					</form>
 					<div class="buttonRow" id="editCategoryButtonRow">
-
 					   <button dojoType="dijit.form.Button" onclick="saveOrUpdateCategory(false);" iconClass="saveIcon" type="button">
 					      <%= LanguageUtil.get(pageContext, "save") %>
 					   </button>
 					</div>
 				</div>
 			</div>
-
 			<!-- END Properties Tab -->
+			
 			<!-- START Permission Tab -->
 			<div id="TabThree" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "permissions")%>" >
 				<div id="permissionNA" style="height: 300px; text-align: center;  position:relative">
@@ -899,8 +915,14 @@ td {font-size: 100%;}
 					<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc_ajax.jsp" %>
 				</div>
 			<!-- END Permission Tab -->
+			
 			</div>
 		</div>
+	<!-- END Tabs -->
+</div>
+
+
+
 <script language="Javascript">
 	/**
 		focus on search box
@@ -920,13 +942,13 @@ td {font-size: 100%;}
 </liferay:box>
 
 <!-- START Add Category pop up -->
-<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;height:320px;width:450px;vertical-align: middle;" draggable="true"
+<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;height:380px;width:450px;" draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane">
 		<div style="padding:0 0 10px 0; border-bottom:1px solid #ccc;">
 			<form id="addCatPropertiesForm" dojoType="dijit.form.Form">
 				<dl>
-					<dd style="margin-bottom: -2px; margin-top: -8px">
+					<dd>
 			       		<span id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
 						</span>
 					</dd>
@@ -959,6 +981,30 @@ td {font-size: 100%;}
    	</div>
 </div>
 
+<!-- Import Categories Popup -->
+<div id="importCategoriesOptions" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "import") %>">
+	<div dojoType="dijit.layout.ContentPane" style="width:300px;height:400px;" class="box" hasShadow="true">
+		<dl class="vertical">
+			<dt><label><%= LanguageUtil.get(pageContext, "Import-Options") %>:</label></dt>
+			<dd><input type="file" id="uploadFile" onchange="importCategories()" class="upload"  /></dd>
+	        <div class="clear"></div>
+		
+	        <dt><label><%= LanguageUtil.get(pageContext, "Import-Options") %>:</label></dt>
+	        <dd>
+	        	<input type="radio" dojoType="dijit.form.RadioButton" name="importMode" id="radioOne" checked /></span>
+	        	<label for="radioOne"><%= LanguageUtil.get(pageContext, "Replace") %></label>
+	        	
+	        	<input type="radio" dojoType="dijit.form.RadioButton" name="importMode" id="radioTwo" />
+	    		<label for="radioTwo"><%= LanguageUtil.get(pageContext, "add-edit") %></label>
+	        </dd>
+	        <div class="clear"></div>
+	     </dl>
+	     <div class="buttonRow">  
+	        <button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" ><%= LanguageUtil.get(pageContext, "import") %></button>
+	    </div>
+	</div>
+</div>
+
 <!-- END Add Category pop up -->
 
 <div id="dotImportCategoriesDialog" dojoType="dijit.Dialog" style="display:none" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Processing-Please-be-patient")) %>">
@@ -970,6 +1016,7 @@ td {font-size: 100%;}
 			</div>
 	</div>
 </div>
+
 <div id="dotDeleteCategoriesDialog" dojoType="dijit.Dialog" style="display:none" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Processing-Please-be-patient")) %>">
 	<div dojoType="dijit.layout.ContentPane" style="width:300px;height:80px;text-align: center;vertical-align: middle;padding:20px;" class="box" hasShadow="true">
 		<div style="width:300px"  indeterminate="true" id="indeterminateBar2"
