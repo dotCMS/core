@@ -72,11 +72,13 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return false;
   }
 
+  /*
   @JsonIgnore
   @Value.Default
   public StorageType storageType() {
     return ImmutableDbStorageType.of();
   }
+  */
 
   @Value.Default
   @Nullable

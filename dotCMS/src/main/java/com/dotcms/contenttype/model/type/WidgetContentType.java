@@ -2,6 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 import java.util.List;
 
+import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize
 @JsonDeserialize
+@Gson.TypeAdapters
 @Value.Immutable
 public abstract class WidgetContentType extends ContentType {
 	
