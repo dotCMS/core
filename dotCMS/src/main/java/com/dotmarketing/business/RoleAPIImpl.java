@@ -1,22 +1,19 @@
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jason Tesser
@@ -39,6 +36,7 @@ public class RoleAPIImpl implements RoleAPI {
 		this(FactoryLocator.getRoleFactory(), APILocator.getUserAPI());
 	}
 
+	@VisibleForTesting
 	public RoleAPIImpl(RoleFactory roleFactory, UserAPI userAPI) {
 		this.rf = roleFactory;
 		this.userAPI = userAPI;
