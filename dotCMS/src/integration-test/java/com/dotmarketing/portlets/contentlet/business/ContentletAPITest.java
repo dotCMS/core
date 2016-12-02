@@ -892,7 +892,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = null;//FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg-" + identifier );
+        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Wysiwyg-" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );

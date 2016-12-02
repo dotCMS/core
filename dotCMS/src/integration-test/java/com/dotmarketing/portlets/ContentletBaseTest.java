@@ -280,7 +280,7 @@ public class ContentletBaseTest extends TestBase {
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
         testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
-        testStructure.setSystem( true );
+        testStructure.setSystem( false );
         testStructure.setType( "structure" );
         testStructure.setVelocityVarName( structureVelocityVarName );
 

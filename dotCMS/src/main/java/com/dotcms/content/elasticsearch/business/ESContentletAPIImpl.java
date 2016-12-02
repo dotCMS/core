@@ -3829,9 +3829,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     throw new DotContentletStateException("Unable to set string value as a Long");
                 }
             }
-            // http://jira.dotmarketing.net/browse/DOTCMS-1073
-            // setBinary
-        }else if(field.getFieldContentlet().startsWith("binary")){
+        // http://jira.dotmarketing.net/browse/DOTCMS-1073
+        // setBinary
+        }else if(field.getFieldType().equals("binary")){
                 try{
                 	// only if the value is a file
                 	if(value.getClass()==java.io.File.class){
