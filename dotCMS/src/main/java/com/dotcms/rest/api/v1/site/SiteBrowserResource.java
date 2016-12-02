@@ -208,5 +208,48 @@ public class SiteBrowserResource implements Serializable {
 
         return response;
     } // sites.
+    
+    /**
+	 * Returns the list of Sites that the currently logged-in user has access
+	 * to. In the front-end, this list is displayed in the Site Selector
+	 * component. Its contents will also be refreshed when performing the "Login
+	 * As".
+	 * <p>
+	 * The site that will be selected in the UI component will be retrieved from
+	 * the HTTP session. If such a site does not exist in the list of sites, the
+	 * first site in it will be selected.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The {@link Response} containing the list of Sites.
+	 */
+    @GET
+    @Path ("/paginatedSites/filter/{filter}/archived/{archived}/page/{page}/limit/{limit}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response currentSite(@Context final HttpServletRequest req,
+    		@PathParam("filter") final String filter,
+    		@PathParam("archived") final boolean showArchived,
+    		@PathParam("page")  final int page, 
+    		@PathParam("limit") final int limit) {
+        final Map<String, Object> paginatedSites;
+        Response response = null;
+        this.webResource.init(null, true, req, true, null);
+        final HttpSession session = req.getSession();
+        try {
+			// Get user from session, not request. This is required to make this
+			// work with the 'Login As' user as well.
+			final User user = this.userAPI
+					.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
+			paginatedSites = siteBrowserHelper.getPaginatedOrderedSites(showArchived, user, filter, page, limit, true);
+			
+			response = Response.ok( new ResponseEntityView( map("sites", paginatedSites))).build();
+        } catch (Exception e) {
+        	// Unknown error, so we report it as a 500
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
 
 } // E:O:F:SiteBrowserResource.

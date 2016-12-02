@@ -36,6 +36,7 @@ import com.liferay.util.LocaleUtil;
 public class ConfigurationHelper implements Serializable {
 
 	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
+	public static final String DOTSITESELECTOR_SITES_PER_PAGE = "DOTSITESELECTOR_SITES_PER_PAGE";
 	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
@@ -72,6 +73,8 @@ public class ConfigurationHelper implements Serializable {
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
 				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
+				DOTSITESELECTOR_SITES_PER_PAGE,
+				Config.getIntProperty(DOTSITESELECTOR_SITES_PER_PAGE, 20),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications

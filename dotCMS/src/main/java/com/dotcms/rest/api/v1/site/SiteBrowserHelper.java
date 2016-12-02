@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.site;
 import static com.dotmarketing.util.Logger.error;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +37,12 @@ public class SiteBrowserHelper implements Serializable {
             new HostNameComparator();
 
     public static final String EXT_HOSTADMIN = "EXT_HOSTADMIN";
-
+    
+    private static final String HAS_PREVIOUS = "hasPrevious";
+    private static final String HAS_NEXT = "hasNext";
+    private static final String TOTAL_SITES = "total";
+    private static final String RESULTS = "results";
+    
     @VisibleForTesting
     public SiteBrowserHelper (HostAPI hostAPI) {
         this.hostAPI = hostAPI;
@@ -177,5 +183,59 @@ public class SiteBrowserHelper implements Serializable {
 		}
 		return selectedSite;
 	}
+	
+	/**
+	 * Returns a subset of the list of sites that the given user has access to
+	 * by query, page and limit 
+	 * .
+	 *
+	 * @param showArchived
+	 *            - Is set to {@code true}, archived sites will be returned.
+	 *            Otherwise, set to {@code false}.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param filter
+	 *            - (Optional) If specified, returns the sites whose name starts
+	 *            with the value of the {@code filter} variable.
+	 *            
+	 * @param currentPage
+	 *           - indicate the page to obtain the subset of sites to be returned.
+	 *           
+	 * @param sitesPerPage
+	 *           - indicates how many site should be included in the subset to be returned.
+	 *            
+	 * @param respectFrontendRoles
+	 *            -
+	 * @return The list of sites that the given user has permissions to access.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the sites' data.
+	 * @throws DotSecurityException
+	 *             A system error occurred.
+	 */
+    public Map<String,Object> getPaginatedOrderedSites(final boolean showArchived, final User user, final String filter, final int currentPage, final int sitesPerPage, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    	final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
+    	
+    	Map<String, Object> results = new HashMap<String,Object>();
+    	List<Host> hosts = this.hostAPI.findAll(user, respectFrontendRoles)
+                .stream().sorted(HOST_NAME_COMPARATOR)
+                .filter (site ->
+                        !site.isSystemHost() && checkArchived(showArchived, site) &&
+                                (site.getHostname().toLowerCase().startsWith(sanitizedFilter.toLowerCase())))
+                .collect(Collectors.toList());
+    	
+    	
+    	int minIndex = (currentPage - 1) * sitesPerPage;
+        int totalCount = hosts.size();
+        int maxIndex = sitesPerPage * currentPage;
+        if((minIndex + sitesPerPage) >= totalCount){
+        	maxIndex = totalCount;
+        }
+		results.put(TOTAL_SITES, totalCount);
+    	results.put(RESULTS, hosts.subList(minIndex, maxIndex));
+    	results.put(HAS_NEXT, maxIndex < totalCount);
+    	results.put(HAS_PREVIOUS, minIndex > 0);
+    	return results;
+    	
+    }
 
 }
