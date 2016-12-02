@@ -852,8 +852,10 @@ td {font-size: 100%;}
 			<!-- START Children Tab -->
 			<div id="TabOne" dojoType="dijit.layout.ContentPane"  title="<%=LanguageUtil.get(pageContext, "children")%>">
 
-				<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" onblur="alterFocus(document.activeElement, this);" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
-				<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+				<div class="inline-form" style="width:300px">
+					<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" onblur="alterFocus(document.activeElement, this);" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
+					<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+				</div>
 				<div id="warningDiv" style="text-align: center; height: 10px; margin-top: 15px; color: red; font-size: 11px; "></div>
 
                                         
