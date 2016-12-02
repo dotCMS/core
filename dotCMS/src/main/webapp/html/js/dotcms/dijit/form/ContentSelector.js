@@ -176,11 +176,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		}
 		this.availableLanguages = data;
 		this.search_languages_table.innerHTML = "";
-		var htmlstr = "<dl>";
-		htmlstr += "<dt><b>"+data[0].title+"</b></dt>";
+		var htmlstr = "<dl class='vertical'>";
+		htmlstr += "<dt><label for='langcombo+"+this.dialogCounter+"'>"+data[0].title+"</label></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='true' name='langcombo+"+this.dialogCounter+"' style='width:160px;'>";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='true' name='langcombo+"+this.dialogCounter+">";
 
 		for (var i = 0; i < data.length; i++) {
 			htmlstr += "<option  value='"+data[i].id+"'";
@@ -200,13 +200,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_fillFields: function (data){
 		this.currentStructureFields = data;
 		this.search_fields_table.innerHTML = "";
-		var htmlstr = "<dl>";
+		var htmlstr = "<dl class='vertical'>";
 		for(var i = 0; i < data.length; i++) {
 			var type = data[i]["fieldFieldType"];
 	        	if(type=='category' || type=='hidden'){
 	                 continue;
 	        	}
-			htmlstr += "<dt>" + this._fieldName(data[i]) + "</dt>";
+			htmlstr += "<dt><label>" + this._fieldName(data[i]) + "</label></dt>";
 			htmlstr += "<dd>" + this._renderSearchField(data[i]) + "</dd>";
 		}
 		htmlstr += "</dl>";
@@ -220,7 +220,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		if(type=='category'){
 			return "";
 		}else{
-			return "<strong>" + field["fieldName"] + ":</strong>"; //DOTCMS -4381
+			return field["fieldName"] + ":"; //DOTCMS -4381
 		}
 	},
 
