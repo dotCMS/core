@@ -472,9 +472,13 @@ td {font-size: 100%;}
 		            <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="resetButton" onClick="resetSearch()">
 		               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
 		            </button>
+
+                    <div class="checkbox">
+                        <input type="checkbox" name="showGlobal" id="showGlobal" dojoType="dijit.form.CheckBox" value="" onChange="checkGlobalTags()"/>
+                        <label for="showGlobal"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "show-global-tags")) %></label>
+                    </div>
 		            
-		            <input type="checkbox" name="showGlobal" id="showGlobal" dojoType="dijit.form.CheckBox" value="" onChange="checkGlobalTags()"/>
-		            <label for="showGlobal"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "show-global-tags")) %></label>
+
 		            <input type="hidden" name="globalFilter" id="globalFilter" value="0">
 		        </div>
 		    </div>

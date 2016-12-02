@@ -5875,12 +5875,13 @@ Styles for commons fields along the backend
   margin-bottom: 4px;
 }
 
-#checkbox-radio, dd .radio, dd .checkbox, .fieldValue .radio, .fieldValue .checkbox {
-  margin: 8px 0;
-  display: flex;
+#checkbox-radio, #inline-form .radio, .fileSelectorControls .radio, .inline-form .radio, #inline-form .checkbox, .fileSelectorControls .checkbox, .inline-form .checkbox, dd .radio, dd .checkbox, .fieldValue .radio, .fieldValue .checkbox {
   align-items: center;
+  display: flex;
+  margin: 8px 0;
+  white-space: nowrap;
 }
-#checkbox-radio > .dijit, dd .radio > .dijit, dd .checkbox > .dijit, .fieldValue .radio > .dijit, .fieldValue .checkbox > .dijit {
+#checkbox-radio > .dijit, #inline-form .radio > .dijit, .fileSelectorControls .radio > .dijit, .inline-form .radio > .dijit, #inline-form .checkbox > .dijit, .fileSelectorControls .checkbox > .dijit, .inline-form .checkbox > .dijit, dd .radio > .dijit, dd .checkbox > .dijit, .fieldValue .radio > .dijit, .fieldValue .checkbox > .dijit {
   margin-right: 4px;
 }
 
