@@ -2,6 +2,7 @@ package com.dotmarketing.servlets;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,6 +11,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
@@ -31,9 +33,7 @@ import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.metadata.ClassMetadata;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Inode;
@@ -63,6 +63,8 @@ public class ImportExportXMLServlet extends HttpServlet {
 	 * The path where backup files are stored
 	 */
 	String backupFilePath = "../backup";
+	
+	private static final String CHARSET = UtilMethods.getCharsetConfiguration();
 
 	/**
 	 * The path where tmp files are stored. This gets wiped alot
@@ -238,7 +240,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				HibernateUtil _dh = null;
 
 				_className = f.getName().substring(0, f.getName().lastIndexOf("."));
-				_xstream = new XStream(new DomDriver());
+				_xstream = new XStream(new DomDriver(CHARSET));
 				_importClass = Class.forName(_className);
 				out.println("Importing:\t" + _className);
 				if (_importClass.equals(User.class)) {
@@ -332,7 +334,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			HibernateUtil _dh = null;
 			List _list = null;
 			File _writing = null;
-			BufferedOutputStream _bout = null;
+			BufferedWriter _bout = null;
 
 			for (Class clazz : _tablesToDump) {
 				_xstream = new XStream(new DomDriver());
@@ -344,7 +346,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 				 */
 
 				_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + clazz.getName() + ".xml"));
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
+				_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
 				_dh = new HibernateUtil(clazz);
 				_dh.setQuery("from " + clazz.getName());
 
@@ -362,9 +364,9 @@ public class ImportExportXMLServlet extends HttpServlet {
 			/* Run Liferay's Tables */
 			/* Companies */
 			_list = PublicCompanyFactory.getCompanies();
-			_xstream = new XStream(new DomDriver());
+			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + Company.class.getName() + ".xml"));
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
+			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
 			_xstream.toXML(_list, _bout);
 			_bout.close();
 			_list = null;
@@ -372,9 +374,9 @@ public class ImportExportXMLServlet extends HttpServlet {
 
 			/* Users */
 			_list = APILocator.getUserAPI().findAllUsers();
-			_xstream = new XStream(new DomDriver());
+			_xstream = new XStream(new DomDriver(CHARSET));
 			_writing = new File(FileUtil.getRealPath(backupTempFilePath + "/" + User.class.getName() + ".xml"));
-			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
+			_bout = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(_writing), CHARSET));
 			_xstream.toXML(_list, _bout);
 			_bout.close();
 			_list = null;
