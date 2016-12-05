@@ -885,7 +885,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 						   	'	<td class="nameTD" id="' + asset.inode + '-NameTD">' +
 									'<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
 									'<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-									'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + title + '</span>' +
+									'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
 									'</a>' +
 							'	</td>\n' +
 							'	<td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
