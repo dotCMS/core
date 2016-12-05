@@ -483,7 +483,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
         
         // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
-        if(clive!=null && !UtilMethods.isSet(clive.getTemplateId())) {
+        if(clive!=null && UtilMethods.isSet(clive.getTemplateId())) {
             Contentlet cclive = contentletAPI.checkin(clive, user, respectFrontEndPermissions);
             contentletAPI.publish(cclive, user, respectFrontEndPermissions);
         }
