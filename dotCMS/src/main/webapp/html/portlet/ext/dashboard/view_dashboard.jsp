@@ -403,15 +403,12 @@ int periodData = dAPI.checkPeriodData(0,0);
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-dashboard") %>' />
 
 
+<div class="portlet-main">
+
 <% if(LicenseUtil.getLevel() > 199){ %>		
 <form id="fm" method="post">
-<% if(periodData<=0){ %>
-<br />
-<br />
-<%} %>
-
-<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
+	<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+	<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 
 	<div class="portlet-toolbar">
 		<div class="portlet-toolbar__actions-primary">
@@ -434,7 +431,8 @@ int periodData = dAPI.checkPeriodData(0,0);
 		</div>
     	<div class="portlet-toolbar__actions-secondary"></div>
        
-    </div>  
+    </div>
+     
 	<table class="searchTable">
 		<tr>
 			<td class="tdLabel"></td>
@@ -810,8 +808,11 @@ int periodData = dAPI.checkPeriodData(0,0);
 	
 	<div id="popups"></div>
 	<div id="hostContextMenues"></div>
-</div>
+	
 <%}else{ %>
+	
 	<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
+	
 <% }%>
+</div>
 </liferay:box>
