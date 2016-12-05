@@ -138,15 +138,29 @@ public class StructureFactory {
 	@Deprecated
 	public static List<String> getAllStructuresNames()
 	{
-	
-			return new ArrayList<String>();
+		String orderBy = "name";
+		int limit = -1;
+		List<Structure> temp = getStructures(orderBy,limit);
+
+		List<String> results = new ArrayList<String>();
+		for(Structure st : temp){
+			results.add(st.getName());
+		}
+		return results;
 	}
 	
 	@Deprecated
 	public static List<String> getAllVelocityVariablesNames()
 	{
-		return new ArrayList<String>();
+		String orderBy = "name";
+		int limit = -1;
+		List<Structure> temp = getStructures(orderBy,limit);
 
+		List<String> results = new ArrayList<String>();
+		for(Structure st : temp){
+			results.add(st.getVelocityVarName());
+		}
+		return results;
 	}
 	
 	@Deprecated
@@ -453,6 +467,14 @@ public class StructureFactory {
 		}
 	}
 
+    /**
+     *
+     * @throws com.dotmarketing.exception.DotHibernateException
+     * 
+     * @deprecated Do not use this method anymore, Instead, use {@link com.dotcms.contenttype.business.ContentTypeApi.setAsDefault(ContentType)}
+     * 
+     * @see com.dotcms.contenttype.business.ContentTypeApi.setAsDefault(ContentType)
+     */
 	public static void disableDefault() throws DotHibernateException
 	{
 		throw new DotHibernateException("You cannot disbale the defualt without setting a new one");
