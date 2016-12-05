@@ -95,13 +95,11 @@ export class DotcmsConfig extends CoreWebService {
     }
 
     /**
-     * Returns the max number of sites to display in the dot site selecteor autocomplete.
-     * The items in the dot-site-selector depend on the roles and permissions of the
-     * logged-in user and the filter.
+     * Returns the default rest page count to display.
      *
      * @returns <number> The max number of sites to display after a search.
      */
-    getSiteSelectorSitesPerPage(): number {
-        return this.configParams.config['DOTSITESELECTOR_SITES_PER_PAGE'];
+    getDefaultRestPageCount(): number {
+        return this.configParams.config['DEFAULT_REST_PAGE_COUNT'];
     }
 }

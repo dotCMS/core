@@ -25,7 +25,7 @@ export class SiteSelectorComponent extends BaseComponent {
 
     constructor(private siteService: SiteService, messageService: MessageService, config: DotcmsConfig) {
         super(['updated-current-site-message', 'archived-current-site-message', 'modes.Close'], messageService);
-        this.paginationPerPage = config.getSiteSelectorSitesPerPage();
+        this.paginationPerPage = config.getDefaultRestPageCount();
     }
 
     ngOnInit(): void {
