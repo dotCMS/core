@@ -147,9 +147,9 @@ public class ContentMap {
 						IFileAsset file = null;
 						String p = "";
 						if (EDIT_OR_PREVIEW_MODE){
-							p = WorkingCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+							p = WorkingCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 						}else{
-							p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+							p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 						}
 						p = p.substring(5, p.lastIndexOf("."));
 						if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
@@ -184,7 +184,7 @@ public class ContentMap {
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
 				IFileAsset file = null;
 				if (EDIT_OR_PREVIEW_MODE){
-					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
@@ -199,7 +199,7 @@ public class ContentMap {
 						file = fileAPI.find(p,user,true);
 					}
 				}else{
-					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
