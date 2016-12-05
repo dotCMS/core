@@ -66,15 +66,20 @@ export class SiteSelectorComponent extends BaseComponent {
         this.filteredSitesResults = [];
 
         /**
-         * If the query change then clean the paginationPage
-         * and paginationQuery variables
+         * only execute the search if there is at least 3 characters
          */
-        if(this.paginationQuery !== event.query){
-            this.paginationPage = 1;
-            this.paginationQuery = event.query;
-        }
+        if(event.query.length >= 3) {
+            /**
+             * If the query change then clean the paginationPage
+             * and paginationQuery variables
+             */
+            if (this.paginationQuery !== event.query) {
+                this.paginationPage = 1;
+                this.paginationQuery = event.query;
+            }
 
-        this.showPaginateSites();
+            this.showPaginateSites();
+        }
     }
 
     /**
