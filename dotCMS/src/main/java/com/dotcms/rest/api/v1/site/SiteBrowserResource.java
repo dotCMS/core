@@ -235,13 +235,12 @@ public class SiteBrowserResource implements Serializable {
     		@PathParam("limit") final int limit) {
         final Map<String, Object> paginatedSites;
         Response response = null;
-        this.webResource.init(null, true, req, true, null);
-        final HttpSession session = req.getSession();
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+        
         try {
 			// Get user from session, not request. This is required to make this
 			// work with the 'Login As' user as well.
-			final User user = this.userAPI
-					.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
 			paginatedSites = siteBrowserHelper.getPaginatedOrderedSites(showArchived, user, filter, page, limit, true);
 			
 			response = Response.ok( new ResponseEntityView( map("sites", paginatedSites))).build();
