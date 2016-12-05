@@ -280,7 +280,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException("No contenlet found for given identifier");
             }
             if(live){
-                return find(clvi.getLiveInode(), user, respectFrontendRoles);
+                return (com.dotmarketing.util.UtilMethods.isSet(clvi.getLiveInode()))?
+                        find(clvi.getLiveInode(), user, respectFrontendRoles): null;
             }
             else{
                 return find(clvi.getWorkingInode(), user, respectFrontendRoles);
