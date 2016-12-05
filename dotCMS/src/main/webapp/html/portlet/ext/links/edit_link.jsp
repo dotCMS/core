@@ -219,6 +219,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/edit_link" /></portlet:actionURL>&cmd=edit&inode=' + objId + '&referer=' + referer;
 	}
 
+
 	function hideEditButtonsRow() {
 		dojo.style('editLinkButtonRow', { display: 'none' });
 	}
@@ -253,6 +254,75 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 <input name="<portlet:namespace />inode" type="hidden" value="<%=contentLink.getInode()%>">
 <input type="hidden" name="existinglink" id="existinglink" value="">
 <input type="hidden" name="selectedexistinglink" id="selectedexistinglink" value="">
+
+<div class="portlet-main">
+	<div class="portlet-toolbar">
+    	<div class="portlet-toolbar__actions-primary"></div>
+    	<div class="portlet-toolbar__info"><div style="height:32px;width:1px;display:inline-block;"></div></div>
+    	<div class="portlet-toolbar__actions-secondary">
+
+			<!-- START Actions -->
+			<div id="editLinkButtonRow">
+				<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+		            <span></span>
+		
+		            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+	
+		                <div data-dojo-type="dijit/MenuItem" onClick="cancelEdit()">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+						</div>
+						
+						<%
+							if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
+					         	canUserWriteToLink = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
+					       	}
+						%>
+						<% if (!InodeUtils.isSet(contentLink.getInode()) || contentLink.isLive() || contentLink.isWorking()) { %>
+						<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
+					
+						<% if( canUserWriteToLink ) { %>
+							<div data-dojo-type="dijit/MenuItem" onClick="submitfm(document.getElementById('fm'),'')">
+								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+							</div>
+						<% } %>
+					
+						<% if( canUserPublishLink ) { %>
+							<div data-dojo-type="dijit/MenuItem" onClick="submitfm(document.getElementById('fm'),'publish')">
+								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+							</div>
+						<% } %>
+						<% } else { %>
+						<%
+							String title = contentLink.getTitle();
+							if (title!=null) {
+							title = title.replaceAll("\'","\\\\\'");
+							}
+						%>
+							<div data-dojo-type="dijit/MenuItem" onClick="selectLink('<%=contentLink.getInode()%>','<%=contentLink.getWorkingURL()%>', '<%= title %>', '<%= contentLink.getTarget() %>')">
+								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select-link")) %>
+							</div>
+						<% } %>
+						<% } else { %>
+							<div data-dojo-type="dijit/MenuItem" onClick="selectVersion(<%=contentLink.getInode()%>, '<%=referer%>')">
+								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
+							</div>
+						<% } %>
+					
+						<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
+							<div data-dojo-type="dijit/MenuItem" onClick="submitfmDelete()">
+								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
+							</div>
+						<% } %>
+					
+		            </div>
+		        </div>
+		    </div>
+	    	<!-- END Actions -->
+	    		
+	    </div>
+	</div>
+
+
 
 <!-- START TABS -->
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
@@ -410,58 +480,10 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 </div>
 <!-- END TABS -->
 
-<div class="clear"></div>
-
-<!-- Button Row --->
-<div class="buttonRow" id="editLinkButtonRow">
-	<%
-		if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
-         	canUserWriteToLink = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
-       	}
-	%>
-	<% if (!InodeUtils.isSet(contentLink.getInode()) || contentLink.isLive() || contentLink.isWorking()) { %>
-	<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
-
-	<% if( canUserWriteToLink ) { %>
-		<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-		</button>
-	<% } %>
-
-	<% if( canUserPublishLink ) { %>
-		<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-		</button>
-	<% } %>
-	<% } else { %>
-	<%
-		String title = contentLink.getTitle();
-		if (title!=null) {
-		title = title.replaceAll("\'","\\\\\'");
-		}
-	%>
-		<button dojoType="dijit.form.Button" onClick="selectLink('<%=contentLink.getInode()%>','<%=contentLink.getWorkingURL()%>', '<%= title %>', '<%= contentLink.getTarget() %>')" iconClass="linkIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select-link")) %>
-		</button>
-	<% } %>
-	<% } else { %>
-		<button dojoType="dijit.form.Button" onClick="selectVersion(<%=contentLink.getInode()%>, '<%=referer%>')" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-		</button>
-	<% } %>
-
-	<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
-		<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
-		</button>
-	<% } %>
-
-	<button dojoType="dijit.form.Button" onClick="cancelEdit()"  iconClass="cancelIcon" type="button">
-		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-	</button>
 
 </div>
-<!-- /Button Row -->
+
+
 
 </html:form>
 </liferay:box>
