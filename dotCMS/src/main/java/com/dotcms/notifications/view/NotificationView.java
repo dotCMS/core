@@ -1,7 +1,9 @@
 package com.dotcms.notifications.view;
 
-import com.dotcms.notifications.bean.*;
-import com.dotcms.util.I18NMessage;
+import com.dotcms.notifications.bean.NotificationAction;
+import com.dotcms.notifications.bean.NotificationData;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -17,23 +19,24 @@ import java.util.List;
 public class NotificationView implements Serializable, Cloneable {
 
     private final String id;
+    private final String userId;
     private final NotificationDataView notificationData;
     private final NotificationType type;
     private final NotificationLevel level;
-    private final String userId;
     private final Date timeSent;
     private final Boolean wasRead;
     private final String prettyDate;
 
-
-
     /**
      * Creates a Notification object.
      *
-     * @param id
-     *            - The ID of this notification. If a new object is being
-     *            created, leave this parameter as {@code null} so the system
-     *            generates an appropriate ID.
+     * @param groupId
+     *            - The group id of this notification. Multiple notifications can share the same group id, that's why
+     *            the notification key is the group id and the user id.
+     *            <br>
+     *            Multiple notifications with the same group id exists when an Event notification with for example
+     *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+     *            the same group id but just one event will handle the whole notification group.
      * @param type
      *            - The type or notification according to the
      *            {@link NotificationType} class.
@@ -51,13 +54,13 @@ public class NotificationView implements Serializable, Cloneable {
      * @param notificationData
      *            - The additional information that make up this notification.
      */
-    public NotificationView(final String id, final NotificationType type,
-                        final NotificationLevel level, final String userId,
-                        final Date timeSent,
-                        final Boolean wasRead,
-                        final NotificationDataView notificationData,
-                        final String prettyDate) {
-        this.id = id;
+    public NotificationView(final String groupId, final NotificationType type,
+                            final NotificationLevel level, final String userId,
+                            final Date timeSent,
+                            final Boolean wasRead,
+                            final NotificationDataView notificationData,
+                            final String prettyDate) {
+        this.id = groupId;
         this.userId = userId;
         this.notificationData = notificationData;
         this.type = type;
@@ -68,7 +71,7 @@ public class NotificationView implements Serializable, Cloneable {
     }
 
     /**
-     * Returns the ID of this notification.
+     * Returns the group id of this notification.
      *
      * @return The notification ID.
      */
@@ -178,7 +181,7 @@ public class NotificationView implements Serializable, Cloneable {
 
         NotificationView that = (NotificationView) o;
 
-        if (id != null ? !id.equals(that.id) : that.id != null) {
+        if ( id != null ? !id.equals(that.id) : that.id != null ) {
             return false;
         }
         return true;
@@ -201,7 +204,7 @@ public class NotificationView implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        return "Notification [id=" + id + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
+        return "Notification [groupId=" + id + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
                 + ", level=" + level + ", userId=" + userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead
                 + ", actions=" + this.getActions() + "]";
     }

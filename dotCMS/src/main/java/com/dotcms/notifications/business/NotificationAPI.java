@@ -1,9 +1,5 @@
 package com.dotcms.notifications.business;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Locale;
-
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationAction;
@@ -11,6 +7,10 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.exception.DotDataException;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Provides access to useful information displayed in the notification section
@@ -153,41 +153,53 @@ public interface NotificationAPI extends Serializable {
                               String userId, Locale locale) throws DotDataException;
 
 	/**
-	 * Returns a notification based on its ID.
-	 * 
-	 * @param notificationId
-	 *            - The ID of the notification.
+	 * Returns a notification based on its group and user id.
+	 *
+	 * @param userId The user id of the owner of the notification
+	 * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @return The {@link Notification} object.
 	 * @throws DotDataException
 	 *             An error occurred when finding the notification from the
 	 *             database.
 	 */
-	Notification findNotification(String notificationId) throws DotDataException;
+	Notification findNotification(String userId, String groupId) throws DotDataException;
 
 	/**
-	 * Deletes a notification based on its ID.
-	 * 
+	 * Deletes a notification based on its group and user id.
 	 *
-	 * @param userId
-	 * @param notificationId
-	 *            - The ID of the notification.
+	 * @param userId The user id of the owner of the notification
+	 * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @throws DotDataException
 	 *             An error occurred when deleting the notification in the
 	 *             database.
 	 */
-	void deleteNotification(String userId, String notificationId) throws DotDataException;
+	void deleteNotification(String userId, String groupId) throws DotDataException;
 
 	/**
-	 * Deletes a notification based on its ID.
+	 * Deletes a group of notifications based on its user id and groups id.
 	 *
-	 * @param userId String
-	 * @param notificationId
-	 *            - The ID of the notification.
+	 * @param userId The user id of the owner of the notification
+	 * @param groupId The group ids of the notifications. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @throws DotDataException
 	 *             An error occurred when deleting the notification in the
 	 *             database.
 	 */
-	void deleteNotifications(String userId, String... notificationId) throws DotDataException;
+	void deleteNotifications(String userId, String... groupId) throws DotDataException;
 
 	/**
 	 * Deletes all the notifications associated to a specific user ID.

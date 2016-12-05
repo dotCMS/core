@@ -81,10 +81,8 @@ public class LanguagesResource {
 
         try {
 
-            // try to set to the session the locale company settings
-            LocaleUtil.processLocaleCompanySettings(request, session);
-            // or the locale user cookie configuration if exits.
-            LocaleUtil.processLocaleUserCookie(request, session);
+            //Trying to find out and process the locale to use
+            LocaleUtil.processCustomLocale(request, session);
 
             final Map<String, String> messagesMap =
                     this.i18NUtil.getMessagesMap(
