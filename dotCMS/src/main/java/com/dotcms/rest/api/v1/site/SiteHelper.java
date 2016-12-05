@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.util.HostNameComparator;
@@ -28,7 +29,7 @@ import com.liferay.portal.model.User;
  *
  * @author jsanca
  */
-public class SiteBrowserHelper implements Serializable {
+public class SiteHelper implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -44,27 +45,27 @@ public class SiteBrowserHelper implements Serializable {
     private static final String RESULTS = "results";
     
     @VisibleForTesting
-    public SiteBrowserHelper (HostAPI hostAPI) {
+    public SiteHelper (HostAPI hostAPI) {
         this.hostAPI = hostAPI;
     }
 
     /**
      * Private constructor for the singleton holder.
      */
-    private SiteBrowserHelper () {
+    private SiteHelper () {
         this.hostAPI = APILocator.getHostAPI();
     }
 
     private static class SingletonHolder {
-        private static final SiteBrowserHelper INSTANCE = new SiteBrowserHelper();
+        private static final SiteHelper INSTANCE = new SiteHelper();
     }
 
     /**
      * Get the instance.
      * @return JsonWebTokenFactory
      */
-    public static SiteBrowserHelper getInstance() {
-        return SiteBrowserHelper.SingletonHolder.INSTANCE;
+    public static SiteHelper getInstance() {
+        return SiteHelper.SingletonHolder.INSTANCE;
     } // getInstance.
 
 
@@ -80,7 +81,7 @@ public class SiteBrowserHelper implements Serializable {
 
             checkArchived = (showArchived || !host.isArchived());
         } catch (Exception e) {
-            error(SiteBrowserHelper.class, e.getMessage(), e);
+            error(SiteHelper.class, e.getMessage(), e);
         }
 
         return checkArchived;
@@ -212,7 +213,7 @@ public class SiteBrowserHelper implements Serializable {
 	 * @throws DotSecurityException
 	 *             A system error occurred.
 	 */
-    public Map<String,Object> getPaginatedOrderedSites(final boolean showArchived, final User user, final String filter, final int currentPage, final int sitesPerPage, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Map<String,Object> getPaginatedOrderedSites(final boolean showArchived, final User user, final String filter, final int currentPage, final int perPage, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
     	final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
     	
     	Map<String, Object> results = new HashMap<String,Object>();
@@ -224,10 +225,10 @@ public class SiteBrowserHelper implements Serializable {
                 .collect(Collectors.toList());
     	
     	
-    	int minIndex = (currentPage - 1) * sitesPerPage;
+    	int minIndex = PaginationUtil.getMinIndex(currentPage, perPage);
         int totalCount = hosts.size();
-        int maxIndex = sitesPerPage * currentPage;
-        if((minIndex + sitesPerPage) >= totalCount){
+        int maxIndex = PaginationUtil.getMaxIndex(currentPage, perPage);
+        if((minIndex + perPage) >= totalCount){
         	maxIndex = totalCount;
         }
 		results.put(TOTAL_SITES, totalCount);

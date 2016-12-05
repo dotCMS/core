@@ -50,7 +50,7 @@ import com.liferay.portal.model.User;
  * {@link SiteBrowserResource} test
  * @author jsanca
  */
-public class SiteBrowserResourceTest extends TestBase {
+public class SiteResourceTest extends TestBase {
 
 	/**
 	 * Queries the list of sites associated to a user based on the value of the
@@ -83,7 +83,7 @@ public class SiteBrowserResourceTest extends TestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
         Response response1 = siteBrowserResource.sites(request, null, false);
         System.out.println(response1);
@@ -157,7 +157,7 @@ public class SiteBrowserResourceTest extends TestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
         Response response1 = siteBrowserResource.sites(request, "demo", false);
         System.out.println(response1);
@@ -216,7 +216,7 @@ public class SiteBrowserResourceTest extends TestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
         Response response1 = siteBrowserResource.switchSite(request, null);
         System.out.println(response1);
@@ -297,7 +297,7 @@ public class SiteBrowserResourceTest extends TestBase {
         );
 
         SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
         Response response1 = siteBrowserResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
         System.out.println(response1);
@@ -336,7 +336,7 @@ public class SiteBrowserResourceTest extends TestBase {
                 .thenReturn( currentSite );
 
         final SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteBrowserHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
         final Response response = siteBrowserResource.currentSite(request);
 
         RestUtilTest.verifySuccessResponse(response);
