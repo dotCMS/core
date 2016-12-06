@@ -15,9 +15,9 @@
 
     request.setAttribute(com.dotmarketing.util.WebKeys.DONT_DISPLAY_SUBNAV_ALL_HOSTS, false);
 %>
-<div class="portlet-wrapper">
-    <%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
-</div>
+
+<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
+
 
 <script type="text/javascript">
 
@@ -236,85 +236,67 @@
     }
 
     function backToBundleList() {
-
         dijit.byId("uploadBundleDiv").hide();
         refreshAuditList("");
     }
 
 </script>
 
-<div class="portlet-wrapper">
+<div class="portlet-main">
     <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-
-
-
         <div id="queue" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Queue") %>" >
-            <div class="buttonRow" >
-
-                <div style="float:left">
-                    <button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
+            <div class="portlet-toolbar">
+				<div class="portlet-toolbar__actions-primary">
+                    
+                </div>
+                <div class="portlet-toolbar__actions-secondary">
+                	<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %>
                     </button>
-                </div>
-                <div style="float:right">
-                    <button  dojoType="dijit.form.Button" onClick="doQueueFilter();" iconClass="resetIcon">
+                    <button  dojoType="dijit.form.Button" onClick="doQueueFilter();" class="dijitButtonFlat">
                         <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
                     </button>
                 </div>
-
-                <div>&nbsp;</div>
             </div>
-            <div style="height:10px;"></div>
             <div id="queue_results"></div>
-
         </div>
-
-
-
-
 
 
         <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
-            <div class="buttonRow" >
-                <div style="float:left">
-                    <button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon">
-                        <%= LanguageUtil.get(pageContext, "Delete") %>
-                    </button>
+            <div class="portlet-toolbar">
+				<div class="portlet-toolbar__actions-primary">
+                    
                 </div>
 
-
-				<div style="float:right">
+				<div class="portlet-toolbar__actions-secondary">
+					<button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon">
+                        <%= LanguageUtil.get(pageContext, "Delete") %>
+                    </button>
                     <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
                     </button>
-                    <button  dojoType="dijit.form.Button" onClick="doAuditFilter();" iconClass="resetIcon">
+                    <button  dojoType="dijit.form.Button" onClick="doAuditFilter();" class="dijitButtonFlat">
                         <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
                     </button>
                 </div>
-                <div>&nbsp;</div>
             </div>
-            <div style="height:10px;"></div>
             <div id="audit_results"></div>
         </div>
         
-        
-        
-        
-        
+
         <div id="unpushedBundles" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Unpushed_Bundles") %>" >
-            <div id="unpushedBundlesDiv">
-            </div>
+            <div id="unpushedBundlesDiv"></div>
         </div>
+        
     </div>
 </div>
 
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
     <form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
         <div>
-            <%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile"><br>
+            <%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile">
         </div>
-        <div>&nbsp;</div>
         <div style="text-align: center">
             <button  dojoType="dijit.form.Button" onClick="doBundleUpload();" iconClass="uploadIcon">
                 <%= LanguageUtil.get(pageContext, "publisher_upload") %>
@@ -325,14 +307,14 @@
 </div>
 
 <form id="remotePublishForm">
-    <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
-    <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
-    <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
-    <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
-    <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
-    <input name="iWantTo" id=iWantTo type="hidden" value="">
-    <input name="whoToSend" id=whoToSend type="hidden" value="">
-    <input name="bundleName" id=bundleName type="hidden" value="">
-    <input name="bundleSelect" id=bundleSelect type="hidden" value="">
-    <input name="forcePush" id=forcePush type="hidden" value="">
+	<input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+	<input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+	<input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+	<input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+	<input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+	<input name="iWantTo" id=iWantTo type="hidden" value="">
+	<input name="whoToSend" id=whoToSend type="hidden" value="">
+	<input name="bundleName" id=bundleName type="hidden" value="">
+	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
+	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
