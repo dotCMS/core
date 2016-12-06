@@ -897,13 +897,7 @@ public class DotConnect {
      * @return True if present
      */
     private Boolean hasOracleDriver () {
-
-        try {
-            Class.forName( "oracle.sql.TIMESTAMP" );
-            return true;
-        } catch ( ClassNotFoundException e ) {
-            return false;
-        }
+        return DbConnectionFactory.isOracle();
     }
 
 	/**
