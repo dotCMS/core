@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.*;
 
 import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -117,6 +118,8 @@ public class StructureFactory {
 
 		try {
 			return new StructureTransformer(typeAPI.find(varName)).asStructure();
+		} catch (NotFoundInDbException  e){
+			return new Structure();
 		} catch (Exception e) {
 			throw new DotStateException(e);
 		}

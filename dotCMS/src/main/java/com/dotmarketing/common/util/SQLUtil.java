@@ -15,6 +15,7 @@ import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenize
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -195,7 +196,7 @@ public class SQLUtil {
 
 
 		
-		if(!UtilMethods.isSet(parameter)){//check if is not null
+		if(StringUtils.isBlank(parameter) || parameter.contains("null")){//first check if is null or empty, check if contains the word null (e.g null null)
 			return "";
 		}
 
