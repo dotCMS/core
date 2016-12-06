@@ -178,11 +178,13 @@ dojo.addOnLoad(function() {
     });
     menu.addChild(menuItem3);
 
-    var button = new dijit.form.DropDownButton({
-        label: "",
-		iconClass: "actionIcon",
-		class: "dijitDropDownActionButton",
-		dropDown: menu
+    var button = new dijit.form.ComboButton({
+        label: "<%= LanguageUtil.get(pageContext, "Add-New-Structure") %>",
+		iconClass: "plusIcon",
+		dropDown: menu,
+		onClick: function() {
+            addNewStructure();
+        }
     });
     dojo.byId("addNewStructure").appendChild(button.domNode);
 
@@ -256,53 +258,48 @@ var deleteLabel = "";
 </style>
 
 <!-- START Toolbar -->
-<div class="portlet-toolbar">
-	<div class="portlet-toolbar__actions-primary">
-		<form id="fm" method="post">
-			<div class="inline-form">
-				<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-				<select name="structureType" autocomplete="false" dojoType="dijit.form.FilteringSelect" id="selectStructure" onChange="submitfm()">
-					<%if(structureTypes.size() > 1){ %>
-						<option value="0"><%= LanguageUtil.get(pageContext, "Any-Structure-Type") %></option>
-					<%}
-					String strTypeName="";
-					for(Integer next: structureTypes){
-							 if(next == STRUCTURE_TYPE_CONTENT){
-								 strTypeName =  LanguageUtil.get(pageContext, "Content");
-							 }else if(next == STRUCTURE_TYPE_WIDGET){
-								 strTypeName = LanguageUtil.get(pageContext, "Widget");
-							 }else if(next == STRUCTURE_TYPE_FORM){
-								 strTypeName = LanguageUtil.get(pageContext, "Form");
-							 }else if(next == STRUCTURE_TYPE_FILEASSET){
-								 strTypeName = LanguageUtil.get(pageContext, "File");
-							 }else if(next == STRUCTURE_TYPE_HTMLPAGE){
-								 strTypeName = LanguageUtil.get(pageContext, "HTMLPage");
-							 }else if(next == STRUCTURE_TYPE_PERSONA){
-								 strTypeName = LanguageUtil.get(pageContext, "Persona");
-							 }
-					%>
-						<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
-					<%} %>
-				</select>
+<div class="yui-g portlet-toolbar">
+<form id="fm" method="post">
+<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+	<div class="yui-u first" style="white-space: nowrap">
+		<select name="structureType" autocomplete="false" dojoType="dijit.form.FilteringSelect" id="selectStructure" onChange="submitfm()">
+			<%if(structureTypes.size() > 1){ %>
+				<option value="0"><%= LanguageUtil.get(pageContext, "Any-Structure-Type") %></option>
+			<%}
+			String strTypeName="";
+			for(Integer next: structureTypes){
+					 if(next == STRUCTURE_TYPE_CONTENT){
+						 strTypeName =  LanguageUtil.get(pageContext, "Content");
+					 }else if(next == STRUCTURE_TYPE_WIDGET){
+						 strTypeName = LanguageUtil.get(pageContext, "Widget");
+					 }else if(next == STRUCTURE_TYPE_FORM){
+						 strTypeName = LanguageUtil.get(pageContext, "Form");
+					 }else if(next == STRUCTURE_TYPE_FILEASSET){
+						 strTypeName = LanguageUtil.get(pageContext, "File");
+					 }else if(next == STRUCTURE_TYPE_HTMLPAGE){
+                         strTypeName = LanguageUtil.get(pageContext, "HTMLPage");
+                     }else if(next == STRUCTURE_TYPE_PERSONA){
+                         strTypeName = LanguageUtil.get(pageContext, "Persona");
+                     }
+			%>
+				<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
+			<%} %>
+		</select>
 
-				<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>" />
+		<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
 
-				<button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
-				   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-				</button>
+		<button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
+		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+		</button>
 
-				<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
-				   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
-				</button>
+		<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
+		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
+		</button>
 
-				<div class="checkbox">
-					<input type="checkbox" name="system" id="system" dojoType="dijit.form.CheckBox" <%if (UtilMethods.isSet(request.getParameter("system")) && request.getParameter("system").equals("1")) {%> checked="checked"<%}%> value="1" onClick="submitfm()"/>
-					<label id="system"><%= LanguageUtil.get(pageContext, "Structure-show-System") %></label>
-				</div>
-			</div>
-		</form>
+		<input type="checkbox" name="system" id="system" dojoType="dijit.form.CheckBox" <%if (UtilMethods.isSet(request.getParameter("system")) && request.getParameter("system").equals("1")) {%> checked="checked"<%}%> value="1" onClick="submitfm()"/><%= LanguageUtil.get(pageContext, "Structure-show-System") %>
 	</div>
-	<div class="portlet-toolbar__actions-secondary">
+</form>
+	<div class="yui-u" style="text-align:right;">
 		<div id="addNewStructure"></div>
 	</div>
 </div>
