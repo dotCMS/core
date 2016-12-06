@@ -56,12 +56,12 @@ function deletePushHistory() {
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 
 
-<div class="yui-g portlet-toolbar" style="padding-top: 10px">
-	<div class="yui-u first" style="font-weight: bold; padding-left: 15px">
-		<%= LanguageUtil.get(pageContext, "publisher_push_history") %>
+<div class="portlet-toolbar">
+	<div class="portlet-toolbar__actions-primary">
+		<h2><%= LanguageUtil.get(pageContext, "publisher_push_history") %></h2>
 	</div>
 
-	<div class="yui-u" style="text-align:right;">
+	<div class="portlet-toolbar__actions-secondary">
 		<button dojoType="dijit.form.Button" onClick="deletePushHistory();" iconClass="deleteIcon" disabled='<%=pushedAssets.isEmpty()%>'>
 			<%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
 		</button>

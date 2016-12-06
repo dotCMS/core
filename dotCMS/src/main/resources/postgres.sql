@@ -2539,8 +2539,16 @@ create index contentlet_lang on contentlet (language_id);
 -- end of fk indicies --
 
 -- Notifications Table
-create table notification(id varchar(36) NOT NULL,message text NOT NULL, notification_type varchar(100), notification_level varchar(100), user_id varchar(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read bool default false, PRIMARY KEY (id) );
-create index idx_not_user ON notification (user_id);
+CREATE TABLE notification (
+  group_id           VARCHAR(36)  NOT NULL,
+  user_id            VARCHAR(255) NOT NULL,
+  message            TEXT         NOT NULL,
+  notification_type  VARCHAR(100),
+  notification_level VARCHAR(100),
+  time_sent          TIMESTAMP    NOT NULL,
+  was_read           BOOL DEFAULT FALSE,
+  PRIMARY KEY (group_id, user_id)
+);
 create index idx_not_read ON notification (was_read);
 
 -- indices for version_info tables on version_ts

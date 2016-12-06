@@ -519,12 +519,14 @@ function disableFormFields(){
 	<%session.setAttribute("selectedStructure",structure.getInode() ); %>
 <%}%>
 
-<div class="portlet-main">
 
-	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-	<% if(InodeUtils.isSet(structure.getInode())){ // >0%>
-	<!-- START Properties Tab -->
-	<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Fields") %>" style="overflow:hidden;" onShow="showEditButtonsRow()">
+<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+<% if(InodeUtils.isSet(structure.getInode())){ // >0%>
+<!-- START Properties Tab -->
+<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Fields") %>" style="overflow:hidden;" onShow="showEditButtonsRow()">
+
+
+
 
 		<div class="buttonRow" style="width:97%;">
 			<div class="yui-g">
@@ -948,7 +950,7 @@ function disableFormFields(){
 </div>
 
 
-</div>
+<div class="clear"></div>
 
 
 

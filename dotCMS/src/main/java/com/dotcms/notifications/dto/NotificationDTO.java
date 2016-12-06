@@ -1,10 +1,10 @@
 package com.dotcms.notifications.dto;
 
-import java.io.Serializable;
-import java.util.Date;
-
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * This class is the physical representation of a Notification in the database.
@@ -19,7 +19,7 @@ import com.dotcms.notifications.bean.NotificationType;
 @SuppressWarnings("serial")
 public class NotificationDTO implements Serializable {
 
-	private String id;
+	private String groupId;
 	private String message;
 	private String type;
 	private String level;
@@ -29,11 +29,14 @@ public class NotificationDTO implements Serializable {
 
 	/**
 	 * Creates a Notification object.
-	 * 
-	 * @param id
-	 *            - The ID of this notification. If a new object is being
-	 *            created, leave this parameter as {@code null} so the system
-	 *            generates an appropriate ID.
+	 *
+	 * @param groupId
+	 *            - The group id of this notification. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @param message
 	 *            - The contents of this notification. This column can contain a
 	 *            simple String, or a String representation of a more complex
@@ -53,9 +56,11 @@ public class NotificationDTO implements Serializable {
 	 *            - If set to {@code true}, this notification will be marked as
 	 *            "read" by the user. Otherwise, set to {@code false}.
 	 */
-	public NotificationDTO(String id, String message, String type, String level, String userId, Date timeSent,
-			Boolean wasRead) {
-		this.id = id;
+	public NotificationDTO(String groupId, String message,
+						   String type, String level,
+						   String userId, Date timeSent,
+						   Boolean wasRead) {
+		this.groupId = groupId;
 		this.message = message;
 		this.type = type;
 		this.level = level;
@@ -65,22 +70,22 @@ public class NotificationDTO implements Serializable {
 	}
 
 	/**
-	 * Returns the ID of this notification.
-	 * 
-	 * @return The notification ID.
+	 * Returns the group id of this notification.
+	 *
+	 * @return The notification group id.
 	 */
-	public String getId() {
-		return id;
+	public String getGroupId() {
+		return groupId;
 	}
 
 	/**
-	 * Sets the ID of this notification.
-	 * 
-	 * @param id
-	 *            - The notification ID.
+	 * Sets the group id of this notification.
+	 *
+	 * @param groupId
+	 *            - The notification group id.
 	 */
-	public void setId(String id) {
-		this.id = id;
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
 	}
 
 	/**
@@ -207,7 +212,7 @@ public class NotificationDTO implements Serializable {
 
 	@Override
 	public String toString() {
-		return "NotificationDTO [id=" + id + ", message=" + message + ", type=" + type + ", level=" + level + ", userId="
+		return "NotificationDTO [groupId=" + groupId + ", message=" + message + ", type=" + type + ", level=" + level + ", userId="
 				+ userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead + "]";
 	}
 
