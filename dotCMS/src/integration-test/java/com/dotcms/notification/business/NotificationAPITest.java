@@ -343,6 +343,9 @@ public class NotificationAPITest extends TestBase  {
 					systemUser.getLocale()
 			);
 
+			//Sleep some time in order to make sure the thread had time to start
+			Thread.sleep(2000);
+
 			//Using the DotSubmitter in order to know when the generation of the notification finished
 			DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().
 					getSubmitter(NotificationAPIImpl.NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME);
