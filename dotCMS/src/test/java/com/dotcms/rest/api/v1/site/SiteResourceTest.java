@@ -47,11 +47,13 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 
 /**
- * {@link SiteBrowserResource} test
+ * {@link siteResource} test
  * @author jsanca
  */
 public class SiteResourceTest extends TestBase {
 
+	private static final int page = 1;
+	private static final int count = 20;
 	/**
 	 * Queries the list of sites associated to a user based on the value of the
 	 * "filter" parameter being an actual filter or an empty value.
@@ -82,10 +84,10 @@ public class SiteResourceTest extends TestBase {
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+        SiteResource siteResource =
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
-        Response response1 = siteBrowserResource.sites(request, null, false);
+        Response response1 = siteResource.sites(request, null, false, page, count);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -97,11 +99,11 @@ public class SiteResourceTest extends TestBase {
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result").equals("demo.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).get(0))
+        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
+        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
                 .get("hostName").equals("demo.dotcms.com"));
 
-        response1 = siteBrowserResource.sites(request, StringUtils.EMPTY, false);
+        response1 = siteResource.sites(request, StringUtils.EMPTY, false, page, count);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -113,11 +115,11 @@ public class SiteResourceTest extends TestBase {
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result").equals("demo.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).get(0))
+        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
+        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
                 .get("hostName").equals("demo.dotcms.com"));
 
-        response1 = siteBrowserResource.sites(request, "*", false);
+        response1 = siteResource.sites(request, "*", false, page, count);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -129,8 +131,8 @@ public class SiteResourceTest extends TestBase {
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result").equals("demo.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).get(0))
+        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
+        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
                 .get("hostName").equals("demo.dotcms.com"));
     }
 
@@ -156,10 +158,10 @@ public class SiteResourceTest extends TestBase {
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+        SiteResource siteResource =
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
-        Response response1 = siteBrowserResource.sites(request, "demo", false);
+        Response response1 = siteResource.sites(request, "demo", false, page, count);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -171,14 +173,14 @@ public class SiteResourceTest extends TestBase {
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result").equals("demo.dotcms.com"));
-        assertTrue(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).size() == 2);
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).get(0))
+        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
+        assertTrue(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).size() == 2);
+        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
                 .get("hostName").equals("demo.awesome.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).get(1))
+        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(1))
                 .get("hostName").equals("demo.dotcms.com"));
 
-        response1 = siteBrowserResource.sites(request, "nothing", false);
+        response1 = siteResource.sites(request, "nothing", false, page, count);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -190,8 +192,8 @@ public class SiteResourceTest extends TestBase {
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result").equals("demo.dotcms.com"));
-        assertTrue(List.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("result")).size() == 0);
+        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
+        assertTrue(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).size() == 0);
     }
 
     @Test
@@ -215,31 +217,31 @@ public class SiteResourceTest extends TestBase {
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+        SiteResource siteResource =
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
-        Response response1 = siteBrowserResource.switchSite(request, null);
+        Response response1 = siteResource.switchSite(request, null);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 404);
 
-        response1 = siteBrowserResource.switchSite(request, StringUtils.EMPTY);
+        response1 = siteResource.switchSite(request, StringUtils.EMPTY);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 404);
 
-        response1 = siteBrowserResource.switchSite(request, "48190c8c-not-found-8d1a-0cd5db894797");
+        response1 = siteResource.switchSite(request, "48190c8c-not-found-8d1a-0cd5db894797");
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 404);
 
-        response1 = siteBrowserResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894797"); // system, should be not allowed to switch
+        response1 = siteResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894797"); // system, should be not allowed to switch
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -296,10 +298,10 @@ public class SiteResourceTest extends TestBase {
                 anyString()
         );
 
-        SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+        SiteResource siteResource =
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
 
-        Response response1 = siteBrowserResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
+        Response response1 = siteResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
         System.out.println(response1);
         System.out.println(response1.getEntity());
         System.out.println(sessionAttributes);
@@ -335,9 +337,9 @@ public class SiteResourceTest extends TestBase {
         when( session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID ) )
                 .thenReturn( currentSite );
 
-        final SiteBrowserResource siteBrowserResource =
-                new SiteBrowserResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
-        final Response response = siteBrowserResource.currentSite(request);
+        final SiteResource siteResource =
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+        final Response response = siteResource.currentSite(request);
 
         RestUtilTest.verifySuccessResponse(response);
         Map<String, Object> entity = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
