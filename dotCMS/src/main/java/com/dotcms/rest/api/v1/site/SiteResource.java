@@ -130,7 +130,6 @@ public class SiteResource implements Serializable {
 
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-        final List<Map<String, Object>> siteResults;
         final User user = initData.getUser();
         final String filter;
         final Map<String, Object> paginatedSites;
@@ -143,7 +142,7 @@ public class SiteResource implements Serializable {
                     filterParam.substring(0, filterParam.length() - 1):
                     (null != filterParam)? filterParam: StringUtils.EMPTY;
 
-                    paginatedSites = siteBrowserHelper.getPaginatedOrderedSites(showArchived, user, filter, page, count, true);
+                    paginatedSites = siteBrowserHelper.getPaginatedOrderedSites(showArchived, user, filter, page, count, Boolean.FALSE);
         			
         			response = Response.ok(new ResponseEntityView
                     (map(   "sites",         paginatedSites

@@ -100,8 +100,8 @@ public class SiteResourceTest extends TestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
         assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .get("hostName").equals("demo.dotcms.com"));
+        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
+                .getHostname().equals("demo.dotcms.com"));
 
         response1 = siteResource.sites(request, StringUtils.EMPTY, false, page, count);
         System.out.println(response1);
@@ -116,8 +116,8 @@ public class SiteResourceTest extends TestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
         assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .get("hostName").equals("demo.dotcms.com"));
+        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
+                .getHostname().equals("demo.dotcms.com"));
 
         response1 = siteResource.sites(request, "*", false, page, count);
         System.out.println(response1);
@@ -132,8 +132,8 @@ public class SiteResourceTest extends TestBase {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
         assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .get("hostName").equals("demo.dotcms.com"));
+        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
+                .getHostname().equals("demo.dotcms.com"));
     }
 
     @Test
@@ -175,10 +175,10 @@ public class SiteResourceTest extends TestBase {
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
         assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
         assertTrue(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).size() == 2);
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .get("hostName").equals("demo.awesome.dotcms.com"));
-        assertTrue(Map.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(1))
-                .get("hostName").equals("demo.dotcms.com"));
+        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
+                .getHostname().equals("demo.awesome.dotcms.com"));
+        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(1))
+                .getHostname().equals("demo.dotcms.com"));
 
         response1 = siteResource.sites(request, "nothing", false, page, count);
         System.out.println(response1);

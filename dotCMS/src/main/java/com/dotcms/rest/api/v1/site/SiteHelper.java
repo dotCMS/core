@@ -217,14 +217,8 @@ public class SiteHelper implements Serializable {
     	final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
     	
     	Map<String, Object> results = new HashMap<String,Object>();
-    	List<Host> hosts = this.hostAPI.findAll(user, respectFrontendRoles)
-                .stream().sorted(HOST_NAME_COMPARATOR)
-                .filter (site ->
-                        !site.isSystemHost() && checkArchived(showArchived, site) &&
-                                (site.getHostname().toLowerCase().startsWith(sanitizedFilter.toLowerCase())))
-                .collect(Collectors.toList());
-    	
-    	
+    	List<Host> hosts = getOrderedSites(showArchived, user, sanitizedFilter, respectFrontendRoles);
+    	    	
     	int minIndex = PaginationUtil.getMinIndex(currentPage, perPage);
         int totalCount = hosts.size();
         int maxIndex = PaginationUtil.getMaxIndex(currentPage, perPage);
