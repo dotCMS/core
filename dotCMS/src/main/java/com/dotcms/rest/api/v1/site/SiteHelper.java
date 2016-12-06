@@ -216,8 +216,8 @@ public class SiteHelper implements Serializable {
     public Map<String,Object> getPaginatedOrderedSites(final boolean showArchived, final User user, final String filter, final int currentPage, final int perPage, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
     	final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
     	
-    	Map<String, Object> results = new HashMap<String,Object>();
-    	List<Host> hosts = getOrderedSites(showArchived, user, sanitizedFilter, respectFrontendRoles);
+    	Map<String, Object> results = new HashMap<String,Object>(); 
+    	List<Host> hosts = getOrderedSites(showArchived, user, sanitizedFilter, respectFrontendRoles); 
     	    	
     	int minIndex = PaginationUtil.getMinIndex(currentPage, perPage);
         int totalCount = hosts.size();
@@ -225,6 +225,7 @@ public class SiteHelper implements Serializable {
         if((minIndex + perPage) >= totalCount){
         	maxIndex = totalCount;
         }
+        
 		results.put(TOTAL_SITES, totalCount);
     	results.put(RESULTS, hosts.subList(minIndex, maxIndex));
     	results.put(HAS_NEXT, maxIndex < totalCount);
