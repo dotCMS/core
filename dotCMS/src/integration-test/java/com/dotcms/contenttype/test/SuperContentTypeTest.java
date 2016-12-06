@@ -4,35 +4,17 @@ import java.io.FileNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.ContentTypeApi;
-import com.dotcms.mock.request.BaseRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.TestingJndiDatasource;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 
 
 
-
-
-	@RunWith(Suite.class)
-	@SuiteClasses({ 
-		ContentTypeBuilderTest.class, 
-		ContentTypeFactoryImplTest.class, 
-		ContentTypeAPIImplTest.class, 
-		FieldFactoryImplTest.class, 
-		FieldBuilderTest.class ,
-		JsonContentTypeTransformerTest.class
-	})
 
 
 	public class SuperContentTypeTest   {
@@ -40,7 +22,6 @@ import com.dotmarketing.common.db.DotConnect;
 			  public String myFunction(String abc);
 			  
 		}
-	    final static String dbFile = "/Users/will/git/META-INF/context.xml";
 		static boolean inited=false;
 		@BeforeClass
 		public static void SetUpTests() throws FileNotFoundException, Exception {

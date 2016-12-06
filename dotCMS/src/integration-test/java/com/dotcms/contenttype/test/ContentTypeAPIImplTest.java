@@ -492,7 +492,7 @@ public class ContentTypeAPIImplTest {
 
   }
 
-
+/*
   @Test
   public void validateFields() throws DotDataException {
     for (BaseContentType baseType : BaseContentType.values()) {
@@ -510,7 +510,7 @@ public class ContentTypeAPIImplTest {
       }
     }
   }
-
+*/
 
 
   private static List<Structure> getCrappyStructures() {
