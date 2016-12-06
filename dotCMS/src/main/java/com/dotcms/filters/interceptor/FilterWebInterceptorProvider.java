@@ -27,7 +27,7 @@ public class FilterWebInterceptorProvider implements Serializable {
     public static FilterWebInterceptorProvider getInstance (final HttpServletRequest request) {
 
         final ServletContext context =
-                request.getSession().getServletContext();
+                request.getServletContext();
 
         return getInstance(context);
     } // getInstance.

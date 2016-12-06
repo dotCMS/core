@@ -1,9 +1,11 @@
 package com.dotcms.notifications.business;
 
-import java.util.List;
-
 import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * This data access object provides access to information associated to
@@ -30,27 +32,47 @@ public abstract class NotificationFactory {
 	public abstract void saveNotification(final NotificationDTO notification) throws DotDataException;
 
 	/**
-	 * Returns a notification based on its ID.
-	 * 
-	 * @param notificationId
-	 *            - The ID of the notification.
+	 * Saves a Notification for each user in the given users collection
+	 *
+	 * @param notificationTemplate Will be used as a Notification template in order to create the notification record
+	 *                             for each user on the list
+	 * @param users                For each element on this list a Notification record will be created
+	 * @throws DotDataException
+	 */
+	public abstract void saveNotificationsForUsers(final NotificationDTO notificationTemplate, Collection<User> users) throws DotDataException;
+
+	/**
+	 * Returns a notification based on its group id and user.
+	 *
+	 * @param userId The user id of the owner of the notification
+	 * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @return The {@link NotificationDTO} object.
 	 * @throws DotDataException
 	 *             An error occurred when executing the SQL query. Please check
 	 *             your database and/or query syntax.
 	 */
-	public abstract NotificationDTO findNotification(final String notificationId) throws DotDataException;
+	public abstract NotificationDTO findNotification(final String userId, final String groupId) throws DotDataException;
 
 	/**
-	 * Deletes a notification based on its ID.
-	 * 
-	 * @param notificationId
-	 *            - The ID of the notification.
+	 * Deletes a notification based on its group id and user.
+	 *
+	 * @param userId The user id of the owner of the notification
+	 * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @throws DotDataException
 	 *             An error occurred when executing the SQL query. Please check
 	 *             your database and/or query syntax.
 	 */
-	public abstract void deleteNotification(final String notificationId) throws DotDataException;
+	public abstract void deleteNotification(final String userId, final String groupId) throws DotDataException;
 
 	/**
 	 * Deletes all the notifications associated to a specific user ID.
@@ -65,10 +87,16 @@ public abstract class NotificationFactory {
 
 	/**
 	 * Deletes all the notification in the array.
-	 * @param notificationsId {@link String} array
+	 * @param userId The user id of the owner of the notification
+	 * @param groupIds The group ids of the notifications. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @throws DotDataException
      */
-	public abstract void deleteNotification(String[] notificationsId) throws DotDataException;
+	public abstract void deleteNotification(final String userId, String[] groupIds) throws DotDataException;
 
 	/**
 	 * Returns a paginated result of all the notifications according to the

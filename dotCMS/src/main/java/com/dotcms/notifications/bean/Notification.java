@@ -20,7 +20,7 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class Notification implements Serializable, Cloneable {
 
-	private String id;
+	private String groupId;
 	private NotificationData notificationData;
 	private NotificationType type;
 	private NotificationLevel level;
@@ -96,11 +96,14 @@ public class Notification implements Serializable, Cloneable {
 
 	/**
 	 * Creates a Notification object.
-	 * 
-	 * @param id
-	 *            - The ID of this notification. If a new object is being
-	 *            created, leave this parameter as {@code null} so the system
-	 *            generates an appropriate ID.
+	 *
+	 * @param groupId
+	 *            - The group id of this notification. Multiple notifications can share the same group id, that's why
+	 *            the notification key is the group id and the user id.
+	 *            <br>
+	 *            Multiple notifications with the same group id exists when an Event notification with for example
+	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+	 *            the same group id but just one event will handle the whole notification group.
 	 * @param type
 	 *            - The type or notification according to the
 	 *            {@link NotificationType} class.
@@ -118,9 +121,10 @@ public class Notification implements Serializable, Cloneable {
 	 * @param notificationData
 	 *            - The additional information that make up this notification.
 	 */
-	public Notification(String id, NotificationType type, NotificationLevel level, String userId, Date timeSent,
-			Boolean wasRead, NotificationData notificationData) {
-		this.id = id;
+	public Notification(String groupId, NotificationType type,
+						NotificationLevel level, String userId, Date timeSent,
+						Boolean wasRead, NotificationData notificationData) {
+		this.groupId = groupId;
 		this.userId = userId;
 		this.notificationData = notificationData;
 		this.type = type;
@@ -130,22 +134,22 @@ public class Notification implements Serializable, Cloneable {
 	}
 
 	/**
-	 * Returns the ID of this notification.
-	 * 
-	 * @return The notification ID.
+	 * Returns the group id of this notification.
+	 *
+	 * @return The notification group id.
 	 */
-	public String getId() {
-		return id;
+	public String getGroupId() {
+		return groupId;
 	}
 
 	/**
-	 * Sets the ID of this notification.
-	 * 
-	 * @param id
-	 *            - The notification ID.
+	 * Sets the group id of this notification.
+	 *
+	 * @param groupId
+	 *            - The notification groupd id.
 	 */
-	public void setId(String id) {
-		this.id = id;
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
 	}
 
 	/**
@@ -332,7 +336,7 @@ public class Notification implements Serializable, Cloneable {
 
 		Notification that = (Notification) o;
 
-		if (id != null ? !id.equals(that.id) : that.id != null) {
+		if ( groupId != null ? !groupId.equals(that.groupId) : that.groupId != null ) {
 			return false;
 		}
 		return true;
@@ -342,7 +346,7 @@ public class Notification implements Serializable, Cloneable {
 	public int hashCode() {
 		I18NMessage title   = this.notificationData.getTitle();
 		I18NMessage message = this.notificationData.getMessage();
-		int result = id != null ? id.hashCode() : 0;
+		int result = groupId != null ? groupId.hashCode() : 0;
 		result = 31 * result + (title != null ? title.hashCode() : 0);
 		result = 31 * result + (message != null ? message.hashCode() : 0);
 		result = 31 * result + (type != null ? type.hashCode() : 0);
@@ -355,7 +359,7 @@ public class Notification implements Serializable, Cloneable {
 
 	@Override
 	public String toString() {
-		return "Notification [id=" + id + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
+		return "Notification [groupId=" + groupId + ", title=" + this.getTitle() + ", message=" + this.getMessage() + ", type=" + type
 				+ ", level=" + level + ", userId=" + userId + ", timeSent=" + timeSent + ", wasRead=" + wasRead
 				+ ", actions=" + this.getActions() + "]";
 	}

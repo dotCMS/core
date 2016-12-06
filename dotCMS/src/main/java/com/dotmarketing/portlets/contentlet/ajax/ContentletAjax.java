@@ -1371,7 +1371,8 @@ public class ContentletAjax {
 
 		try {
 
-            newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user);
+			// if it is save and publish, the save event must be not generagted
+            newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user, !publish);
 
             Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 

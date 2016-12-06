@@ -26,6 +26,39 @@ html, body {
   padding: 0;
 }
 
+.dijitDownArrowButton,
+.dijitUpArrowButton {
+  position: relative;
+}
+
+.dijitUpArrowButton .dijitArrowButtonInner:before {
+  left: 50%;
+  margin-left: -5px;
+  margin-top: -2.5px;
+  position: absolute;
+  top: 50%;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #8A8A8A;
+  content: "";
+  height: 0;
+  width: 0;
+}
+
+.dijitDownArrowButton .dijitArrowButtonInner:before {
+  left: 50%;
+  margin-left: -5px;
+  margin-top: -2.5px;
+  position: absolute;
+  top: 50%;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #8A8A8A;
+  content: "";
+  height: 0;
+  width: 0;
+}
+
 #font-icon-base, #dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .uknIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .dijitIconCopy {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
@@ -79,55 +112,6 @@ html, body {
   display: none !important;
 }
 
-/*
-
-====================================
-DOJO DOM TREE INFORMATION
-====================================
-Just for guideance
-
-.dijitDropDownButton {
-  .dijitArrowButtonInner <-- background container
-    :before <-- icon
-}
-
-table.dijitComboButton {
-  td.dijitButtonNode.dijitArrowButton {
-    .dijitArrowButtonInner <-- background container
-      :before <-- icon
-  }
-}
-
-.dijitComboBox {
-  .dijitButtonNode.dijitArrowButton { <-- background container
-    .dijitArrowButtonInner
-     :before <-- icon
-  }
-}
-
-.dijitSpinner {
-  .dijitSpinnerButtonContainer { <-- container wrapper
-
-    .dijitButtonNode.dijitArrowButton.dijitUpArrowButton { <-- icon wrapper
-      .dijitArrowButtonInner {
-        .dijitInputField
-      }
-    }
-    .dijitButtonNode.dijitArrowButton.dijitDownArrowButton { <-- icon wrapper
-      .dijitArrowButtonInner {
-        .dijitInputField
-      }
-    }
-  }
-}
-
-.dijitSelect {
-  .dijitArrowButtonContainer {
-
-  }
-}
-
-*/
 .dijitButton,
 .dijitComboButton,
 .dijitDropDownButton,
@@ -266,7 +250,7 @@ table.dijitComboButton {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #0E80CB;
+  border-top: 5px solid #CB3927;
   content: "";
   height: 0;
   width: 0;
@@ -531,6 +515,9 @@ table.dijitComboButton {
 }
 .dijitButton .dijitIcon {
   display: none;
+}
+.dijitButtonNode {
+  border: none;
 }
 .dijitButtonHover {
   background-color: #FAFAFA;
@@ -949,19 +936,6 @@ table.dijitComboButton {
   background-color: #fff;
   border-left: solid 1px #C5C5C5;
 }
-.dijitComboBox .dijitArrowButton:before {
-  left: 50%;
-  margin-left: -5px;
-  margin-top: -2.5px;
-  position: absolute;
-  top: 50%;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #8A8A8A;
-  content: "";
-  height: 0;
-  width: 0;
-}
 .dijitComboBoxHover {
   background-color: #fff;
   border: solid 1px #CB3927;
@@ -988,19 +962,6 @@ table.dijitComboButton {
   background-color: #fff;
   border-left: solid 1px #CB3927;
 }
-.dijitComboBoxFocused .dijitArrowButton:before {
-  left: 50%;
-  margin-left: -5px;
-  margin-top: -2.5px;
-  position: absolute;
-  top: 50%;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
-  content: "";
-  height: 0;
-  width: 0;
-}
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
   background-color: rgba(203, 57, 39, 0.2);
   border-left: solid 1px #CB3927;
@@ -1025,19 +986,6 @@ table.dijitComboButton {
 .dijitComboBoxDisabled .dijitArrowButton {
   background-color: #fff;
   border-left: solid 1px #E3E4E6;
-}
-.dijitComboBoxDisabled .dijitArrowButton:before {
-  left: 50%;
-  margin-left: -5px;
-  margin-top: -2.5px;
-  position: absolute;
-  top: 50%;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #C5C5C5;
-  content: "";
-  height: 0;
-  width: 0;
 }
 .dijitComboBoxDisabled .dijitPlaceHolder {
   color: #ECEDEE;
@@ -1238,6 +1186,16 @@ table.dijitComboButton {
   border-bottom-color: #C5C5C5;
 }
 
+.dijitTimePicker .dijitDownArrowButton,
+.dijitTimePicker .dijitUpArrowButton {
+  background-color: #FAFAFA;
+  padding: 4px;
+}
+.dijitTimePicker .dijitDownArrowHover,
+.dijitTimePicker .dijitUpArrowHover {
+  background-color: #ECEDEE;
+}
+
 .dijitAccordionContainer {
   border: none;
 }
@@ -1379,18 +1337,21 @@ table.dijitComboButton {
   transform: rotate(-45deg);
 }
 .dijitDialogPaneActionBar, .dijitDialogPaneContent {
-  padding: 8px 16px 16px;
+  padding: 16px;
 }
 .dijitDialogPaneActionBar {
   padding-top: 0;
 }
 .dijitDialogTitleBar {
-  background-color: transparent;
+  background-color: #FAFAFA;
+  border-color: transparent transparent #ECEDEE transparent;
+  border-style: solid;
+  border-width: 0 0 1px 0;
   color: #5B5B5B;
   font-weight: bold;
   height: 50px;
   line-height: 50px;
-  padding: 0 8px 16px 16px;
+  padding: 0 16px;
   position: relative;
 }
 
@@ -1586,9 +1547,9 @@ table.dijitComboButton {
   border-top-color: #C5C5C5;
 }
 .dijitTabContainerBottom-container, .dijitTabContainerTop-container, .dijitTabContainerLeft-container, .dijitTabContainerRight-container {
-  border-width: 0 0 1px;
+  border-width: 0;
   border-style: solid;
-  border-color: #ECEDEE;
+  border-color: transparent;
 }
 .dijitTabContainerTop-container {
   border-top: none;
@@ -1664,6 +1625,39 @@ html, body {
 }
 .dojoDndItemItemOver, .dojoDndItemItemAfter {
   padding: 0;
+}
+
+.dijitDownArrowButton,
+.dijitUpArrowButton {
+  position: relative;
+}
+
+.dijitUpArrowButton .dijitArrowButtonInner:before {
+  left: 50%;
+  margin-left: -5px;
+  margin-top: -2.5px;
+  position: absolute;
+  top: 50%;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #8A8A8A;
+  content: "";
+  height: 0;
+  width: 0;
+}
+
+.dijitDownArrowButton .dijitArrowButtonInner:before {
+  left: 50%;
+  margin-left: -5px;
+  margin-top: -2.5px;
+  position: absolute;
+  top: 50%;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #8A8A8A;
+  content: "";
+  height: 0;
+  width: 0;
 }
 
 .dijitA11ySideArrow {
@@ -2685,6 +2679,10 @@ hr {
   width: 100%;
 }
 
+.dijitComboBox {
+  width: auto;
+}
+
 select[multiple] {
   border: solid 1px #C5C5C5;
   min-height: 80px;
@@ -2720,6 +2718,13 @@ select[multiple]:hover {
 }
 .dijitButtonFlat.dijitButtonHover {
   background-color: #ECEDEE;
+}
+.dijitButtonDanger {
+  background-color: #CB3927;
+  color: #fff;
+}
+.dijitButtonDanger.dijitButtonHover {
+  background-color: #a02d1f;
 }
 
 .dotCMSHostFileFilteringSelect .dijitTextBox {
@@ -2983,34 +2988,6 @@ select[multiple]:hover {
   width: 300px;
 }
 
-/* EDITCONTENTLET CATEGORY STYLES 2.0 */
-.catPreview {
-  height: 24px;
-  margin: -9px -10px 10px -10px;
-  overflow: hidden;
-  background-color: white;
-}
-
-.catPreview li {
-  font-size: 85%;
-  margin: 0;
-  list-style: none;
-  float: left;
-  padding: 3px 3px 3px 3px;
-  line-height: 16px;
-  margin: 1px;
-  background-color: #EDEDED;
-  border: 1px groove;
-}
-
-.catPreview a {
-  text-decoration: none;
-}
-
-.catPreview a:hover {
-  color: #cc0000;
-}
-
 /* TABLE STYLES 2.0 */
 .listingTable {
   border-bottom: 1px solid #ECEDEE;
@@ -3034,12 +3011,6 @@ select[multiple]:hover {
 .listingTable th {
   font-weight: bold;
   background-color: #FAFAFA;
-}
-.listingTable th:last-child {
-  text-align: right;
-}
-.listingTable td a {
-  text-decoration: none;
 }
 .listingTable td table td:first-child, .listingTable td table td:last-child {
   padding: 0;
@@ -3144,83 +3115,10 @@ tr.active {
   cursor: pointer;
 }
 
-.callOutBox {
-  margin: 20px 0;
-  background-color: #CDEAFD;
-  padding: 10px;
-  text-align: center;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border: 1px solid #d0d0d0;
-}
-
-.callOutBox2 {
-  background-color: #f0f0f0;
-  padding: 10px;
-  text-align: center;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border: 1px solid #d0d0d0;
-}
-
-.hintBox {
-  width: 250px;
-  position: absolute;
-  left: auto;
-  margin-left: 320px;
-  text-align: left;
-  font-style: italic;
-}
-
 /* Use with .callOutBox2 */
 #loadingPermissionsAccordion {
   margin: 50px auto;
   width: 100px;
-}
-
-#fieldsTable {
-  font-size: 88%;
-  border-top: 1px solid #d0d0d0;
-  border-right: 1px solid #d0d0d0;
-  border-bottom: 1px solid #d0d0d0;
-  width: 100%;
-}
-
-#fieldsTableHeader {
-  width: 100%;
-  background: #ececec;
-  border-bottom: 1px solid #d0d0d0;
-}
-
-.item_header_cell {
-  text-align: left;
-  float: left;
-  height: 25px;
-  padding-top: 5px;
-  padding-left: 10px;
-  font-weight: bold;
-  border-left: 1px solid #d0d0d0;
-}
-
-#item_list {
-  width: 100%;
-}
-
-.item_row {
-  cursor: move;
-  border-bottom: 1px solid #d0d0d0;
-}
-
-.item_cell {
-  text-align: left;
-  float: left;
-  height: 25px;
-  line-height: 20px;
-  padding-top: 5px;
-  padding-left: 10px;
-  border-left: 1px solid #d0d0d0;
-  width: 100px;
-  overflow: hidden;
 }
 
 .excelDownload {
@@ -3254,14 +3152,6 @@ tr.active {
 .fieldReadOnly {
   border-color: #eeeeee;
   background: blue;
-}
-
-.lineDividerTitle {
-  background: #ECECEC;
-  font-weight: bold;
-  border: 1px solid #D0D0D0;
-  padding: 5px 10px;
-  margin: 30px 20px 20px 0;
 }
 
 .requiredBox {
@@ -4303,25 +4193,6 @@ table.sTypeTable.sTypeItem {
   visibility: hidden;
 }
 
-.sideMenuWrapper {
-  margin: 3px 0 0 10px;
-}
-
-/* File uploader dijit classes */
-.fileAjaxUploader div {
-  float: left;
-}
-
-.fileAjaxUploaderStatusMsg {
-  padding-top: 3px;
-  padding-left: 3px;
-}
-
-.fileAjaxUploaderFileName {
-  padding-right: 6px;
-  padding-top: 3px;
-}
-
 /* Dashboard classes */
 .siteOverview {
   font-weight: bold;
@@ -4431,10 +4302,6 @@ table.dojoxLegendNode td {
   height: 40px;
   border: 0px solid red;
   overflow: hidden;
-}
-
-#contentActionsCp {
-  height: 300px;
 }
 
 .lockedWarningDiv {
@@ -5688,6 +5555,142 @@ div#_dotHelpMenu {
   color: #CB3927;
 }
 
+.filter-tasks-frm {
+  margin: 56px 20px 0 0;
+}
+.filter-tasks-frm .who-user label {
+  margin-right: 4px;
+}
+
+/*
+
+Styles for commons fields along the backend
+
+*/
+.glossaryTermPopup {
+  background-color: #FAFAFA;
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+  padding: 4px 8px;
+  border: solid 1px #ECEDEE;
+  position: absolute;
+}
+
+.fileAjaxUploader {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+  width: 336px;
+}
+.fileAjaxUploaderActions {
+  display: flex;
+  justify-content: center;
+}
+.fileAjaxUploaderFileName, .fileAjaxUploaderForm, .fileAjaxUploaderStatus {
+  margin-bottom: 16px;
+}
+.fileAjaxUploaderFileName {
+  text-align: center;
+}
+.fileAjaxUploaderStatus {
+  display: flex;
+}
+.fileAjaxUploaderStatusMsg {
+  align-self: center;
+  margin-left: 16px;
+}
+.fileAjaxUploader .dijitProgressBar {
+  width: 100%;
+}
+
+.catPreview {
+  background-color: #fff;
+  border: solid 1px #C5C5C5;
+  border-radius: 2px;
+  min-height: 41px;
+  margin-top: 8px;
+  padding: 3px 5px;
+}
+.catPreview li {
+  background-color: #ECEDEE;
+  border-radius: 7px;
+  border: solid 1px #C5C5C5;
+  display: inline-block;
+  font-size: 12px;
+  margin: 2px 5px 2px 0px;
+  padding: 3px 25px 4px 5px;
+  position: relative;
+  text-decoration: none;
+  vertical-align: middle;
+}
+.catPreview a {
+  text-decoration: none;
+}
+.catPreview a:hover {
+  color: #cc0000;
+}
+
+.fileSelectorControls .dijitTextBox {
+  width: 300px;
+}
+
+.lineDividerTitle {
+  color: #8A8A8A;
+  font-size: 24px;
+  border-bottom: 1px solid #ECEDEE;
+  padding-bottom: 16px;
+  margin: 48px 0 24px;
+}
+
+#text-toolbar, .textarea-toolbar, .wysiwyg-tools {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+#text-toolbar .checkbox, .textarea-toolbar .checkbox, .wysiwyg-tools .checkbox, #text-toolbar .radio, .textarea-toolbar .radio, .wysiwyg-tools .radio {
+  margin: 0;
+}
+
+.textarea-toolbar {
+  width: 450px;
+}
+
+.langVariablesField {
+  position: relative;
+}
+.langVariablesField .glossaryTermPopup {
+  right: 0;
+  top: 36px;
+}
+
+.wysiwyg-tools .dijitSelect {
+  width: auto;
+}
+
+.wysiwyg-wrapper {
+  width: 800px;
+}
+
+.key-value-form {
+  display: flex;
+  margin-bottom: 16px;
+  width: 500px;
+}
+.key-value-form .dijit {
+  margin-right: 8px;
+}
+.key-value-form .dijit:last-child {
+  margin-right: 0;
+}
+
+.key-value-items {
+  width: 500px;
+}
+.key-value-items .listingTable th:first-child, .key-value-items .listingTable td:first-child {
+  padding-left: 8px;
+}
+
 .tagsOptions {
   background: #fff;
   border: solid 1px #C5C5C5;
@@ -5782,47 +5785,9 @@ div#_dotHelpMenu {
   height: auto;
   padding: 3px 5px;
 }
-
-.buttonRow {
-  text-align: center;
-}
-
-.toggleEditorField,
-.langVariablesField {
-  margin-top: 8px;
-}
-
-.glossaryTermPopup {
-  background-color: rgba(243, 118, 42, 0.2);
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
-  border-radius: 2px;
-  padding: 4px 8px;
-  border: solid 1px #F3762A;
-  position: absolute;
-}
-
-.langVariablesField {
-  position: relative;
-}
-.langVariablesField .glossaryTermPopup {
-  right: 0;
-  top: 0;
-}
-
-.WYSIWYGTools {
-  margin-top: 8px;
-}
-.WYSIWYGTools .glossaryTermPopup {
-  left: 150px;
-  top: 35px;
-}
-
-.filter-tasks-frm {
-  margin: 56px 20px 0 0;
-}
-.filter-tasks-frm .who-user label {
-  margin-right: 4px;
+.tagsWrapper .dijitInputContainer {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /*
@@ -5835,6 +5800,31 @@ div#_dotHelpMenu {
   display: block;
   font-size: 12px;
   margin-bottom: 4px;
+}
+
+#checkbox-radio, #inline-form .radio, .fileSelectorControls .radio, .inline-form .radio, #inline-form .checkbox, .fileSelectorControls .checkbox, .inline-form .checkbox, dd .radio, dd .checkbox, .fieldValue .radio, .fieldValue .checkbox {
+  align-items: center;
+  display: flex;
+  margin: 8px 0;
+  white-space: nowrap;
+}
+#checkbox-radio > .dijit, #inline-form .radio > .dijit, .fileSelectorControls .radio > .dijit, .inline-form .radio > .dijit, #inline-form .checkbox > .dijit, .fileSelectorControls .checkbox > .dijit, .inline-form .checkbox > .dijit, dd .radio > .dijit, dd .checkbox > .dijit, .fieldValue .radio > .dijit, .fieldValue .checkbox > .dijit {
+  margin-right: 4px;
+}
+
+#inline-form, .fileSelectorControls, .inline-form {
+  align-items: center;
+  display: flex;
+}
+#inline-form > label, .fileSelectorControls > label, .inline-form > label {
+  margin-right: 8px;
+  white-space: nowrap;
+}
+#inline-form .dijit, .fileSelectorControls .dijit, .inline-form .dijit {
+  margin-right: 8px;
+}
+#inline-form .dijit:last-child, .fileSelectorControls .dijit:last-child, .inline-form .dijit:last-child {
+  margin-right: 0;
 }
 
 .required2 {
@@ -5911,17 +5901,59 @@ dd .inputCaption,
 dd .buttonCaption {
   padding-left: 8px !important;
 }
-dd .radio, dd .checkbox {
-  margin: 8px 0;
+
+#form-horizontal-flexbox dl, .form-horizontal dl {
   display: flex;
-  align-items: center;
+  margin-bottom: 8px;
+  min-height: 32px;
 }
-dd .radio > .dijit, dd .checkbox > .dijit {
-  margin-right: 4px;
+#form-horizontal-flexbox dd, .form-horizontal dd, #form-horizontal-flexbox dt, .form-horizontal dt {
+  clear: none;
+  float: none;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  text-align: inherit;
+  width: auto;
+}
+#form-horizontal-flexbox dd, .form-horizontal dd {
+  align-self: center;
+}
+#form-horizontal-flexbox dt, .form-horizontal dt {
+  padding: 8px 16px 0;
+  text-align: right;
+  width: 150px;
+}
+
+#form-horizontal-table {
+  display: table;
+}
+#form-horizontal-table > div {
+  display: table-row-group;
+}
+#form-horizontal-table dl {
+  display: table-row;
+}
+#form-horizontal-table dd, #form-horizontal-table dt {
+  display: table-cell;
+}
+#form-horizontal-table dt {
+  white-space: nowrap;
+  width: 1%;
+}
+#form-horizontal-table dd {
+  width: 99%;
 }
 
 .fieldWrapper {
   margin-bottom: 16px;
+}
+
+.buttonRow {
+  text-align: center;
+}
+.buttonRow .dijitButton {
+  margin: 0 4px;
 }
 
 .advanced-search-button {
@@ -5992,7 +6024,7 @@ dd .radio > .dijit, dd .checkbox > .dijit {
   background-color: #ECEDEE;
   color: #161616;
 }
-.content-edit-actions > div a:last-child {
+.content-edit-actions > div a:last-of-type {
   border-bottom: none;
 }
 
@@ -6008,6 +6040,37 @@ dd .radio > .dijit, dd .checkbox > .dijit {
 }
 .content-edit-workflow table tr {
   border-bottom: solid 1px #ECEDEE;
+}
+
+.content-type__edit-field-form {
+  width: 550px;
+}
+.content-type__fields-list {
+  display: table;
+  width: 100%;
+}
+.content-type__fields-list-body {
+  display: table-row-group;
+}
+.content-type__fields-list-cell {
+  border-bottom: 1px solid #ECEDEE;
+  display: table-cell;
+  padding: 8px;
+  white-space: nowrap;
+}
+.content-type__fields-list-header, .content-type__fields-list-row {
+  display: table-row;
+}
+.content-type__fields-list-header {
+  background: #FAFAFA;
+  font-weight: bold;
+  width: 100%;
+}
+.content-type__fields-list-row {
+  transition: background-color 0.1s;
+}
+.content-type__fields-list-row:hover {
+  background-color: rgba(14, 128, 203, 0.1);
 }
 
 .contentIdentifier {
@@ -6073,9 +6136,16 @@ dd .radio > .dijit, dd .checkbox > .dijit {
 .portlet-pagination__results {
   flex: 1;
   align-self: center;
+  text-align: center;
 }
 .portlet-toolbar {
   margin: 0 16px 16px;
+}
+.dijitTabPaneWrapper .dijitContentPane .portlet-toolbar {
+  margin: 0 0 16px;
+}
+.portlet-toolbar > * {
+  align-self: center;
 }
 .portlet-toolbar a {
   text-decoration: none;
@@ -6087,9 +6157,311 @@ dd .radio > .dijit, dd .checkbox > .dijit {
   margin: 0 18px;
   align-items: center;
 }
+.dijitTabPaneWrapper .dijitContentPane .portlet-toolbar__info {
+  margin-left: 0;
+}
+.portlet-toolbar__center {
+  flex: 2;
+}
+.portlet-toolbar__center .callOutBox {
+  margin: 0;
+}
+.portlet-toolbar__center + .portlet-toolbar__actions {
+  flex: 1;
+  justify-content: flex-end;
+}
 
 #tablemessage {
   color: #cc0000;
+}
+
+.hintBox {
+  background-color: #FAFAFA;
+  border-radius: 2px;
+  border: solid 1px #C5C5C5;
+  padding: 16px;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 300px;
+}
+
+.callOutBox {
+  background-color: rgba(14, 128, 203, 0.1);
+  border-radius: 2px;
+  border: 1px solid rgba(14, 128, 203, 0.3);
+  margin: 16px 0;
+  padding: 8px;
+  text-align: center;
+}
+
+.callOutBox2 {
+  background-color: #f0f0f0;
+  border-radius: 2px;
+  border: 1px solid #d0d0d0;
+  padding: 8px;
+  text-align: center;
+}
+
+#iFrameWrapper {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 26px;
+  bottom: 0px;
+}
+
+#imageToolIframe {
+  /*border:1px solid blue;*/
+  display: block;
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+}
+
+.imageToolButtonBar {
+  background: #fff;
+  border-bottom: 1px solid silver;
+  border-top: 1px solid silver;
+  margin-width: 0 0px;
+  padding: 5px 15px 1px 15px;
+  vertical-align: middle;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#imageViewPort {
+  overflow: auto;
+  margin-top: 5px;
+}
+
+#toolBar {
+  background: #fff;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  /*border:1px solid blue;*/
+}
+
+#exif {
+  clear: both;
+  height: 2em;
+}
+
+#showScaleSlider {
+  margin: 10px auto;
+  width: 250px;
+  height: 20px;
+}
+
+#saveAsDialog {
+  width: 350px;
+  height: 170px;
+}
+
+#saveAsDiaTable {
+  margin: auto;
+  margin-top: 10px;
+}
+#saveAsDiaTable td {
+  padding: 8px;
+}
+
+#saveAsFileExt {
+  font-weight: bold;
+}
+
+#cropDim {
+  display: none;
+}
+
+/* part of the widget: drag handle styles */
+.imageDragger {
+  /* required: */
+  position: absolute;
+  /* optional: */
+  cursor: move;
+  z-index: 999;
+  background: #fff;
+  border: 2px dotted #000;
+  min-width: 50px;
+  min-height: 50px;
+}
+
+#cropSizeBox {
+  float: left;
+  border: 1px solid silver;
+  opacity: 1;
+  min-width: 46px;
+  height: 20px;
+  color: black;
+  white-space: nowrap;
+}
+
+.textInputClass {
+  border: 1px solid silver;
+  width: 46px;
+  margin: 2px;
+  height: 23px;
+}
+
+.baseImageDim {
+  width: 45px;
+  margin: 2px;
+  height: 23px;
+  overflow: hidden;
+  display: inline-block;
+  padding-top: 4px;
+}
+
+#doCropButton {
+  display: none;
+}
+
+#filtersUndoDiv {
+  text-align: left;
+}
+
+#filterListTd {
+  vertical-align: top;
+  padding: 0px;
+}
+
+#filterListBox {
+  height: 115px;
+  display: block;
+}
+
+#filterListDiv {
+  width: 115px;
+  overflow-y: auto;
+  height: 80px;
+  overflow-x: hidden;
+}
+
+.loader {
+  background: url("/html/js/dotcms/dijit/image/loading.gif") no-repeat center center;
+}
+
+.filterListItem {
+  text-align: left;
+  cursor: pointer;
+  width: 100px;
+  padding: 2px;
+  border: 1px solid silver;
+  background: url("/html/images/icons/minus-small-circle.png") no-repeat right center;
+}
+
+#controlTable {
+  width: 100%;
+}
+#controlTable td {
+  border: 1px solid silver;
+  padding: 3px;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+#showScaleSlider td {
+  border: 0px solid silver;
+  padding: 0px;
+}
+
+#hsbDialog {
+  width: 400px;
+  height: 300px;
+}
+
+#hsbTable {
+  border: 1px solid silver;
+  width: 90%;
+}
+#hsbTable td {
+  padding: 4px;
+  border: 1px solid silver;
+  height: 20px;
+  vertical-align: top;
+}
+#hsbTable .colorSlider td {
+  padding: 0px;
+  border: 0px solid silver;
+}
+
+.colorSlider {
+  width: 200px;
+}
+
+.thumbnailDiv {
+  cursor: pointer;
+  padding: 16px;
+  border: solid 2px #ECEDEE;
+  min-width: 120px;
+  min-height: 120px;
+}
+.thumbnailDivHover {
+  border: solid 2px #C5C5C5;
+}
+
+.editImageText {
+  cursor: pointer;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  opacity: .50;
+  background: white;
+  border: 1px solid gray;
+  padding: 3px;
+  width: 80px;
+  height: 50px;
+  text-align: center;
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+}
+
+/*********
+
+Resize Handle
+
+********/
+.dojoxResizeHandle {
+  float: right;
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 13px;
+  height: 13px;
+  z-index: 20;
+  background-image: url("/html/js/dotcms/dijit/image/resize.png");
+  line-height: 0px;
+}
+
+.dojoxResizeNW {
+  cursor: nw-resize;
+}
+
+.dojoxResizeNE {
+  cursor: ne-resize;
+}
+
+.dojoxResizeW {
+  cursor: w-resize;
+}
+
+.dojoxResizeN {
+  cursor: n-resize;
+}
+
+.dojoxResizeHandleClone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px dashed #666;
+  z-index: 999;
 }
 
 #addFileAssetDialog .dijitComboBox {
@@ -6098,6 +6470,100 @@ dd .radio > .dijit, dd .checkbox > .dijit {
 
 #search_form, #borderContainer {
   height: 100%;
+}
+
+.file-selector-tree .dijitDialogPaneContent,
+.related-content-dialog .dijitDialogPaneContent {
+  padding: 0;
+}
+.file-selector-tree .portlet-sidebar-wrapper,
+.related-content-dialog .portlet-sidebar-wrapper {
+  width: 200px;
+}
+
+.file-selector-tree .selectableFile {
+  display: flex;
+}
+.file-selector-tree .selectableFile img {
+  margin-right: 4px;
+}
+.file-selector-tree .portlet-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.file-selector-tree__container {
+  width: 900px;
+  height: 500px;
+}
+
+.file-selector-tree__loading,
+.file-selector-tree__no-results,
+.file-selector-tree__select-folder {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+.file-selector-tree__main {
+  display: flex;
+}
+
+.file-selector-tree__sidebar {
+  padding: 16px;
+}
+.file-selector-tree__sidebar .dijitTreeContainer {
+  float: none;
+}
+.file-selector-tree__sidebar .dijitTreeNode {
+  padding: 4px 0;
+}
+
+.file-selector-tree__table {
+  display: flex;
+  flex: 1;
+}
+
+.file-selector-tree__toolbar {
+  background-color: #ECEDEE;
+  margin: 0;
+  padding: 16px;
+}
+
+.file-selector-tree__views-menu {
+  display: flex;
+}
+.file-selector-tree__views-menu span {
+  margin-right: 4px;
+  font-weight: bold;
+}
+.file-selector-tree__views-menu img {
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+.related-content-dialog {
+  width: 900px;
+  height: 550px;
+}
+.related-content-dialog .dijitDialogTitleBar {
+  height: 0;
+  z-index: 1;
+}
+
+.related-content-container,
+.related-content-form {
+  height: 100%;
+}
+
+.related-content-form {
+  width: 900px;
 }
 
 /* The main calendar widget.  DIV containing a table. */
@@ -6352,6 +6818,17 @@ div.calendar {
   border-color: #f00;
   background-color: #000;
   color: #0f0;
+}
+
+#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions {
+  text-align: center;
+  width: 65px;
+  white-space: nowrap;
+}
+#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a {
+  display: inline-block;
+  margin: 0 4px;
+  text-decoration: none;
 }
 
 body {

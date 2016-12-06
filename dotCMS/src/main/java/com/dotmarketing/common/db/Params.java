@@ -2,8 +2,10 @@ package com.dotmarketing.common.db;
 
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -61,12 +63,10 @@ public class Params implements Serializable {
             if (null != parameters && parameters.length > 0) {
 
                 if (1 == parameters.length) {
-
                     this.paramList.add(parameters[0]);
                 } else {
-
                     for (Object p : parameters) {
-                        this.paramList.add(p);
+                        this.add(p);
                     }
                 }
             }
@@ -77,12 +77,22 @@ public class Params implements Serializable {
         public Builder add (final Collection<Object> collection) {
 
             if (null != collection && collection.size() > 0) {
-
-                this.paramList.addAll(collection);
+                for ( Object p : collection ) {
+                    this.add(p);
+                }
             }
 
             return this;
         } // add.
+
+        public Builder add(Object param) {
+            if ( param instanceof Date ) {
+                this.paramList.add(new Timestamp(((Date) param).getTime()));
+            } else {
+                this.paramList.add(param);
+            }
+            return this;
+        }
 
         public Params build () {
 

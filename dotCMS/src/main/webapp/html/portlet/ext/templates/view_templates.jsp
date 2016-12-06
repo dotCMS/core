@@ -206,189 +206,194 @@ function processDelete(inode, referer) {
 		top.location = loc;
 	}
 }
-
-
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-templates-all") %>' />
 
-<form id="fm" method="post" >
-<div class="yui-gc portlet-toolbar">
-<table style="width:100%">
-	<tr>
-		<td style="white-space: nowrap;">
-			<input type="hidden" name="resetQuery" value="">
-			<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
-			<input type="text" dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-		    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
-		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search" )) %>
-		    </button>
-		
-			<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
-		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
-		    </button>
-		
-			<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-		
-		</td>
-		<td style="text-align: right;white-space: nowrap;">
-			<input  dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true" />
-			<label for="showDeleted" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>&nbsp; &nbsp; &nbsp;
-	
-			<% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN) || (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_ADD)) { %>
-				<div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'plusIcon', showLabel:true">
-					<span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-template")) %></span>
-					<div dojoType="dijit.Menu">
-		                <% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN)) { %>
-							<div dojoType="dijit.MenuItem" onClick="designAsset" iconClass="designTemplateIcon">
-						        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "design-template")) %>
-						    </div>
-						<% } %>
-						
-		                <% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_ADD)) { %>
-			                <div dojoType="dijit.MenuItem" onClick="addAsset" iconClass="templateIcon">
-			                    <span ></span> <%= LanguageUtil.get(pageContext,"code-template") %>
-			                </div>
-			            <% } %>
-					</div>
-				</div>
-			<% } %>
+
+
+<div class="portlet-main">
+	<form id="fm" method="post" >	
+		<div class="portlet-toolbar">
+	    	<div class="portlet-toolbar__actions-primary">
+	    		<input type="hidden" name="resetQuery" value="">
+				<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
+				<input type="text" dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
+			    
+			    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
+			       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search" )) %>
+			    </button>
 			
-		</td>
-	</tr>
-</table>
+				<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
+			       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
+			    </button>
+				&nbsp; &nbsp;
+				<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+				<input  dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true" />
+				<label for="showDeleted" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
+	    	</div>
+	    	<div class="portlet-toolbar__info"></div>
+	    	<div class="portlet-toolbar__actions-secondary">
+	    		
+	    		<!-- START Actions -->			
+				<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+		            <span></span>
+		
+		            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+		                <% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN) || (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_ADD)) { %>
+			                <% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_DESIGN)) { %>
+								<div data-dojo-type="dijit/MenuItem" onClick="designAsset">
+							        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "design-template")) %>
+							    </div>
+							<% } %>
+							
+			                <% if((Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_CAN_ADD)) { %>
+				                <div data-dojo-type="dijit/MenuItem" onClick="addAsset">
+				                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %> <%= LanguageUtil.get(pageContext,"code-template") %>
+				                </div>
+				            <% } %>
+			            <% } %>
+			            
+			            <div data-dojo-type="dijit/MenuItem" id="publishButton" onClick="submitfmPublish()" disabled="true">
+					       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
+					    </div>
+				
+					    <div data-dojo-type="dijit/MenuItem" id="deleteButton" onClick="submitfmDelete()" disabled="true">
+					       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %>
+					    </div>
 
+		            </div>
+		        </div>
+		    	<!-- END Actions -->	    	
+		    </div>
+		</div>
 
-	</div>
-	<div class="yui-u" style="text-align:right; white-space:nowrap" >
+		<script language="Javascript">
+			/**
+				focus on search box
+			**/
+			require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+				dojo.require('dojox.timing');
+				t = new dojox.timing.Timer(500);
+				t.onTick = function(){
+				  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+				  t.stop();
+				}
+				t.start();
+			});
+	    </script>    
+	    
+	</form>
 
-	</div>
-	<script language="Javascript">
-		/**
-			focus on search box
-		**/
-		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-			dojo.require('dojox.timing');
-			t = new dojox.timing.Timer(500);
-			t.onTick = function(){
-			  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
-			  t.stop();
-			}
-			t.start();
-		});
-    </script>    
-    
-</form>
+	<form id="fm_publish" method="post">
+	<input type="hidden" name="referer" value="<%=referer%>">
+	<input type="hidden" name="cmd" value="">
 
-<form id="fm_publish" method="post">
-<input type="hidden" name="referer" value="<%=referer%>">
-<input type="hidden" name="cmd" value="">
-
-<!-- START Listing Results -->
-<table class="listingTable">
-	<tr>
-
-		<th nowrap style="width:25px;text-align:center;">
-			<input dojoType="dijit.form.CheckBox" type="checkbox" name="cb2" id="checkAll" value="1" onclick="checkAll"/>
-			<span dojoType="dijit.Tooltip" connectId="checkAll" id="ckeckAll_tooltip"><%= LanguageUtil.get(pageContext, "Check-all") %> / <%= LanguageUtil.get(pageContext, "Uncheck-all") %></span>
-		</th>
-		<th nowrap width="30%">
-			<a href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-			<portlet:param name="struts_action" value="/ext/templates/view_templates" />
-			<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber) %>" />
-			<portlet:param name="orderby" value="<%=orderby.equals(\"title asc\")?\"title desc\":\"title asc\"%>" />
-			</portlet:renderURL>">
-			<%= LanguageUtil.get(pageContext, "Title") %></a>
-		</th>
-		<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
-		<th nowrap width="45%"><%= LanguageUtil.get(pageContext, "Description") %></th>
-		<th nowrap width="10%">
-			<a href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-			<portlet:param name="struts_action" value="/ext/templates/view_templates" />
-			<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber) %>" />
-			<portlet:param name="orderby" value="<%=orderby.equals(\"modDate desc\")?\"modDate asc\":\"modDate desc\"%>" />
-			</portlet:renderURL>">
-			<%= LanguageUtil.get(pageContext, "Mod-Date") %>
-		</th>
-	</tr>
-
-	<%
-		java.util.List templates = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATES_VIEW);
-		int templatesSize = ((Long) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATES_VIEW_COUNT)).intValue();
-		String userId = user.getUserId();
-
-		for (int k=0;k<templates.size();k++) {
-			com.dotmarketing.beans.PermissionAsset permAsset = (com.dotmarketing.beans.PermissionAsset) templates.get(k);
-			java.util.List permissions = permAsset.getPermissions();
-			com.dotmarketing.portlets.templates.model.Template template = (com.dotmarketing.portlets.templates.model.Template) permAsset.getAsset();
-
-			String str_style = "";
-			if ((k%2)==0) {
-				str_style = "class=\"alternate_1\"";
-			}
-			else{
-				str_style = "class=\"alternate_2\"";
-            }
-
-			//container properties and permissions
-			String inode = template.getInode();
-			boolean live = (template.isLive());
-			boolean working = (template.isWorking());
-			boolean deleted = (template.isDeleted());
-			boolean locked = (template.isLocked());
-			boolean write = APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user);
-			boolean publish = APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_PUBLISH, user);
-			Host host = APILocator.getHostAPI().findParentHost(template, APILocator.getUserAPI().getSystemUser(), false);
-		%>
-			<tr id="tr<%=k%>" <%=str_style%>>
-				<td nowrap style="text-align:center;">
-					<% if (publish) { %>
-								<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= template.getInode() %>" value="<%= template.getInode() %>" onclick="togglePublish()" />
-					<% } %>
-				</td>
-				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
-					<%if(template.isDrawed()){ %>
-						<span class="designTemplateIcon"></span>
-					<%}else{ %>
-						<span class="templateIcon"></span>
-					<%} %>
-					&nbsp;
-
-					<%=template.getTitle()%>
-				</td>
-				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>
-				<td <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%=template.getFriendlyName()%></td>
-				<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
-					<%=modDateFormat.format(template.getModDate())%>
-					<script language="JavaScript">
-						//popup div for the template
-						document.write(getTemplatePopUp('<%=k%>','<%= CTX_PATH %>', '<%=template.getInode()%>', '<%=template.getIdentifier()%>','',
-							'<%=referer%>','<%=(template.isLive()) ? "1" : "0"%>',
-							'<%=(template.isWorking()) ? "1" : "0"%>',
-							'<%=(template.isDeleted()) ? "1" : "0"%>',
-							'<%=(template.isLocked()) ? "1" : "0"%>',
-							'<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>',
-							'<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>',
-							'<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>',
-							'<%=user.getUserId()%>',
-							'<%=template.hasLiveVersion() ? "1" : "0"%>'));
-					</script>
+	<!-- START Listing Results -->
+	<table class="listingTable">
+		<tr>
+	
+			<th nowrap style="width:25px;text-align:center;">
+				<input dojoType="dijit.form.CheckBox" type="checkbox" name="cb2" id="checkAll" value="1" onclick="checkAll"/>
+				<span dojoType="dijit.Tooltip" connectId="checkAll" id="ckeckAll_tooltip"><%= LanguageUtil.get(pageContext, "Check-all") %> / <%= LanguageUtil.get(pageContext, "Uncheck-all") %></span>
+			</th>
+			<th nowrap width="30%">
+				<a href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+				<portlet:param name="struts_action" value="/ext/templates/view_templates" />
+				<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber) %>" />
+				<portlet:param name="orderby" value="<%=orderby.equals(\"title asc\")?\"title desc\":\"title asc\"%>" />
+				</portlet:renderURL>">
+				<%= LanguageUtil.get(pageContext, "Title") %></a>
+			</th>
+			<th nowrap style="width:35px;"><%= LanguageUtil.get(pageContext, "Status") %></th>
+			<th nowrap width="45%"><%= LanguageUtil.get(pageContext, "Description") %></th>
+			<th nowrap width="10%">
+				<a href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+				<portlet:param name="struts_action" value="/ext/templates/view_templates" />
+				<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber) %>" />
+				<portlet:param name="orderby" value="<%=orderby.equals(\"modDate desc\")?\"modDate asc\":\"modDate desc\"%>" />
+				</portlet:renderURL>">
+				<%= LanguageUtil.get(pageContext, "Mod-Date") %>
+			</th>
+		</tr>
+	
+		<%
+			java.util.List templates = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATES_VIEW);
+			int templatesSize = ((Long) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATES_VIEW_COUNT)).intValue();
+			String userId = user.getUserId();
+	
+			for (int k=0;k<templates.size();k++) {
+				com.dotmarketing.beans.PermissionAsset permAsset = (com.dotmarketing.beans.PermissionAsset) templates.get(k);
+				java.util.List permissions = permAsset.getPermissions();
+				com.dotmarketing.portlets.templates.model.Template template = (com.dotmarketing.portlets.templates.model.Template) permAsset.getAsset();
+	
+				String str_style = "";
+				if ((k%2)==0) {
+					str_style = "class=\"alternate_1\"";
+				}
+				else{
+					str_style = "class=\"alternate_2\"";
+	            }
+	
+				//container properties and permissions
+				String inode = template.getInode();
+				boolean live = (template.isLive());
+				boolean working = (template.isWorking());
+				boolean deleted = (template.isDeleted());
+				boolean locked = (template.isLocked());
+				boolean write = APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_EDIT, user);
+				boolean publish = APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_PUBLISH, user);
+				Host host = APILocator.getHostAPI().findParentHost(template, APILocator.getUserAPI().getSystemUser(), false);
+			%>
+				<tr id="tr<%=k%>" <%=str_style%>>
+					<td nowrap style="text-align:center;">
+						<% if (publish) { %>
+									<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= template.getInode() %>" value="<%= template.getInode() %>" onclick="togglePublish()" />
+						<% } %>
+					</td>
+					<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
+						<%if(template.isDrawed()){ %>
+							<span class="designTemplateIcon"></span>
+						<%}else{ %>
+							<span class="templateIcon"></span>
+						<%} %>
+						&nbsp;
+	
+						<%=template.getTitle()%>
+					</td>
+					<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(template) %></td>
+					<td <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>><%=template.getFriendlyName()%></td>
+					<td nowrap <%if(!template.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=template.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&referer=<%=referer%>'"<%} %>>
+						<%=modDateFormat.format(template.getModDate())%>
+						<script language="JavaScript">
+							//popup div for the template
+							document.write(getTemplatePopUp('<%=k%>','<%= CTX_PATH %>', '<%=template.getInode()%>', '<%=template.getIdentifier()%>','',
+								'<%=referer%>','<%=(template.isLive()) ? "1" : "0"%>',
+								'<%=(template.isWorking()) ? "1" : "0"%>',
+								'<%=(template.isDeleted()) ? "1" : "0"%>',
+								'<%=(template.isLocked()) ? "1" : "0"%>',
+								'<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>',
+								'<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>',
+								'<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>',
+								'<%=user.getUserId()%>',
+								'<%=template.hasLiveVersion() ? "1" : "0"%>'));
+						</script>
+					</td>
+				</tr>
+			<%}%>
+	<!-- END Listing Results -->
+	
+	<!-- Start No Results -->
+		<% if (templatesSize ==0) { %>
+			<tr>
+				<td colspan="5">
+					<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Templates-to-show") %></div>
 				</td>
 			</tr>
-		<%}%>
-<!-- END Listing Results -->
-
-<!-- Start No Results -->
-<% if (templatesSize ==0) { %>
-	<tr>
-		<td colspan="5">
-			<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Templates-to-show") %></div>
-		</td>
-	</tr>
-<% } %>
-<!-- End No Results -->
-</table>
+		<% } %>
+	<!-- End No Results -->
+	</table>
 
 <!-- Start Pagination -->
 	<div class="yui-gb buttonRow">
@@ -401,29 +406,29 @@ function processDelete(inode, referer) {
 		</div>
 		<div class="yui-u" style="text-align:center;">
 			<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> -
-<%
-	if (maxIndex > (minIndex + templatesSize)) {
-%>
-	<%= minIndex + templatesSize %>
-<%
-	} else {
-%>
-	<%= maxIndex %>
-<%
-	}
-%>
-	<%= LanguageUtil.get(pageContext, "of1") %>
-<%
-	if (100 < templatesSize) {
-%>
-	<%= LanguageUtil.get(pageContext, "hundreds") %>
-<%
-	} else {
-%>
-	<%= minIndex + templatesSize %>
-<%
-	}
-%>
+			<%
+				if (maxIndex > (minIndex + templatesSize)) {
+			%>
+				<%= minIndex + templatesSize %>
+			<%
+				} else {
+			%>
+				<%= maxIndex %>
+			<%
+				}
+			%>
+				<%= LanguageUtil.get(pageContext, "of1") %>
+			<%
+				if (100 < templatesSize) {
+			%>
+				<%= LanguageUtil.get(pageContext, "hundreds") %>
+			<%
+				} else {
+			%>
+				<%= minIndex + templatesSize %>
+			<%
+				}
+			%>
 		</div>
 		<div class="yui-u" style="text-align:right;">
 			<% if (maxIndex < (minIndex + templatesSize)) { %>
@@ -435,41 +440,27 @@ function processDelete(inode, referer) {
 	</div>
 <!-- END Pagination -->
 
-
-
-<!-- Start Buttons -->
-	<div class="buttonRow">
-	    <button dojoType="dijit.form.Button" id="publishButton" onClick="submitfmPublish()" disabled="true" iconClass="publishIcon">
-	       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
-	    </button>
-
-	    <button dojoType="dijit.form.Button" id="deleteButton" onClick="submitfmDelete()" disabled="true" iconClass="deleteIcon">
-	       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %>
-	    </button>
-	</div>
-<!-- END Buttons -->
-
 </form>
 
 </liferay:box>
 
-<script>
+	<script>
+		dojo.addOnLoad(function() {
+		if(<%=dependencies%>)
+		{
+			dojo.byId("depDiv").innerHTML = "<br />" + "<%=depResp%>";
+			dijit.byId("dependenciesDialog").show();
+		}
+		
+		}) ;
+	</script>
+	
+	<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:auto;vertical-align: middle; " draggable="true"
+		title="<%= LanguageUtil.get(pageContext, "Delete-Template") %>" >
+	
+		<span style="color: red; font-weight: bold"><%= LanguageUtil.get(pageContext, "message.template.full_delete.error") %></span>
+	
+		<div id="depDiv" style="overflow: auto;height:auto"></div>
+	</div>
 
-dojo.addOnLoad(function() {
-if(<%=dependencies%>)
-{
-	dojo.byId("depDiv").innerHTML = "<br />" + "<%=depResp%>";
-	dijit.byId("dependenciesDialog").show();
-}
-
-}) ;
-</script>
-
-<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:auto;vertical-align: middle; " draggable="true"
-	title="<%= LanguageUtil.get(pageContext, "Delete-Template") %>" >
-
-	<span style="color: red; font-weight: bold"><%= LanguageUtil.get(pageContext, "message.template.full_delete.error") %></span>
-
-	<div id="depDiv" style="overflow: auto;height:auto"></div>
 </div>
-

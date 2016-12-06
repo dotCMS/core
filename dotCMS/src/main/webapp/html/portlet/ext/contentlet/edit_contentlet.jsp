@@ -266,9 +266,9 @@ var editButtonRow="editContentletButtonRow";
 			fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
 				Field f0 = fields.get(0);
 				fields.remove(0);%>
-			<div id="<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>" onShow="showEditButtonsRow()">
+			<div id="<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
 		<%} else {	%>
-			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()">
+			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>">
 		<%}%>
 
         <!-- START EDIT CONTENT FORM -->
@@ -304,9 +304,8 @@ var editButtonRow="editContentletButtonRow";
                         tabDividerOpen = true;%>
                             </div>
                         </div>
-                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>" onShow="showEditButtonsRow()">
-                            <div class="wrapperRight" style="position:relative;">
-                                <div class="fieldWrapper">&nbsp;</div>
+                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+                            <div class="wrapperRight">
                     <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
                         categoriesTabFieldExists = true;%>
                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
@@ -432,7 +431,7 @@ var editButtonRow="editContentletButtonRow";
 		   relationshipsTabFieldExists = true;
 		   request.setAttribute("isRelationsihpAField",false); //DOTCMS-6893
 	%>
-		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>" onShow="hideEditButtonsRow()">
+		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
 		</div>
 	<%}%>
@@ -453,7 +452,7 @@ var editButtonRow="editContentletButtonRow";
 
 	<!-- Permissions -->
 	<%if(!permissionsTabFieldExists && canEditAsset){%>
-		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()">
+		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
 			<%
 				HTMLPage permParent = (HTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), HTMLPage.class);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
@@ -474,7 +473,7 @@ var editButtonRow="editContentletButtonRow";
 		 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty);
 		}%>
 
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
+		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
 			<div id="contentletVersionsDiv" style="height:100%;">
 			</div>
 
@@ -485,7 +484,7 @@ var editButtonRow="editContentletButtonRow";
 
 		<!-- References Tab -->
 		<%if(references != null && references.size() > 0){ %>
-			<div id="references" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "References") %>" onShow="hideEditButtonsRow()">
+			<div id="references" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "References") %>">
 				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_references.jsp" />
 			</div>
 		<%}%>
@@ -561,9 +560,6 @@ var editButtonRow="editContentletButtonRow";
 					if (selectedTab.class != undefined && selectedTab.class == "custom-tab") {
 						isCustomTab = true;
 					}
-
-					if(selectedTab.id == "properties" || selectedTab.id == "MetadataTab" || isCustomTab)
- 				 		document.getElementById(selectedTab.id).insertBefore(document.getElementById(editButtonRow), document.getElementById(selectedTab.id).firstChild);
  				});
 	});
 

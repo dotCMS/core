@@ -7,6 +7,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.*;
@@ -14,6 +15,7 @@ import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.LocaleUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -331,6 +333,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -338,6 +341,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
+        LocaleUtil.setUserWebAPI(userWebAPI);
         Config.CONTEXT = context;
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
@@ -347,6 +351,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         when(request.getSession(false)).thenReturn(session); //
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
         when(userLocalManager.getUserById(userId)).thenReturn(user);
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
@@ -355,7 +360,6 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
                 throw new UserActiveException();
             }
         });
-
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
                 new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
@@ -383,6 +387,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -390,6 +395,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
+        LocaleUtil.setUserWebAPI(userWebAPI);
         Config.CONTEXT = context;
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
@@ -401,7 +407,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
         when(userLocalManager.getUserById(userId)).thenReturn(user);
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenReturn(false);
-
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
                 new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);
@@ -430,6 +436,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         final HttpSession session  = mock(HttpSession.class);
         final LoginService loginService     = mock(LoginService.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
         final ServletContext context = mock(ServletContext.class);
@@ -438,6 +445,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
+        LocaleUtil.setUserWebAPI(userWebAPI);
         Config.CONTEXT = context;
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
@@ -449,7 +457,7 @@ public class CreateJsonWebTokenResourceTest extends TestBase {
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
         when(userLocalManager.getUserById(userId)).thenReturn(user);
         when(loginService.doActionLogin(userId, pass, false, request, response)).thenReturn(true);
-
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
                 new CreateJsonWebTokenResource(loginService, userLocalManager, ResponseUtil.INSTANCE, jsonWebTokenUtils, securityLoggerServiceAPI);

@@ -254,214 +254,217 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 <input type="hidden" name="existinglink" id="existinglink" value="">
 <input type="hidden" name="selectedexistinglink" id="selectedexistinglink" value="">
 
-<!-- START TABS -->
-<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+<div class="portlet-main">
 
-<!-- START Link Properties -->
-	<div id="fileBasicTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()">
-
-		<dl>
-
-		<input name="referer" type="hidden" value="<%=referer%>">
-
-		<input name="<%= Constants.CMD %>" type="hidden" value="add">
-		<input type="hidden" name="userId" value="<%= user.getUserId() %>">
-
-		<%if(identifier!=null){%>
-			<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-			<dd><%= identifier.getId() %></dd>
-		<%}%>
-
-			<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
-			<dd>
-				<input type="text" dojoType="dijit.form.TextBox" style="width:250px;" name="title" id="titleField" value="<%= UtilMethods.isSet(linkForm.getTitle()) ? linkForm.getTitle() : "" %>" />
-				<html:hidden  property="friendlyName" styleId="friendlyNameField"/>
-			</dd>
-
-			<dt><%= LanguageUtil.get(pageContext, "Folder") %>:</dt>
-			<dd>
-				<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
-					<div id="folder" name="parent" onlySelectFolders="true" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" <%= UtilMethods.isSet(hostId)?"hostId=\"" + hostId + "\"":"" %>></div>
-				<% } else { %>
-					<input type="text" readonly="readonly" styleClass="form-text" value="<%= APILocator.getIdentifierAPI().find(folder).getPath() %>" />
-					<html:hidden styleClass="form-text" property="parent" styleId="parent" />
-				<% } %>
-			</dd>
-
-			<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
-			<dd>
-				<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.INTERNAL.toString())?"checked":"" %> id="internalLinkType" name="linkType" value="<%= LinkType.INTERNAL.toString() %>" onclick="hideShowOptions()">
-				<label for="internalLinkType"><%= LanguageUtil.get(pageContext, "Internal-Link") %></label>
-
-				<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.EXTERNAL.toString())?"checked":"" %> id="externalLinkType" name="linkType" value="<%= LinkType.EXTERNAL.toString() %>" onclick="hideShowOptions()">
-				<label for="externalLinkType"><%= LanguageUtil.get(pageContext, "External-Link") %></label>
-
-				<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.CODE.toString())?"checked":"" %> id="codeLinkType" name="linkType" value="<%= LinkType.CODE.toString() %>" onclick="hideShowOptions()">
-				<label for="codeLinkType"><%= LanguageUtil.get(pageContext, "Code-Link") %></label>
-			</dd>
-		</dl>
-
-		<!-- If External Link -->
-		<dl id="externalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.EXTERNAL.toString()) { %>none;<% } %>">
-			<dt>&nbsp;</dt>
-			<dd>
-				<select dojoType="dijit.form.ComboBox" autocomplete="false" name="protocal" id="protocal" style="width:94px;"value="<%= UtilMethods.isSet(linkForm.getProtocal()) ? linkForm.getProtocal() : "" %>" >
-					<option>http://</option>
-					<option>https://</option>
-					<option>mailto:</option>
-					<option>ftp://</option>
-					<option>javascript:</option>
-				</select>
-				<input type="text" dojoType="dijit.form.TextBox" style="width:200px;" name="url" id="url" value="<%= UtilMethods.isSet(linkForm.getUrl()) ? linkForm.getUrl() : "" %>" />
-			</dd>
-		</dl>
-		<!-- /If External Link -->
-
-		<!-- If Internal Link -->
-		<dl id="internalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.INTERNAL.toString()) { %>none;<% } %>">
-			<dt>&nbsp;</dt>
-			<dd>
-				<input type="text" name="internalLinkIdentifier" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="list"
-					value="<%= linkForm.getInternalLinkIdentifier() %>" showThumbnail="false" />
-			</dd>
-		</dl>
-		<!-- /If Internal Link -->
-
-		<!-- If Code Link -->
-		<dl id="codeLink" style="display:<% if(contentLink.getLinkType() != Link.LinkType.CODE.toString()) { %>none;<% } %>">
-			<SCRIPT language="JavaScript" src="/html/js/cms_ui_utils.js"></SCRIPT>
-			<dt>
-				<!-- Resize TextArea -->
-					<table align="right">
-						<tr>
-							<td><a href="javascript:makeNarrower('linkCode');"><IMG border="0" src="/html/images/icons/arrow-180-medium.png" width="16" height="16" alt="make narrower"></a></td>
-							<td>
-								<a href="javascript:makeShorter('linkCode');"><IMG border="0" src="/html/images/icons/arrow-090-medium.png" width="16" height="16" alt="make shorter"></a><br />
-								<a href="javascript:makeTaller('linkCode');"><IMG border="0" src="/html/images/icons/arrow-270-medium.png" width="16" height="16" alt="make taller"></a>
-							</td>
-							<td><a href="javascript:makeWider('linkCode');"><IMG border="0" src="/html/images/icons/arrow-000-medium.png" width="16" height="16" alt="make wider"></a></td>
-						</tr>
-					</table>
-				<!-- /Resize TextArea -->
-			</dt>
-			<dd>
-				<%--html:textarea onkeydown="return catchTab(this,event)" style="width:450px; height:150px; font-size: 12px" property="linkCode" styleId="linkCode"></html:textarea--%>
-				<textarea dojoType="dijit.form.Textarea" style="width:250px; min-height:150px; font-size:12px" name="linkCode" id="linkCode"><%= UtilMethods.isSet(linkForm.getLinkCode()) ? linkForm.getLinkCode() : "" %></textarea>
-				<script>
-					dojo.connect(dijit.byId('linkCode'), 'onkeydown', function(e) { return catchTab(document.getElementById('linkCode'), e) });
-				</script>
-			</dd>
-		</dl>
-		<!-- /If Code Link -->
-
-		<!-- Link Target -->
-		<dl id="target" style="display:<% if(contentLink.getLinkType() != Link.LinkType.CODE.toString()) { %>none;<% } %>">
-			<dt><%= LanguageUtil.get(pageContext, "Target") %>:</dt>
-			<dd>
-				<select dojoType="dijit.form.FilteringSelect" autocomplete="false" name="target" id="target" value="<%= UtilMethods.isSet(linkForm.getTarget()) ? linkForm.getTarget() : "_self" %>">
-					<option value="_self"><%= LanguageUtil.get(pageContext, "Same-Window") %></option>
-					<option value="_blank"><%= LanguageUtil.get(pageContext, "New-Window") %></option>
-					<option value="_top"><%= LanguageUtil.get(pageContext, "Parent-Window") %></option>
-				</select>
-			</dd>
-		</dl>
-		<!-- /Link Target -->
-
-		<dl>
-			<dt><%= LanguageUtil.get(pageContext, "sort-order") %>:</dt>
-			<dd><input type="text" dojoType="dijit.form.TextBox" name="sortOrder" style="width:50px;" id="sortOrder" size="3" value="<%= linkForm.getSortOrder() %>" /></dd>
-
-			<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
-			<dd>
-				<!--<html:checkbox styleClass="form-text" property="showOnMenu" />-->
-				<input type="checkbox" dojoType="dijit.form.CheckBox" name="showOnMenu" id="showOnMenu" <%= linkForm.isShowOnMenu() ? "checked" : "" %> />
-			</dd>
-		</dl>
-
-	</div>
-<!-- END Link Properties -->
-
-<!-- Permissions Tab -->
-<%
-	boolean canEditAsset = perAPI.doesUserHavePermission(contentLink, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
-	if (canEditAsset) {
-%>
-	<div id="filePermissionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()">
-		<%
-			request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink);
-			request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, folder);
-		%>
-		<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
-	</div>
-<%
-	}
-%>
-<!-- /Permissions Tab  -->
-
-<!-- START Versions Tab -->
-	<%if(contentLink != null && InodeUtils.isSet(contentLink.getInode())){ %>
-		<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink); %>
-		<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
-			<%@ include	file="/html/portlet/ext/common/edit_versions_inc.jsp"%>
+	<!-- START TABS -->
+	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+	
+	<!-- START Link Properties -->
+		<div id="fileBasicTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()">
+	
+			<dl>
+	
+			<input name="referer" type="hidden" value="<%=referer%>">
+	
+			<input name="<%= Constants.CMD %>" type="hidden" value="add">
+			<input type="hidden" name="userId" value="<%= user.getUserId() %>">
+	
+			<%if(identifier!=null){%>
+				<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+				<dd><%= identifier.getId() %></dd>
+			<%}%>
+	
+				<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
+				<dd>
+					<input type="text" dojoType="dijit.form.TextBox" style="width:250px;" name="title" id="titleField" value="<%= UtilMethods.isSet(linkForm.getTitle()) ? linkForm.getTitle() : "" %>" />
+					<html:hidden  property="friendlyName" styleId="friendlyNameField"/>
+				</dd>
+	
+				<dt><%= LanguageUtil.get(pageContext, "Folder") %>:</dt>
+				<dd>
+					<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
+						<div id="folder" name="parent" onlySelectFolders="true" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" <%= UtilMethods.isSet(hostId)?"hostId=\"" + hostId + "\"":"" %>></div>
+					<% } else { %>
+						<input type="text" readonly="readonly" styleClass="form-text" value="<%= APILocator.getIdentifierAPI().find(folder).getPath() %>" />
+						<html:hidden styleClass="form-text" property="parent" styleId="parent" />
+					<% } %>
+				</dd>
+	
+				<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
+				<dd>
+					<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.INTERNAL.toString())?"checked":"" %> id="internalLinkType" name="linkType" value="<%= LinkType.INTERNAL.toString() %>" onclick="hideShowOptions()">
+					<label for="internalLinkType"><%= LanguageUtil.get(pageContext, "Internal-Link") %></label>
+	
+					<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.EXTERNAL.toString())?"checked":"" %> id="externalLinkType" name="linkType" value="<%= LinkType.EXTERNAL.toString() %>" onclick="hideShowOptions()">
+					<label for="externalLinkType"><%= LanguageUtil.get(pageContext, "External-Link") %></label>
+	
+					<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.CODE.toString())?"checked":"" %> id="codeLinkType" name="linkType" value="<%= LinkType.CODE.toString() %>" onclick="hideShowOptions()">
+					<label for="codeLinkType"><%= LanguageUtil.get(pageContext, "Code-Link") %></label>
+				</dd>
+			</dl>
+	
+			<!-- If External Link -->
+			<dl id="externalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.EXTERNAL.toString()) { %>none;<% } %>">
+				<dt>&nbsp;</dt>
+				<dd>
+					<select dojoType="dijit.form.ComboBox" autocomplete="false" name="protocal" id="protocal" style="width:94px;"value="<%= UtilMethods.isSet(linkForm.getProtocal()) ? linkForm.getProtocal() : "" %>" >
+						<option>http://</option>
+						<option>https://</option>
+						<option>mailto:</option>
+						<option>ftp://</option>
+						<option>javascript:</option>
+					</select>
+					<input type="text" dojoType="dijit.form.TextBox" style="width:200px;" name="url" id="url" value="<%= UtilMethods.isSet(linkForm.getUrl()) ? linkForm.getUrl() : "" %>" />
+				</dd>
+			</dl>
+			<!-- /If External Link -->
+	
+			<!-- If Internal Link -->
+			<dl id="internalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.INTERNAL.toString()) { %>none;<% } %>">
+				<dt>&nbsp;</dt>
+				<dd>
+					<input type="text" name="internalLinkIdentifier" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="list"
+						value="<%= linkForm.getInternalLinkIdentifier() %>" showThumbnail="false" />
+				</dd>
+			</dl>
+			<!-- /If Internal Link -->
+	
+			<!-- If Code Link -->
+			<dl id="codeLink" style="display:<% if(contentLink.getLinkType() != Link.LinkType.CODE.toString()) { %>none;<% } %>">
+				<SCRIPT language="JavaScript" src="/html/js/cms_ui_utils.js"></SCRIPT>
+				<dt>
+					<!-- Resize TextArea -->
+						<table align="right">
+							<tr>
+								<td><a href="javascript:makeNarrower('linkCode');"><IMG border="0" src="/html/images/icons/arrow-180-medium.png" width="16" height="16" alt="make narrower"></a></td>
+								<td>
+									<a href="javascript:makeShorter('linkCode');"><IMG border="0" src="/html/images/icons/arrow-090-medium.png" width="16" height="16" alt="make shorter"></a><br />
+									<a href="javascript:makeTaller('linkCode');"><IMG border="0" src="/html/images/icons/arrow-270-medium.png" width="16" height="16" alt="make taller"></a>
+								</td>
+								<td><a href="javascript:makeWider('linkCode');"><IMG border="0" src="/html/images/icons/arrow-000-medium.png" width="16" height="16" alt="make wider"></a></td>
+							</tr>
+						</table>
+					<!-- /Resize TextArea -->
+				</dt>
+				<dd>
+					<%--html:textarea onkeydown="return catchTab(this,event)" style="width:450px; height:150px; font-size: 12px" property="linkCode" styleId="linkCode"></html:textarea--%>
+					<textarea dojoType="dijit.form.Textarea" style="width:250px; min-height:150px; font-size:12px" name="linkCode" id="linkCode"><%= UtilMethods.isSet(linkForm.getLinkCode()) ? linkForm.getLinkCode() : "" %></textarea>
+					<script>
+						dojo.connect(dijit.byId('linkCode'), 'onkeydown', function(e) { return catchTab(document.getElementById('linkCode'), e) });
+					</script>
+				</dd>
+			</dl>
+			<!-- /If Code Link -->
+	
+			<!-- Link Target -->
+			<dl id="target" style="display:<% if(contentLink.getLinkType() != Link.LinkType.CODE.toString()) { %>none;<% } %>">
+				<dt><%= LanguageUtil.get(pageContext, "Target") %>:</dt>
+				<dd>
+					<select dojoType="dijit.form.FilteringSelect" autocomplete="false" name="target" id="target" value="<%= UtilMethods.isSet(linkForm.getTarget()) ? linkForm.getTarget() : "_self" %>">
+						<option value="_self"><%= LanguageUtil.get(pageContext, "Same-Window") %></option>
+						<option value="_blank"><%= LanguageUtil.get(pageContext, "New-Window") %></option>
+						<option value="_top"><%= LanguageUtil.get(pageContext, "Parent-Window") %></option>
+					</select>
+				</dd>
+			</dl>
+			<!-- /Link Target -->
+	
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "sort-order") %>:</dt>
+				<dd><input type="text" dojoType="dijit.form.TextBox" name="sortOrder" style="width:50px;" id="sortOrder" size="3" value="<%= linkForm.getSortOrder() %>" /></dd>
+	
+				<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
+				<dd>
+					<!--<html:checkbox styleClass="form-text" property="showOnMenu" />-->
+					<input type="checkbox" dojoType="dijit.form.CheckBox" name="showOnMenu" id="showOnMenu" <%= linkForm.isShowOnMenu() ? "checked" : "" %> />
+				</dd>
+			</dl>
+	
 		</div>
-	<% } %>
-<!-- END Versions Tab -->
-
-</div>
-<!-- END TABS -->
-
-<div class="clear"></div>
-
-<!-- Button Row --->
-<div class="buttonRow" id="editLinkButtonRow">
+	<!-- END Link Properties -->
+	
+	<!-- Permissions Tab -->
 	<%
-		if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
-         	canUserWriteToLink = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
-       	}
+		boolean canEditAsset = perAPI.doesUserHavePermission(contentLink, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+		if (canEditAsset) {
 	%>
-	<% if (!InodeUtils.isSet(contentLink.getInode()) || contentLink.isLive() || contentLink.isWorking()) { %>
-	<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
-
-	<% if( canUserWriteToLink ) { %>
-		<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-		</button>
-	<% } %>
-
-	<% if( canUserPublishLink ) { %>
-		<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-		</button>
-	<% } %>
-	<% } else { %>
+		<div id="filePermissionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()">
+			<%
+				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink);
+				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, folder);
+			%>
+			<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+		</div>
 	<%
-		String title = contentLink.getTitle();
-		if (title!=null) {
-		title = title.replaceAll("\'","\\\\\'");
 		}
 	%>
-		<button dojoType="dijit.form.Button" onClick="selectLink('<%=contentLink.getInode()%>','<%=contentLink.getWorkingURL()%>', '<%= title %>', '<%= contentLink.getTarget() %>')" iconClass="linkIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select-link")) %>
-		</button>
-	<% } %>
-	<% } else { %>
-		<button dojoType="dijit.form.Button" onClick="selectVersion(<%=contentLink.getInode()%>, '<%=referer%>')" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-		</button>
-	<% } %>
+	<!-- /Permissions Tab  -->
+	
+	<!-- START Versions Tab -->
+		<%if(contentLink != null && InodeUtils.isSet(contentLink.getInode())){ %>
+			<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentLink); %>
+			<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="showEditButtonsRow()">
+				<%@ include	file="/html/portlet/ext/common/edit_versions_inc.jsp"%>
+			</div>
+		<% } %>
+	<!-- END Versions Tab -->
+	
+	</div>
+	<!-- END TABS -->
 
-	<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
-		<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
+
+
+	<!-- Button Row --->
+	<div class="buttonRow" id="editLinkButtonRow">
+		<%
+			if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
+	         	canUserWriteToLink = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
+	       	}
+		%>
+		<% if (!InodeUtils.isSet(contentLink.getInode()) || contentLink.isLive() || contentLink.isWorking()) { %>
+		<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
+	
+		<% if( canUserWriteToLink ) { %>
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+			</button>
+		<% } %>
+	
+		<% if( canUserPublishLink ) { %>
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+			</button>
+		<% } %>
+		<% } else { %>
+		<%
+			String title = contentLink.getTitle();
+			if (title!=null) {
+			title = title.replaceAll("\'","\\\\\'");
+			}
+		%>
+			<button dojoType="dijit.form.Button" onClick="selectLink('<%=contentLink.getInode()%>','<%=contentLink.getWorkingURL()%>', '<%= title %>', '<%= contentLink.getTarget() %>')" iconClass="linkIcon" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select-link")) %>
+			</button>
+		<% } %>
+		<% } else { %>
+			<button dojoType="dijit.form.Button" onClick="selectVersion(<%=contentLink.getInode()%>, '<%=referer%>')" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
+			</button>
+		<% } %>
+	
+		<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
+			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
+			</button>
+		<% } %>
+	
+		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  iconClass="cancelIcon" type="button">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 		</button>
-	<% } %>
-
-	<button dojoType="dijit.form.Button" onClick="cancelEdit()"  iconClass="cancelIcon" type="button">
-		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-	</button>
-
+	
+	</div>
+	<!-- /Button Row -->
 </div>
-<!-- /Button Row -->
 
 </html:form>
 </liferay:box>
