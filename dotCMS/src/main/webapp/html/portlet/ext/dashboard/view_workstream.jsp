@@ -108,7 +108,7 @@ try {
 
  	var noRecordsTemplate = '<tr class="alternate_1" id="rowNoResults"><td colspan="5"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "No-Records-Found") %></div></td></tr>';
  		 
- 	var workStreamsTemplate = '<tr class="${className}"><td><a href="javascript:editAsset(\'${assetType}\',\'${assetInode}\',\'${structureInode}\');">${name}</a></td>\
+ 	var workStreamsTemplate = '<tr class="${className}"><td>${name}</td>\
  		<td>${host}</td>\
  		<td>${user}</td>\
  		<td>${action}</td>\
