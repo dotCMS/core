@@ -88,7 +88,7 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
     @Override
     public JsonElement serialize(Payload payload, Type type, JsonSerializationContext jsonSerializationContext) {
         JsonObject jsonElement = new JsonObject();
-        jsonElement.addProperty(TYPE, payload.getData().getClass().getName());
+        jsonElement.addProperty(TYPE, payload.getRawData().getClass().getName());
         jsonElement.addProperty(VISIBILITY, payload.getVisibility().name());
         Object visibilityValue = payload.getVisibilityValue();
 
@@ -97,7 +97,7 @@ public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<
             jsonElement.addProperty(VISIBILITY_TYPE, visibilityValue.getClass().getName());
         }
 
-        jsonElement.add(DATA, jsonSerializationContext.serialize(payload.getData()));
+        jsonElement.add(DATA, jsonSerializationContext.serialize(payload.getRawData()));
         return jsonElement;
     }
 }
