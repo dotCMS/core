@@ -312,6 +312,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'
 	compile 'org.immutables:generator:2.3.3'
 	compile 'org.immutables:value:2.3.3'
+	compile 'org.immutables:gson:2.3.3'
 
 
     individualTestCompile sourceSets.test.output
