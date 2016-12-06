@@ -6,7 +6,7 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParser;
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationContext;
-import com.dotcms.repackage.com.google.gson.*;
+import com.google.gson.*;
 import com.liferay.portal.model.User;
 
 import java.io.IOException;

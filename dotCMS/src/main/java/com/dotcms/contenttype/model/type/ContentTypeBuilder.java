@@ -25,7 +25,7 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder defaultType(boolean variable);
 
-	ContentTypeBuilder storageType(StorageType variable);
+	//ContentTypeBuilder storageType(StorageType variable);
 
 	ContentTypeBuilder detailPage(String variable);
 

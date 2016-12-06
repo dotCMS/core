@@ -40,7 +40,6 @@ THIS FILE AND ITS INCLUDES
 	<style type="text/css">
         @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
         @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
 	</style>
 
 	<!--[if IE]>

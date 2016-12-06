@@ -2,7 +2,6 @@ package com.dotcms.notifications;
 
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationAction;
-import com.dotcms.notifications.bean.NotificationData;
 import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.view.NotificationActionView;
 import com.dotcms.notifications.view.NotificationDataView;
@@ -55,7 +54,7 @@ public class NotificationConverter implements Converter<UserNotificationPair, No
 
         if (null != notification.getNotificationData()) {
 
-            String title = StringUtils.EMPTY;
+            String title;
 
             try {
 
@@ -67,7 +66,7 @@ public class NotificationConverter implements Converter<UserNotificationPair, No
                         notification.getNotificationData().getTitle().getKey();
             }
 
-            String message = StringUtils.EMPTY;
+            String message;
 
             try {
 
@@ -84,7 +83,7 @@ public class NotificationConverter implements Converter<UserNotificationPair, No
                 actions =  list();
                 for (NotificationAction action : notification.getNotificationData().getActions()) {
 
-                    String text = StringUtils.EMPTY;
+                    String text;
 
                     try {
 
@@ -104,7 +103,7 @@ public class NotificationConverter implements Converter<UserNotificationPair, No
             data = new NotificationDataView(title, message, actions);
         }
 
-        final NotificationView notificationResult = new NotificationView(notification.getId(),
+        final NotificationView notificationResult = new NotificationView(notification.getGroupId(),
                 notification.getType(), notification.getLevel(), notification.getUserId(),
                 notification.getTimeSent(), notification.getWasRead(),
                 data, prettyDateSince(notification.getTimeSent(), locale));

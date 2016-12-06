@@ -78,24 +78,20 @@
 	
 	//Layout Initialization
 	var browserLoaded = false;
-	
+
 	function  resizeBrowser(){
 		if(browserLoaded) return;
 		browserLoaded=true;
-	    var viewport = dijit.getViewport();
-	    var viewport_height = viewport.h;
-	    var e =  dojo.byId("borderContainer");
-	    dojo.style(e, "height", viewport_height -150 + "px");
 	    var bc = dijit.byId('borderContainer');
 	    if(bc != undefined){
 	    	bc.resize();
 	    }
 	}
-		
+
 		dojo.connect(window, "onresize", this, "resizeBrowser");
 
 
-		
+
 
 	    dojo.declare("dotcms.dijit.contentlet.ContentAdmin", null, {
 	    	contentletIdentifier : "",

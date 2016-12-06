@@ -11,6 +11,7 @@ package com.dotcms.api.system.event;
  * <li>A file change: <b>SAVE_FILE_ASSET, UPDATE_FILE_ASSET, ARCHIVE_FILE_ASSET, UN_ARCHIVE_FILE_ASSET, DELETE_FILE_ASSET, PUBLISH_FILE_ASSET, UN_PUBLISH_FILE_ASSET</b>.</li>
  * <li>A file change: <b>SAVE_LINK, UPDATE_LINK, ARCHIVE_LINK, UN_ARCHIVE_LINK, MOVE_LINK, COPY_LINK, DELETE_LINK, PUBLISH_LINK, UN_PUBLISH_LINK</b>.</li>
  * <li>A file change: <b>MOVE_FOLDER, COPY_FOLDER, MOVE_FILE_ASSET, COPY_FILE_ASSET, MOVE_PAGE_ASSET, COPY_PAGE_ASSET</b>.</li>
+ * <li>When a session is created or destroyed: <b>SESSION_CREATED, SESSION_DESTROYED</b>.</li>
  * </ul>
  * <p>
  * The idea behind this class is to map a type of event with different possible
@@ -73,6 +74,9 @@ public enum SystemEventType {
 	COPY_FILE_ASSET,
 	MOVE_PAGE_ASSET,
 	COPY_PAGE_ASSET,
-	
+
+	SESSION_CREATED,
+	SESSION_DESTROYED,
+
 	UPDATE_PORTLET_LAYOUTS,
 }

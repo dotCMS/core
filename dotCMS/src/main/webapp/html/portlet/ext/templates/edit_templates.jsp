@@ -272,6 +272,7 @@
 	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
 	<input name="admin_l_list" type="hidden" value="">
 
+<div class="portlet-main">
 
 <!-- START TabContainer-->
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
@@ -416,7 +417,9 @@
 </div>
 <!-- /TabContainer-->
 
-<div class="clear"></div>
+
+
+</div>
 
 <!-- Button Row --->
 <div class="buttonRow" id="editTemplateButtonRow">

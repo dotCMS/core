@@ -172,26 +172,32 @@
 <%
     if (!isReadOnly) {
  %>
-        <div class="toggleEditorField">
- 		<%if(toggleOn){ %>
-    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
-    		<%}else{ %>
-    		<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
-        <%} %>
-        	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-        </div>
-        <div class="langVariablesField">
-            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>: <input
-            type="text" id="glossary_term_<%= field.getVelocityVarName() %>"
-            name="glossary_term_<%= field.getVelocityVarName() %>"
-            class="form-text"
-            onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
-            <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+        <div class="textarea-toolbar">
+            <div class="toggleEditorField checkbox">
+                <%if(toggleOn){ %>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+                <%}else{ %>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+                <%} %>
+                <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+            </div>
+            <div class="langVariablesField inline-form">
+                <label for="glossary_term_<%= field.getVelocityVarName() %>">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>:
+                </label>
+                <input type="text"
+                    dojoType="dijit.form.TextBox"
+                    id="glossary_term_<%= field.getVelocityVarName() %>"
+                    name="glossary_term_<%= field.getVelocityVarName() %>"
+                    style="margin-right: 0"
+                    onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
+                <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
                 <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
             </div>
             <script type="text/javascript">
                 dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
             </script>
+            </div>
         </div>
 <%
         }
@@ -240,7 +246,7 @@
         	}
         }
 %>
-    <div style="margin-bottom:20px;width:845px;overflow:visible;border:0px red solid">
+    <div class="wysiwyg-wrapper">
     	<div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce"></div>
         <textarea  <%= isReadOnly?"readonly=\"readonly\"":"" %>
             class="editWYSIWYGField" rows="7"
@@ -248,33 +254,31 @@
             id="<%=field.getVelocityVarName()%>" style="width:100%; height:450px;font-family:monospace;clear:both;"><%=UtilMethods.htmlifyString(textValue)%>
 		</textarea>
 
-   		<table class="WYSIWYGTools">
-            <tr>
-				<td class="WYSIWYGControls">
-	                <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>')">
-	                        <option value="WYSIWYG">WYSIWYG</option>
-	                        <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
-							<option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
-	                </select>
-	            </td>
-	            <td style="text-align:right;padding:0 0 0 30px;">
-	              	<div style="position:relative;">
-						<%= LanguageUtil.get(pageContext, "Language-Variables") %>:
-	                	<input type="text" dojoType="dijit.form.TextBox" id="glossary_term_<%= field.getVelocityVarName() %>"
-							name="glossary_term_<%= field.getVelocityVarName() %>"
-	                    	class="form-text"
-							onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
+   		<div class="wysiwyg-tools">
+            <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>')">
+                <option value="WYSIWYG">WYSIWYG</option>
+                <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
+                <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
+            </select>
 
-							<div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
-	                    		<div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
-		                	</div>
-			                <script type="text/javascript">
-			                    dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
-			                </script>
-					</div>
-	            </td>
-			</tr>
-        </table>
+            <div class="langVariablesField inline-form">
+                <label for="glossary_term_<%= field.getVelocityVarName() %>">
+                    <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
+                </label>
+                <input type="text" dojoType="dijit.form.TextBox"
+                    id="glossary_term_<%= field.getVelocityVarName() %>"
+                    name="glossary_term_<%= field.getVelocityVarName() %>"
+                    style="margin: 0"
+                    onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
+
+                <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
+                    <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
+                </div>
+                <script type="text/javascript">
+                    dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
+                </script>
+            </div>
+        </div>
 
         <!-- AChecker errors -->
         <div id="acheck<%=field.getVelocityVarName()%>"></div>
@@ -357,7 +361,7 @@
                 name="<%=field.getFieldContentlet()%>Time"
                 value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
-                dojoType="dijit.form.TimeTextBox" style="width: 100px;"
+                dojoType="dijit.form.TimeTextBox" style="width: 120px;"
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
         <% }
 
@@ -447,49 +451,47 @@
                 <%int imageEditors=0; %>
                 <!--  If you are not enterprise -->
                 <%if(LicenseUtil.getLevel() < 199 ){ %>
-                <div id="thumbnailParent<%=field.getVelocityVarName()%>">
-                    <div style="position:relative;width:<%=showDim+40 %>px;">
-                        <%
-                            String src = null;
-                            if(!fileName.toLowerCase().endsWith("svg")){
-                                src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
-                            }else{
-                                src = String.format("/contentAsset/image/%s/%s", contentlet.getIdentifier(), field.getVelocityVarName());
-                            }
-                        %>
-                        <img src="<%=src%>"
-                             class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
-                             onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
-                             onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
-                             onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
-                    </div>
+                <div id="thumbnailParent<%=field.getVelocityVarName()%>" class="field-binary">
+                    <%
+                        String src = null;
+                        if(!fileName.toLowerCase().endsWith("svg")){
+                            src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
+                        }else{
+                            src = String.format("/contentAsset/image/%s/%s", contentlet.getIdentifier(), field.getVelocityVarName());
+                        }
+                    %>
+                    <img src="<%=src%>"
+                         class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
+                         onmouseover="dojo.attr(this, 'className', 'thumbnailDiv thumbnailDivHover');"
+                         onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
+                         onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
                </div>
 
-                    <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
-                        <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
-                            <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=true" />
-                        </div>
-                        <div class="callOutBox">
-                            <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
-                        </div>
+                <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
+                    <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
+                        <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=true" />
                     </div>
+                    <div class="callOutBox">
+                        <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
+                    </div>
+                </div>
 
 
 
 
                 <%}else{ %>
 	                <div id="thumbnailParent<%=field.getVelocityVarName()%>">
-	                        <div dojoType="dotcms.dijit.image.ImageEditor"
-	                            editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
-	                            inode="<%= binInode%>"
-	                            identifier="<%=contentlet.getIdentifier()%>"
-	                            fieldName="<%=field.getVelocityVarName()%>"
-	                            binaryFieldId="<%=field.getFieldContentlet()%>"
-	                            fieldContentletId="<%=field.getFieldContentlet()%>"
-	                            saveAsFileName="<%=fileName %>"
-	                            class="thumbnailDiv<%=field.getVelocityVarName()%>"
-	                        >
-	                    </div>
+                        <div dojoType="dotcms.dijit.image.ImageEditor"
+                            editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
+                            inode="<%= binInode%>"
+                            identifier="<%=contentlet.getIdentifier()%>"
+                            fieldName="<%=field.getVelocityVarName()%>"
+                            binaryFieldId="<%=field.getFieldContentlet()%>"
+                            fieldContentletId="<%=field.getFieldContentlet()%>"
+                            saveAsFileName="<%=fileName %>"
+                            class="thumbnailDiv<%=field.getVelocityVarName()%>"
+                        >
+                    </div>
 					</div>
                 <%} %>
 
@@ -650,8 +652,9 @@
                 checked = "checked";
             }
 %>
-    <div style="height:20px;vertical-align:middle">
-        <input type="radio" dojoType="dijit.form.RadioButton" name="<%=radio%>" id="<%=field.getVelocityVarName() + j %>" value="<%=pairValue%>"<%=field.isReadOnly()?" disabled=\"disabled\" ":"" %><%=checked%>>&nbsp;<label for="<%=field.getVelocityVarName() + j %>"><%=name%></label>
+    <div class="radio">
+        <input type="radio" dojoType="dijit.form.RadioButton" name="<%=radio%>" id="<%=field.getVelocityVarName() + j %>" value="<%=pairValue%>"<%=field.isReadOnly()?" disabled=\"disabled\" ":"" %><%=checked%>>
+        <label for="<%=field.getVelocityVarName() + j %>"><%=name%></label>
     </div>
 <%
         }
@@ -772,10 +775,11 @@
                 }
             }
  %>
- <div style="height:20px;vertical-align:middle">
+ <div class="checkbox">
     <input type="checkbox" dojoType="dijit.form.CheckBox" name="<%=fieldName%>Checkbox" id="<%=fieldName + j%>Checkbox"
         value="<%=pairValue%>" <%=checked%> <%=field.isReadOnly()?"disabled":""%>
-        onchange="update<%=field.getVelocityVarName()%>Checkbox()">&nbsp;<label for="<%=fieldName + j%>Checkbox"><%=name%></label>
+        onchange="update<%=field.getVelocityVarName()%>Checkbox()">&nbsp
+    <label for="<%=fieldName + j%>Checkbox"><%=name%></label>
  </div>
 <%
         }
@@ -835,7 +839,7 @@
 			%>
 							<jsp:include page="/html/portlet/ext/categories/view_categories_dialog.jsp" />
 							<a  id="link<%=counter%>"  href="javascript: showCatDialog<%=counter%>();"><%= LanguageUtil.get(pageContext, "select-categories") %></a>
-							<div id="previewCats<%=counter%>" class="catPreview" style="margin-top: 10px;  margin-left: 2px; border: 0;  max-width: 600px; border: 0.5px solid #B3B3B3; overflow:hidden; height:1%">
+							<div id="previewCats<%=counter%>" class="catPreview">
 							</div>
 							<script type="text/javascript">
 								function init<%=counter%>() {
@@ -944,13 +948,25 @@
 		   keyValueMap =  com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(JSONValue);
 	  }
  %>
- <div style="display:<%=field.isReadOnly()?"none":"block"%>">
-	  <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="" />
-	  <input type="text" name="<%=field.getFieldContentlet()%>_key" id="<%=field.getVelocityVarName()%>_key" dojoType='dijit.form.TextBox' style='width:200px' value="" <%=field.isReadOnly()?"disabled":""%> />
-	  <%=LanguageUtil.get(pageContext, "Value")%>: <input type="text" name="<%=field.getFieldContentlet()%>_value" id="<%=field.getVelocityVarName()%>_value" dojoType='dijit.form.TextBox' style='width:300px' value="" <%=field.isReadOnly()?"disabled":""%> />
-	  <button dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
+ <div class="key-value-form" style="display:<%=field.isReadOnly()?"none":"flex"%>">
+    <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="" />
+    <input
+        type="text"
+        placeholder="<%=LanguageUtil.get(pageContext, "Key")%>"
+        name="<%=field.getFieldContentlet()%>_key"
+        id="<%=field.getVelocityVarName()%>_key"
+        dojoType='dijit.form.TextBox'
+        value="" <%=field.isReadOnly()?"disabled":""%> />
+    <input
+        type="text"
+        placeholder="<%=LanguageUtil.get(pageContext, "Value")%>"
+        name="<%=field.getFieldContentlet()%>_value"
+        id="<%=field.getVelocityVarName()%>_value"
+        dojoType='dijit.form.TextBox'
+        value="" <%=field.isReadOnly()?"disabled":""%> />
+    <button type="submit" dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
   </div>
-  <div id="mainHolder" style="margin:0 20px 0 0;">
+  <div id="mainHolder" class="key-value-items">
 
   <%
   String licenseMessage = LanguageUtil.get(pageContext, "Go-Enterprise-To-Access") + "!" ;
@@ -982,7 +998,7 @@
 	        <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
 			<input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= keyValueMap.get(key) %>" />
 	        <tr id="<%=field.getFieldContentlet()+"_"+key%>" <%=str_style %>>
-			    <td style="width:20px">
+			    <td>
 			    <%if(!field.isReadOnly()){ %>
 			       <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
 			     <%} %>

@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
@@ -459,9 +460,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
     SearchCondition searchCondition = new SearchCondition(search);
+    //check if order by is set, if not set it to mod_date
+    if(SQLUtil.sanitizeSortBy(orderBy).isEmpty()){
+    	orderBy = "mod_date";
+    }
     DotConnect dc = new DotConnect();
-    dc.setSQL(String.format(this.contentTypeSql.SELECT_QUERY_CONDITION, searchCondition.condition,
-        SQLUtil.sanitizeSortBy(orderBy)));
+    dc.setSQL(String.format(this.contentTypeSql.SELECT_QUERY_CONDITION, searchCondition.condition,orderBy));
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
     dc.addParam(searchCondition.search);
@@ -469,6 +473,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(searchCondition.search);
     dc.addParam(bottom);
     dc.addParam(top);
+    
+    Logger.debug(this, "QUERY " + dc.getSQL());
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
 
