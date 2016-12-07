@@ -312,7 +312,7 @@ public class HostAPIImpl implements HostAPI {
             if(vinfo!=null && UtilMethods.isSet(vinfo.getIdentifier())) {
                 String hostInode=vinfo.getWorkingInode();
                 Contentlet cont= APILocator.getContentletAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-                ContentType type =APILocator.getContentTypeAPI2(user, respectFrontendRoles).find("Host");
+                ContentType type =APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), respectFrontendRoles).find("Host");
                 if(cont.getStructureInode().equals(type.inode())) {
                     host=new Host(cont);
                     hostCache.add(host);

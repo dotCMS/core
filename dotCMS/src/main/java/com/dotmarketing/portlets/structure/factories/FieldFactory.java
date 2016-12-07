@@ -99,7 +99,7 @@ public class FieldFactory {
 
 
 	//### CREATE AND UPDATE ###
-	public static void saveField(Field oldField) throws DotHibernateException
+	public static Field saveField(Field oldField) throws DotHibernateException
 	{
 	    
         if (oldField.getFieldType().equals("host or folder") || oldField.getFieldType().equals("line_divider") || oldField.getFieldType().equals("tab_divider")
@@ -116,13 +116,12 @@ public class FieldFactory {
 	    
 	    com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 	    try {
-            APILocator.getFieldAPI2().save(field, APILocator.systemUser());
+            return new LegacyFieldTransformer(
+            	APILocator.getFieldAPI2().save(field, APILocator.systemUser())
+            ).asOldField();
         } catch (DotDataException | DotSecurityException e) {
             throw new DotHibernateException(e.getMessage(),e);
         }
-	    
-	    
-	    
 	}
 
 	public static void saveField(Field oldField, String existingId) throws DotHibernateException
@@ -172,16 +171,16 @@ public class FieldFactory {
         return null;
 	}
 
-	public static void saveFieldVariable(FieldVariable fieldVar){
+	public static FieldVariable saveFieldVariable(FieldVariable fieldVar){
 
 	    com.dotcms.contenttype.model.field.FieldVariable var= new FieldVariableTransformer(fieldVar).newfield();
 	    
         try {
-            fapi().save(var, APILocator.systemUser());
+            return new FieldVariableTransformer(fapi().save(var, APILocator.systemUser())).oldField();
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(FieldFactory.class, e.getMessage());
         }
-
+        return new FieldVariable();
 	}
 
 	public static FieldVariable getFieldVariable(String id){

@@ -757,7 +757,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
 		}
-		List list = StructureFactory.getStructures("folder='"+parent.getInode()+"'", "", -1, 0, "");//limit can't be 0, orderBy and direction can't be null
+		List list = StructureFactory.getStructures("folder='"+parent.getInode()+"'", "mod_date", Integer.MAX_VALUE, 0, "asc");
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 

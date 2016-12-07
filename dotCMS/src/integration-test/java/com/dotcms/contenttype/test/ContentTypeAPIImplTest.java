@@ -246,9 +246,22 @@ public class ContentTypeAPIImplTest {
 
   @Test
   public void testDefaultType() throws DotDataException, DotSecurityException {
-    ContentType type = api.findDefault();
-    assertThat("we have a default content type", type != null);
 
+	long time = System.currentTimeMillis();
+	ContentType initialDefaultType = api.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+		.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+		.name("ContentTypeDefault1" + time).owner("owner").variable("velocityVarNameDefault1" + time).build());
+	api.setAsDefault(initialDefaultType);
+    assertThat("we have a default content type", initialDefaultType != null && api.findDefault().defaultType());
+
+	ContentType newDefaultType = api.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+			.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+			.name("ContentTypeDefault2" + time).owner("owner").variable("velocityVarNameDefault2" + time).build());
+	api.setAsDefault(newDefaultType);
+	newDefaultType = api.findDefault();
+    assertThat("there is a new default content type", newDefaultType.inode().equals(api.findDefault().inode()));
+
+    assertThat("existing content type is not default anymore", initialDefaultType != null && !api.find(initialDefaultType.inode()).defaultType());
   }
 
 
@@ -479,7 +492,7 @@ public class ContentTypeAPIImplTest {
 
   }
 
-
+/*
   @Test
   public void validateFields() throws DotDataException {
     for (BaseContentType baseType : BaseContentType.values()) {
@@ -497,7 +510,7 @@ public class ContentTypeAPIImplTest {
       }
     }
   }
-
+*/
 
 
   private static List<Structure> getCrappyStructures() {

@@ -2380,7 +2380,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
                         .append(field.getFieldContentlet()).append("\" != ");
             }
-        } else {
+        //https://github.com/dotCMS/core/issues/10245
+        }else if(!field.getFieldContentlet().startsWith("system_field")){
             update.append(field.getFieldContentlet()).append(" = ");
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                     .append(" != ");

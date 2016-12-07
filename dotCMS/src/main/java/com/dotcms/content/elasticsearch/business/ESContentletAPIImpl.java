@@ -871,8 +871,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	            for(Contentlet contentlet : contentlets) {
 	            	tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
 	            }
+	            
+	            return;
 	        }
-	
+
 	        conFac.clearField(structure.getInode(), field);
         }
         catch (Exception e) {
@@ -3009,7 +3011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// do it to the new inode directory
 			    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 			    for (Field field : structFields) {
-			        if (field.getFieldContentlet().startsWith("binary")) {
+			        if(Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
 			            try {
 
 			                String velocityVarNm = field.getVelocityVarName();
@@ -3829,9 +3831,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     throw new DotContentletStateException("Unable to set string value as a Long");
                 }
             }
-            // http://jira.dotmarketing.net/browse/DOTCMS-1073
-            // setBinary
-            }else if(field.getFieldContentlet().startsWith("binary")){
+        // http://jira.dotmarketing.net/browse/DOTCMS-1073
+        // setBinary
+        }else if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
                 try{
                 	// only if the value is a file
                 	if(value.getClass()==java.io.File.class){
@@ -3840,6 +3842,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }catch (Exception e) {
                     throw new DotContentletStateException("Unable to set binary file Object",e);
                 }
+        //https://github.com/dotCMS/core/issues/10245
+        }else if(field.getFieldContentlet().startsWith("system_field")){
+        	if(value.getClass()==java.lang.String.class){
+	            try{
+	                contentlet.setStringProperty(field.getVelocityVarName(), (String)value);
+	            }catch (Exception e) {
+	                contentlet.setStringProperty(field.getVelocityVarName(),value.toString());
+	            }
+        	}
         }else{
             throw new DotContentletStateException("Unable to set value : Unknown field type");
         }
@@ -4433,7 +4444,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @return
      */
     public boolean isFieldTypeBinary(Field field) {
-        if(field.getFieldContentlet().startsWith("binary")){
+    	if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
             return true;
         }
         return false;

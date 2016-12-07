@@ -1090,7 +1090,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Structure structure = contentlet.getStructure();
 				List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());
 				for (Field field : list) {
-					if(field.getFieldContentlet().startsWith("binary")){
+					if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
 						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
 						java.io.File inputFile = APILocator.getContentletAPI().getBinaryFile(sib, field.getVelocityVarName(), user);
 						if(inputFile != null){
