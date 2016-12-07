@@ -1,8 +1,10 @@
 package com.dotcms.util.marshal;
 
 import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.com.google.gson.*;
 import com.dotcms.util.deserializer.ContentletDeserializer;
+import com.dotcms.util.deserializer.ExcludeOwnerVerifierAdapter;
 import com.dotcms.util.deserializer.PayloadAdapter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -18,6 +20,7 @@ public class CustomDotCmsTypeGsonConfigurator implements GsonConfigurator {
     public void configure(final GsonBuilder gsonBuilder) {
 
         gsonBuilder.registerTypeAdapter( Payload.class, new PayloadAdapter() );
+        gsonBuilder.registerTypeAdapter(ExcludeOwnerVerifierBean.class, new ExcludeOwnerVerifierAdapter());
         gsonBuilder.registerTypeAdapter(Contentlet.class, new ContentletDeserializer() );
         gsonBuilder.registerTypeAdapter(HTMLPageAsset.class, new ContentletDeserializer() );
         gsonBuilder.registerTypeAdapter(Host.class, new ContentletDeserializer() );

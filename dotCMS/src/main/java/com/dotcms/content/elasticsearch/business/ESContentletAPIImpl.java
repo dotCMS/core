@@ -453,7 +453,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                contentletSystemEventUtil.pushPublishEvent(contentlet);
+                // by now, the publish event is making a duplicate reload events on the site browser
+                // so we decided to comment it out by now, and
+                //contentletSystemEventUtil.pushPublishEvent(contentlet);
             } catch(DotDataException | DotStateException | DotSecurityException e) {
                 ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
                         + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")

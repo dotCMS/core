@@ -118,18 +118,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	 * This funtion works similar to EditContentletAction cmd = Constants.ADD
 	 */
 	public String saveContent(Map<String, Object> contentletFormData,
-							  boolean isAutoSave, boolean isCheckin,User user) throws DotContentletValidationException,Exception {
-
-		return this.saveContent(contentletFormData, isAutoSave, isCheckin, user, true);
-	}
-
-	/*
-	 * 	(non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI#saveContent(java.util.Map, boolean, boolean, com.liferay.portal.model.User)
-	 * This funtion works similar to EditContentletAction cmd = Constants.ADD
-	 */
-	public String saveContent(Map<String, Object> contentletFormData,
-			boolean isAutoSave, boolean isCheckin,User user, final boolean generateSaveEvent) throws DotContentletValidationException,Exception {
+			boolean isAutoSave, boolean isCheckin,User user) throws DotContentletValidationException,Exception {
 
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 
@@ -202,9 +191,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			HibernateUtil.commitTransaction();
 		}
 
-		if (generateSaveEvent) {
-			contentletSystemEventUtil.pushSaveEvent(cont, isNew);
-		}
+		// todo: make it async by thread pool
+		contentletSystemEventUtil.pushSaveEvent(cont, isNew);
 
 		contentletFormData.put("cache_control", "0");
 
