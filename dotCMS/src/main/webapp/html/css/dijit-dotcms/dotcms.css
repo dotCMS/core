@@ -5643,17 +5643,17 @@ Styles for commons fields along the backend
   margin: 48px 0 24px;
 }
 
-#text-toolbar, .textarea-toolbar, .wysiwyg-tools {
+#editor-toolbar, .editor-toolbar, .wysiwyg-tools {
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
 }
-#text-toolbar .checkbox, .textarea-toolbar .checkbox, .wysiwyg-tools .checkbox, #text-toolbar .radio, .textarea-toolbar .radio, .wysiwyg-tools .radio {
+#editor-toolbar .checkbox, .editor-toolbar .checkbox, .wysiwyg-tools .checkbox, #editor-toolbar .radio, .editor-toolbar .radio, .wysiwyg-tools .radio {
   margin: 0;
 }
 
-.textarea-toolbar {
-  width: 450px;
+.editor-toolbar {
+  width: 600px;
 }
 
 .langVariablesField {
