@@ -432,7 +432,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
 
-				this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.EXCLUDE_OWNER,
+				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.EXCLUDE_OWNER,
 						new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
                 return true;

@@ -602,7 +602,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			result = ffac.copyFile( file, host );
         }
 
-		systemEventsAPI.push(SystemEventType.COPY_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.COPY_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 		return result;
     }
@@ -619,7 +619,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 
 		boolean b = ffac.renameFile(file, newName);
 
-		this.systemEventsAPI.push(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return b;

@@ -279,7 +279,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		ffac.copy(folderToCopy, newParentFolder);
 
-		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -296,7 +296,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		ffac.copy(folderToCopy, newParentHost);
 
-		this.systemEventsAPI.push(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -592,7 +592,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		ffac.save(folder, existingId);
 
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
-		systemEventsAPI.push(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -832,7 +832,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		boolean move = ffac.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return move;
@@ -849,7 +849,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		boolean move = ffac.move(folderToMove, newParentHost);
 
-		this.systemEventsAPI.push(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return move;
