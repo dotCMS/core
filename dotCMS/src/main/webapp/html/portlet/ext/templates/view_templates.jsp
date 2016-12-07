@@ -217,21 +217,22 @@ function processDelete(inode, referer) {
 	<form id="fm" method="post" >	
 		<div class="portlet-toolbar">
 	    	<div class="portlet-toolbar__actions-primary">
-	    		<input type="hidden" name="resetQuery" value="">
-				<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
-				<input type="text" dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-			    
-			    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
-			       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search" )) %>
-			    </button>
-			
-				<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
-			       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
-			    </button>
-				&nbsp; &nbsp;
-				<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-				<input  dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true" />
-				<label for="showDeleted" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
+				<div class="inline-form">
+					<input type="hidden" name="resetQuery" value="">
+					<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
+					<input type="text" dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
+					<button dojoType="dijit.form.Button" type="submit" onClick="submitfm()">
+					   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search" )) %>
+					</button>
+					<button dojoType="dijit.form.Button" onClick="resetSearch()" class="dijitButtonFlat">
+					   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
+					</button>
+					<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+					<div class="checkbox">
+						<input  dojoType="dijit.form.CheckBox" type="checkbox" name="showDeleted" id="showDeleted" onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true" />
+						<label for="showDeleted"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
+					</div>
+				</div>
 	    	</div>
 	    	<div class="portlet-toolbar__info"></div>
 	    	<div class="portlet-toolbar__actions-secondary">

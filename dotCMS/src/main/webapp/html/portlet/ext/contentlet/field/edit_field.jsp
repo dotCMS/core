@@ -172,7 +172,7 @@
 <%
     if (!isReadOnly) {
  %>
-        <div class="textarea-toolbar">
+        <div class="editor-toolbar">
             <div class="toggleEditorField checkbox">
                 <%if(toggleOn){ %>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />

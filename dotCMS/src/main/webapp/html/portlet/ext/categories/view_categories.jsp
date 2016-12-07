@@ -803,18 +803,13 @@ td {font-size: 100%;}
 	<div class="portlet-toolbar">
     	<div class="portlet-toolbar__actions-primary">
     		Breadcrumbs go here!
-    		<div id="subNavCrumbTrail">
-    			<div id="ulNav"></div>
-    		</div>
     	</div>
-    	<div class="portlet-toolbar__info"></div>
     	<div class="portlet-toolbar__actions-secondary">
-
-			<!-- START Actions -->			
-			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+			<!-- START Actions -->
+			<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
 	            <span></span>
-	
-	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+
+	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions" id="oneandtwothree">
 	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showAddCategory">
 	                    <%= LanguageUtil.get(pageContext, "Add") %>
 	                </div>
@@ -840,7 +835,7 @@ td {font-size: 100%;}
 	            </div>
 	        </div>
 	    	<!-- END Actions -->
-	    	
+
 	    </div>
 	</div>
 
@@ -949,42 +944,33 @@ td {font-size: 100%;}
 </liferay:box>
 
 <!-- START Add Category pop up -->
-<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;height:380px;width:450px;" draggable="true"
-	title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
-	<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane">
-		<div style="padding:0 0 10px 0; border-bottom:1px solid #ccc;">
-			<form id="addCatPropertiesForm" dojoType="dijit.form.Form">
+<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
+	<div dojoType="dijit.layout.ContentPane">
+		<span id="savedMessage" style="color:red; font-size:11px;"></span>
+		<form id="addCatPropertiesForm" dojoType="dijit.form.Form">
+			<div class="form-inline">
 				<dl>
-					<dd>
-			       		<span id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
-						</span>
-					</dd>
-					<dt>
-			       		<span id="VariableIdTitle" >
-				    	<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
-						</span>
-					</dt>
-					<dd style="clear: none;">
-						<input id="addCatVelVarName" readonly="true" style="width:250px;border:0;"  />
-					</dd>
-					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-					<dd><input id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-					<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
-					<dd><input id="addCatKey" type="text" tabindex="2" dojoType="dijit.form.TextBox" /></dd>
-					<dt>
-						<%= LanguageUtil.get(pageContext, "keywords") %>:
-					</dt>
-					<dd>
-						<textarea id="addCatKeywords" tabindex="3" dojoType="dijit.form.Textarea"  style="width:250px; min-height:40px;"></textarea>
-					</dd>
+					<dt><span id="VariableIdTitle"><%= LanguageUtil.get(pageContext, "Variable-ID") %>:</span></dt>
+					<dd><input id="addCatVelVarName" readonly="true" style="width:250px;border:0;" /></dd>
 				</dl>
-			</form>
-		</div>
-		<div class="clear"></div>
-		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" tabindex="4" onclick="saveOrUpdateCategory(true)" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
-			<button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
-   		</div>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
+					<dd><input dojoType="dijit.form.ValidationTextBox" id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." /></dd>
+				</dl>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
+					<dd><input dojoType="dijit.form.TextBox" id="addCatKey" type="text" tabindex="2" /></dd>
+				</dl>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "keywords") %>:</dt>
+					<dd><textarea dojoType="dijit.form.Textarea" id="addCatKeywords" tabindex="3" style="height:100px"></textarea></dd>
+				</dl>
+			</div>
+			<div class="buttonRow">
+				<button dojoType="dijit.form.Button" tabindex="4" onclick="saveOrUpdateCategory(true)" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
+				<button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+			</div>
+		</form>
    	</div>
 </div>
 
