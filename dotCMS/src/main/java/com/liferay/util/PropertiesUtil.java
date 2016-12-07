@@ -22,8 +22,15 @@
 
 package com.liferay.util;
 
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.util.InputStreamUtils;
+import com.dotmarketing.util.Logger;
+
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -36,6 +43,8 @@ import java.util.Properties;
  *
  */
 public class PropertiesUtil {
+
+	private static final String XML_EXT = ".xml";
 
 	public static void copyProperties(Properties from, Properties to) {
 		Iterator itr = from.entrySet().iterator();
@@ -73,6 +82,20 @@ public class PropertiesUtil {
 		}
 	}
 
+	public static Map fromProperties(Properties p) {
+
+		final Map map = new HashMap();
+		final Iterator itr = p.entrySet().iterator();
+
+		while (itr.hasNext()) {
+			Map.Entry entry = (Map.Entry)itr.next();
+
+			map.put(entry.getKey(), entry.getValue());
+		}
+
+		return map;
+	}
+
 	public static void load(Properties p, String s) throws IOException {
 		s = UnicodeFormatter.toString(s);
 		s = StringUtil.replace(s, "\\u003d", "=");
@@ -81,4 +104,97 @@ public class PropertiesUtil {
 		p.load(new ByteArrayInputStream(s.getBytes()));
 	}
 
+	/**
+	 * Load the properties, it could be a xml or properties.
+	 * @param resourceName String.
+	 * @return Properties
+	 */
+	public static Properties load (final String resourceName) {
+
+		Properties properties = null;
+
+		if (null != resourceName) {
+
+			properties = (resourceName.endsWith(XML_EXT))?
+					loadXML(resourceName):
+					loadProperties(resourceName);
+		}
+
+		return properties;
+	} // load.
+
+	/**
+	 * Load the properties,  .properties file.
+	 * @param resourceName String.
+	 * @return Properties
+     */
+	public static Properties loadProperties (final String resourceName) {
+
+		InputStream inputStream = null;
+		Properties properties = null;
+
+		try {
+			// use the class name as a path to find the properties
+			inputStream =
+					InputStreamUtils.getInputStream(resourceName);
+
+			if (null != inputStream) {
+
+				properties =
+						new Properties();
+
+				properties.load(new BufferedInputStream(inputStream));
+			} else {
+
+				Logger.error(PropertiesUtil.class,
+						"No Properties File loaded for the resourceName: " + resourceName);
+			}
+		} catch (Exception e) {
+
+			Logger.error(PropertiesUtil.class, e.getMessage(), e);
+		} finally {
+
+			IOUtils.closeQuietly(inputStream);
+		}
+
+		return properties;
+	} // loadProperties.
+
+	/**
+	 * Load the properties (.XML file).
+	 * @param resourceName String.
+	 * @return Properties
+	 */
+	public static Properties loadXML (final String resourceName) {
+
+		InputStream inputStream = null;
+		Properties properties = null;
+
+		try {
+
+			// use the class name as a path to find the properties
+			inputStream =
+					InputStreamUtils.getInputStream(resourceName);
+
+			if (null != inputStream) {
+
+				properties =
+						new Properties();
+
+				properties.loadFromXML(new BufferedInputStream(inputStream));
+
+			} else {
+
+				Logger.error(PropertiesUtil.class, "No Properties File loaded for the resourceName: " + resourceName);
+			}
+		} catch (Exception e) {
+
+			Logger.error(PropertiesUtil.class, e.getMessage(), e);
+		} finally {
+
+			IOUtils.closeQuietly(inputStream);
+		}
+
+		return properties;
+	} // loadXML.
 }
