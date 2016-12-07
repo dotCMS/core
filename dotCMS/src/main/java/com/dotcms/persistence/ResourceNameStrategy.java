@@ -10,7 +10,7 @@ import java.util.List;
  * - A {@link QueryMap} class name implementation.
  * @author jsanca
  */
-public interface ResourceNameProvider extends Serializable {
+public interface ResourceNameStrategy extends Serializable {
 
     /**
      * Return a collection of resources names (a resource could be a file in the classpath,
@@ -20,4 +20,4 @@ public interface ResourceNameProvider extends Serializable {
      */
     List<String> getResourceNames (Class persistenceClass);
 
-} // E:O:F:ResourceNameProvider.
+} // E:O:F:ResourceNameStrategy.

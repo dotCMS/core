@@ -3,7 +3,6 @@ package com.dotcms.persistence;
 
 import com.liferay.util.PropertiesUtil;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -15,13 +14,24 @@ import static com.dotcms.util.ReflectionUtils.newInstance;
  * Mixed Query Map Provider creates a map using first the classpath files, then the filesystem files and finally
  * the {@link QueryMap} implementations.
  *
+ * The way to get the resources will depend on the strategy.
+ *
  * @author jsanca
  */
 public class MixedQueryMapProvider implements QueryMapProvider {
 
-    private final ResourceNameProvider classPathResourceNameProvider   = null; // todo implement it
-    private final ResourceNameProvider fileSystemResourceNameProvider  = null; // todo implement it
-    private final ResourceNameProvider queryMapResourceNameProvider    = null; // todo implement it
+    private final ResourceNameStrategy classPathResourceNameStrategy;
+    private final ResourceNameStrategy fileSystemResourceNameStrategy;
+    private final ResourceNameStrategy queryMapResourceNameStrategy;
+
+    public MixedQueryMapProvider(final ResourceNameStrategy classPathResourceNameStrategy,
+                                 final ResourceNameStrategy fileSystemResourceNameStrategy,
+                                 final ResourceNameStrategy queryMapResourceNameStrategy) {
+
+        this.classPathResourceNameStrategy = classPathResourceNameStrategy;
+        this.fileSystemResourceNameStrategy = fileSystemResourceNameStrategy;
+        this.queryMapResourceNameStrategy = queryMapResourceNameStrategy;
+    }
 
     @Override
     public Map<String, String> getQueryMap(final Class persistanceClass) {
@@ -29,17 +39,17 @@ public class MixedQueryMapProvider implements QueryMapProvider {
         final Map<String, String> queryMap = map();
         // first class path files.
         final List<String> classpathResourceNames  =
-                this.classPathResourceNameProvider.getResourceNames(persistanceClass);
+                this.classPathResourceNameStrategy.getResourceNames(persistanceClass);
         final String genericClasspathResource      =
                 this.getGenericResource (classpathResourceNames);
 
         final List<String> filesystemResourceNames =
-                this.fileSystemResourceNameProvider.getResourceNames(persistanceClass);
+                this.fileSystemResourceNameStrategy.getResourceNames(persistanceClass);
         final String genericFilesystemResource     =
                 this.getGenericResource (filesystemResourceNames);
 
         final List<String> queryMapResourceNames   =
-                this.queryMapResourceNameProvider.getResourceNames(persistanceClass);
+                this.queryMapResourceNameStrategy.getResourceNames(persistanceClass);
         final String genericQueryMapResource       =
                 this.getGenericResource (queryMapResourceNames);
 
@@ -106,7 +116,7 @@ public class MixedQueryMapProvider implements QueryMapProvider {
 
                 queryMapInstance = (QueryMap)newInstance(queryMapResource);
                 if (null != queryMapInstance) {
-                    
+
                     queryMap.putAll(queryMapInstance.getQueryMap());
                 }
             }

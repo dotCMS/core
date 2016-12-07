@@ -14,7 +14,7 @@ import java.io.InputStream;
  */
 public class InputStreamUtils {
 
-    private final static String PREFIX_FILE = "file://"; // file://
+    public final static String PREFIX_FILE = "file://"; // file://
 
     /**
      * If the resourceName start with {@link InputStreamUtils}.PREFIX_FILE ("file://")

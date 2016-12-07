@@ -44,7 +44,15 @@ import java.util.Properties;
  */
 public class PropertiesUtil {
 
-	private static final String XML_EXT = ".xml";
+	/**
+	 * Extension for .properties Prop file
+	 */
+	public static  final String PROP_EXT = ".properties";
+
+	/**
+	 * Extension for .xml Prop file
+	 */
+	public static final String  XML_EXT  = ".xml";
 
 	public static void copyProperties(Properties from, Properties to) {
 		Iterator itr = from.entrySet().iterator();
