@@ -3,9 +3,9 @@
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
 
 <%if(request.getAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS)==null){%>
-    <div class="portlet-wrapper">
+   <!--<div class="portlet-wrapper">
         <jsp:include page="/html/portlet/admin/sub_nav.jsp"></jsp:include>
-    </div>
+   </div>-->
 <%}%>
 
 <%
@@ -19,7 +19,7 @@
     }
 %>
 
-<div class="portlet-wrapper">
+<div class="portlet-main">
 
     <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
