@@ -15,7 +15,6 @@
         position: relative;
     }
     .show{
-    	width: 585px;
         height: 500px;
         border:1px solid #C0C0C0;
     }
@@ -279,65 +278,81 @@
 
 <!-- START Properties Tab -->
 	<div id="templatePropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>"  onShow="showEditButtonsRow()">
-		<dl>
+		<div class="form-horizontal">
 			<%if(id!=null) {%>
-				<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-				<dd><%= id.getId() %></dd>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+					<dd><%= id.getId() %></dd>
+				</dl>
 			<%}%>
 			<% if(host != null) { %>
-				<html:hidden property="hostId" value="<%=hostId%>"/>
-				<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-				<dd><%= host.getHostname() %></dd>
+				<html:hidden property="hostId" value="<%=hostId%>" />
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
+					<dd><%= host.getHostname() %></dd>
+				</dl>
 			<%	} else { %>
-				<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-				<dd>
-				<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
-				<% for(Host h: listHosts) { %>
-					<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
-				<% } %>1
-				</select>
-				</dd>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
+					<dd>
+						<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
+							<% for(Host h: listHosts) { %>
+								<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
+							<% } %>1
+						</select>
+					</dd>
+				</dl>
 			<% } %>
-			<dt>
-				<span class="required"></span>
-				<%= LanguageUtil.get(pageContext, "Title") %>:
-			</dt>
-			<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="title" id="titleField" value="<%= UtilMethods.isSet(template.getTitle()) ? template.getTitle() : "" %>" /></dd>
+			<dl>
+				<dt>
+					<span class="required"></span>
+					<%= LanguageUtil.get(pageContext, "Title") %>:
+				</dt>
+				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="title" id="titleField" value="<%= UtilMethods.isSet(template.getTitle()) ? template.getTitle() : "" %>" /></dd>
+			</dl>
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
+				<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(template.getFriendlyName()) ? template.getFriendlyName() : "" %>" /></dd>
+			</dl>
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "Screen-Capture-Image") %>:</dt>
+				<dd>
+					<input type="text" name="image" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" mimeTypes="image"
+						value="<%= UtilMethods.isSet(form.getImage())?form.getImage():"" %>" showThumbnail="true" />
+				</dd>
+			</dl>
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "Template") %>:</dt>
+				<dd>
+					<button dojoType="dijit.form.Button" onClick="showAddContainerDialog()" type="button">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-container")) %>
+					</button>
 
-			<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-			<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(template.getFriendlyName()) ? template.getFriendlyName() : "" %>" /></dd>
-
-			<dt><%= LanguageUtil.get(pageContext, "Screen-Capture-Image") %>:</dt>
-			<dd>
-				<input type="text" name="image" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" mimeTypes="image"
-					value="<%= UtilMethods.isSet(form.getImage())?form.getImage():"" %>" showThumbnail="true" />
-			</dd>
-			<dt><%= LanguageUtil.get(pageContext, "Template") %>:</dt>
-
-			<dd>
-				<button dojoType="dijit.form.Button" onClick="showAddContainerDialog()" type="button">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-container")) %>
-				</button>
-
-				<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
-				</button>
-			</dd>
-			<dd>
-				<div id="textEditorArea" style="border: 0px;  width: 600px; height: 500px;">
-					<div id="aceEditorArea" class="show"></div>
-		    		<html:textarea onkeydown="return catchTab(this,event)" style="width:600px; height:500px; font-size: 12px; display:none;" property="body" styleId="bodyField"></html:textarea>
-				</div>
-                <div class="editor-options">
-                    <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="aceColoration();"  checked="checked"  />
-                    <label for="toggleEditor" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-                    <div id="toggleWrapEditor" style="display: inline-block">
-                        <input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
-                        <label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-                    </div>
-                </div>
-			</dd>
-		</dl>
+					<button dojoType="dijit.form.Button" onClick="addFile()" type="button">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-js-css")) %>
+					</button>
+				</dd>
+			</dl>
+			<dl>
+				<dt></dt>
+				<dd>
+					<div id="textEditorArea" style="border: 0px; width: 600px; height: 500px;">
+						<div id="aceEditorArea" class="show"></div>
+						<html:textarea onkeydown="return catchTab(this,event)" style="width:600px; height:500px; font-size: 12px; display:none;" property="body" styleId="bodyField"></html:textarea>
+					</div>
+					<div class="editor-toolbar">
+						<div class="checkbox">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor" id="toggleEditor"  onClick="aceColoration();"  checked="checked"  />
+							<label for="toggleEditor" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+						</div>
+						<div id="toggleWrapEditor" class="checkbox">
+							<input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
+							<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+						</div>
+					</div>
+				</dd>
+			</dl>
+		</div>
 	</div>
     <script type="text/javascript">
 
@@ -444,12 +459,12 @@
 	<% } %>
 
 	<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
-		<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
+		<button dojoType="dijit.form.Button" onClick="submitfmDelete()" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
 		</button>
 	<% } %>
 
-	<button dojoType="dijit.form.Button" onClick="cancelEdit()" iconClass="cancelIcon" type="button">
+	<button dojoType="dijit.form.Button" onClick="cancelEdit()" type="button" class="dijitButtonFlat">
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 	</button>
 
