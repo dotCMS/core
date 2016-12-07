@@ -413,8 +413,10 @@ public class FolderAPIImpl implements FolderAPI  {
 			// The delete folder will avoid to send the message to the current user
 			// in addition will check any match roles to propagate the event.
 			if (Logger.isDebugEnabled(getClass())) {
+				
 				Logger.debug(getClass(), "Pushing async events: " + path);
 			}
+
 			this.systemEventsAPI.pushAsync(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(),
 							new VisibilityRoles(VisibilityRoles.Operator.OR, roles), Visibility.ROLES)));

@@ -129,12 +129,12 @@ public class SystemEventsFactory implements Serializable {
 		}
 
 		@Override
-		public void pushAsync(final SystemEventType event, final Payload payload)  {
+		public void pushAsync(final SystemEventType event, final Payload payload) throws DotDataException {
 
 			// if by any reason the submitter couldn't be created, sends the message syn
 			if (null == this.dotSubmitter) {
 				Logger.debug(this, "Sending a message: " + event + "sync, it seems the dotSubmitter could not be created");
-
+				this.push(event, payload);
 			} else {
 				this.dotSubmitter.execute(() -> {
 
