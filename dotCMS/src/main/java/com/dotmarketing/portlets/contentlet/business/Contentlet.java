@@ -1658,7 +1658,8 @@ public class Contentlet extends WebAsset implements Serializable {
 				continue;
 			}
 			// https://github.com/dotCMS/core/issues/10245
-			if (f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field")) {
+			if (f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field") &&
+				! Field.FieldType.BINARY.toString().equals(f.getFieldType())) {
 				continue;
 			}
 			// http://jira.dotmarketing.net/browse/DOTCMS-1073
@@ -1672,10 +1673,9 @@ public class Contentlet extends WebAsset implements Serializable {
 				value = f.getValues();
 			}else{
 				try {
-					value = PropertyUtils.getProperty(this, f.getFieldContentlet());
 					// http://jira.dotmarketing.net/browse/DOTCMS-3463
 					/*** THIS LOGIC IS DUPED IN THE CONTENTLETAPI.  IF YOU CHANGE HERE, CHANGE THERE **/
-					if(f.getFieldContentlet().startsWith("binary")&& value == null){
+					if(Field.FieldType.BINARY.toString().equals(f.getFieldType())){
 						java.io.File binaryFile = null ;
 						java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
 								+ java.io.File.separator
@@ -1693,6 +1693,8 @@ public class Contentlet extends WebAsset implements Serializable {
 							}
 						}
 						value = binaryFile;
+					} else {
+						value = PropertyUtils.getProperty(this, f.getFieldContentlet());
 					}
 				} catch (Exception e) {
 					Logger.error(this, "Unable to obtain contentlet property value for: " + f.getFieldContentlet(), e);

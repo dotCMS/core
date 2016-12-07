@@ -216,7 +216,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
         Structure structure = translatedContent.getStructure();
         List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());
         for (Field field : list) {
-            if (field.getFieldContentlet().startsWith("binary")) {
+            if (Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
                 java.io.File inputFile = APILocator
                     .getContentletAPI().getBinaryFile(sourceContentlet.getInode(), field.getVelocityVarName(), user);
                 if (inputFile != null) {

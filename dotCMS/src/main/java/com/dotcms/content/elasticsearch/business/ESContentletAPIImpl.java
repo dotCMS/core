@@ -871,8 +871,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	            for(Contentlet contentlet : contentlets) {
 	            	tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
 	            }
+	            
+	            return;
 	        }
-	
+
 	        conFac.clearField(structure.getInode(), field);
         }
         catch (Exception e) {
@@ -3009,7 +3011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// do it to the new inode directory
 			    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 			    for (Field field : structFields) {
-			        if (field.getFieldContentlet().startsWith("binary")) {
+			        if(Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
 			            try {
 
 			                String velocityVarNm = field.getVelocityVarName();
@@ -3831,7 +3833,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         // http://jira.dotmarketing.net/browse/DOTCMS-1073
         // setBinary
-        }else if(field.getFieldType().equals("binary")){
+        }else if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
                 try{
                 	// only if the value is a file
                 	if(value.getClass()==java.io.File.class){
@@ -4442,7 +4444,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @return
      */
     public boolean isFieldTypeBinary(Field field) {
-        if(field.getFieldContentlet().startsWith("binary")){
+    	if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
             return true;
         }
         return false;
