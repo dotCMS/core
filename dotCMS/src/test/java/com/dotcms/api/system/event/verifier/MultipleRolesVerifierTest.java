@@ -19,18 +19,18 @@ import static com.dotcms.util.CollectionsUtils.set;
 import static org.mockito.Mockito.when;
 
 /**
- * RolesVerifier
+ * MultipleRolesVerifier
  * Test
  * @author jsanca
  */
 
-public class RolesVerifierTest extends TestBase {
+public class MultipleRolesVerifierTest extends TestBase {
 
     @Test
     public void verifiedAndFailTest() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -56,7 +56,7 @@ public class RolesVerifierTest extends TestBase {
     public void verifiedAndSuccessTest() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -82,7 +82,7 @@ public class RolesVerifierTest extends TestBase {
     public void verifiedOrFailTest() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -108,7 +108,7 @@ public class RolesVerifierTest extends TestBase {
     public void verifiedOrSuccessTest() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -134,7 +134,7 @@ public class RolesVerifierTest extends TestBase {
     public void verifiedOrSuccess2Test() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -159,7 +159,7 @@ public class RolesVerifierTest extends TestBase {
     public void verifiedOrSuccess3Test() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -184,7 +184,7 @@ public class RolesVerifierTest extends TestBase {
     public void verifiedOrSuccess4Test() throws DotDataException {
 
         final RoleAPI roleAPI = Mockito.mock(RoleAPI.class);
-        final RolesVerifier rolesVerifier = new RolesVerifier(roleAPI);
+        final MultipleRolesVerifier rolesVerifier = new MultipleRolesVerifier(roleAPI);
 
         final Role simpleUserRole = new Role();  simpleUserRole.setId("simple");
         final Role superUserRole  = new Role();  superUserRole.setId ("super");
@@ -204,4 +204,4 @@ public class RolesVerifierTest extends TestBase {
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
-} // E:O:F:RolesVerifierTest.
+} // E:O:F:MultipleRolesVerifierTest.
