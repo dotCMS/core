@@ -199,6 +199,10 @@ public class CMSFilter implements Filter {
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
+		if (iAm == IAm.PAGE) {
+			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
+		}
+
 		// run rules engine for all requests
         RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
         
@@ -234,8 +238,6 @@ public class CMSFilter implements Filter {
 		}
 
 		if (iAm == IAm.PAGE) {
-			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
-
 			// Serving a page through the velocity servlet
 			StringWriter forward = new StringWriter();
 			forward.append("/servlets/VelocityServlet");

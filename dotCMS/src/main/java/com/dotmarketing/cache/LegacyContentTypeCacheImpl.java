@@ -101,6 +101,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
 				return new StructureTransformer(type).asStructure();
 			} catch (Exception e) {
 				Logger.warn(this.getClass(), "Structure with var: '" + variableName + "' not found in db");
+				return new Structure();
 			}
         }
         return new StructureTransformer(type).asStructure();
