@@ -42,6 +42,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
@@ -72,14 +73,14 @@ public class SiteResourceTest extends TestBase {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Host> hosts = getSites();
+        final PaginatedArrayList<Host> hosts = getSites();
         
         Config.CONTEXT = context;
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(hostAPI.findAll(user, Boolean.FALSE)).thenReturn(hosts);
+        when(hostAPI.search(StringUtils.EMPTY,  Boolean.FALSE, Boolean.FALSE, count, 0, user, Boolean.FALSE)).thenReturn(hosts);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
@@ -146,14 +147,15 @@ public class SiteResourceTest extends TestBase {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Host> hosts = getThreeSites();
+        final PaginatedArrayList<Host> hosts = getTwoSites();
+        final PaginatedArrayList<Host> nohosts = getNoSites();
 
         Config.CONTEXT = context;
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(hostAPI.findAll(user, Boolean.FALSE)).thenReturn(hosts);
+        when(hostAPI.search("demo", Boolean.FALSE, Boolean.FALSE, count, 0, user, Boolean.FALSE)).thenReturn(hosts);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
@@ -180,6 +182,15 @@ public class SiteResourceTest extends TestBase {
         assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(1))
                 .getHostname().equals("demo.dotcms.com"));
 
+        
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(hostAPI.search("nothing", Boolean.FALSE, Boolean.FALSE, count, 0, user, Boolean.FALSE)).thenReturn(nohosts);
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+        
         response1 = siteResource.sites(request, "nothing", false, page, count);
         System.out.println(response1);
         System.out.println(response1.getEntity());
@@ -206,7 +217,7 @@ public class SiteResourceTest extends TestBase {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Host> hosts = getThreeSites();
+        final List<Host> hosts = getTwoSites();
 
         Config.CONTEXT = context;
 
@@ -259,7 +270,7 @@ public class SiteResourceTest extends TestBase {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Host> hosts = getThreeSites();
+        final List<Host> hosts = getTwoSites();
 
         Config.CONTEXT = context;
         Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
@@ -355,8 +366,8 @@ public class SiteResourceTest extends TestBase {
      * 
      * @return
      */
-    private List<Host> getSites() {
-        return list(new Host(new Contentlet(mapAll(
+    private PaginatedArrayList<Host> getSites() {
+        List<Host> temp = list(new Host(new Contentlet(mapAll(
                 map(
                         "hostName", "demo.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
@@ -434,6 +445,10 @@ public class SiteResourceTest extends TestBase {
                  }
              }
         );
+        PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+        hosts.addAll(temp);
+        hosts.setTotalResults(2);
+        return hosts;
     }
 
     /**
@@ -441,8 +456,45 @@ public class SiteResourceTest extends TestBase {
      * 
      * @return
      */
-    private List<Host> getThreeSites() {
-    	return list(new Host(new Contentlet(mapAll(
+    private PaginatedArrayList<Host> getTwoSites() {
+    	List<Host> temp = list(new Host(new Contentlet(mapAll(
+                map(
+                        "hostName", "demo.awesome.dotcms.com",
+                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
+                        "modDate", Integer.parseInt("125466"),
+                        "aliases", "",
+                        "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
+                        "description", "dotCMS starter site was designed to demonstrate what you can do with dotCMS.",
+                        "type", "host",
+                        "title", "system.dotcms.com",
+                        "inode", "54ac9a4e-3d63-4b9a-882f-27c7dba29618f",
+                        "hostname", "system.dotcms.com"),
+                map(
+                        "__DOTNAME__", "demo.awesome.dotcms.com",
+                        "addThis", "ra-4e02119211875e7b",
+                        "disabledWYSIWYG", new Object[]{},
+                        "host", "SYSTEM_HOST",
+                        "lastReview", 14503,
+                        "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
+                        "owner", "dotcms.org.1",
+                        "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
+                        "runDashboard", false,
+                        "languageId", 1
+                ),
+                map(
+                        "isDefault", true,
+                        "folder", "SYSTEM_FOLDER",
+                        "googleAnalytics", "UA-9877660-3",
+                        "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
+                        "isSystemHost", false,
+                        "sortOrder", 0,
+                        "modUser", "dotcms.org.1"
+                )))) {
+	            @Override
+	            public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+	                return false;
+	            }
+            }, new Host(new Contentlet(mapAll(
                 map(
                         "hostName", "demo.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
@@ -476,88 +528,29 @@ public class SiteResourceTest extends TestBase {
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
                 )
-                                      ))) {
-                                          @Override
-                                          public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                                              return false;
-                                          }
-                                      }, new Host(new Contentlet(mapAll(
-                map(
-                        "hostName", "system.dotcms.com",
-                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
-                        "modDate", Integer.parseInt("125466"),
-                        "aliases", "",
-                        "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
-                        "description", "dotCMS starter site was designed to demonstrate what you can do with dotCMS.",
-                        "type", "host",
-                        "title", "system.dotcms.com",
-                        "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
-                        "hostname", "system.dotcms.com"),
-                map(
-                        "__DOTNAME__", "system.dotcms.com",
-                        "addThis", "ra-4e02119211875e7b",
-                        "disabledWYSIWYG", new Object[]{},
-                        "host", "SYSTEM_HOST",
-                        "lastReview", 14503,
-                        "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
-                        "owner", "dotcms.org.1",
-                        "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894797",
-                        "runDashboard", false,
-                        "languageId", 1
-                ),
-                map(
-                        "isDefault", true,
-                        "folder", "SYSTEM_FOLDER",
-                        "googleAnalytics", "UA-9877660-3",
-                        "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
-                        "isSystemHost", true,
-                        "sortOrder", 0,
-                        "modUser", "dotcms.org.1"
-                )))) {
-                                          @Override
-                                          public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                                              return false;
-                                          }
-                                      }
-                , new Host(new Contentlet(mapAll(
-                        map(
-                                "hostName", "demo.awesome.dotcms.com",
-                                "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
-                                "modDate", Integer.parseInt("125466"),
-                                "aliases", "",
-                                "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
-                                "description", "dotCMS starter site was designed to demonstrate what you can do with dotCMS.",
-                                "type", "host",
-                                "title", "system.dotcms.com",
-                                "inode", "54ac9a4e-3d63-4b9a-882f-27c7dba29618f",
-                                "hostname", "system.dotcms.com"),
-                        map(
-                                "__DOTNAME__", "demo.awesome.dotcms.com",
-                                "addThis", "ra-4e02119211875e7b",
-                                "disabledWYSIWYG", new Object[]{},
-                                "host", "SYSTEM_HOST",
-                                "lastReview", 14503,
-                                "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
-                                "owner", "dotcms.org.1",
-                                "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
-                                "runDashboard", false,
-                                "languageId", 1
-                        ),
-                        map(
-                                "isDefault", true,
-                                "folder", "SYSTEM_FOLDER",
-                                "googleAnalytics", "UA-9877660-3",
-                                "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
-                                "isSystemHost", false,
-                                "sortOrder", 0,
-                                "modUser", "dotcms.org.1"
-                        )))) {
-                    @Override
-                    public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                        return false;
-                    }
-                }
+                  ))) {
+                         @Override
+                         public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+                                return false;
+                        }
+                } 
+                
         );
+    	
+    	PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+    	hosts.addAll(temp);
+    	hosts.setTotalResults(2);
+    	return hosts;
     }
 
+    /**
+     * Returns a list of 3 mocked Sites for testing purposes.
+     * 
+     * @return
+     */
+    private PaginatedArrayList<Host> getNoSites() {
+    	PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+    	hosts.setTotalResults(0);
+    	return hosts;
+    }
 }

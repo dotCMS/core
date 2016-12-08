@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -217,17 +218,20 @@ public class SiteHelper implements Serializable {
     	final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
     	
     	Map<String, Object> results = new HashMap<String,Object>(); 
-    	List<Host> hosts = getOrderedSites(showArchived, user, sanitizedFilter, respectFrontendRoles); 
-    	    	
+    	
     	int minIndex = PaginationUtil.getMinIndex(currentPage, perPage);
-        int totalCount = hosts.size();
-        int maxIndex = PaginationUtil.getMaxIndex(currentPage, perPage);
+    	int maxIndex = PaginationUtil.getMaxIndex(currentPage, perPage);
+    	
+    	PaginatedArrayList<Host> hosts = this.hostAPI.search(sanitizedFilter, showArchived, Boolean.FALSE, perPage, minIndex, user, respectFrontendRoles);
+    	   	
+    	int totalCount = (int)hosts.getTotalResults();
+        
         if((minIndex + perPage) >= totalCount){
         	maxIndex = totalCount;
         }
         
 		results.put(TOTAL_SITES, totalCount);
-    	results.put(RESULTS, hosts.subList(minIndex, maxIndex));
+    	results.put(RESULTS, hosts);
     	results.put(HAS_NEXT, maxIndex < totalCount);
     	results.put(HAS_PREVIOUS, minIndex > 0);
     	return results;

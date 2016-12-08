@@ -11,6 +11,7 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
 /**
@@ -281,4 +282,29 @@ public interface HostAPI {
 	 * @throws DotSecurityException
 	 */
 	public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
+	
+	/**
+	 * Retrieves the subset of all hosts in the system
+	 * that matches the current filter, offset and limit
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @return List<Host> the subset of hosts that accomplish the search condition
+	 */
+	/**
+	 * Retrieves the subset of all hosts in the system
+	 * that matches the current filter, offset and limit
+	 * 
+	 * @param filter characters to search in the host name
+	 * @param showArchived boolean true if its requires that also archived content are returned, false if not
+	 * @param showSystemHost boolean true if the system host could be included among the results, false if not 
+	 * @param limit Max number of element to return
+	 * @param offset First element of the subset to return
+	 * @param user Current user to validate permissions
+	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
+	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 }

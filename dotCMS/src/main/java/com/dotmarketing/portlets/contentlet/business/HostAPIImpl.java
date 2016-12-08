@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -1018,5 +1019,43 @@ public class HostAPIImpl implements HostAPI {
 
 		return hosts;
 
+	}
+	
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		try {
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+			String condition="";
+			
+			if(showArchived){
+				condition=" +(working:true deleted:true)";
+			}else {
+				condition=" +working:true";
+			}
+			
+			if(UtilMethods.isSet(filter)){
+				condition += " +Host.hostName:"+filter.trim()+"*";
+			}
+			if(!showSystemHost){
+				condition += " +Host.isSystemHost:false";
+			}
+			PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
+			
+			return convertToHostPaginatedArrayList(list);
+		} catch (Exception e) {
+			Logger.error(HostAPIImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+	}
+	
+	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {
+		List<Host> temp = new ArrayList<Host>();
+		for(Contentlet c : list) {
+			temp.add(new Host(c));
+		}
+		PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+		hosts.addAll(temp);
+		hosts.setQuery(list.getQuery());
+		hosts.setTotalResults(list.getTotalResults());
+		return hosts;
 	}
 }
