@@ -2,19 +2,10 @@ package com.dotcms.contenttype.test;
 
 import org.junit.Test;
 
-import com.dotcms.contenttype.business.FieldFactory;
-import com.dotcms.contenttype.business.FieldFactoryImpl;
-
-public class DeleteFieldJobTest {
-
-	FieldFactory factory = new FieldFactoryImpl();
-	
+public class DeleteFieldJobTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testFieldDelete() throws Exception {
-		
+
 	}
-	
-	
-	
 }

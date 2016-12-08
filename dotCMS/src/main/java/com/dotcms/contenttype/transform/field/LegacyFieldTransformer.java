@@ -171,14 +171,14 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public Date modDate() {
-				return DateUtils.round(new Date(oldField.getModDate().getTime()), Calendar.SECOND);
+				return new Date(oldField.getModDate().getTime());
 			}
 
 			@Override
 			public Date iDate() {
 				if (oldField.getiDate() == null)
 					return null;
-				return DateUtils.round(new Date(oldField.getiDate().getTime()), Calendar.SECOND);
+				return new Date(oldField.getiDate().getTime());
 
 			}
 

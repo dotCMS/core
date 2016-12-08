@@ -41,24 +41,18 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 
-public class ContentTypeFactoryImplTest {
-
-	final ContentTypeFactory factory = new ContentTypeFactoryImpl();
-	@BeforeClass
-	public static void SetUpTests() throws FileNotFoundException, Exception {
-		SuperContentTypeTest.SetUpTests();
-	}
+public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testDifferentContentTypes() throws Exception {
 
-		ContentType content 	= factory.find(Constants.CONTENT);
-		ContentType news 		= factory.find(Constants.NEWS);
-		ContentType widget 		= factory.find(Constants.WIDGET);
-		ContentType form 		= factory.find(Constants.FORM);
-		ContentType fileAsset 	= factory.find(Constants.FILEASSET);
-		ContentType htmlPage 	= factory.find(Constants.HTMLPAGE);
-		ContentType persona 	= factory.find(Constants.PERSONA);
+		ContentType content 	= contentTypeFactory.find(Constants.CONTENT);
+		ContentType news 		= contentTypeFactory.find(Constants.NEWS);
+		ContentType widget 		= contentTypeFactory.find(Constants.WIDGET);
+		ContentType form 		= contentTypeFactory.find(Constants.FORM);
+		ContentType fileAsset 	= contentTypeFactory.find(Constants.FILEASSET);
+		ContentType htmlPage 	= contentTypeFactory.find(Constants.HTMLPAGE);
+		ContentType persona 	= contentTypeFactory.find(Constants.PERSONA);
 
 		// Test all the types
 		assertThat("ContentType is type Content", content.baseType() == BaseContentType.CONTENT);
@@ -67,16 +61,16 @@ public class ContentTypeFactoryImplTest {
 
 		assertThat("ContentType is type FILEASSET", fileAsset.baseType() == BaseContentType.FILEASSET);
 		assertThat("ContentType is type FILEASSET", fileAsset instanceof ImmutableFileAssetContentType);
-		
+
 		assertThat("ContentType is type WIDGET", widget.baseType() == BaseContentType.WIDGET);
 		assertThat("ContentType is type WIDGET", widget instanceof ImmutableWidgetContentType);
 
 		assertThat("ContentType is type FORM", form.baseType() == BaseContentType.FORM);
 		assertThat("ContentType is type FORM", form instanceof ImmutableFormContentType);
-		
+
 		assertThat("ContentType is type PERSONA", persona.baseType() == BaseContentType.PERSONA);
 		assertThat("ContentType is type PERSONA", persona instanceof ImmutablePersonaContentType);
-		
+
 		assertThat("ContentType is type HTMLPAGE", htmlPage.baseType() == BaseContentType.HTMLPAGE);
 		assertThat("ContentType is type HTMLPAGE", htmlPage instanceof ImmutablePageContentType);
 
@@ -84,10 +78,10 @@ public class ContentTypeFactoryImplTest {
 
 	@Test
 	public void testFindMethodEquals() throws Exception {
-		List<ContentType> types = factory.findAll();
+		List<ContentType> types = contentTypeFactory.findAll();
 		for (ContentType type : types) {
-			ContentType contentType = factory.find(type.id());
-			ContentType contentType2 = factory.find(type.variable());
+			ContentType contentType = contentTypeFactory.find(type.id());
+			ContentType contentType2 = contentTypeFactory.find(type.variable());
 			try {
 				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
@@ -98,28 +92,28 @@ public class ContentTypeFactoryImplTest {
 	}
 	@Test
 	public void testFindUrlMapped() throws Exception {
-		List<ContentType> types = factory.findUrlMapped();
+		List<ContentType> types = contentTypeFactory.findUrlMapped();
 		assertThat("findUrlMapped only returns urlmapped content", types.size()>0);
 		for(ContentType type : types){
 			assertThat("findUrlMapped only returns urlmapped content", type.urlMapPattern()!=null);
 		}
-		
+
 	}
-	
-	
+
+
 	@Test
 	public void testFindAll() throws Exception {
-		List<ContentType> types = factory.findAll();
-		assertThat("findAll sort by Name has same size as find all", factory.findAll("name").size() == types.size());
+		List<ContentType> types = contentTypeFactory.findAll();
+		assertThat("findAll sort by Name has same size as find all", contentTypeFactory.findAll("name").size() == types.size());
 	}
 
 	@Test
 	public void testFieldsMethod() throws Exception {
 
-		ContentType type = factory.find(Constants.NEWS);
+		ContentType type = contentTypeFactory.find(Constants.NEWS);
 
 		//System.out.println(type);
-		ContentType otherType = factory.find(Constants.NEWS);
+		ContentType otherType = contentTypeFactory.find(Constants.NEWS);
 
 		List<Field> fields = otherType.fields();
 		//System.out.println(type);
@@ -130,7 +124,7 @@ public class ContentTypeFactoryImplTest {
 			Field testField = fields2.get(j);
 			assertThat("fields are correct:", field.equals(testField));
 		}
-		
+
 		fields = type.fields();
 		fields = type.fields();
 		fields = type.fields();
@@ -142,8 +136,8 @@ public class ContentTypeFactoryImplTest {
 
 		File temp = File.createTempFile("test1", "obj");
 		File temp2 = File.createTempFile("test2", "obj");
-		ContentType origType = factory.find(Constants.NEWS);
-		
+		ContentType origType = contentTypeFactory.find(Constants.NEWS);
+
 		try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(temp))){
 			oos.writeObject(origType);
 			oos.close();
@@ -155,7 +149,7 @@ public class ContentTypeFactoryImplTest {
 			fromDisk = (ContentType) ois.readObject();
 			ois.close();
 		}
-		
+
 
 		try {
 			assertThat("fields are correct:", origType.equals(fromDisk));
@@ -186,9 +180,9 @@ public class ContentTypeFactoryImplTest {
 
 	@Test
 	public void testLegacyTransform() throws Exception {
-		
+
 		Structure st = new Structure();
-		List<ContentType> types = factory.findAll("name");
+		List<ContentType> types = contentTypeFactory.findAll("name");
 		List<ContentType> oldTypes = new StructureTransformer(getCrappyStructures()).asList();
 
 		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
@@ -204,12 +198,12 @@ public class ContentTypeFactoryImplTest {
 			}
 		}
 
-		assertThat("findAll sort by Name has same size as find all", factory.findAll("name").size() == types.size());
+		assertThat("findAll sort by Name has same size as find all", contentTypeFactory.findAll("name").size() == types.size());
 	}
 
 	@Test
 	public void testAddingContentTypes() throws Exception {
-		int count = factory.searchCount(null);
+		int count = contentTypeFactory.searchCount(null);
 		int runs = 20;
 
 		for (int i = 0; i < runs; i++) {
@@ -219,144 +213,157 @@ public class ContentTypeFactoryImplTest {
 			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base)).description("description" + time)
 					.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeTestingWithFields" + time).owner("owner")
 					.variable("velocityVarNameTesting" + time).build();
-			type = factory.save(type);
+			type = contentTypeFactory.save(type);
 			addFields(type);
 		}
-		int count2 = factory.searchCount(null);
+		int count2 = contentTypeFactory.searchCount(null);
 		assertThat("contenttypes are added", count == count2 - runs);
 	}
 
 	@Test
 	public void testUpdatingContentTypes() throws Exception {
-		List<ContentType> types = factory.findUrlMapped();
+		List<ContentType> types = contentTypeFactory.findUrlMapped();
 		assertThat("findUrlMapped only returns urlmapped content", types.size()>0);
 		for(ContentType type : types){
 			assertThat("findUrlMapped only returns urlmapped content", type.urlMapPattern()!=null);
 		}
-		
+
 	}
-	
-	
-	
+
 	@Test 
 	public void testDefaultType() throws DotDataException{
-		ContentType type = factory.findDefaultType();
+		ContentType type = contentTypeFactory.findDefaultType();
 		assertThat("we have a default content type", type !=null);
 
 	}
-	
-	
-	
+
 	@Test
 	public void testSearch() throws Exception {
-		String[] searchTerms = { Constants.NEWS, "news", "content", "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'" };
+		String[] searchTerms = { Constants.NEWS, "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'" };
 
-		int totalCount = factory.searchCount(null);
+		int totalCount = contentTypeFactory.searchCount(null);
 
-		List<ContentType> types=factory.search(null, BaseContentType.ANY, "name", 100,0);
+		List<ContentType> types=contentTypeFactory.search(null, BaseContentType.ANY, "name", 100,0);
 		assertThat("we have at least 40 content types", types.size() > 20);
-		types = factory.search(null, BaseContentType.ANY, "name", 5, 0);
+		types = contentTypeFactory.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
-			types = factory.search(null, BaseContentType.ANY, "name",  5, x);
+			types = contentTypeFactory.search(null, BaseContentType.ANY, "name",  5, x);
 			assertThat("we have max five content types", types.size() < 6);
 		}
 
 		for (int i = 0; i < BaseContentType.values().length; i++) {
-			types = factory.search(null, BaseContentType.getBaseContentType(i), "name", 1000, 0);
+			types = contentTypeFactory.search(null, BaseContentType.getBaseContentType(i), "name", 1000, 0);
 			assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
-			int count = factory.searchCount(null,  BaseContentType.getBaseContentType(i));
+			int count = contentTypeFactory.searchCount(null,  BaseContentType.getBaseContentType(i));
 			assertThat("Count works as well", types.size() == count);
 		}
 
 		for (int i = 0; i < searchTerms.length; i++) {
-			types = factory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 1000, 0);
+			types = contentTypeFactory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 1000, 0);
 			assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
-			int count = factory.searchCount(searchTerms[i],  BaseContentType.ANY);
+			int count = contentTypeFactory.searchCount(searchTerms[i],  BaseContentType.ANY);
 			assertThat("Count works as well", types.size() == count);
 		}
 
 	}
-
-
-
 
 	@Test
 	public void testAddingUpdatingDeleteing() throws Exception {
 
 		for(BaseContentType baseType: BaseContentType.values()){
 			if(baseType == BaseContentType.ANY)continue;
-			int countAll = factory.searchCount(null);
+			int countAll = contentTypeFactory.searchCount(null);
 			int runs = 10;
-			int countBaseType = factory.searchCount(null, baseType);
-	
+			int countBaseType = contentTypeFactory.searchCount(null, baseType);
+
 			for (int i = 0; i < runs; i++) {
 				insert(baseType,null);
 				Thread.sleep(1);
 			}
 
-			int countAll2 = factory.searchCount(null);
-			int countBaseType2 = factory.searchCount(null,baseType);
+			int countAll2 = contentTypeFactory.searchCount(null);
+			int countBaseType2 = contentTypeFactory.searchCount(null,baseType);
 			assertThat("counts are working", countAll == countAll2 - runs);
 			assertThat("counts are working", countAll2 > countBaseType2);
 			assertThat("counts are working", countBaseType == countBaseType2 - runs);
-			
-			
+
+
 			for (int i = 0; i < runs; i++) {
 				insert(baseType,UUID.randomUUID().toString());
 				Thread.sleep(1);
 			}
-			int countAll3 = factory.searchCount(null);
-			int countBaseType3 = factory.searchCount(null,baseType);
+			int countAll3 = contentTypeFactory.searchCount(null);
+			int countBaseType3 = contentTypeFactory.searchCount(null,baseType);
 			assertThat("counts are working", countAll2 == countAll3 - runs);
 			assertThat("counts are working", countAll3 > countBaseType3);
 			assertThat("counts are working", countBaseType2 == countBaseType3 - runs);
-			
+
 		}
-		
+
 		testUpdating();
-		
+
 		testDeleting() ;
 	}
-	
-	
+
+	@Test
+	public void searchCount() throws DotDataException {
+		String query = " velocity_var_name like '%content%'";
+		List<ContentType> types = contentTypeFactory.search(query, 10000);
+
+		int count= contentTypeFactory.searchCount(query,BaseContentType.ANY);
+		assertThat("we have the right content types:", types.size() == count);
+
+	}
+
+	@Test
+	public void suggestVelocityVar() throws DotDataException {
+		String tryVar = "Content" + System.currentTimeMillis();
+		String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+
+		assertThat("random velocity var works", newVar!=null);
+		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
+
+		tryVar = "News" ;
+		newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
+	}
 
 	private void testDeleting() throws Exception{
-		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
+		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
 		assertThat(types +" search is working", types.size() > 0);
 		for(ContentType type : types){
 			delete(type);
 		}
-		
+
 	}
-	
-	
+
 	private void testUpdating() throws Exception {
-		List<ContentType> types = factory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
+		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
 		assertThat(types +" search is working", types.size() > 0);
 		for(ContentType type : types){
-			ContentType testing = factory.find(type.id());
+			ContentType testing = contentTypeFactory.find(type.id());
 			assertThat("contenttype is in db", testing.equals(type) );
 			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 
 			builder.host(Constants.DEFUALT_HOST);
 			builder.folder(Constants.ABOUT_US_FOLDER);
-			
+
 			if(type instanceof UrlMapable){
 				builder.urlMapPattern("/asdsadsadsad/");
 				builder.detailPage("asdadsad");
-				
+
 			}
 			if(type instanceof Expireable){
 				builder.publishDateVar("/asdsadsadsad/");
 			}
 			builder.description("new description");
 			builder.variable(type.variable() + "plus");
-			
-			type=factory.save(builder.build());
-			
+
+			type=contentTypeFactory.save(builder.build());
+
 			try{
-				testing = factory.find(type.id());
+				testing = contentTypeFactory.find(type.id());
 				assertThat("Type is updated", testing.equals(type));
 			}
 			catch(Throwable t){
@@ -367,17 +374,15 @@ public class ContentTypeFactoryImplTest {
 			}
 		}
 	}
-	
-	
 
 	private void delete(ContentType type) throws Exception {
 
-		ContentType test1 = factory.find(type.id());
+		ContentType test1 = contentTypeFactory.find(type.id());
 		assertThat("factory find works", test1.equals(type) );
 		Exception e=null;
 		try{
-			factory.delete(type);
-			test1 = factory.find(type.id());
+			contentTypeFactory.delete(type);
+			test1 = contentTypeFactory.find(type.id());
 		}
 		catch(Exception e2){
 			e=e2;
@@ -385,13 +390,11 @@ public class ContentTypeFactoryImplTest {
 		}
 		assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
 	}
-	
 
-	
-	public void insert(BaseContentType baseType, String inode) throws DotDataException {
+	private void insert(BaseContentType baseType, String inode) throws DotDataException {
 
 		long i = System.currentTimeMillis();
-		
+
 
 		ContentTypeBuilder builder =ContentTypeBuilder.builder(baseType.immutableClass())
 				.description("description" + i)
@@ -401,12 +404,12 @@ public class ContentTypeFactoryImplTest {
 				.name(baseType.name() + "Testing" + i)
 				.owner("owner")
 				.variable("velocityVarNameTesting" + i);
-				
-		
-		ContentType type = builder.build(); 
-		type = factory.save(type);
 
-		ContentType type2 = factory.find(type.id());
+
+		ContentType type = builder.build(); 
+		type = contentTypeFactory.save(type);
+
+		ContentType type2 = contentTypeFactory.find(type.id());
 		try{
 			assertThat("Type saved correctly", type2.equals(type));
 		}
@@ -418,65 +421,39 @@ public class ContentTypeFactoryImplTest {
 		}
 		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.id());
 		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass()).name("test").variable("rewarwa").build().requiredFields();
-    try {
-		    assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
+		try {
+			assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields, fields.size() == baseTypeFields.size());
 		}
-        catch(Throwable e){
-            System.out.println(e.getMessage());
-            System.out.println("Saved  db: " + fields);
-            System.out.println("not saved: " + baseTypeFields);
-            System.out.println("\n");
-            throw e;
-            
-          }
+		catch(Throwable e){
+			System.out.println(e.getMessage());
+			System.out.println("Saved  db: " + fields);
+			System.out.println("not saved: " + baseTypeFields);
+			System.out.println("\n");
+			throw e;
+
+		}
 		for (int j = 0; j < fields.size(); j++) {
 			Field field = fields.get(j);
 			Field baseField = null;
 			try{
-              baseField = baseTypeFields.get(j);
-              assertThat("field datatypes are not correct:", field.dataType().equals(baseField.dataType()));
-              assertThat("fields variable is not correct:", field.variable().equals(baseField.variable()));
-              assertThat("field class is not correct:", field.getClass().equals(baseField.getClass()));
-              assertThat("field name is  not correct:", field.name().equals(baseField.name()));
-              assertThat("field sort order is not correct", field.sortOrder() == baseField.sortOrder());
+				baseField = baseTypeFields.get(j);
+				assertThat("field datatypes are not correct:", field.dataType().equals(baseField.dataType()));
+				assertThat("fields variable is not correct:", field.variable().equals(baseField.variable()));
+				assertThat("field class is not correct:", field.getClass().equals(baseField.getClass()));
+				assertThat("field name is  not correct:", field.name().equals(baseField.name()));
+				assertThat("field sort order is not correct", field.sortOrder() == baseField.sortOrder());
 			} 
 			catch(Throwable e){
-              System.out.println(e.getMessage());
-              System.out.println("Saved  db: " + field);
-              System.out.println("not saved: " + baseField);
-              System.out.println("\n");
-              throw e;
-              
+				System.out.println(e.getMessage());
+				System.out.println("Saved  db: " + field);
+				System.out.println("not saved: " + baseField);
+				System.out.println("\n");
+				throw e;
+
 			}
 		}
 	}
-	
-	
-	
-	@Test
-	public void searchCount() throws DotDataException {
-		String query = " velocity_var_name like '%content%'";
-		List<ContentType> types = factory.search(query, 10000);
-		
-		int count= factory.searchCount(query,BaseContentType.ANY);
-		assertThat("we have content type:", types.size()>0);
-		assertThat("we have the right content types:", types.size() == count);
 
-	}
-	@Test
-	public void suggestVelocityVar() throws DotDataException {
-		String tryVar = "Content" + System.currentTimeMillis();
-		String newVar = factory.suggestVelocityVar(tryVar);
-		
-		assertThat("random velocity var works", newVar!=null);
-		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
-		
-		tryVar = "News" ;
-		newVar = factory.suggestVelocityVar(tryVar);
-		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
-
-	}
-	
 	private static List<Structure> getCrappyStructures(){
 		return InodeFactory.getInodesOfClass(Structure.class,"name");
 	}
@@ -501,14 +478,14 @@ public class ContentTypeFactoryImplTest {
 			if(!save) continue;
 			for (DataTypes dt : fakeField.acceptedDataTypes()) {
 				Field savedField = FieldBuilder.builder(clazz)
-					.name("test field" + numFields)
-					.variable(TEST_VAR_PREFIX + "textField" + numFields)
-					.contentTypeId(type.id())
-					.dataType(dt)
-					.build();
+						.name("test field" + numFields)
+						.variable(TEST_VAR_PREFIX + "textField" + numFields)
+						.contentTypeId(type.id())
+						.dataType(dt)
+						.build();
 				APILocator.getFieldAPI2().save(savedField, APILocator.systemUser());
-        numFields++;
-      }
-    }
-  }
+				numFields++;
+			}
+		}
+	}
 }
