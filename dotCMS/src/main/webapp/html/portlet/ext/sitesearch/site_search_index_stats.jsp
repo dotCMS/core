@@ -64,132 +64,128 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 
+<div data-dojo-type="dijit.Dialog" style="width:400px;" id="createIndexDialog">
+	<div class="dotForm">
+		<label for="createIndexAlias">Alias:</label>
+		<input id="createIndexAlias" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
+		<label for="createIndexNumShards">Shards:</label>
+		<input id="createIndexNumShards" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
+		<div class="buttonRow">
+			<button dojoType="dijit.form.Button"  iconClass="addIcon"
+				onClick="doCreateSiteSearch(dijit.byId('createIndexAlias').attr('value'),dijit.byId('createIndexNumShards').attr('value'))">
+				<%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
+			</button>
+			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('createIndexDialog').hide()">
+				<%= LanguageUtil.get(pageContext,"Cancel") %>
+			</button>
+		</div>
+	</div>
+</div>
 
 
-
-
-
-
-    <div data-dojo-type="dijit.Dialog" style="width:400px;" id="createIndexDialog">
-      <div class="dotForm">
-       <label for="createIndexAlias">Alias:</label>
-	   <input id="createIndexAlias" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
-	   <label for="createIndexNumShards">Shards:</label>
-	   <input id="createIndexNumShards" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
-	   <div style="text-align: right;">
-		   <button dojoType="dijit.form.Button"  iconClass="addIcon"
-		           onClick="doCreateSiteSearch(dijit.byId('createIndexAlias').attr('value'),dijit.byId('createIndexNumShards').attr('value'))">
-		      <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
-		   </button>
-		   <button dojoType="dijit.form.Button"  iconClass="deleteIcon" onClick="dijit.byId('createIndexDialog').hide()">
-		      <%= LanguageUtil.get(pageContext,"Cancel") %>
-		   </button>
-	   </div>
-	  </div>
-    </div>
-
-
-
-
-		<div class="buttonRow" style="text-align: right;padding:20px;">
-
-		    <button dojoType="dijit.form.Button"  onClick="showNewIndexDialog()" iconClass="addIcon">
+<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<button dojoType="dijit.form.Button"  onClick="showNewIndexDialog()" iconClass="addIcon">
                <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
             </button>
-
-		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
+		</div>
+		<div class="portlet-toolbar__info">
+			
+		</div>
+    	<div class="portlet-toolbar__actions-secondary">
+    		<button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
-		
-		
-		</div>
+    	</div>
+   </div>
+<!-- END Toolbar -->
+
+<table class="listingTable">
+	<thead>
+		<tr>
+			<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Status") %></th>
+			<th><%= LanguageUtil.get(pageContext,"Index-Name") %></th>
+			<th><%= LanguageUtil.get(pageContext,"Alias") %></th>					
+			<th><%= LanguageUtil.get(pageContext,"Created") %></th>
+			<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Count") %></th>
+			<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Shards") %></th>
+			<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Replicas") %></th>
+			<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Size") %></th>
+			<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Health") %></th>					
+		</tr>
+	</thead>
+	<%for(String x : indices){%>
+		<%ClusterIndexHealth health = map.get(x); %>
+		<%IndexStatus status = indexInfo.get(x); %>
+
+		<%boolean active =x.equals(info.site_search);%>
+		<%	Date d = null;
+			String myDate = null;
+			try{
+				 myDate = x.split("_")[1];
+				d = dater.parse(myDate);
+
+				myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+				}
+				catch(Exception e){
+
+			}%>
 
 
-		<table class="listingTable" style="width:98%">
-			<thead>
-				<tr>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Status") %></th>
-					<th><%= LanguageUtil.get(pageContext,"Index-Name") %></th>
-					<th><%= LanguageUtil.get(pageContext,"Alias") %></th>					
-					<th><%= LanguageUtil.get(pageContext,"Created") %></th>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Count") %></th>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Shards") %></th>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Replicas") %></th>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Size") %></th>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Health") %></th>					
-				</tr>
-			</thead>
-			<%for(String x : indices){%>
-				<%ClusterIndexHealth health = map.get(x); %>
-				<%IndexStatus status = indexInfo.get(x); %>
+		<tr class="<%=(active) ? "trIdxActive"  : "trIdxNothing" %> pointer" id="<%=x%>Row" onclick="showSiteSearchPane('<%=x%>')">
+			<td  align="center" class="showPointer" >
+				<%if(active){ %>
+					<%= LanguageUtil.get(pageContext,"default") %>
+				<%}%>
+			</td>
+			<td  class="showPointer" ><%=x %></td>
+			<td><%= alias.get(x) == null ? "": alias.get(x)%></td>
+			<td><%=UtilMethods.webifyString(myDate) %></td>
 
-				<%boolean active =x.equals(info.site_search);%>
-				<%	Date d = null;
-					String myDate = null;
-					try{
-						 myDate = x.split("_")[1];
-						d = dater.parse(myDate);
+			<td align="center">
+				<%=(status !=null && status.getDocs() != null) ? status.getDocs().getNumDocs(): "n/a"%>
+			</td>
+			<td align="center"><%=(status !=null) ? status.getShards().size() : "n/a"%></td>
+			<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
+			<td align="center"><%=(status !=null) ? status.getStoreSize(): "n/a"%></td>
+			<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
+		</tr>
+	<%} %>
+	
+	<% for(String x : closedIndices) { %>
+	    <%   Date d = null;
+            String myDate = null;
+            try {
+                 myDate = x.split("_")[1];
+                 d = dater.parse(myDate);
+                 myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+            }
+            catch(Exception e){}%>
+	    <tr class="trIdxNothing pointer" id="<%=x%>Row">
+            <td  align="center" class="showPointer" >
+               <%= LanguageUtil.get(pageContext,"Closed") %>
+            </td>
+            <td  class="showPointer" ><%=x %></td>
+            <td><%= alias.get(x) == null ? "": alias.get(x)%></td>
+            <td><%=UtilMethods.webifyString(myDate) %></td>
 
-						myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
-						}
-						catch(Exception e){
+            <td colspan="5" align="center">
+                n/a
+            </td>
+        </tr>
+	<% } %>
+	<tr>
+		<td colspan="15" align="center" style="padding:20px;"><a href="#" onclick="refreshIndexStats()"><%= LanguageUtil.get(pageContext,"refresh") %></a></td>
+	</tr>
 
-					}%>
-
-
-				<tr class="<%=(active) ? "trIdxActive"  : "trIdxNothing" %> pointer" id="<%=x%>Row" onclick="showSiteSearchPane('<%=x%>')">
-					<td  align="center" class="showPointer" >
-						<%if(active){ %>
-							<%= LanguageUtil.get(pageContext,"default") %>
-						<%}%>
-					</td>
-					<td  class="showPointer" ><%=x %></td>
-					<td><%= alias.get(x) == null ? "": alias.get(x)%></td>
-					<td><%=UtilMethods.webifyString(myDate) %></td>
-
-					<td align="center">
-						<%=(status !=null && status.getDocs() != null) ? status.getDocs().getNumDocs(): "n/a"%>
-					</td>
-					<td align="center"><%=(status !=null) ? status.getShards().size() : "n/a"%></td>
-					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-					<td align="center"><%=(status !=null) ? status.getStoreSize(): "n/a"%></td>
-					<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
-				</tr>
-			<%} %>
-			
-			<% for(String x : closedIndices) { %>
-			    <%   Date d = null;
-                    String myDate = null;
-                    try {
-                         myDate = x.split("_")[1];
-                         d = dater.parse(myDate);
-                         myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
-                    }
-                    catch(Exception e){}%>
-			    <tr class="trIdxNothing pointer" id="<%=x%>Row">
-                    <td  align="center" class="showPointer" >
-                       <%= LanguageUtil.get(pageContext,"Closed") %>
-                    </td>
-                    <td  class="showPointer" ><%=x %></td>
-                    <td><%= alias.get(x) == null ? "": alias.get(x)%></td>
-                    <td><%=UtilMethods.webifyString(myDate) %></td>
-
-                    <td colspan="5" align="center">
-                        n/a
-                    </td>
-                </tr>
-			<% } %>
-			<tr>
-				<td colspan="15" align="center" style="padding:20px;"><a href="#" onclick="refreshIndexStats()"><%= LanguageUtil.get(pageContext,"refresh") %></a></td>
-			</tr>
-
-		</table>
-
-
+</table>
 
 
 
-		<%--   RIGHT CLICK MENUS --%>
+
+
+<%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
 			<%boolean active =x.equals(info.site_search);%>

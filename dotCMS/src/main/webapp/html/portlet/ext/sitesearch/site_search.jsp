@@ -929,16 +929,7 @@ function  resizeBrowser(){
 </script>
 
 <style type="text/css">
-	.listingTable {width: 42.5%;font-size: 100%;border-top: 1px solid #d0d0d0;}
-	.trIdxBuilding{background:#F8ECE0;}
-	.trIdxActive{background:#D8F6CE;}
-	.trIdxNothing td{color:#aaaaaa;}
-	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	#restoreIndexUploader {width:200px !important;}
-	#uploadProgress {float: right;display: none;}
-	.dotForm label {position: absolute; text-align:right; width:6em;}
-	.dotForm .dotFormInput {margin-left: 7em;}
-	.listingTable td{word-wrap: break-word;}
+	
 	.highlight td {
 	    background: #94BBFF;
 	    color: white !important;
@@ -952,7 +943,7 @@ function  resizeBrowser(){
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 
 
-<div class="portlet-wrapper">
+<div class="portlet-main">
 
 	<div class="subNavCrumbTrail">
 		<ul id="subNavCrumbUl">
