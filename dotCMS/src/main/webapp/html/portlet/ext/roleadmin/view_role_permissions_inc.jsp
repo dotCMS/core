@@ -8,14 +8,13 @@
 		<div class="warningText" id="permissionsCascadeMsgText"></div>
 	</div>
 	
-	<div id="rolePermissionsHostSelectorWrapper" class="buttonRow">
-		<div id="addHostFolderTitle"style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "add-host-folder") %></div> 
-		<div id="rolePermissionsHostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;"></div>
-		<button dojoType="dijit.form.Button" class="hostSelectorButton" onclick="addHostFolder()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "add") %></button>
+	<div id="rolePermissionsHostSelectorWrapper" class="permission__host-selector inline-form">
+		<label id="addHostFolderTitle"><%= LanguageUtil.get(pageContext, "add-host-folder") %></label>
+		<div id="rolePermissionsHostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect"></div>
+		<button dojoType="dijit.form.Button" class="hostSelectorButton" onclick="addHostFolder()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
 	</div>
 	<div class="clear"></div>
 	<div id="rolePermissionsAccordion">
-		
 		<div class="permissionLabelsWrapper">
 			<table class="permissionTable">
              	<tr>
@@ -29,10 +28,7 @@
              	</tr>
              </table>
          </div>
-		
 		<div id="permissionsAccordionContainer"></div>
-		<div class="clear"></div>
-
 	</div>
 			
 </div>
