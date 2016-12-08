@@ -122,19 +122,18 @@
 </script>
 
 <style>
-	.myTable {margin:20px;padding:10px;}
-	.myTable tr td{padding:5px;vertical-align: top;}
+	.myTable tr td{padding: 5px !important;}
 	#addressRow {}
 	#portRow {display:none;}
 
 </style>
 
-<div style="margin:auto; width:580px; height:240px; overflow:auto;">
+<div style="margin:20px; width:580px; height:280px; overflow:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEnvironment"  id="formSaveEnvironment" onsubmit="return false;">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getId())) %>">
-		<table class="myTable" border=0 style="margin: auto" align="center">
+		<table class="listingTable" border=0 style="margin: auto" align="center">
 			<tr>
-				<td align="right" width="40%">
+				<td align="right" width="30%">
 					<%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>:
 				</td>
 				<td>
@@ -148,47 +147,38 @@
 				</td>
 			</tr>
 			<tr>
-				<td align="right"><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</td>
+				<td align="right"><%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>:</td>
+				<td>
+					<div class="inline-form">
+						<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToOne" checked="<%=!currentEnvironment.getPushToAll()%>" id="pushToOne" />
+						<label for="pushToOne"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %></label>
+	
+						&nbsp;
+						&nbsp;
+	
+						<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToAll"  checked="<%=currentEnvironment.getPushToAll()%>"  id="pushToAll" />
+						<label for="pushToAll"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %></label>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td align="right" style="vertical-align: top; white-space: nowrap;"><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</td>
 				<td>
 					<input id="actionWhoCanUseSelect" />
 					<div class="wfWhoCanUseDiv">
-						<table class="listingTable" id="whoCanUseTbl" id="whoCanUseTbl" style="height: 90px;overflow-y: scroll;display: block;overflow: auto;">
-						</table>
+						<table class="myTable" id="whoCanUseTbl" style="height: 90px;overflow-y: scroll;display: block;overflow: auto;"></table>
 					</div>
 
 					<input type="hidden" name="whoCanUse" id="whoCanUse" value="">
 
 				</td>
 			</tr>
-			<tr>
-				<td align="right" width="40%">
-					<%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>:
-				</td>
-				<td >
-
-					<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToOne" checked="<%=!currentEnvironment.getPushToAll()%>" id="pushToOne" />
-					<label for="pushToOne"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %></label>
-
-					&nbsp;
-					&nbsp;
-
-
-					<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToAll"  checked="<%=currentEnvironment.getPushToAll()%>"  id="pushToAll" />
-					<label for="pushToAll"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %></label>
-				</td>
-			</tr>
-
 		</table>
 
-		<table align="center">
-			<tr>
-				<td colspan="2" class="buttonRow" style="text-align: center;white-space: nowrap;">
-					<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEnvironment()"><%= LanguageUtil.get(pageContext, "Save") %></button>
-					&nbsp;
-					<button dojoType="dijit.form.Button" onClick="backToEnvironmentList(false)" id="closeSave" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+		<div class="buttonRow">
+			<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEnvironment()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+			<button dojoType="dijit.form.Button" onClick="backToEnvironmentList(false)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+		</div>
 
-			    </td>
-		    </tr>
-	   </table>
 	</div>
 </div>
