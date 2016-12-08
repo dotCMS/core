@@ -42,9 +42,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
@@ -68,9 +68,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
@@ -94,9 +94,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
@@ -120,9 +120,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
@@ -146,9 +146,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
@@ -171,9 +171,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
@@ -196,9 +196,9 @@ public class MultipleRolesVerifierTest extends TestBase {
         final User user = new User();  user.setUserId("dotcms.1");
         final SessionWrapper session = new SessionWrapper(null, user);
 
-        when(roleAPI.doesUserHaveRole(user, simpleUserRole)).thenReturn(false);
-        when(roleAPI.doesUserHaveRole(user, superUserRole)).thenReturn(true);
-        when(roleAPI.doesUserHaveRole(user, adminUserRole)).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
+        when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
         final boolean verified = rolesVerifier.verified(payload, session);
 
