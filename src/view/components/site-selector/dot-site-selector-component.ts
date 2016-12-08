@@ -30,7 +30,7 @@ export class SiteSelectorComponent extends BaseComponent {
 
     ngOnInit(): void {
         this.siteService.switchSite$.subscribe(site => this.currentSite = {
-            label: site.hostName,
+            label: site.hostname,
             value: site.identifier,
         });
         this.siteService.sites$.subscribe(sites => this.sites = sites);
