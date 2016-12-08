@@ -3270,16 +3270,6 @@ tr.active {
   line-height: 18px;
 }
 
-.nameHeader {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-  padding: 3px 10px 3px 10px;
-  vertical-align: middle;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-}
-
 .warningHeader {
   background-color: #f0f0f0;
   color: yellow;
@@ -5802,13 +5792,13 @@ Styles for commons fields along the backend
   margin-bottom: 4px;
 }
 
-#checkbox-radio, #inline-form .radio, .fileSelectorControls .radio, .inline-form .radio, #inline-form .checkbox, .fileSelectorControls .checkbox, .inline-form .checkbox, dd .radio, dd .checkbox, .fieldValue .radio, .fieldValue .checkbox {
+#checkbox-radio, .radio, .checkbox {
   align-items: center;
   display: flex;
   margin: 8px 0;
   white-space: nowrap;
 }
-#checkbox-radio > .dijit, #inline-form .radio > .dijit, .fileSelectorControls .radio > .dijit, .inline-form .radio > .dijit, #inline-form .checkbox > .dijit, .fileSelectorControls .checkbox > .dijit, .inline-form .checkbox > .dijit, dd .radio > .dijit, dd .checkbox > .dijit, .fieldValue .radio > .dijit, .fieldValue .checkbox > .dijit {
+#checkbox-radio > .dijit, .radio > .dijit, .checkbox > .dijit {
   margin-right: 4px;
 }
 
@@ -5816,7 +5806,7 @@ Styles for commons fields along the backend
   align-items: center;
   display: flex;
 }
-#inline-form > label, .fileSelectorControls > label, .inline-form > label {
+#inline-form > label, .fileSelectorControls > label, .inline-form > label, #inline-form > div, .fileSelectorControls > div, .inline-form > div {
   margin-right: 8px;
   white-space: nowrap;
 }
@@ -5825,6 +5815,10 @@ Styles for commons fields along the backend
 }
 #inline-form .dijit:last-child, .fileSelectorControls .dijit:last-child, .inline-form .dijit:last-child {
   margin-right: 0;
+}
+
+.listingTable .radio, .listingTable .checkbox {
+  margin: 0;
 }
 
 .required2 {
@@ -6073,6 +6067,132 @@ dd .buttonCaption {
   background-color: rgba(14, 128, 203, 0.1);
 }
 
+.view-users .dijitDropDownActionButton {
+  z-index: 2;
+}
+.view-users .dijitTabPaneWrapper .dijitContentPane {
+  box-sizing: content-box;
+}
+.view-users .portlet-main,
+.view-users .view-users__profile-tabs,
+.view-users .view-users__profile-tabs-container {
+  height: 100%;
+  width: 100%;
+}
+
+.view-users__filter-form {
+  margin-bottom: 16px;
+}
+
+.view-users__loading {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  text-align: center;
+  z-index: 1;
+}
+
+.view-user__form form {
+  width: 500px;
+}
+.view-user__form dd {
+  flex: 1;
+}
+
+.view-user__add-contact {
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.view-user__buttonRow {
+  padding-left: 146px;
+  margin-top: 16px;
+  text-align: left !important;
+}
+
+.view-users__additional-info .dojoxGrid {
+  margin-bottom: 16px;
+}
+.view-users__additional-info .dojoxGridRowTable td:last-child {
+  text-align: center;
+}
+.view-users__additional-info .view-user__form {
+  border-bottom: solid 1px #ECEDEE;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+}
+
+.view-users__roles-container {
+  display: flex;
+  margin-bottom: 16px;
+}
+.view-users__roles-container h4 {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.view-users__roles-actions {
+  padding: 52px 16px 0;
+}
+.view-users__roles-actions .dijitButton {
+  display: block;
+  margin: 8px 0;
+}
+
+.view-users__roles-to-grant .dijitTreeContainer {
+  float: none;
+  margin-top: 4px;
+}
+
+.view-users__roles-to-grant,
+.view-users__roles-granted {
+  flex: 2;
+}
+
+.view-users__roles-container-item {
+  border-radius: 2px;
+  border: solid 1px #C5C5C5;
+  height: 150px;
+}
+.view-users__roles-container-item select[multiple] {
+  border: none;
+}
+
+.view-users__marketing .listingTable .checkbox {
+  justify-content: flex-end;
+}
+
+.view-users__section-break {
+  background-color: #FAFAFA;
+  border: solid 1px #ECEDEE;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.view-users__section-break .radio, .view-users__section-break .checkbox {
+  margin: 0;
+}
+
+.view-users__section-content {
+  margin-bottom: 16px;
+}
+
+.view-users__section-content-cols {
+  display: flex;
+  justify-content: space-around;
+}
+
+.fullUserName {
+  border-bottom: solid 1px #ECEDEE;
+  font-size: 18px;
+  font-weight: normal;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+}
+
 .contentIdentifier {
   margin: 0 0 8px;
 }
@@ -6201,6 +6321,188 @@ dd .buttonCaption {
   border: 1px solid #d0d0d0;
   padding: 8px;
   text-align: center;
+}
+
+.file-selector-tree .dijitDialogPaneContent {
+  padding: 0;
+}
+.file-selector-tree .portlet-sidebar-wrapper {
+  width: 200px;
+}
+.file-selector-tree .selectableFile {
+  display: flex;
+}
+.file-selector-tree .selectableFile img {
+  margin-right: 4px;
+}
+.file-selector-tree .portlet-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.file-selector-tree__container {
+  width: 900px;
+  height: 500px;
+}
+
+.file-selector-tree__loading,
+.file-selector-tree__no-results,
+.file-selector-tree__select-folder {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+.file-selector-tree__main {
+  display: flex;
+}
+
+.file-selector-tree__sidebar {
+  padding: 16px;
+}
+.file-selector-tree__sidebar .dijitTreeContainer {
+  float: none;
+}
+.file-selector-tree__sidebar .dijitTreeNode {
+  padding: 4px 0;
+}
+
+.file-selector-tree__table {
+  display: flex;
+  flex: 1;
+}
+
+.file-selector-tree__toolbar {
+  background-color: #ECEDEE;
+  margin: 0;
+  padding: 16px;
+}
+
+.file-selector-tree__views-menu {
+  display: flex;
+}
+.file-selector-tree__views-menu span {
+  margin-right: 4px;
+  font-weight: bold;
+}
+.file-selector-tree__views-menu img {
+  cursor: pointer;
+  margin: 0 4px;
+}
+
+.permission__host-selector {
+  justify-content: flex-end;
+}
+
+#rolePermissionsAccordion .dijitAccordionContainer-child {
+  overflow-y: hidden !important;
+}
+
+.permissionLabelTable, .permissionTable {
+  width: 100%;
+}
+
+.permissionTableWrapper {
+  padding: 0 0 0 3px;
+}
+
+.permissionLabelsWrapper {
+  padding: 15px 15px 10px 9px;
+}
+
+.permissionTable td,
+.permissionTableTitle td {
+  padding: 4px 0;
+  width: 12%;
+  text-align: center;
+}
+.permissionTable td.permissionType,
+.permissionTableTitle td.permissionType {
+  width: 28%;
+  text-align: right;
+  padding: 3px 35px 3px 0;
+}
+
+.permissionTableTitle {
+  width: 100%;
+  margin: 0;
+}
+.permissionTableTitle td.folderName {
+  vertical-align: middle;
+  width: 28%;
+  text-align: left;
+}
+.permissionTableTitle td.folderName img {
+  vertical-align: middle;
+}
+
+.hostSelectorButton {
+  margin: 0;
+}
+
+.hostFolderAccordionPermissionsTitle {
+  vertical-align: middle;
+}
+.hostFolderAccordionPermissionsTitle img {
+  vertical-align: middle;
+}
+
+.permissionsActions {
+  border: 1px solid #ddd;
+  background: #f1f1f1;
+  padding: 5px 8px;
+  width: 550px;
+  text-align: center;
+  margin: 20px auto 0 auto;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+.permissionsActions a {
+  margin-right: 20px;
+}
+
+#loadingPermissionsAccordion {
+  padding-top: 25px;
+  text-align: center;
+}
+
+#permissionsTab {
+  margin-bottom: 5px;
+}
+
+#rolePermissionsMsg {
+  color: #E84048;
+  text-align: center;
+}
+
+.related-content-dialog {
+  width: 900px;
+  height: 550px;
+}
+.related-content-dialog .dijitDialogPaneContent {
+  padding: 0;
+}
+.related-content-dialog .portlet-sidebar-wrapper {
+  width: 200px;
+}
+.related-content-dialog .dijitDialogTitleBar {
+  height: 0;
+  z-index: 1;
+}
+
+.related-content-container,
+.related-content-form {
+  height: 100%;
+}
+
+.related-content-form {
+  width: 900px;
 }
 
 #iFrameWrapper {
@@ -6470,100 +6772,6 @@ Resize Handle
 
 #search_form, #borderContainer {
   height: 100%;
-}
-
-.file-selector-tree .dijitDialogPaneContent,
-.related-content-dialog .dijitDialogPaneContent {
-  padding: 0;
-}
-.file-selector-tree .portlet-sidebar-wrapper,
-.related-content-dialog .portlet-sidebar-wrapper {
-  width: 200px;
-}
-
-.file-selector-tree .selectableFile {
-  display: flex;
-}
-.file-selector-tree .selectableFile img {
-  margin-right: 4px;
-}
-.file-selector-tree .portlet-main {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  justify-content: space-between;
-  padding: 0;
-}
-
-.file-selector-tree__container {
-  width: 900px;
-  height: 500px;
-}
-
-.file-selector-tree__loading,
-.file-selector-tree__no-results,
-.file-selector-tree__select-folder {
-  align-self: center;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  justify-content: center;
-  text-align: center;
-}
-
-.file-selector-tree__main {
-  display: flex;
-}
-
-.file-selector-tree__sidebar {
-  padding: 16px;
-}
-.file-selector-tree__sidebar .dijitTreeContainer {
-  float: none;
-}
-.file-selector-tree__sidebar .dijitTreeNode {
-  padding: 4px 0;
-}
-
-.file-selector-tree__table {
-  display: flex;
-  flex: 1;
-}
-
-.file-selector-tree__toolbar {
-  background-color: #ECEDEE;
-  margin: 0;
-  padding: 16px;
-}
-
-.file-selector-tree__views-menu {
-  display: flex;
-}
-.file-selector-tree__views-menu span {
-  margin-right: 4px;
-  font-weight: bold;
-}
-.file-selector-tree__views-menu img {
-  cursor: pointer;
-  margin: 0 4px;
-}
-
-.related-content-dialog {
-  width: 900px;
-  height: 550px;
-}
-.related-content-dialog .dijitDialogTitleBar {
-  height: 0;
-  z-index: 1;
-}
-
-.related-content-container,
-.related-content-form {
-  height: 100%;
-}
-
-.related-content-form {
-  width: 900px;
 }
 
 /* The main calendar widget.  DIV containing a table. */
