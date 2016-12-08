@@ -735,7 +735,7 @@ public class HostAPIImpl implements HostAPI {
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
 
-		systemEventsAPI.push(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -750,7 +750,7 @@ public class HostAPIImpl implements HostAPI {
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
 
-		systemEventsAPI.push(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 

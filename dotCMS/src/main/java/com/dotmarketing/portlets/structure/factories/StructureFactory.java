@@ -8,6 +8,7 @@ import java.util.*;
 
 import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
@@ -563,16 +564,23 @@ public class StructureFactory {
 
 	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
 
-		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
+		final DotSubmitter dotSubmitter =
+				SystemEventsFactory.getInstance().getDotSubmitter();
 
-		try {
-	 		String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
-			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
-			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-                            PermissionAPI.PERMISSION_READ));
-		} catch (DotDataException e) {
-			throw new RuntimeException( e );
-		}
+		dotSubmitter.execute(() -> {
+
+			final SystemEventType systemEventType = isNew ?
+					SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
+
+			try {
+				String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
+				ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+				systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
+						PermissionAPI.PERMISSION_READ));
+			} catch (DotDataException e) {
+				throw new BaseRuntimeInternationalizationException( e );
+			}
+		});
 	}
 
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
@@ -595,18 +603,27 @@ public class StructureFactory {
 	public static void deleteStructure(Structure structure) throws DotDataException
 	{
 
+		final DotSubmitter dotSubmitter =
+				SystemEventsFactory.getInstance().getDotSubmitter();
+
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
 		InodeFactory.deleteInode(structure);
 
-		try {
-			String actionUrl = contentTypeUtil.getActionUrl(structure);
-			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
-			systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-					PermissionAPI.PERMISSION_READ));
-		} catch (DotDataException e) {
-			throw new BaseRuntimeInternationalizationException( e );
-		}
+			if (null != dotSubmitter) {
+
+				dotSubmitter.execute(() -> {
+
+					try {
+						String actionUrl = contentTypeUtil.getActionUrl(structure);
+						ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+						systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper, Visibility.PERMISSION,
+								PermissionAPI.PERMISSION_READ));
+					} catch (DotDataException e) {
+						throw new BaseRuntimeInternationalizationException( e );
+					}
+				});
+			}
 	}
 
 	public static void disableDefault() throws DotHibernateException

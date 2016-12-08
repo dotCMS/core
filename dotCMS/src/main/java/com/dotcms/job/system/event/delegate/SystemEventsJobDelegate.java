@@ -9,6 +9,7 @@ import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 
 import java.util.List;
 
@@ -36,9 +37,19 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 
 	@Override
 	public void executeDelegate(final JobDelegateDataBean data) throws DotDataException {
-		final List<SystemEvent> newEvents = (List<SystemEvent>) this.systemEventsAPI.getEventsSince(data.getLastCallback());
+		List<SystemEvent> newEvents = null;
+		final long lastCallback = data.getLastCallback();
 
-		if (!newEvents.isEmpty()) {
+		try {
+
+			Logger.debug(this, "Getting events, last callback: " + lastCallback);
+			newEvents = (List<SystemEvent>) this.systemEventsAPI.getEventsSince(lastCallback);
+		} catch (Exception e) {
+
+			Logger.debug(this, e.getMessage(), e);
+		}
+
+		if (null != newEvents && !newEvents.isEmpty()) {
 			final SystemEventsWebSocketEndPoint webSocketEndPoint = this.webSocketContainerAPI
 					.getEndpointInstance(SystemEventsWebSocketEndPoint.class);
 			for (SystemEvent event : newEvents) {

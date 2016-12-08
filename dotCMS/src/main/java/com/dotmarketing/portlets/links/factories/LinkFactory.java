@@ -402,7 +402,7 @@ public class LinkFactory {
         //Copy permissions
         permissionAPI.copyPermissions( currentLink, newLink );
 
-		systemEventsAPI.push(SystemEventType.COPY_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.COPY_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return newLink;
@@ -508,7 +508,7 @@ public class LinkFactory {
         	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
         }
 
-		systemEventsAPI.push(SystemEventType.MOVE_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.MOVE_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return true;

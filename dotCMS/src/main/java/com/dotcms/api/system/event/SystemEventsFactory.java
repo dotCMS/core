@@ -1,28 +1,26 @@
 package com.dotcms.api.system.event;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -36,8 +34,11 @@ import com.dotmarketing.util.UtilMethods;
 @SuppressWarnings("serial")
 public class SystemEventsFactory implements Serializable {
 
+	public static final String EVENTS_THREAD_POOL_SUBMITTER_NAME = "events";
+	private final DotSubmitter dotSubmitter		  = DotConcurrentFactory.getInstance().getSubmitter(EVENTS_THREAD_POOL_SUBMITTER_NAME);
 	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
 	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
+
 
 	/**
 	 * Private constructor for singleton creation.
@@ -68,8 +69,17 @@ public class SystemEventsFactory implements Serializable {
 	 * 
 	 * @return The {@link SystemEventsDAO} instance.
 	 */
-	private SystemEventsDAO getSystemEventsDAO() {
+	protected SystemEventsDAO getSystemEventsDAO() {
 		return this.systemEventsDAO;
+	}
+
+	/**
+	 * Returns the Thread Pool for the async events
+	 * It is public in case some external client needs to build the payload in an async task, could reuse the same Submitter.
+	 * @return The {@link DotSubmitter} instance.
+	 */
+	public DotSubmitter getDotSubmitter() {
+		return this.dotSubmitter;
 	}
 
 	/**
@@ -92,7 +102,7 @@ public class SystemEventsFactory implements Serializable {
 	private final class SystemEventsAPIImpl implements SystemEventsAPI {
 
 		private final ConversionUtils conversionUtils = ConversionUtils.INSTANCE;
-
+		private final DotSubmitter dotSubmitter = getDotSubmitter();
 		private SystemEventsDAO systemEventsDAO = getSystemEventsDAO();
 		private MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 
@@ -116,6 +126,27 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public void push(SystemEventType event, Payload payload) throws DotDataException {
 			push( new SystemEvent(event, payload ) );
+		}
+
+		@Override
+		public void pushAsync(final SystemEventType event, final Payload payload) throws DotDataException {
+
+			// if by any reason the submitter couldn't be created, sends the message syn
+			if (null == this.dotSubmitter) {
+				Logger.debug(this, "Sending a message: " + event + "sync, it seems the dotSubmitter could not be created");
+				this.push(event, payload);
+			} else {
+				this.dotSubmitter.execute(() -> {
+
+					try {
+
+						Logger.debug(this, "Sending an async message: " + event);
+						push(new SystemEvent(event, payload));
+					} catch (DotDataException e) {
+						Logger.info(this, e.getMessage());
+					}
+				});
+			}
 		}
 
 		@Override

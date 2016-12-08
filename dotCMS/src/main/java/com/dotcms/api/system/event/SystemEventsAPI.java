@@ -47,14 +47,21 @@ public interface SystemEventsAPI {
 	public void push(SystemEvent systemEvent) throws DotDataException;
 
 	/**
-	 * Pushg an event with a payload.
+	 * Pushes an event with a payload.
 	 * @param event {@link SystemEventType}
 	 * @param payload {@link Payload}
 	 * @throws DotDataException
      */
 	public void push(SystemEventType event, Payload payload) throws DotDataException;
 
-	// todo:
+	/**
+	 * Pushes an event with a payload in a separate task.
+	 * @param event {@link SystemEventType}
+	 * @param payload {@link Payload}
+	 * @throws DotDataException
+	 */
+	public void pushAsync(SystemEventType event, Payload payload) throws DotDataException;
+
 
 	/**
 	 * Returns a list of {@link SystemEvent} objects that were created from a
