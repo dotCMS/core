@@ -101,12 +101,18 @@
                 dojo.addClass('row-' + row, "active");
                 this.lastRow=row;
 
+				// Set Container Height
+				var x = window.innerHeight - 140;
+				dojo.style("container", "height", x + "px");
+
+
                 // Build the action Panel
                 var panelDiv = dojo.byId("actionPanelContainer");
                 var hanger = dojo.byId("actionPanelContent");
                 if(!hanger){
                     return;
                 }
+
                 if (panelDiv) {
                     dojo.destroy("panelDiv")
                 }
@@ -224,7 +230,7 @@
 
                 //dojo.parser.parse("actionPanel");
                 dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
-                
+
             },
 
             /**
@@ -364,7 +370,6 @@
 
         require(["dojo/ready"], function(ready){
               ready(function(){
-
                   renderNodesStatus();
 
                  /**
@@ -420,13 +425,11 @@
     <div id="myCacheDialogName"></div>
 </div>
 
-<div id="doc3" style="min-height: 600px">
-
-    <div class="actionPannelPage" id="container" style="min-height: 600px">
-        <div id="actionPanel" class="hideMe" style="height: 600px">
+<div id="doc3">
+    <div id="container">
+        <div id="actionPanel" class="hideMe">
             <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
             <div id="actionPanelContent" style="overflow:auto;"></div>
         </div>
     </div>
-
 </div>
