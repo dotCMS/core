@@ -39,18 +39,6 @@ List<ScheduledTask> tasks = ssapi.getTasks();
 
 	<%  List<SiteSearchAudit> recents = audit.findRecentAudits(jobId, offset, limit); %>
 
-	<% if(offset>0) { %>
-		<button dojoType="dijit.form.Button" iconClass="previousIcon" onClick="refreshAuditData('<%=jobId %>',<%=offset-limit %>,<%=limit%>)">
-			<%= LanguageUtil.get(pageContext, "Newer") %>
-		</button>
-	<% } %>
-	
-	<% if(recents.size()>=limit) { %>
-		<button dojoType="dijit.form.Button" iconClass="nextIcon" onClick="refreshAuditData('<%=jobId %>',<%=offset+limit %>,<%=limit%>)">
-			<%= LanguageUtil.get(pageContext, "Older") %>
-		</button>
-	<% } %>
-
 	<table class="listingTable">
 	    <tr>
 	     <th nowrap><%= LanguageUtil.get(pageContext, "Job") %></th>
@@ -98,4 +86,18 @@ List<ScheduledTask> tasks = ssapi.getTasks();
 	     </tr>
 	  <% } %>
 	</table>
+	
+	<div class="buttonRow">
+		<% if(offset>0) { %>
+			<button dojoType="dijit.form.Button" iconClass="previousIcon" onClick="refreshAuditData('<%=jobId %>',<%=offset-limit %>,<%=limit%>)">
+				<%= LanguageUtil.get(pageContext, "Newer") %>
+			</button>
+		<% } %>
+		
+		<% if(recents.size()>=limit) { %>
+			<button dojoType="dijit.form.Button" iconClass="nextIcon" onClick="refreshAuditData('<%=jobId %>',<%=offset+limit %>,<%=limit%>)">
+				<%= LanguageUtil.get(pageContext, "Older") %>
+			</button>
+		<% } %>
+	</div>
 <% } %>
