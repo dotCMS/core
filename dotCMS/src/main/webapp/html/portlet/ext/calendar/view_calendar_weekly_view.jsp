@@ -23,7 +23,7 @@
 	</div>
 
 	<div id="weekWrapper" style="overflow-y:auto;overflow-x:hidden;">
-		<table class="listingTable">
+		<table class="listingTable" style="height: 100%;">
 			<thead>
 				<tr>
 					<th width="14%"><%= LanguageUtil.get(pageContext, "SUN") %></th>
@@ -147,7 +147,7 @@
 					(selectedDate.getMonth() != currentDate.getMonth()?'notInMonth ':'') +
 					(currentDayOfWeek == 6 || currentDayOfWeek == 7?'weekendDay ':'') + 
 					(currentDayOfWeek == 6?'lastWeekDay':'') + '">' +
-				'	<div class="dayNumber" style="margin:-26px 3px 15px 0;"><a href="javascript: setDayView('+currentDate.getFullYear()+','+currentDate.getMonth()+','+currentDate.getDate()+');">' + currentDate.format('j') + '</a></div>';
+				'	<div class="dayNumber" style="margin:-30px 10px 25px 0;"><a href="javascript: setDayView('+currentDate.getFullYear()+','+currentDate.getMonth()+','+currentDate.getDate()+');">' + currentDate.format('j') + '</a></div>';
 
 				
 		// START ALL DAY LOOP	

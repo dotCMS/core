@@ -27,7 +27,7 @@
 	</div>
 	
 	<div id="monthWrapper" style="overflow-y:auto;overflow-x:hidden;">
-		<table class="listingTable">
+		<table class="listingTable" style="height: 100%;">
 			<thead> 
 				<tr>
 					<th width="14%"><%= LanguageUtil.get(pageContext, "SUN") %></th>

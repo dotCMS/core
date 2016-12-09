@@ -561,50 +561,50 @@
 		if(!event.archived && event.writePermission){
 			if(event.recurs){
 		      eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'copy\');">' +
-			  '<span class="copyIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "copy")) %></a>';
+			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "copy")) %></a>';
 			}else{
 				eventDetailActions += '<a class="fakeDojoButton" href="javascript: copyEvent(\'' + event.inode + '\',\'<%= referer %>\');">' +
-				  '<span class="copyIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "copy")) %></a>';
+				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "copy")) %></a>';
 			}
 		}
 		if(event.writePermission){
 			if(event.recurs){
 			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate+ '\',\'edit\');">' +
-			  '<span class="editIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
+			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
 			}else{
 				eventDetailActions += '<a class="fakeDojoButton" href="javascript: editEvent(\'' + event.inode + '\',\'<%= referer %>\');">' +
-				  '<span class="editIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
+				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
 			}
 		}
 		if(event.live && event.publishPermission) {
 		    eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.inode + '\');">' +
-					'<span class="republishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "republish")) %></a>';
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "republish")) %></a>';
 		  if(event.recurs){
 			eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'unpublish\');">' +
-			       '<span class="unpublishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
+			       '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
 		  }else{
 			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + event.inode + '\',\'false\');">' +
-				'<span class="unpublishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
 		  }
 		}
 		if(!event.live && !event.archived && event.publishPermission){
 		     eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.inode + '\');">' +
-				'<span class="publishIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish")) %></a>';
 		}
 		if(!event.archived && !event.live && event.publishPermission){
 		    	eventDetailActions += '<a class="fakeDojoButton" href="javascript: archiveEvent(\'' + event.inode + '\');">' +
-				'<span class="archiveIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "archive")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "archive")) %></a>';
 		}
 		if(event.archived && event.publishPermission) {
 			eventDetailActions += '<a class="fakeDojoButton" href="javascript: unarchiveEvent(\'' + event.inode + '\');">' +
-				'<span class="unarchiveIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive")) %></a>';
 
 			if(event.recurs){
 				eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'delete\');">' +
-				'<span class="deleteIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
 			}else{
 			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: deleteEvent(\'' + event.identifier + '\',\'false\');">' +
-				'<span class="deleteIcon"></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
 			}
 		}
 
@@ -627,22 +627,22 @@
 			    actions += '<a class="fakeDojoButton" href="javascript: editRecurrentEvent(\'' + inode + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
 				'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Only-this-instance")) %></a>';
 				actions += '<a class="fakeDojoButton" href="javascript: editEvent(\'' + inode + '\',\'<%= referer %>\');">' +
-					'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
 		}else if(action=="unpublish"){
 			 actions += '<a class="fakeDojoButton" href="javascript: unpublishRecurrentEvent(\'' + inode + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
 				'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Only-this-instance")) %></a>';
 			  actions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + inode + '\',\'true\');">' +
-					'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
 		}else if(action=="delete"){
 			 actions += '<a class="fakeDojoButton" href="javascript: deleteRecurrentEvent(\'' + inode + '\',\'' + identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
 				'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Only-this-instance")) %></a>';
 			  actions += '<a class="fakeDojoButton" href="javascript: deleteEvent(\'' + identifier + '\',\'true\');">' +
-					'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
 		}else if(action=="copy"){
 			  actions += '<a class="fakeDojoButton" href="javascript: copyRecurrentEvent(\'' + inode + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
 				'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Only-this-instance")) %></a>';
 			  actions += '<a class="fakeDojoButton" href="javascript: copyEvent(\'' + inode + '\',\'<%= referer %>\');">' +
-					'<span></span> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
 		}
 
 		closeEventDetail();
