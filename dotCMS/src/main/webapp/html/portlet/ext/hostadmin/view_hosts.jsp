@@ -142,7 +142,7 @@
                 <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
                     <%= LanguageUtil.get(pageContext, "Next") %>
                 </button>
-                <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false; " iconClass="cancelIcon">
+                <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false;" class="dijitButtonFlat">
                     <%= LanguageUtil.get(pageContext, "Cancel") %>
                 </button>
             </div>

@@ -117,115 +117,170 @@ query = Xss.strip(query);
 <script>
 	dojo.require("dijit.form.NumberTextBox");
 </script>
-<div class="portlet-wrapper">
-	<div>
-		<form name="query" action="<%= submitURL %>" method="post">		
-			<dl>	
-				<dt><strong><%= LanguageUtil.get(pageContext, "Lucene-Query") %> :</strong></dt><dd>
-				
-				<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea>
-				
-				</dd>
-				<dt><strong><%= LanguageUtil.get(pageContext, "Offset") %> : </strong></dt><dd><input name="offset" id="offset" dojoType="dijit.form.NumberTextBox" type="text" value="<%=offset%>" size="10" /></dd>
-				<dt><strong><%= LanguageUtil.get(pageContext, "Limit") %> : </strong></dt><dd><input name="limit" id="limit" dojoType="dijit.form.NumberTextBox" type="text" value="<%=limit%>" size="10" /></dd>
-				<dt><strong><%= LanguageUtil.get(pageContext, "Sort") %> : </strong></dt><dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="<%=sortBy%>" size="10" /></dd>
-				<dt><strong><%= LanguageUtil.get(pageContext, "UserID") %> : </strong></dt><dd><input name="userid" id="userid" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
-				<dt><strong><%= LanguageUtil.get(pageContext, "Reindex-selected-contents") %> : </strong></dt><dd><input name="reindexResults" id="reindexResults" dojoType="dijit.form.CheckBox" type="checkbox"  value="true" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
-				
-				<dt></dt><dd><button type="submit" id="submitButton" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Submit") %></button></dd>
-			</dl>
-            <script language="Javascript">
-				/**
-					focus on search box
-				**/
-				require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-					dojo.require('dojox.timing');
-					t = new dojox.timing.Timer(500);
-					t.onTick = function(){
-					  focusUtil.focus(dom.byId("query"));
-					  t.stop();
-					}
-					t.start();
-				});
-			</script>
-		</form>
-	</div>
-	<hr>
-	<%if(UtilMethods.isSet(nastyError)){%>
-		<dl>
-			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "Query-Error") %> : </dt>
-			<dd><%=nastyError %></dd>
-		</dl>
+
+<!-- START Split Screen -->
+    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer">
+	<!-- START Left Column -->
+	<div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 400px;" class="portlet-sidebar-wrapper" >
+	    <div class="portlet-sidebar">
+		
+			<div id="advancedSearch">
+				<form name="query" action="<%= submitURL %>" method="post">
+					<dl class="vertical">
+							
+						<dt><label><%= LanguageUtil.get(pageContext, "Lucene-Query") %> :</label></dt>
+						<dd><textarea dojoType="dijit.form.Textarea" name="query" style="width:365px;min-height: 150px;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea></dd>
 			
-		
-	<%}else if(iresults != null){%>
-	
-	<div>
-		<div><strong><%= LanguageUtil.get(pageContext, "Query-took") %> : </strong><%= afterAPISearchPull-startAPISearchPull %> ms <em><%= LanguageUtil.get(pageContext, "This-includes-permissions-but-returns-only-the-index-objects") %></em></div>
-		<div><strong><%= LanguageUtil.get(pageContext, "Content-Population-took") %> : </strong><%= afterAPIPull-startAPIPull %> ms <em><%= LanguageUtil.get(pageContext, "This-includes-permissions-and-returns-full-content-objects") %></em></div>
-		<div><strong><%= LanguageUtil.get(pageContext, "Query-is") %> : </strong><%=UtilMethods.htmlifyString(query)%></div>
-		<div><strong><%= LanguageUtil.get(pageContext, "Translated-query-is") %> : </strong><%=translatedQuery%></div>
-		<div><strong><%= LanguageUtil.get(pageContext, "The-offset-is") %> : </strong><%=offset%></div>
-		<div><strong><%= LanguageUtil.get(pageContext, "The-limit-is") %> : </strong><%=limit%></div> 
-		<div><strong><%= LanguageUtil.get(pageContext, "The-sort-is") %>: </strong><%=sortBy%></div> 
-		
-	</div>
-	<div>&nbsp</div>
-	
-	
-	
-		<div id=results>
-			<div><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> : </strong><%=iresults == null ? "0" : iresults.size()%></div> 
-	
-			<% for (ContentletSearch r : iresults){%>
-				<div id="result" style="padding-left:10px;"><strong><%= LanguageUtil.get(pageContext, "INODE") %> : </strong><%= r.getInode() %> <strong><%= LanguageUtil.get(pageContext, "IDENTIFIER") %> : </strong><%= r.getIdentifier() %>
+						<dt><label><%= LanguageUtil.get(pageContext, "Offset") %> : </label></dt>
+						<dd><input name="offset" id="offset" dojoType="dijit.form.NumberTextBox" type="text" value="<%=offset%>" size="10" /></dd>
 				
-				<strong><%= LanguageUtil.get(pageContext, "score") %> : </strong><%= r.getScore() %>
+						<dt><label><%= LanguageUtil.get(pageContext, "Limit") %> : </label></dt>
+						<dd><input name="limit" id="limit" dojoType="dijit.form.NumberTextBox" type="text" value="<%=limit%>" size="10" /></dd>
 				
-				</div>
-			<% } %>
-			<%if(iresults.size() >0){ %>
-				<div>&nbsp</div>
-				<div><strong><%= LanguageUtil.get(pageContext, "INODE") %></strong><hr /></div>
+						<dt><label><%= LanguageUtil.get(pageContext, "Sort") %> : </label></dt>
+						<dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="<%=sortBy%>" size="10" /></dd>
 				
-						
-				<table>
-				<% for(Contentlet c : cons) {%>
-					<tr>
-						<td><strong><%= counter %>.</td>
-						<td width="100"><strong><%= LanguageUtil.get(pageContext, "Title") %>:</strong></td>
-						
-		
-						
-						
-						<td><a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
-								<%=c.getTitle() %>
-							</a>
-						</td>
-					</tr>
-					<tr>
-						<td>&nbsp;</td>
-						<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
-						<td width="90%"><%=c.getInode() %></td>
-					</tr>
-					<tr>
-						<td>&nbsp;</td>
-						<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
-						<td><%= c.getIdentifier() %></td>
-					</tr>
-					<tr >
-						<td>&nbsp;</td>
-						<td colspan=2>
-							<div style="border-bottom:1px silver solid;padding:10px;"><%= UtilMethods.makeHtmlSafe(ContentletUtil.getContentPrintableMap(user, c).toString()) %></div>
-						</td>
-					</tr>
-					<%	counter++;%>
-				<%}%>
-				</table>
-			<% }else{ %>
-				<div id="result"><%= LanguageUtil.get(pageContext, "No-Results") %></div>
-			<%} %>
+						<dt><label><%= LanguageUtil.get(pageContext, "UserID") %> : </label></dt>
+						<dd><input name="userid" id="userid" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
+					</dl>
+					<div class="inline-form">
+						<input name="reindexResults" id="reindexResults" dojoType="dijit.form.CheckBox" type="checkbox"  value="true" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/>
+						<label><%= LanguageUtil.get(pageContext, "Reindex-selected-contents") %></label>
+					</div>	
+						<div class="buttonRow">
+							<button type="submit" id="submitButton" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Submit") %></button>
+					</div>
+					
+			        <script language="Javascript">
+						/**
+							focus on search box
+						**/
+						require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+							dojo.require('dojox.timing');
+							t = new dojox.timing.Timer(500);
+							t.onTick = function(){
+							  focusUtil.focus(dom.byId("query"));
+							  t.stop();
+							}
+							t.start();
+						});
+					</script>
+				</form>
+			</div>
 		</div>
-	<%} %>
+	</div>
+	
+	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
+		<div class="portlet-main" style="margin: 35px 20px;">
+	
+			<%if(UtilMethods.isSet(nastyError)){%>
+				<dl>
+					<dt style='color:red;'><%= LanguageUtil.get(pageContext, "Query-Error") %> : </dt>
+					<dd><%=nastyError %></dd>
+				</dl>
+				
+			<%}else if(iresults != null){%>
+			
+			<table class="listingTable">
+				<tr>
+					<td><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> :</strong> <%=iresults == null ? "0" : iresults.size()%></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td><strong><%= LanguageUtil.get(pageContext, "Query-took") %> :</strong> <<%= afterAPISearchPull-startAPISearchPull %> ms</td>
+					<td><em><%= LanguageUtil.get(pageContext, "This-includes-permissions-but-returns-only-the-index-objects") %></em></td>
+				</tr>
+				<tr>
+					<td><strong><%= LanguageUtil.get(pageContext, "Content-Population-took") %> :</strong> <%= afterAPIPull-startAPIPull %> ms</td>
+					<td><em><%= LanguageUtil.get(pageContext, "This-includes-permissions-and-returns-full-content-objects") %></em></td>
+				</tr>
+			</table>
+				<!-- <tr>
+					<td><%= LanguageUtil.get(pageContext, "Query-is") %> :</td>
+					<td><%=UtilMethods.htmlifyString(query)%></td>
+				</tr>
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "Translated-query-is") %> :</td>
+					<td><%=translatedQuery%></td>
+				</tr>
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "The-offset-is") %> :</td>
+					<td><%=offset%></td>
+				</tr>
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "The-limit-is") %> :</td>
+					<td><%=limit%></td>
+				</tr>
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "The-sort-is") %>:</td>
+					<td><%=sortBy%> </td>
+				</tr>
+				 -->
+			</table>
+			<!--
+			<table class="listingTable">
+				<tr>
+					<th><%= LanguageUtil.get(pageContext, "INODE") %></th>
+					<th><%= LanguageUtil.get(pageContext, "IDENTIFIER") %></th>
+					<th><%= LanguageUtil.get(pageContext, "score") %></th>
+				</tr>
+				<% for (ContentletSearch r : iresults){%>
+					<tr>
+						<td><%= r.getInode() %></td>
+						<td><%= r.getIdentifier() %></td>
+						<td><%= r.getScore() %></td>
+					</tr>
+				<% } %>	
+			</table>
+			-->
+			
+			<div id="results" style="margin-top: 30px;">
+				<table class="listingTable">
+					<!--<tr>
+						<th colspan="3"><%= LanguageUtil.get(pageContext, "INODE") %></th>
+					</tr>-->
+					<%if(iresults.size() >0){ %>
+
+						<% for(Contentlet c : cons) {%>
+							<tr>
+								<th><strong><%= counter %>.</th>
+								<th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
+								<th>
+									<a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
+										<%=c.getTitle() %>
+									</a>
+								</th>
+							</tr>
+							<tr>
+								<td></td>
+								<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
+								<td width="90%"><%=c.getInode() %></td>
+							</tr>
+							<tr>
+								<td></td>
+								<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
+								<td><%= c.getIdentifier() %></td>
+							</tr>
+							<!-- <tr >
+								<td></td>
+								<td colspan="2">
+									<div style="padding-bottom: 25px;"><%= UtilMethods.makeHtmlSafe(ContentletUtil.getContentPrintableMap(user, c).toString()) %></div>
+								</td>
+							</tr> -->
+							<tr>
+								<td></td>
+								<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
+								<td width="90%"><%=c.getStructure().getVelocityVarName() %></td>
+							</tr>
+							<%	counter++;%>
+						<%}%>
+					<% }else{ %>
+						<div id="result" style="text-align:center; padding: 40px;"><%= LanguageUtil.get(pageContext, "No-Results") %></div>
+					<%} %>
+				</table>
+			</div>
+		<%} %>
+		</div>
+	</div>
 </div>
 
