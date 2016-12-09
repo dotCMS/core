@@ -253,6 +253,11 @@ query = Xss.strip(query);
 							</tr>
 							<tr>
 								<td></td>
+								<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
+								<td width="90%"><%=c.getStructure().getVelocityVarName() %></td>
+							</tr>
+							<tr>
+								<td></td>
 								<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
 								<td width="90%"><%=c.getInode() %></td>
 							</tr>
@@ -267,11 +272,7 @@ query = Xss.strip(query);
 									<div style="padding-bottom: 25px;"><%= UtilMethods.makeHtmlSafe(ContentletUtil.getContentPrintableMap(user, c).toString()) %></div>
 								</td>
 							</tr> -->
-							<tr>
-								<td></td>
-								<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
-								<td width="90%"><%=c.getStructure().getVelocityVarName() %></td>
-							</tr>
+							
 							<%	counter++;%>
 						<%}%>
 					<% }else{ %>
