@@ -17,6 +17,7 @@ import {BaseComponent} from '../common/_base/base-component';
 export class SiteSelectorComponent extends BaseComponent {
     private currentSite: any;
     private sites: Site[];
+    private sitesCounter: number;
     private message: string;
     private filteredSitesResults: Array<any>;
     private paginationPage: number = 1;
@@ -34,6 +35,7 @@ export class SiteSelectorComponent extends BaseComponent {
             value: site.identifier,
         });
         this.siteService.sites$.subscribe(sites => this.sites = sites);
+        this.siteService.sitesCounter$.subscribe(counter => this.sitesCounter = counter);
         this.siteService.archivedCurrentSite$.subscribe(site => {
             this.message = this.i18nMessages['archived-current-site-message'];
         });
@@ -114,7 +116,6 @@ export class SiteSelectorComponent extends BaseComponent {
                     value: site.identifier,
                 });
             });
-
         });
     }
 }

@@ -13,11 +13,13 @@ export class SiteService {
     private _switchSite$: Subject<Site> = new Subject();
     private site: Site;
     private sites: Site[];
+    private sitesCounter: number;
 
     private _switchSite$: Subject<Site> = new Subject();
     private _sites$: Subject<Site[]> = new Subject();
     private _updatedCurrentSite$: Subject<Site> = new Subject();
     private _archivedCurrentSite$: Subject<Site> = new Subject();
+    private _sitesCounter$: Subject<number> = new Subject();
     private urls: any;
 
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
@@ -91,6 +93,10 @@ export class SiteService {
         return this._sites$.asObservable();
     }
 
+    get sitesCounter$(): Observable<number>{
+        return this._sitesCounter$.asObservable();
+    }
+
     get updatedCurrentSite$(): Observable<Site> {
         return this._updatedCurrentSite$.asObservable();
     }
@@ -110,6 +116,7 @@ export class SiteService {
             url: this.urls.allSiteUrl,
         }).subscribe(response => {
             this.setSites(response.entity.sites);
+            this.setSitesCounter(response.entity.sitesCounter);
             this.setCurrentSiteIdentifier(response.entity.currentSite);
         });
     }
@@ -119,6 +126,10 @@ export class SiteService {
         this._sites$.next(this.sites);
     }
 
+    private setSitesCounter(counter: number): void {
+        this.sitesCounter = counter;
+        this._sitesCounter$.next(this.sitesCounter);
+    }
     get currentSite(): Site{
         return this.site;
     }
@@ -138,6 +149,7 @@ export class SiteService {
             method: RequestMethod.Get,
             url: `${this.urls.sitesUrl}?filter=${filter}&archived=${archived}&page=${page}&count=${count}`,
         }).map(response => {
+            this.setSites(response.entity.sites.results);
             return response.entity;
         });
     }
