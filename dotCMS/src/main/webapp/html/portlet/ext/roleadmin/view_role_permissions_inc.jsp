@@ -1,17 +1,21 @@
-<div id="loadingPermissionsAccordion"><img src="/html/js/lightbox/images/loading.gif"></div>
-      
+<div id="loadingPermissionsAccordion"><img src="/html/images/icons/processing.gif"></div>
+
 <div id="rolePermissionsWrapper">
-	
+
+	<div class="view-roles__heading">
+		<h3 class="nameText" id="displayRoleName2"></h3>
+
+		<div id="rolePermissionsHostSelectorWrapper" class="permission__host-selector inline-form">
+			<label id="addHostFolderTitle" for="rolePermissionsHostSelector"><%= LanguageUtil.get(pageContext, "add-host-folder") %></label>
+			<div id="rolePermissionsHostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect"></div>
+			<button dojoType="dijit.form.Button" class="hostSelectorButton" onclick="addHostFolder()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
+		</div>
+	</div>
+
 	<div id="rolePermissionsMsg"></div>
 	
- 	<div id="permissionsCascadeMsg" class="warningHeader " style="display:none;position: absolute;">
+ 	<div id="permissionsCascadeMsg" class="warningHeader" style="display:none;position: absolute;">
 		<div class="warningText" id="permissionsCascadeMsgText"></div>
-	</div>
-	
-	<div id="rolePermissionsHostSelectorWrapper" class="permission__host-selector inline-form">
-		<label id="addHostFolderTitle"><%= LanguageUtil.get(pageContext, "add-host-folder") %></label>
-		<div id="rolePermissionsHostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect"></div>
-		<button dojoType="dijit.form.Button" class="hostSelectorButton" onclick="addHostFolder()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
 	</div>
 	<div class="clear"></div>
 	<div id="rolePermissionsAccordion">

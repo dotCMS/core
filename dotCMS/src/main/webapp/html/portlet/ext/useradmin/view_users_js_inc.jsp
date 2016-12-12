@@ -298,7 +298,6 @@
 				loadMarketingInfo(userId);
 				break;
 		}
-		resizeRoleBrowser();
 	}
 
 	function userRoleCallback(userRole) {
