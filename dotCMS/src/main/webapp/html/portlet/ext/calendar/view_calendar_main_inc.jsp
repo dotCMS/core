@@ -56,19 +56,19 @@
 		var viewport_height = viewport.h;
 
 		var  e =  dojo.byId("borderContainer");
-		dojo.style(e, "height", viewport_height -150+"px");
+		dojo.style(e, "height", viewport_height +"px");
 
-		//var  e =  dojo.byId("sideMenuWrapper");
-		//dojo.style(e, "height", viewport_height -230+"px");
+		var  e =  dojo.byId("sideMenuWrapper");
+		dojo.style(e, "height", viewport_height +"px");
 		
 		var  e =  dojo.byId("monthWrapper");
-		dojo.style(e, "height", viewport_height -251+"px");
+		dojo.style(e, "height", viewport_height - 140 +"px");
 		
 		var  e =  dojo.byId("weekWrapper");
-		dojo.style(e, "height", viewport_height -251+"px");
+		dojo.style(e, "height", viewport_height - 140 +"px");
 		
 		var  e =  dojo.byId("dayWrapper");
-		dojo.style(e, "height", viewport_height -251+"px");
+		dojo.style(e, "height", viewport_height - 140 +"px");
 		
 		if(viewport_height > 625){
 			var  e =  dojo.byId("calendarWeeklyBody");
@@ -84,8 +84,8 @@
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">				
 	
 	<!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="lineRight" style="width:240px;padding:0;margin:0;">
-		<div id="sideMenuWrapper" style="margin:40px 0 0 0;overflow-y:auto;overflow-x:hidden;">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="lineRight" style="width:260px;padding:0;margin:0;">
+		<div id="sideMenuWrapper" class="portlet-sidebar-wrapper">
 			<div id="calendarNavigation">
 				<%@ include file="view_calendar_navigation.jsp" %>
 				<div class="clear">&nbsp;</div>
@@ -97,9 +97,10 @@
 	<!-- START Right Column -->
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 
-		<div class="buttonRightInBox">
-			<div class="yui-gc">
-				<div class="yui-u first" style="text-align:left;">
+		<div class="portlet-main">
+			<!-- START Toolbar -->
+			<div class="portlet-toolbar">
+				<div class="portlet-toolbar__actions-primary">
 					<input type="text" dojoType="dijit.form.TextBox" style="width:250px;margin-left:10px;" name="keywordBox" id="keywordBox" size="30" />
 					<button dojoType="dijit.form.Button" id="moreOptionsButton"  onclick="addKeyword()" iconClass="previewIcon">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>
@@ -108,33 +109,34 @@
 			            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Filter")) %>
 			        </button>
 				</div>
-			
-				<div class="yui-u" style="text-align:right;">
-					<%
+				<div class="portlet-toolbar__info">
+					
+				</div>
+		    	<div class="portlet-toolbar__actions-secondary">
+		    		<button dojoType="dijit.form.Button" onclick="changeCalendarView('list');" iconClass="calListIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "List-View")) %>
+					</button>
+					
+					<button dojoType="dijit.form.Button" onclick="changeCalendarView('weekly');" iconClass="calWeekIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Weekly-View")) %>
+					</button>
+					
+					<button dojoType="dijit.form.Button" onclick="changeCalendarView('monthly');" iconClass="calMonthIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Monthly-View")) %>
+					</button>
+		    		<%
 					    PermissionAPI permissionAPI = APILocator.getPermissionAPI();		    
 					    if(permissionAPI.doesUserHavePermission(eventStructure,PermissionAPI.PERMISSION_WRITE,user,false)){
 				    %>
-					    <button dojoType="dijit.form.Button" id="addEventBtn" onclick="addEvent();" iconClass="plusIcon">
+					    <button dojoType="dijit.form.Button" id="addEventBtn" onclick="addEvent();" class="dijitButtonDanger">
 					        <%= LanguageUtil.get(pageContext, "add-event") %>    
 					    </button>
 					<% } %>
-				</div>
-			</div>
+		    	</div>
+		   </div>
+		   <!-- END Toolbar -->
 		</div>
 
-		<div class="buttonRow" style="text-align:right;position:absolute;right:3px;z-index:6;margin-top:3px;">
-			<button dojoType="dijit.form.Button" onclick="changeCalendarView('list');" iconClass="calListIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "List-View")) %>
-			</button>
-			
-			<button dojoType="dijit.form.Button" onclick="changeCalendarView('weekly');" iconClass="calWeekIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Weekly-View")) %>
-			</button>
-			
-			<button dojoType="dijit.form.Button" onclick="changeCalendarView('monthly');" iconClass="calMonthIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Monthly-View")) %>
-			</button>
-		</div>
 				
 		<div id="calendarSection" style="padding:5px;">
 			<%@ include file="view_calendar_list_view.jsp" %>

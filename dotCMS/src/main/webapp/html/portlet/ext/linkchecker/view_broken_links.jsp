@@ -196,34 +196,43 @@ dojo.ready(function(){
 
 </script>
 
-<div class="portlet-wrapper">
+<div class="portlet-main">
     
-    <div class="subNavCrumbTrail">
-        <ul id="subNavCrumbUl">        
-            <li>
-                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS")%>
-            </li>
-            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
-        </ul>
-        <div class="clear"></div>
-    </div>
+    <!--
+    	<div class="subNavCrumbTrail">
+	        <ul id="subNavCrumbUl">        
+	            <li>
+	                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS")%>
+	            </li>
+	            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
+	        </ul>
+	        <div class="clear"></div>
+	    </div>
+	-->
     
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;background-image:none;">
-            <div dojoType="dijit.layout.ContentPane" region="top" style="padding:8px;">
-					<%=LanguageUtil.get(pageContext, "Structure")%>:
-					<div id="structureSelect"></div>
-					
-                <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
-                   <span class="reindexIcon"></span>
-                   <%=LanguageUtil.get(pageContext,"Refresh")%>
-                </button>
-                <div style="float:right;">
-                <button id="runBtn" type="button" dojoType="dijit.form.Button" onClick="runNow()">
-                   <span class="linkCheckIcon"></span>
-                   <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
-                </button>
-                </div>
+            <div dojoType="dijit.layout.ContentPane" region="top">
+            	<!-- START Toolbar -->
+				<div class="portlet-toolbar">
+					<div class="portlet-toolbar__actions-primary">
+						<!-- <%=LanguageUtil.get(pageContext, "Structure")%>:-->
+						<div id="structureSelect"></div>
+						<button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
+		                   <span class="reindexIcon"></span>
+		                   <%=LanguageUtil.get(pageContext,"Refresh")%>
+		                </button>
+					</div>
+					<div class="portlet-toolbar__info">
+						
+					</div>
+			    	<div class="portlet-toolbar__actions-secondary">
+			    		<button id="runBtn" type="button" dojoType="dijit.form.Button" onClick="runNow()">
+		                   <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
+		                </button>
+			    	</div>
+			   </div>
+			   <!-- END Toolbar -->
             </div>
             <div dojoType="dijit.layout.ContentPane" region="center">
                 <table id="links_table" class="listingTable">

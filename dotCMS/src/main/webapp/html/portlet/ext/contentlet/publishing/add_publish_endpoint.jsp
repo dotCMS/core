@@ -113,21 +113,20 @@
 </script>
 
 <style>
-	.myTable {margin:20px;padding:10px;}
-	.myTable tr td{padding:5px;vertical-align: top;}
+	.myTable tr td{padding: 5px !important;}
 	#addressRow {}
 	#portRow {display:none;}
 
 </style>
 
-<div style="margin:auto;">
+<div style="padding:20px; width:580px; overflow:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
-		<table class="myTable" border=0 style="margin: auto" align="center">
+		<table class="listingTable">
 			<%if(currentEnvironment!=null) { %>
 
 			<tr id="sendGroupRow">
-				<td align="right">
+				<td align="right" width="30%">
 					<%= LanguageUtil.get(pageContext, "publisher_Environment") %>:
 				</td>
 				<td>
@@ -138,7 +137,7 @@
 
 			<%} %>
 			<tr>
-				<td align="right" width="40%">
+				<td align="right">
 					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
 				</td>
 				<td>
@@ -149,18 +148,10 @@
 							  value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
 							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
 							  />
-				</td>
-			</tr>
-
-
-
-			<tr>
-				<td align="center" colspan=2>
 					<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
 				</td>
 			</tr>
-
-
+			
 			<tr id="addressRow">
 				<td align="right">
 					<span id="addressToSpan">
@@ -222,15 +213,9 @@
 			</tr>
 		</table>
 
-		<table align="center">
-			<tr>
-				<td colspan="2" class="buttonRow" style="text-align: center;white-space: nowrap;">
-					<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
-					&nbsp;
-					<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
-
-			    </td>
-		    </tr>
-	   </table>
+		<div class="buttonRow">
+			<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+			<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+		</div>
 	</div>
 </div>
