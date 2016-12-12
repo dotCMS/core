@@ -24,7 +24,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Concrete implementation of the {@link NotificationAPI} class.
@@ -257,9 +260,37 @@ public class NotificationAPIImpl implements NotificationAPI {
     public void deleteNotification(final String userId, final String groupId) throws DotDataException {
 
 		synchronized (this) {
-            this.notificationFactory.deleteNotification(userId, groupId);
-            this.newNotificationCache.removeNotification(userId, groupId);
-            this.newNotificationCache.remove(userId);
+
+            boolean localTransaction = false;
+
+            try {
+
+                //Check for a transaction and start one if required
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+                this.notificationFactory.deleteNotification(userId, groupId);
+                this.newNotificationCache.removeNotification(userId, groupId);
+                this.newNotificationCache.remove(userId);
+
+                //Everything ok..., committing the transaction
+                if ( localTransaction ) {
+                    HibernateUtil.commitTransaction();
+                }
+            } catch (Exception e) {
+
+                try {
+                    //On error rolling back the changes
+                    if ( localTransaction ) {
+                        HibernateUtil.rollbackTransaction();
+                    }
+                } catch (DotHibernateException hibernateException) {
+                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
+                }
+
+                final String msg = "An error occurred when deleting Notification.";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
         }
     } // deleteNotification.
 
@@ -269,25 +300,79 @@ public class NotificationAPIImpl implements NotificationAPI {
 
 		synchronized (this) {
 
-            this.notificationFactory.deleteNotification(userId, groupsId);
+            boolean localTransaction = false;
 
-            for ( String groupId : groupsId ) {
-                this.newNotificationCache.removeNotification(userId, groupId);
+            try {
+
+                //Check for a transaction and start one if required
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+                this.notificationFactory.deleteNotification(userId, groupsId);
+
+                for ( String groupId : groupsId ) {
+                    this.newNotificationCache.removeNotification(userId, groupId);
+                }
+
+                this.newNotificationCache.remove(userId);
+
+                //Everything ok..., committing the transaction
+                if ( localTransaction ) {
+                    HibernateUtil.commitTransaction();
+                }
+            } catch (Exception e) {
+
+                try {
+                    //On error rolling back the changes
+                    if ( localTransaction ) {
+                        HibernateUtil.rollbackTransaction();
+                    }
+                } catch (DotHibernateException hibernateException) {
+                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
+                }
+
+                final String msg = "An error occurred when deleting Notifications for user [" + userId + "]";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
             }
-
-			this.newNotificationCache.remove(userId);
-		}
-	} // deleteNotifications.
+        }
+    } // deleteNotifications.
 
 	@Override
 	public void deleteNotifications(final String userId) throws DotDataException {
 
 		synchronized (this) {
 
-			this.notificationFactory.deleteNotifications(userId);
-			this.newNotificationCache.remove(userId);
-		}
-	} // deleteNotifications.
+            boolean localTransaction = false;
+
+            try {
+
+                //Check for a transaction and start one if required
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+                this.notificationFactory.deleteNotifications(userId);
+                this.newNotificationCache.remove(userId);
+
+                //Everything ok..., committing the transaction
+                if ( localTransaction ) {
+                    HibernateUtil.commitTransaction();
+                }
+            } catch (Exception e) {
+
+                try {
+                    //On error rolling back the changes
+                    if ( localTransaction ) {
+                        HibernateUtil.rollbackTransaction();
+                    }
+                } catch (DotHibernateException hibernateException) {
+                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
+                }
+
+                final String msg = "An error occurred when deleting Notifications for user [" + userId + "]";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
+        }
+    } // deleteNotifications.
 
 	@Override
 	public List<Notification> getNotifications(final long offset,
@@ -429,10 +514,38 @@ public class NotificationAPIImpl implements NotificationAPI {
 	public void markNotificationsAsRead(final String userId) throws DotDataException {
 
 		synchronized (this) {
-			this.notificationFactory.markNotificationsAsRead(userId);
-			this.newNotificationCache.remove(userId);
-		}
-	} // markNotificationsAsRead.
+
+            boolean localTransaction = false;
+
+            try {
+
+                //Check for a transaction and start one if required
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+                this.notificationFactory.markNotificationsAsRead(userId);
+                this.newNotificationCache.remove(userId);
+
+                //Everything ok..., committing the transaction
+                if ( localTransaction ) {
+                    HibernateUtil.commitTransaction();
+                }
+            } catch (Exception e) {
+
+                try {
+                    //On error rolling back the changes
+                    if ( localTransaction ) {
+                        HibernateUtil.rollbackTransaction();
+                    }
+                } catch (DotHibernateException hibernateException) {
+                    Logger.error(NotificationAPIImpl.class, hibernateException.getMessage(), hibernateException);
+                }
+
+                final String msg = "An error occurred marking Notifications as read for user [" + userId + "]";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
+        }
+    } // markNotificationsAsRead.
 
 	/**
 	 * Converts the physical representation of a Notification (i.e., the
