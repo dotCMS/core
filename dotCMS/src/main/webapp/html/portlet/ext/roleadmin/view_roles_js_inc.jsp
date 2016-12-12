@@ -92,52 +92,7 @@
 
 
 
-	var browserLoaded = false;
-
-	function  resizeRoleBrowser(){
-
-	    var viewport = dijit.getViewport();
-	    var viewport_height = viewport.h;
-	    var e =  dojo.byId("borderContainer");
-	    dojo.style(e, "height", viewport_height -150 + "px");
-
-	    var bc = dijit.byId('borderContainer');
-	    if(bc != undefined){
-			try{
-		    	bc.resize();
-			}catch(err){//DOTCMS-5749
-				console.log(err);
-			}
-	    }
-
-		var  e =  dojo.byId("roleTabsContainer");
-		if(e){
-	       	dojo.style(e, "height", viewport_height - 150 + "px");
-		}
-
-		var  e =  dojo.byId("usersTab");
-		if(e){
-       	  dojo.style(e, "height", viewport_height - 220 + "px");
-		}
-
-		var  e =  dojo.byId("permissionsTab");
-		if(e){
-		  dojo.style(e, "height", viewport_height - 220 + "px");
-		}
-
-		var  e =  dojo.byId("cmsTabsTab");
-		if(e){
-       	  dojo.style(e, "height", viewport_height - 220 + "px");
-		}
-
-       	dojo.query("#roleTabsContainer .dijitTabPaneWrapper").style("height", (viewport_height - 150) + "px");
-
-	}
-
 	// need the timeout for back buttons
-	setTimeout(resizeRoleBrowser, 50);
-	dojo.addOnLoad(resizeRoleBrowser);
-	dojo.connect(window, "onresize", this, "resizeRoleBrowser");
 
 
 
@@ -239,8 +194,8 @@
 					roleClickedDeferredHandler = setTimeout(roleClickedDeferred, 500);
 
 				} else {
-					dojo.byId('editRoleButtonWrapper').style.display = 'none';
-					dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
+					dijit.byId('editRoleButtonWrapper').setAttribute("disabled", true);
+					dijit.byId('deleteRoleButtonWrapper').setAttribute("disabled", true);
 					dojo.style(dojo.byId('roleTabs'), { display: 'none' });
 					currentRoleId=null;
 					currentRole=null;
@@ -373,8 +328,8 @@
 			hideToolTip();
 			lastSelectedNode = null;
 			buildRolesTree(null);
-			dojo.byId('editRoleButtonWrapper').style.display = 'none';
-			dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
+			dijit.byId('editRoleButtonWrapper').setAttribute("disabled", true);
+			dijit.byId('deleteRoleButtonWrapper').setAttribute("disabled", true);
 			dojo.style(dojo.byId('roleTabs'), { display: 'none' });
 			currentRoleId=null;
 			currentRole=null;
@@ -556,8 +511,8 @@
 	//Callback from the server to confirm a user deletion
 	function deleteRoleCallback (isDeleted) {
 		dojo.style(dojo.byId('roleTabs'), { display: 'none' });
-		dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
-		dojo.byId('editRoleButtonWrapper').style.display = 'none';
+		dijit.byId('deleteRoleButtonWrapper').setAttribute("disabled", true);
+		dijit.byId('editRoleButtonWrapper').setAttribute("disabled", true);
 		lastSelectedNode = null;
 		currentRoleId=null;
 		currentRole=null;
@@ -586,9 +541,7 @@
 		node.iconNode.style.width = '';
 		node.iconNode.style.height = '';
 
-		if (norm(currentRoleId) == norm(lockedRoleId)) {
-			dojo.byId('editRoleButtonWrapper').style.display = 'none';
-		}
+		dijit.byId('editRoleButtonWrapper').setAttribute("disabled", norm(currentRoleId) == norm(lockedRoleId));
 		buildRolesTree();
 		showDotCMSSystemMessage(roleLockedMsg);
 
@@ -600,9 +553,7 @@
 		node.iconNode.style.width = '0px';
 		node.iconNode.style.height = '0px';
 
-		if (norm(currentRoleId) == norm(unlockedRoleId) && !eval(norm(currentRole.system))) {
-			dojo.byId('editRoleButtonWrapper').style.display = '';
-		}
+		dijit.byId('editRoleButtonWrapper').setAttribute("disabled", norm(currentRoleId) == norm(unlockedRoleId) && !eval(norm(currentRole.system)));
 		buildRolesTree();
 		showDotCMSSystemMessage(roleUnlockedMsg);
 	}
@@ -638,17 +589,8 @@
 		dojo.byId('roleKey').innerHTML = norm(role.roleKey);
 		dojo.byId('rolePath').innerHTML = norm(role.FQN);
 
-		if(eval(norm(role.system)) || eval(norm(role.locked))) {
-			dojo.byId('editRoleButtonWrapper').style.display = 'none';
-		} else {
-			dojo.byId('editRoleButtonWrapper').style.display = '';
-		}
-
-		if(eval(norm(role.system)) || role.children.length > 0) {
-			dojo.byId('deleteRoleButtonWrapper').style.display = 'none';
-		} else {
-			dojo.byId('deleteRoleButtonWrapper').style.display = '';
-		}
+		dijit.byId('editRoleButtonWrapper').setAttribute("disabled", eval(norm(role.system)) || eval(norm(role.locked)));
+		dijit.byId('deleteRoleButtonWrapper').setAttribute("disabled", eval(norm(role.system)) || role.children.length > 0);
 
 		renderCurrentTab();
 	}
@@ -675,9 +617,6 @@
 				break;
 		}
 	 	dojo.style(dojo.byId('roleTabs'), { display: '' });
-	 	resizeRoleBrowser();
-		// DOTCMS-6233 need the timeout for users tab initially //
-		setTimeout("resizeRoleBrowser();", 200);
 	}
 
 

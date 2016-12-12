@@ -1197,7 +1197,7 @@ html, body {
 }
 
 .dijitAccordionContainer {
-  border: none;
+  border: solid 1px #ECEDEE;
 }
 .dijitAccordionContainer .dijitAccordionContainer-child {
   padding: 8px;
@@ -1211,7 +1211,8 @@ html, body {
   -webkit-transition: background-color, color, border, 0.1s;
   transition: background-color, color, border, 0.1s;
   background-color: #FAFAFA;
-  border: solid 1px #ECEDEE;
+  border-bottom: solid 1px #ECEDEE;
+  border-top: solid 1px #ECEDEE;
   border-bottom: none;
   height: 32px;
   line-height: 32px;
@@ -1226,10 +1227,6 @@ html, body {
 .dijitAccordionTitleSelected {
   background-color: #ECEDEE;
   font-weight: bold;
-}
-.dijitAccordionChildWrapper {
-  border-left: solid 1px #ECEDEE;
-  border-right: solid 1px #ECEDEE;
 }
 
 .dijitTitlePane {
@@ -1353,6 +1350,14 @@ html, body {
   line-height: 50px;
   padding: 0 16px;
   position: relative;
+}
+
+.dijitPopup {
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+.dijitTimePickerPopup {
+  border: none;
 }
 
 .dijitSplitter {
@@ -1601,12 +1606,88 @@ html, body {
   padding: 8px;
 }
 
-.dijitPopup {
-  border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+.dijitTreeContainer {
+  float: none;
 }
-.dijitTimePickerPopup {
-  border: none;
+.dijitTreeNode {
+  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/i.gif");
+  background-repeat: repeat-y;
+  zoom: 1;
+}
+.dijitTreeIsLast {
+  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/i_half.gif") no-repeat;
+}
+.dijitTreeIsRoot {
+  margin-left: 0;
+  background-image: none;
+}
+.dijitTreeExpando {
+  width: 18px;
+  height: 18px;
+  background-position: 0 -2px;
+}
+.dijitTreeRow {
+  display: flex;
+  padding: 2px 0;
+}
+.dijitTreeContent {
+  min-height: 18px;
+  min-width: 18px;
+}
+.dijitTreeExpand {
+  width: 18px;
+  height: 18px;
+  background-repeat: no-repeat;
+}
+.dijitTreeLabel {
+  margin: 0;
+}
+.dijitTreeLabelFocused {
+  outline: 1px invert dotted;
+}
+.dijitTreeNodeSelected .dijitTreeLabel {
+  background: #e2ebfe;
+}
+.dijitTreeNodeHover {
+  background-color: rgba(22, 22, 22, 0.025);
+}
+.dijitTreeExpandoOpened {
+  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_minus.gif");
+}
+.dijitTreeExpandoClosed {
+  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_plus.gif");
+}
+.dijitTreeExpandoLeaf {
+  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_leaf.gif");
+}
+.dijitTreeExpandoLoading {
+  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_loading.gif");
+}
+.dijitTreeIcon {
+  width: 16px;
+  height: 16px;
+}
+.dijitTreeContent .dijitTreeIcon {
+  margin: 0;
+}
+.dijitFolderOpened {
+  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderOpened.gif") no-repeat;
+}
+.dijitFolderClosed {
+  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderClosed.gif") no-repeat;
+}
+.dijitLeaf {
+  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/leaf.gif") no-repeat;
+}
+.dijitTreeNode .dojoDndItemBefore, .dijitTreeNode .dojoDndItemAfter {
+  border-bottom: none;
+  border-top: none;
+}
+.dojoDndItemBefore .dijitTreeNodeTreeContent {
+  border-top: 2px solid #369;
+}
+.dojoDndItemAfter .dijitTreeNodeTreeContent {
+  border-bottom: 2px solid #369;
 }
 
 html, body {
@@ -3279,13 +3360,6 @@ tr.active {
   vertical-align: middle;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
-}
-
-.nameText {
-  font-weight: bold;
-  padding: 3px 0 5px 0;
-  width: 200px;
-  overflow: hidden;
 }
 
 .warningText {
@@ -6191,6 +6265,58 @@ dd .buttonCaption {
   font-weight: normal;
   margin-bottom: 24px;
   padding-bottom: 8px;
+}
+
+.view-roles,
+.view-roles .portlet-sidebar {
+  height: 100%;
+}
+
+.view-roles .dijitTabPaneWrapper .dijitContentPane {
+  box-sizing: content-box;
+}
+.view-roles .portlet-main {
+  height: 100%;
+  width: 100%;
+}
+
+.view-roles__filter {
+  margin-bottom: 16px;
+}
+
+.view-roles__heading {
+  background-color: #FAFAFA;
+  border-radius: 2px;
+  border: solid 1px #ECEDEE;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  min-height: 50px;
+  padding: 8px;
+}
+
+.view-roles__tree {
+  height: 100%;
+}
+
+.view-roles__tabs,
+.view-roles__tabs-container {
+  height: 100%;
+}
+
+.view-roles__user-filter {
+  margin-bottom: 16px;
+  width: 300px;
+}
+
+.view-roles__user-grid {
+  margin-bottom: 8px;
+}
+
+.nameText {
+  align-self: center;
+  font-size: 18px;
+  font-weight: normal;
 }
 
 .contentIdentifier {
