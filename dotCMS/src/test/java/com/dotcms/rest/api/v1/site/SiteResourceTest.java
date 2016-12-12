@@ -217,7 +217,7 @@ public class SiteResourceTest extends TestBase {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Host> hosts = getTwoSites();
+        final List<Host> hosts = getSites();
 
         Config.CONTEXT = context;
 
@@ -270,14 +270,14 @@ public class SiteResourceTest extends TestBase {
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
-        final List<Host> hosts = getTwoSites();
+        final Host host = getSite().get(0);
 
         Config.CONTEXT = context;
         Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(hostAPI.findAll(user, true)).thenReturn(hosts);
+        when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
@@ -337,12 +337,12 @@ public class SiteResourceTest extends TestBase {
         final HttpSession session = request.getSession();
         RestUtilTest.initMockContext();
         final User user = new User();
-        final List<Host> siteList = getSites();
+        final PaginatedArrayList<Host> siteList = getSites();
         final String currentSite = siteList.get(0).getIdentifier();
         final WebResource webResource = RestUtilTest.getMockWebResource( user, request );
         
         final HostAPI hostAPI = mock(HostAPI.class);
-        when( hostAPI.findAll(user, Boolean.FALSE) ).thenReturn( siteList );
+        when( hostAPI.search(StringUtils.EMPTY, Boolean.FALSE, Boolean.FALSE, 1, 0, user, Boolean.FALSE)).thenReturn( siteList );
         final UserAPI userAPI = mock(UserAPI.class);
         when(userAPI.loadUserById(Mockito.anyString())).thenReturn(user);
         when( session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID ) )
@@ -356,11 +356,61 @@ public class SiteResourceTest extends TestBase {
         Map<String, Object> entity = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals( currentSite, entity.get("currentSite") );
 
-        List<Map<String, String>> sites = (List<Map<String, String>>) entity.get("sites");
-        assertEquals(1, sites.size());
-        assertEquals(siteList.get(0).getMap(), sites.get(0));
+        List<Host> sites = (List<Host>) entity.get("sites");
+        assertEquals(2, sites.size());
+        assertEquals(siteList.get(0), sites.get(0));
     }
 
+    /**
+     * Returns a list of 2 mocked Sites for testing purposes.
+     * 
+     * @return
+     */
+    private PaginatedArrayList<Host> getSite() {
+        List<Host> temp = list(new Host(new Contentlet(mapAll(
+                map(
+                        "hostName", "system.dotcms.com",
+                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
+                        "modDate", Integer.parseInt("125466"),
+                        "aliases", "",
+                        "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
+                        "description", "dotCMS starter site was designed to demonstrate what you can do with dotCMS.",
+                        "type", "host",
+                        "title", "system.dotcms.com",
+                        "inode", "54ac9a4e-3d63-4b9a-882f-27c7ba29618f",
+                        "hostname", "system.dotcms.com"),
+                map(
+                        "__DOTNAME__", "system.dotcms.com",
+                        "addThis", "ra-4e02119211875e7b",
+                        "disabledWYSIWYG", new Object[]{},
+                        "host", "SYSTEM_HOST",
+                        "lastReview", 14503,
+                        "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
+                        "owner", "dotcms.org.1",
+                        "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
+                        "runDashboard", false,
+                        "languageId", 1
+                ),
+                map(
+                        "isDefault", true,
+                        "folder", "SYSTEM_FOLDER",
+                        "googleAnalytics", "UA-9877660-3",
+                        "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
+                        "isSystemHost", true,
+                        "sortOrder", 0,
+                        "modUser", "dotcms.org.1"
+                )))) {
+                 @Override
+                 public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+                     return false;
+                 }
+             }
+        );
+        PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+        hosts.addAll(temp);
+        hosts.setTotalResults(1);
+        return hosts;
+    }
     /**
      * Returns a list of 2 mocked Sites for testing purposes.
      * 

@@ -292,7 +292,7 @@ public interface HostAPI {
 	 */
 	/**
 	 * Retrieves the subset of all hosts in the system
-	 * that matches the current filter, offset and limit
+	 * that matches the current host name filter, offset and limit
 	 * 
 	 * @param filter characters to search in the host name
 	 * @param showArchived boolean true if its requires that also archived content are returned, false if not

@@ -33,6 +33,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -53,7 +54,7 @@ public class SiteResource implements Serializable {
 
 	private final UserAPI userAPI;
     private final WebResource webResource;
-    private final SiteHelper siteBrowserHelper;
+    private final SiteHelper siteHelper;
     private final I18NUtil i18NUtil;
 
     public SiteResource() {
@@ -64,10 +65,10 @@ public class SiteResource implements Serializable {
 
     @VisibleForTesting
     public SiteResource(final WebResource webResource,
-                               final SiteHelper siteBrowserHelper,
+                               final SiteHelper siteHelper,
                                final I18NUtil i18NUtil, final UserAPI userAPI) {
         this.webResource = webResource;
-        this.siteBrowserHelper  = siteBrowserHelper;
+        this.siteHelper  = siteHelper;
         this.i18NUtil    = i18NUtil;
         this.userAPI = userAPI;
     }
@@ -92,22 +93,18 @@ public class SiteResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response currentSite(@Context final HttpServletRequest req) {
-        final List<Map<String, Object>> siteList;
+        final Map<String,Object> userSites;
         Response response = null;
-        this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
         final HttpSession session = req.getSession();
         try {
-			// Get user from session, not request. This is required to make this
-			// work with the 'Login As' user as well.
-			final User user = this.userAPI
-					.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
-            siteList = siteBrowserHelper.getOrderedSites(false, user, StringUtils.EMPTY)
-                    .stream()
-                    .map(site -> site.getMap())
-                    .collect(Collectors.toList());
-			final String currentSite = this.siteBrowserHelper.getSelectedSite(siteList,
-					(String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID));
-            response = Response.ok( new ResponseEntityView( map("sites", siteList,
+			
+        	userSites = siteHelper.getPaginatedOrderedSites(Boolean.FALSE, user, StringUtils.EMPTY, 1, 1, Boolean.FALSE);
+            		                    
+			final String currentSite = this.siteHelper.getSelectedSite((List<Host>)userSites.get(siteHelper.RESULTS),
+					(String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID), user);
+            response = Response.ok( new ResponseEntityView( map("sites", userSites.get(siteHelper.RESULTS),"sitesCounter", userSites.get(siteHelper.TOTAL_SITES),
                     "currentSite", currentSite))).build();
         } catch (Exception e) {
         	// Unknown error, so we report it as a 500
@@ -142,7 +139,7 @@ public class SiteResource implements Serializable {
                     filterParam.substring(0, filterParam.length() - 1):
                     (null != filterParam)? filterParam: StringUtils.EMPTY;
 
-                    paginatedSites = siteBrowserHelper.getPaginatedOrderedSites(showArchived, user, filter, page, count, Boolean.FALSE);
+                    paginatedSites = siteHelper.getPaginatedOrderedSites(showArchived, user, filter, page, count, Boolean.FALSE);
         			
         			response = Response.ok(new ResponseEntityView
                     (map(   "sites",         paginatedSites
@@ -183,7 +180,7 @@ public class SiteResource implements Serializable {
             if (UtilMethods.isSet(hostId)) {
 
                 // we verified if the host id pass by parameter is one of the user's hosts
-                hostFound = siteBrowserHelper.getSite( user, hostId);
+                hostFound = siteHelper.getSite( user, hostId);
 
                 if (hostFound != null) {
 

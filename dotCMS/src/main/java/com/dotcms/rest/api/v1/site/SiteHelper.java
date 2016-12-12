@@ -40,10 +40,10 @@ public class SiteHelper implements Serializable {
 
     public static final String EXT_HOSTADMIN = "EXT_HOSTADMIN";
     
-    private static final String HAS_PREVIOUS = "hasPrevious";
-    private static final String HAS_NEXT = "hasNext";
-    private static final String TOTAL_SITES = "total";
-    private static final String RESULTS = "results";
+    public static final String HAS_PREVIOUS = "hasPrevious";
+    public static final String HAS_NEXT = "hasNext";
+    public static final String TOTAL_SITES = "total";
+    public static final String RESULTS = "results";
     
     @VisibleForTesting
     public SiteHelper (HostAPI hostAPI) {
@@ -87,56 +87,6 @@ public class SiteHelper implements Serializable {
 
         return checkArchived;
     } // checkArchived.
-
-	/**
-	 * Returns the list of sites that the given user has access to.
-	 *
-	 * @param showArchived
-	 *            - Is set to {@code true}, archived sites will be returned.
-	 *            Otherwise, set to {@code false}.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param filter
-	 *            - (Optional) If specified, returns the sites whose name starts
-	 *            with the value of the {@code filter} variable.
-	 * @return The list of sites that the given user has permissions to access.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the sites' data.
-	 * @throws DotSecurityException
-	 *             A system error occurred.
-	 */
-    public List<Host> getOrderedSites(final boolean showArchived, final User user, final String filter) throws DotDataException, DotSecurityException {
-    	return getOrderedSites(showArchived, user, filter, Boolean.FALSE);
-    }
-
-	/**
-	 * Returns the list of sites that the given user has access to.
-	 *
-	 * @param showArchived
-	 *            - Is set to {@code true}, archived sites will be returned.
-	 *            Otherwise, set to {@code false}.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param filter
-	 *            - (Optional) If specified, returns the sites whose name starts
-	 *            with the value of the {@code filter} variable.
-	 * @param respectFrontendRoles
-	 *            -
-	 * @return The list of sites that the given user has permissions to access.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the sites' data.
-	 * @throws DotSecurityException
-	 *             A system error occurred.
-	 */
-    public List<Host> getOrderedSites(final boolean showArchived, final User user, final String filter, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-    	final String sanitizedFilter = filter != null ? filter : StringUtils.EMPTY;
-    	return this.hostAPI.findAll(user, respectFrontendRoles)
-                .stream().sorted(HOST_NAME_COMPARATOR)
-                .filter (site ->
-                        !site.isSystemHost() && checkArchived(showArchived, site) &&
-                                (site.getHostname().toLowerCase().startsWith(sanitizedFilter.toLowerCase())))
-                .collect(Collectors.toList());
-    }
     
     /**
      * Return a site by user and site id
@@ -148,10 +98,9 @@ public class SiteHelper implements Serializable {
      * @throws DotDataException if one is thrown when the sites are search
      */
     public Host getSite(User user, String siteId) throws DotSecurityException, DotDataException {
-        Optional<Host> siteOptional = this.hostAPI.findAll(user, Boolean.TRUE)
-                .stream().filter(site -> !site.isSystemHost() && siteId.equals(site.getIdentifier()))
-                .findFirst();
-        return siteOptional.isPresent() ? siteOptional.get() : null;
+        Host site = this.hostAPI.find(siteId, user, Boolean.TRUE);
+        
+        return site;
     }
 
 	/**
@@ -167,20 +116,39 @@ public class SiteHelper implements Serializable {
 	 * @param siteInSession
 	 *            - The Identifier of the site that is marked as selected in the
 	 *            current user session.
+	 * @param user
+	 *            - The current user session.            
 	 * @return The Identifier of the site that will be marked as "selected".
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
 	 */
-	public String getSelectedSite(final List<Map<String, Object>> siteList, final String siteInSession) {
+    public String getSelectedSite(final List<Host> siteList, final String siteInSession, User user)  {
 		String selectedSite = UtilMethods.isSet(siteInSession) ? siteInSession : StringUtils.EMPTY;
 		boolean siteFound = false;
 		if (siteList != null && !siteList.isEmpty()) {
-			for (Map<String, Object> siteData : siteList) {
-				if (siteData.get(Contentlet.IDENTIFIER_KEY).equals(siteInSession)) {
-					siteFound = true;
-					break;
+			Host host = null;
+			try {
+				host = this.hostAPI.find(siteInSession, user, Boolean.FALSE);
+			} catch (DotDataException e) {
+				/** The host can't be found **/
+			} catch (DotSecurityException e) {
+				/** The user doesn't have permission to see this host **/
+			}
+			
+			if (null != host && UtilMethods.isSet(host.getIdentifier())) {
+				siteFound = true;
+				if(!siteList.contains(host)){
+					siteList.add(host);
 				}
 			}
+						
+			/**
+			 * If the user doesn't have permission to see the host or 
+			 * the host doesn't exist then get the first one available
+			 * for the user
+			 */
 			if (!siteFound) {
-				selectedSite = siteList.get(0).get(Contentlet.IDENTIFIER_KEY).toString();
+				selectedSite = siteList.get(0).getIdentifier();
 			}
 		}
 		return selectedSite;
