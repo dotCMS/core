@@ -10,7 +10,9 @@ import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -114,9 +116,24 @@ public class SystemEventsFactory implements Serializable {
 				throw new IllegalArgumentException(msg);
 			}
 			try {
+
+				//Start a transaction
+				HibernateUtil.startTransaction();
+
 				this.systemEventsDAO.add(new SystemEventDTO(systemEvent.getId(), systemEvent.getEventType().name(),
 						this.marshalUtils.marshal(systemEvent.getPayload()), systemEvent.getCreationDate().getTime()));
-			} catch (DotDataException e) {
+
+				//Everything ok..., committing the transaction
+				HibernateUtil.commitTransaction();
+			} catch (Exception e) {
+
+				try {
+					//On error rolling back the changes
+					HibernateUtil.rollbackTransaction();
+				} catch (DotHibernateException hibernateException) {
+					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
+				}
+
 				final String msg = "An error occurred when saving a system event with ID: [" + systemEvent.getId() + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
@@ -166,6 +183,13 @@ public class SystemEventsFactory implements Serializable {
 						+ new Date(createdDate) + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
+			} finally {
+				try {
+					//Make sure we are not leaving open connections
+					HibernateUtil.closeSession();
+				} catch (DotHibernateException hibernateException) {
+					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
+				}
 			}
 		}
 
@@ -180,6 +204,13 @@ public class SystemEventsFactory implements Serializable {
 				final String msg = "An error occurred when retreiving all system events.";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
+			} finally {
+				try {
+					//Make sure we are not leaving open connections
+					HibernateUtil.closeSession();
+				} catch (DotHibernateException hibernateException) {
+					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
+				}
 			}
 		}
 
@@ -191,8 +222,23 @@ public class SystemEventsFactory implements Serializable {
 				throw new IllegalArgumentException(msg);
 			}
 			try {
+
+				//Start a transaction
+				HibernateUtil.startTransaction();
+
 				this.systemEventsDAO.deleteEvents(toDate);
-			} catch (DotDataException e) {
+
+				//Everything ok..., committing the transaction
+				HibernateUtil.commitTransaction();
+			} catch (Exception e) {
+
+				try {
+					//On error rolling back the changes
+					HibernateUtil.rollbackTransaction();
+				} catch (DotHibernateException hibernateException) {
+					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
+				}
+
 				final String msg = "An error occurred when deleting system events created up to: [" + new Date(toDate) + "]";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
@@ -217,8 +263,23 @@ public class SystemEventsFactory implements Serializable {
 				throw new IllegalArgumentException(msg);
 			}
 			try {
+
+				//Start a transaction
+				HibernateUtil.startTransaction();
+
 				this.systemEventsDAO.deleteEvents(fromDate, toDate);
-			} catch (DotDataException e) {
+
+				//Everything ok..., committing the transaction
+				HibernateUtil.commitTransaction();
+			} catch (Exception e) {
+
+				try {
+					//On error rolling back the changes
+					HibernateUtil.rollbackTransaction();
+				} catch (DotHibernateException hibernateException) {
+					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
+				}
+
 				final String msg = "An error occurred when deleting system events created from: [" + new Date(fromDate)
 						+ "] to: [" + new Date(toDate) + "]";
 				Logger.error(this, msg, e);
@@ -229,8 +290,23 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public void deleteAll() throws DotDataException {
 			try {
+
+				//Start a transaction
+				HibernateUtil.startTransaction();
+
 				this.systemEventsDAO.deleteAll();
-			} catch (DotDataException e) {
+
+				//Everything ok..., committing the transaction
+				HibernateUtil.commitTransaction();
+			} catch (Exception e) {
+
+				try {
+					//On error rolling back the changes
+					HibernateUtil.rollbackTransaction();
+				} catch (DotHibernateException hibernateException) {
+					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
+				}
+
 				final String msg = "An error occurred when deleting all system events.";
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
