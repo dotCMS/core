@@ -8,20 +8,20 @@ import java.sql.SQLException;
 import org.quartz.impl.jdbcjobstore.LockException;
 import org.quartz.impl.jdbcjobstore.Util;
 
-public class MySQLLockSemaphore extends org.quartz.impl.jdbcjobstore.DBSemaphore{
+public class DotSelectLockRowSemaphore extends org.quartz.impl.jdbcjobstore.DBSemaphore{
 	
 	public static final String SELECT_FOR_LOCK = "SELECT * FROM "
         + TABLE_PREFIX_SUBST.toLowerCase() + TABLE_LOCKS.toLowerCase() + " WHERE " + COL_LOCK_NAME.toLowerCase()
         + " = ? FOR UPDATE";
 	
-    public MySQLLockSemaphore() {
+    public DotSelectLockRowSemaphore() {
         super(DEFAULT_TABLE_PREFIX.toLowerCase(), null, SELECT_FOR_LOCK);
     }
-    public MySQLLockSemaphore(String tablePrefix) {
+    public DotSelectLockRowSemaphore(String tablePrefix) {
         super(tablePrefix.toLowerCase(), null, SELECT_FOR_LOCK);
     }
     
-    public MySQLLockSemaphore(String tablePrefix, String selectWithLockSQL) {
+    public DotSelectLockRowSemaphore(String tablePrefix, String selectWithLockSQL) {
         super(tablePrefix.toLowerCase(), selectWithLockSQL.toLowerCase(), SELECT_FOR_LOCK);
     }
 
