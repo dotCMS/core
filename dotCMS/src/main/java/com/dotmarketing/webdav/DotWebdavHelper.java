@@ -1134,6 +1134,7 @@ public class DotWebdavHelper {
 	}
 
 	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
+	    String resourceFromPath = fromPath;
 		fromPath = stripMapping(fromPath);
 		toPath = stripMapping(toPath);
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -1153,7 +1154,7 @@ public class DotWebdavHelper {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
 		}
-		if (isResource(fromPath,user)) {
+		if (isResource(resourceFromPath,user)) {
 			try {
 				if (!perAPI.doesUserHavePermission(toParentFolder,
 						PermissionAPI.PERMISSION_READ, user, false)) {
@@ -1333,6 +1334,7 @@ public class DotWebdavHelper {
 	}
 
 	public void removeObject(String uri, User user) throws IOException, DotDataException, DotSecurityException {
+	    String resourceUri = uri;
 		uri = stripMapping(uri);
 		Logger.debug(this.getClass(), "In the removeObject Method");
 		String hostName = getHostname(uri);
@@ -1350,7 +1352,7 @@ public class DotWebdavHelper {
 			throw new IOException(e.getMessage());
 		}
 		Folder folder = folderAPI.findFolderByPath(folderName, host,user,false);
-		if (isResource(uri,user)) {
+		if (isResource(resourceUri,user)) {
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 
 			Long timeOfPublishing = fileResourceCache.get(uri + "|" + user.getUserId());
@@ -1400,7 +1402,7 @@ public class DotWebdavHelper {
 			    LiveCache.removeAssetFromCache(webAsset);
 			}
 
-		} else if (isFolder(uri,user)) {
+		} else if (isFolder(resourceUri,user)) {
 			if(!path.endsWith("/"))
 				path += "/";
 			folder = folderAPI.findFolderByPath(path, host,user,false);
