@@ -559,50 +559,50 @@
 		if(!event.archived && event.writePermission){
 			if(event.recurs){
 		      eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'copy\');">' +
-			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %></a>';
+			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "copy")) %></a>';
 			}else{
 				eventDetailActions += '<a class="fakeDojoButton" href="javascript: copyEvent(\'' + event.inode + '\',\'<%= referer %>\');">' +
-				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy")) %></a>';
+				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "copy")) %></a>';
 			}
 		}
 		if(event.writePermission){
 			if(event.recurs){
 			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate+ '\',\'edit\');">' +
-			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %></a>';
+			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
 			}else{
 				eventDetailActions += '<a class="fakeDojoButton" href="javascript: editEvent(\'' + event.inode + '\',\'<%= referer %>\');">' +
-				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %></a>';
+				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
 			}
 		}
 		if(event.live && event.publishPermission) {
 		    eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.inode + '\');">' +
-					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Republish")) %></a>';
+					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "republish")) %></a>';
 		  if(event.recurs){
 			eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'unpublish\');">' +
-			       '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %></a>';
+			       '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
 		  }else{
 			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: unpublishEvent(\'' + event.inode + '\',\'false\');">' +
-				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish")) %></a>';
 		  }
 		}
 		if(!event.live && !event.archived && event.publishPermission){
 		     eventDetailActions += '<a class="fakeDojoButton" href="javascript: publishEvent(\'' + event.inode + '\');">' +
-				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish")) %></a>';
 		}
 		if(!event.archived && !event.live && event.publishPermission){
 		    	eventDetailActions += '<a class="fakeDojoButton" href="javascript: archiveEvent(\'' + event.inode + '\');">' +
-				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "archive")) %></a>';
 		}
 		if(event.archived && event.publishPermission) {
 			eventDetailActions += '<a class="fakeDojoButton" href="javascript: unarchiveEvent(\'' + event.inode + '\');">' +
-				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive")) %></a>';
 
 			if(event.recurs){
 				eventDetailActions += '<a class="fakeDojoButton fakeDojoButtonDanger" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'delete\');">' +
-				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
 			}else{
 			  eventDetailActions += '<a class="fakeDojoButton fakeDojoButtonDanger" href="javascript: deleteEvent(\'' + event.identifier + '\',\'false\');">' +
-				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %></a>';
+				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
 			}
 		}
 

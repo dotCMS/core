@@ -1,6 +1,5 @@
 package com.dotmarketing.quartz;
 
-
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -86,16 +85,32 @@ public class DotJobStore extends JobStoreCMT {
 		);
 
 
-		//This is done because http://jira.opensymphony.com/browse/QUARTZ-497
-		UpdateLockRowSemaphore sem = new UpdateLockRowSemaphore();
+		//Set lock handler because of http://jira.opensymphony.com/browse/QUARTZ-497
 		if (DbConnectionFactory.isMySql()) {
 			tablePrefix = tablePrefix.toLowerCase();
-		}else{
-		  sem.setUpdateLockRowSQL("UPDATE {0}LOCKS SET LOCK_NAME = LOCK_NAME WHERE LOCK_NAME = ?");
-		  sem.setTablePrefix(tablePrefix);
+
+			setLockHandler( new DotSelectLockRowSemaphore( tablePrefix ) );
+
+		} else if (DbConnectionFactory.isMsSql()) {
+
+			//https://github.com/dotCMS/core/tree/issue-10331-fix-snapshot-isolation-exception-on-quartz
+			setLockHandler(
+				new DotSelectLockRowSemaphore(tablePrefix,
+					"SELECT * FROM {0}LOCKS WITH (UPDLOCK ROWLOCK) WHERE LOCK_NAME = ?"
+				)
+			);
+
+		} else if (DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
+
+			UpdateLockRowSemaphore updateLockHandler = new UpdateLockRowSemaphore();
+			updateLockHandler.setUpdateLockRowSQL("UPDATE {0}LOCKS SET LOCK_NAME = LOCK_NAME WHERE LOCK_NAME = ?");
+			updateLockHandler.setTablePrefix(tablePrefix);
+
+			setLockHandler( updateLockHandler );
 		}
 
-		//http://jira.dotmarketing.net/browse/DOTCMS-6699
+
+		//Set driver delegate class because of http://jira.dotmarketing.net/browse/DOTCMS-6699
 		String driverClass = Config.getStringProperty("QUARTZ_DRIVER_CLASS", "");
 		if(UtilMethods.isSet(driverClass) && driverClass.trim().length()>1){
 			try {
@@ -106,8 +121,6 @@ public class DotJobStore extends JobStoreCMT {
 		}else if (DbConnectionFactory.isMySql()) {
 			try {
 				setDriverDelegateClass("com.dotmarketing.quartz.MySQLJDBCDelegate");
-				MySQLLockSemaphore mySQLSem = new MySQLLockSemaphore(tablePrefix);
-				setLockHandler(mySQLSem);
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
@@ -120,21 +133,18 @@ public class DotJobStore extends JobStoreCMT {
 		} else if (DbConnectionFactory.isMsSql()) {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.DotMSSQLDelegate");
-				setLockHandler(sem);
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
 		} else if (DbConnectionFactory.isOracle()) {
 			try {
 				setDriverDelegateClass("org.quartz.impl.jdbcjobstore.oracle.OracleDelegate");
-				setLockHandler(sem);
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
 		} else if (DbConnectionFactory.isH2()) {
             try {
                 setDriverDelegateClass("org.quartz.impl.jdbcjobstore.StdJDBCDelegate");
-                setLockHandler(sem);
             } catch (Exception e) {
                 Logger.info(this, e.getMessage());
             }
@@ -146,9 +156,4 @@ public class DotJobStore extends JobStoreCMT {
 	protected void closeConnection(Connection con) {
 		DataSourceUtils.releaseConnection(con, this.dataSource);
 	}
-
-
-
-
-
 }
