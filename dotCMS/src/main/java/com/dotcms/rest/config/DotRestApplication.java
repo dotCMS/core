@@ -12,7 +12,7 @@ import com.dotcms.rest.api.v1.content.ContentTypeResource;
 import com.dotcms.rest.api.v1.authentication.*;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
-import com.dotcms.rest.api.v1.site.SiteBrowserResource;
+import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
@@ -98,7 +98,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ForgotPasswordResource.class);
 					REST_CLASSES.add(ConfigurationResource.class);
 					REST_CLASSES.add(AppContextInitResource.class);
-					REST_CLASSES.add(SiteBrowserResource.class);
+					REST_CLASSES.add(SiteResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
