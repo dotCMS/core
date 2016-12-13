@@ -11,6 +11,13 @@ import {Observable, Observer} from 'rxjs/Rx';
  * easier way to access the information.
  *
  */
+const DEFAULT_REST_PAGE_COUNT = 'DEFAULT_REST_PAGE_COUNT';
+const DOTCMS_WEBSOCKET_RECONNECT_TIME = 'dotcms.websocket.reconnect.time';
+const DOTCMS_WEBSOCKET_ENDPOINTS = 'dotcms.websocket.endpoints';
+const WEBSOCKET_SYSTEMEVENTS_ENDPOINT ='websocket.systemevents.endpoint';
+const DOTCMS_WEBSOCKET_BASEURL = 'dotcms.websocket.baseurl';
+const DOTCMS_WEBSOCKET_PROTOCOL = 'dotcms.websocket.protocol';
+
 @Injectable()
 export class DotcmsConfig extends CoreWebService {
 
@@ -57,7 +64,7 @@ export class DotcmsConfig extends CoreWebService {
      * @returns {String} The Websocket protocol.
      */
     getWebsocketProtocol(): String {
-        return this.configParams.config['dotcms.websocket.protocol'];
+        return this.configParams.config[DOTCMS_WEBSOCKET_PROTOCOL];
     }
 
     /**
@@ -67,7 +74,7 @@ export class DotcmsConfig extends CoreWebService {
      * @returns {String} The Websocket base URL.
      */
     getWebsocketBaseUrl(): String {
-        return this.configParams.config['dotcms.websocket.baseurl'];
+        return this.configParams.config[DOTCMS_WEBSOCKET_BASEURL];
     }
 
     /**
@@ -77,11 +84,11 @@ export class DotcmsConfig extends CoreWebService {
      * @returns {String} The System Events end-point URL.
      */
     getSystemEventsEndpoint(): String {
-        return this.configParams.config['dotcms.websocket.endpoints']['websocket.systemevents.endpoint'];
+        return this.configParams.config[DOTCMS_WEBSOCKET_ENDPOINTS][WEBSOCKET_SYSTEMEVENTS_ENDPOINT];
     }
 
     getTimeToWaitToReconnect(): number {
-        return this.configParams.config['dotcms.websocket.reconnect.time'];
+        return this.configParams.config[DOTCMS_WEBSOCKET_RECONNECT_TIME];
     }
 
     /**
@@ -92,5 +99,14 @@ export class DotcmsConfig extends CoreWebService {
      */
     getNavigationMenu(): Array<any> {
         return this.configParams.menu;
+    }
+
+    /**
+     * Returns the default rest page count to display.
+     *
+     * @returns <number> The max number of sites to display after a search.
+     */
+    getDefaultRestPageCount(): number {
+        return this.configParams.config[DEFAULT_REST_PAGE_COUNT];
     }
 }
