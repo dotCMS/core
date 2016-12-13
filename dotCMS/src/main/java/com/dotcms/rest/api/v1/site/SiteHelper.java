@@ -1,13 +1,12 @@
 package com.dotcms.rest.api.v1.site;
 
+import static com.dotmarketing.util.Logger.debug;
 import static com.dotmarketing.util.Logger.error;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
@@ -18,7 +17,6 @@ import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -35,8 +33,6 @@ public class SiteHelper implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	private final HostAPI hostAPI;
-    private final static HostNameComparator HOST_NAME_COMPARATOR =
-            new HostNameComparator();
 
     public static final String EXT_HOSTADMIN = "EXT_HOSTADMIN";
     
@@ -129,10 +125,9 @@ public class SiteHelper implements Serializable {
 			Host host = null;
 			try {
 				host = this.hostAPI.find(siteInSession, user, Boolean.FALSE);
-			} catch (DotDataException e) {
-				/** The host can't be found **/
-			} catch (DotSecurityException e) {
+			} catch (DotDataException | DotSecurityException e) {
 				/** The user doesn't have permission to see this host **/
+				debug(SiteHelper.class, "User doesn't have permission to see host ["+siteInSession+"}. error"+e.getMessage());
 			}
 			
 			if (null != host && UtilMethods.isSet(host.getIdentifier())) {

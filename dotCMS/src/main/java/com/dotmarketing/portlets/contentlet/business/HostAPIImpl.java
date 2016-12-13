@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -1048,14 +1049,12 @@ public class HostAPIImpl implements HostAPI {
 	}
 	
 	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {
-		List<Host> temp = new ArrayList<Host>();
-		for(Contentlet c : list) {
-			temp.add(new Host(c));
-		}
+		
 		PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
-		hosts.addAll(temp);
+		hosts.addAll(list.stream().map( content -> new Host(content)).collect(Collectors.toList()));
 		hosts.setQuery(list.getQuery());
 		hosts.setTotalResults(list.getTotalResults());
+		
 		return hosts;
 	}
 }
