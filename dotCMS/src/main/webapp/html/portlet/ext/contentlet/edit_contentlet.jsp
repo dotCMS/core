@@ -258,7 +258,7 @@ var editButtonRow="editContentletButtonRow";
 		</script>
 	<%} %>
 	<!--  START TABS -->
-	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit-main">
+	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
 		<% if(fields != null &&
 			fields.size()>0 &&
@@ -272,7 +272,7 @@ var editButtonRow="editContentletButtonRow";
 		<%}%>
 
         <!-- START EDIT CONTENT FORM -->
-        <div>
+        <div class="content-edit__form">
             <% if(widgetUsageField != null && UtilMethods.isSet(widgetUsageField.getValues())){ %>
                 <div class="fieldWrapper">
                     <div class="fieldName">
@@ -492,7 +492,7 @@ var editButtonRow="editContentletButtonRow";
 	</div>
 
 		<!-- START CONTENT ACTIONS -->
-		<div class="content-edit-sidebar" id="editContentletButtonRow">
+		<div class="content-edit__sidebar" id="editContentletButtonRow">
 			<%if (InodeUtils.isSet(structure.getInode())) {%>
 			<%--If the user has permissions to publish--%>
 			<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>

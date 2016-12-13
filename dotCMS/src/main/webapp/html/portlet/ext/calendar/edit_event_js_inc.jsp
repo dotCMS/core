@@ -476,13 +476,13 @@ function saveEvent(isAutoSave){
 	}
 	
 	dojo.require.on(document.body,"keyup",checkEscapeKey);
-	
+
 
 	function hideEditButtonsRow() {
-		
+
 		dojo.style('editEventButtonRow', { display: 'none' });
 	}
-	
+
 	function showEditButtonsRow() {
 		if( typeof changesMadeToPermissions!= "undefined"){
 			if(changesMadeToPermissions == true){
@@ -492,21 +492,6 @@ function saveEvent(isAutoSave){
 		dojo.style('editEventButtonRow', { display: '' });
 		changesMadeToPermissions = false;
 	}
-	
-	function  resizeBrowser(){
-        var viewport = dijit.getViewport();
-        var viewport_height = viewport.h;
-        
-        var  e =  dojo.byId(editButtonRow);
-        dojo.style(e, "height", viewport_height -185+ "px");
-
-         dojo.query(".wrapperRight").forEach(function(node, index, arr){
-		      dojo.style(node, "height", viewport_height -185+ "px");
-		 });
-    }
-
-    dojo.addOnLoad(resizeBrowser);
-    dojo.connect(window, "onresize", this, "resizeBrowser");
 </script>
 
 	

@@ -1,29 +1,27 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
-<div class=" navCalendar">
-	<table class="listingTable" id="navigationCalendar">
+<table class="listingTable" id="navigationCalendar">
+	<tr>
+		<th id="navMonthYearName" class="last" colspan="7" onclick="changeCalendarView('monthly')"></th>
+	</tr>
+	<tbody id="navBodyHead">
 		<tr>
-			<th id="navMonthYearName" class="last" colspan="7" onclick="changeCalendarView('monthly')"></th>
+			<td class="navDay"><%= LanguageUtil.get(pageContext, "sunday.first.letter") %></td>
+			<td class="navDay"><%= LanguageUtil.get(pageContext, "monday.first.letter") %></td>
+			<td class="navDay"><%= LanguageUtil.get(pageContext, "tuesday.first.letter") %></td>
+			<td class="navDay"><%= LanguageUtil.get(pageContext, "wednesday.first.letter") %></td>
+			<td class="navDay"><%= LanguageUtil.get(pageContext, "thursday.first.letter") %></td>
+			<td class="navDay"><%= LanguageUtil.get(pageContext, "friday.first.letter") %></td>
+			<td class="navLastDay"><%= LanguageUtil.get(pageContext, "saturday.first.letter") %></td>
 		</tr>
-		<tbody id="navBodyHead">
-			<tr>
-				<td class="navDay"><%= LanguageUtil.get(pageContext, "sunday.first.letter") %></td>
-				<td class="navDay"><%= LanguageUtil.get(pageContext, "monday.first.letter") %></td>
-				<td class="navDay"><%= LanguageUtil.get(pageContext, "tuesday.first.letter") %></td>
-				<td class="navDay"><%= LanguageUtil.get(pageContext, "wednesday.first.letter") %></td>
-				<td class="navDay"><%= LanguageUtil.get(pageContext, "thursday.first.letter") %></td>
-				<td class="navDay"><%= LanguageUtil.get(pageContext, "friday.first.letter") %></td>
-				<td class="navLastDay"><%= LanguageUtil.get(pageContext, "saturday.first.letter") %></td>
-			</tr>
-		</tbody>
-		<tbody id="navBodyCalendar">
-	
-		</tbody>
-	</table>
-	
-	<div id="calendarFilters" class="calendarFiltersBox">
-		<%= LanguageUtil.get(pageContext, "No-filters-set") %>
-	</div>
+	</tbody>
+	<tbody id="navBodyCalendar">
+
+	</tbody>
+</table>
+
+<div id="calendarFilters" class="calendarFiltersBox">
+	<%= LanguageUtil.get(pageContext, "No-filters-set") %>
 </div>
 
 <script type="text/javascript">
