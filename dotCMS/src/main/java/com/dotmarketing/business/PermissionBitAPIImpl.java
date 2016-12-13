@@ -472,7 +472,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		
 		if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
-			systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
 					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
 		}
 	}
@@ -619,7 +619,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
         if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
-			systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
 					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
 		}
     }
@@ -683,7 +683,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(createEvent){
 			if(permissionable instanceof Host){	
 				//Send a websocket event to notificate a site permission change  
-				systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+				systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
 						new Payload(permissionable, Visibility.GLOBAL,	(String) null));
 			}
 		}
@@ -740,7 +740,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
-			systemEventsAPI.push(SystemEventType.UPDATE_SITE_PERMISSIONS, 
+			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
 					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
 		}
 		

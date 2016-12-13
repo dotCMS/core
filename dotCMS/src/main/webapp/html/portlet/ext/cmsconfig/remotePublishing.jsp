@@ -872,9 +872,7 @@ function deleteEnvPushHistory(envId) {
 <div style="padding-top: 5px">
     <table  class="listingTable">
         <tr>
-            <th>
-            </th>
-            <th nowrap="nowrap">
+            <th colspan="2" nowrap="nowrap">
                 <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
             </th>
             <th nowrap="nowrap" width="100%" >
@@ -916,48 +914,48 @@ function deleteEnvPushHistory(envId) {
                             continue;
                         }
                         hasRow=true;%>
-                <div style="padding:10px;border-bottom:1px solid silver;margin-bottom:-1px">
-                    <div class="buttonsGroup">
-
-                        <%if(environment.getPushToAll() || i == 0){%>
-                        <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
-                            <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
-                                <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
-                            </button>
-                            <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="exclamation" style="display: none;">
-                                <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
-                            </button>
-                            <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
-                                <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
-                                    <img src="/html/images/icons/processing.gif" /></font>
-                            </div>
-                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
-                                <%= LanguageUtil.get( pageContext, "cancel" ) %>
-                            </button>
-                        </div>
-                        <%} %>
-
-                    </div>
-
-                    <div style="padding:10px; float: left;">
-                        <div class="buttonsGroup">
-                            <a style="cursor: pointer; float:right" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-                                <span class="deleteIcon"></span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <div <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%> style="cursor:pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')">
-
-                        <div >
-                            <%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%>
-                        </div>
-                        <div>
-                            <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
-                            <i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
-                        </div>
-                    </div>
-                </div>
+	                <div style="padding:10px; border-left:1px solid #ECEDEE;border-right:1px solid #ECEDEE;border-bottom:1px solid #ECEDEE;">
+	                    <div class="buttonsGroup">
+	
+	                        <%if(environment.getPushToAll() || i == 0){%>
+	                        <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
+	                            <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
+	                                <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
+	                            </button>
+	                            <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="exclamation" style="display: none;">
+	                                <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
+	                            </button>
+	                            <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
+	                                <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
+	                                    <img src="/html/images/icons/processing.gif" /></font>
+	                            </div>
+	                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
+	                                <%= LanguageUtil.get( pageContext, "cancel" ) %>
+	                            </button>
+	                        </div>
+	                        <%} %>
+	
+	                    </div>
+	
+	                    <div style="padding:10px; float: left;">
+	                        <div class="buttonsGroup">
+	                            <a style="cursor: pointer; float:right" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+	                                <span class="deleteIcon"></span>
+	                            </a>
+	                        </div>
+	                    </div>
+	
+	                    <div <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%> style="cursor:pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', '<%=environment.getId()%>', 'false')">
+	
+	                        <div >
+	                            <%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%>
+	                        </div>
+	                        <div>
+	                            <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
+	                            <i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+	                        </div>
+	                    </div>
+	                </div>
                 <%
                         i++;
                     }%>
@@ -977,7 +975,7 @@ function deleteEnvPushHistory(envId) {
                 <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %>
                 <%} %>
             </td>
-            <td valign="top" nowrap="nowrap">
+            <td valign="top" nowrap="nowrap" style=" border-left:1px solid #ECEDEE">
                 <button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');" iconClass="plusIcon">
                     <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
                 </button>

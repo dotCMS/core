@@ -16,7 +16,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
@@ -419,17 +419,26 @@ public class StructureFactory {
 
 	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
 
-		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
 		ContentType type=new StructureTransformer(structure).from();
-		try {
 
-	 		String actionUrl = contentTypeUtil.getActionUrl(type);
-			ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-			systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
-                            PermissionAPI.PERMISSION_READ));
-		} catch (DotDataException e) {
-			throw new RuntimeException( e );
-		}
+		final DotSubmitter dotSubmitter =
+				SystemEventsFactory.getInstance().getDotSubmitter();
+
+		dotSubmitter.execute(() -> {
+
+			final SystemEventType systemEventType = isNew ?
+					SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
+
+			try {
+
+		 		String actionUrl = contentTypeUtil.getActionUrl(type);
+				ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+				systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
+	                            PermissionAPI.PERMISSION_READ));
+			} catch (DotDataException e) {
+				throw new RuntimeException( e );
+			}
+		});
 	}
 
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
@@ -451,15 +460,28 @@ public class StructureFactory {
 
 	public static void deleteStructure(Structure structure) throws DotDataException
 	{
+		final DotSubmitter dotSubmitter =
+				SystemEventsFactory.getInstance().getDotSubmitter();
 
 		ContentType type=new StructureTransformer(structure).from();
 
 		try {
 
 			typeAPI.delete(type);
-            String actionUrl = contentTypeUtil.getActionUrl(type);
-            ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-            systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION, PermissionAPI.PERMISSION_READ));
+
+			if (null != dotSubmitter) {
+
+				dotSubmitter.execute(() -> {
+
+					try {
+						String actionUrl = contentTypeUtil.getActionUrl(type);
+						ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+						systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION, PermissionAPI.PERMISSION_READ));
+					} catch (DotDataException e) {
+						throw new BaseRuntimeInternationalizationException( e );
+					}
+				});
+			}
 		} catch (DotStateException | DotSecurityException e) {
 			Logger.error(StructureFactory.class, e.getMessage(), e);
 

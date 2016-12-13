@@ -17,22 +17,22 @@
     #aceTextArea {
         position: relative;
     }
-    .aceClass{
+    .aceClass {
     	width: 100%;
         height: 400px;
         border:1px solid #C0C0C0;
         text-overflow: clip;
     	white-space: nowrap;
     }
-    .aceText{
-    	width:450px;
+    .aceText {
+    	width:600px;
     	min-height:105px;
     	max-height: 600px;
         border:1px solid #C0C0C0;
         text-overflow: clip;
     	white-space: nowrap;
     }
-    .widgetAceText{
+    .widgetAceText {
     	width:682px;min-height:362px;max-height: 400px;
         border:1px solid #C0C0C0;
         text-overflow: clip;

@@ -22,6 +22,7 @@ public class PayloadVerifierFactoryInitializer implements DotInitializer {
         //And register each of ours PayloadVerifier
         factory.register(Visibility.USER, new UserVerifier());
         factory.register(Visibility.ROLE, new RoleVerifier());
+        factory.register(Visibility.ROLES, new MultipleRolesVerifier());
         factory.register(Visibility.PERMISSION, new PermissionVerifier());
         factory.register(Visibility.GLOBAL, new GlobalVerifier());
         factory.register(Visibility.EXCLUDE_OWNER, new ExcludeOwnerVerifier());

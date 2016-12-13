@@ -167,6 +167,7 @@ if(query == null){
         bottom: 0;
         left: 0;
     }
+    .ace_print-margin {display: none;}
     .esEditorWrapper {
         position: relative;
         height: 400px;
@@ -180,13 +181,28 @@ if(query == null){
         margin-top: 5px;
     }
 </style>
-<div class="portlet-wrapper">
 
-	<table class="listingTable" style="width:70%">
+<div class="portlet-main">
+	
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			
+		</div>
+		<div class="portlet-toolbar__info">
+			
+		</div>
+    	<div class="portlet-toolbar__actions-secondary">
+    		<button type="button" class="helpButton" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
+    	</div>
+   </div>
+   <!-- END Toolbar -->
+
+
+	<table class="listingTable" style="width:90%;">
         <tr>
-            <th width="110" valign="top">
+            <th width="170" valign="top">
                 <strong><%= LanguageUtil.get(pageContext, "ES Query") %>:</strong>
-                <button type="button" class="helpButton" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
             </th>
             <td>
                 <div class="esEditorWrapper">
@@ -221,9 +237,13 @@ if(query == null){
 	</div>
 
 	<%if(UtilMethods.isSet(cons)){ %>
-		<table class="listingTable" style="width:70%;padding-bottom:20px">
+		<table class="listingTable" style="width:90%;">
 			<tr>
-				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Took") %> :</strong></th>
+				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Showing Hits") %> :</strong></th>
+				<td><%=cons.getCount() %> of <%=cons.getTotalResults()%></td>
+			</tr>
+			<tr>
+				<th><strong><%= LanguageUtil.get(pageContext, "Took") %> :</strong></th>
 				<td style="width:100%">
 					<%=cons.getQueryTook()%> ms <%= LanguageUtil.get(pageContext, "query") %><br>
 					<%=cons.getPopulationTook()%> ms <%= LanguageUtil.get(pageContext, "population") %><br>
@@ -231,22 +251,11 @@ if(query == null){
 				</td>
 			</tr>
 
-			<tr>
+			<!-- <tr>
 				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Query-is") %> :</strong></th>
-				<td>
-					<%=cons.getQuery()%>
-
-
-				</td>
-			</tr>
-			<tr>
-				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Showing Hits") %> :</strong></th>
-				<td>
-				<%=cons.getCount() %> of <%=cons.getTotalResults()%>
-
-
-				</td>
-			</tr>
+				<td><%=cons.getQuery()%></td>
+			</tr> -->
+			
 		</table>
 		<div style='text-align:center;padding:20px;'>
 
@@ -254,7 +263,7 @@ if(query == null){
 	<%} %>
 
 	<%if(cons!= null && cons.getFacets() !=null){ %>
-		<table class="listingTable" style="width:70%;">
+		<table class="listingTable" style="width:90%;">
 			<tr><th colspan="3">
 
 
@@ -280,7 +289,7 @@ if(query == null){
 		</div>
 	<%} %>
 	<%if(cons != null && cons.getSuggestions() !=null){ %>
-		<table class="listingTable" style="width:70%;">
+		<table class="listingTable" style="width:90%;">
 			<tr>
 				<th colspan="3">
 					<h3>Suggestions</h3>
@@ -309,7 +318,7 @@ if(query == null){
 	<%} %>
 	<%if(cons!=null && cons.size() >0){ %>
 
-			<table class="listingTable" style="width:70%;">
+			<table class="listingTable" style="width:90%;">
 				<tr><th colspan="3">
 
 
@@ -362,7 +371,7 @@ if(query == null){
 
 
 		<%if(cons != null){ %>
-			<table 	class="listingTable" style="width:70%;">
+			<table 	class="listingTable" style="width:90%;">
 				<tr>
 					<th colspan="3">
 						<h3>Raw</h3>
@@ -381,7 +390,7 @@ if(query == null){
 		<%} %>
 	<%if(UtilMethods.isSet(nastyError)){%>
 
-		<div style='color:red;width:70%;margin:auto;padding:20px;'>
+		<div style='color:red;width:90%;margin:auto;padding:20px;'>
 			<%=nastyError %>
 		</div>
 

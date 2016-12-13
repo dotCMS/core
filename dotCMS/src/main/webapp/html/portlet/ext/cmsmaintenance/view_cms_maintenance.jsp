@@ -1294,7 +1294,8 @@ dd.leftdl {
 }
 </style>
 
-<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+<div class="portlet-main">
+	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
     <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
         <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
@@ -1943,6 +1944,7 @@ dd.leftdl {
         <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 
+</div>
 </div>
 
 <div dojoType="dijit.Dialog" id="addIndex" title="Add Index" style="height:150px;width:400px;">

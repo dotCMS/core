@@ -1,4 +1,6 @@
-#rolePermissionsAccordion .dijitAccordionContainer-child{overflow-y:hidden !important;}
+#rolePermissionsAccordion .dijitAccordionContainer-child{
+	overflow-y:hidden !important;
+}
 
 .permissionLabelTable, .permissionTable  {
 	width: 100%;
@@ -59,13 +61,6 @@
 
 #addHostFolderTitle {
 	padding-top: 3px;
-}
-
-#rolePermissionsHostSelectorWrapper {
-	float:right;
-	margin-top:-49px;
-	padding:10px 15px 15px 0;
-	vertical-align:middle;
 }
 
 .hostSelectorButton {

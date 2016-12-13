@@ -110,164 +110,172 @@ function downloadToExcel(structureInode){
 <liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Forms")) %>' />
 
 
+<div class="portlet-main">
 	
-<% if(LicenseUtil.getLevel() > 199){ %>		
-<form id="fm" method="post">
-	<div class="yui-g portlet-toolbar">
-		<div class="yui-u first">
-			<hidden name="structureType" value="3">
-			<input type="hidden" name="resetQuery" value=""> 
-			
-			<input type="text" dojoType="dijit.form.TextBox" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-			
-			<button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-			</button>
+<% if(LicenseUtil.getLevel() > 199){ %>
+	
+	<form id="fm" method="post">
+		<!-- START Toolbar -->
+		<div class="portlet-toolbar">
+			<div class="portlet-toolbar__actions-primary">
+				<div class="inline-form">
+					<input type="hidden" name="structureType" value="3">
+					<input type="hidden" name="resetQuery" value=""> 
+					
+					<input type="text" dojoType="dijit.form.TextBox" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
+					
+					<button dojoType="dijit.form.Button" onClick="submitfm()">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+					</button>
+		
+					<button dojoType="dijit.form.Button" onClick="resetSearch()">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
+					</button>
+					<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+				</div>
+			</div>
+	    	<div class="portlet-toolbar__actions-secondary">
+	    		<script type="text/javascript">
+					dojo.require("dijit.form.CheckBox");
+				</script>
+				<%	String defaultHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+	    			String host = HostUtils.filterDefaultHostForSelect(defaultHostId, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user); 
+				 %>
+				<button dojoType="dijit.form.Button" onCLick="addNewForm();return false;" iconClass="formNewIcon" <%=UtilMethods.isSet(host)?"":"disabled"%> >
+		           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Form" )) %>
+		        </button>
+	    	</div>
+	   </div>
+	   <!-- END Toolbar -->
+	
+ 
+		<script language="Javascript">
+			/**
+				focus on search box
+			**/
+			require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+				dojo.require('dojox.timing');
+				t = new dojox.timing.Timer(500);
+				t.onTick = function(){
+				  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+				  t.stop();
+				}
+				t.start();
+			});
+		</script>
+	               
+	</form>
+	
 
-			<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
-			</button>
-			<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-		</div>
-		<div class="yui-u" style="text-align:right;">
-			<script type="text/javascript">
-				dojo.require("dijit.form.CheckBox");
-			</script>
-			<%	String defaultHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-    			String host = HostUtils.filterDefaultHostForSelect(defaultHostId, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user); 
-			 %>
-			<button dojoType="dijit.form.Button" onCLick="addNewForm();return false;" iconClass="formNewIcon" <%=UtilMethods.isSet(host)?"":"disabled"%> >
-	           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Form" )) %>
-	        </button>
-		</div>
-	</div> 
-<script language="Javascript">
-	/**
-		focus on search box
-	**/
-	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-		dojo.require('dojox.timing');
-		t = new dojox.timing.Timer(500);
-		t.onTick = function(){
-		  focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
-		  t.stop();
-		}
-		t.start();
-	});
-</script>
-               
-</form>
-	
-
-<form action="" method="post" name="order">
-	
-<!-- START Listing Results -->
-<table class="listingTable" >
-	<tr>
-		<th width="50"><%= LanguageUtil.get(pageContext, "Action") %></th>
-		<th width="250">
-			<a href="<portlet:actionURL>
-			<portlet:param name='struts_action' value='/ext/formhandler/view_form' />
-			<portlet:param name='orderBy' value='upper(name)' /><portlet:param name='direction' value='asc'/>
-			</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Form-Name") %></a>
-		</th>
-		<th><%= LanguageUtil.get(pageContext, "Description") %></th>
-		<th width="50" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Content") %></td>
-        <th width="125" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Download-to-Excel") %></td>
-	</tr>
-	
-	<%
-		int structuresSize = ((Integer) request.getAttribute(com.dotmarketing.util.WebKeys.STRUCTURES_VIEW_COUNT)).intValue();
-		if (structures.size() > 0) {
-			for (int i = 0; i < structures.size(); i++) {
-			Structure structure = (Structure) structures.get(i);
-			String str_style = (i % 2 == 0 ? "class=\"alternate_1\""
-			: "class=\"alternate_2\"");
-	%>
-		<tr <%=str_style%> >
-			<td align="center">
-				<a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
-					 	<portlet:param name='struts_action' value='/ext/structure/edit_structure' />
-					 	<portlet:param name='inode' value='<%=structure.getInode()%>' />
-					 	<portlet:param name='referer' value='<%=referer%>' />
-					 	</portlet:actionURL>">
-					    <span class="editIcon"></span>
-				</a>
-			</td>
-			<td>
-					<a  class="gamma" href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
-				<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
-				<portlet:param name='structure_id' value='<%=structure.getInode()%>' />
-				</portlet:actionURL>">
-						  	<%=structure.getName()%>
+	<form action="" method="post" name="order">
+		
+	<!-- START Listing Results -->
+	<table class="listingTable" >
+		<tr>
+			<th width="50"><%= LanguageUtil.get(pageContext, "Action") %></th>
+			<th width="250">
+				<a href="<portlet:actionURL>
+				<portlet:param name='struts_action' value='/ext/formhandler/view_form' />
+				<portlet:param name='orderBy' value='upper(name)' /><portlet:param name='direction' value='asc'/>
+				</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Form-Name") %></a>
+			</th>
+			<th><%= LanguageUtil.get(pageContext, "Description") %></th>
+			<th width="50" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Content") %></td>
+	        <th width="125" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Download-to-Excel") %></td>
+		</tr>
+		
+		<%
+			int structuresSize = ((Integer) request.getAttribute(com.dotmarketing.util.WebKeys.STRUCTURES_VIEW_COUNT)).intValue();
+			if (structures.size() > 0) {
+				for (int i = 0; i < structures.size(); i++) {
+				Structure structure = (Structure) structures.get(i);
+				String str_style = (i % 2 == 0 ? "class=\"alternate_1\""
+				: "class=\"alternate_2\"");
+		%>
+			<tr <%=str_style%> >
+				<td align="center">
+					<a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
+						 	<portlet:param name='struts_action' value='/ext/structure/edit_structure' />
+						 	<portlet:param name='inode' value='<%=structure.getInode()%>' />
+						 	<portlet:param name='referer' value='<%=referer%>' />
+						 	</portlet:actionURL>">
+						    <span class="editIcon"></span>
 					</a>
-			</td>
-			<td><%=!UtilMethods.isSet(structure.getDescription())?"":structure.getDescription() %></td>
-			<td align="center" width="200">
-				<a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
-				<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
-				<portlet:param name='structure_id' value='<%=structure.getInode()%>' />
-				</portlet:actionURL>">
-				<%= LanguageUtil.get(pageContext, "view") %></a>
 				</td>
-			<td align="center"><a href="javascript:downloadToExcel('<%=structure.getInode()%>')"><img src='/html/images/icons/csv.png' border='0' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' align='absbottom'></a></td>
+				<td>
+						<a  class="gamma" href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
+					<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
+					<portlet:param name='structure_id' value='<%=structure.getInode()%>' />
+					</portlet:actionURL>">
+							  	<%=structure.getName()%>
+						</a>
+				</td>
+				<td><%=!UtilMethods.isSet(structure.getDescription())?"":structure.getDescription() %></td>
+				<td align="center" width="200">
+					<a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
+					<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
+					<portlet:param name='structure_id' value='<%=structure.getInode()%>' />
+					</portlet:actionURL>">
+					<%= LanguageUtil.get(pageContext, "view") %></a>
+					</td>
+				<td align="center"><a href="javascript:downloadToExcel('<%=structure.getInode()%>')"><img src='/html/images/icons/csv.png' border='0' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' alt='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-results")) %>' align='absbottom'></a></td>
+			</tr>
+		<% } %>
+	<% } %>
+	<!-- END Listing Results -->
+	
+	
+	<!-- Start No Results -->
+	<% if (structuresSize == 0) { %>
+		<tr>
+			<td colspan="5">
+				<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Forms-to-display") %></div>
+			</td>
 		</tr>
 	<% } %>
-<% } %>
-<!-- END Listing Results -->
-
-
-<!-- Start No Results -->
-<% if (structuresSize == 0) { %>
-	<tr>
-		<td colspan="5">
-			<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Forms-to-display") %></div>
-		</td>
-	</tr>
-<% } %>
-<!-- End No Results -->
-
-</table>
-
-<!-- Start Pagination -->
-<div class="yui-gb buttonRow">
-	<div class="yui-u first" style="text-align:left;">
-		<% if (minIndex != 0) { %>
-			<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/formhandler/view_form" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><portlet:param name="orderBy" value="<%= orderby %>" /></portlet:renderURL>';return false;" iconClass="previousIcon">
-				<%= LanguageUtil.get(pageContext, "Previous") %> <%= perPage %> <%= LanguageUtil.get(pageContext, "Results") %>
-			</button>
-		<% } %>&nbsp;
+	<!-- End No Results -->
+	
+	</table>
+	
+	<!-- Start Pagination -->
+	<div class="yui-gb buttonRow">
+		<div class="yui-u first" style="text-align:left;">
+			<% if (minIndex != 0) { %>
+				<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/formhandler/view_form" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><portlet:param name="orderBy" value="<%= orderby %>" /></portlet:renderURL>';return false;" iconClass="previousIcon">
+					<%= LanguageUtil.get(pageContext, "Previous") %> <%= perPage %> <%= LanguageUtil.get(pageContext, "Results") %>
+				</button>
+			<% } %>&nbsp;
+		</div>
+		<div class="yui-u" style="text-align:center;">
+			<%= LanguageUtil.get(pageContext, "Viewing") %>
+			<%= minIndex+1 %> - 
+			<% if (maxIndex > (minIndex + structuresSize)) { %>
+		    	<%= minIndex + structuresSize %>
+			<%}else{ %>
+				<%= maxIndex %>
+			<% } %>
+			
+			<%= LanguageUtil.get(pageContext, "of1") %>
+		    <% if (100 <= structuresSize) { %>
+				<%= LanguageUtil.get(pageContext, "hundreds") %>
+			<%}else{ %>
+				<%= minIndex + structuresSize %>
+			<%} %>
+		</div>
+		<div class="yui-u" style="text-align:right;">	
+			<% if (maxIndex < (minIndex + structuresSize)) { %>
+		        <button dojoType="dijit.form.Button" onClick="window.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/formhandler/view_form" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /></portlet:renderURL>';return false;" iconClass="nextIcon">
+					<%= LanguageUtil.get(pageContext, "Next") %> <% if ((structuresSize - maxIndex) < perPage){ %> <%= ((minIndex + structuresSize)-maxIndex) %> <%}else{%> <%= perPage %><%}%> <%= LanguageUtil.get(pageContext, "Results") %>
+		    	</button>
+			<% } %>&nbsp;
+		</div>
 	</div>
-	<div class="yui-u" style="text-align:center;">
-		<%= LanguageUtil.get(pageContext, "Viewing") %>
-		<%= minIndex+1 %> - 
-		<% if (maxIndex > (minIndex + structuresSize)) { %>
-	    	<%= minIndex + structuresSize %>
-		<%}else{ %>
-			<%= maxIndex %>
-		<% } %>
-		
-		<%= LanguageUtil.get(pageContext, "of1") %>
-	    <% if (100 <= structuresSize) { %>
-			<%= LanguageUtil.get(pageContext, "hundreds") %>
-		<%}else{ %>
-			<%= minIndex + structuresSize %>
-		<%} %>
-	</div>
-	<div class="yui-u" style="text-align:right;">	
-		<% if (maxIndex < (minIndex + structuresSize)) { %>
-	        <button dojoType="dijit.form.Button" onClick="window.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/formhandler/view_form" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /></portlet:renderURL>';return false;" iconClass="nextIcon">
-				<%= LanguageUtil.get(pageContext, "Next") %> <% if ((structuresSize - maxIndex) < perPage){ %> <%= ((minIndex + structuresSize)-maxIndex) %> <%}else{%> <%= perPage %><%}%> <%= LanguageUtil.get(pageContext, "Results") %>
-	    	</button>
-		<% } %>&nbsp;
-	</div>
-</div>
-<!-- END Pagination -->
+	<!-- END Pagination -->
+	</form>
 
-</form>
 <% }else{ %>
 	<%@ include file="/html/portlet/ext/formhandler/not_licensed.jsp" %>
-
-
 <% } %>
+
+</div>
 </liferay:box>

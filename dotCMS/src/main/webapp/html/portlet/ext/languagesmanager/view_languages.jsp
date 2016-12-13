@@ -38,12 +38,29 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 	<liferay:param name="box_title"
 		value='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Viewing-Languages"))%>' />
 
-	<div class="buttonRow" style="text-align: right;">
-		<button dojoType="dijit.form.Button" onClick="editDefault"
-			iconClass="editIcon"><%=LanguageUtil.get(pageContext, "Edit-Default-Language-Variables")%></button>
-		<button dojoType="dijit.form.Button" onClick="addLanguage"
-			iconClass="plusIcon"><%=LanguageUtil.get(pageContext, "Add-New-Language")%></button>
-	</div>
+<div class="portlet-main">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			
+		</div>
+		<div class="portlet-toolbar__info">
+			
+		</div>
+    	<div class="portlet-toolbar__actions-secondary">
+    		<button dojoType="dijit.form.Button" onClick="editDefault" iconClass="editIcon">
+    			<%=LanguageUtil.get(pageContext, "Edit-Default-Language-Variables")%>
+    		</button>
+			<button dojoType="dijit.form.Button" onClick="addLanguage" iconClass="plusIcon">
+				<%=LanguageUtil.get(pageContext, "Add-New-Language")%>
+			</button>
+    	</div>
+   </div>
+   <!-- END Toolbar -->
+
+
+
+	<!-- Listing -->
 	<table class="listingTable" id="listingLanguagesTable">
 		<tr>
 			<th colspan="2"><%=LanguageUtil.get(pageContext, "Languages")%></th>
@@ -96,8 +113,12 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 	    }
 	%>
 	</table>
+	<!-- End Listing -->
+	
+	
     <div id="popups"></div>
 </liferay:box>
+
 <form id="remotePublishForm">
 	<input name="assetIdentifier" id="assetIdentifier" type="hidden"
 		value=""> <input name="remotePublishDate"

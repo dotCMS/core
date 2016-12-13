@@ -127,94 +127,104 @@ function pageSelected(page) {
 
 </script>
 
-
-<html:form action="/ext/virtuallinks/edit_virtuallink" styleId="fm">
-	<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
-	<input name="<portlet:namespace />redirect" type="hidden" value="">
-	<input name="su" type="hidden" value="add">
-	<input type="hidden" name="inode" value="<%=vl.getInode()%>">
-	
-	<dl class="shadowBoxLine">
-		<dt>
-			<span class="required"></span>
-			<%= LanguageUtil.get(pageContext, "Title") %>:
-		</dt>
-		<dd>
-			<input id="vlTitle" type="text" name="title"  value="<%=UtilMethods.webifyString(vfm.getTitle()) %>"
-			dojoType="dijit.form.TextBox"
-			trim="true"
-			required="true"
-			invalidMessage="<%=LanguageUtil.get(pageContext, "required") %>" />
-		</dd>
+<div class="portlet-main">
+	<div class="form-horizontal content-type__properties">
 		
-		<dt><%= LanguageUtil.get(pageContext, "Applies-to") %>:</dt>
-		<dd>	
-			<% if(UtilMethods.isSet(vfm.getInode())) { %>
-				<%= host != null?host.getHostname():"All Hosts" %>
-				<input type="hidden" name="hostId" value="<%= hostId %>" />
-			<% } else { %>
-				<select  dojoType="dijit.form.FilteringSelect" id="hostId" name="hostId" autoComplete="true" value="<%=vfm.getHostId()%>">
-				<% if((Boolean)request.getAttribute("isCMSAdministrator")) { %>
-					<option value="0"><%= LanguageUtil.get(pageContext, "All-Hosts") %></OPTION>
+		<html:form action="/ext/virtuallinks/edit_virtuallink" styleId="fm">
+		<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
+		<input name="<portlet:namespace />redirect" type="hidden" value="">
+		<input name="su" type="hidden" value="add">
+		<input type="hidden" name="inode" value="<%=vl.getInode()%>">
+		
+		<dl>
+			<dt>
+				<span class="required"></span>
+				<%= LanguageUtil.get(pageContext, "Title") %>:
+			</dt>
+			<dd>
+				<input style="width: 325px" id="vlTitle" type="text" name="title"  value="<%=UtilMethods.webifyString(vfm.getTitle()) %>"
+				dojoType="dijit.form.TextBox"
+				trim="true"
+				required="true"
+				invalidMessage="<%=LanguageUtil.get(pageContext, "required") %>" />
+			</dd>
+		</dl>
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "Applies-to") %>:</dt>
+			<dd>	
+				<% if(UtilMethods.isSet(vfm.getInode())) { %>
+					<%= host != null?host.getHostname():"All Hosts" %>
+					<input type="hidden" name="hostId" value="<%= hostId %>" />
+				<% } else { %>
+					<select  dojoType="dijit.form.FilteringSelect" id="hostId" name="hostId" autoComplete="true" value="<%=vfm.getHostId()%>" style="width: 325px">
+					<% if((Boolean)request.getAttribute("isCMSAdministrator")) { %>
+						<option value="0"><%= LanguageUtil.get(pageContext, "All-Hosts") %></OPTION>
+					<% } %>
+					<% for(Host h: allHosts){
+					     if(!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive())
+					%>     <option value="<%=h.getIdentifier() %>" ><%=h.getHostname() %></option>
+					<%
+					   }
+					%>
+									 
+					</select>
 				<% } %>
-				<% for(Host h: allHosts){
-				     if(!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive())
-				%>     <option value="<%=h.getIdentifier() %>" ><%=h.getHostname() %></option>
-				<%
-				   }
-				%>
-								 
-				</select>
-			<% } %>
-		</dd>
-		
-		<dt>
-			<span class="required"></span>
-			<%= LanguageUtil.get(pageContext, "URL") %>:
-		</dt>
-		<dd>
-			<%String showUrl = UtilMethods.webifyString((vl.getUrl() != null && vl.getUrl().split(":").length>1) ? vl.getUrl().split(":")[1] : vl.getUrl());
-			         showUrl = UtilMethods.isSet(showUrl)?showUrl:UtilMethods.isSet(vfm.getUrl())?UtilMethods.webifyString(vfm.getUrl()):"";%>
-			<input id="url" type="text" name="url"  value="<%=showUrl %>"
-		    dojoType="dijit.form.TextBox"
-		    trim="true"
-		    required="true"
-		    invalidMessage="<%=LanguageUtil.get(pageContext, "required") %>" />
-		</dd>
-		
-		<dt>
-			<span class="required"></span>
-			<%= LanguageUtil.get(pageContext, "Enter-URL-to-Redirect-To") %>:
-		</dt>
-		<dd>
-			<%String uriValue = UtilMethods.isSet(vl.getUri())?UtilMethods.webifyString(vl.getUri()):UtilMethods.isSet(vfm.getUri())?UtilMethods.webifyString(vfm.getUri()):"";%>
-			<input id="vlUri" type="text" name="uri"  value="<%=uriValue %>"
-			dojoType="dijit.form.TextBox"
-			trim="true"
-			required="true" style="width: 250px;"
-			invalidMessage="<%=LanguageUtil.get(pageContext, "required") %>" />
-			<button dojoType="dijit.form.Button" onClick="browsePage();return false;" iconClass="browseIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "click-here-to-browse")) %>
-			</button>
-		</dd>
-	</dl>
-<div class="clear"></div>
+			</dd>
+		</dl>
+		<dl>	
+			<dt>
+				<span class="required"></span>
+				<%= LanguageUtil.get(pageContext, "URL") %>:
+			</dt>
+			<dd>
+				<%String showUrl = UtilMethods.webifyString((vl.getUrl() != null && vl.getUrl().split(":").length>1) ? vl.getUrl().split(":")[1] : vl.getUrl());
+				         showUrl = UtilMethods.isSet(showUrl)?showUrl:UtilMethods.isSet(vfm.getUrl())?UtilMethods.webifyString(vfm.getUrl()):"";%>
+				<input style="width: 325px" id="url" type="text" name="url"  value="<%=showUrl %>"
+			    dojoType="dijit.form.TextBox"
+			    trim="true"
+			    required="true"
+			    invalidMessage="<%=LanguageUtil.get(pageContext, "required") %>" />
+			</dd>
+		</dl>
+		<dl>	
+			<dt>
+				<span class="required"></span>
+				<%= LanguageUtil.get(pageContext, "Enter-URL-to-Redirect-To") %>:
+			</dt>
+			<dd>
+				<div class="inline-form">
+					<%String uriValue = UtilMethods.isSet(vl.getUri())?UtilMethods.webifyString(vl.getUri()):UtilMethods.isSet(vfm.getUri())?UtilMethods.webifyString(vfm.getUri()):"";%>
+					<input id="vlUri" type="text" name="uri"  value="<%=uriValue %>"
+					dojoType="dijit.form.TextBox"
+					trim="true"
+					required="true"
+					invalidMessage="<%=LanguageUtil.get(pageContext, "required") %>" />
+					<button dojoType="dijit.form.Button" onClick="browsePage();return false;" iconClass="browseIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "click-here-to-browse")) %>
+					</button>
+				</div>
+			</dd>
+		</dl>
+	</div>
+</div>
+
 <!-- START Button Roww -->
 	<div class="buttonRow">
+		<% if(!InodeUtils.isSet(vl.getInode()) || (InodeUtils.isSet(vl.getInode()) && 
+				APILocator.getVirtualLinkAPI().checkVirtualLinkForEditPermissions(vl, user)!=null)){ %>
+			<button iconClass="saveIcon" dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'))">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+			</button>
+		<% } %>
 		<% if(InodeUtils.isSet(vl.getInode()) && APILocator.getVirtualLinkAPI().checkVirtualLinkForEditPermissions(vl, user)!=null){ %>
-			<button iconClass="deleteIcon" dojoType="dijit.form.Button" onClick="deleteVirtualLink(document.getElementById('fm'))">
+			<button iconClass="deleteIcon" dojoType="dijit.form.Button" onClick="deleteVirtualLink(document.getElementById('fm'))" class="dijitButtonDanger">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %>
 			</button>
 		<%} %>
-		<% if(!InodeUtils.isSet(vl.getInode()) || (InodeUtils.isSet(vl.getInode()) && 
-				APILocator.getVirtualLinkAPI().checkVirtualLinkForEditPermissions(vl, user)!=null)){ %>
-		<button iconClass="saveIcon" dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'))">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-		</button>
-		<% } %>
-		<button  iconClass="cancelIcon" dojoType="dijit.form.Button" onClick="cancelEdit();return false;">
+		<button  iconClass="cancelIcon" dojoType="dijit.form.Button" onClick="cancelEdit();return false;" class="dijitButtonFlat">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 		</button>
+		
 	</div>
 <!-- ENDButton Roww -->
 
