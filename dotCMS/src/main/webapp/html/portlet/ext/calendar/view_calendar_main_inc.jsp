@@ -36,9 +36,6 @@
 <%@ include file="view_calendar_js_inc.jsp" %>
 
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
-<style media="all" type="text/css">
-	@import url(/html/portlet/ext/calendar/calendar.css);
-</style>
 
 <script type='text/javascript' src='/dwr/interface/CalendarAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
@@ -49,43 +46,12 @@
 
 <%--jsp:include page="/html/portlet/ext/folders/view_folders_js.jsp" / --%>
 
-<script language="Javascript">
-//Layout Initialization
-	function  resizeBrowser(){
-		var viewport = dijit.getViewport();
-		var viewport_height = viewport.h;
 
-		var  e =  dojo.byId("borderContainer");
-		dojo.style(e, "height", viewport_height +"px");
-
-		var  e =  dojo.byId("sideMenuWrapper");
-		dojo.style(e, "height", viewport_height +"px");
-		
-		var  e =  dojo.byId("monthWrapper");
-		dojo.style(e, "height", viewport_height - 140 +"px");
-		
-		var  e =  dojo.byId("weekWrapper");
-		dojo.style(e, "height", viewport_height - 140 +"px");
-		
-		var  e =  dojo.byId("dayWrapper");
-		dojo.style(e, "height", viewport_height - 140 +"px");
-		
-		if(viewport_height > 625){
-			var  e =  dojo.byId("calendarWeeklyBody");
-			dojo.style(e, "height", viewport_height -285+"px");
-		}
-	}
-// need the timeout for back buttons
-
-	dojo.connect(window, "onresize", this, "resizeBrowser");
-</script>
-
-
-<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:400px;" id="borderContainer" class="shadowBox headerBox">				
+<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="calendar-events">
 	
 	<!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="lineRight" style="width:260px;padding:0;margin:0;">
-		<div id="sideMenuWrapper" class="portlet-sidebar-wrapper">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="portlet-sidebar-wrapper" style="width:280px">
+		<div id="sideMenuWrapper" class="portlet-sidebar">
 			<div id="calendarNavigation">
 				<%@ include file="view_calendar_navigation.jsp" %>
 				<div class="clear">&nbsp;</div>
@@ -101,80 +67,82 @@
 			<!-- START Toolbar -->
 			<div class="portlet-toolbar">
 				<div class="portlet-toolbar__actions-primary">
-					<input type="text" dojoType="dijit.form.TextBox" style="width:250px;margin-left:10px;" name="keywordBox" id="keywordBox" size="30" />
-					<button dojoType="dijit.form.Button" id="moreOptionsButton"  onclick="addKeyword()" iconClass="previewIcon">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>
-					</button>
-			        <button dojoType="dijit.form.Button" id="addFilterButton"  onclick="addKeyword()" iconClass="searchIcon">
-			            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Filter")) %>
-			        </button>
+					<div class="inline-form">
+						<input type="text" dojoType="dijit.form.TextBox" style="width:250px;" name="keywordBox" id="keywordBox" />
+						<button dojoType="dijit.form.Button" id="moreOptionsButton" onclick="addKeyword()">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>
+						</button>
+						<button dojoType="dijit.form.Button" id="addFilterButton" onclick="addKeyword()">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Filter")) %>
+						</button>
+					</div>
 				</div>
 				<div class="portlet-toolbar__info">
-					
+
 				</div>
 		    	<div class="portlet-toolbar__actions-secondary">
-		    		<button dojoType="dijit.form.Button" onclick="changeCalendarView('list');" iconClass="calListIcon">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "List-View")) %>
-					</button>
-					
-					<button dojoType="dijit.form.Button" onclick="changeCalendarView('weekly');" iconClass="calWeekIcon">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Weekly-View")) %>
-					</button>
-					
-					<button dojoType="dijit.form.Button" onclick="changeCalendarView('monthly');" iconClass="calMonthIcon">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Monthly-View")) %>
-					</button>
-		    		<%
-					    PermissionAPI permissionAPI = APILocator.getPermissionAPI();		    
-					    if(permissionAPI.doesUserHavePermission(eventStructure,PermissionAPI.PERMISSION_WRITE,user,false)){
-				    %>
-					    <button dojoType="dijit.form.Button" id="addEventBtn" onclick="addEvent();" class="dijitButtonDanger">
-					        <%= LanguageUtil.get(pageContext, "add-event") %>    
-					    </button>
-					<% } %>
+					<div class="inline-form">
+						<button dojoType="dijit.form.Button" onclick="changeCalendarView('list');" iconClass="calListIcon">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "List-View")) %>
+						</button>
+
+						<button dojoType="dijit.form.Button" onclick="changeCalendarView('weekly');" iconClass="calWeekIcon">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Weekly-View")) %>
+						</button>
+
+						<button dojoType="dijit.form.Button" onclick="changeCalendarView('monthly');" iconClass="calMonthIcon">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Monthly-View")) %>
+						</button>
+						<%
+							PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+							if(permissionAPI.doesUserHavePermission(eventStructure,PermissionAPI.PERMISSION_WRITE,user,false)){
+						%>
+							<button dojoType="dijit.form.Button" id="addEventBtn" onclick="addEvent();" class="dijitButtonAction">
+								<%= LanguageUtil.get(pageContext, "add-event") %>
+							</button>
+						<% } %>
+					</div>
 		    	</div>
 		   </div>
 		   <!-- END Toolbar -->
-		</div>
-
 				
-		<div id="calendarSection" style="padding:5px;">
-			<%@ include file="view_calendar_list_view.jsp" %>
-			<%@ include file="view_calendar_monthly_view.jsp" %>
-			<%@ include file="view_calendar_weekly_view.jsp" %>
-			
-			<div id="loadingView" style="display: none;">
-				<br/><br/><br/><br/><img src="/html/images/icons/round-progress-bar.gif" /><br/>&nbsp;&nbsp;&nbsp;<b><%= LanguageUtil.get(pageContext, "Loading") %>...</b>
+			<div id="calendarSection">
+				<%@ include file="view_calendar_list_view.jsp" %>
+				<%@ include file="view_calendar_monthly_view.jsp" %>
+				<%@ include file="view_calendar_weekly_view.jsp" %>
+
+				<div id="loadingView" style="display: none;">
+					<img src="/html/images/icons/round-progress-bar.gif" /><br/>
+					<%= LanguageUtil.get(pageContext, "Loading") %>...
+				</div>
 			</div>
 		</div>
-		
 	</div>
 	<!-- END Right Column -->
 
 </div>
 
 <!-- START FILTER POPUP -->
-	<div id="filtersBox" class="filtersBox shadowBox" style="display: none;">
-		<div class="dijitDialogTitleBar">
-			<div id="closeFiltersButton" class="closeFilter" onclick="closeFiltersBox()"></div>
-			<div class="clear"></div>
+<div id="filtersBox" class="filtersBox shadowBox" style="display: none;">
+	<div class="dijitDialogTitleBar">
+		<div id="closeFiltersButton" class="closeFilter" onclick="closeFiltersBox()"></div>
+		<div class="clear"></div>
+	</div>
+
+	<div class="yui-g lineCenter">
+		<div class="yui-u first">
+			<div id="categoriesFilterBox"></div>
 		</div>
-		
-		<div class="yui-g lineCenter">
-			<div class="yui-u first">
-				<div id="categoriesFilterBox"></div>
-			</div>
-			<div class="yui-u">
-				<div id="tagsFilterBox"><b><%= LanguageUtil.get(pageContext, "Filter-by-tag") %>:</b>
-			</div>
+		<div class="yui-u">
+			<div id="tagsFilterBox"><b><%= LanguageUtil.get(pageContext, "Filter-by-tag") %>:</b>
 		</div>
 	</div>
+</div>
 <!-- END FILTER POPUP -->
 
 <!-- START EVENT DETAIL POPUP -->
 <div id="eventDetail" dojoType="dijit.Dialog" style="display: none; padding-top:20px\9;">
 	<div class="eventDetail" style="width: 650px">
-		<div id="eventDetailTitle"></div>
 		<div id="eventDetailDate" style="padding:5px;padding-left:10px;"></div>
 		
 		<div id="showLocation" style="display:none;">
@@ -216,7 +184,6 @@
 	dojo.addOnLoad(function () {
 		initializeCalendar();
 	});
-	resizeBrowser();
 </script>
 
 <script language="Javascript">
