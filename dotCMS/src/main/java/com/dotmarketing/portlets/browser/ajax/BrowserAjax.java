@@ -18,6 +18,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1388,6 +1389,44 @@ public class BrowserAjax {
     	return result;
     }
 
+    
+    public Map<String, Object> getStatus(String inode) throws Exception {
+
+      HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+      User user = null;
+      try {
+          user = com.liferay.portal.util.PortalUtil.getUser(req);
+      } catch (Exception e) {
+          Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+          throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
+      }
+      
+      Contentlet c = contAPI.find(inode, user, false);
+      HashMap<String, Object> result = new HashMap<String, Object> ();
+      result.put("LIVE", false);
+      result.put("WORKING", false);
+      result.put("LOCKED", false);
+      result.put("DELETED", false);
+      try{
+        result.put("LIVE", versionAPI.isLive(c));
+        result.put("WORKING", versionAPI.isWorking(c));
+        result.put("DELETED", versionAPI.isDeleted(c));
+        result.put("LOCKED", versionAPI.isLocked(c));
+
+      }
+      catch(Exception e){
+        Logger.warn(this.getClass(), "getStatus failed for inode:" + inode + ":" + e.getMessage());
+      }
+      
+      
+      
+      
+      
+      
+      return result;
+  }
+    
+    
     /**
      * Copies a given inode Link to a given folder
      *
@@ -1490,6 +1529,14 @@ public class BrowserAjax {
      */
     public boolean publishAsset ( String inode ) throws Exception {
 
+      return LocalTransaction.wrapReturn(() ->{
+           return _publishAsset(inode); 
+        }); 
+    }
+    
+    
+    private boolean _publishAsset ( String inode ) throws Exception {
+
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
@@ -1530,7 +1577,7 @@ public class BrowserAjax {
 		}
 
 		//Only publish the content if there is not related unpublished content
-		if ( (relatedAssets == null) || (relatedAssets.size() == 0) ) {
+		//if ( (relatedAssets == null) || (relatedAssets.size() == 0) ) {
 
             /*
 			Publishing the HTMLPage
@@ -1553,9 +1600,9 @@ public class BrowserAjax {
 				return PublishFactory.publishAsset( asset, req );
 			}
 
-		} else {
-			throw new Exception( "Related assets needs to be published" );
-		}
+		//} else {
+		//	throw new Exception( "Related assets needs to be published" );
+		//}
 
         return false;
     }
