@@ -389,9 +389,9 @@
 				<table class="listingTable">
 					<tr>
 						<th><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
-						<th>
+						<th class="btn-add-comment">
 							<% if (!step.isResolved()) { %>
-								<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon">
+								<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon" class="view-workflow__add-comment">
 									<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
 									<div dojoType="dijit.TooltipDialog" id="dialog1" title="Login Form" execute="addComment();">
 										<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">

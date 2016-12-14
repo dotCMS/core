@@ -6660,7 +6660,8 @@ a.category_higlighted, a.tag_higlighted {
   padding-bottom: 8px;
 }
 
-.view-workflow table span.dijitDropDownButton {
+.view-workflow .dijitDropDownActionButton,
+.view-workflow .view-workflow__add-comment {
   float: right;
 }
 
