@@ -2,45 +2,30 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="listView" style="display: none;">
 
-	<div class="yui-gb" id="monthControls" style="padding: 8px 5px;">
-		<div class="yui-u first">
-			<button dojoType="dijit.form.Button" onClick="previousRangeListView()" >
-				<span class="arrowLeftIcon"></span>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="nextRangeListView()" >
-				<span class="arrowRightIcon"></span>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="setTodayView()" >
-	    		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
-			</button>
-	    	<!-- <select name="rangeSelector" onchange="changeDatesRange()" id="rangeSelector"">
-				<option value="day"><%= LanguageUtil.get(pageContext, "Day") %></option>
-				<option value="7days"><%= LanguageUtil.get(pageContext, "Next-7-Days") %></option>
-				<option value="week"><%= LanguageUtil.get(pageContext, "Week") %></option>
-				<option value="month"><%= LanguageUtil.get(pageContext, "Month") %></option>
-				<option value="year"><%= LanguageUtil.get(pageContext, "Year") %></option>
-			</select>
-			-->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div class="inline-form">
+				<button dojoType="dijit.form.Button" onClick="previousRangeListView()" iconClass="arrowLeftIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="nextRangeListView()" iconClass="arrowRightIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="setTodayView()" >
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
+				</button>
+			</div>
 		</div>
-		<div class="yui-u"style="text-align:left;padding-top:5px;width:400px;">
-			<span id="monthListViewName" class="monthName" style="font-size:108%;"></span>
+		<div class="portlet-toolbar__info" id="monthListViewName">
 		</div>
-	    <div class="yui-u">
-	    	&nbsp;
-		</div> 
+		<div class="portlet-toolbar__actions-secondary"></div>
 	</div>
-	
-	<div id="dayWrapper" style="overflow-y:auto;overflow-x:hidden;">
-		<div id="calendarListBody" class="yui-ge">
-			<div id="dailyEvents" class="yui-u first"></div>
-			<div id="ongoingEvents" class="yui-u">
-				<h3 style="margin-top:4px;"><%= LanguageUtil.get(pageContext, "Ongoing-Events") %></h3>
-				<div id="ongoingEventsList"></div>
-			</div>	
+
+	<div id="calendarListBody" class="calendar-events__list">
+		<div id="dailyEvents" class="calendar-events__list-items"></div>
+		<div id="ongoingEvents" class="calendar-events__list-ongoing">
+			<h3><%= LanguageUtil.get(pageContext, "Ongoing-Events") %></h3>
+			<div id="ongoingEventsList"></div>
 		</div>
-		
-		<div id="eventsNavigation" class=""></div>
 	</div>
+
+	<div id="eventsNavigation" class=""></div>
 	
 </div>
 			

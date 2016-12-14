@@ -19,6 +19,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 
 /**
@@ -189,4 +190,69 @@ public class HostAPITest {
         host = APILocator.getHostAPI().findDefaultHost(user, false);
         Assert.assertEquals(hdef.getIdentifier(), host.getIdentifier());
     }
+    
+    @Test
+    public void search() throws Exception {
+    	User user=APILocator.getUserAPI().getSystemUser();
+    	/*
+    	 * Get the current Default host
+    	 */
+    	Host hdef = APILocator.getHostAPI().findDefaultHost(user, false);
+    	
+    	/*
+    	 * Create a new Host 
+    	 */
+    	String hostname ="demo.test"+System.currentTimeMillis()+".dotcms.com";
+    	Host host=new Host();
+        host.setHostname(hostname);
+        host.setDefault(false);
+        try{
+        	HibernateUtil.startTransaction();
+        	host=APILocator.getHostAPI().save(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HostAPITest.class, e.getMessage());
+        }
+        APILocator.getHostAPI().publish(host, user, false);
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        PaginatedArrayList<Host> hosts = APILocator.getHostAPI().search("demo", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
+                
+        /*
+         * Validate if the search is bringing the rigth amount of results
+         */
+        Assert.assertTrue(hosts.size() >= 2 && hosts.getTotalResults() >= 2);
+        Assert.assertTrue(hosts.contains(host));
+        
+        hosts = APILocator.getHostAPI().search(hostname, Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
+        
+        Assert.assertTrue(hosts.size() == 1 && hosts.getTotalResults() == 1);
+        Assert.assertTrue(hosts.get(0).getHostname().equals(hostname));
+        
+        /*
+         * Delete the new test host
+         */
+        Thread.sleep(600); // wait a bit for the index
+        try{
+        	HibernateUtil.startTransaction();
+        	APILocator.getHostAPI().unpublish(host, user, false);
+        	APILocator.getHostAPI().archive(host, user, false);
+        	APILocator.getHostAPI().delete(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HostAPITest.class, e.getMessage());
+        }
+        Thread.sleep(600); // wait a bit for the index
+        
+        hosts = APILocator.getHostAPI().search("nothing", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
+        
+        /*
+         * Validate if the search doesn't bring results
+         */
+        Assert.assertTrue(hosts.size() == 0 && hosts.getTotalResults() == 0);
+
+    }
+    
+    
 }

@@ -505,8 +505,6 @@
 		var doc = Ext.get(document.body);
 		var detailDiv = Ext.get("eventDetail");
 
-		Element.update($("eventDetailTitle"), event.title);
-
 		var eventDates = '';
 		if(isSameDate(event.startDate, event.endDate)) {
 			var startTime = event.startDate.format('h:i A');
@@ -554,7 +552,7 @@
 
 		}
 
-		var eventDetailActions = '';
+		var eventDetailActions = '<div class=\"buttonRow\">';
 		var startDate = event.startDate.format('m/d/Y');
 		var endDate = event.endDate.format('m/d/Y');
 
@@ -600,17 +598,21 @@
 				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive")) %></a>';
 
 			if(event.recurs){
-				eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'delete\');">' +
+				eventDetailActions += '<a class="fakeDojoButton fakeDojoButtonDanger" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate + '\',\'delete\');">' +
 				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
 			}else{
-			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: deleteEvent(\'' + event.identifier + '\',\'false\');">' +
+			  eventDetailActions += '<a class="fakeDojoButton fakeDojoButtonDanger" href="javascript: deleteEvent(\'' + event.identifier + '\',\'false\');">' +
 				'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></a>';
 			}
 		}
 
+		eventDetailActions += '</div>';
+
 		Element.update($("eventDetailActions"), eventDetailActions);
 
-		dijit.byId('eventDetail').show();
+		var dialog = dijit.byId('eventDetail');
+		dialog.setAttribute('title', event.title);
+		dialog.show();
 	}
 
 	function hideEventDetail () {
