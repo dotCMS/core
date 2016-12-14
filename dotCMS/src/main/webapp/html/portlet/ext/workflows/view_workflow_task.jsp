@@ -224,8 +224,8 @@
 %>
 <!-- START Task Overview -->
 
-
-<table class="listingTable">
+<div class="view-workflow">
+	<table class="listingTable">
 	<tr>
 		<th style="text-align:left;">
 			<div style="display:inline-block;">
@@ -592,3 +592,4 @@
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="whereToSend" type="hidden" value="">
 </form>
+</div>

@@ -6660,6 +6660,10 @@ a.category_higlighted, a.tag_higlighted {
   padding-bottom: 8px;
 }
 
+.view-workflow table span.dijitDropDownButton {
+  float: right;
+}
+
 .contentIdentifier {
   margin: 0 0 8px;
 }
