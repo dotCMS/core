@@ -389,7 +389,7 @@
 				<table class="listingTable">
 					<tr>
 						<th><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
-						<th class="btn-add-comment">
+						<th>
 							<% if (!step.isResolved()) { %>
 								<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon" class="view-workflow__add-comment">
 									<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
