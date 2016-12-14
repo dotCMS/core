@@ -1,19 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
-import java.text.DateFormat;
-import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
@@ -21,23 +7,14 @@ import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotLanguageException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -64,19 +41,20 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import java.text.DateFormat;
+import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -190,9 +168,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(autocommit) {
 			HibernateUtil.commitTransaction();
 		}
-
-		// todo: make it async by thread pool
-		contentletSystemEventUtil.pushSaveEvent(cont, isNew);
 
 		contentletFormData.put("cache_control", "0");
 
