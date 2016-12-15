@@ -1,6 +1,6 @@
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
 
-<% request.setAttribute("requiredPortletAccess", "9"); %>
+<% request.setAttribute("requiredPortletAccess", "configuration"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <%@page import="com.dotmarketing.business.APILocator"%>

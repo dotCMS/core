@@ -2532,7 +2532,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_BROWSER</portlet-name>
+		<portlet-name>site-browser</portlet-name>
 		<display-name>CMS Browser</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2553,7 +2553,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_11</portlet-name>
+		<portlet-name>content</portlet-name>
 		<display-name>Contents Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2575,7 +2575,7 @@
 
 	<!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
 	<portlet>
-		<portlet-name>EXT_CONTENT_PUBLISHING_TOOL</portlet-name>
+		<portlet-name>publishing-queue</portlet-name>
 		<display-name>Content Publishing Tools</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -2598,7 +2598,7 @@
 	<!-- END: PORTLET CONTENT PUBLISHING FRAMEWORK -->
 
 	<portlet>
-		<portlet-name>EXT_12</portlet-name>
+		<portlet-name>containers</portlet-name>
 		<display-name>Container Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2617,7 +2617,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_13</portlet-name>
+		<portlet-name>templates</portlet-name>
 		<display-name>Templates Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2704,7 +2704,7 @@
 
 
 	<portlet>
-		<portlet-name>EXT_18</portlet-name>
+		<portlet-name>links</portlet-name>
 		<display-name>Links Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3409,7 +3409,7 @@
 	</portlet>
 
     <portlet>
-        <portlet-name>9</portlet-name>
+        <portlet-name>configuration</portlet-name>
         <display-name>CMS Config</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
@@ -3449,7 +3449,7 @@
     </portlet>
 
     <portlet>
-        <portlet-name>TIMEMACHINE</portlet-name>
+        <portlet-name>time-machine</portlet-name>
         <display-name>Time Machine</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
@@ -3495,7 +3495,7 @@
 	</portlet>
 	
 	<portlet>
-		<portlet-name>ES_SEARCH_PORTLET</portlet-name>
+		<portlet-name>es-search</portlet-name>
 		<display-name>ES Query Tool</display-name>
 		<portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
 	</portlet>

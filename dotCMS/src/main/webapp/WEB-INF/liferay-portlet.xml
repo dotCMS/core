@@ -10,7 +10,7 @@
 	<!--portlet id="6" struts-path="reverend_fun" narrow="true" /-->
 	<!--portlet id="7" struts-path="bible_gateway" /-->
 	<!-- portlet id="8" struts-path="calendar" scheduler-class="com.liferay.portlet.calendar.job.Scheduler" preferences-sharing-type="user" show-portlet-access-denied="true" show-portlet-inactive="true" ns-4-compatible="false" /-->
-	<portlet id="9"/>
+	<portlet id="configuration"/>
 	<!--portlet id="10" struts-path="address_book" /-->
 	<!--portlet id="11" struts-path="directory" /-->
 	<!--portlet id="12" struts-path="stocks" narrow="true" /-->
@@ -80,17 +80,17 @@
 	<portlet id="EXT_5" struts-path="ext/wysiwyg" />
 	<portlet id="EXT_6" struts-path="ext/entities" narrow="true"  />
 	<portlet id="EXT_8" struts-path="ext/folders" />
-	<portlet id="EXT_BROWSER" struts-path="ext/browser" />
-	<portlet id="EXT_11" struts-path="ext/contentlet" narrow="true"/>
+	<portlet id="site-browser" struts-path="ext/browser" />
+	<portlet id="content" struts-path="ext/contentlet" narrow="true"/>
 	<!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
-	<portlet id="EXT_CONTENT_PUBLISHING_TOOL" struts-path="ext/content/publishing" narrow="true" />
+	<portlet id="publishing-queue" struts-path="ext/content/publishing" narrow="true" />
 	<!-- END: 	PORTLET CONTENT PUBLISHING FRAMEWORK -->
-	<portlet id="EXT_12" struts-path="ext/containers" narrow="true"/>
-	<portlet id="EXT_13" struts-path="ext/templates" narrow="true"/>
+	<portlet id="containers" struts-path="ext/containers" narrow="true"/>
+	<portlet id="templates" struts-path="ext/templates" narrow="true"/>
 	<portlet id="EXT_15" struts-path="ext/htmlpages" narrow="true"/>
 	<portlet id="EXT_16" struts-path="ext/mailinglists" />
 	<portlet id="EXT_17" struts-path="ext/director" />
-	<portlet id="EXT_18" struts-path="ext/links" narrow="true"/>
+	<portlet id="links" struts-path="ext/links" narrow="true"/>
 	<portlet id="EXT_19" struts-path="ext/campaigns"/>
 	<portlet id="EXT_21" struts-path="ext/workflows" />
 	<portlet id="EXT_HTMLPAGE_VIEWS" struts-path="ext/htmlpageviews" />
@@ -131,8 +131,8 @@
     <portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
 	<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
 	<portlet id="EXT_BROKEN_LINKS" struts-path="ext/brokenlinks" narrow="true" />
-    <portlet id="TIMEMACHINE" />
-    <portlet id="ES_SEARCH_PORTLET" />
+    <portlet id="time-machine" />
+    <portlet id="es-search" />
     <portlet id="PERSONAS_PORTLET" />
 	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
 </portlets>

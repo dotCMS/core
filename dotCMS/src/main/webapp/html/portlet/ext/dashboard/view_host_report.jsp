@@ -71,8 +71,8 @@ try {
 			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=0";
 		}else if (portletId.equals("EXT_3")) {
 			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=0";
-		}else if (portletId.equals("EXT_11")) {
-			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_11";
+		}else if (portletId.equals("content")) {
+			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=content";
 		}
 	  }
 	}
@@ -789,7 +789,7 @@ try {
 	}
 
 	function editContent(contInode,structureInode){
-		 var URL = '<%=contentURL%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit&_EXT_11_selectedStructure={stInode}&inode={inode}&referer=<%=referer%>';
+		 var URL = '<%=contentURL%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&_content_selectedStructure={stInode}&inode={inode}&referer=<%=referer%>';
 	     var href = dojo.replace(URL, { stInode:structureInode, inode: contInode})
 		 window.location=href;	
 	}

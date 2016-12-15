@@ -1,7 +1,7 @@
 <%@ include file="/html/common/init.jsp" %>
 <%@page import="com.dotmarketing.business.APILocator" %>
 <%@page import="com.dotmarketing.util.URLEncoder" %>
-<% request.setAttribute("requiredPortletAccess", "9"); %>
+<% request.setAttribute("requiredPortletAccess", "configuration"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <script type="text/javascript" src="/html/portlet/ext/cmsconfig/js/main.js" ></script>
@@ -13,7 +13,7 @@
 
         for ( Layout l : myLayouts ) {
             List<String> ports = l.getPortletIds();
-            if ( ports.contains( "9" ) ) {
+            if ( ports.contains( "configuration" ) ) {
                 layout = l;
                 layoutId = l.getId();
                 break;

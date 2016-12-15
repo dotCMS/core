@@ -307,7 +307,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
                         iconClass: "uploadIcon",
                         onClick: function() {
-               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&_EXT_11_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
+               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=content&p_p_action=1&p_p_state=maximized&_content_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
             }
         });
         menu.addChild(menuItem2);
@@ -465,7 +465,7 @@
                                 <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></span>
                                 <script type="text/javascript">
                                     function importContent() {
-                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&_EXT_11_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=content&p_p_action=1&p_p_state=maximized&_content_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
                                     }
                                 </script>
                                 <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">

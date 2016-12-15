@@ -33,7 +33,7 @@ String contentLayout="";
 List<Layout> list=APILocator.getLayoutAPI().loadLayoutsForUser(user);
 for(Layout ll : list) {
     for(String pid : ll.getPortletIds())
-        if(pid.equals("EXT_11"))
+        if(pid.equals("content"))
             contentLayout=ll.getId();
 }
 
@@ -114,7 +114,7 @@ function loadTable() {
 	var currentUser="<%=user.getUserId()%>";
 	var lid="<%=contentLayout%>";
 	var lidBL="<%=layout.getId()%>";
-	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit";
+	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit";
 	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
 	var pageSize=25;

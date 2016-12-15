@@ -3568,7 +3568,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_18 a span {
+#menu ul.dropdown li.dotCMS_links a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -660px;
 }
 
@@ -3622,7 +3622,7 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1200px;
 }
 
-#menu ul.dropdown li.dotCMS_9 a span {
+#menu ul.dropdown li.dotCMS_configuration a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -200px;
   width: 18px;
   height: 18px;
@@ -3630,7 +3630,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_12 a span,
+#menu ul.dropdown li.dotCMS_containers a span,
 .container {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1220px;
   width: 18px;
@@ -3639,7 +3639,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_13 a span,
+#menu ul.dropdown li.dotCMS_templates a span,
 .templateIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1220px;
   width: 18px;
@@ -3674,7 +3674,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_BROWSER a span,
+#menu ul.dropdown li.dotCMS_site-browser a span,
 .bowserIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1280px;
   width: 18px;
@@ -3683,7 +3683,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_11 a span {
+#menu ul.dropdown li.dotCMS_content a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1280px;
   width: 18px;
   height: 18px;
@@ -3742,7 +3742,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_TIMEMACHINE a span,
+#menu ul.dropdown li.dotCMS_time-machine a span,
 .clockIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1760px;
   width: 18px;
@@ -3760,7 +3760,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_ES_SEARCH_PORTLET a span,
+#menu ul.dropdown li.dotCMS_es-search a span,
 .elasticsearchIcon {
   background: url("http://localhost:8080/html/images/icons/elasticsearch.png") no-repeat;
   width: 18px;
@@ -3770,7 +3770,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span,
+#menu ul.dropdown li.dotCMS_publishing-queue a span,
 .sServerIcon,
 .pushIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1880px;

@@ -149,7 +149,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 
                     <% if ( request.getHeader( "User-Agent" ).contains( "MSIE" ) ) { %>
                         <input type="hidden" name="p_p_action" value="1">
-                        <input type="hidden" name="p_p_id" value="EXT_BROWSER">
+                        <input type="hidden" name="p_p_id" value="site-browser">
                         <input type="hidden" name="p_p_state" value="maximized">
                         <input type="hidden" name="p_p_mode" value="view">
                         <input type="hidden" name="struts_action" value="/ext/files/upload_multiple">

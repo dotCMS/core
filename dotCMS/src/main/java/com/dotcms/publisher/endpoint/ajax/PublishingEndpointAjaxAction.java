@@ -62,7 +62,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 				    setUser(request);
 	                user = getUser();
 				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", user)){
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", user)){
 					response.sendError(401);
 					return;
 				}

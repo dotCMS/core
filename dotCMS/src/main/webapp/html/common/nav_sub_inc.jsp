@@ -27,7 +27,7 @@
             layoutListForLicenseManager=APILocator.getLayoutAPI().loadLayoutsForUser(user);
             for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
                 List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-                if (portletIdsForLicenseManager.contains("9")) {
+                if (portletIdsForLicenseManager.contains("configuration")) {
                     licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
                     licenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
                     break;
@@ -102,7 +102,7 @@
 
                 }
 
-                if (portletids.get(j).equals("9") && !hasLicenseManagerPortlet) {
+                if (portletids.get(j).equals("configuration") && !hasLicenseManagerPortlet) {
                     hasLicenseManagerPortlet = true;
                 }
             }
@@ -145,7 +145,7 @@
 
         if(!hasLicenseManagerPortlet){
             String licenseManagerPortletId = "";
-            portlet = APILocator.getPortletAPI().findPortlet("9");
+            portlet = APILocator.getPortletAPI().findPortlet("configuration");
                 if(portlet!=null){
                     licenseManagerPortletId = portlet.getPortletId();
                 }

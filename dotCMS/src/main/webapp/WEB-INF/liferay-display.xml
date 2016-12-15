@@ -77,7 +77,7 @@
 	</category-->
 	
 	<category name="category.tools">
-		<!--portlet id="9" /-->
+		<!--portlet id="configuration" /-->
 		<!--portlet id="65" /-->
 		<!--portlet id="28" /-->
 		<!--portlet id="17" /-->
@@ -107,7 +107,7 @@
 		<portlet id="EXT_USERMANAGER" />
 		<portlet id="EXT_USER_COMMENTS"/>
 		<portlet id="EXT_USER_CLICKS"/>
-		<portlet id="9" />
+		<portlet id="configuration" />
 		<portlet id="EXT_USERFILTER"/>
 		<portlet id="EXT_USER_ACCOUNT_NOTES"/>
 	</category>
@@ -149,11 +149,11 @@
 		<portlet id="EXT_4" />
 		<portlet id="EXT_6" />
 		<portlet id="EXT_8" />
-		<portlet id="EXT_BROWSER" />
-		<portlet id="EXT_11" />
-		<portlet id="EXT_12" />
-		<portlet id="EXT_13" />
-		<portlet id="EXT_18" />
+		<portlet id="site-browser" />
+		<portlet id="content" />
+		<portlet id="containers" />
+		<portlet id="templates" />
+		<portlet id="links" />
 		<portlet id="EXT_20" />
 		<portlet id="EXT_22" />
 		<portlet id="EXT_JOBS" />

@@ -180,7 +180,7 @@
                                 <span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
 
                                 <%if ( assetType.equals( "contentlet" ) ) {%>
-                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
+                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
                                         <strong style="text-decoration: underline;"><%= title %></strong>  : <%=structureName %>
                                     </a>
                                 <%} else if (assetType.equals("language")) {%>

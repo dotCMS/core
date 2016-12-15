@@ -73,7 +73,7 @@
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "edit-htmlpage"), null));
 		
 		request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
-	} else if (portletId1.equals("EXT_BROWSER")) {
+	} else if (portletId1.equals("site-browser")) {
 		HTMLPage htmlpage;
 		if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
 			htmlpage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);

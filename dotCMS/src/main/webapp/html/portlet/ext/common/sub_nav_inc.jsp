@@ -78,7 +78,7 @@
 		for (int i = 0; i < layouts.length; i++) {
 			List<String> portletIDs = layouts[i].getPortletIds();
 			for (String x : portletIDs) {
-				if ("EXT_BROWSER".equals(x)) {
+				if ("site-browser".equals(x)) {
 					_browserCrumbUrl = new PortletURLImpl(request, x, layouts[i].getId(), false).toString();
 				}
 				if ("EXT_HOSTADMIN".equals(x)) {

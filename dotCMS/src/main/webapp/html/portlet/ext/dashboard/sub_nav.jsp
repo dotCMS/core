@@ -31,7 +31,7 @@
 			}
 			 crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "work-stream"), null));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_BROWSER )){
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "EXT_BROWSER"), crumbTrailReferer));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "site-browser"), crumbTrailReferer));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_FILES )){	
 			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "EXT_3"), crumbTrailReferer));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_PAGES )){	

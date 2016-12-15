@@ -386,7 +386,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     public void downloadBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
     	try {
-			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", getUser())){
+			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
 				response.sendError(401);
 				return;
 			}
@@ -443,7 +443,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     public void downloadUnpushedBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
     	try {
-			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", getUser())){
+			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
 				response.sendError(401);
 				return;
 			}
@@ -605,7 +605,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
     public void uploadBundle ( HttpServletRequest request, HttpServletResponse response ) throws FileUploadException, IOException{
 
     	try {
-			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", getUser())){
+			if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", getUser())){
 				response.sendError(401);
 				return;
 			}

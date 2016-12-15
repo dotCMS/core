@@ -33,13 +33,13 @@
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.ES_SEARCH_PORTLET")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.es-search")%></a>
 				</li>
 
 			</ul>
 			<div class="clear"></div>
 		</div>
-		<jsp:include page="/WEB-INF/jsp/es_search_portlet/not_licensed.jsp"></jsp:include>
+		<jsp:include page="/WEB-INF/jsp/es-search/not_licensed.jsp"></jsp:include>
 
 	</div>
 <%return;}%>
@@ -139,7 +139,7 @@ if(query == null){
         };
 
         dojo.xhrPost({
-            url: "/api/portlet/ES_SEARCH_PORTLET/render",
+            url: "/api/portlet/es-search/render",
             handleAs: "text",
             postData: data,
             load: function(code) {
@@ -401,5 +401,5 @@ if(query == null){
 
 
 <div id="esSearchHelpDia" title="ElasticSearch Help" dojoType="dijit.Dialog">
-	<jsp:include page="/WEB-INF/jsp/es_search_portlet/es-search-help.jsp"></jsp:include>
+	<jsp:include page="/WEB-INF/jsp/es-search/es-search-help.jsp"></jsp:include>
 </div>
