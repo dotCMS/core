@@ -169,7 +169,7 @@ var project = {
           gulp.src('./src/**/*.scss')
               .pipe(sourcemaps.init())
               .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
-              .on('error', function() {})
+              .on('error', sass.logError)
               .pipe(sourcemaps.write())
               .pipe(gulp.dest(config.buildDir)).on('finish', cb);
     });

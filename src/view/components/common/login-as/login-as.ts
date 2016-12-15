@@ -1,11 +1,12 @@
 import {BaseComponent} from '../_base/base-component';
-import {Component, Output, EventEmitter} from '@angular/core';
+import {Component, Output, EventEmitter, Input, ViewEncapsulation} from '@angular/core';
 import {LoginService, User} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {DotRouterService} from '../../../../api/services/dot-router-service';
 
 @Component({
     directives: [],
+    encapsulation: ViewEncapsulation.None,
     moduleId: __moduleName,
     providers: [],
     selector: 'dot-login-as',
@@ -14,13 +15,14 @@ import {DotRouterService} from '../../../../api/services/dot-router-service';
 })
 export class LoginAsComponent extends BaseComponent {
     @Output() cancel = new EventEmitter<>();
+    @Input() visible: boolean;
 
     private needPassword: boolean = false;
     private userLists: Array<User>;
     private filteredLoginAsUsersResults: Array<any>;
 
     constructor(private loginService: LoginService, private router: DotRouterService, private messageService: MessageService) {
-        super(['change', 'cancel', 'password', 'loginas.select.loginas.user'], messageService);
+        super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], messageService);
     }
 
     ngOnInit(): void {
@@ -66,11 +68,11 @@ export class LoginAsComponent extends BaseComponent {
      */
     filterUsers(event): void {
         this.filteredLoginAsUsersResults = this.userLists.
-        filter( user => user.fullName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0)
-            .map( user => {
+        filter(user => user.fullName.toLowerCase().indexOf(event.query.toLowerCase()) >= 0)
+            .map(user => {
                 return {
-                label: user.fullName,
-                value: user.userId,
+                    label: user.fullName,
+                    value: user.userId
                 };
             });
     }
@@ -96,7 +98,7 @@ export class LoginAsComponent extends BaseComponent {
          *
          */
         setTimeout(() => {
-            this.filteredLoginAsUsersResults = this.userLists.map( user => {
+            this.filteredLoginAsUsersResults = this.userLists.map(user => {
                 return {
                     label: user.fullName,
                     value: user.userId,

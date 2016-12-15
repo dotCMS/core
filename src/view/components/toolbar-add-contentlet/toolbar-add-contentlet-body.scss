@@ -2,49 +2,46 @@
 @import "../../../scss/variables";
 
 :host {
+  display: flex;
+  flex-direction: column;
+  padding: $basic-padding * 2 0 0;
 
-  .toolbar-add-contentlet-body__title{
+  .toolbar-add-contentlet-body {
     display: flex;
-    flex-direction: row;
   }
 
-  .toolbar-add-contentlet-body__title label{
-    font-size: 16px;
-    margin-top: 5%;
+  .toolbar-add-contentlet-body__title {
+    font-weight: normal;
+    margin: 0 0 $basic-padding;
   }
 
-  .toolbar-add-contentlet-body__links{
-    padding-left: 2.5%;
-    padding-right: 2.5%;
+  .toolbar-add-contentlet-body__list {
+    @include naked-list;
   }
 
-  .toolbar-add-contentlet-body__links div{
-    margin-left: 2.5%;
-    margin-right: 2.5%;
+  .toolbar-add-contentlet-body__list-item {
+    margin: $basic-padding / 2 0;
+
+    a {
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
-  .toolbar-add-contentlet-body__links div a{
-    font-size: 12px;
-  }
-
-  .toolbar-add-contentlet-body__more-panel{
-    margin-top: 15px;
+  .toolbar-add-contentlet-body__more-panel {
+    background: $gray-lightest;
+    margin-top: $basic-padding * 2;
+    padding: $basic-padding;
     text-align: center;
     text-decoration: none;
-    font-size: 12px;
   }
 
-  .toolbar-add-contentlet-body__more-panel a{
-    text-decoration: none;
-  }
-
-  .toolbar-add-contentlet-body__more-panel a:visited{
-    text-decoration: none;
-  }
-
-  .two-columns-width{
-    width: 45%;
-    display: inline-table;
+  .toolbar-add-contentlet-body__section {
+    padding: 0 $basic-padding * 2;
+    white-space: nowrap;
   }
 }
 

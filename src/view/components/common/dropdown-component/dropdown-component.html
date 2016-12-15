@@ -1,8 +1,9 @@
 <button *ngIf="icon"
-        class="btn icn"
+        pButton iconButton
+        [icon]="icon"
         (click)="onToggle()"
-        [disabled]="disabled">
-    <i *ngIf="icon" class="material-icons">{{icon}}</i>
+        [disabled]="disabled"
+        [class.inverse]="inverse">
     <ng-content select=".badge"></ng-content>
 </button>
 

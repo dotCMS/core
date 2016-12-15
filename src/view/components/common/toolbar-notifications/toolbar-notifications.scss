@@ -4,12 +4,8 @@
 :host {
     position: relative;
 
-    dot-notifications-list {
-        font-size: rem-cal(14px);
-    }
-
     .badge {
-        background-color: $secondary;
+        background-color: $brand-secondary;
         border-radius: 2px;
         font-size: rem-cal(12px);
         line-height: rem-cal(12px);
@@ -17,10 +13,10 @@
         position: absolute;
         right: 0;
         top: 0;
-
     }
 
     .toolbar-notifications {
+        padding: $basic-padding * 2;
         width: 350px;
 
         &:before {
@@ -33,10 +29,6 @@
             transform: rotate(45deg);
             width: 10px;
         }
-    }
-
-    .toolbar-notifications__content {
-        height: 320px;
     }
 
     .toolbar-notifications__heading {

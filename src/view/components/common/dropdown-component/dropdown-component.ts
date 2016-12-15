@@ -16,6 +16,7 @@ export class DropdownComponent {
     @Input() icon: string = null;
     @Input() title: string = null;
     @Input() alignRight: boolean = false;
+    @Input() inverse: boolean = false;
 
     @Output() open = new EventEmitter<>();
     @Output() toggle = new EventEmitter<boolean>();

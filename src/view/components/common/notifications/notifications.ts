@@ -21,9 +21,9 @@ export class NotificationsItem extends BaseComponent{
     @Output() clear = new EventEmitter<Object>();
 
     private notificationIcons: Object = {
-        'WARNING': 'cancel',
-        'ERROR': 'warning',
-        'INFO': 'info'
+        'WARNING': 'ban',
+        'ERROR': 'exclamation-triangle',
+        'INFO': 'info-circle'
     };
     private showLinkAction: boolean = false;
     private showTitleLinked: boolean = false;
@@ -40,7 +40,7 @@ export class NotificationsItem extends BaseComponent{
     }
 
     getIconName(val:string) {
-        return this.notificationIcons[val];
+        return 'notification-item__icon fa fa-' + this.notificationIcons[val];
     }
 
     onClear() {

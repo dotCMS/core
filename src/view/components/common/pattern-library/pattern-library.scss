@@ -46,10 +46,11 @@
     }
 
     .section__subtitle {
-        margin: 0;
-        font-size: rem-cal(12px);
-        text-transform: uppercase;
         color: $gray-dark;
+        font-size: rem-cal(12px);
+        margin: rem-cal($basic-padding * 2) 0;
+
+        text-transform: uppercase;
     }
 
     .section__title {

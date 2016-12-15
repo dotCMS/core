@@ -30,14 +30,14 @@ accordion {
         }
 
         &.is-active {
-            border-left: solid 3px $primary;
+            border-left: solid 3px $brand-primary;
             font-weight: bold;
             background-color: $gray-lightest;
         }
     }
 
     .accordion-group__content {
-        border-left: solid 3px $primary;
+        border-left: solid 3px $brand-primary;
         background-color: $gray-lightest;
     }
 
