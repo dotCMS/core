@@ -36,7 +36,7 @@ let mainComponentChildren = [
                                 {
                                     canActivate: [RoutingPrivateAuthService],
                                     component: IframeLegacyComponent,
-                                    path: 'portlet/:id',
+                                    path: ':id',
                                 }
                             ];
 
@@ -46,7 +46,7 @@ angularComponents.forEach( component => {
     mainComponentChildren.push({
         canActivate: [RoutingPrivateAuthService],
         component: component.component,
-        path: `html/ng/p/${component.id}`
+        path: `p/${component.id}`
     });
 
     fromCoreChildren.push({

@@ -117,7 +117,7 @@ var project = {
                 patterns: [
                   {
                     match: /<base href=\"\/build\/\">/g,
-                    replacement: '<base href=\"/html/ng/\">'
+                    replacement: '<base href=\"/dotadmin/\">'
                   }
                 ]
               }))
