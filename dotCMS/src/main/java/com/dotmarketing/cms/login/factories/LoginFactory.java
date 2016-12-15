@@ -24,6 +24,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -197,15 +198,13 @@ public class LoginFactory {
         		(0 < PRE_AUTHENTICATOR.length()) &&
         		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION")) &&
         		!useCASLoginFilter) {
-        		
-        		Class ldap_auth_impl_class = Class.forName(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
-        		Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.newInstance();
-        		int auth = 0;
 
-    			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-    				auth = ldap_auth_impl.authenticateByEmailAddress(comp.getCompanyId(), userName, password);
-				} else {
-					auth = ldap_auth_impl.authenticateByUserId(comp.getCompanyId(), userName, password);
+				int auth = 0;
+
+				// if skipPasswordCheck is in true, means we do not have to check the user on LDAP just our DB
+				if (!skipPasswordCheck) {
+
+					auth = getLDAPAuth(userName, password, comp);
 				}
 
     			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
@@ -214,22 +213,19 @@ public class LoginFactory {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
 
-    			try{
-    				boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
-    				if(!SYNC_PASSWORD){
-    					String roleName = LDAPImpl.LDAP_USER_ROLE;
-    					if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName)){
-    						user.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);
-    						APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
-    					}
-    				}
-    			}catch (Exception e) {
-    				Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
-    			}
+				// if we do not get the user from LDAP, does not make sense to sync the password.
+				if (!skipPasswordCheck) {
+
+					syncPassword(user);
+				}
+
+				// if it is the skip password on true and the user is not null, means the user exists on our db and the login is ok (usually it is the case for cookie login)
+				if (skipPasswordCheck && null != user) {
+
+					auth = Authenticator.SUCCESS;
+				}
 
     			match = auth == Authenticator.SUCCESS;
-    		
-
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
@@ -357,8 +353,45 @@ public class LoginFactory {
         return false;
     }
 
+	private static void syncPassword(User user) {
+		try {
 
-    /**
+            final boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
+            if (!SYNC_PASSWORD) {
+
+                String roleName = LDAPImpl.LDAP_USER_ROLE;
+
+                if (APILocator.getRoleAPI().doesUserHaveRole(user, roleName)) {
+
+                    user.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);
+                    APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
+                }
+            }
+        } catch (Exception e) {
+
+            Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
+        }
+	}
+
+	private static int getLDAPAuth(final String userName,
+								   final String password,
+								   final Company comp) throws ClassNotFoundException, InstantiationException, IllegalAccessException, AuthException {
+
+		int auth = Authenticator.DNE;
+		final Class ldap_auth_impl_class = Class.forName
+                (Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
+		final Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.newInstance();
+
+		if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
+            auth = ldap_auth_impl.authenticateByEmailAddress(comp.getCompanyId(), userName, password);
+        } else {
+            auth = ldap_auth_impl.authenticateByUserId(comp.getCompanyId(), userName, password);
+        }
+		return auth;
+	}
+
+
+	/**
     *
     * @param userName
     * @param password
