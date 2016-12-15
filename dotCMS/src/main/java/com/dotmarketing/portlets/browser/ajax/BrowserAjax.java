@@ -18,7 +18,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1529,9 +1528,9 @@ public class BrowserAjax {
      */
     public boolean publishAsset ( String inode ) throws Exception {
 
-      return LocalTransaction.wrapReturn(() ->{
-           return _publishAsset(inode); 
-        }); 
+
+       return _publishAsset(inode); 
+
     }
     
     

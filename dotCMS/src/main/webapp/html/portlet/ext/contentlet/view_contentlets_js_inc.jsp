@@ -2027,7 +2027,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"_unlockContentlet('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"_unlockAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }
                         }
                         if (deleted && (write == "1"))
@@ -2605,7 +2605,7 @@
                                 form.action+= "&modDateTo="+dateTo;
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
-                submitForm(form);
+            form.submit();
         }
 
         //*************************************
@@ -2831,7 +2831,19 @@
 	
 		}
 	}
-
+	
+	function _unlockAsset (inode) {
+		BrowserAjax.unlockAsset(inode, function (data) { _unlockAssetCallback(data) } );
+	}
+	
+	function _unlockAssetCallback (response) {
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-unlock-check-you-have-the-required-permissions")) %>');
+		} else {
+			refreshFakeJax();
+		}
+	}
+	
 
 	function refreshFakeJax(){
 	
