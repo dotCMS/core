@@ -270,31 +270,9 @@ deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Dist
 
 //Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
 //(Useful for development)
-task moveCleanLicenseEnterpriseTomcat {
-	doFirst {
-		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-			include "eelic-*", "eelic_*"
-		}
-		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-			include "ee-*", "ee_*"
-		}
-
-		copy{
-			from "$licenseProjectHome/build/libs"
-			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-			include "eelic_clean.jar"
-		}
-		copy{
-			from "$enterpriseProjectHome/build/libs"
-			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-			include "ee_clean.jar"
-		}
-	}
+task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 }
-
-task deployWarTomcatDev (dependsOn: ['generateCleanLicense', 'generateCleanEnterprise']) {
-}
-deployWarTomcatDev.finalizedBy 'deployWarTomcat', 'moveCleanLicenseEnterpriseTomcat'
+deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
 deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)'
 
@@ -622,22 +600,45 @@ restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, M
 undeployPlugins.finalizedBy 'deployConfig'
 
 //Generates a no obfuscated version of the license jar
-task generateCleanLicense(type: GradleBuild) {
+task generateMoveCleanLicenseTomcat(type: GradleBuild) {
     buildFile = "$licenseProjectHome/build.gradle"
     tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
 	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
+
+	doLast {
+		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+			include "eelic-*", "eelic_*"
+		}
+		copy{
+			from "$licenseProjectHome/build/libs"
+			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+			include "eelic_clean.jar"
+		}
+	}
 }
-generateCleanLicense.group='dotCMS Util'
-generateCleanLicense.description='Creates a no-obfuscated license JAR and moves it into WEB-INF/lib .'
+generateMoveCleanLicenseTomcat.group='dotCMS Util'
+generateMoveCleanLicenseTomcat.description='Creates a no-obfuscated license JAR and moves it into WEB-INF/lib .'
 
 //Generates a no obfuscated version of the enterprise jar
-task generateCleanEnterprise(type: GradleBuild) {
+task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {
     buildFile = "$enterpriseProjectHome/build.gradle"
     tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
 	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
+
+	doLast {
+		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+			include "ee-*", "ee_*"
+		}
+
+		copy{
+			from "$enterpriseProjectHome/build/libs"
+			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+			include "ee_clean.jar"
+		}
+	}
 }
-generateCleanEnterprise.group='dotCMS Util'
-generateCleanEnterprise.description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
+generateMoveCleanEnterpriseTomcat.group='dotCMS Util'
+generateMoveCleanEnterpriseTomcat.description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
 
 // Util methods.
 def getDate() {
