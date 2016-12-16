@@ -415,7 +415,7 @@
 
 	  	if (read && !archived) {
 			strHTML += '<a href="javascript: viewFile(\'' + objId + '\', \'' + ext + '\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="previewIcon"></span>';
+		    	//strHTML += '<span class="previewIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
 		}
@@ -423,7 +423,7 @@
 		if ((live || working) && write && !archived) {
 			if(file.isContent){
    				strHTML += '<a href="javascript: editFileAsset(\'' + objId + '\',\'' + file.fileAssetType + '\');" class="contextPopupMenu">';
-   				strHTML += '<span class="editIcon"></span>';
+   				//strHTML += '<span class="editIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>';
 			    strHTML += '</a>';
    			}else{
@@ -580,7 +580,7 @@
             if (enterprise) {
                 if (sendingEndpoints) {
                     strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-                        strHTML += '<span class="sServerIcon"></span>';
+                        //strHTML += '<span class="sServerIcon"></span>';
                         strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                     strHTML += '</a>';
                 }
@@ -704,7 +704,7 @@
 
 		if ((live || working) && read && !archived) {
 			strHTML += '<a href="javascript: previewHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="pageIcon"></span>';
+		    	//strHTML += '<span class="pageIcon"></span>';
 	    	    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
 
