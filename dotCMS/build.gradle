@@ -106,12 +106,11 @@ dependencies {
     functionalTestCompile sourceSets.integrationTest.output
 }
 
-if (!gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
-	dependencies {
-		compile group: 'com.dotcms.enterprise', name: 'ee', version: "$dotcmsReleaseVersion-SNAPSHOT", changing: true
-		compile group: 'com.dotcms.enterprise', name: 'eelic', version: "$dotcmsReleaseVersion-SNAPSHOT", changing: true
-	}
-} else {
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/dependencies.gradle"
+
+
+if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
 	sourceSets {
     	main {
         	java { 
@@ -120,9 +119,6 @@ if (!gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
     	}
 	}
 }
-
-// Import and apply the dependencies from the dependencies scripts.
-apply from: "$rootDir/dependencies.gradle"
 
 
 ant.lifecycleLogLevel = "INFO"
