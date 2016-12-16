@@ -108,8 +108,8 @@ dependencies {
 
 if (!gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
 	dependencies {
-		compile group: 'com.dotcms.enterprise', name: 'ee', version: '3.8.0-SNAPSHOT', changing: true
-		compile group: 'com.dotcms.enterprise', name: 'eelic', version: '3.8.0-SNAPSHOT', changing: true
+		compile group: 'com.dotcms.enterprise', name: 'ee', version: "$dotcmsReleaseVersion-SNAPSHOT", changing: true
+		compile group: 'com.dotcms.enterprise', name: 'eelic', version: "$dotcmsReleaseVersion-SNAPSHOT", changing: true
 	}
 } else {
 	sourceSets {
@@ -129,8 +129,6 @@ ant.lifecycleLogLevel = "INFO"
 
 ext {
     // Open the Git repository in the current directory.
-
-    dotcmsReleaseVersion='3.8.0'
     dotcmsReleaseBuild = ''
     dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'
