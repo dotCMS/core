@@ -711,7 +711,23 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		List<Index> indexes=null;
 		List<Constraint> defaultConstraints = null;
 		List<Constraint> checkConstraints = null;
+		List<String> schemaList = new ArrayList<>();
 		try {
+			// Obtain the SQL Script in accordance with the database type
+			if (DbConnectionFactory.isPostgres()) {
+				schemaList = SQLUtil.tokenize(getPostgresScript());
+			} else if (DbConnectionFactory.isMySql()) {
+				schemaList = SQLUtil.tokenize(getMySQLScript());
+			} else if (DbConnectionFactory.isOracle()) {
+				schemaList = SQLUtil.tokenize(getOracleScript());
+			} else if (DbConnectionFactory.isMsSql()) {
+				schemaList = SQLUtil.tokenize(getMSSQLScript());
+			} else {
+				schemaList = SQLUtil.tokenize(getH2Script());
+			}
+			if (schemaList.isEmpty()) {
+				return;
+			}
 			this.primaryKeyProcessor = getPrimaryKeyProcessor();
 			this.foreignKeyProcessor = getForeignKeyProcessor();
 			this.indexProcessor = getIndexProcessor();
@@ -748,22 +764,6 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		        throw new DotDataException(ex.getMessage(), ex);
 		    }
 		}
-			
-		List<String> schemaList = new ArrayList<String>();
-
-		//Execute the SQL Script in accordance with the database type
-		if(DbConnectionFactory.isPostgres()){
-			schemaList = SQLUtil.tokenize(getPostgresScript());
-		}else if(DbConnectionFactory.isMySql()){
-			schemaList = SQLUtil.tokenize(getMySQLScript());
-		}else if(DbConnectionFactory.isOracle()){
-			schemaList = SQLUtil.tokenize(getOracleScript());
-		}else if(DbConnectionFactory.isMsSql()) {
-			schemaList = SQLUtil.tokenize(getMSSQLScript());
-		}else {
-		    schemaList = SQLUtil.tokenize(getH2Script());
-		}
-
 		try {
 		    conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(false);
