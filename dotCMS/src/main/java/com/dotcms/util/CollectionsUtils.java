@@ -1,13 +1,23 @@
 package com.dotcms.util;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 /**
- * Encapsulates collection utils methods
+ * This utility class provides common use methods for creating and interacting
+ * with Java collections, such as maps, lists, sets, and so on. It is advised
+ * that any utility methods regarding interaction with theses data structures be
+ * added to this class.
  * 
  * @author jsanca
  * @version 3.7
@@ -44,7 +54,6 @@ public class CollectionsUtils implements Serializable {
      * @return List
      */
     public static <T> List<T> getNewList() { // this method is keep for compatibility
-
         return list();
     } // getNewList
 
@@ -58,7 +67,6 @@ public class CollectionsUtils implements Serializable {
      * @return List
      */
     public static <T> List<T> list() {
-
         return new ArrayList<T>();
     } // list
 
@@ -74,8 +82,8 @@ public class CollectionsUtils implements Serializable {
      * @param <T>
      * @return List
      */
-    public static <T> List<T> list(final T... elements) {
-
+	@SuppressWarnings("unchecked")
+	public static <T> List<T> list(final T... elements) {
         return list(Arrays.asList(elements));
     } // list
 
@@ -86,7 +94,6 @@ public class CollectionsUtils implements Serializable {
      * @return List
      */
     public static <T> List<T> list(final Collection<T> tCollection) {
-
         return new ArrayList<T>(tCollection);
     } // list
 
@@ -96,7 +103,6 @@ public class CollectionsUtils implements Serializable {
      * @return Set
      */
     public static <T> Set<T> set () {
-
         return new HashSet<T>();
     } // set
 
@@ -106,8 +112,8 @@ public class CollectionsUtils implements Serializable {
      * @param <T>
      * @return Set
      */
-    public static <T> Set<T> set (final T... elements) {
-
+    @SuppressWarnings("unchecked")
+	public static <T> Set<T> set (final T... elements) {
         return set(Arrays.asList(elements));
     } // set
 
@@ -117,8 +123,8 @@ public class CollectionsUtils implements Serializable {
      * @param <T>
      * @return Set
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> linkSet (final T... elements) {
-
         return new LinkedHashSet<T>(Arrays.asList(elements));
     } // set
 
@@ -129,7 +135,6 @@ public class CollectionsUtils implements Serializable {
      * @return Set
      */
     public static <T> Set<T> set (final Collection<T> tCollection) {
-
         return new HashSet<T>(tCollection);
     } // set
 
@@ -140,7 +145,6 @@ public class CollectionsUtils implements Serializable {
      * @return Map
      */
     public static <K,V> Map<K,V> map() {
-
         return new HashMap<K, V>();
     } // map.
 
@@ -151,8 +155,8 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
+    @SafeVarargs
     public static <K,V> Map<K,V> mapAll(final Map<K, V>... maps) {
-
         final Map<K,V> map = map();
 
         if (null != maps) {
@@ -173,7 +177,6 @@ public class CollectionsUtils implements Serializable {
      * @return Map
      */
     public static <K,V> Map<K,V> map(final K key, final V value) {
-
         return mapEntries(entry(key, value));
     } // map.
 
@@ -188,7 +191,6 @@ public class CollectionsUtils implements Serializable {
      * @return Map
      */
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2));
     } // map.
 
@@ -206,7 +208,6 @@ public class CollectionsUtils implements Serializable {
      */
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3));
     } // map.
@@ -227,7 +228,6 @@ public class CollectionsUtils implements Serializable {
      */
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4));
     } // map.
@@ -250,7 +250,6 @@ public class CollectionsUtils implements Serializable {
      */
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4), entry(key5, value5));
     } // map.
@@ -276,7 +275,6 @@ public class CollectionsUtils implements Serializable {
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
             final K key6, final V value6) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4), entry(key5, value5),
                 entry(key6, value6));
@@ -305,7 +303,6 @@ public class CollectionsUtils implements Serializable {
     public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5,
                                      final K key6, final V value6, final K key7, final V value7) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4), entry(key5, value5),
                 entry(key6, value6), entry(key7, value7));
@@ -342,7 +339,6 @@ public class CollectionsUtils implements Serializable {
             , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
             , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
             , final K key9, final V value9, final K key10, final V value10) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4), entry(key5, value5),
                 entry(key6, value6), entry(key7, value7), entry(key8, value8),
@@ -389,7 +385,6 @@ public class CollectionsUtils implements Serializable {
             , final K key9, final V value9, final K key10, final V value10
             , final K key11, final V value11, final K key12, final V value12, final K key13, final V value13
             , final K key14, final V value14) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4), entry(key5, value5),
                 entry(key6, value6), entry(key7, value7), entry(key8, value8),
@@ -441,7 +436,6 @@ public class CollectionsUtils implements Serializable {
             , final K key9, final V value9, final K key10, final V value10
             , final K key11, final V value11, final K key12, final V value12, final K key13, final V value13
             , final K key14, final V value14, final K key15, final V value15, final K key16, final V value16) {
-
         return mapEntries(entry(key1, value1), entry(key2, value2),
                 entry(key3, value3), entry(key4, value4), entry(key5, value5),
                 entry(key6, value6), entry(key7, value7), entry(key8, value8),
@@ -450,9 +444,13 @@ public class CollectionsUtils implements Serializable {
                 entry(key15, value15), entry(key16, value16));
     } // map.
 
-
-    public static <K,V> Map<K,V> imap(Object... entries) {
-
+    /**
+     * 
+     * @param entries
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+	public static <K,V> Map<K,V> imap(Object... entries) {
         if (entries.length % 2 != 0){
             throw new IllegalArgumentException("The entries must be pair");
         }
@@ -466,17 +464,6 @@ public class CollectionsUtils implements Serializable {
         return mapEntries(entriesCollection);
     } // map.
 
-    private static <K,V> Map<K,V> immutableMapEntries(final Collection<Map.Entry<K, V>> entries) {
-
-        final ImmutableMap.Builder<K, V> parametersBuilder = ImmutableMap.builder();
-
-        for (Map.Entry<K, V> entry : entries) {
-            parametersBuilder.put(entry.getKey(), entry.getValue());
-        }
-
-        return parametersBuilder.build();
-    } // map.
-
     /**
      * Get a new map based on a collections of entries
      * @param entries Entry
@@ -484,8 +471,8 @@ public class CollectionsUtils implements Serializable {
      * @param <V>
      * @return Map
      */
-    public static <K,V> Map<K,V> mapEntries(final Map.Entry<K, V>... entries) {
-
+	@SuppressWarnings("unchecked")
+	public static <K,V> Map<K,V> mapEntries(final Map.Entry<K, V>... entries) {
         final Map<K,V> hashMap = map();
 
         for (Map.Entry<K, V> entry : entries) {
@@ -504,7 +491,6 @@ public class CollectionsUtils implements Serializable {
      * @return Map
      */
     public static <K,V> Map<K,V> mapEntries(final Collection<Map.Entry<K, V>> entries) {
-
         final Map<K,V> hashMap = map();
 
         for (Map.Entry<K, V> entry : entries) {
@@ -524,7 +510,6 @@ public class CollectionsUtils implements Serializable {
      * @return Map.Entry
      */
     public static <K,V> Map.Entry<K, V> entry(final K key, final V value) {
-
         return new AbstractMap.SimpleEntry<K, V>(key, value);
     } // entry
 
@@ -551,4 +536,56 @@ public class CollectionsUtils implements Serializable {
         map.put( key2, emailaddress);
     }
 
-} // E:O:F:CollectionsUtils.
+	/**
+	 * Returns the first object in the {@link Map} whose key <b>is represented
+	 * by or starts with some of the characters of the specified seed</b>. This
+	 * method allows developers to simulate a reverse {@code startsWith}
+	 * operation in a {@code Map}. That is, the map key only contains some of
+	 * the initial characters in the seed.
+	 * <p>
+	 * If the map contains a complete key represented by the {@code seed}
+	 * parameter, such a value will be returned. Otherwise, the method will go
+	 * trough all the map entries looking for the first key whose characters
+	 * match the specified seed. If none of the keys match the seed in any way,
+	 * the default value will be returned. For example:
+	 * 
+	 * <pre>
+	 * String seed = "prefix_mapentry";
+	 * Map<String, String> map = new HashMap<>();
+	 * 
+	 * map.put("first.key", "1");
+	 * map.put("prefix_", "2");
+	 * map.put("third.key", "3");
+	 * 
+	 * System.out.println(getMapValue(map, seed, null));
+	 * </pre>
+	 * 
+	 * The following value will be printed:
+	 * 
+	 * <pre>
+	 * 2
+	 * </pre>
+	 * 
+	 * @param map
+	 *            - The map containing the elements to inspect.
+	 * @param seed
+	 *            - The key of the value to return.
+	 * @param defaultValue
+	 *            - The default value to return in case the key doesn't match an
+	 *            entry in the map.
+	 * @return The value mapped to the specified key, or the default value.
+	 */
+	public static <T> T getMapValue(final Map<String, T> map, final String seed, T defaultValue) {
+		if (map.containsKey(seed)) {
+			return map.get(seed);
+		} else {
+			for (Map.Entry<String, T> entry : map.entrySet()) {
+				if (seed.startsWith(entry.getKey())) {
+					return entry.getValue();
+				}
+			}
+		}
+		return defaultValue;
+	}
+
+}
