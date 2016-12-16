@@ -1,4 +1,9 @@
 
+configurations {
+    compile
+    testCompile
+}
+
 def scriptDescription = """\
 
     ********************************************************
