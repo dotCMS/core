@@ -17,13 +17,13 @@ import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
 
 let angularComponents: any[] = [];
-angularComponents.push({component: RuleEngineContainer, id: 'RULES_ENGINE_PORTLET'});
+angularComponents.push({component: RuleEngineContainer, id: 'rules'});
 
 let mainComponentChildren = [
                                 {
                                     path: '',
                                     pathMatch: 'full',
-                                    redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'portlet/EXT_21',
+                                    redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'workflow',
                                 },
                                 {
                                     component: PatternLibrary,
