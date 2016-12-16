@@ -2451,7 +2451,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_4</portlet-name>
+		<portlet-name>categories</portlet-name>
 		<display-name>Category Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2752,7 +2752,7 @@
 
 
 	<portlet>
-		<portlet-name>EXT_21</portlet-name>
+		<portlet-name>workflow</portlet-name>
 		<display-name>Workflow Tasks</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2833,7 +2833,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_VIRTUAL_LINKS</portlet-name>
+		<portlet-name>vanity-urls</portlet-name>
 		<display-name>Virtual Links</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2854,7 +2854,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_LANG</portlet-name>
+		<portlet-name>languages</portlet-name>
 		<display-name>Languages Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2890,7 +2890,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_STRUCTURE</portlet-name>
+		<portlet-name>content-types</portlet-name>
 		<display-name>Structures</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2911,7 +2911,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_FORM_HANDLER</portlet-name>
+		<portlet-name>forms</portlet-name>
 		<display-name>Form Handler</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2975,7 +2975,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_USER_ADMIN</portlet-name>
+		<portlet-name>users</portlet-name>
 		<display-name>User Admin</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -2993,7 +2993,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_ROLE_ADMIN</portlet-name>
+		<portlet-name>roles</portlet-name>
 		<display-name>Roles Admin</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3106,7 +3106,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_CMS_MAINTENANCE</portlet-name>
+		<portlet-name>maintenance</portlet-name>
 		<display-name>CMS Maintenance</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3283,7 +3283,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_CALENDAR</portlet-name>
+		<portlet-name>calendar</portlet-name>
 		<display-name>Calendar of Events</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3301,7 +3301,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_HOSTADMIN</portlet-name>
+		<portlet-name>sites</portlet-name>
 		<display-name>Host Admin</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3324,7 +3324,7 @@
 
 	<!-- JSP PORTLETS -->
 	<portlet>
-		<portlet-name>EXT_LUCENE_TOOL</portlet-name>
+		<portlet-name>query-tool</portlet-name>
 		<display-name>Lucene Test Tool</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -3346,7 +3346,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_SITESEARCH</portlet-name>
+		<portlet-name>site-search</portlet-name>
 		<display-name>Site Search Manager</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -3357,7 +3357,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_DASHBOARD</portlet-name>
+		<portlet-name>dashboard</portlet-name>
 		<display-name>Dashboard</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3379,7 +3379,7 @@
 
 
 	<portlet>
-		<portlet-name>WORKFLOW_SCHEMES</portlet-name>
+		<portlet-name>workflow-schemes</portlet-name>
 		<display-name>Workflow Schemes</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -3394,7 +3394,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>OSGI_MANAGER</portlet-name>
+		<portlet-name>dynamic-plugins</portlet-name>
 		<display-name>OSGI Manager</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -3427,7 +3427,7 @@
     </portlet>
 
 	<portlet>
-		<portlet-name>EXT_TAG_MANAGER</portlet-name>
+		<portlet-name>tags</portlet-name>
 		<display-name>Tag Manager</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -3466,7 +3466,7 @@
     </portlet>
 
 	<portlet>
-		<portlet-name>EXT_BROKEN_LINKS</portlet-name>
+		<portlet-name>link-checker</portlet-name>
 		<display-name>Broken Links</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
 		<init-param>
@@ -3500,7 +3500,7 @@
 		<portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
 	</portlet>
 	<portlet>
-		<portlet-name>RULES_ENGINE_PORTLET</portlet-name>
+		<portlet-name>rules</portlet-name>
 		<display-name>Rules Editor</display-name>
 		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
