@@ -81,7 +81,7 @@
 				if ("site-browser".equals(x)) {
 					_browserCrumbUrl = new PortletURLImpl(request, x, layouts[i].getId(), false).toString();
 				}
-				if ("EXT_HOSTADMIN".equals(x)) {
+				if ("sites".equals(x)) {
 					canManageHosts = true;
 					_hostManagerUrl = new PortletURLImpl(request, x, layouts[i].getId(), false).toString();
 				}

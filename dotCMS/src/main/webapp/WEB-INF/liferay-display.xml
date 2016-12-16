@@ -124,18 +124,18 @@
 		<portlet id="EXT_EVENTSAPPROVAL"/>
 	</category>
 	<category name="category.calendar">
-		<portlet id="EXT_CALENDAR"/>
+		<portlet id="calendar"/>
 	</category>
 	<category name="category.contentManagementAdmin">
-		<portlet id="EXT_CMS_MAINTENANCE" />
+		<portlet id="maintenance" />
 		<portlet id="EXT_SCHEDULER" />
 		<!--portlet id="EXT_WEBFORMS"/-->
-		<portlet id="EXT_VIRTUAL_LINKS" />
-		<portlet id="EXT_STRUCTURE" />
-		<portlet id="EXT_FORM_HANDLER" />
-		<portlet id="EXT_LANG" />
-		<portlet id="EXT_LUCENE_TOOL" />
-		<portlet id="EXT_SITESEARCH" />
+		<portlet id="vanity-urls" />
+		<portlet id="content-types" />
+		<portlet id="forms" />
+		<portlet id="languages" />
+		<portlet id="query-tool" />
+		<portlet id="site-search" />
 	</category>
 	<category name="category.marketing">
 		<portlet id="EXT_MAILINGLISTBUILDER" />
@@ -146,7 +146,7 @@
 
 	<category name="category.contentManagement">
 		<portlet id="EXT_3" />
-		<portlet id="EXT_4" />
+		<portlet id="categories" />
 		<portlet id="EXT_6" />
 		<portlet id="EXT_8" />
 		<portlet id="site-browser" />
@@ -158,14 +158,14 @@
 		<portlet id="EXT_22" />
 		<portlet id="EXT_JOBS" />
 		<portlet id="EXT_KCO" />
-		<portlet id="EXT_21"/>
+		<portlet id="workflow"/>
 		<portlet id="EXT_HTMLPAGE_VIEWS"/>
 		<portlet id="EXT_5"/>
 		<portlet id="EXT_2"/>
 		<portlet id="EXT_15"/>
 		<portlet id="EXT_17"/>
 		<portlet id="EXT_CONTENTRATINGS"/>
-		<portlet id="EXT_TAG_MANAGER" />
+		<portlet id="tags" />
 	</category>	
 
 	<category name="category.analysis">

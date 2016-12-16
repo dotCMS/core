@@ -32,7 +32,7 @@ public class UserSessionAjax {
         User user = null;
         try {
             user = com.liferay.portal.util.PortalUtil.getUser(req);
-            if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+            if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
                 throw new DotSecurityException("User does not have access to the CMS Maintance Portlet");
             }
             return true;

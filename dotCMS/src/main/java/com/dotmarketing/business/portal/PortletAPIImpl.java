@@ -33,7 +33,7 @@ public class PortletAPIImpl implements PortletAPI {
     }
     
     public boolean hasUserAdminRights(User user) {
-        return hasPortletRights(user,"EXT_USER_ADMIN");
+        return hasPortletRights(user,"users");
     }
 
 	public boolean hasContainerManagerRights(User user) {

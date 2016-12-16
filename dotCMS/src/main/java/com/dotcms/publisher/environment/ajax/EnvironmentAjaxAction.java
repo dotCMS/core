@@ -45,7 +45,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
-			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
 				String userName = map.get("u") !=null
 					? map.get("u")
 						: map.get("user") !=null

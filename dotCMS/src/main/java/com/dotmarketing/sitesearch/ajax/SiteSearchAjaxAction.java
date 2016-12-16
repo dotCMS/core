@@ -54,7 +54,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
-			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)) {
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)) {
 				String userName = map.get("u");
 				String password = map.get("p");
 				LoginFactory.doLogin(userName, password, false, request, response);
@@ -63,7 +63,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 				    setUser(request);
                     user = getUser();
 				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)){
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)){
 					response.sendError(401);
 					return;
 				}

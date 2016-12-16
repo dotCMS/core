@@ -115,13 +115,13 @@ function loadTable() {
 	var lid="<%=contentLayout%>";
 	var lidBL="<%=layout.getId()%>";
 	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit";
-	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
+	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=link-checker&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
 	var pageSize=25;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
 	var id = dojo.byId('currentPage');
     if(typeof id.textContent == "undefined"){
-            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
+            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=link-checker&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
@@ -202,7 +202,7 @@ dojo.ready(function(){
     	<div class="subNavCrumbTrail">
 	        <ul id="subNavCrumbUl">        
 	            <li>
-	                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS")%>
+	                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.link-checker")%>
 	            </li>
 	            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
 	        </ul>

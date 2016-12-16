@@ -68,7 +68,7 @@ public class WorkflowEmailUtil {
             List<Layout> layouts = APILocator.getLayoutAPI().findAllLayouts();
             Layout layout = new Layout();
             for (Layout lout : layouts) {
-                if (lout.getPortletIds().contains("EXT_21")) {
+                if (lout.getPortletIds().contains("workflow")) {
                     layout = lout;
                     break;
                 }
@@ -81,7 +81,7 @@ public class WorkflowEmailUtil {
 
             }
             link += "/c/portal/layout?p_l_id=" + layout.getId()
-                    + "&p_p_id=EXT_21&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_21_struts_action=/ext/workflows/edit_workflow_task&_EXT_21_cmd=view&_EXT_21_taskId="
+                    + "&p_p_id=workflow&p_p_action=1&p_p_state=maximized&p_p_mode=view&_workflow_struts_action=/ext/workflows/edit_workflow_task&_workflow_cmd=view&_workflow_taskId="
                     + processor.getTask().getId();
 
             HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();

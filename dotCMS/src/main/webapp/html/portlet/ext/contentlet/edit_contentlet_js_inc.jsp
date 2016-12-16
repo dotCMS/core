@@ -622,7 +622,7 @@ dojo.require("dojox.layout.ContentPane");
 		myCp = new dojox.layout.ContentPane({
 			id : "contentletRulezDivCp",
 			style: "height:100%",
-			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
+			href:  "/api/portlet/rules/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
 		}).placeAt("contentletRulezDiv");
 
 

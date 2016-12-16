@@ -97,7 +97,7 @@
         for (int i = 0; i < userLayouts.size(); i++) {
             java.util.List<String> portletids = userLayouts.get(i).getPortletIds();
             for (int j = 0; j < portletids.size(); j++) {
-                if (portletids.get(j).equals("EXT_ROLE_ADMIN") && !hasRolesPortlet) {
+                if (portletids.get(j).equals("roles") && !hasRolesPortlet) {
                     hasRolesPortlet = true;
 
                 }
@@ -119,7 +119,7 @@
          String ticket = "";
         if(!hasRolesPortlet){
           String roleAdminPortletId = "";
-          portlet = APILocator.getPortletAPI().findPortlet("EXT_ROLE_ADMIN");
+          portlet = APILocator.getPortletAPI().findPortlet("roles");
             if(portlet!=null){
                 roleAdminPortletId = portlet.getPortletId();
             }

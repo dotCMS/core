@@ -65,8 +65,8 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("EXT_USER_ADMIN")) {
-			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_USER_ADMIN&p_p_action=0";
+		if (portletId.equals("users")) {
+			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=users&p_p_action=0";
 		}else if (portletId.equals("EXT_15")) {
 			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=0";
 		}else if (portletId.equals("EXT_3")) {

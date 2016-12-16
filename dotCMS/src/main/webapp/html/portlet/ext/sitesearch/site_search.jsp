@@ -40,7 +40,7 @@ boolean success = false;
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SITESEARCH")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.site-search")%></a>
 				</li>
 
 			</ul>
@@ -948,7 +948,7 @@ function  resizeBrowser(){
 	<div class="subNavCrumbTrail">
 		<ul id="subNavCrumbUl">
 			<li>
-				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SITESEARCH")%></a>
+				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.site-search")%></a>
 			</li>
 			<li class="lastCrumb"><span id="crumbTitleSpan"></span></li>
 		</ul>

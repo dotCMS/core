@@ -76,7 +76,7 @@
 	<portlet id="EXT_1" struts-path="ext/inodes" narrow="true" />
 	<portlet id="EXT_2" struts-path="ext/banners" />
 	<portlet id="EXT_3" struts-path="ext/files" narrow="true"/>
-	<portlet id="EXT_4" struts-path="ext/categories"  narrow="true"  />
+	<portlet id="categories" struts-path="ext/categories"  narrow="true"  />
 	<portlet id="EXT_5" struts-path="ext/wysiwyg" />
 	<portlet id="EXT_6" struts-path="ext/entities" narrow="true"  />
 	<portlet id="EXT_8" struts-path="ext/folders" />
@@ -92,24 +92,24 @@
 	<portlet id="EXT_17" struts-path="ext/director" />
 	<portlet id="links" struts-path="ext/links" narrow="true"/>
 	<portlet id="EXT_19" struts-path="ext/campaigns"/>
-	<portlet id="EXT_21" struts-path="ext/workflows" />
+	<portlet id="workflow" struts-path="ext/workflows" />
 	<portlet id="EXT_HTMLPAGE_VIEWS" struts-path="ext/htmlpageviews" />
 	<portlet id="EXT_USER_CLICKS" struts-path="ext/userclicks" />
 	<portlet id="EXT_USER_COMMENTS" struts-path="ext/usercomments" />
-	<portlet id="EXT_VIRTUAL_LINKS" struts-path="ext/virtuallinks" />
-	<portlet id="EXT_LANG" struts-path="ext/languages_manager" narrow="true" />
+	<portlet id="vanity-urls" struts-path="ext/virtuallinks" />
+	<portlet id="languages" struts-path="ext/languages_manager" narrow="true" />
 	<portlet id="EXT_EVENTS" struts-path="ext/events" />
-	<portlet id="EXT_STRUCTURE" struts-path="ext/structure"/>
+	<portlet id="content-types" struts-path="ext/structure"/>
 	<portlet id="EXT_ORG" struts-path="ext/organization"/>
 	<portlet id="EXT_USERMANAGER" struts-path="ext/usermanager" />
-	<portlet id="EXT_USER_ADMIN" struts-path="ext/useradmin" />
-	<portlet id="EXT_ROLE_ADMIN" struts-path="ext/roleadmin" />
+	<portlet id="users" struts-path="ext/useradmin" />
+	<portlet id="roles" struts-path="ext/roleadmin" />
 	<portlet id="EXT_WEBFORMS" struts-path="ext/webforms" narrow="true" />
 	<portlet id="EXT_FACILITY" struts-path="ext/facilities" narrow="true"/>
 	<portlet id="EXT_EVENTS" struts-path="ext/events" />
 	<portlet id="EXT_EVENTSAPPROVAL" struts-path="ext/eventsapproval" />
 	<portlet id="EXT_USER_ACCOUNT_NOTES" struts-path="ext/user" />
-	<portlet id="EXT_CMS_MAINTENANCE" struts-path="ext/cmsmaintenance" narrow="true"/>
+	<portlet id="maintenance" struts-path="ext/cmsmaintenance" narrow="true"/>
 	<portlet id="EXT_PRODUCT" struts-path="ext/product" />
 	<portlet id="EXT_ECO_ORDER" struts-path="ext/order_manager" />
 	<portlet id="EXT_EVE_REG" struts-path="ext/event_registration" />
@@ -120,17 +120,17 @@
 	<portlet id="EXT_USERFILTER" struts-path="ext/userfilter" />
 	<portlet id="EXT_SCHEDULER" struts-path="ext/scheduler" />
 	<portlet id="EXT_REPORTMANAGER" struts-path="ext/report" />
-	<portlet id="EXT_CALENDAR" struts-path="ext/calendar" />
-	<portlet id="EXT_FORM_HANDLER" struts-path="ext/formhandler"/>
-	<portlet id="EXT_HOSTADMIN" struts-path="ext/hostadmin"/>
-	<portlet id="EXT_LUCENE_TOOL"  />
-	<portlet id="EXT_SITESEARCH"  />
-	<portlet id="EXT_DASHBOARD" struts-path="ext/dashboard" />
-	<portlet id="WORKFLOW_SCHEMES"  />
-	<portlet id="OSGI_MANAGER"  />
-    <portlet id="EXT_TAG_MANAGER" struts-path="tag_manager" />
+	<portlet id="calendar" struts-path="ext/calendar" />
+	<portlet id="forms" struts-path="ext/formhandler"/>
+	<portlet id="sites" struts-path="ext/hostadmin"/>
+	<portlet id="query-tool"  />
+	<portlet id="site-search"  />
+	<portlet id="dashboard" struts-path="ext/dashboard" />
+	<portlet id="workflow-schemes"  />
+	<portlet id="dynamic-plugins"  />
+    <portlet id="tags" struts-path="tag_manager" />
 	<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
-	<portlet id="EXT_BROKEN_LINKS" struts-path="ext/brokenlinks" narrow="true" />
+	<portlet id="link-checker" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="time-machine" />
     <portlet id="es-search" />
     <portlet id="PERSONAS_PORTLET" />

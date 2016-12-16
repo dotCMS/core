@@ -184,7 +184,7 @@
                                         <strong style="text-decoration: underline;"><%= title %></strong>  : <%=structureName %>
                                     </a>
                                 <%} else if (assetType.equals("language")) {%>
-                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_LANG&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_LANG_struts_action=/ext/languages_manager/edit_language&_EXT_LANG_id=1&_EXT_LANG_cmd=edit&referer=<%=referer %>">
+                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=languages&p_p_action=1&p_p_state=maximized&p_p_mode=view&_languages_struts_action=/ext/languages_manager/edit_language&_languages_id=1&_languages_cmd=edit&referer=<%=referer %>">
                                         <img src="/html/images/languages/<%= langCode %>_<%= countryCode %>.gif" border="0" />
                                         <strong style="text-decoration: underline;"><%= title %></strong>  : <%= structureName %>
                                     </a>

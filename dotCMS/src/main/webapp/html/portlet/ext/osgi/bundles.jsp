@@ -8,7 +8,7 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotcms.repackage.org.osgi.framework.Bundle" %>
 <%        
-	request.setAttribute("requiredPortletAccess", "OSGI_MANAGER"); 
+	request.setAttribute("requiredPortletAccess", "dynamic-plugins"); 
 %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
