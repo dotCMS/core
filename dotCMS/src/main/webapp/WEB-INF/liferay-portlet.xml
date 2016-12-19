@@ -87,7 +87,7 @@
 	<!-- END: 	PORTLET CONTENT PUBLISHING FRAMEWORK -->
 	<portlet id="containers" struts-path="ext/containers" narrow="true"/>
 	<portlet id="templates" struts-path="ext/templates" narrow="true"/>
-	<portlet id="EXT_15" struts-path="ext/htmlpages" narrow="true"/>
+	<portlet id="html-pages" struts-path="ext/htmlpages" narrow="true"/>
 	<portlet id="EXT_16" struts-path="ext/mailinglists" />
 	<portlet id="EXT_17" struts-path="ext/director" />
 	<portlet id="links" struts-path="ext/links" narrow="true"/>
@@ -118,8 +118,8 @@
 	<portlet id="EXT_DISCOUNTCODE" struts-path="ext/discountcode" />
 	<portlet id="EXT_CONTENTRATINGS" struts-path="ext/contentratings" narrow="true" />
 	<portlet id="EXT_USERFILTER" struts-path="ext/userfilter" />
-	<portlet id="EXT_SCHEDULER" struts-path="ext/scheduler" />
-	<portlet id="EXT_REPORTMANAGER" struts-path="ext/report" />
+	<portlet id="jobs" struts-path="ext/scheduler" />
+	<portlet id="reports" struts-path="ext/report" />
 	<portlet id="calendar" struts-path="ext/calendar" />
 	<portlet id="forms" struts-path="ext/formhandler"/>
 	<portlet id="sites" struts-path="ext/hostadmin"/>
@@ -133,6 +133,6 @@
 	<portlet id="link-checker" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="time-machine" />
     <portlet id="es-search" />
-    <portlet id="PERSONAS_PORTLET" />
+    <portlet id="personas" />
 	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
 </portlets>

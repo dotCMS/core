@@ -12,7 +12,7 @@
 
 <div class="wrapperCluster">
 	<div class="content">
-		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.PERSONAS_PORTLET")%></h2>
+		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.personas")%></h2>
 		<p><%= LanguageUtil.get(pageContext, "PERSONAS-NOT-LICENSED") %></p>
 	</div>
 </div>

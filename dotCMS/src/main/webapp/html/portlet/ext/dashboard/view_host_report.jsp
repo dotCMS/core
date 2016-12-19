@@ -67,8 +67,8 @@ try {
 		for(String portletId : portletIdsForLayout){
 		if (portletId.equals("users")) {
 			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=users&p_p_action=0";
-		}else if (portletId.equals("EXT_15")) {
-			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=0";
+		}else if (portletId.equals("html-pages")) {
+			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=html-pages&p_p_action=0";
 		}else if (portletId.equals("EXT_3")) {
 			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=0";
 		}else if (portletId.equals("content")) {

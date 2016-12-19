@@ -774,7 +774,7 @@ function refreshJobSchedule(){
 	else{
 		x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +myJobName +"&r=" + y  );
 	}
-	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SCHEDULER") %>";
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.jobs") %>";
 	myJobName=null;
 }
 
@@ -970,7 +970,7 @@ function  resizeBrowser(){
 			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp"></div>
 		</div>
 		
-		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SCHEDULER") %>">
+		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.jobs") %>">
 			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
 		</div>
 		

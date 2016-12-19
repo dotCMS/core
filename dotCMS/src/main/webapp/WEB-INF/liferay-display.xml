@@ -128,7 +128,7 @@
 	</category>
 	<category name="category.contentManagementAdmin">
 		<portlet id="maintenance" />
-		<portlet id="EXT_SCHEDULER" />
+		<portlet id="jobs" />
 		<!--portlet id="EXT_WEBFORMS"/-->
 		<portlet id="vanity-urls" />
 		<portlet id="content-types" />
@@ -162,13 +162,13 @@
 		<portlet id="EXT_HTMLPAGE_VIEWS"/>
 		<portlet id="EXT_5"/>
 		<portlet id="EXT_2"/>
-		<portlet id="EXT_15"/>
+		<portlet id="html-pages"/>
 		<portlet id="EXT_17"/>
 		<portlet id="EXT_CONTENTRATINGS"/>
 		<portlet id="tags" />
 	</category>	
 
 	<category name="category.analysis">
-		<portlet id="EXT_REPORTMANAGER" />
+		<portlet id="reports" />
 	</category>
 </display>

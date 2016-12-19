@@ -33,13 +33,13 @@ Object c = LicenseUtil.getLevel();
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.PERSONAS_PORTLET")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.personas")%></a>
 				</li>
 
 			</ul>
 			<div class="clear"></div>
 		</div>
-		<jsp:include page="/WEB-INF/jsp/personas_portlet/not_licensed.jsp"></jsp:include>
+		<jsp:include page="/WEB-INF/jsp/personas/not_licensed.jsp"></jsp:include>
 
 	</div>
 <%return;}%>

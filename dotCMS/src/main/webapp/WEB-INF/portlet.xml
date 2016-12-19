@@ -2636,7 +2636,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_15</portlet-name>
+		<portlet-name>html-pages</portlet-name>
 		<display-name>HTML Pages Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3238,7 +3238,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_SCHEDULER</portlet-name>
+		<portlet-name>jobs</portlet-name>
 		<display-name>Scheduler</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3256,7 +3256,7 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_REPORTMANAGER</portlet-name>
+		<portlet-name>reports</portlet-name>
 		<display-name>Report Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
@@ -3506,7 +3506,7 @@
 	</portlet>
 	
 	<portlet>
-		<portlet-name>PERSONAS_PORTLET</portlet-name>
+		<portlet-name>personas</portlet-name>
 		<display-name>Personas</display-name>
 		<portlet-class>com.dotcms.rest.personas.PersonasResourcePortlet</portlet-class>
 

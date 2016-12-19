@@ -40,8 +40,8 @@ try {
 			containerURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=containers&p_p_action=1";
 		}else if (portletId.equals("EXT_1")) {
 			linkURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_1&p_p_action=1";
-		}else if (portletId.equals("EXT_15")) {
-			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=1";
+		}else if (portletId.equals("html-pages")) {
+			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=html-pages&p_p_action=1";
 		}else if (portletId.equals("EXT_3")) {
 			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=1";
 		}else if (portletId.equals("content")) {
@@ -205,7 +205,7 @@ try {
    	   }
 
        function editHtmlPage(contInode){
-      	     var URL = '<%=pagesURL%>&p_p_state=maximized&p_p_mode=view&_EXT_15_struts_action=%2Fext%2Fhtmlpages%2Fedit_htmlpage&_EXT_15_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	        
+      	     var URL = '<%=pagesURL%>&p_p_state=maximized&p_p_mode=view&_html-pages_struts_action=%2Fext%2Fhtmlpages%2Fedit_htmlpage&_html-pages_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	        
       	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
       	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
       		 window.location=href;	
