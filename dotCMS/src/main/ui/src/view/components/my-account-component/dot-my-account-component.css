@@ -1,0 +1,17 @@
+.my-account {
+  color: #444444;
+  display: block;
+  padding: 0px 10px;
+}
+
+.my-account input {
+  width: 100%;
+}
+
+.my-account .my-account__form-line {
+  padding: 8px 0;
+}
+
+.my-account__actions {
+  text-align: center;
+}

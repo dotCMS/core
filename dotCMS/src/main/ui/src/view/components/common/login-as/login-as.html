@@ -1,0 +1,18 @@
+<div class="login-as">
+        <!--TODO: manage errors on required fields and errors messages -->
+    <form action="" #loginAsForm="ngForm" (submit)="dolLoginAs(loginAsForm.value)">
+        <div class="form-group">
+            <p-autoComplete name="user" id="userId"  ngModel required [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" [size]="30"
+                (onSelect)="userSelectedHandler($event)" field="label" [minLength]="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
+                           [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
+            </p-autoComplete>
+        </div>
+        <div class="form-group" *ngIf="needPassword">
+            <input pPassword name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel/>
+        </div>
+        <div class="form-group">
+            <button pButton id="dot-login-as-button-change" [disabled]="!loginAsForm.valid" label="{{i18nMessages['change']}}"></button>
+            <button pButton color="accent" id="dot-login-as-button-cancel" (click)="close($event)" label="{{i18nMessages['cancel']}}"></button>
+        </div>
+    </form>
+</div>

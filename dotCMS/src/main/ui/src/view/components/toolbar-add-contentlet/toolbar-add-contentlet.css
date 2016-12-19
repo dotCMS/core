@@ -1,0 +1,34 @@
+:host .toolbar-add-contentlet__head {
+  align-items: center;
+  border-bottom: lightgray 1px solid;
+  display: flex;
+  flex-direction: row;
+  padding: 5px;
+  padding-bottom: 10px;
+}
+
+:host .toolbar-add-contentlet__head--button {
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+  padding: 2px;
+  position: relative;
+}
+
+:host .toolbar-add-contentlet__head--selected {
+  background-color: #00ACED;
+}
+
+:host .toolbar-add-contentlet__head--button button {
+  margin: auto;
+}
+
+:host .toolbar-add-contentlet__head--button label {
+  font-size: 12px;
+  margin: auto;
+}
+
+:host .toolbar-add-contentlet__head--button button img {
+  margin: auto;
+  width: 30px;
+}

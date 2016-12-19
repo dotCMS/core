@@ -1,0 +1,14 @@
+<div *ngFor="let structureTypeView of structureTypeViews" [class.two-columns-width]="structureTypeViews.length > 1">
+    <div class="toolbar-add-contentlet-body__title">
+        <label>{{structureTypeView && structureTypeView.label}}</label>
+    </div>
+    <div class="toolbar-add-contentlet-body__links" *ngIf="structureTypeView.types">
+        <div *ngFor="let type of structureTypeView.types" [class.two-columns-width]="structureTypeViews.length == 1">
+            <a href="" (click)="goToAddContent(type)">
+                {{type.name}}
+            </a>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="showMore" class="toolbar-add-contentlet-body__more-panel"><a href="" (click)="clickMore($event)" messagekey>more</a></div>

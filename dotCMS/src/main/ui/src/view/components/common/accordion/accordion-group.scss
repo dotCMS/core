@@ -1,0 +1,15 @@
+@import "../../../../scss/variables";
+
+.accordion-group__title {
+    display: block;
+}
+
+.accordion-group__content {
+    transition: max-height 0.15s ease-in;
+    max-height: 0;
+    overflow: hidden;
+
+    &.is-open {
+        max-height: 300px;
+    }
+}

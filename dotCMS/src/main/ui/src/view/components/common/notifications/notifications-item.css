@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+:host custom-time {
+  color: #A1A1A1;
+  display: block;
+}
+
+:host a {
+  color: #444444;
+}
+
+:host .notification-item {
+  border-top: solid 1px #EEE;
+  position: relative;
+}
+
+:host .notification-item__content {
+  margin-left: 0.38462rem;
+}
+
+:host .notification-item__close {
+  height: 16px;
+  position: absolute;
+  right: 0;
+  top: 1rem;
+  width: 16px;
+}
+
+:host .notification-item__close md-icon {
+  font-size: 1.23077rem;
+  color: #A1A1A1;
+  height: 16px;
+  width: 16px;
+}
+
+:host .notification-item__icon {
+  font-size: 1.38462rem;
+  margin-top: 0.15385rem;
+  width: auto;
+}
+
+:host .notification-item__title,
+:host .notification-item__message {
+  margin: 0;
+}
+
+:host .notification-item__message {
+  line-height: 1.5rem;
+}
+
+:host .notification-item__wrapper {
+  display: flex;
+  padding: 1rem 0;
+}
+
+:host .warning .notification-item__icon,
+:host .warning .notification-item__link,
+:host .warning .notification-item__title,
+:host .warning .notification-item__title a {
+  color: #0E80CB;
+}
+
+:host .error .notification-item__icon,
+:host .error .notification-item__link,
+:host .error .notification-item__title,
+:host .error .notification-item__title a {
+  color: #EE5C4A;
+}

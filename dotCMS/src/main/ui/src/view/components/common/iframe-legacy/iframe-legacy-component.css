@@ -1,0 +1,14 @@
+:host .iframe-spinner {
+  left: 0;
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 50px;
+  right: 0;
+  width: 50px;
+  z-index: 2;
+}
+
+:host .iframe--loading-in-progress {
+  opacity: 0.5;
+}

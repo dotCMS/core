@@ -1,0 +1,43 @@
+accordion a {
+  display: block;
+  padding: 5px 0;
+  color: #444444;
+  text-decoration: none;
+}
+
+accordion .md-nav-list__submenu {
+  padding: 0 30px 10px 42px;
+}
+
+accordion .md-nav-list__submenu a {
+  color: #737373;
+}
+
+accordion .md-nav-list__submenu a:hover {
+  color: #444444;
+}
+
+accordion .accordion-group__title {
+  border-left: solid 3px transparent;
+  padding: 10px 20px;
+  transition: background-color 0.15s ease-in;
+}
+
+accordion .accordion-group__title:hover {
+  background-color: #FAFAFA;
+}
+
+accordion .accordion-group__title.is-active {
+  border-left: solid 3px #0E80CB;
+  font-weight: bold;
+  background-color: #FAFAFA;
+}
+
+accordion .accordion-group__content {
+  border-left: solid 3px #0E80CB;
+  background-color: #FAFAFA;
+}
+
+accordion .accordion-group__title-text {
+  margin-left: 6px;
+}

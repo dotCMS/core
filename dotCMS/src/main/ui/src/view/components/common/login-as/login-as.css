@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+:host dot-select {
+  display: block;
+}
+
+:host .login-as {
+  color: #444444;
+  display: block;
+  padding: 0px 10px;
+}
+
+:host .login-as input {
+  with: 100%;
+}

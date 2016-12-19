@@ -1,0 +1,20 @@
+<p-autoComplete *ngIf="sitesCounter > 1"  id="selectedSite" name="selectedSite" [(ngModel)]="currentSite"
+                [suggestions]="filteredSitesResults" (completeMethod)="filterSites($event)" [size]="30"
+                (onSelect)="switchSite($event)" field="label" [minLength]="1"
+                [dropdown]="true" (onDropdownClick)="handleSitesDropdownClick($event)"
+                styleClass="site-selector__title">
+</p-autoComplete>
+
+<h1 *ngIf="sitesCounter == 1" class="site-selector__title">{{currentSite ? currentSite.label : ''}}</h1>
+
+<div class="site-selector-overlay" [hidden]="!message">
+    <div class="site-selector-modal">
+        {{message}}
+
+        <div>
+            <button pButton (click)="message=''" type="button">{{i18nMessages['modes.Close']}}</button>
+        </div>
+    </div>
+
+
+</div>

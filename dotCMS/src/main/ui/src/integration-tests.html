@@ -1,0 +1,62 @@
+<html>
+<head>
+  <title>1st Jasmine Tests</title>
+  <link rel="stylesheet" href="../node_modules/jasmine-core/lib/jasmine-core/jasmine.css">
+  <script src="../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
+  <script src="../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
+  <script src="../node_modules/jasmine-core/lib/jasmine-core/boot.js"></script>
+
+
+  <link rel="stylesheet" type="text/css" href="view/components/rule-engine/styles/rule-engine.css">
+  <link rel="stylesheet" type="text/css" href="thirdparty/semantic/dist/semantic.css">
+  <link rel="stylesheet" type="text/css" href="thirdparty/angular-material/angular-material.layouts.css">
+
+  <script src="thirdparty/systemjs/dist/system.js"></script>
+  <script src="thirdparty/angular2/bundles/angular2-polyfills.js"></script>
+  <script  src="thirdparty/es6-shim/es6-shim.js"></script>
+  <script src="thirdparty/rxjs/bundles/Rx.js"></script>
+  <script src="thirdparty/angular2/bundles/angular2.js"></script>
+  <script src="thirdparty/angular2/bundles/http.js"></script>
+  <script src="thirdparty/jquery/dist/jquery.js"></script>
+  <script src="thirdparty/semantic/dist/semantic.min.js"></script>
+  <script src="thirdparty/core-js/client/shim.js"></script>
+
+
+  <script>
+
+    System.config({
+      paths: {
+
+      },
+      packages: {
+        app: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        api: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        view: {
+          format: 'register',
+          defaultExtension: 'js'
+        }
+      },
+      map: {
+        "whatwg-fetch": "thirdparty/whatwg-fetch/fetch.js"
+      }
+    });
+    Promise.all([
+      System.import('api/system/locale/I18n.it-spec'),
+      System.import('api/rule-engine/Rule.it-spec'),
+      System.import('api/services/bundle-service.it-spec')
+    ]).then(function (p) {
+      console.log("Project load complete.")
+    });
+
+  </script>
+</head>
+<body>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base href="/build/">
+  <meta charset="UTF-8">
+  <title>(Dev) dotCMS Core-Web</title>
+
+  <link rel="stylesheet" type="text/css" href="scss/main.css" />
+
+  <!-- 1. Load libraries -->
+  <!-- Polyfill(s) for older browsers -->
+  <!-- build:ng thirdparty/lib.js -->
+  <script src="../node_modules/core-js/client/shim.min.js"></script>
+  <script src="../node_modules/reflect-metadata/Reflect.js"></script>
+  <script src="../node_modules/systemjs/dist/system.src.js"></script>
+  <script src="../node_modules/zone.js/dist/zone.min.js"></script>
+  <!-- endbuild -->
+
+  <!-- 2. Configure SystemJS -->
+  <script src="systemjs.config.js"></script>
+  <script>
+    System.import('view/main.js')
+            .catch(function(err) { console.error(err); });
+  </script>
+  <!-- 3. Load icons for angular-material md-icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+</head>
+
+
+<body>
+<app>Loading...</app>
+
+<!-- build:js thirdparty/plugins.js -->
+<script src="../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="../node_modules/semantic-ui/dist/semantic.min.js"></script>
+<!-- endbuild -->
+</body>
+</html>

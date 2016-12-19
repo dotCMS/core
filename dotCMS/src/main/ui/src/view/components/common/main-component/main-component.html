@@ -1,0 +1,23 @@
+<!--TODO: make this md-toolbar a dot-component-->
+<p-toolbar>
+    <div class="toolbar__host">
+        <button (click)="toggleSidenav()" class="btn icn">
+            <i class="material-icons">menu</i>
+        </button>
+        <dot-site-selector-component></dot-site-selector-component>
+    </div>
+    <dot-global-search></dot-global-search>
+    <div class="toolbar__actions">
+        <dot-toolbar-notifications></dot-toolbar-notifications>
+        <toolbar-user></toolbar-user>
+        <toolbar-add-contentlet></toolbar-add-contentlet>
+    </div>
+</p-toolbar>
+<div class="layout" [class.collapsed]="isMenuCollapsed">
+    <div class="layout__sidebar">
+        <dot-main-nav></dot-main-nav>
+    </div>
+    <div class="layout__main">
+        <router-outlet></router-outlet>
+    </div>
+</div>

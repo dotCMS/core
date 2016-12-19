@@ -1,0 +1,43 @@
+:host .toolbar-add-contentlet-body__title {
+  display: flex;
+  flex-direction: row;
+}
+
+:host .toolbar-add-contentlet-body__title label {
+  font-size: 16px;
+  margin-top: 5%;
+}
+
+:host .toolbar-add-contentlet-body__links {
+  padding-left: 2.5%;
+  padding-right: 2.5%;
+}
+
+:host .toolbar-add-contentlet-body__links div {
+  margin-left: 2.5%;
+  margin-right: 2.5%;
+}
+
+:host .toolbar-add-contentlet-body__links div a {
+  font-size: 12px;
+}
+
+:host .toolbar-add-contentlet-body__more-panel {
+  margin-top: 15px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+:host .toolbar-add-contentlet-body__more-panel a {
+  text-decoration: none;
+}
+
+:host .toolbar-add-contentlet-body__more-panel a:visited {
+  text-decoration: none;
+}
+
+:host .two-columns-width {
+  width: 45%;
+  display: inline-table;
+}

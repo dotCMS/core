@@ -1,0 +1,85 @@
+.login {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+}
+
+.login input.ui-inputtext {
+  display: block;
+  width: 100%;
+}
+
+.login md-input {
+  overflow: inherit;
+  width: 100%;
+}
+
+.login .cms-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login .cms-info__message {
+  color: #737373;
+  font-size: 0.92308rem;
+}
+
+.login .cms-info__logo {
+  width: 200px;
+}
+
+.login .login__container {
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+  background-color: #FFF;
+  display: flex;
+  padding: 30px 60px;
+}
+
+.login .login__container.forgot-password__container {
+  margin: 0 auto;
+  padding: 30px;
+  width: 500px;
+}
+
+.login .login__form-line {
+  padding: 8px 0;
+}
+
+.login .login__title {
+  color: #0E80CB;
+  font-size: 3.69231rem;
+  font-weight: normal;
+  margin: 0;
+}
+
+.login .signin {
+  border-left: solid 1px #D0D0D0;
+  padding-left: 60px;
+  position: relative;
+}
+
+.login .signin:before {
+  background-color: #FFF;
+  border: solid #D0D0D0;
+  border-width: 1px 1px 0 0;
+  content: '';
+  height: 14px;
+  left: -7px;
+  margin-top: -7px;
+  position: absolute;
+  top: 50%;
+  transform: rotate(45deg);
+  width: 14px;
+}
+
+.login .singin__language {
+  float: right;
+}
+
+.login .app-spinner {
+  height: 30px;
+  width: 30px;
+  display: inline-block;
+}

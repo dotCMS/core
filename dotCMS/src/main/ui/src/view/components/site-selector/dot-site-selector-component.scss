@@ -1,0 +1,44 @@
+@import "../../../scss/variables";
+@import "../../../scss/mixins";
+
+:host {
+  .site-selector__title {
+    color: $white;
+    font-size: 20px;
+    margin: 0 0 0 10px;
+    align-self: center;
+
+    .site-selector__option {
+      color: $black;
+      font-size: 18px;
+    }
+  }
+
+  dot-select .dot-select__options{
+    margin-top: 50px;
+  }
+
+  // TODO: overlay have to go when we use the digalog material 2 component
+  .site-selector-overlay {
+    background-color: rgba($black, 0.8);
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+  }
+
+  .site-selector-modal {
+    @include box_shadow(2);
+    background-color: $white;
+    color: $black;
+    display: block;
+    left: 50%;
+    padding: 40px 50px;
+    position: fixed;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+}

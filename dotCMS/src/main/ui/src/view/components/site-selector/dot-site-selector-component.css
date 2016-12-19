@@ -1,0 +1,37 @@
+:host .site-selector__title {
+  color: #FFF;
+  font-size: 20px;
+  margin: 0 0 0 10px;
+  align-self: center;
+}
+
+:host .site-selector__title .site-selector__option {
+  color: #444444;
+  font-size: 18px;
+}
+
+:host dot-select .dot-select__options {
+  margin-top: 50px;
+}
+
+:host .site-selector-overlay {
+  background-color: rgba(68, 68, 68, 0.8);
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+:host .site-selector-modal {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  background-color: #FFF;
+  color: #444444;
+  display: block;
+  left: 50%;
+  padding: 40px 50px;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

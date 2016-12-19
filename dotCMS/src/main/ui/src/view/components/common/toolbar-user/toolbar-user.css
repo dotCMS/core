@@ -1,0 +1,11 @@
+:host {
+  font-size: 13px;
+}
+
+:host .user-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  margin: 20px;
+  white-space: nowrap;
+}

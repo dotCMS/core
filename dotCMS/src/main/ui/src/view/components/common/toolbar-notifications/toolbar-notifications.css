@@ -1,0 +1,49 @@
+:host {
+  position: relative;
+}
+
+:host dot-notifications-list {
+  font-size: 1.07692rem;
+}
+
+:host .badge {
+  background-color: #EE5C4A;
+  border-radius: 2px;
+  font-size: 0.92308rem;
+  line-height: 0.92308rem;
+  padding: 2px 5px;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+:host .toolbar-notifications {
+  width: 350px;
+}
+
+:host .toolbar-notifications:before {
+  background: #FFF;
+  content: "";
+  height: 10px;
+  position: absolute;
+  right: 15px;
+  top: -5px;
+  transform: rotate(45deg);
+  width: 10px;
+}
+
+:host .toolbar-notifications__content {
+  height: 320px;
+}
+
+:host .toolbar-notifications__heading {
+  display: flex;
+  margin-bottom: 0.76923rem;
+  justify-content: space-between;
+}
+
+:host .toolbar-notifications__title {
+  align-self: center;
+  font-size: 1.38462rem;
+  margin: 0;
+}
