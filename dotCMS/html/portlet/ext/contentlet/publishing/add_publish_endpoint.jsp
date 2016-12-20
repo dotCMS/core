@@ -118,14 +118,27 @@
 	function onChangeProtocolSelectCheckAWSS3() {
 
 		isAwsS3 = "awss3" === dijit.byId("protocol").value;
-		dojo.style("awss3Row", "display", (isAwsS3)?"table-row":"none");
+		setAwsS3Help();
 	}
 
 	dojo.ready( function(){
 
 		toggleServerType('<%=isSender%>');
-		dojo.style("awss3Row", "display", (isAwsS3)?"table-row":"none");
+		setAwsS3Help();
 	});
+
+	function setAwsS3Help() {
+
+		if (isAwsS3) {
+			if (dijit.byId("authKey").value.trim().length == 0) {
+
+				dijit.byId("authKey")
+						.set("value",
+								"dotcms.push.aws.s3.token=ASDfdsADASGFADSG\n" +
+								"dotcms.push.aws.s3.secret=ASDFGDSAGADasdfgasdgfASGASD");
+			}
+		}
+	}
 
 </script>
 
@@ -220,22 +233,6 @@
 
 				</td>
 			</tr>
-
-			<!-- todo add here the password only when awss3 is selected -->
-
-			<tr id="awss3Row">
-				<td align="right"><%= LanguageUtil.get(pageContext, "password") %>:</td>
-				<td nowrap="nowrap">
-
-					<input type="password" dojoType="dijit.form.ValidationTextBox"
-						   name="awss3password" id="awss3password"
-						   style="width:300px"
-						   value="xxxxxxxx"
-						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" />
-
-				</td>
-			</tr>
-
 
 			<tr id="authKeyRow">
 				<td align="right">
