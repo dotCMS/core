@@ -844,7 +844,7 @@
         <div>
     	    #if($iCanLock)
 				<a id="lockBtn" href="#" onclick="fireLockPage()" >
-					$languagewebapi.getFromUserLanguage("Make-Editable")
+					<span class="lockIcon"></span> $languagewebapi.getFromUserLanguage("Make-Editable")
 				</a>
     			#if(!$mandatory)
     	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
