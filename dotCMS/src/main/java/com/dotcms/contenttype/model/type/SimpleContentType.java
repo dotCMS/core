@@ -8,8 +8,8 @@ import org.immutables.value.Value;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutableSimpleContentType.class)
+@JsonDeserialize(as = ImmutableSimpleContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
 public abstract class SimpleContentType extends ContentType

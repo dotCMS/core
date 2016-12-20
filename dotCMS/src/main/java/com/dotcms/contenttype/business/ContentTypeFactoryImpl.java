@@ -299,8 +299,6 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       builder.publishDateVar(null);
     }
 
-
-
     boolean existsInDb = false;
     try {
       dbById(saveType.id());
@@ -312,37 +310,39 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     ContentType retType = builder.build();
 
     if (!existsInDb) {
-      dbInodeInsert(retType);
-      dbInsert(retType);
+    	dbInodeInsert(retType);
+    	dbInsert(retType);
 
-      if (isNew) {
-        if (ContentTypeApi.reservedStructureNames.contains(retType.name().toLowerCase())) {
-          throw new DotDataException("cannot save a structure with name:" + retType.name());
-        }
-        if (ContentTypeApi.reservedStructureVars.contains(retType.variable().toLowerCase())) {
-          throw new DotDataException("cannot save a structure with name:" + retType.name());
-        }
-
-        // set up default fields;
-        List<Field> fields = retType.requiredFields();
-        FieldApi fapi = new FieldApiImpl().instance();
-        for (Field f : fields) {
-          f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
-          try {
-            fapi.save(f, APILocator.systemUser());
-          } catch (DotSecurityException e) {
-            throw new DotStateException(e);
-          }
-        }
-      }
-      return retType;
-
+    	if (isNew) {
+    		if (ContentTypeApi.reservedStructureNames.contains(retType.name().toLowerCase())) {
+    			throw new DotDataException("cannot save a structure with name:" + retType.name());
+    		}
+    		if (ContentTypeApi.reservedStructureVars.contains(retType.variable().toLowerCase())) {
+    			throw new DotDataException("cannot save a structure with name:" + retType.name());
+    		}
+    	}
     } else {
 
-      dbInodeUpdate(retType);
-      dbUpdate(retType);
-      return new ImplClassContentTypeTransformer(retType).from();
+    	dbInodeUpdate(retType);
+    	dbUpdate(retType);
+    	retType = new ImplClassContentTypeTransformer(retType).from();
     }
+
+    retType.constructWithFields(saveType.fields());      
+
+    // set up default fields;
+    List<Field> fields = retType.fields();
+    FieldApi fapi = new FieldApiImpl().instance();
+    for (Field f : fields) {
+      f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
+      try {
+        fapi.save(f, APILocator.systemUser());
+      } catch (DotSecurityException e) {
+        throw new DotStateException(e);
+      }
+    }
+
+    return retType;
   }
 
   private void dbInodeUpdate(final ContentType type) throws DotDataException {

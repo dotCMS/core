@@ -16,9 +16,11 @@ import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-@JsonSerialize
+@JsonSerialize(as = ImmutableFileAssetContentType.class)
+@JsonDeserialize(as = ImmutableFileAssetContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
 public abstract class FileAssetContentType extends ContentType implements UrlMapable{
