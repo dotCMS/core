@@ -32,6 +32,15 @@
 %>
 
 <script type="text/javascript">
+
+	// if it is aws s3 selected, the password should be displayed.
+	var isAwsS3 = false;
+	<%
+            if ("awss3".equals(currentEndpoint.getProtocol())) {
+    %>
+	isAwsS3 = true;
+	<%      } %>
+
 	require(["dojo/parser", "dijit/form/SimpleTextarea"]);
 	function saveEndpoint(){
 
@@ -59,9 +68,9 @@
 					}
 					else{
 						<% if (UtilMethods.isSet(environmentId)) { %>
-							backToEnvironmentList(true);
+						backToEnvironmentList(true);
 						<% } else {%>
-							backToEndpointsList();
+						backToEndpointsList();
 						<%}%>
 					}
 				},
@@ -106,8 +115,16 @@
 		}
 	}
 
+	function onChangeProtocolSelectCheckAWSS3() {
+
+		isAwsS3 = "awss3" === dijit.byId("protocol").value;
+		dojo.style("awss3Row", "display", (isAwsS3)?"table-row":"none");
+	}
+
 	dojo.ready( function(){
+
 		toggleServerType('<%=isSender%>');
+		dojo.style("awss3Row", "display", (isAwsS3)?"table-row":"none");
 	});
 
 </script>
@@ -143,12 +160,12 @@
 				</td>
 				<td>
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
-							  name="serverName"
-							  id="serverName"
-							  style="width:300px;"
-							  value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
-							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
-							  />
+						   name="serverName"
+						   id="serverName"
+						   style="width:300px;"
+						   value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
+						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
+					/>
 				</td>
 			</tr>
 
@@ -177,8 +194,8 @@
 						   style="width:300px"
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
-						   />
-						   <div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
+					/>
+					<div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
 				</td>
 			</tr>
 
@@ -195,13 +212,30 @@
 					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
 
 
-					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;">
+					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;" onchange="onChangeProtocolSelectCheckAWSS3();">
 						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>http</option>
 						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>https</option>
+						<option value="awss3" <%=("awss3".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>AWS S3</option>
 					</select>
 
 				</td>
 			</tr>
+
+			<!-- todo add here the password only when awss3 is selected -->
+
+			<tr id="awss3Row">
+				<td align="right"><%= LanguageUtil.get(pageContext, "password") %>:</td>
+				<td nowrap="nowrap">
+
+					<input type="password" dojoType="dijit.form.ValidationTextBox"
+						   name="awss3password" id="awss3password"
+						   style="width:300px"
+						   value="xxxxxxxx"
+						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" />
+
+				</td>
+			</tr>
+
 
 			<tr id="authKeyRow">
 				<td align="right">
@@ -229,8 +263,8 @@
 					&nbsp;
 					<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 
-			    </td>
-		    </tr>
-	   </table>
+				</td>
+			</tr>
+		</table>
 	</div>
 </div>
