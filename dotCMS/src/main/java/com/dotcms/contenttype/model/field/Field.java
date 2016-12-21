@@ -18,8 +18,43 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
-
+@JsonTypeInfo(
+	use = Id.CLASS,
+	include = JsonTypeInfo.As.PROPERTY,
+	property = "clazz"
+)
+@JsonSubTypes({
+	@Type(value = BinaryField.class),
+	@Type(value = CategoryField.class),
+	@Type(value = CheckboxField.class),
+	@Type(value = ConstantField.class),
+	@Type(value = CustomField.class),
+	@Type(value = DateField.class),
+	@Type(value = DateTimeField.class),
+	@Type(value = EmptyField.class),
+	@Type(value = FileField.class),
+	@Type(value = HiddenField.class),
+	@Type(value = HostFolderField.class),
+	@Type(value = ImageField.class),
+	@Type(value = KeyValueField.class),
+	@Type(value = LineDividerField.class),
+	@Type(value = MultiSelectField.class),
+	@Type(value = PermissionTabField.class),
+	@Type(value = RadioField.class),
+	@Type(value = RelationshipsTabField.class),
+	@Type(value = SelectField.class),
+	@Type(value = TabDividerField.class),
+	@Type(value = TagField.class),
+	@Type(value = TextAreaField.class),
+	@Type(value = TextField.class),
+	@Type(value = TimeField.class),
+	@Type(value = WysiwygField.class),
+})
 public abstract class Field implements FieldIf, Serializable {
 
   @Value.Check
@@ -85,6 +120,7 @@ public abstract class Field implements FieldIf, Serializable {
     return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName()).getCanonicalName();
   }
 
+  @JsonIgnore
   @Derived
   public Class<Field> type() {
     return LegacyFieldTypes.getImplClass(this.getClass().getCanonicalName());
@@ -190,7 +226,4 @@ public abstract class Field implements FieldIf, Serializable {
   public FieldValueRenderer listRenderer() {
     return new FieldValueRenderer() {};
   }
-
-
-
 }

@@ -1,30 +1,22 @@
 package com.dotcms.publishing;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -142,6 +134,48 @@ public class BundlerUtil {
         }
     }
 
+    /**
+     * Serialize a given object to json (using jackson)
+     *
+     * @param obj Object to serialize
+     * @param f   File to write to
+     */
+    public static void objectToJSON( Object obj, File f ) {
+        objectToJSON( obj, f, true );
+    }
+
+    /**
+     * Serialize a given object to json (using jackson)
+     *
+     * @param obj Object to serialize
+     * @param f   File to write to
+     */
+    public static void objectToJSON( Object obj, File f, boolean removeFirst ) {
+
+        if ( removeFirst && f.exists() )
+            f.delete();
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            if ( !f.exists() ){
+                //Lets create the folders if necessary to avoid "No such file or directory" error.
+                if(f.getParentFile() != null){
+                    f.getParentFile().mkdirs();
+                    }
+                //Lets create the file.
+            	f.createNewFile();
+            }	
+
+            mapper.writeValue(f, obj);
+
+        } catch ( FileNotFoundException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        } catch ( IOException e ) {
+            Logger.error( PublisherUtil.class, e.getMessage(), e );
+        }
+    }
+
 
     /**
      * Deserialize an object back from XML
@@ -169,6 +203,34 @@ public class BundlerUtil {
 			}
 		}
 
+	}
+
+
+    /**
+     * Deserialize an object back from JSON (using jackson)
+     *
+     * @param f file to deserialize
+     * @param clazz value type to deserialize
+     * @return A deserialized object
+     */
+    public static <T> T jsonToObject(File f, Class<T> clazz){
+    	ObjectMapper mapper = new ObjectMapper();
+
+    	BufferedInputStream input = null;
+		try {
+			input = new BufferedInputStream(new FileInputStream(f));
+			T ret = mapper.readValue(input, clazz);
+			return ret;
+		} catch (IOException e) {
+			Logger.error(BundlerUtil.class,e.getMessage(),e);
+			return null;
+		}finally{
+			try {
+				input.close();
+			}
+			catch(Exception e){
+			}
+		}
 	}
     
     public static void publisherConfigToLuceneQuery(StringBuilder bob, PublisherConfig config) {

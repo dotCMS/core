@@ -7,13 +7,14 @@ import org.immutables.value.Value;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-@JsonSerialize
-@JsonDeserialize
+
+@JsonSerialize(as = ImmutableBinaryField.class)
+@JsonDeserialize(as = ImmutableBinaryField.class)
 @Value.Immutable
 public abstract class BinaryField extends Field {
 
 	private static final long serialVersionUID = 1L;
-		
+
 	@Override
 	public Class type() {
 		return BinaryField.class;
@@ -23,6 +24,7 @@ public abstract class BinaryField extends Field {
 	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SYSTEM);
 	}
+
 	@Value.Default
 	@Override
 	public DataTypes dataType(){

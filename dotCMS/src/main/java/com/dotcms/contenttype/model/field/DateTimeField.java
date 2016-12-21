@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-
-
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -9,10 +7,12 @@ import org.immutables.value.Value;
 import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-@JsonSerialize
-@JsonDeserialize
+
+@JsonSerialize(as = ImmutableDateTimeField.class)
+@JsonDeserialize(as = ImmutableDateTimeField.class)
 @Value.Immutable
 public abstract class DateTimeField extends Field {
 
@@ -27,6 +27,8 @@ public abstract class DateTimeField extends Field {
 	public DataTypes dataType(){
 		return DataTypes.DATE;
 	};
+
+	@JsonIgnore
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

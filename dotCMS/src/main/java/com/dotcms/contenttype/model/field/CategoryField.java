@@ -5,12 +5,12 @@ import java.util.List;
 import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-@JsonSerialize
-@JsonDeserialize
+
+@JsonSerialize(as = ImmutableCategoryField.class)
+@JsonDeserialize(as = ImmutableCategoryField.class)
 @Value.Immutable
 public abstract class CategoryField extends Field {
 
