@@ -20,7 +20,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
@@ -321,6 +320,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     			throw new DotDataException("cannot save a structure with name:" + retType.name());
     		}
     	}
+
     } else {
 
     	dbInodeUpdate(retType);
@@ -328,10 +328,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	retType = new ImplClassContentTypeTransformer(retType).from();
     }
 
-    retType.constructWithFields(saveType.fields());      
-
-    // set up default fields;
-    List<Field> fields = retType.fields();
+    // set up default fields
+    List<Field> fields = (saveType.fields().isEmpty() && !existsInDb) ? retType.requiredFields() : saveType.fields();
     FieldApi fapi = new FieldApiImpl().instance();
     for (Field f : fields) {
       f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
