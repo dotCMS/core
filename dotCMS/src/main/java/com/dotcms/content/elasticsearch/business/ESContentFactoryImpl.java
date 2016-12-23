@@ -2312,24 +2312,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
         StringBuilder whereField = new StringBuilder();
 
         if (field.getFieldContentlet().contains("float")) {
-            if (DbConnectionFactory.isMySql() || DbConnectionFactory.isH2()) {
+            if (!DbConnectionFactory.isMySql()) {
                 select.append(field.getFieldContentlet());
                 whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                         .append(" != ");
             } else {
-                select.append("\"").append(field.getFieldContentlet()).append("\"");
-                whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
-                        .append(field.getFieldContentlet()).append("\" != ");
+                select.append("`").append(field.getFieldContentlet()).append("`");
+                whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
+                        .append(field.getFieldContentlet()).append("` != ");
             }
         } else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                     .append(" != ");
         }
 
-        if (DbConnectionFactory.isMySql()) {
+        if (!DbConnectionFactory.isMySql()) {
             update.append(field.getFieldContentlet()).append(" = ");
         }else{
-            update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
+            update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
         }
 
         if (field.getFieldContentlet().contains("bool")) {
