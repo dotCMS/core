@@ -58,7 +58,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     JSONObject jsonObject;
     try {
       jsonObject =
-          new JSONObject(mapper.writeValueAsString(new SerialWrapper<>(type, type.baseType().immutableClass())));
+          new JSONObject(mapper.writeValueAsString(type));
 
 
       jsonObject.remove("permissionType");
@@ -77,7 +77,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
 
   private ContentType fromJsonStr(String input) {
     try {
-      return (ContentType) mapper.readValue(input, JsonHelper.resolveClass(input));
+      return (ContentType) mapper.readValue(input, ContentType.class);
     } catch (Exception e) {
       throw new DotStateException(e);
     }

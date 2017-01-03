@@ -93,7 +93,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   private Field fromJsonStr(String input) throws DotStateException {
 
     try {
-      return (Field) mapper.readValue(input, JsonHelper.resolveClass(input));
+      return (Field) mapper.readValue(input, Field.class);
     } catch (Exception e) {
       throw new DotStateException(e);
     }
@@ -112,9 +112,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   @Override
   public JSONObject jsonObject() {
-    SerialWrapper<Field> wrapped = new SerialWrapper<>(from(), from().type());
     try {
-      JSONObject jo = new JSONObject(mapper.writeValueAsString(wrapped));
+      JSONObject jo = new JSONObject(mapper.writeValueAsString(from()));
       jo.remove("acceptedDataTypes");
       //jo.remove("iDate");
       jo.remove("dbColumn");
