@@ -194,6 +194,7 @@ public class TaskLocatorUtil {
         ret.add(Task03715AddFKForPublishingBundleTable.class);
         ret.add(Task03720AddRolesIntegrityCheckerTable.class);
         ret.add(Task03725NewNotificationTable.class);
+        ret.add(Task03730UpdatePortletsIds.class);
         return ret;
     }
 
