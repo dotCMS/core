@@ -252,6 +252,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     }
 
     // set to system folder if on system host or the host id of the folder it is on
+    List<Field> fields = type.fields();
+
     if (!UtilMethods.isSet(type.host()) || type.host().equals(Host.SYSTEM_HOST)) {
       type = ContentTypeBuilder.builder(type).host(Host.SYSTEM_HOST).build();
       type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
@@ -262,6 +264,9 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     } else {
       type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
     }
+
+    if (!fields.isEmpty())
+    	type.constructWithFields(fields);
 
     ContentType oldType = type;
     try {

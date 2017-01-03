@@ -18,8 +18,8 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-@JsonSerialize
-@JsonDeserialize
+@JsonSerialize(as = ImmutablePersonaContentType.class)
+@JsonDeserialize(as = ImmutablePersonaContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
 public abstract class PersonaContentType extends ContentType{

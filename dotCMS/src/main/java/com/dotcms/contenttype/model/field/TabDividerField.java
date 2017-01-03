@@ -1,16 +1,16 @@
 package com.dotcms.contenttype.model.field;
 
-
-
 import java.util.List;
 
 import org.immutables.value.Value;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-@JsonSerialize
-@JsonDeserialize
+
+@JsonSerialize(as = ImmutableTabDividerField.class)
+@JsonDeserialize(as = ImmutableTabDividerField.class)
 @Value.Immutable
 public abstract class TabDividerField extends Field {
 
@@ -22,6 +22,8 @@ public abstract class TabDividerField extends Field {
 	public  Class type() {
 		return  TabDividerField.class;
 	}
+
+	@JsonIgnore
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){

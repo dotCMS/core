@@ -11,7 +11,6 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
@@ -29,9 +28,25 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 
-
+@JsonTypeInfo(
+	use = Id.CLASS,
+	include = JsonTypeInfo.As.PROPERTY,
+	property = "clazz"
+)
+@JsonSubTypes({
+	@Type(value = FileAssetContentType.class),
+	@Type(value = FormContentType.class),
+	@Type(value = PageContentType.class),
+	@Type(value = PersonaContentType.class),
+	@Type(value = SimpleContentType.class),
+	@Type(value = WidgetContentType.class),
+})
 public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
 
 
@@ -243,6 +258,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return null;
   }
 
+  @JsonIgnore
   @Override
   public String getPermissionType() {
     return Structure.class.getCanonicalName();
