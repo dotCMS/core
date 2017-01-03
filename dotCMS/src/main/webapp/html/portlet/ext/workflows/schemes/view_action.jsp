@@ -158,7 +158,8 @@
 </script>
 
 
-<div>
+<div class="portlet-main">
+	
 	<div dojoType="dijit.form.Form" id="addEditAction" jsId="addEditAction" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax" method="POST">
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="stepId"	value="<%=UtilMethods.webifyString(step.getId())%>">
@@ -166,11 +167,11 @@
 		<input type="hidden" name="whoCanUse"	id="whoCanUse" value="">
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
-		<table border="0">
+		<table style="margin-bottom: 20px; border: 0; width: 100%;">
 			<tr>
 				<td width="50%" valign="top" style="padding:7px;">
+					
 					<table class="listingTable" width="100%">
-
 						<tr>
 							<th colspan="2">
 								<%=LanguageUtil.get(pageContext, "About-Action")%>
@@ -192,10 +193,14 @@
 							</tr>
 						<%} %>
 						<tr>
-							<td  width="100px" ><%=LanguageUtil.get(pageContext, "Save-content")%>: (<%=LanguageUtil.get(pageContext, "Requires-Checkout")%>)</td>
-							<td nowrap="true"><input type="checkbox" name="actionRequiresCheckout"
-								id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
-								<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+							<td><%=LanguageUtil.get(pageContext, "Save-content")%>:</td>
+							<td>
+								<div class="inline-form">
+									<input type="checkbox" name="actionRequiresCheckout"
+										id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									&nbsp; <%=LanguageUtil.get(pageContext, "Requires-Checkout")%>
+								</div>
 							</td>
 						</tr>
 						<tr>
@@ -207,16 +212,19 @@
 										iconClass="addIcon">
 										<%=LanguageUtil.get(pageContext, "add")%>
 									</button>
-									<div class="wfWhoCanUseDiv">
+									<div class="wfWhoCanUseDiv" style="min-height: 140px;">
 										<table class="listingTable" id="whoCanUseTbl">
 										</table>
 									</div>
 							</td>
 						</tr>
 					</table>
+					
 				</td>
 				<td valign="top" style="padding:7px;">
+					
 					<table class="listingTable" width="100%">
+
 						<tr>
 							<th colspan="2">
 								<%=LanguageUtil.get(pageContext, "What-Action-Does")%>
@@ -239,22 +247,13 @@
 							<td nowrap="true" valign="top"><%=LanguageUtil.get(pageContext, "Assign-To")%>:</td>
 							<td valign="top">
 								<input id="actionAssignToSelect"  />
-								&nbsp;
+								
 								<%--hideHierarchayControl --%>
-								<table id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>;width:160px;float:right;margin:0px;">
-									<tr>
-										<td style="margin:0px;border:0px;padding:3px;padding-top:5px;" valign="top">
-										<input type="checkbox" name="actionRoleHierarchyForAssign"
-												id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
-												<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-										</td>
-										<td style="margin:0px;border:0px;padding:0px;;padding-left:3px" valign="top">
-											<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
-										</td>
-									</tr>
-								</table>
-
-
+								<div class="inline-form" id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>; margin-top: 5px;">
+									<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
+									<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+									<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
+								</div>
 							</td>
 						</tr>
 						<tr>
@@ -274,7 +273,7 @@
 
 							</td>
 						</tr>
-						<tr>
+						<!-- <tr>
 							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Icon")%>:</td>
 							<td nowrap="nowrap">
 								<div>
@@ -283,7 +282,7 @@
 									<input id="actionIconSelect" name="actionIconSelect" />
 								</div>
 							</td>
-						</tr>
+						</tr> -->
 
 						<tr>
 							<td valign="top"><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</td>
@@ -309,53 +308,37 @@
 
 
 					</table>
+				
 				</td>
 			</tr>
-
-
-
-
-
 		</table>
-	</div>
-
-
-
-
-
-
-
-
-	<div class="wfAddActionButtonRow">
-		<%if(action!=null && !action.isNew()) {%>
-		<span id="deleteButtonDiv" class="saveButtonHide">
-			<button dojoType="dijit.form.Button"
-				onClick="actionAdmin.deleteAction('<%=action.getId() %>');" iconClass="deleteIcon">
-				<%=LanguageUtil.get(pageContext, "Delete")%>
+		
+		<div class="buttonRow">
+			<%if(action!=null && !action.isNew()) {%>
+			<span id="deleteButtonDiv" class="saveButtonHide">
+				<button dojoType="dijit.form.Button" onClick="actionAdmin.deleteAction('<%=action.getId() %>');" class="dijitButtonDanger">
+					<%=LanguageUtil.get(pageContext, "Delete")%>
+				</button>
+			</span>
+			<%} %>
+	
+			<span id="saveButtonDiv" class="saveButtonHide">
+				<button dojoType="dijit.form.Button" onClick="actionAdmin.saveAction('<%=stepId %>');" iconClass="saveIcon">
+					<%=LanguageUtil.get(pageContext, "Save")%>
+				</button>
+			</span>
+			
+			<button dojoType="dijit.form.Button" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")' class="dijitButtonFlat">
+				<%=LanguageUtil.get(pageContext, "Cancel")%>
 			</button>
-		</span>
-		&nbsp; 	&nbsp; 	&nbsp;
-		<%} %>
-
-
-		<span id="saveButtonDiv" class="saveButtonHide">
-			<button dojoType="dijit.form.Button"
-				onClick="actionAdmin.saveAction('<%=stepId %>');" iconClass="saveIcon">
-				<%=LanguageUtil.get(pageContext, "Save")%>
-			</button>
-		</span>&nbsp;
-		<button dojoType="dijit.form.Button"
-			onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'
-			iconClass="cancelIcon">
-			<%=LanguageUtil.get(pageContext, "Cancel")%>
-		</button>
-	</div>
-	<%if(!action.isNew()){ %>
-		<div class="clear"></div>
-		<div>
+		</div>
+		
+<!-- SUB ACTIONS -->
+		<%if(!action.isNew()){ %>
 			<div style="margin:40px;" >
-				<div class="wfAddActionButtonRow">
-					<%=LanguageUtil.get(pageContext, "Workflow-SubAction")%>: <select name="wfActionlets" id="wfActionlets" style="width:300px;" dojoType="dijit.form.FilteringSelect">
+				<h2><%=LanguageUtil.get(pageContext, "Workflow-SubAction")%></h2>
+				<div class="inline-form">
+					 <select name="wfActionlets" id="wfActionlets" style="width:300px;" dojoType="dijit.form.FilteringSelect">
 						<option value=""></option>
 						<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
 							<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
@@ -366,6 +349,7 @@
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-SubAction")%>
 					</button>
 				</div>
+				
                 <table id="actionletsTbl" class="listingTable">
                     <thead>
                         <tr><th colspan="2"><%= LanguageUtil.get(pageContext, "Workflow-SubActions") %></th></tr>
@@ -374,9 +358,10 @@
                     </tbody>
                 </table>
 			</div>
-		</div>
-	<%} %>
-
+		<%} %>
+		
+	</div>
+	
 </div>
 
 

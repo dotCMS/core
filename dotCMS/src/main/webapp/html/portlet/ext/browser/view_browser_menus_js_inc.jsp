@@ -415,7 +415,7 @@
 
 	  	if (read && !archived) {
 			strHTML += '<a href="javascript: viewFile(\'' + objId + '\', \'' + ext + '\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="previewIcon"></span>';
+		    	//strHTML += '<span class="previewIcon"></span>';
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
 		}
@@ -423,7 +423,7 @@
 		if ((live || working) && write && !archived) {
 			if(file.isContent){
    				strHTML += '<a href="javascript: editFileAsset(\'' + objId + '\',\'' + file.fileAssetType + '\');" class="contextPopupMenu">';
-   				strHTML += '<span class="editIcon"></span>';
+   				//strHTML += '<span class="editIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>';
 			    strHTML += '</a>';
    			}else{
@@ -580,7 +580,7 @@
             if (enterprise) {
                 if (sendingEndpoints) {
                     strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
-                        strHTML += '<span class="sServerIcon"></span>';
+                        //strHTML += '<span class="sServerIcon"></span>';
                         strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
                     strHTML += '</a>';
                 }
@@ -704,7 +704,7 @@
 
 		if ((live || working) && read && !archived) {
 			strHTML += '<a href="javascript: previewHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
-		    	strHTML += '<span class="pageIcon"></span>';
+		    	//strHTML += '<span class="pageIcon"></span>';
 	    	    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Preview")) %>';
 			strHTML += '</a>';
 
@@ -974,9 +974,10 @@
 			selectedFolder = "";
 		}
 
-		var htmlCode = '<button dojoType="dijit.form.ComboButton" id="addNewButton" iconClass="plusIcon" title="<%= LanguageUtil.get(pageContext, "Add-New") %>">';
-		htmlCode += '	<span><%= LanguageUtil.get(pageContext, "Add-New") %></span>';
-		htmlCode += '	<div dojoType="dijit.Menu" style="display: none;">';
+
+		var htmlCode = '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"actionIcon", class:"dijitDropDownActionButton"\'>';
+		htmlCode += '<span></span>';
+		htmlCode += '<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">';
 		if (selectedFolder == "") {
 			var host = inodes[activeHost];
 			var addChildren = hasAddChildrenPermissions(host.permissions);
@@ -988,33 +989,28 @@
 			    var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
                 
                 if (isAdminUser || userRoles.folderModifiable) {
-                    htmlCode += '<div dojoType="dijit.MenuItem" onclick="addTopFolder(\'' + objId + '\',\''+referer+'\')">';
-                    htmlCode += '<span class="folderAddIcon"></span>&nbsp;';
+                    htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addTopFolder(\'' + objId + '\',\''+referer+'\')">';
                     htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
                     htmlCode += '</div>';
                 }
                 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
-				htmlCode += '<span class="newPageIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 				htmlCode += '</div>';
 
 				if(containerperm){
-					htmlCode += '<div dojoType="dijit.MenuItem" onclick="addContainer(\'' + referer + '\')">';
-					htmlCode += '<span class="container"></span>&nbsp;';
+					htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addContainer(\'' + referer + '\')">';
 					htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
 					htmlCode += '</div>';
 				}
 
 				if(templateperm){
-					htmlCode += '<div dojoType="dijit.MenuItem" onclick="addTemplate(\'' + referer + '\')">';
-					htmlCode += '<span class="templateIcon"></span>&nbsp;';
+					htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addTemplate(\'' + referer + '\')">';
 					htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
 					htmlCode += '</div>';
 				}
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
-				htmlCode += '<span class="fileNewIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				htmlCode += '</div>';
 
@@ -1025,35 +1021,30 @@
 			if (addChildren) {
 				var referer = unescape(encodeURIComponent(origReferer));
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFolder(\'' + selectedFolder + '\', \'' + referer + '\')">';
-				htmlCode += '<span class="folderAddIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFolder(\'' + selectedFolder + '\', \'' + referer + '\')">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
 				htmlCode += '</div>';
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addHTMLPage(\'' + selectedFolder + '\',\'' + referer + '\')">';
-				htmlCode += '<span class="newPageIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + selectedFolder + '\',\'' + referer + '\')">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 				htmlCode += '</div>';
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
-				htmlCode += '<span class="fileNewIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
 				htmlCode += '</div>';
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
-				htmlCode += '<span class="fileMultiIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
 				htmlCode += '</div>';
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addLink(\'' + selectedFolder + '\',\'' + referer + '\')">';
-				htmlCode += '<span class="linkAddIcon"></span>&nbsp;';
+				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addLink(\'' + selectedFolder + '\',\'' + referer + '\')">';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Menu-Link")) %>';
 				htmlCode += '</div>';
 			}
 		}
 
 		htmlCode += '	</div>';
-		htmlCode += '</button>';
+		htmlCode += '</div>';
 
 		dojo.byId("addNewDropDownButtonDiv").innerHTML = htmlCode;
 		dojo.parser.parse("addNewDropDownButtonDiv");
