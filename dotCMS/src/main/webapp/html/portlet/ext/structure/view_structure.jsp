@@ -147,6 +147,7 @@ function changeBgOut(inode){
 	dojo.style("tr" + inode, "background", "#ffffff");
 }
 
+/*
 dojo.addOnLoad(function() {
     var menu = new dijit.Menu({
         style: "display: none;"
@@ -189,6 +190,7 @@ dojo.addOnLoad(function() {
     dojo.byId("addNewStructure").appendChild(button.domNode);
 
 });
+*/
 
 dojo.require("dotcms.dojo.push.PushHandler");
 var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
@@ -257,170 +259,195 @@ var deleteLabel = "";
 	.dijitSelect .dijitButtonText{width:150px;text-align:left;}
 </style>
 
-<!-- START Toolbar -->
-<div class="yui-g portlet-toolbar">
-<form id="fm" method="post">
-<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-	<div class="yui-u first" style="white-space: nowrap">
-		<select name="structureType" autocomplete="false" dojoType="dijit.form.FilteringSelect" id="selectStructure" onChange="submitfm()">
-			<%if(structureTypes.size() > 1){ %>
-				<option value="0"><%= LanguageUtil.get(pageContext, "Any-Structure-Type") %></option>
-			<%}
-			String strTypeName="";
-			for(Integer next: structureTypes){
-					 if(next == STRUCTURE_TYPE_CONTENT){
-						 strTypeName =  LanguageUtil.get(pageContext, "Content");
-					 }else if(next == STRUCTURE_TYPE_WIDGET){
-						 strTypeName = LanguageUtil.get(pageContext, "Widget");
-					 }else if(next == STRUCTURE_TYPE_FORM){
-						 strTypeName = LanguageUtil.get(pageContext, "Form");
-					 }else if(next == STRUCTURE_TYPE_FILEASSET){
-						 strTypeName = LanguageUtil.get(pageContext, "File");
-					 }else if(next == STRUCTURE_TYPE_HTMLPAGE){
-                         strTypeName = LanguageUtil.get(pageContext, "HTMLPage");
-                     }else if(next == STRUCTURE_TYPE_PERSONA){
-                         strTypeName = LanguageUtil.get(pageContext, "Persona");
-                     }
-			%>
-				<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
-			<%} %>
-		</select>
+<div class="portlet-main">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<form id="fm" method="post">
+				<div class="inline-form">
+					<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+					<select name="structureType" autocomplete="false" dojoType="dijit.form.FilteringSelect" id="selectStructure" onChange="submitfm()">
+						<%if(structureTypes.size() > 1){ %>
+							<option value="0"><%= LanguageUtil.get(pageContext, "Any-Structure-Type") %></option>
+						<%}
+						String strTypeName="";
+						for(Integer next: structureTypes){
+								 if(next == STRUCTURE_TYPE_CONTENT){
+									 strTypeName =  LanguageUtil.get(pageContext, "Content");
+								 }else if(next == STRUCTURE_TYPE_WIDGET){
+									 strTypeName = LanguageUtil.get(pageContext, "Widget");
+								 }else if(next == STRUCTURE_TYPE_FORM){
+									 strTypeName = LanguageUtil.get(pageContext, "Form");
+								 }else if(next == STRUCTURE_TYPE_FILEASSET){
+									 strTypeName = LanguageUtil.get(pageContext, "File");
+								 }else if(next == STRUCTURE_TYPE_HTMLPAGE){
+			                         strTypeName = LanguageUtil.get(pageContext, "HTMLPage");
+			                     }else if(next == STRUCTURE_TYPE_PERSONA){
+			                         strTypeName = LanguageUtil.get(pageContext, "Persona");
+			                     }
+						%>
+							<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
+						<%} %>
+					</select>
+			
+					<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
+			
+					<button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
+					   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+					</button>
+			
+					<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
+					   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
+					</button>
+			
+					<input type="checkbox" name="system" id="system" dojoType="dijit.form.CheckBox" <%if (UtilMethods.isSet(request.getParameter("system")) && request.getParameter("system").equals("1")) {%> checked="checked"<%}%> value="1" onClick="submitfm()"/>
+					&nbsp; <%= LanguageUtil.get(pageContext, "Structure-show-System") %>
+				</div>
+			</form>
+		</div>
 
-		<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-
-		<button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
-		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-		</button>
-
-		<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
-		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
-		</button>
-
-		<input type="checkbox" name="system" id="system" dojoType="dijit.form.CheckBox" <%if (UtilMethods.isSet(request.getParameter("system")) && request.getParameter("system").equals("1")) {%> checked="checked"<%}%> value="1" onClick="submitfm()"/><%= LanguageUtil.get(pageContext, "Structure-show-System") %>
-	</div>
-</form>
-	<div class="yui-u" style="text-align:right;">
-		<div id="addNewStructure"></div>
-	</div>
-</div>
-<!-- END Toolbar -->
-
-<!-- START Listing Results -->
-	<form action="" method="post" name="order">
-	<div id="results_table_popup_menus"></div>
-	<table class="listingTable" >
-		<tr>
-
-			<th width="40%">
-				<a href="<portlet:actionURL>
-				<portlet:param name='struts_action' value='/ext/structure/view_structure' />
-				<portlet:param name='orderBy' value='name' /><portlet:param name='direction' value='<%=request.getAttribute("direction").toString() %>'/>
-				</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Structure-Name") %></a>
-			</th>
-			<th width="10%">
-				<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
-				<portlet:param name='orderBy' value='velocity_var_name' /><portlet:param name='direction' value='<%=request.getAttribute("direction").toString() %>'/>
-				</portlet:actionURL>" >
-				<%= LanguageUtil.get(pageContext, "Variable") %></a>
-
-			</th>
-			<th width="30%" >
-				<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
-				<portlet:param name='orderBy' value='description' /><portlet:param name='direction' value='<%=request.getAttribute("direction").toString() %>'/>
-				</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Description") %></a>
-			</th>
-			<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Entries") %></th>
-			<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Relationships") %></th>
-		</tr>
-
-		<%
-		int structuresSize = ((Integer) request.getAttribute(com.dotmarketing.util.WebKeys.STRUCTURES_VIEW_COUNT)).intValue();
-		int k = 0;
-
-		if (structures.size() > 0) {
-		for (int i = 0; i < structures.size(); i++) {
-			Structure structure = (Structure) structures.get(i);
+    	<div class="portlet-toolbar__actions-secondary">
+    		<!-- START Actions -->			
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+			<span></span>
+				<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+					<div data-dojo-type="dijit/MenuItem" onClick="addNewStructure();">
+						<%= LanguageUtil.get(pageContext, "Add-New-Structure") %>
+					</div>
+					
+					<div data-dojo-type="dijit/MenuItem" onClick="addNewRelationship();">
+						<%= LanguageUtil.get(pageContext, "Add-New-Relationship") %>
+					</div>
+					
+					<div data-dojo-type="dijit/MenuItem" onClick="viewAllRelationship();">
+						<%= LanguageUtil.get(pageContext, "View-all-Relationships") %>
+					</div>
+				</div>
+			</div>
+			<!-- END Actions -->
+    		
+    	</div>
+   </div>
+   <!-- END Toolbar -->
 
 
-
-
-			%>
-
-			<tr id="tr<%=structure.getInode()%>" class="alternate_1" onclick="editStructure('<%=structure.getInode()%>');">
-				<td>
-					<% if(structure.isWidget()){ %>
-						<span class="gearIcon"></span>
-					<% }else if(structure.isForm()){ %>
-						<span class="formIcon"></span>
-					<% }else if(structure.isFileAsset()){ %>
-						<span class="fileIcon"></span>
-				    <% }else if(structure.isHTMLPageAsset()){ %>
-				        <span class="pageIcon"></span>
-				    <% }else if(structure.isPersona()){ %>
-				        <span class="personaIcon"></span>
-					<% }else{ %>
-						<span class="contentIcon"></span>
-					<% } %>
-
-					<%=structure.getName()%>
-				</td>
-				<td><%=structure.getVelocityVarName() %></td>
-				<td><%=structure.getDescription()==null?"":structure.getDescription()%></td>
-				<td align="center">
-					<a href="<portlet:renderURL>
-					<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
-					<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
-					<%= LanguageUtil.get(pageContext, "view") %></a>
-				</td>
-				<td align="center">
-					<a href="<portlet:renderURL>
-					<portlet:param name='struts_action' value='/ext/structure/view_relationships' />
-					<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
-					<%= LanguageUtil.get(pageContext, "view") %></a>
+	<!-- START Listing Results -->
+		<form action="" method="post" name="order">
+		<div id="results_table_popup_menus"></div>
+		<table class="listingTable" >
+			<tr>
+	
+				<th width="40%">
+					<a href="<portlet:actionURL>
+					<portlet:param name='struts_action' value='/ext/structure/view_structure' />
+					<portlet:param name='orderBy' value='name' /><portlet:param name='direction' value='<%=request.getAttribute("direction").toString() %>'/>
+					</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Structure-Name") %></a>
+				</th>
+				<th width="10%">
+					<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
+					<portlet:param name='orderBy' value='velocity_var_name' /><portlet:param name='direction' value='<%=request.getAttribute("direction").toString() %>'/>
+					</portlet:actionURL>" >
+					<%= LanguageUtil.get(pageContext, "Variable") %></a>
+	
+				</th>
+				<th width="30%" >
+					<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
+					<portlet:param name='orderBy' value='description' /><portlet:param name='direction' value='<%=request.getAttribute("direction").toString() %>'/>
+					</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Description") %></a>
+				</th>
+				<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Entries") %></th>
+				<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Relationships") %></th>
+			</tr>
+	
+			<%
+			int structuresSize = ((Integer) request.getAttribute(com.dotmarketing.util.WebKeys.STRUCTURES_VIEW_COUNT)).intValue();
+			int k = 0;
+	
+			if (structures.size() > 0) {
+			for (int i = 0; i < structures.size(); i++) {
+				Structure structure = (Structure) structures.get(i);
+	
+	
+	
+	
+				%>
+	
+				<tr id="tr<%=structure.getInode()%>" class="alternate_1" onclick="editStructure('<%=structure.getInode()%>');">
+					<td>
+						<% if(structure.isWidget()){ %>
+							<span class="gearIcon"></span>
+						<% }else if(structure.isForm()){ %>
+							<span class="formIcon"></span>
+						<% }else if(structure.isFileAsset()){ %>
+							<span class="fileIcon"></span>
+					    <% }else if(structure.isHTMLPageAsset()){ %>
+					        <span class="pageIcon"></span>
+					    <% }else if(structure.isPersona()){ %>
+					        <span class="personaIcon"></span>
+						<% }else{ %>
+							<span class="contentIcon"></span>
+						<% } %>
+	
+						<%=structure.getName()%>
+					</td>
+					<td><%=structure.getVelocityVarName() %></td>
+					<td><%=structure.getDescription()==null?"":structure.getDescription()%></td>
+					<td align="center">
+						<a href="<portlet:renderURL>
+						<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
+						<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
+						<%= LanguageUtil.get(pageContext, "view") %></a>
+					</td>
+					<td align="center">
+						<a href="<portlet:renderURL>
+						<portlet:param name='struts_action' value='/ext/structure/view_relationships' />
+						<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
+						<%= LanguageUtil.get(pageContext, "view") %></a>
+					</td>
+				</tr>
+	
+				<script>
+	
+					<%if(structure.getStructureType() == 3 ){%>
+					deleteLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Form-and-Entries")) %>';
+					<%}else{ %>
+					deleteLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Structure-and-Content")) %>';
+					<%} %>
+	
+			    	popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=structure.getInode()%>\">";
+	
+			    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
+	
+	                <% if ( enterprise ) { %>
+	                    <% if ( sendingEndpoints ) { %>
+			    	        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>',<%=structure.isFixed()%>);\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+	                    <%}%>
+			    	    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+	                <%}%>
+					<%if(!structure.isFixed()){%>
+	                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
+					<%}%>
+			        popupMenus += "</div>";
+	
+			        popupMenusDiv = document.getElementById("results_table_popup_menus");
+			        popupMenusDiv.innerHTML = popupMenus;
+				</script>
+	
+	 		<% } %>
+	<!-- END Listing Results -->
+	
+	<!-- Start No Results -->
+	  <% }else { %>
+			<tr>
+				<td colspan="6">
+					<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Structures-to-display") %></div>
 				</td>
 			</tr>
-
-			<script>
-
-				<%if(structure.getStructureType() == 3 ){%>
-				deleteLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Form-and-Entries")) %>';
-				<%}else{ %>
-				deleteLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Structure-and-Content")) %>';
-				<%} %>
-
-		    	popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr<%=i%>\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr<%=structure.getInode()%>\">";
-
-		    	popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editStructure('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
-
-                <% if ( enterprise ) { %>
-                    <% if ( sendingEndpoints ) { %>
-		    	        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublishStructure('<%=structure.getInode()%>',<%=structure.isFixed()%>);\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-                    <%}%>
-		    	    popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('<%=structure.getInode()%>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
-                <%}%>
-				<%if(!structure.isFixed()){%>
-                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"stopIcon\" onClick=\"deleteStructure('<%=structure.getInode()%>');\">"+deleteLabel+"</div>";
-				<%}%>
-		        popupMenus += "</div>";
-
-		        popupMenusDiv = document.getElementById("results_table_popup_menus");
-		        popupMenusDiv.innerHTML = popupMenus;
-			</script>
-
- 		<% } %>
-<!-- END Listing Results -->
-
-<!-- Start No Results -->
-  <% }else { %>
-		<tr>
-			<td colspan="6">
-				<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "There-are-no-Structures-to-display") %></div>
-			</td>
-		</tr>
-  <%}%>
-<!-- End No Results -->
+	  <%}%>
+	<!-- End No Results -->
 
 	</table>
+</div>
 
 <!-- Start Pagination -->
 	<div class="yui-gb buttonRow">

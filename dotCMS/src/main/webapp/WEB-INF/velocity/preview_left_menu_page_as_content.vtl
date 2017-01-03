@@ -46,14 +46,45 @@
 <meta http-equiv="pragma" content="no-cache" />
 
 
-
-
-
 <style type="text/css">
-    @import "$dojoPath/dijit/themes/dmundra/dmundra.css";
-    @import "/html/css/leftPreview.css";
-    @import "/html/css/dot_admin.css";
+	@import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+	@import "/html/css/dijit-dotcms/dotcms.css?b=3.7.0";
 </style>
+
+<style>
+	body{
+        margin:0;
+        padding:0;
+        font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+        font-size: 13px;
+        background: #fff;
+    }
+
+	div.maxmin{position:absolute;top:10px;right: 8px;width:24px;bottom:0px;height:24px;background: #0E80CB;border: 1px solid #aaa;border-radius: 100%;text-align: center;}
+    .maxmin span {font-weight: bold; color: #fff;line-height: 18px;}
+	#max_bar{background: #0E80CB;}
+	#min_bar{background: #0E80CB;}
+	#min_bar{display: none;}
+	
+	.sideMenu {width: 100%;overflow: hidden;}
+
+    .content-edit-actions > div a, .content-edit-actions > div a:hover {text-decoration: none;}
+    .dijitTabPaneWrapper .dijitContentPane {padding: 16px 20px 16px 8px;}
+
+    .disabled{display:block;line-height:18px;padding:3px;color:#aaa;text-decoration:none;}
+
+    .viewOptions {background: #FBFAFB; padding: 15px 20px 15px 8px; border-top: solid 1px #C5C5C5; border-bottom: solid 1px #C5C5C5;}
+
+    .lang{margin: 0 0 15px 0; }
+
+    .personaWrapper {}
+    .personaWrapper .dijitComboBox, .lang .dijitComboBox {width: 100%;}
+    .personaImageDiv {margin-top: 8px; text-align: center;}
+    .personaImage {border-radius: 16px; border: 1px solid #5C5C5; width: 85px; height: 85px; background-color: #fff;background-position: center center; background-repeat: no-repeat; background-size: contain;}
+    label {text-transform: uppercase; margin-bottom: 8px;color: #636163; font-size: 11px; display:block;}
+
+</style>
+
 <script type="text/javascript">
    	djConfig={
            parseOnLoad: true,
@@ -321,23 +352,23 @@
 
     function ToggleCollapse() {
         if (is_collapsed) {
-            parent.document.getElementById('frameMenu').style.width="210px";
+            parent.document.getElementById('frameMenu').style.width="240px";
             document.getElementById("main_window").style.display = 'block';
             document.getElementById("max_bar").style.display = "block";
-            document.getElementById("max_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementById("max_bar").style.backgroundColor = "#0E80CB";
             document.getElementById("min_bar").style.display = 'none';
-            document.getElementById("min_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementById("min_bar").style.backgroundColor = "#0E80CB";
             document.getElementsByTagName("html")[0].style.overflow = "";
             is_collapsed = false;
             parent.resetFrameWidth();
         } else {
             document.getElementById("main_window").style.display = 'none';
             document.getElementById("max_bar").style.display = "none";
-            document.getElementById("max_bar").style.backgroundColor = "#E6E9EE";
-            document.getElementById("min_bar").style.backgroundColor = "#E6E9EE";
+            document.getElementById("max_bar").style.backgroundColor = "#0E80CB";
+            document.getElementById("min_bar").style.backgroundColor = "#0E80CB";
             document.getElementById("min_bar").style.display = 'block';
             document.getElementsByTagName("html")[0].style.overflow = "hidden";
-            parent.document.getElementById('frameMenu').style.width="11px";
+            parent.document.getElementById('frameMenu').style.width="36px";
             is_collapsed = true;
             parent.resetFrameWidth();
         }
@@ -443,7 +474,7 @@
    		if(!inode || inode==0 || inode=="0"){
 			document.getElementById("personaImage").style.backgroundImage="url(/html/images/persona/default-persona.png)";
    			document.getElementById("personaImage").src="/html/images/shim.gif";
-   			document.getElementById("personaImage").style.backgroundColor="#fff";
+   			//document.getElementById("personaImage").style.backgroundColor="#fff";
    			return;
    		}
 
@@ -540,201 +571,153 @@
 </script>
 </head>
 
-<body class="dmundra">
+<body>
 
 <!-- Start Frame Max-Min -->
     <div class="maxmin" id="min_bar" style="z-index:1000"
          onmouseover="this.style.backgroundColor='#cbe1f2'"
-         onmouseout="this.style.backgroundColor='#E6E9EE'"
+         onmouseout="this.style.backgroundColor='#0E80CB'"
          onclick="ToggleCollapse()"
          title="Expand pane">
+         <span class="toggle"><</span>
     </div>
     <div class="maxmin" id="max_bar" style="z-index:1000"
          onmouseover="this.style.backgroundColor='#cbe1f2'"
-         onmouseout="this.style.backgroundColor='#E6E9EE'"
+         onmouseout="this.style.backgroundColor='#0E80CB'"
          title="Collapse pane"
          onclick="ToggleCollapse()">
+         <span class="toggle">></span>
     </div>
 <!-- END Frame Max-Min -->
 
 
 
-<div id="main_window" class="sideMenu">
+<div id="main_window" class="portlet-main">
 
-<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
+    <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-        
-<!-- Edit Mode -->
-  <div id="editModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Edit")" #if ($EDIT_MODE && $ADMIN_MODE) selected="true" #end>
-       	<div class="pageTools" id="lockedPageTools"></div>
-		<div class="pageTools commonPageTools"></div>
-    </div>
-
-<!-- /Edit Mode -->
-        
-        
-<!-- Preview Mode -->
-    <div id="previewModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Preview")" #if ($PREVIEW_MODE && $ADMIN_MODE) selected="true" #end>
-       
-       	<div class="pageTools" id="previewModeTools"></div>
-
-
-
-		#if($canViewDiff)
-			<div class="pageTools">
-				<a href="javascript: viewDiff();">
-					<span class="redlineIcon"></span> $languagewebapi.getFromUserLanguage("modes.Whats-Changed")
-				</a>
-			</div>
-		#end
-
-    	<div class="pageTools commonPageTools"></div>
-    </div>
-<!-- /Preview Mode -->
-
-
-
-
-<!-- Live Mode -->
-    <div id="liveModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Live")" #if (!$EDIT_MODE && $ADMIN_MODE) selected="true" #end>
-        <div class="pageTools commonPageTools"></div>
-    </div>
-<!-- /Live Mode -->
-
-
-
-</div>
-
-
-#if($canViewDiff)
-	## Personas
-	<div id="personaInfo" style="text-align:center;border:0px;margin:10px 0px 0px 0px;visibility:none;">
-		<div style="padding:0px 0px 10px 0px;">
-			$languagewebapi.getFromUserLanguage("modes.persona.select.persona"):
-		</div>
-		<div id="personaImageDiv">
-			<img id="personaImage" 
-			#if($visitor.persona.identifier) 
-				src="/contentAsset/image/${visitor.persona.identifier}/photo/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/photo" 
-			#else 
-				src="/html/images/shim.gif" 
-			#end 
-			style="border-radius:25%; width:100px;height:100px; border:0px;background:no-repeat center" /> 
-		</div>
-	</div>
-
-	<div class="lang" style="border-top:0px;padding-left:0px;text-align:center;">
-	
-		<select name="personaSelector" id="personaSelector" dojoType="dijit.form.FilteringSelect" onchange="changePersona">
-			<option value="0:0">$languagewebapi.getFromUserLanguage("modes.persona.no.persona")</option>
-			#foreach($persona in $personatool.personas)
-				<option value="$persona.identifier:$persona.inode" #if($visitor.persona.identifier ==$persona.identifier ) selected #end  >$persona.name</option>
-			#end
-		</select>
-	</div>
-#end
-
-
-<!-- Start Languages -->
-    #if($availablePageLangs.size() > 0)
-        <div class="lang" style="border-top:0px;padding-left:0px;margin-left:0px;text-align:center;">
-
-            <div id="combo_zone2">
-                <input id="language_id"/>
-            </div>
-
-              <script>
-
-                  // http://jira.dotmarketing.net/browse/DOTCMS-6148
-                  #set($myString="{identifier:'id',imageurl:'imageurl',label:'label',items:[")
-
-                  #set($imageURL="/html/images/languages/all.gif")
-                  #set($style="background-image:url(URLHERE);width:16px;height:11px;margin:3px 5px;display:inline-block;vertical-align:middle")
-                  #set($first=true)
-                  #foreach($displayedLang in $availablePageLangs)
-                  	  #set($lang=$displayedLang.language)
-                  	  
-                  	  #if($displayedLang.greyedOut)
-                  	  	#set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}_gray.gif")
-                  	  #else
-                  	  	#set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}.gif")
-                  	  #end
-                      
-                      #set($display="${lang.language} (${lang.countryCode})")
-                      #if($first)
-                        #set($first=false)
-                      #else
-                        #set($myString="${myString},")
-                      #end
-                      #set($myString="${myString}{id:'${lang.id}',")
-                      #set($myString="${myString}value:'${lang.id}',")
-                      #set($myString="${myString}imageurl:'${imageURL}',")
-                      #set($myString="${myString}lang:'${display}',")
-                      #set($elStyle=$style.replaceAll("URLHERE",$imageURL))
-                      #set($myString="${myString}label:'<span style=\"${elStyle}\"></span>${display}'}")
-                  #end
-                  #set($myString="${myString}]}")
-
-                function updateSelectBoxImage(myselect) {
-                    var imagestyle = "url('" + myselect.item.imageurl + "')";
-                    var selField = dojo.query('#combo_zone2 div.dijitInputField')[0];
-                    dojo.style(selField, "backgroundImage", imagestyle);
-                    dojo.style(selField, "backgroundRepeat", "no-repeat");
-                    dojo.style(selField, "padding", "0px 0px 0px 25px");
-                    dojo.style(selField, "backgroundColor", "transparent");
-                    dojo.style(selField, "backgroundPosition", "3px 6px");
-                }
-
-                    var storeData=${myString};
-                    var langStore = new dojo.data.ItemFileReadStore({data: storeData});
-                    var myselect = new dijit.form.FilteringSelect({
-                             id: "language_id",
-                             name: "language_id",
-                             value: '',
-                             required: true,
-                             store: langStore,
-                             searchAttr: "lang",
-                             labelAttr: "label",
-                             labelType: "html",
-                             onChange: function() {
-                                 var el=dijit.byId('language_id');
-                                 updateSelectBoxImage(el);
-                                 changeLanguage(el.item.value);
-                             },
-                             labelFunc: function(item, store) { return store.getValue(item, "label"); }
-                        },
-                        dojo.byId("language_id"));
-                        myselect.setValue('${language}');
-
-            </script>
+            
+    <!-- Edit Mode -->
+      <div id="editModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Edit")" #if ($EDIT_MODE && $ADMIN_MODE) selected="true" #end>
+           	<div class="content-edit-actions" id="lockedPageTools"></div>
+    		<div class="content-edit-actions commonPageTools"></div>
         </div>
-    #end
-<!-- End Languages -->
+
+    <!-- /Edit Mode -->
+            
+            
+    <!-- Preview Mode -->
+        <div id="previewModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Preview")" #if ($PREVIEW_MODE && $ADMIN_MODE) selected="true" #end>
+           
+           	<div class="content-edit-actions" id="previewModeTools"></div>
 
 
 
-    <div class="clear"></div>
+    		#if($canViewDiff)
+    			<div class="content-edit-actions">
+    				<div>
+    					<a href="javascript: viewDiff();">
+    						<span class="redlineIcon"></span> $languagewebapi.getFromUserLanguage("modes.Whats-Changed")
+    					</a>
+    				</div>
+    			</div>
+    		#end
 
-<!-- Start Controles -->
-	<div id="buttonRow">
-	    <button dojoType="dijit.form.Button" onClick='backToCMS()' iconClass="cancelIcon" >
-	        $languagewebapi.getFromUserLanguage("Admin-Screen")
-	    </button>
-	</div>
-	
-
-	<div class="clear"></div>
+        	<div class="content-edit-actions commonPageTools"></div>
+        </div>
+    <!-- /Preview Mode -->
 
 
 
 
-	<div class="logout">
-	    <button dojoType="dijit.form.Button" onClick='doLogout()' iconClass="closeIcon">
-            $languagewebapi.getFromUserLanguage("Logout")
-        </button>
-	</div>
+    <!-- Live Mode -->
+        <div id="liveModeTab" dojoType="dijit.layout.ContentPane" title="$languagewebapi.getFromUserLanguage("modes.Live")" #if (!$EDIT_MODE && $ADMIN_MODE) selected="true" #end>
+            <div class="content-edit-actions commonPageTools"></div>
+        </div>
+    <!-- /Live Mode -->
 
-<!-- END Controles -->
+
+
+    </div>
+
+    <div class="viewOptions">
+    <!-- Start Languages -->
+        #if($availablePageLangs.size() > 0)
+            <div class="lang">
+
+                <div id="combo_zone2">
+                    <label>$languagewebapi.getFromUserLanguage("language")</label>
+                    <input id="language_id"/>
+                </div>
+
+                  <script>
+
+                      // http://jira.dotmarketing.net/browse/DOTCMS-6148
+                      #set($myString="{identifier:'id',label:'label',items:[")
+                      #set($first=true)
+                      #foreach($displayedLang in $availablePageLangs)
+                          #set($lang=$displayedLang.language)
+                          #set($display="${lang.language} (${lang.countryCode})")
+                          #if($first)
+                            #set($first=false)
+                          #else
+                            #set($myString="${myString},")
+                          #end
+                          #set($myString="${myString}{id:'${lang.id}',")
+                          #set($myString="${myString}value:'${lang.id}',")
+                          #set($myString="${myString}lang:'${display}',")
+                          #set($myString="${myString}label:'${display}'}")
+                      #end
+                      #set($myString="${myString}]}")
+
+                        var storeData=${myString};
+                        var langStore = new dojo.data.ItemFileReadStore({data: storeData});
+                        var myselect = new dijit.form.FilteringSelect({
+                                 id: "language_id",
+                                 name: "language_id",
+                                 value: '',
+                                 required: true,
+                                 store: langStore,
+                                 searchAttr: "lang",
+                                 labelAttr: "label",
+                                 labelType: "html",
+                                 onChange: function() {
+                                     var el=dijit.byId('language_id');
+                                     changeLanguage(el.item.value);
+                                 },
+                                 labelFunc: function(item, store) { return store.getValue(item, "label"); }
+                            },
+                            dojo.byId("language_id"));
+                            myselect.setValue('${language}');
+
+                </script>
+            </div>
+        #end
+    <!-- End Languages -->
+
+        #if($canViewDiff)
+        	## Personas
+        	<div id="personaInfo" class="personaWrapper" style="visibility:none;">
+        		<label> $languagewebapi.getFromUserLanguage("modes.persona.select.persona") </label>
+                <select name="personaSelector" id="personaSelector" dojoType="dijit.form.FilteringSelect" onchange="changePersona">
+                    <option value="0:0">$languagewebapi.getFromUserLanguage("modes.persona.no.persona")</option>
+                    #foreach($persona in $personatool.personas)
+                        <option value="$persona.identifier:$persona.inode" #if($visitor.persona.identifier ==$persona.identifier ) selected #end  >$persona.name</option>
+                    #end
+                </select>
+        		<div class="personaImageDiv">
+        			<img id="personaImage" 
+        			#if($visitor.persona.identifier) 
+        				src="/contentAsset/image/${visitor.persona.identifier}/photo/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/photo" 
+        			#else 
+        				src="/html/images/shim.gif" 
+        			#end 
+        			class="personaImage" /> 
+        		</div>		
+        	</div>
+        #end
+
+    </div>
 
 </div>
 
@@ -772,29 +755,29 @@
 
 
 	<div id="commonPageToolsTmpl" style="display:none">
-		<a href="javascript: editPageProperties();">
-			<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
-		</a>
-		<a href="javascript: viewStatistics();">
-			<span class="statisticsIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Statistics")
-		</a>
-	
-		#if($EDIT_TEMPLATE_PERMISSION)
-			<a href="javascript: editTemplate();">
-				<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
-			</a>
-		#else
-			<span class="disabled">
-				<span class="templateIcon"></span> $languagewebapi.getFromUserLanguage("modes.Edit-Template")
-			</span>
-		#end
-	
-		<hr/>
-	
-		<a href="javascript: addPage();">
-			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
-		</a>
-	</div>
+        <div>
+    		<a href="javascript: editPageProperties();">
+    			$languagewebapi.getFromUserLanguage("modes.Page-Properties")
+    		</a>
+    		<a href="javascript: viewStatistics();">
+    			$languagewebapi.getFromUserLanguage("modes.Page-Statistics")
+    		</a>
+    	
+    		#if($EDIT_TEMPLATE_PERMISSION)
+    			<a href="javascript: editTemplate();">
+    				$languagewebapi.getFromUserLanguage("modes.Edit-Template")
+    			</a>
+    		#else
+    			<span class="disabled">
+    				$languagewebapi.getFromUserLanguage("modes.Edit-Template")
+    			</span>
+    		#end
+    	
+    		<a href="javascript: addPage();">
+    			$languagewebapi.getFromUserLanguage("modes.Create-New-Page")
+    		</a>
+    	</div>
+    </div>
 
 
 
@@ -802,112 +785,113 @@
 
 
     <div id="lockedPageToolsTmpl" style="display:none">
-    	#if($iCanLock)
-			<a href="#" onclick="fireUnlockPage()">
-				<span class="unlockIcon"></span> $languagewebapi.getFromUserLanguage("Release-Lock")
-			</a>
-			#if(!$mandatory)
-	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
-	                <a href="javascript: publishAll();">
-	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
-	                </a>
-	                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-	                    #if($REMOTE_PUBLISH_END_POINTS)
-	                        <a href="javascript: remotePublishCall();">
-	                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
-	                        </a>
-		                #end
-		                 <a href="javascript: addToBundleCall();">
-		                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
-		                </a>
-	                #end
-	            #end
-	        #end
-	           
+        <div>
+        	#if($iCanLock)
+    			<a href="#" onclick="fireUnlockPage()">
+    				<span class="unlockIcon"></span> $languagewebapi.getFromUserLanguage("Release-Lock")
+    			</a>
+    			#if(!$mandatory)
+    	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
+    	                <a href="javascript: publishAll();">
+    	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+    	                </a>
+    	                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
+    	                    #if($REMOTE_PUBLISH_END_POINTS)
+    	                        <a href="javascript: remotePublishCall();">
+    	                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+    	                        </a>
+    		                #end
+    		                 <a href="javascript: addToBundleCall();">
+    		                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+    		                </a>
+    	                #end
+    	            #end
+    	        #end
+    	           
 
-			#foreach($a in $wfActions)
-				#if($a.requiresCheckout())
-					#set($actionlets = $workflowtool.findActionClasses($a))
-					#set($hasPushPublishActionlet = false)
-					#foreach($actionlet in $actionlets)
-						#if($UtilMethods.isSet($actionlet.getActionlet()) && $actionlet.getActionlet().getClass().getName().contains("PushPublishActionlet"))
-							#set($hasPushPublishActionlet = true)
-						#end
-						
-					#end
-				
-					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
-				
-					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
-								<span class="$a.icon"></span>
-						$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage($a.getName()))
-					</a>
-	
-				#end
-			#end
-		#else
-		 <span class="disabled">
-			<span class="lockIcon" style=""></span>
-			$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage("message.htmlpage.locked.page"))
-		</span>
-		#end
-		
+    			#foreach($a in $wfActions)
+    				#if($a.requiresCheckout())
+    					#set($actionlets = $workflowtool.findActionClasses($a))
+    					#set($hasPushPublishActionlet = false)
+    					#foreach($actionlet in $actionlets)
+    						#if($UtilMethods.isSet($actionlet.getActionlet()) && $actionlet.getActionlet().getClass().getName().contains("PushPublishActionlet"))
+    							#set($hasPushPublishActionlet = true)
+    						#end
+    						
+    					#end
+    				
+    					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
+    				
+    					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
+    								<span class="$a.icon"></span>
+    						$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage($a.getName()))
+    					</a>
+    	
+    				#end
+    			#end
+    		#else
+    		 <span class="disabled">
+    			<span class="lockIcon" style=""></span>
+    			$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage("message.htmlpage.locked.page"))
+    		</span>
+    		#end
+        </div>
 	</div>
 	
 	
 	
     <div id="unLockedPageToolsTmpl" style="display:none">
-	    #if($iCanLock)
-			<div  id="lockBtn">
-				<a href="#" onclick="fireLockPage()">
+        <div>
+    	    #if($iCanLock)
+				<a id="lockBtn" href="#" onclick="fireLockPage()" >
 					<span class="lockIcon"></span> $languagewebapi.getFromUserLanguage("Make-Editable")
 				</a>
-			</div>
-			#if(!$mandatory)
-	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
-	                <a href="javascript: publishAll();">
-	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
-	                </a>
-	                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-	                    #if($REMOTE_PUBLISH_END_POINTS)
-	                        <a href="javascript: remotePublishCall();">
-	                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
-	                        </a>
-		                #end
-		                 <a href="javascript: addToBundleCall();">
-		                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
-		                </a>
-	                #end
-	            #end
-	           #end
-	           
-			#foreach($a in $wfActions)
-				#if(!$a.requiresCheckout())
-					#set($actionlets = $workflowtool.findActionClasses($a))
-					#set($hasPushPublishActionlet = false)
-					#foreach($actionlet in $actionlets)
-						#if($UtilMethods.isSet($actionlet.getActionlet()) && $actionlet.getActionlet().getClass().getName().contains("PushPublishActionlet"))
-							#set($hasPushPublishActionlet = true)
-						#end
-						
-					#end
-				
-					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
-				
-	
-					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
-						<span class="$a.icon"></span>
-							$UtilMethods.escapeSingleQuotes($text.get($a.getName()))
-					</a>
-					
-				#end
-			#end
-		#else
-		 <span class="disabled">
-			<span class="lockIcon" style=""></span>
-			$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage("message.htmlpage.locked.page"))
-		</span>
-		#end
+    			#if(!$mandatory)
+    	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
+    	                <a href="javascript: publishAll();">
+    	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
+    	                </a>
+    	                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
+    	                    #if($REMOTE_PUBLISH_END_POINTS)
+    	                        <a href="javascript: remotePublishCall();">
+    	                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+    	                        </a>
+    		                #end
+    		                 <a href="javascript: addToBundleCall();">
+    		                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+    		                </a>
+    	                #end
+    	            #end
+    	           #end
+    	           
+    			#foreach($a in $wfActions)
+    				#if(!$a.requiresCheckout())
+    					#set($actionlets = $workflowtool.findActionClasses($a))
+    					#set($hasPushPublishActionlet = false)
+    					#foreach($actionlet in $actionlets)
+    						#if($UtilMethods.isSet($actionlet.getActionlet()) && $actionlet.getActionlet().getClass().getName().contains("PushPublishActionlet"))
+    							#set($hasPushPublishActionlet = true)
+    						#end
+    						
+    					#end
+    				
+    					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
+    				
+    	
+    					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
+    						<span class="$a.icon"></span>
+    							$UtilMethods.escapeSingleQuotes($text.get($a.getName()))
+    					</a>
+    					
+    				#end
+    			#end
+    		#else
+        		 <span class="disabled">
+        			<span class="lockIcon" style=""></span>
+        			$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage("message.htmlpage.locked.page"))
+        		</span>
+    		#end
+        </div>
 	</div>
 
 

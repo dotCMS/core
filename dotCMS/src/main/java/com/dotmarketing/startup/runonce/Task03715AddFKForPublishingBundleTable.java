@@ -19,10 +19,10 @@ public class Task03715AddFKForPublishingBundleTable implements StartupTask {
             dc.executeStatement("ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);");
         }else if(DbConnectionFactory.isOracle()) {
         	//Fix Inconsistent Data
-        	dc.executeStatement("UPDATE publishing_bundle SET owner = 'system' WHERE owner NOT IN ( SELECT userid FROM user_ );");
+        	dc.executeStatement("UPDATE publishing_bundle SET owner = 'system' WHERE owner NOT IN ( SELECT userid FROM user_ )");
 
         	//Add Foreign Key
-            dc.executeStatement("ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);");
+            dc.executeStatement("ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid)");
         }else if(DbConnectionFactory.isMySql()) {
         	//Fix Inconsistent Data
         	dc.executeStatement("UPDATE publishing_bundle SET owner = 'system' WHERE owner NOT IN ( SELECT userid FROM user_ );");

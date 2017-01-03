@@ -174,7 +174,9 @@ create table User_ (
 	lastLoginIP varchar2(100) null,
 	failedLoginAttempts number(30,0),
 	agreedToTermsOfUse number(1, 0),
-	active_ number(1, 0)
+	active_ number(1, 0),
+	delete_in_progress number(1,0) default 0,
+	delete_date DATE
 );
 
 create table UserTracker (
@@ -2482,14 +2484,14 @@ alter table broken_link add CONSTRAINT fk_brokenl_field
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 
 CREATE TABLE publishing_queue (
-  id INTEGER PRIMARY KEY NOT NULL,
-  operation number(19,0),
-  asset VARCHAR2(2000) NOT NULL,
-  language_id number(19,0) NOT NULL,
-  entered_date TIMESTAMP,
-  publish_date TIMESTAMP,
-  type VARCHAR2(256),
-  bundle_id VARCHAR2(256)
+    id INTEGER PRIMARY KEY NOT NULL,
+    operation NUMBER(19,0),
+    asset VARCHAR2(2000) NOT NULL,
+    language_id NUMBER(19,0) NOT NULL,
+    entered_date TIMESTAMP,
+    publish_date TIMESTAMP,
+    type VARCHAR2(256),
+    bundle_id VARCHAR2(256)
 );
 
 CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before
@@ -2586,16 +2588,17 @@ ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign ke
 
 -- Notifications Table
 CREATE TABLE notification (
-  group_id           VARCHAR2(36)  NOT NULL,
-  user_id            VARCHAR2(255) NOT NULL,
-  message            NCLOB         NOT NULL,
-  notification_type  VARCHAR2(100),
-  notification_level VARCHAR2(100),
-  time_sent          TIMESTAMP     NOT NULL,
-  was_read           NUMBER(1, 0) DEFAULT 0,
-  PRIMARY KEY (group_id, user_id)
+    group_id VARCHAR2(36) NOT NULL,
+    user_id VARCHAR2(255) NOT NULL,
+    message NCLOB NOT NULL,
+    notification_type VARCHAR2(100),
+    notification_level VARCHAR2(100),
+    time_sent TIMESTAMP NOT NULL,
+    was_read NUMBER(1, 0)
 );
-create index idx_not_read ON notification (was_read);
+ALTER TABLE notification ADD CONSTRAINT PK_notification PRIMARY KEY (group_id, user_id);
+ALTER TABLE notification MODIFY was_read DEFAULT 0;
+CREATE INDEX idx_not_read ON notification (was_read);
 
 -- indices for version_info tables on version_ts
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
@@ -2655,11 +2658,7 @@ CREATE TABLE system_event (
 	identifier VARCHAR(36) NOT NULL,
 	event_type VARCHAR(50) NOT NULL,
 	payload NCLOB NOT NULL,
-	created NUMBER(19, 0) NOT NULL,
-	PRIMARY KEY (identifier)
+	created NUMBER(19, 0) NOT NULL
 );
+ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
-
--- Delete User
-ALTER TABLE user_ ADD delete_in_progress number(1,0) default 0;
-ALTER TABLE user_ ADD delete_date DATE;

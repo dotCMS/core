@@ -19,10 +19,10 @@ public class Task03720AddRolesIntegrityCheckerTable implements StartupTask {
             dc.executeStatement("alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
         }else {
         	//Add Table
-        	dc.executeStatement("create table cms_roles_ir(name varchar2(1000), role_key varchar2(255), local_role_id varchar2(36), remote_role_id varchar2(36), local_role_fqn varchar2(1000), remote_role_fqn varchar2(1000), endpoint_id varchar2(36), PRIMARY KEY (local_role_id, endpoint_id));");
+        	dc.executeStatement("create table cms_roles_ir(name varchar2(1000), role_key varchar2(255), local_role_id varchar2(36), remote_role_id varchar2(36), local_role_fqn varchar2(1000), remote_role_fqn varchar2(1000), endpoint_id varchar2(36), PRIMARY KEY (local_role_id, endpoint_id))");
 
         	//Add Foreign Key
-            dc.executeStatement("alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
+            dc.executeStatement("alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id)");
         }
     }
 
