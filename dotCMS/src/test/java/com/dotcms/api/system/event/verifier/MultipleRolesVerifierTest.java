@@ -1,6 +1,6 @@
 package com.dotcms.api.system.event.verifier;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
  * @author jsanca
  */
 
-public class MultipleRolesVerifierTest extends TestBase {
+public class MultipleRolesVerifierTest extends UnitTestBase {
 
     @Test
     public void verifiedAndFailTest() throws DotDataException {

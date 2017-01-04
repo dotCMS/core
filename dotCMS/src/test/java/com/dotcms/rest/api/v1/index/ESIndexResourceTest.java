@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
@@ -28,7 +28,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.LayoutAPI;
 import com.liferay.portal.model.User;
 
-public class ESIndexResourceTest extends TestBase {
+public class ESIndexResourceTest extends UnitTestBase {
 
 
     public ESIndexResourceTest() {

@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.unittest.TestUtil;
@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
-public class VisitorsCurrentURLConditionletTest extends TestBase {
+public class VisitorsCurrentURLConditionletTest extends UnitTestBase {
 
     @DataProvider
     public static Object[][] cases() throws Exception {

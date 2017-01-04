@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -24,7 +24,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.util.LocaleUtil;
 
-public class ResetPasswordResourceTest extends TestBase {
+public class ResetPasswordResourceTest extends UnitTestBase {
 
     HttpServletRequest request;
     ResponseUtil responseUtil;

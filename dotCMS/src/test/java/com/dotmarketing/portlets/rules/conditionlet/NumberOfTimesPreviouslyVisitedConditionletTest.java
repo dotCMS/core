@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.CookieUtil;
 import org.junit.Assert;
@@ -22,7 +22,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 /**
  * Created by freddyrodriguez on 10/3/16.
  */
-public class NumberOfTimesPreviouslyVisitedConditionletTest extends TestBase {
+public class NumberOfTimesPreviouslyVisitedConditionletTest extends UnitTestBase {
 
     private HttpServletRequest request;
     private HttpServletResponse response;

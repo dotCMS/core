@@ -14,13 +14,13 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 
 /**
  * CollectionsUtils unit test.
  * @author jsanca
  */
-public class CollectionsUtilsTest extends TestBase {
+public class CollectionsUtilsTest extends UnitTestBase {
 
 
     /**

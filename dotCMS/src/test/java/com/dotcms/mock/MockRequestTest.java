@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.mock.request.BaseRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -19,7 +19,7 @@ import com.dotcms.mock.request.MockSessionRequest;
  * Unit test for request and resonse mock
  *
  */
-public class MockRequestTest extends TestBase {
+public class MockRequestTest extends UnitTestBase {
 	
 	
 	
