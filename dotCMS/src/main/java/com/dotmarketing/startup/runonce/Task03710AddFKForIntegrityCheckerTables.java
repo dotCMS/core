@@ -18,15 +18,11 @@ public class Task03710AddFKForIntegrityCheckerTables implements StartupTask {
             dc.executeStatement("truncate table schemes_ir;");
             dc.executeStatement("truncate table htmlpages_ir;");
             dc.executeStatement("truncate table fileassets_ir;");
-            //fix datatype for htmlpages_ir table
-            //dc.executeStatement("ALTER TABLE htmlpages_ir ALTER COLUMN language_id bigint;");
-            //dc.executeStatement("ALTER TABLE fileassets_ir ALTER COLUMN language_id bigint;");
-          //drop tables and recreate them
+            //drop tables and recreate them (We need this because language_id is a PK so you can not change the type since a constraint its created by default)
             dc.executeStatement("drop table htmlpages_ir;");
+            dc.executeStatement("drop table fileassets_ir;");
             dc.executeStatement("create table htmlpages_ir(html_page varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), "
             		+ "remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));");
-            
-            dc.executeStatement("drop table fileassets_ir;");
             dc.executeStatement("create table fileassets_ir(file_name varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), "
             		+ "remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));");
 
