@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -70,7 +70,7 @@ import static org.junit.Assert.assertTrue;
  *
  */
 
-public class UserAPITest extends TestBase {
+public class UserAPITest extends IntegrationTestBase {
 
 	protected static UserAPI userAPI;
 	protected static RoleAPI roleAPI;
