@@ -798,45 +798,38 @@ td {font-size: 100%;}
 <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
 
 
-<div class="portlet-main">
-	
-	<div class="portlet-toolbar" style="margin-bottom: -30px;">
-    	<div class="portlet-toolbar__actions-primary">
-    	</div>
-    	<div class="portlet-toolbar__actions-secondary" style="z-index: 99999;">
-			<!-- START Actions -->
-			<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
-	            <span></span>
+<div class="portlet-main view-categories">
 
-	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions" id="oneandtwothree">
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showAddCategory">
-	                    <%= LanguageUtil.get(pageContext, "Add") %>
-	                </div>
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteCategories">
-	                    <%= LanguageUtil.get(pageContext, "delete") %>
-	                </div>
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showImportCategories">
-	                	<%= LanguageUtil.get(pageContext, "import") %>
-	                </div>
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: exportCategories">
-	                    <%= LanguageUtil.get(pageContext, "export") %>
-	                </div>
-					<% if ( enterprise ) { %>
-                        <% if ( sendingEndpoints ) { %>
-                            <div data-dojo-type="dijit/MenuItem" onClick="remoteSyncronization();">
-                            	<%= LanguageUtil.get(pageContext,"Remote-Syncronization") %>
-                            </div>
-                        <%}%>
-                        <div data-dojo-type="dijit/MenuItem" onClick="addToBundle();">
-                        	<%= LanguageUtil.get(pageContext,"Add-To-Bundle") %>
-                        </div>
-                    <%}%>
-	            </div>
-	        </div>
-	    	<!-- END Actions -->
+	<!-- START Actions -->
+	<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+		<span></span>
 
-	    </div>
+		<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions" id="oneandtwothree">
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showAddCategory">
+				<%= LanguageUtil.get(pageContext, "Add") %>
+			</div>
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteCategories">
+				<%= LanguageUtil.get(pageContext, "delete") %>
+			</div>
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showImportCategories">
+				<%= LanguageUtil.get(pageContext, "import") %>
+			</div>
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: exportCategories">
+				<%= LanguageUtil.get(pageContext, "export") %>
+			</div>
+			<% if ( enterprise ) { %>
+				<% if ( sendingEndpoints ) { %>
+					<div data-dojo-type="dijit/MenuItem" onClick="remoteSyncronization();">
+						<%= LanguageUtil.get(pageContext,"Remote-Syncronization") %>
+					</div>
+				<%}%>
+				<div data-dojo-type="dijit/MenuItem" onClick="addToBundle();">
+					<%= LanguageUtil.get(pageContext,"Add-To-Bundle") %>
+				</div>
+			<%}%>
+		</div>
 	</div>
+	<!-- END Actions -->
 
 
 	
@@ -943,7 +936,7 @@ td {font-size: 100%;}
 </liferay:box>
 
 <!-- START Add Category pop up -->
-<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;" draggable="false" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
+<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div dojoType="dijit.layout.ContentPane">
 		<span id="savedMessage" style="color:red; font-size:11px;"></span>
 		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
