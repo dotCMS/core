@@ -6665,6 +6665,12 @@ a.category_higlighted, a.tag_higlighted {
   float: right;
 }
 
+.view-categories .dijitDropDownActionButton {
+  position: absolute;
+  right: 30px;
+  z-index: 1;
+}
+
 .contentIdentifier {
   margin: 0 0 8px;
 }
