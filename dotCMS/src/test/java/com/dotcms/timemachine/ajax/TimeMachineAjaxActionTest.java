@@ -1,6 +1,6 @@
 package com.dotcms.timemachine.ajax;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link TimeMachineAjaxAction}
  * @author jsanca
  */
-public class TimeMachineAjaxActionTest extends TestBase {
+public class TimeMachineAjaxActionTest extends UnitTestBase {
 
     private boolean testGenerateNotification = false;
 

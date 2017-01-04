@@ -1,6 +1,6 @@
 package com.dotcms.visitor;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class VisitorAPITest extends TestBase {
+public class VisitorAPITest extends UnitTestBase {
 
 
     @Test(expected = IllegalArgumentException.class)

@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,7 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
-public class FieldAPITest extends TestBase {
+public class FieldAPITest extends IntegrationTestBase {
 	
     @BeforeClass
     public static void prepare () throws Exception {

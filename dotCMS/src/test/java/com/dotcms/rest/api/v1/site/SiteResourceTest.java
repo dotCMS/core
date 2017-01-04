@@ -25,7 +25,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -51,7 +51,7 @@ import com.liferay.portal.model.User;
  * {@link siteResource} test
  * @author jsanca
  */
-public class SiteResourceTest extends TestBase {
+public class SiteResourceTest extends UnitTestBase {
 
 	private static final int page = 1;
 	private static final int count = 20;

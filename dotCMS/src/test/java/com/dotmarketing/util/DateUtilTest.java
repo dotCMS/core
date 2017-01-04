@@ -1,6 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.rest.RestUtilTest;
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link DateUtil}
  * @author jsanca
  */
-public class DateUtilTest extends TestBase {
+public class DateUtilTest extends UnitTestBase {
 
     @Test
     public void testaddDate () throws ParseException {
