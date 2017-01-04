@@ -1,0 +1,90 @@
+/* Checkbox and Radio */
+$icon-size: $check-size - $check-border-width * 2;
+
+#check-icon {
+    align-items: center;
+    display: flex;
+    height: $icon-size;
+    justify-content: center;
+    margin: 0;
+    width: $icon-size;
+}
+
+.ui-chkbox {
+    .ui-chkbox-icon {
+        @extend #check-icon;
+        color: $check-checked-color;
+        font-size: $icon-size;
+    }
+    .ui-chkbox-box {
+        border-radius: $check-radius;
+        height: $check-size;
+        width: $check-size;
+
+        &.ui-state-default {
+            background: $check-normal-bgcolor;
+            border: $check-normal-border;
+        }
+
+        &.ui-state-active {
+            border: $check-checked-border;
+            background: $check-checked-bgcolor;
+        }
+
+        &.ui-state-disabled {
+            border: $check-disabled-border;
+            background: $check-disabled-bgcolor;
+
+            .ui-chkbox-icon {
+                color: $check-disabled-color;
+            }
+        }
+    }
+
+}
+
+.ui-chkbox-label {
+    p-checkbox[disabled="true"] & {
+        color: $check-disabled-label-color;
+    }
+}
+
+.ui-radiobutton {
+    .ui-radiobutton-icon {
+        @extend #check-icon;
+        color: $brand-primary;
+        font-size: 8px;
+    }
+
+    .ui-radiobutton-box {
+        height: $check-size;
+        width: $check-size;
+
+        &.ui-state-default {
+            background: $check-normal-bgcolor;
+            border: $radio-normal-border;
+        }
+
+        &.ui-state-active {
+            background: $radio-checked-bgcolor;
+            border: $radio-checked-border;
+        }
+
+        &.ui-state-disabled {
+            background: $radio-disabled-bgcolor;
+            border: $radio-disabled-border;
+
+            .ui-radiobutton-icon {
+                color: $radio-disabled-color;
+            }
+        }
+    }
+}
+
+.ui-radiobutton-label {
+    margin-left: 0;
+
+    p-radiobutton[disabled="true"] & {
+        color: $radio-disabled-label-color;
+    }
+}

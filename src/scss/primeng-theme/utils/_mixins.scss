@@ -1,0 +1,25 @@
+@mixin btn ($shadow: none, $bg: $button-normal-bgcolor, $border: $button-normal-border, $color: $button-normal-textcolor) {
+  background-color: $bg;
+  border: $border;
+  box-shadow: $shadow;
+  color: $color;
+}
+
+@mixin placeholder($color) {
+  &::-webkit-input-placeholder {
+    color: $color
+  }
+
+  &:-moz-placeholder {
+    color: $color
+  }
+
+  &::-moz-placeholder {
+    color: $color
+  }
+
+  &:-ms-input-placeholder {
+    color: $color
+  }
+
+}

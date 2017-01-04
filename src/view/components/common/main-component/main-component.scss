@@ -1,37 +1,43 @@
 @import "../../../../scss/mixins";
 @import "../../../../scss/variables";
 
+$sidebar-width: 190px;
+
 .layout {
   background-color: $gray-lightest;
   bottom: 0;
   left: 0;
-  overflow: hidden;
-  position: fixed;
   right: 0;
   top: $toolbar-height;
 }
 
+.layout__main {
+  margin: $toolbar-height 0 0 $sidebar-width;
+  transition: margin-left $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  .collapsed & {
+    margin-left: 0;
+  }
+}
+
 .layout__sidebar {
-  position: absolute;
   background-color: $white;
   border-right: solid 1px $gray-lighter;
   height: 100%;
+  position: fixed;
   transition: transform $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+  width: $sidebar-width;
 
   .collapsed & {
     transform: translateX(-100%);
   }
 }
 
-.layout__main {
-  margin-left: 188px;
-  height: 100%;
-  overflow: auto;
-  transition: margin-left $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
-
-  .collapsed & {
-    margin-left: 0;
-  }
+.layout__toolbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1;
 }
 
 .toolbar__actions,

@@ -1,22 +1,9 @@
 @import "../../../../scss/mixins";
 @import "../../../../scss/variables";
 
-:host {
-    display: block;
-
-    dot-select {
-        display: block;
+.login-as {
+    .ui-autocomplete,
+    input {
+        width: 100%;
     }
-
-    .login-as {
-        color: $black;
-        display: block;
-        padding: 0px 10px;
-
-        input {
-            with: 100%;
-        }
-    }
-
 }
-

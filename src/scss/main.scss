@@ -2,7 +2,6 @@
 @import "mixins";
 @import "grids";
 @import "typography";
-@import "buttons";
 @import "material-design";
 @import "./deeppurple-amber.css";
 
@@ -15,14 +14,9 @@
     box-sizing: border-box;
 }
 
-// Fix for primeng theme
-[class^='ui-'] {
-    box-sizing: content-box !important;
-}
-
 html, body {
     color: $black;
-    font-family: $base-font-family;
+    font-family: $body-text;
     font-size: $body-font-size-base;
     height: 100%;
     margin: 0;
@@ -40,14 +34,14 @@ p {
 }
 
 a {
-    color: $primary;
+    color: $brand-primary;
 
     &:hover {
         text-decoration: none;
     }
 
     &.link-secondary {
-        color: $secondary;
+        color: $brand-secondary;
     }
 }
 
@@ -71,7 +65,7 @@ select {
     border: none;
     border-bottom: solid 1px $gray-light;
     border-radius: 0;
-    font-family: $base-font-family;
+    font-family: $body-text;
     font-size: $body-font-size-base;
     padding: rem-cal(5px) rem-cal(50px) rem-cal(5px) 0;
     position: relative;
@@ -79,5 +73,13 @@ select {
 
 // TODO: we need a file for this classes
 .form-group {
-    margin: 10px 0;
+    margin: $basic-padding 0;
+
+    .ui-dialog-content &:first-child {
+        margin-top: 0;
+    }
+
+    .ui-dialog-content &:last-child {
+        margin-bottom: 0;
+    }
 }

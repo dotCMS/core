@@ -21,7 +21,7 @@ export class ToolbarUserComponent extends BaseComponent {
     private showMyAccount: boolean = false;
 
     constructor(private router: DotRouterService, private loginService: LoginService, private messageService: MessageService) {
-        super(['login-as','my-account'],messageService);
+        super(['my-account'], messageService);
     }
 
     ngOnInit(): void {

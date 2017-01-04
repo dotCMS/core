@@ -1,21 +1,35 @@
 // COLORS
-$primary: #0E80CB;
-$secondary: #EE5C4A;
-$black: #444444; // 100%
-$gray: #A1A1A1; // 50%
-$gray-dark: #737373; // 75%
-$gray-light: #D0D0D0; //  25%
-$gray-lighter: #EEE; //  10%
+$black: #161616;
+$blue-ligth: #77CEE6;
+$blue: #0E80CB;
+$gray-dark: #5B5B5B;
+$gray: #8A8A8A;
+$gray-light: #C5C5C5;
+$gray-lighter: #ECEDEE;
 $gray-lightest: #FAFAFA;
-$white: #FFF;
+$green-ligth: #E7E7E7;
+$green: #4A9D51;
+$orange: #F3762A;
+$white: #fff;
+$error: #D0021B;
+$red: #CB3927;
+
+$brand-primary: $blue;
+$brand-secondary: $red;
+
+// Basic stuffs
+$border-radius: 2px;
+$icon-size: 16px;
+$basic-padding: 8px;
 
 // TYPOGRAPHY
-$font-small: 11px;
-$font-medium: 13px;
-$font-large: 16px;
+$font-size-x-large: 24px;
+$font-size-large: 18px;
+$font-size-medium: 13px;
+$font-size-small: 12px;
 
-$base-font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-$body-font-size-base: $font-medium;
+$body-text: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+$body-font-size-base: $font-size-medium;
 $body-font-color: $black;
 
 // ANIMATION
@@ -24,3 +38,10 @@ $basic-speed: 250ms;
 // LAYOUT
 $basic-padding: 8px;
 $toolbar-height: 60px;
+
+// MATERIAL DESIGN SHADOWS
+$md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+$md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+$md-shadow-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+$md-shadow-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+$md-shadow-5: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);

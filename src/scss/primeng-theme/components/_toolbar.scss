@@ -1,10 +1,10 @@
-.ui-widget-header {
+.ui-toolbar {
   align-items: center;
-  background-color: $primary;
+  background-color: $brand-primary;
   color: $white;
   display: flex;
-  padding: 0 $basic-padding * 2;
   height: $toolbar-height;
+  padding: 0 $basic-padding * 2;
 
   &.ui-corner-all {
     border-radius: 0;

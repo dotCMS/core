@@ -1,0 +1,70 @@
+.ui-button {
+    height: $field-height;
+    margin-right: 0;
+    outline: none;
+
+    @each $button, $states in $buttons-map {
+        @if ($button == "basic") {
+
+            @each $label, $props in $states {
+                &.ui-state-#{$label} {
+                    background: map-get($props, background);
+                    color:  map-get($props, color);
+                    border: map-get($props, border);
+                    box-shadow: map-get($props, shadow);
+                }
+            }
+
+        } @else {
+
+            &[#{$button}] {
+                @each $label, $props in $states {
+                    &.ui-state-#{$label} {
+                        background: map-get($props, background);
+                        color:  map-get($props, color);
+                        border: map-get($props, border);
+                        box-shadow: map-get($props, shadow);
+                    }
+                }
+            }
+
+        }
+    }
+
+    &[iconButton] {
+        border-radius: $field-height / 2;
+        border: none;
+        transition: background-color $basic-speed;
+        width: $field-height;
+
+        &.inverse {
+            color: $white;
+        }
+
+        &.ui-state-default {
+            background: none;
+            box-shadow: none;
+        }
+
+        &.ui-state-hover {
+            background: rgba($black, 0.1);
+        }
+    }
+}
+
+.ui-button-text {
+
+    .ui-button-text-only & {
+        padding: 0 $button-padding;
+    }
+
+    .ui-button-text-icon-left & {
+        padding: 0 $button-padding 0 $basic-padding * 3.5;
+    }
+
+    .ui-button-text-icon-right & {
+        padding: 0 $basic-padding * 3.5 0 $button-padding;
+    }
+
+}
+

@@ -175,11 +175,13 @@ import {AutoCompleteModule} from 'primeng/primeng';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {ToolbarModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
+import {RadioButtonModule} from 'primeng/primeng';
 
 const NGFACES_MODULES = [
     InputTextModule,
     PasswordModule,
     CheckboxModule,
+    RadioButtonModule,
     ButtonModule,
     DropdownModule,
     AutoCompleteModule,

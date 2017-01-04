@@ -2,20 +2,7 @@
 @import "../../../scss/variables";
 
 .my-account {
-  color: $black;
-  display: block;
-  padding: 0px 10px;
-
-  input {
-    width: 100%;
-  }
-
-  .my-account__form-line {
-    padding: 8px 0;
-  }
-
-}
-
-.my-account__actions {
-  text-align: center;
+    input {
+        width: 100%;
+    }
 }

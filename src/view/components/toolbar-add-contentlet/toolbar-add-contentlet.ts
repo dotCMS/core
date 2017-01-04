@@ -47,6 +47,13 @@ export class ToolbarAddContenletComponent extends BaseComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
     private types: StructureTypeView[];
+    private typesIcons: any = {
+        "Content": 'fa-table',
+        "Widget": 'fa-cog',
+        "File": 'fa-picture-o',
+        "Page": 'fa-file-text-o',
+        "Persona": 'fa-user',
+    };
     private recent: StructureTypeView[];
     private structureTypeViewSelected: StructureTypeView[];
     private showMore: boolean = false;
@@ -74,7 +81,6 @@ export class ToolbarAddContenletComponent extends BaseComponent {
                             this.routingService.addPortletURL(type.name, type.action);
                         });
                     }
-
                     return !structure.name.startsWith('RECENT');
                 }
             );

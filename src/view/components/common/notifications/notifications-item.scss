@@ -1,6 +1,6 @@
 @import "../../../../scss/mixins";
 @import "../../../../scss/variables";
-$close-button-size: 16px;
+$notification-icon-size: 16px;
 
 :host {
     display: block;
@@ -24,24 +24,25 @@ $close-button-size: 16px;
     }
 
     .notification-item__close {
-        height: $close-button-size;
+        color: $gray-light;
+        height: $notification-icon-size;
         position: absolute;
         right: 0;
         top: 1rem;
-        width: $close-button-size;
+        width: $notification-icon-size;
 
-        md-icon {
-            font-size: rem-cal($close-button-size);
-            color: $gray;
-            height: $close-button-size;
-            width: $close-button-size;
+        &.ui-state-hover {
+            background: none;
         }
     }
 
     .notification-item__icon {
         font-size: rem-cal(18px);
-        margin-top: rem-cal(2px);
-        width: auto;
+        width: $notification-icon-size;
+    }
+
+    .notification-item__title {
+        font-size: rem-cal($body-font-size-base);
     }
 
     .notification-item__title,
@@ -63,7 +64,7 @@ $close-button-size: 16px;
         .notification-item__link,
         .notification-item__title,
         .notification-item__title a {
-            color: $primary;
+            color: $brand-primary;
         }
     }
 
@@ -72,7 +73,7 @@ $close-button-size: 16px;
         .notification-item__link,
         .notification-item__title,
         .notification-item__title a {
-            color: $secondary;
+            color: $brand-secondary;
         }
     }
 }
