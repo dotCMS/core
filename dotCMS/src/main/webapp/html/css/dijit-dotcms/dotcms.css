@@ -5749,6 +5749,10 @@ Styles for commons fields along the backend
   top: 36px;
 }
 
+textarea {
+  min-height: 100px !important;
+}
+
 .wysiwyg-tools .dijitSelect {
   width: auto;
 }
