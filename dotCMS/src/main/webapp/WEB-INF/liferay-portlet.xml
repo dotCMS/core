@@ -3,7 +3,7 @@
 
 <portlets>
 	<!-- portlet id="1" struts-path="mail" scheduler-class="com.liferay.portlet.mail.job.Scheduler" preferences-sharing-type="user" /-->
-	<portlet id="2" struts-path="my_account" />
+	<portlet id="my-account" struts-path="my_account" />
 	<!-- portlet id="3" struts-path="search" narrow="true" / -->
 	<!--portlet id="4" struts-path="weather" narrow="true" /-->
 	<!--portlet id="5" struts-path="news" /-->

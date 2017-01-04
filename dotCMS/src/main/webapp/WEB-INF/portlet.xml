@@ -91,7 +91,7 @@
 		</security-role-ref>
 	</portlet-->
 	<portlet>
-		<portlet-name>2</portlet-name>
+		<portlet-name>my-account</portlet-name>
 		<display-name>My Account</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
