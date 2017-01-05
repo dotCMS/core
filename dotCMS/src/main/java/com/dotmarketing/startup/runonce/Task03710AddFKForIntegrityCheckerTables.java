@@ -21,10 +21,10 @@ public class Task03710AddFKForIntegrityCheckerTables implements StartupTask {
             //drop tables and recreate them (We need this because language_id is a PK so you can not change the type since a constraint its created by default)
             dc.executeStatement("drop table htmlpages_ir;");
             dc.executeStatement("drop table fileassets_ir;");
-            dc.executeStatement("create table htmlpages_ir(html_page varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), "
-            		+ "remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));");
-            dc.executeStatement("create table fileassets_ir(file_name varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), "
-            		+ "remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));");
+            dc.executeStatement("create table htmlpages_ir(html_page nvarchar(255), local_working_inode nvarchar(36), local_live_inode nvarchar(36), remote_working_inode nvarchar(36), remote_live_inode nvarchar(36),local_identifier nvarchar(36), "
+            		+ "remote_identifier nvarchar(36), endpoint_id nvarchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));");
+            dc.executeStatement("create table fileassets_ir(file_name nvarchar(255), local_working_inode nvarchar(36), local_live_inode nvarchar(36), remote_working_inode nvarchar(36), remote_live_inode nvarchar(36),local_identifier nvarchar(36), "
+            		+ "remote_identifier nvarchar(36), endpoint_id nvarchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));");
 
             //add FKS
             dc.executeStatement("alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);");
