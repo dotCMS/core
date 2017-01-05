@@ -482,7 +482,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return findTopLevelCategoriesByFilter(null, null);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException {
 		filter = SQLUtil.sanitizeParameter(filter);
@@ -497,7 +496,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		if (UtilMethods.isSet(sort)) {
 			String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
 			sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
-			selectQuery += " ORDER BY ?" + sortDirection;
+			if (DbConnectionFactory.isMsSql()) {
+				selectQuery += " ORDER BY category." + sort + sortDirection;
+			} else {
+				selectQuery += " ORDER BY ?" + sortDirection;
+			}
 		} else {
 			selectQuery += " ORDER BY category.sort_order, category.category_name";
 		}
@@ -508,13 +511,15 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				stmt.setString(1, "%" + filter + "%");
 				stmt.setString(2, "%" + filter + "%");
 				stmt.setString(3, "%" + filter + "%");
-			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter)) {
+			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter) && !DbConnectionFactory.isMsSql()) {
 				stmt.setString(1, "category." + sort);
 			} else if (UtilMethods.isSet(filter) && UtilMethods.isSet(sort)) {
 				stmt.setString(1, "%" + filter + "%");
 				stmt.setString(2, "%" + filter + "%");
 				stmt.setString(3, "%" + filter + "%");
-				stmt.setString(4, "category." + sort);
+				if (!DbConnectionFactory.isMsSql()) {
+					stmt.setString(4, "category." + sort);
+				}
 			}
 			ResultSet rs = stmt.executeQuery();
 			while (rs.next()) {
@@ -570,7 +575,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
 		}
 	}
-	@SuppressWarnings("unchecked")
+
 	@Override
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
 		inode = SQLUtil.sanitizeParameter(inode);
@@ -586,7 +591,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		if (UtilMethods.isSet(sort)) {
 			String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
 			sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
-			selectQuery += " ORDER BY ?" + sortDirection;
+			if (DbConnectionFactory.isMsSql()) {
+				selectQuery += " ORDER BY category." + sort + sortDirection;
+			} else {
+				selectQuery += " ORDER BY ?" + sortDirection;
+			}
 		} else {
 			selectQuery += " ORDER BY category.sort_order, category.category_name";
 		}
@@ -598,13 +607,15 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				stmt.setString(2, "%" + filter + "%");
 				stmt.setString(3, "%" + filter + "%");
 				stmt.setString(4, "%" + filter + "%");
-			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter)) {
+			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter) && !DbConnectionFactory.isMsSql()) {
 				stmt.setString(2, "category." + sort);
 			} else if (UtilMethods.isSet(filter) && UtilMethods.isSet(sort)) {
 				stmt.setString(2, "%" + filter + "%");
 				stmt.setString(3, "%" + filter + "%");
 				stmt.setString(4, "%" + filter + "%");
-				stmt.setString(5, "category." + sort);
+				if (!DbConnectionFactory.isMsSql()) {
+					stmt.setString(5, "category." + sort);
+				}
 			}
 			ResultSet rs = stmt.executeQuery();
 			while (rs.next()) {
