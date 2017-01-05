@@ -117,7 +117,7 @@ var project = {
                 patterns: [
                   {
                     match: /<base href=\"\/build\/\">/g,
-                    replacement: '<base href=\"/dotadmin/\">'
+                    replacement: '<base href=\"/dotAdmin/\">'
                   }
                 ]
               }))
@@ -287,7 +287,7 @@ var project = {
     var app = connect();
 
     app.use(function (req, res, next) {
-      if (req.url.startsWith('/build/dotCMS') || req.url.startsWith('/build/public') ||
+      if (req.url.startsWith('/build/c') || req.url.startsWith('/build/public') ||
           req.url.startsWith('/build/fromCore')) {
 
         req.url = '/build/index.html';

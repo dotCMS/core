@@ -46,7 +46,7 @@ angularComponents.forEach( component => {
     mainComponentChildren.push({
         canActivate: [RoutingPrivateAuthService],
         component: component.component,
-        path: `p/${component.id}`
+        path: `a/${component.id}`
     });
 
     fromCoreChildren.push({
@@ -66,7 +66,7 @@ const appRoutes: Routes = [
         canActivate: [RoutingPrivateAuthService],
         children: mainComponentChildren,
         component: MainComponent,
-        path: 'dotCMS',
+        path: 'c',
     },
     {
         canActivate: [RoutingPublicAuthService],

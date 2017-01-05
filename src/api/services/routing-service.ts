@@ -79,7 +79,7 @@ export class RoutingService {
                 for (let k = 0; k < menu.menuItems.length; k++) {
                     let subMenuItem = menu.menuItems[k];
                     if (subMenuItem.angular) {
-                        subMenuItem.url = '/dotCMS' + subMenuItem.url;
+                        subMenuItem.url = '/c/a/' + subMenuItem.url;
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
                     } else {
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
