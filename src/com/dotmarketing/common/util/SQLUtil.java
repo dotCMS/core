@@ -226,7 +226,6 @@ public class SQLUtil {
 
 	public static String sanitizeParameter(String parameter){
 
-
 		if(!UtilMethods.isSet(parameter)){ //check if is not null
 
 			return StringPool.BLANK;
@@ -243,13 +242,12 @@ public class SQLUtil {
 			if(index != -1  &&
 					(
 						(index  == 0 // if the evilWord is at the begin of the parameterLowercase AND
-								|| !Character.isLetterOrDigit(parameterLowercase.charAt(index - 1)) // there is not alphanumeric before parameterLowercase is invalid
+								|| !isValidSQLCharacter(parameterLowercase.charAt(index - 1)) // there is not alphanumeric before parameterLowercase is invalid
 						)  &&
 						(index + evilWord.length() == parameterLowercase.length() // if the evilWord is at the end of the parameterLowercase is invalid
-								|| !Character.isLetterOrDigit(parameterLowercase.charAt(index + evilWord.length()))  // if there is not alphanumeric next is invalid
+								|| !isValidSQLCharacter(parameterLowercase.charAt(index + evilWord.length()))  // if there is not alphanumeric next is invalid
 						)
 					)){
-
 
 					if (enableLog) {
 						Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
@@ -262,5 +260,15 @@ public class SQLUtil {
 		}
 
 		return parameter;
-	}
+	} // sanitizeParameter.
+
+	/**
+	 * Determine if the character is a valid for sql
+	 * @param c char
+	 * @return boolean
+     */
+	private static boolean isValidSQLCharacter (final char c) {
+
+		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
+	} // isValidSQLCharacter.
 }
