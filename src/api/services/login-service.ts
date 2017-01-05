@@ -28,7 +28,7 @@ export class LoginService {
     private loginAsUserList: User[];
     private urls: any;
 
-    constructor(private router: Router, private coreWebService: CoreWebService) {
+    constructor(private router: Router, private coreWebService: CoreWebService, private dotcmsEventsService: DotcmsEventsService) {
 
         this._loginAsUsersList$ = <Subject<User[]>>new Subject();
         this.loginAsUserList = [];
@@ -45,6 +45,13 @@ export class LoginService {
         };
 
         coreWebService.subscribeTo(401).subscribe(() => this.logOutUser().subscribe(() => {}));
+
+        // when the session is expired/destroyed
+        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pluck('data').subscribe( date => {
+
+            // log ("session was destroyed at: " + date + ", doing logout");
+            this.logOutUser();
+        });
     }
 
     get loginAsUsersList$(): Observable<User[]> {
@@ -211,7 +218,14 @@ export class LoginService {
                 loginAsUser: null,
                 user: response.entity
             };
+
             this.setAuth(auth);
+
+            if (response.entity) {
+                // on login, we have to connect to the websocket
+                this.dotcmsEventsService.connectWithSocket();
+            }
+
             return response.entity;
         });
     }
@@ -247,7 +261,12 @@ export class LoginService {
                 loginAsUser: null,
                 user: null
             };
+
             this.setAuth(nullAuth);
+
+            // on logout close the websocket
+            this.dotcmsEventsService.close();
+
             this.router.navigate(['/public/login']);
         });
     }
