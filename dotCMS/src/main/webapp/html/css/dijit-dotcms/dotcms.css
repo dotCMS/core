@@ -4090,13 +4090,6 @@ table.sTypeTable.sTypeItem {
 
 /* To display DotContentletValidationExceptions on content normal save */
 /* http://jira.dotmarketing.net/browse/DOTCMS-2273 */
-#saveContentErrors {
-  width: 300px;
-  overflow: auto;
-  margin-left: 100px;
-  margin-bottom: 10px;
-}
-
 #saveContentMessages {
   background-color: #fff;
   border: 1px solid gray;
@@ -6422,12 +6415,13 @@ a.category_higlighted, a.tag_higlighted {
   border-bottom: solid 1px #ECEDEE;
 }
 
-.content-edit_dialog-error {
+.content-edit__dialog-error {
   background: #ffffff;
   padding: 0px;
   border: 0px;
+  width: 300px;
 }
-.content-edit_dialog-error .dijitDialogTitleBar {
+.content-edit__dialog-error .dijitDialogTitleBar {
   height: 0;
   z-index: 1;
 }
