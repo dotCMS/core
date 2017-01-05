@@ -846,7 +846,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			return contentlet;
 		}
 		// if we don't have the con in this language
-		catch(java.lang.ArrayIndexOutOfBoundsException aibex){
+		catch(ArrayIndexOutOfBoundsException aibex){
 			return null;
 		}
 		catch (Exception e) {
@@ -1018,12 +1018,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (working) {
             condition.append("contentletvi.working_inode=contentlet.inode")
                      .append(" and contentletvi.deleted = ")
-                     .append(com.dotmarketing.db.DbConnectionFactory.getDBFalse());
+                     .append(DbConnectionFactory.getDBFalse());
         }
         else {
             condition.append("contentletvi.live_inode=contentlet.inode")
                      .append(" and contentletvi.deleted = ")
-                     .append(com.dotmarketing.db.DbConnectionFactory.getDBFalse());
+                     .append(DbConnectionFactory.getDBFalse());
         }
 
         if (languageId == 0) {
@@ -1650,8 +1650,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            query = query.replace("structureInode:"+inode, "structureName:" + st.getVelocityVarName());
 
 	            // handle the field translation
-	            List<com.dotmarketing.portlets.structure.model.Field> fields = FieldsCache.getFieldsByStructureVariableName(st.getVelocityVarName());
-	            Map<String, com.dotmarketing.portlets.structure.model.Field> fieldsMap;
+	            List<Field> fields = FieldsCache.getFieldsByStructureVariableName(st.getVelocityVarName());
+	            Map<String, Field> fieldsMap;
 	            try {
 	                fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
 	            } catch (Exception e) {
@@ -1698,8 +1698,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        List<RegExMatch> numberMatches = RegEX.find(query, "(\\w+)\\.(\\w+):([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+$|\\.?[0-9]+$)");
 	        if(numberMatches != null && numberMatches.size() > 0){
 	            for (RegExMatch numberMatch : numberMatches) {
-	                List<com.dotmarketing.portlets.structure.model.Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
-	                for (com.dotmarketing.portlets.structure.model.Field field : fields) {
+	                List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
+	                for (Field field : fields) {
 	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
 	                        if (field.getFieldContentlet().startsWith("float")) {
 	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
@@ -1732,8 +1732,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
 	        if(numberRangeMatches != null && numberRangeMatches.size() > 0){
 	            for (RegExMatch numberMatch : numberRangeMatches) {
-	                List<com.dotmarketing.portlets.structure.model.Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
-	                for (com.dotmarketing.portlets.structure.model.Field field : fields) {
+	                List<Field> fields = FieldsCache.getFieldsByStructureVariableName(numberMatch.getGroups().get(0).getMatch());
+	                for (Field field : fields) {
 	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
 	                        if (field.getFieldContentlet().startsWith("float")) {
 	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":[" + numberMatch.getGroups().get(3).getMatch() + " to " + numberMatch.getGroups().get(4).getMatch() +"]",
@@ -1765,7 +1765,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            return null;
 
 	        List<RegExMatch> matches = RegEX.find(originalQuery,  "structureName:([^\\s)]+)");
-	        List<com.dotmarketing.portlets.structure.model.Field> fields = null;
+	        List<Field> fields = null;
 	        Structure structure = null;
 	        if(matches.size() > 0) {
 	            String structureName = matches.get(0).getGroups().get(0).getMatch();
@@ -1783,7 +1783,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        if(fields == null)
 	            return sortBy;
 
-	        Map<String, com.dotmarketing.portlets.structure.model.Field> fieldsMap;
+	        Map<String, Field> fieldsMap;
 	        try {
 	            fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
 	        } catch (Exception e) {
@@ -1873,7 +1873,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
             //DOTCMS - 4127
-            List<com.dotmarketing.portlets.structure.model.Field> dateFields = new ArrayList<com.dotmarketing.portlets.structure.model.Field>();
+            List<Field> dateFields = new ArrayList<Field>();
             String tempStructureVarName;
             Structure tempStructure;
 
@@ -1885,13 +1885,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     tempStructureVarName = clause.substring(0, clause.indexOf('.'));
                     tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
 
-                    List<com.dotmarketing.portlets.structure.model.Field> tempStructureFields = FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName());
+                    List<Field> tempStructureFields = FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName());
 
                     for (int pos = 0; pos < tempStructureFields.size();) {
 
-                        if (tempStructureFields.get(pos).getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.DATE_TIME.toString()) ||
-                                tempStructureFields.get(pos).getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.DATE.toString()) ||
-                                tempStructureFields.get(pos).getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.TIME.toString())) {
+                        if (tempStructureFields.get(pos).getFieldType().equals(Field.FieldType.DATE_TIME.toString()) ||
+                                tempStructureFields.get(pos).getFieldType().equals(Field.FieldType.DATE.toString()) ||
+                                tempStructureFields.get(pos).getFieldType().equals(Field.FieldType.TIME.toString())) {
                             ++pos;
                         } else {
                             tempStructureFields.remove(pos);
@@ -1905,13 +1905,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             String replace;
             for (String clause: clauses) {
-                for (com.dotmarketing.portlets.structure.model.Field field: dateFields) {
+                for (Field field: dateFields) {
 
                     structureVarName = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode()).getVelocityVarName().toLowerCase();
 
                     if (clause.startsWith(structureVarName + "." + field.getVelocityVarName().toLowerCase() + ":") || clause.startsWith("moddate:")) {
                         replace = new String(clause);
-                        if (field.getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.DATE_TIME.toString()) || clause.startsWith("moddate:")) {
+                        if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) || clause.startsWith("moddate:")) {
                             matches = RegEX.find(replace, "\\[(\\d{1,2}/\\d{1,2}/\\d{4}) to ");
                             for (RegExMatch regExMatch : matches) {
                                 replace = replace.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to ", "["
@@ -2312,19 +2312,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
         StringBuilder whereField = new StringBuilder();
 
         if (field.getFieldContentlet().contains("float")) {
-            if (DbConnectionFactory.isMySql()) {
-                select.append(field.getFieldContentlet()).append(" = ");
+            if (!DbConnectionFactory.isMySql()) {
+                select.append(field.getFieldContentlet());
                 whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                         .append(" != ");
             } else {
-                select.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
-                whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
-                        .append(field.getFieldContentlet()).append("\" != ");
+                select.append("`").append(field.getFieldContentlet()).append("`");
+                whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
+                        .append(field.getFieldContentlet()).append("` != ");
             }
         } else {
-            update.append(field.getFieldContentlet()).append(" = ");
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                     .append(" != ");
+        }
+
+        if (!DbConnectionFactory.isMySql()) {
+            update.append(field.getFieldContentlet()).append(" = ");
+        }else{
+            update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
         }
 
         if (field.getFieldContentlet().contains("bool")) {
