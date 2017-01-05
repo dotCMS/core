@@ -26,7 +26,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.cmis.server.CMISManager;
 import com.dotcms.enterprise.cmis.server.CMISService;
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
@@ -38,7 +38,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-public class CMISBaseTest extends TestBase {
+public class CMISBaseTest extends IntegrationTestBase {
 
 	protected static User user;
 	protected static List<Contentlet> contentlets;

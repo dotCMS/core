@@ -1,6 +1,6 @@
 package com.dotcms.filters.interceptor.jwt;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
  * The goal of this unit test is to try some scenarios for the json web token interceptor.
  * @author jsanca
  */
-public class JsonWebTokenInterceptorTest extends TestBase {
+public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
     /**
      * Test the scenario when the user is already logged in, means does not need any process

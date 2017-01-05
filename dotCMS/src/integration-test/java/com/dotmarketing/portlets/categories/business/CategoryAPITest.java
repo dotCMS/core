@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 
 import org.junit.BeforeClass;
@@ -36,7 +36,7 @@ import com.liferay.portal.model.User;
  * Created by Jonathan Gamba
  * Date: 4/8/13
  */
-public class CategoryAPITest extends TestBase {
+public class CategoryAPITest extends IntegrationTestBase {
 
     private static User user;
     private static Host defaultHost;

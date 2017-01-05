@@ -1,6 +1,6 @@
 package com.dotcms.util;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import org.junit.BeforeClass;
@@ -32,7 +32,7 @@ import static org.junit.Assert.*;
  * @author Jonathan Gamba
  *         Date: 3/10/14
  */
-public class ImportUtilTest extends TestBase {
+public class ImportUtilTest extends IntegrationTestBase {
 
     private static User user;
     private static Host defaultHost;

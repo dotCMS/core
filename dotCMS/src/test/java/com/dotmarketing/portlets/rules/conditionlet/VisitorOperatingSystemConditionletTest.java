@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import eu.bitwalker.useragentutils.OperatingSystem;
@@ -18,7 +18,7 @@ import java.util.*;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 
-public class VisitorOperatingSystemConditionletTest extends TestBase {
+public class VisitorOperatingSystemConditionletTest extends UnitTestBase {
 
     private HttpServletRequest request;
     private HttpServletResponse response;

@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.unittest.TestUtil;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * Created by freddyrodriguez on 10/3/16.
  */
 @RunWith(DataProviderRunner.class)
-public class PagesViewedConditionletTest extends TestBase {
+public class PagesViewedConditionletTest extends UnitTestBase {
 
     private HttpServletRequest request;
     private HttpServletResponse response;

@@ -174,7 +174,9 @@ create table User_ (
 	lastLoginIP varchar(100) null,
 	failedLoginAttempts integer,
 	agreedToTermsOfUse bool,
-	active_ bool
+	active_ bool,
+	delete_in_progress BOOLEAN DEFAULT FALSE,
+	delete_date TIMESTAMP
 );
 
 create table UserTracker (
@@ -2406,14 +2408,16 @@ alter table broken_link add CONSTRAINT fk_brokenl_field
 
 
 -- ****** Content Publishing Framework *******
-CREATE TABLE publishing_queue
-(id bigserial PRIMARY KEY NOT NULL,
-operation int8, asset VARCHAR(2000) NOT NULL,
-language_id  int8 NOT NULL, entered_date TIMESTAMP,
-last_try TIMESTAMP, num_of_tries int8 NOT NULL DEFAULT 0,
-in_error bool DEFAULT 'f', last_results TEXT,
-publish_date TIMESTAMP, server_id VARCHAR(256),
-type VARCHAR(256), bundle_id VARCHAR(256), target text);
+CREATE TABLE publishing_queue (
+    id BIGSERIAL PRIMARY KEY NOT NULL,
+    operation INT8,
+    asset VARCHAR(2000) NOT NULL,
+    language_id INT8 NOT NULL,
+    entered_date TIMESTAMP,
+    publish_date TIMESTAMP,
+    type VARCHAR(256),
+    bundle_id VARCHAR(256)
+);
 
 CREATE TABLE publishing_queue_audit
 (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL,
@@ -2457,19 +2461,6 @@ create table sitesearch_audit (
     urlmaps_count integer not null,
     index_name varchar(100) not null,
     primary key(job_id,fire_date)
-);
-
-drop table publishing_queue;
-
-CREATE TABLE publishing_queue (
-	id bigserial PRIMARY KEY NOT NULL,
-	operation int8,
-	asset VARCHAR(2000) NOT NULL,
-	language_id  int8 NOT NULL,
-	entered_date TIMESTAMP,
-	publish_date TIMESTAMP,
-	type VARCHAR(256),
-	bundle_id VARCHAR(256)
 );
 
 create table publishing_bundle(
@@ -2540,16 +2531,17 @@ create index contentlet_lang on contentlet (language_id);
 
 -- Notifications Table
 CREATE TABLE notification (
-  group_id           VARCHAR(36)  NOT NULL,
-  user_id            VARCHAR(255) NOT NULL,
-  message            TEXT         NOT NULL,
-  notification_type  VARCHAR(100),
-  notification_level VARCHAR(100),
-  time_sent          TIMESTAMP    NOT NULL,
-  was_read           BOOL DEFAULT FALSE,
-  PRIMARY KEY (group_id, user_id)
+    group_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    notification_type VARCHAR(100),
+    notification_level VARCHAR(100),
+    time_sent TIMESTAMP NOT NULL,
+    was_read BOOL
 );
-create index idx_not_read ON notification (was_read);
+ALTER TABLE notification ADD CONSTRAINT PK_notification PRIMARY KEY (group_id, user_id);
+ALTER TABLE notification ALTER was_read SET DEFAULT FALSE;
+CREATE INDEX idx_not_read ON notification (was_read);
 
 -- indices for version_info tables on version_ts
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
@@ -2610,9 +2602,9 @@ CREATE TABLE system_event (
     identifier VARCHAR(36) NOT NULL,
     event_type VARCHAR(50) NOT NULL,
     payload TEXT NOT NULL,
-    created BIGINT NOT NULL,
-    PRIMARY KEY (identifier)
+    created BIGINT NOT NULL
 );
+ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
 
 -- Delete User
@@ -2621,3 +2613,4 @@ ALTER TABLE user_ ADD COLUMN delete_date TIMESTAMP;
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
+

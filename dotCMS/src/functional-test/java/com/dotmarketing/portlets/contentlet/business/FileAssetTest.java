@@ -2,12 +2,13 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.IntegrationTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
@@ -24,7 +25,7 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-public class FileAssetTest extends TestBase {
+public class FileAssetTest extends IntegrationTestBase {
 	
 	Client client;
 	WebTarget webTarget;

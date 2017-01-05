@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
-public class SendRedirectActionletTest extends TestBase {
+public class SendRedirectActionletTest extends UnitTestBase {
 
     private static final String URL_KEY = "URL";
 

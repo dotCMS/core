@@ -1,6 +1,6 @@
 package com.dotmarketing.viewtools.navigation;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by Oscar Arrieta on 5/4/15.
  */
-public class NavToolTest extends TestBase{
+public class NavToolTest extends IntegrationTestBase{
 	
 	@BeforeClass
     public static void prepare() throws Exception {

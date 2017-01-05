@@ -513,9 +513,6 @@ html, body {
   color: #161616;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
-.dijitButton .dijitIcon {
-  display: none;
-}
 .dijitButtonNode {
   border: none;
 }
@@ -2579,7 +2576,6 @@ html, body {
 body {
   outline: none !important;
   color: #555;
-  line-height: 138.5%;
   background-color: #f3f3f3;
 }
 
@@ -2624,7 +2620,10 @@ fieldset {
 }
 
 a {
-  color: #2c548d;
+  color: #0E80CB;
+}
+a:hover {
+  text-decoration: none;
 }
 
 em {
@@ -2773,6 +2772,42 @@ select[multiple]:hover {
   border: solid 1px #CB3927;
 }
 
+.fakeDojoButton {
+  background-color: #fff;
+  border: solid 1px transparent;
+  color: #161616;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  -moz-transition: all 0.1s;
+  -o-transition: all 0.1s;
+  -webkit-transition: all 0.1s;
+  transition: all 0.1s;
+  border-radius: 2px;
+  display: inline-block;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+.fakeDojoButton:hover {
+  background-color: #FAFAFA;
+  border: solid 1px transparent;
+  color: #161616;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+.fakeDojoButton img {
+  vertical-align: middle;
+  margin-top: -2px;
+}
+
+.fakeDojoButtonDanger {
+  background-color: #CB3927;
+  color: #fff;
+}
+.fakeDojoButtonDanger:hover {
+  background-color: #a02d1f;
+  color: #fff;
+}
+
 .dijitDropDownActionButton {
   border: none;
   border-radius: 16px;
@@ -2806,6 +2841,13 @@ select[multiple]:hover {
 }
 .dijitButtonDanger.dijitButtonHover {
   background-color: #a02d1f;
+}
+.dijitButtonAction {
+  background-color: #0E80CB;
+  color: #fff;
+}
+.dijitButtonAction.dijitButtonHover {
+  background-color: #0b629b;
 }
 
 .dotCMSHostFileFilteringSelect .dijitTextBox {
@@ -3482,30 +3524,6 @@ td.dijitMenuArrowCell {
 
 tr.pop_divider {
   border-top: 1px dotted silver;
-}
-
-/* FAKE BUTTON STYLE 2.0 */
-a.fakeDojoButton {
-  background: #FFFFFF url("http://localhost:8080/images/buttonEnabled.png") repeat-x scroll left bottom;
-  border-color: #C0C0C0 #C0C0C0 #9B9B9B;
-  border-style: solid;
-  border-width: 1px;
-  padding: 0.2em 0.5em 0.4em 0.4em;
-  text-decoration: none;
-  color: #555555;
-  line-height: 17px;
-  vertical-align: middle;
-  text-align: left;
-  margin: 0 4px;
-}
-
-a.fakeDojoButton:hover {
-  background: #FFFFFF url("http://localhost:8080/images/buttonHover.png") repeat-x scroll left bottom;
-}
-
-a.fakeDojoButton img {
-  vertical-align: middle;
-  margin-top: -2px;
 }
 
 /* NAV MENU ICONS 2.0 */
@@ -4832,7 +4850,6 @@ div#_dotHelpMenu {
 .userIcon,
 .windowsIcon,
 .workflowIcon,
-.workingIcon,
 .workStreamIcon,
 .wysiwygIcon {
   background: none;
@@ -5429,7 +5446,7 @@ div#_dotHelpMenu {
 }
 
 .workingIcon:before {
-  content: "";
+  content: "";
 }
 
 .workStreamIcon:before {
@@ -5600,6 +5617,10 @@ div#_dotHelpMenu {
   *display: inline;
   height: 1px;
   width: 12px;
+}
+
+.workingIcon {
+  color: #F3762A;
 }
 
 .liveIcon {
@@ -5839,7 +5860,7 @@ Styles for commons fields along the backend
   width: 20px;
 }
 .tagLink:hover {
-  border: #2C548D 1px solid;
+  border: 1px solid #0E80CB;
 }
 
 .tagsWrapper {
@@ -5884,11 +5905,23 @@ Styles for commons fields along the backend
   margin-right: 8px;
   white-space: nowrap;
 }
+#inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox, #inline-form > .radio, .fileSelectorControls > .radio, .inline-form > .radio {
+  margin-right: 16px;
+}
+#inline-form > .checkbox label, .fileSelectorControls > .checkbox label, .inline-form > .checkbox label, #inline-form > .radio label, .fileSelectorControls > .radio label, .inline-form > .radio label {
+  line-height: 1;
+}
 #inline-form .dijit, .fileSelectorControls .dijit, .inline-form .dijit {
   margin-right: 8px;
 }
 #inline-form .dijit:last-child, .fileSelectorControls .dijit:last-child, .inline-form .dijit:last-child {
   margin-right: 0;
+}
+#inline-form .dijitRadio, .fileSelectorControls .dijitRadio, .inline-form .dijitRadio,
+#inline-form .dijitCheckBox,
+.fileSelectorControls .dijitCheckBox,
+.inline-form .dijitCheckBox {
+  margin-right: 4px;
 }
 
 .listingTable .radio, .listingTable .checkbox {
@@ -5988,9 +6021,14 @@ dd .buttonCaption {
   align-self: center;
 }
 #form-horizontal-flexbox dt, .form-horizontal dt {
+  line-height: 1;
   padding: 8px 16px 0;
   text-align: right;
   width: 150px;
+}
+#form-horizontal-flexbox dt.checkbox, .form-horizontal dt.checkbox, #form-horizontal-flexbox dt.radio, .form-horizontal dt.radio {
+  justify-content: flex-end;
+  padding-top: 0;
 }
 
 #form-horizontal-table {
@@ -6020,42 +6058,319 @@ dd .buttonCaption {
 .buttonRow {
   text-align: center;
 }
-.buttonRow .dijitButton {
+.buttonRow .dijitButton,
+.buttonRow .fakeDojoButton {
   margin: 0 4px;
 }
 
-.advanced-search-button {
-  display: block;
-  background: #ECEDEE;
-  padding: 8px;
-  text-align: center;
-  text-decoration: none;
-  margin: 16px -16px 0;
+.calendar-events .portlet-sidebar .listingTable {
+  background-color: #fff;
 }
-
-.contentlet-results {
-  color: #8A8A8A;
-}
-
-.contentlet-selection {
+.calendar-events .portlet-toolbar__actions-primary,
+.calendar-events .portlet-toolbar__actions-secondary {
   flex: 1;
+}
+.calendar-events .portlet-toolbar__info {
+  flex: 2;
+  font-size: 18px;
+  justify-content: center;
+}
+
+.calendar-events__list {
+  display: flex;
+}
+
+.calendar-events__list-items,
+.calendar-events__list-ongoing {
+  border: 1px solid #ECEDEE;
+}
+
+.calendar-events__list-items {
+  flex: 3;
+  margin: 0 16px;
+}
+
+.calendar-events__list-ongoing {
+  flex: 1;
+  margin-right: 16px;
+}
+
+.calendar-events__recurence-box {
+  background-color: #FAFAFA;
+  border: solid 1px #ECEDEE;
+  border-radius: 2px;
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px;
+}
+
+/* WEEK VIEW STYLES */
+.weeklyCalendarBody td {
+  min-height: 400px;
+  height: auto;
+  height: 400px;
+  vertical-align: top;
+  padding: 0px;
+  white-space: normal;
+}
+
+.weeklyViewControls {
+  text-align: left;
+}
+
+/* DAY VIEW STYLES */
+#dailyEvents h3, #ongoingEvents h3 {
+  background: #FAFAFA;
+  padding: 8px;
+  border-bottom: 1px solid #ECEDEE;
+  margin: 0;
+}
+#dailyEvents ul, #ongoingEvents ul {
+  margin: 0;
+  padding: 0;
+}
+#dailyEvents ul:last-child li:last-child, #ongoingEvents ul:last-child li:last-child {
+  border-bottom: none;
+}
+#dailyEvents li, #ongoingEvents li {
+  padding: 8px;
+  margin: 0;
+  border-bottom: 1px solid #ECEDEE;
+}
+#dailyEvents li [class$="Icon"],
+#dailyEvents li [class*="Icon"], #ongoingEvents li [class$="Icon"],
+#ongoingEvents li [class*="Icon"] {
+  margin-right: 4px;
+}
+
+/* MONTH VIEW STYLES */
+.calendarBody, .weeklyCalendarBody td {
+  min-height: 100px;
+  height: auto;
+  height: 100px;
+  vertical-align: top;
+  padding: 0;
+  border: 1px solid #ECEDEE;
+  border-collapse: collapse;
+}
+
+.emptyDay {
+  background-color: #FAFAFA;
+}
+
+.selectedDay {
+  background-color: #feffc9;
+}
+
+.weekendDay {
+  background-color: #F2F2F2;
+}
+
+.dayNumberSection {
+  font-size: 11px;
+}
+
+.dayNumber {
+  text-align: right;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 3px 3px 0 0;
+}
+.dayNumber a {
+  text-decoration: none;
+}
+
+.monthDay img {
+  vertical-align: middle;
+}
+.monthDay a {
+  text-decoration: none;
+  color: black;
+}
+.monthDay a:hover {
+  text-decoration: underline;
+}
+
+.allDayEvents {
+  background-color: #CDEAFD;
+  margin-bottom: 3px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+.dayEventsSection span {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 77%;
+}
+
+/* NAV MENU STYLES */
+.navDay a,
+.navLastDay a,
+.navSelectedDay a {
+  color: black;
+  text-decoration: none;
+}
+
+.navDay,
+.navLastDay {
+  text-align: center;
+  height: 19px;
+  width: 22px;
+}
+
+.navSelectedDay {
+  background-color: rgba(14, 128, 203, 0.2);
+}
+
+.previousPageLink {
+  float: left;
+}
+
+.nextPageLink {
+  float: right;
+}
+
+.ongoingEventsWrapper {
+  width: 250px;
+  float: left;
+  text-align: left;
+}
+
+.eventDetail {
+  width: 500px;
+}
+.eventDetail .closeButton {
+  float: right;
+  margin-bottom: -10px;
+}
+.eventDetail img {
+  border: 0;
+}
+
+.viewDetailLink {
+  font-weight: bolder;
+}
+
+#eventDetailTitle {
+  font-weight: bold;
+  font-size: 1.2em;
+  padding-bottom: 5px;
+  width: 459;
+  overflow: hidden;
+}
+
+#eventDetailDate, #eventDetailTags, #eventDetailCategories {
+  padding-left: 10px;
+}
+
+.calLabel {
+  display: inline-block;
+  width: 90px;
+  font-weight: bold;
+}
+
+.removeFilter {
+  display: block;
+  background: transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
+  height: 16px;
+  width: 20px;
+  cursor: pointer;
+}
+
+.closeFilter {
+  display: block;
+  background: transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
+  height: 16px;
+  width: 20px;
+  cursor: pointer;
+  float: right;
+}
+
+.removeFilter {
+  float: left;
+  margin-top: 3px;
+}
+
+.filtersBox {
+  position: absolute;
+  z-index: 700;
+  background: white;
+  width: 400px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border: 1px solid #ECEDEE;
+}
+
+#categoriesFilterBox, #tagsFilterBox {
+  padding: 10px 5px;
+}
+
+.calendarFiltersBox {
+  margin: 20px 5px 0 15px;
+  line-height: 20px;
+  text-align: left;
+}
+
+.tagFilterLink, .categoryFilterLink {
+  padding-top: 5px;
+}
+
+.tagFilterLink a, .categoryFilterLink a {
+  font-weight: normal;
+  color: black;
+}
+.tagFilterLink a:hover, .categoryFilterLink a:hover {
+  font-weight: normal;
+  color: black;
+}
+
+.tagFilterLink a:hover, .categoryFilterLink a:hover {
+  text-decoration: underline;
+}
+
+.statusLegend {
+  text-align: left;
+  padding-left: 23px;
+  padding-top: 15px;
+  vertical-align: middle;
+}
+.statusLegend img {
+  vertical-align: middle;
+}
+
+.calendarActions {
+  text-align: right;
+  padding-right: 15px;
+  padding-top: 15px;
+}
+
+#addEvent {
+  float: left;
+  padding-left: 50px;
+}
+
+#navMonthYearName {
+  background-color: #0E80CB;
+  color: #fff;
+  cursor: pointer;
   text-align: center;
 }
 
-.contentlet-menu-actions {
-  width: 200px;
+.whenListView, .ratingListView, .tagsListView {
+  padding-left: 21px;
 }
 
-.edit-contentlet-portlet {
-  height: 100%;
+a.category_higlighted, a.tag_higlighted {
+  font-weight: bolder;
 }
 
-.content-edit-main {
+.content-edit__main {
   margin: 16px 220px 0 0;
   width: auto;
 }
 
-.content-edit-sidebar {
+.content-edit__sidebar {
   background-color: #FAFAFA;
   border-left: solid 1px #ECEDEE;
   height: 100%;
@@ -6110,6 +6425,32 @@ dd .buttonCaption {
   border-bottom: solid 1px #ECEDEE;
 }
 
+.advanced-search-button {
+  display: block;
+  background: #ECEDEE;
+  padding: 8px;
+  text-align: center;
+  text-decoration: none;
+  margin: 16px -16px 0;
+}
+
+.contentlet-results {
+  color: #8A8A8A;
+}
+
+.contentlet-selection {
+  flex: 1;
+  text-align: center;
+}
+
+.contentlet-menu-actions {
+  width: 200px;
+}
+
+.edit-contentlet-portlet {
+  height: 100%;
+}
+
 .content-type__edit-field-form {
   width: 550px;
 }
@@ -6139,6 +6480,58 @@ dd .buttonCaption {
 }
 .content-type__fields-list-row:hover {
   background-color: rgba(14, 128, 203, 0.1);
+}
+
+.view-roles,
+.view-roles .portlet-sidebar {
+  height: 100%;
+}
+
+.view-roles .dijitTabPaneWrapper .dijitContentPane {
+  box-sizing: content-box;
+}
+.view-roles .portlet-main {
+  height: 100%;
+  width: 100%;
+}
+
+.view-roles__filter {
+  margin-bottom: 16px;
+}
+
+.view-roles__heading {
+  background-color: #FAFAFA;
+  border-radius: 2px;
+  border: solid 1px #ECEDEE;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  min-height: 50px;
+  padding: 8px;
+}
+
+.view-roles__tree {
+  height: 100%;
+}
+
+.view-roles__tabs,
+.view-roles__tabs-container {
+  height: 100%;
+}
+
+.view-roles__user-filter {
+  margin-bottom: 16px;
+  width: 300px;
+}
+
+.view-roles__user-grid {
+  margin-bottom: 8px;
+}
+
+.nameText {
+  align-self: center;
+  font-size: 18px;
+  font-weight: normal;
 }
 
 .view-users .dijitDropDownActionButton {
@@ -6267,56 +6660,15 @@ dd .buttonCaption {
   padding-bottom: 8px;
 }
 
-.view-roles,
-.view-roles .portlet-sidebar {
-  height: 100%;
+.view-workflow .dijitDropDownActionButton,
+.view-workflow .view-workflow__add-comment {
+  float: right;
 }
 
-.view-roles .dijitTabPaneWrapper .dijitContentPane {
-  box-sizing: content-box;
-}
-.view-roles .portlet-main {
-  height: 100%;
-  width: 100%;
-}
-
-.view-roles__filter {
-  margin-bottom: 16px;
-}
-
-.view-roles__heading {
-  background-color: #FAFAFA;
-  border-radius: 2px;
-  border: solid 1px #ECEDEE;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 32px;
-  min-height: 50px;
-  padding: 8px;
-}
-
-.view-roles__tree {
-  height: 100%;
-}
-
-.view-roles__tabs,
-.view-roles__tabs-container {
-  height: 100%;
-}
-
-.view-roles__user-filter {
-  margin-bottom: 16px;
-  width: 300px;
-}
-
-.view-roles__user-grid {
-  margin-bottom: 8px;
-}
-
-.nameText {
-  align-self: center;
-  font-size: 18px;
-  font-weight: normal;
+.view-categories .dijitDropDownActionButton {
+  position: absolute;
+  right: 30px;
+  z-index: 1;
 }
 
 .contentIdentifier {
@@ -6898,260 +7250,6 @@ Resize Handle
 
 #search_form, #borderContainer {
   height: 100%;
-}
-
-/* The main calendar widget.  DIV containing a table. */
-div.calendar {
-  position: relative;
-}
-
-.calendar, .calendar table {
-  border: 1px solid #556;
-  color: #000;
-  cursor: default;
-  background: #eef;
-}
-
-/* Header part -- contains navigation buttons and day names. */
-.calendar .button {
-  /* "<<", "<", ">", ">>" buttons have this class */
-  text-align: center;
-  /* They are the navigation buttons */
-  padding: 2px;
-  /* Make the buttons seem like they're pressing */
-}
-
-.calendar .nav {
-  background: #778 url(menuarrow.gif) no-repeat 100% 100%;
-}
-
-.calendar thead .title {
-  /* This holds the current "month, year" */
-  font-weight: bold;
-  /* Pressing it will take you to the current date */
-  text-align: center;
-  background: #fff;
-  color: #000;
-  padding: 2px;
-}
-
-.calendar thead .headrow {
-  /* Row <TR> containing navigation buttons */
-  background: #778;
-  color: #fff;
-}
-
-.calendar thead .daynames {
-  /* Row <TR> containing the day names */
-  background: #bdf;
-}
-
-.calendar thead .name {
-  /* Cells <TD> containing the day names */
-  border-bottom: 1px solid #556;
-  padding: 2px;
-  text-align: center;
-  color: #000;
-}
-
-.calendar thead .weekend {
-  /* How a weekend day name shows in header */
-  color: #a66;
-}
-
-.calendar thead .hilite {
-  /* How do the buttons in header appear when hover */
-  background-color: #aaf;
-  color: #000;
-  border: 1px solid #04f;
-  padding: 1px;
-}
-
-.calendar thead .active {
-  /* Active (pressed) buttons in header */
-  background-color: #77c;
-  padding: 2px 0px 0px 2px;
-}
-
-/* The body part -- contains all the days in month. */
-.calendar tbody .day {
-  /* Cells <TD> containing month days dates */
-  width: 2em;
-  color: #456;
-  text-align: right;
-  padding: 2px 4px 2px 2px;
-}
-
-.calendar tbody .day.othermonth {
-  font-size: 80%;
-  color: #bbb;
-}
-
-.calendar tbody .day.othermonth.oweekend {
-  color: #fbb;
-}
-
-.calendar table .wn {
-  padding: 2px 3px 2px 2px;
-  border-right: 1px solid #000;
-  background: #bdf;
-}
-
-.calendar tbody .rowhilite td {
-  background: #def;
-}
-
-.calendar tbody .rowhilite td.wn {
-  background: #eef;
-}
-
-.calendar tbody td.hilite {
-  /* Hovered cells <TD> */
-  background: #def;
-  padding: 1px 3px 1px 1px;
-  border: 1px solid #bbb;
-}
-
-.calendar tbody td.active {
-  /* Active (pressed) cells <TD> */
-  background: #cde;
-  padding: 2px 2px 0px 2px;
-}
-
-.calendar tbody td.selected {
-  /* Cell showing today date */
-  font-weight: bold;
-  border: 1px solid #000;
-  padding: 1px 3px 1px 1px;
-  background: #fff;
-  color: #000;
-}
-
-.calendar tbody td.weekend {
-  /* Cells showing weekend days */
-  color: #a66;
-}
-
-.calendar tbody td.today {
-  /* Cell showing selected date */
-  font-weight: bold;
-  color: #00f;
-}
-
-.calendar tbody .disabled {
-  color: #999;
-}
-
-.calendar tbody .emptycell {
-  /* Empty cells (the best is to hide them) */
-  visibility: hidden;
-}
-
-.calendar tbody .emptyrow {
-  /* Empty row (some months need less than 6 rows) */
-  display: none;
-}
-
-/* The footer part -- status bar and "Close" button */
-.calendar tfoot .footrow {
-  /* The <TR> in footer (only one right now) */
-  text-align: center;
-  background: #556;
-  color: #fff;
-}
-
-.calendar tfoot .ttip {
-  /* Tooltip (status bar) cell <TD> */
-  background: #fff;
-  color: #445;
-  border-top: 1px solid #556;
-  padding: 1px;
-}
-
-.calendar tfoot .hilite {
-  /* Hover style for buttons in footer */
-  background: #aaf;
-  border: 1px solid #04f;
-  color: #000;
-  padding: 1px;
-}
-
-.calendar tfoot .active {
-  /* Active (pressed) style for buttons in footer */
-  background: #77c;
-  padding: 2px 0px 0px 2px;
-}
-
-/* Combo boxes (menus that display months/years for direct selection) */
-.calendar .combo {
-  position: absolute;
-  display: none;
-  top: 0px;
-  left: 0px;
-  width: 4em;
-  cursor: default;
-  border: 1px solid #655;
-  background: #def;
-  color: #000;
-  font-size: 90%;
-}
-
-.calendar .combo .label,
-.calendar .combo .label-IEfix {
-  text-align: center;
-  padding: 1px;
-}
-
-.calendar .combo .label-IEfix {
-  width: 4em;
-}
-
-.calendar .combo .hilite {
-  background: #acf;
-}
-
-.calendar .combo .active {
-  border-top: 1px solid #46a;
-  border-bottom: 1px solid #46a;
-  background: #eef;
-  font-weight: bold;
-}
-
-.calendar td.time {
-  border-top: 1px solid #000;
-  padding: 1px 0px;
-  text-align: center;
-  background-color: #f4f0e8;
-}
-
-.calendar td.time .hour,
-.calendar td.time .minute,
-.calendar td.time .ampm {
-  padding: 0px 3px 0px 4px;
-  border: 1px solid #889;
-  font-weight: bold;
-  background-color: #fff;
-}
-
-.calendar td.time .ampm {
-  text-align: center;
-}
-
-.calendar td.time .colon {
-  padding: 0px 2px 0px 3px;
-  font-weight: bold;
-}
-
-.calendar td.time span.hilite {
-  border-color: #000;
-  background-color: #667;
-  color: #fff;
-}
-
-.calendar td.time span.active {
-  border-color: #f00;
-  background-color: #000;
-  color: #0f0;
 }
 
 #cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions {

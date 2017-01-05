@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
@@ -17,7 +18,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.TestBase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -35,7 +35,7 @@ import com.liferay.portal.model.User;
 
 import static org.junit.Assert.*;
 
-public class RulesAPIFTest extends TestBase {
+public class RulesAPIFTest extends IntegrationTestBase {
 
 	private HttpServletRequest request;
     private String ruleId;

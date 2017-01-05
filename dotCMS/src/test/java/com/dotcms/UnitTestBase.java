@@ -12,7 +12,7 @@ import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
-public abstract class TestBase extends BaseMessageResources {
+public abstract class UnitTestBase extends BaseMessageResources {
 
 	protected static ContentTypeApi contentTypeAPI = mock(ContentTypeApi.class);
 

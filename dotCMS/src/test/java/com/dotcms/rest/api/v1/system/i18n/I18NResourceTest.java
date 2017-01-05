@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.i18n;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.json.JSONObject;
 import com.dotcms.rest.exception.InternalServerException;
@@ -18,7 +18,7 @@ import java.util.TreeMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class I18NResourceTest extends TestBase {
+public class I18NResourceTest extends UnitTestBase {
 
     @Before
     public void setUp() throws Exception {

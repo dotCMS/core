@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
-public class RuleTest extends TestBase {
+public class RuleTest extends UnitTestBase {
 
     @DataProvider
     public static Object[][] cases() {

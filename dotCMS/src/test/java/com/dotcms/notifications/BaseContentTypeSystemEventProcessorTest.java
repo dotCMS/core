@@ -1,7 +1,7 @@
 package com.dotcms.notifications;
 
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BaseContentTypeSystemEventProcessorTest extends TestBase {
+public class BaseContentTypeSystemEventProcessorTest extends UnitTestBase {
 
     @Test
     public void testProcess(){

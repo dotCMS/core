@@ -333,8 +333,11 @@
             name="<%=field.getFieldContentlet()%>"
             value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
 
-        <%if (field.getFieldType().equals(Field.FieldType.DATE.toString())
-                    || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+        <%if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+
+            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+                <div class="inline-form">
+            <% }%>
 
              <input type="text"
                 value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
@@ -346,8 +349,7 @@
 
         <% }
 
-        if (field.getFieldType().equals(Field.FieldType.TIME.toString())
-            || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+        if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 
             String hour=null;
             String min=null;
@@ -363,6 +365,10 @@
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.TimeTextBox" style="width: 120px;"
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
+
+            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+                </div>
+            <% }%>
         <% }
 
             if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -371,10 +377,16 @@
 	       		    String expireDateVar = contentletForm.getStructure().getExpireDateVar();
 	                if (field.getVelocityVarName().equals(expireDateVar)) {
 	                	 if (UtilMethods.isSet( value )) {%>
-	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-	                 <%} else {%>
-	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-	                 <%}%>
+                            <div class="checkbox">
+                                <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire">
+                                <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+                            </div>
+	                    <%} else {%>
+                            <div class="checkbox">
+                                <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire">
+                                <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+                            </div>
+	                    <%}%>
                     <script type="text/javascript">
                     function toggleExpire(velocityVarName) {
                         var never = dijit.byId("fieldNeverExpire").getValue();

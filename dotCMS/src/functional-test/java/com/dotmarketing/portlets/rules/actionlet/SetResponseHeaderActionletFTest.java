@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNull;
  * @author Geoff M. Granum
  */
 
-public class SetResponseHeaderActionletFTest extends TestBase {
+public class SetResponseHeaderActionletFTest extends IntegrationTestBase {
 
     private final Random random = new Random();
     HttpServletRequest request = ServletTestRunner.localRequest.get();

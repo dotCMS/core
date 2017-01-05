@@ -35,262 +35,256 @@
 	<div class="fieldWrapper">
 		<div class="fieldName"><%= LanguageUtil.get(pageContext, "Repeats") %>:</div>
 		<div class="fieldValue">
-			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursNever" value="never" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("never")) ? "checked" : "" %> /><label for="recursNever"><%= LanguageUtil.get(pageContext, "never") %></label>&nbsp;&nbsp;
-			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursDaily" value="daily" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("daily")) ? "checked" : "" %> /><label for="recursDaily"><%= LanguageUtil.get(pageContext, "daily") %></label>&nbsp;
-			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursWeekly" value="weekly" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("weekly")) ? "checked" : "" %> /><label for="recursWeekly"><%= LanguageUtil.get(pageContext, "weekly") %></label>&nbsp;
-			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursMonthly" value="monthly" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("monthly")) ? "checked" : "" %> /><label for="recursMonthly"><%= LanguageUtil.get(pageContext, "monthly") %></label>&nbsp;
-			<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursAnnually" value="annually" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("annually")) ? "checked" : "" %> /><label for="recursAnnually"><%= LanguageUtil.get(pageContext, "annually") %></label>&nbsp;
-			<br/>
-			<div id="recurence" class="recurenceWrapper roundBox" style="display: none;width:600px;padding:10px">
+			<div class="inline-form">
+				<div class="radio">
+					<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursNever" value="never" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("never")) ? "checked" : "" %> />
+					<label for="recursNever"><%= LanguageUtil.get(pageContext, "never") %></label>
+				</div>
+				<div class="radio">
+					<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursDaily" value="daily" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("daily")) ? "checked" : "" %> />
+					<label for="recursDaily"><%= LanguageUtil.get(pageContext, "daily") %></label>
+				</div>
+				<div class="radio">
+					<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursWeekly" value="weekly" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("weekly")) ? "checked" : "" %> />
+					<label for="recursWeekly"><%= LanguageUtil.get(pageContext, "weekly") %></label>
+				</div>
+				<div class="radio">
+					<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursMonthly" value="monthly" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("monthly")) ? "checked" : "" %> />
+					<label for="recursMonthly"><%= LanguageUtil.get(pageContext, "monthly") %></label>
+				</div>
+				<div class="radio">
+					<input dojoType="dijit.form.RadioButton" type="radio" onclick="recurrenceHasChanged()" name="recurrenceOccurs" id="recursAnnually" value="annually" <%= (UtilMethods.isSet(contentletForm.getRecurrenceOccurs()) && contentletForm.getRecurrenceOccurs().equals("annually")) ? "checked" : "" %> />
+					<label for="recursAnnually"><%= LanguageUtil.get(pageContext, "annually") %></label>
+				</div>
+			</div>
+
+			<div id="recurence" class="calendar-events__recurence-box" style="display: none;">
 				<html:hidden property="recurrenceInterval" styleId="recurrenceInterval" />
 
-
-
-
-
-
 				<%--       DAILY RECURRANCE        --%>
-				<div id="dailyRecurrence" class="eventRecurrence">
-					<%= LanguageUtil.get(pageContext, "Every") %>:
-						<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalDaily" id="recurrenceIntervalDaily" onchange="setRecurrenceInterval('recurrenceIntervalDaily');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
-						<%= LanguageUtil.get(pageContext, "day-s-") %>&nbsp;
+				<div id="dailyRecurrence" class="form-horizontal">
+					<dl>
+						<dt>
+							<label for="recurrenceIntervalDaily">
+								<%= LanguageUtil.get(pageContext, "Every") %>:
+							</label>
+						</dt>
+						<dd class="inline-form">
+							<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalDaily" id="recurrenceIntervalDaily" onchange="setRecurrenceInterval('recurrenceIntervalDaily');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
+							<label><%= LanguageUtil.get(pageContext, "day-s-") %></label>
+						</dd>
+					</dl>
 				</div>
-
-
-
-
-
-
 
 				<%--       WEEKLY RECURRANCE        --%>
-				<div id="weeklyRecurrence"  style="border:0px solid red;padding:3px;white-space:nowrap">
-					<%= LanguageUtil.get(pageContext, "Every") %>:
-					<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalWeekly" id="recurrenceIntervalWeekly" onchange="setRecurrenceInterval('recurrenceIntervalWeekly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
-					<%= LanguageUtil.get(pageContext, "week-s-on") %>&nbsp;: &nbsp;
-
-
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Sunday" value="<%= String.valueOf(Calendar.SUNDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.SUNDAY)))) ? "checked" : "" %> />
-					<label for="Sunday"><%= LanguageUtil.get(pageContext, "Sunday").charAt(0) %></label>
-					&nbsp;
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Monday" value="<%= String.valueOf(Calendar.MONDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.MONDAY)))) ? "checked" : "" %> />
-					<label for="Monday"><%= LanguageUtil.get(pageContext, "Monday").charAt(0) %></label>
-					&nbsp;
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Tuesday" value="<%= String.valueOf(Calendar.TUESDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.TUESDAY)))) ? "checked" : "" %> />
-					<label for="Tuesday"><%= LanguageUtil.get(pageContext, "Tuesday").charAt(0) %></label>
-					&nbsp;
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Wednesday" value="<%= String.valueOf(Calendar.WEDNESDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.WEDNESDAY)))) ? "checked" : "" %> />
-					<label for="Wednesday"><%= LanguageUtil.get(pageContext, "Wednesday").charAt(0) %></label>
-					&nbsp;
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Thursday" value="<%= String.valueOf(Calendar.THURSDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.THURSDAY)))) ? "checked" : "" %> />
-					<label for="Thursday"><%= LanguageUtil.get(pageContext, "Thursday").charAt(0) %></label>
-					&nbsp;
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Friday" value="<%= String.valueOf(Calendar.FRIDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.FRIDAY)))) ? "checked" : "" %> />
-					<label for="Friday"><%= LanguageUtil.get(pageContext, "Friday").charAt(0) %></label>
-					&nbsp;
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Saturday" value="<%= String.valueOf(Calendar.SATURDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.SATURDAY)))) ? "checked" : "" %> />
-					<label for="Saturday"><%= LanguageUtil.get(pageContext, "Saturday").charAt(0) %></label>
-
-					<div style="clear: both;"></div>
+				<div id="weeklyRecurrence" class="form-horizontal">
+					<dl>
+						<dt>
+							<label for="recurrenceIntervalWeekly"><%= LanguageUtil.get(pageContext, "Every") %>:</label>
+						</dt>
+						<dd class="inline-form">
+							<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalWeekly" id="recurrenceIntervalWeekly" onchange="setRecurrenceInterval('recurrenceIntervalWeekly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
+							<label><%= LanguageUtil.get(pageContext, "week-s-on") %>:</label>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Sunday" value="<%= String.valueOf(Calendar.SUNDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.SUNDAY)))) ? "checked" : "" %> />
+								<label for="Sunday"><%= LanguageUtil.get(pageContext, "Sunday").charAt(0) %></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Monday" value="<%= String.valueOf(Calendar.MONDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.MONDAY)))) ? "checked" : "" %> />
+								<label for="Monday"><%= LanguageUtil.get(pageContext, "Monday").charAt(0) %></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Tuesday" value="<%= String.valueOf(Calendar.TUESDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.TUESDAY)))) ? "checked" : "" %> />
+								<label for="Tuesday"><%= LanguageUtil.get(pageContext, "Tuesday").charAt(0) %></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Wednesday" value="<%= String.valueOf(Calendar.WEDNESDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.WEDNESDAY)))) ? "checked" : "" %> />
+								<label for="Wednesday"><%= LanguageUtil.get(pageContext, "Wednesday").charAt(0) %></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Thursday" value="<%= String.valueOf(Calendar.THURSDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.THURSDAY)))) ? "checked" : "" %> />
+								<label for="Thursday"><%= LanguageUtil.get(pageContext, "Thursday").charAt(0) %></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Friday" value="<%= String.valueOf(Calendar.FRIDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.FRIDAY)))) ? "checked" : "" %> />
+								<label for="Friday"><%= LanguageUtil.get(pageContext, "Friday").charAt(0) %></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" dojoType="dijit.form.CheckBox" name="recurrenceDaysOfWeek" id="Saturday" value="<%= String.valueOf(Calendar.SATURDAY) %>" <%= (UtilMethods.isSet(contentletForm.getRecurrenceDaysOfWeek()) && (-1 < java.util.Arrays.binarySearch(contentletForm.getRecurrenceDaysOfWeek(), String.valueOf(Calendar.SATURDAY)))) ? "checked" : "" %> />
+								<label for="Saturday"><%= LanguageUtil.get(pageContext, "Saturday").charAt(0) %></label>
+							</div>
+						</dd>
+					</dl>
 				</div>
-
-
-
-
-
 
 				<%--       MONTHLY RECURRANCE        --%>
-				<div id="monthlyRecurrence">
-					<style>
-						#monthRecurrTable td{
-							padding:3px;
-							font-size:100%;
-						}
-						#yearRecurrTable td{
-							padding:3px;
-							font-size:100%;
-						}
-					</style>
-					<table id="monthRecurrTable">
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "Every") %>:</td>
-							<td>
-								<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalMonthly" id="recurrenceIntervalMonthly" onchange="setRecurrenceInterval('recurrenceIntervalMonthly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" /> <%= LanguageUtil.get(pageContext, "month-s-") %>
-							</td>
-						</tr>
-						<tr>
-						    <td>
-						        <input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('monthly', false)" name="isSpecificDateMonth" id="noSpecificDateMonth" value="false" <%= (!contentletForm.isSpecificDate()) ? "checked" : "" %> />
-						        <label for="noSpecificDateMonth"><%= LanguageUtil.get(pageContext, "On-The") %>:</label>
-						    </td>
-
-							<td>
-							    <select id="recurrenceWeekOfMonthM" name="recurrenceWeekOfMonthM" dojoType="dijit.form.FilteringSelect" style="width: 90px;" onchange="setRecurrenceWeekOfMonth('month');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-								  <option value="1" <%=contentletForm.getRecurrenceWeekOfMonth()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "1st") %></option>
-							      <option value="2" <%=contentletForm.getRecurrenceWeekOfMonth()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "2nd") %></option>
-							      <option value="3" <%=contentletForm.getRecurrenceWeekOfMonth()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "3rd") %></option>
-								  <option value="4" <%=contentletForm.getRecurrenceWeekOfMonth()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "4th") %></option>
-								  <option value="5" <%=contentletForm.getRecurrenceWeekOfMonth()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Last") %></option>
-								</select>
-								&nbsp;
-								<select id="recurrenceDayOfWeekM" name="recurrenceDayOfWeekM" dojoType="dijit.form.FilteringSelect" style="width: 125px;" onchange="setRecurrenceDayOfWeek('month');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-								  <option value="1" <%=contentletForm.getRecurrenceDayOfWeek()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Sunday") %></option>
-								  <option value="2" <%=contentletForm.getRecurrenceDayOfWeek()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Monday") %></option>
-								  <option value="3" <%=contentletForm.getRecurrenceDayOfWeek()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Tuesday") %></option>
-								  <option value="4" <%=contentletForm.getRecurrenceDayOfWeek()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Wednesday") %></option>
-								  <option value="5" <%=contentletForm.getRecurrenceDayOfWeek()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Thursday") %></option>
-								  <option value="6" <%=contentletForm.getRecurrenceDayOfWeek()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Friday") %></option>
-								  <option value="7" <%=contentletForm.getRecurrenceDayOfWeek()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Saturday") %></option>
-								</select>
-
-
-								<%= LanguageUtil.get(pageContext, "of-the-month") %>
-							</td>
-						</tr>
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "or") %></td>
-							<td>
-								&nbsp;
-							</td>
-						</tr>
-						<tr>
-							<td>
-							 <input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('monthly', true)" name="isSpecificDateMonth" id="specificDateMonth" value="true" <%= (contentletForm.isSpecificDate()) ? "checked" : "" %> />
-						     <label for="specificDateMonth"><%= LanguageUtil.get(pageContext, "Specific-Day") %>:</label>
-							</td>
-							<td>
-						        <input type="text" dojoType="dijit.form.TextBox" name="recurrenceDayOfMonth"  id="recurrenceDayOfMonthM" style="width: 30px;"
-						           value="<%= UtilMethods.isSet((String)contentletForm.getRecurrenceDayOfMonth()) ? (String)contentletForm.getRecurrenceDayOfMonth() : "" %>"
-						           <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>
-						           />
-							</td>
-						</tr>
-					</table>
-
-
+				<div id="monthlyRecurrence" class="form-horizontal">
+					<dl>
+						<dt><%= LanguageUtil.get(pageContext, "Every") %>:</dt>
+						<dd class="inline-form">
+							<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalMonthly" id="recurrenceIntervalMonthly" onchange="setRecurrenceInterval('recurrenceIntervalMonthly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
+							<label><%= LanguageUtil.get(pageContext, "month-s-") %></label>
+						</dd>
+					</dl>
+					<dl>
+						<dt class="radio">
+							<input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('monthly', false)" name="isSpecificDateMonth" id="noSpecificDateMonth" value="false" <%= (!contentletForm.isSpecificDate()) ? "checked" : "" %> />
+							<label for="noSpecificDateMonth"><%= LanguageUtil.get(pageContext, "On-The") %>:</label>
+						</dt>
+						<dd class="inline-form">
+							<select id="recurrenceWeekOfMonthM" name="recurrenceWeekOfMonthM" dojoType="dijit.form.FilteringSelect" style="width: 90px;" onchange="setRecurrenceWeekOfMonth('month');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+							  <option value="1" <%=contentletForm.getRecurrenceWeekOfMonth()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "1st") %></option>
+							  <option value="2" <%=contentletForm.getRecurrenceWeekOfMonth()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "2nd") %></option>
+							  <option value="3" <%=contentletForm.getRecurrenceWeekOfMonth()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "3rd") %></option>
+							  <option value="4" <%=contentletForm.getRecurrenceWeekOfMonth()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "4th") %></option>
+							  <option value="5" <%=contentletForm.getRecurrenceWeekOfMonth()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Last") %></option>
+							</select>
+							<select id="recurrenceDayOfWeekM" name="recurrenceDayOfWeekM" dojoType="dijit.form.FilteringSelect" style="width: 125px;" onchange="setRecurrenceDayOfWeek('month');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+							  <option value="1" <%=contentletForm.getRecurrenceDayOfWeek()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Sunday") %></option>
+							  <option value="2" <%=contentletForm.getRecurrenceDayOfWeek()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Monday") %></option>
+							  <option value="3" <%=contentletForm.getRecurrenceDayOfWeek()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Tuesday") %></option>
+							  <option value="4" <%=contentletForm.getRecurrenceDayOfWeek()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Wednesday") %></option>
+							  <option value="5" <%=contentletForm.getRecurrenceDayOfWeek()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Thursday") %></option>
+							  <option value="6" <%=contentletForm.getRecurrenceDayOfWeek()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Friday") %></option>
+							  <option value="7" <%=contentletForm.getRecurrenceDayOfWeek()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Saturday") %></option>
+							</select>
+							<label><%= LanguageUtil.get(pageContext, "of-the-month") %></label>
+						</dd>
+					</dl>
+					<dl>
+						<dt><%= LanguageUtil.get(pageContext, "or") %></dt>
+						<dd></dd>
+					</dl>
+					<dl>
+						<dt class="radio">
+							<input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('monthly', true)" name="isSpecificDateMonth" id="specificDateMonth" value="true" <%= (contentletForm.isSpecificDate()) ? "checked" : "" %> />
+							<label for="specificDateMonth"><%= LanguageUtil.get(pageContext, "Specific-Day") %>:</label>
+						</dt>
+						<dd>
+							<input type="text" dojoType="dijit.form.TextBox" name="recurrenceDayOfMonth"  id="recurrenceDayOfMonthM" style="width: 30px;"
+							   value="<%= UtilMethods.isSet((String)contentletForm.getRecurrenceDayOfMonth()) ? (String)contentletForm.getRecurrenceDayOfMonth() : "" %>"
+							   <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>
+							   />
+						</dd>
+					</dl>
 				</div>
-
-
-
-
 
 				<%--       YEARLY RECURRANCE        --%>
-				<div id="annualRecurrence">
+				<div id="annualRecurrence" class="form-horizontal">
+					<dl>
+						<dt><%= LanguageUtil.get(pageContext, "Every") %>:</dt>
+						<dd class="inline-form">
+							<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalYearly" id="recurrenceIntervalYearly" onchange="setRecurrenceInterval('recurrenceIntervalYearly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" />
+							<label><%= LanguageUtil.get(pageContext, "year-s-") %></label>
+						</dd>
+					</dl>
+					<dl>
+						 <dt class="radio">
+							<input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('annually', false)" name="isSpecificDateYear" id="noSpecificDateYear" value="false" <%= (!contentletForm.isSpecificDate()) ? "checked" : "" %> />
+							<label for="noSpecificDateYear"><%= LanguageUtil.get(pageContext, "On-The") %>:</label>
+						</dt>
+						<dd class="inline-form">
+							<select id="recurrenceWeekOfMonthY" name="recurrenceWeekOfMonthY" dojoType="dijit.form.FilteringSelect" style="width: 70px;" onchange="setRecurrenceWeekOfMonth('year');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+								<option value="1" <%=contentletForm.getRecurrenceWeekOfMonth()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "1st") %></option>
+								<option value="2" <%=contentletForm.getRecurrenceWeekOfMonth()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "2nd") %></option>
+								<option value="3" <%=contentletForm.getRecurrenceWeekOfMonth()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "3rd") %></option>
+								<option value="4" <%=contentletForm.getRecurrenceWeekOfMonth()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "4th") %></option>
+								<option value="5" <%=contentletForm.getRecurrenceWeekOfMonth()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Last") %></option>
+							</select>
+							<select id="recurrenceDayOfWeekY" name="recurrenceDayOfWeekY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" onchange="setRecurrenceDayOfWeek('year');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+								<option value="1" <%=contentletForm.getRecurrenceDayOfWeek()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Sunday") %></option>
+								<option value="2" <%=contentletForm.getRecurrenceDayOfWeek()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Monday") %></option>
+								<option value="3" <%=contentletForm.getRecurrenceDayOfWeek()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Tuesday") %></option>
+								<option value="4" <%=contentletForm.getRecurrenceDayOfWeek()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Wednesday") %></option>
+								<option value="5" <%=contentletForm.getRecurrenceDayOfWeek()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Thursday") %></option>
+								<option value="6" <%=contentletForm.getRecurrenceDayOfWeek()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Friday") %></option>
+								<option value="7" <%=contentletForm.getRecurrenceDayOfWeek()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Saturday") %></option>
+							</select>
+							<label><%= LanguageUtil.get(pageContext, "of") %></label>
+							<select id="recurrenceMonthOfYear" name="recurrenceMonthOfYearY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" onchange="setRecurrenceMonthOfYear();" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+								<option value="1" <%=contentletForm.getRecurrenceMonthOfYear()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "January") %></option>
+								<option value="2" <%=contentletForm.getRecurrenceMonthOfYear()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "February") %></option>
+								<option value="3" <%=contentletForm.getRecurrenceMonthOfYear()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "March") %></option>
+								<option value="4" <%=contentletForm.getRecurrenceMonthOfYear()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "April") %></option>
+								<option value="5" <%=contentletForm.getRecurrenceMonthOfYear()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "May") %></option>
+								<option value="6" <%=contentletForm.getRecurrenceMonthOfYear()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "June") %></option>
+								<option value="7" <%=contentletForm.getRecurrenceMonthOfYear()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "July") %></option>
+								<option value="8" <%=contentletForm.getRecurrenceMonthOfYear()==8?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "August") %></option>
+								<option value="9" <%=contentletForm.getRecurrenceMonthOfYear()==9?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "September") %></option>
+								<option value="10" <%=contentletForm.getRecurrenceMonthOfYear()==10?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "October") %></option>
+								<option value="11" <%=contentletForm.getRecurrenceMonthOfYear()==11?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "November") %></option>
+								<option value="12" <%=contentletForm.getRecurrenceMonthOfYear()==12?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "December") %></option>
+							</select>
+						</dd>
+					</dl>
+					<dl>
+						<dt><%= LanguageUtil.get(pageContext, "or") %></dt>
+						<dd></dd>
+					</dl>
 
-					<table id="yearRecurrTable">
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "Every") %>:</td>
-							<td>
-								<input type="text" dojoType="dijit.form.TextBox" name="recurrenceIntervalYearly" id="recurrenceIntervalYearly" onchange="setRecurrenceInterval('recurrenceIntervalYearly');" style="width: 30px;" value="<%= UtilMethods.isSet(contentletForm.getRecurrenceInterval()) ? contentletForm.getRecurrenceInterval() : "" %>" /> <%= LanguageUtil.get(pageContext, "year-s-") %>
-							</td>
-						</tr>
-						<tr>
-						     <td>
-								<input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('annually', false)" name="isSpecificDateYear" id="noSpecificDateYear" value="false" <%= (!contentletForm.isSpecificDate()) ? "checked" : "" %> />
-						        <label for="noSpecificDateYear"><%= LanguageUtil.get(pageContext, "On-The") %>:</label>
-							</td>
-							<td>
-								<select id="recurrenceWeekOfMonthY" name="recurrenceWeekOfMonthY" dojoType="dijit.form.FilteringSelect" style="width: 70px;" onchange="setRecurrenceWeekOfMonth('year');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-								  <option value="1" <%=contentletForm.getRecurrenceWeekOfMonth()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "1st") %></option>
-								  <option value="2" <%=contentletForm.getRecurrenceWeekOfMonth()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "2nd") %></option>
-								  <option value="3" <%=contentletForm.getRecurrenceWeekOfMonth()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "3rd") %></option>
-								  <option value="4" <%=contentletForm.getRecurrenceWeekOfMonth()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "4th") %></option>
-								  <option value="5" <%=contentletForm.getRecurrenceWeekOfMonth()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Last") %></option>
-								</select>
-								&nbsp;
-								<select id="recurrenceDayOfWeekY" name="recurrenceDayOfWeekY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" onchange="setRecurrenceDayOfWeek('year');" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-								  <option value="1" <%=contentletForm.getRecurrenceDayOfWeek()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Sunday") %></option>
-								  <option value="2" <%=contentletForm.getRecurrenceDayOfWeek()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Monday") %></option>
-								  <option value="3" <%=contentletForm.getRecurrenceDayOfWeek()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Tuesday") %></option>
-								  <option value="4" <%=contentletForm.getRecurrenceDayOfWeek()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Wednesday") %></option>
-								  <option value="5" <%=contentletForm.getRecurrenceDayOfWeek()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Thursday") %></option>
-								  <option value="6" <%=contentletForm.getRecurrenceDayOfWeek()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Friday") %></option>
-								  <option value="7" <%=contentletForm.getRecurrenceDayOfWeek()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "Saturday") %></option>
-								</select>
-								&nbsp;
-								<%= LanguageUtil.get(pageContext, "of") %>
-								&nbsp;
-								<select id="recurrenceMonthOfYear" name="recurrenceMonthOfYearY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" onchange="setRecurrenceMonthOfYear();" <%= (!contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-								  <option value="1" <%=contentletForm.getRecurrenceMonthOfYear()==1?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "January") %></option>
-								  <option value="2" <%=contentletForm.getRecurrenceMonthOfYear()==2?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "February") %></option>
-								  <option value="3" <%=contentletForm.getRecurrenceMonthOfYear()==3?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "March") %></option>
-								  <option value="4" <%=contentletForm.getRecurrenceMonthOfYear()==4?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "April") %></option>
-								  <option value="5" <%=contentletForm.getRecurrenceMonthOfYear()==5?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "May") %></option>
-								  <option value="6" <%=contentletForm.getRecurrenceMonthOfYear()==6?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "June") %></option>
-								  <option value="7" <%=contentletForm.getRecurrenceMonthOfYear()==7?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "July") %></option>
-								  <option value="8" <%=contentletForm.getRecurrenceMonthOfYear()==8?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "August") %></option>
-								  <option value="9" <%=contentletForm.getRecurrenceMonthOfYear()==9?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "September") %></option>
-								  <option value="10" <%=contentletForm.getRecurrenceMonthOfYear()==10?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "October") %></option>
-								  <option value="11" <%=contentletForm.getRecurrenceMonthOfYear()==11?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "November") %></option>
-								  <option value="12" <%=contentletForm.getRecurrenceMonthOfYear()==12?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "December") %></option>
-								</select>
+					<dl>
+						<dt class="radio">
+						  <input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('annually', true)" name="isSpecificDateYear" id="specificDateYear" value="true" <%= (contentletForm.isSpecificDate()) ? "checked" : "" %> />
+						  <label for="specificDateYear"><%= LanguageUtil.get(pageContext, "Specific-Day") %>:</label>
+						</dt>
+						<dd class="inline-form">
+						  <select id="specificDayOfMonthRecY" name="specificDayOfMonthRecY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+						   <%for(int i =1; i<32; i++){ %>
+							  <option value="<%=i %>" <%=contentletForm.getSpecificDayOfMonthRecY().equals(String.valueOf(i))?"selected=\"selected\"":"" %>><%= i %></option>
+						   <%} %>
+						   </select>
 
-
-							</td>
-
-						</tr>
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "or") %></td>
-							<td>
-								&nbsp;
-							</td>
-						</tr>
-
-						<tr>
-							<td>
-							  <input dojoType="dijit.form.RadioButton" type="radio" onclick="specificDateChanged('annually', true)" name="isSpecificDateYear" id="specificDateYear" value="true" <%= (contentletForm.isSpecificDate()) ? "checked" : "" %> />
-						      <label for="specificDateYear"><%= LanguageUtil.get(pageContext, "Specific-Day") %>:</label>
-							<td>
-
-							  <select id="specificDayOfMonthRecY" name="specificDayOfMonthRecY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-							   <%for(int i =1; i<32; i++){ %>
-							      <option value="<%=i %>" <%=contentletForm.getSpecificDayOfMonthRecY().equals(String.valueOf(i))?"selected=\"selected\"":"" %>><%= i %></option>
-							   <%} %>
-							   </select>
-
-							   <%= LanguageUtil.get(pageContext, "of") %>
-								&nbsp;
-								<select id="specificMonthOfYearRecY" name="specificMonthOfYearRecY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>>
-								  <option value="1" <%=contentletForm.getSpecificMonthOfYearRecY().equals("1")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "January") %></option>
-								  <option value="2" <%=contentletForm.getSpecificMonthOfYearRecY().equals("2")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "February") %></option>
-								  <option value="3" <%=contentletForm.getSpecificMonthOfYearRecY().equals("3")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "March") %></option>
-								  <option value="4" <%=contentletForm.getSpecificMonthOfYearRecY().equals("4")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "April") %></option>
-								  <option value="5" <%=contentletForm.getSpecificMonthOfYearRecY().equals("5")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "May") %></option>
-								  <option value="6" <%=contentletForm.getSpecificMonthOfYearRecY().equals("6")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "June") %></option>
-								  <option value="7" <%=contentletForm.getSpecificMonthOfYearRecY().equals("7")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "July") %></option>
-								  <option value="8" <%=contentletForm.getSpecificMonthOfYearRecY().equals("8")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "August") %></option>
-								  <option value="9" <%=contentletForm.getSpecificMonthOfYearRecY().equals("9")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "September") %></option>
-								  <option value="10" <%=contentletForm.getSpecificMonthOfYearRecY().equals("10")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "October") %></option>
-								  <option value="11" <%=contentletForm.getSpecificMonthOfYearRecY().equals("11")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "November") %></option>
-								  <option value="12" <%=contentletForm.getSpecificMonthOfYearRecY().equals("12")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "December") %></option>
-								</select>
-
-							</td>
-						</tr>
-
-
-					  </table>
-
-
-
-
-
+						   <%= LanguageUtil.get(pageContext, "of") %>
+							&nbsp;
+							<select id="specificMonthOfYearRecY" name="specificMonthOfYearRecY" dojoType="dijit.form.FilteringSelect" style="width: 125px;" <%= (contentletForm.isSpecificDate()) ? "" : "disabled" %>>
+								<option value="1" <%=contentletForm.getSpecificMonthOfYearRecY().equals("1")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "January") %></option>
+								<option value="2" <%=contentletForm.getSpecificMonthOfYearRecY().equals("2")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "February") %></option>
+								<option value="3" <%=contentletForm.getSpecificMonthOfYearRecY().equals("3")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "March") %></option>
+								<option value="4" <%=contentletForm.getSpecificMonthOfYearRecY().equals("4")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "April") %></option>
+								<option value="5" <%=contentletForm.getSpecificMonthOfYearRecY().equals("5")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "May") %></option>
+								<option value="6" <%=contentletForm.getSpecificMonthOfYearRecY().equals("6")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "June") %></option>
+								<option value="7" <%=contentletForm.getSpecificMonthOfYearRecY().equals("7")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "July") %></option>
+								<option value="8" <%=contentletForm.getSpecificMonthOfYearRecY().equals("8")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "August") %></option>
+								<option value="9" <%=contentletForm.getSpecificMonthOfYearRecY().equals("9")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "September") %></option>
+								<option value="10" <%=contentletForm.getSpecificMonthOfYearRecY().equals("10")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "October") %></option>
+								<option value="11" <%=contentletForm.getSpecificMonthOfYearRecY().equals("11")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "November") %></option>
+								<option value="12" <%=contentletForm.getSpecificMonthOfYearRecY().equals("12")?"selected=\"selected\"":"" %>><%= LanguageUtil.get(pageContext, "December") %></option>
+							</select>
+						</dd>
+					</dl>
 
 				</div>
-				<div>
-				    <br/>
-				    <input type="checkbox" dojoType="dijit.form.CheckBox" name="noEndDate" id="noEndDate" value="<%= contentletForm.isNoEndDate() %>" <%= contentletForm.isNoEndDate()?"checked" : "" %> onclick="toggleEndDate();"/>
-					<label for="noEndDate"><%= LanguageUtil.get(pageContext, "No End Date") %></label>
+
+				<div class="form-horizontal">
+					<dl>
+						<dt></dt>
+						<dd class="checkbox">
+							<input type="checkbox" dojoType="dijit.form.CheckBox" name="noEndDate" id="noEndDate" value="<%= contentletForm.isNoEndDate() %>" <%= contentletForm.isNoEndDate()?"checked" : "" %> onclick="toggleEndDate();"/>
+							<label for="noEndDate"><%= LanguageUtil.get(pageContext, "No End Date") %></label>
+						</dd>
+					</dl>
 				</div>
-				<div id="recurrenceEndDate" class="recurrenceEndDate">
-					<br/>
+
+				<div id="recurrenceEndDate" class="form-horizontal">
 					<input type="hidden" id="startRecurrenceDate" name="recurrenceStarts" value="<%= df.format(recurrenceStarts) %>" />
 					<input type="hidden" id="endRecurrenceDate" name="recurrenceEnds" value="<%= df.format(recurrenceEnds) %>" />
-					<%= LanguageUtil.get(pageContext, "Ends") %>:
-					<%SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");%>
-
-						<input type="text" value="<%=df2.format(recurrenceEnds) %>" onChange="updateRecurrenceEndDate('endRecurrenceDate');"
-					 	       dojoType="dijit.form.DateTextBox"  name="endRecurrenceDateDate"  id="endRecurrenceDateDate" style="width:120px;">
-
+					<dl>
+						<dt>
+							<label for="endRecurrenceDateDate">
+								<%= LanguageUtil.get(pageContext, "Ends") %>:
+								<%SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");%>
+							</label>
+						</dt>
+						<dd>
+							<input type="text"
+								value="<%=df2.format(recurrenceEnds) %>"
+								onChange="updateRecurrenceEndDate('endRecurrenceDate');"
+								dojoType="dijit.form.DateTextBox"
+								name="endRecurrenceDateDate"
+								id="endRecurrenceDateDate"
+								style="width:120px;" />
+						</dd>
+					</dl>
 				</div>
 			</div>
 

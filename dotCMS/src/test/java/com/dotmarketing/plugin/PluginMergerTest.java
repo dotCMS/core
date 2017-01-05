@@ -11,10 +11,10 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.plugin.util.PluginFileMerger;
 
-public class PluginMergerTest extends TestBase {
+public class PluginMergerTest extends UnitTestBase {
 
 	 @Test
 	public void testMergeByAttribute() throws IOException {

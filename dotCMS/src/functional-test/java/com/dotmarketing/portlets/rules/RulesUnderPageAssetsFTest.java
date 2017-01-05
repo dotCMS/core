@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
  * Created by Oscar Arrieta on 2/24/16.
  */
 
-public class RulesUnderPageAssetsFTest extends TestBase {
+public class RulesUnderPageAssetsFTest extends IntegrationTestBase {
 
     private Host host;
     private User sysUser;

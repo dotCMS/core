@@ -1,6 +1,6 @@
 package com.dotmarketing.quartz;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link com.dotmarketing.quartz.job.DeleteFieldJobHelper}
  * @author jsanca
  */
-public class DeleteFieldJobHelperTest extends TestBase {
+public class DeleteFieldJobHelperTest extends UnitTestBase {
 
     private boolean testGenerateNotificationStartDeleting  = false;
     private boolean testGenerateNotificationEndDeleting    = false;
