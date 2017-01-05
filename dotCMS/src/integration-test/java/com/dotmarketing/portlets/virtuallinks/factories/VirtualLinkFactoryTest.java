@@ -4,7 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.BeforeClass;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 
 import org.junit.Test;
@@ -22,7 +22,7 @@ import com.liferay.portal.model.User;
  * @since 8/24/15
  *
  */
-public class VirtualLinkFactoryTest extends TestBase{
+public class VirtualLinkFactoryTest extends IntegrationTestBase{
 	
     @BeforeClass
     public static void prepare () throws Exception {

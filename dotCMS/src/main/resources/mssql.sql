@@ -1,199 +1,201 @@
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
 create table Address (
-	addressId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	className varchar(100) null,
-	classPK varchar(100) null,
-	description varchar(100) null,
-	street1 varchar(100) null,
-	street2 varchar(100) null,
-	city varchar(100) null,
-	state varchar(100) null,
-	zip varchar(100) null,
-	country varchar(100) null,
-	phone varchar(100) null,
-	fax varchar(100) null,
-	cell varchar(100) null,
-	priority int
+    addressId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    userName NVARCHAR(100) null,
+    createDate datetime null,
+    modifiedDate datetime null,
+    className NVARCHAR(100) null,
+    classPK NVARCHAR(100) null,
+    description NVARCHAR(100) null,
+    street1 NVARCHAR(100) null,
+    street2 NVARCHAR(100) null,
+    city NVARCHAR(100) null,
+    state NVARCHAR(100) null,
+    zip NVARCHAR(100) null,
+    country NVARCHAR(100) null,
+    phone NVARCHAR(100) null,
+    fax NVARCHAR(100) null,
+    cell NVARCHAR(100) null,
+    priority int
 );
 
 create table AdminConfig (
-	configId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	type_ varchar(100) null,
-	name varchar(100) null,
-	config text null
+    configId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    type_ NVARCHAR(100) null,
+    name NVARCHAR(100) null,
+    config NVARCHAR(MAX) null
 );
 
 create table Company (
-	companyId varchar(100) not null primary key,
-	key_ text null,
-	portalURL varchar(100) not null,
-	homeURL varchar(100) not null,
-	mx varchar(100) not null,
-	name varchar(100) not null,
-	shortName varchar(100) not null,
-	type_ varchar(100) null,
-	size_ varchar(100) null,
-	street varchar(100) null,
-	city varchar(100) null,
-	state varchar(100) null,
-	zip varchar(100) null,
-	phone varchar(100) null,
-	fax varchar(100) null,
-	emailAddress varchar(100) null,
-	authType varchar(100) null,
-	autoLogin bit,
-	strangers bit
+    companyId NVARCHAR(100) not null primary key,
+    key_ NVARCHAR(MAX) null,
+    portalURL NVARCHAR(100) not null,
+    homeURL NVARCHAR(100) not null,
+    mx NVARCHAR(100) not null,
+    name NVARCHAR(100) not null,
+    shortName NVARCHAR(100) not null,
+    type_ NVARCHAR(100) null,
+    size_ NVARCHAR(100) null,
+    street NVARCHAR(100) null,
+    city NVARCHAR(100) null,
+    state NVARCHAR(100) null,
+    zip NVARCHAR(100) null,
+    phone NVARCHAR(100) null,
+    fax NVARCHAR(100) null,
+    emailAddress NVARCHAR(100) null,
+    authType NVARCHAR(100) null,
+    autoLogin bit,
+    strangers bit
 );
 
 create table Counter (
-	name varchar(100) not null primary key,
-	currentId int
+    name NVARCHAR(100) not null primary key,
+    currentId int
 );
 
 create table Image (
-	imageId varchar(200) not null primary key,
-	text_ text not null
+    imageId NVARCHAR(200) not null primary key,
+    text_ NVARCHAR(MAX) not null
 );
 
 create table PasswordTracker (
-	passwordTrackerId varchar(100) not null primary key,
-	userId varchar(100) not null,
-	createDate datetime not null,
-	password_ varchar(100) not null
+    passwordTrackerId NVARCHAR(100) not null primary key,
+    userId NVARCHAR(100) not null,
+    createDate datetime not null,
+    password_ NVARCHAR(100) not null
 );
 
 create table PollsChoice (
-	choiceId varchar(100) not null,
-	questionId varchar(100) not null,
-	description varchar(1000) null,
-	primary key (choiceId, questionId)
+    choiceId NVARCHAR(100) not null,
+    questionId NVARCHAR(100) not null,
+    description NVARCHAR(1000) null,
+    primary key (choiceId, questionId)
 );
 
 create table PollsDisplay (
-	layoutId varchar(100) not null,
-	userId varchar(100) not null,
-	portletId varchar(100) not null,
-	questionId varchar(100) not null,
-	primary key (layoutId, userId, portletId)
+    layoutId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    portletId NVARCHAR(100) not null,
+    questionId NVARCHAR(100) not null,
+    primary key (layoutId, userId, portletId)
 );
 
 create table PollsQuestion (
-	questionId varchar(100) not null primary key,
-	portletId varchar(100) not null,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	userName varchar(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	title varchar(100) null,
-	description varchar(1000) null,
-	expirationDate datetime null,
-	lastVoteDate datetime null
+    questionId NVARCHAR(100) not null primary key,
+    portletId NVARCHAR(100) not null,
+    groupId NVARCHAR(100) not null,
+    companyId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    userName NVARCHAR(100) null,
+    createDate datetime null,
+    modifiedDate datetime null,
+    title NVARCHAR(100) null,
+    description NVARCHAR(1000) null,
+    expirationDate datetime null,
+    lastVoteDate datetime null
 );
 
 create table PollsVote (
-	questionId varchar(100) not null,
-	userId varchar(100) not null,
-	choiceId varchar(100) not null,
-	voteDate datetime null,
-	primary key (questionId, userId)
+    questionId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    choiceId NVARCHAR(100) not null,
+    voteDate datetime null,
+    primary key (questionId, userId)
 );
 
 create table Portlet (
-	portletId varchar(100) not null,
-	groupId varchar(100) not null,
-	companyId varchar(100) not null,
-	defaultPreferences text null,
-	narrow bit,
-	roles varchar(1000) null,
-	active_ bit,
-	primary key (portletId, groupId, companyId)
+    portletId NVARCHAR(100) not null,
+    groupId NVARCHAR(100) not null,
+    companyId NVARCHAR(100) not null,
+    defaultPreferences NVARCHAR(MAX) null,
+    narrow bit,
+    roles NVARCHAR(1000) null,
+    active_ bit,
+    primary key (portletId, groupId, companyId)
 );
 
 create table PortletPreferences (
-	portletId varchar(100) not null,
-	userId varchar(100) not null,
-	layoutId varchar(100) not null,
-	preferences text null,
-	primary key (portletId, userId, layoutId)
+    portletId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    layoutId NVARCHAR(100) not null,
+    preferences NVARCHAR(MAX) null,
+    primary key (portletId, userId, layoutId)
 );
 
 create table Release_ (
-	releaseId varchar(100) not null primary key,
-	createDate datetime null,
-	modifiedDate datetime null,
-	buildNumber int null,
-	buildDate datetime null
+    releaseId NVARCHAR(100) not null primary key,
+    createDate datetime null,
+    modifiedDate datetime null,
+    buildNumber int null,
+    buildDate datetime null
 );
 
 create table User_ (
-	userId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	createDate datetime null,
-	mod_date   datetime null,
-	password_ text null,
-	passwordEncrypted bit,
-	passwordExpirationDate datetime null,
-	passwordReset bit,
-	firstName varchar(100) null,
-	middleName varchar(100) null,
-	lastName varchar(100) null,
-	nickName varchar(100) null,
-	male bit,
-	birthday datetime null,
-	emailAddress varchar(100) null,
-	smsId varchar(100) null,
-	aimId varchar(100) null,
-	icqId varchar(100) null,
-	msnId varchar(100) null,
-	ymId varchar(100) null,
-	favoriteActivity varchar(100) null,
-	favoriteBibleVerse varchar(100) null,
-	favoriteFood varchar(100) null,
-	favoriteMovie varchar(100) null,
-	favoriteMusic varchar(100) null,
-	languageId varchar(100) null,
-	timeZoneId varchar(100) null,
-	skinId varchar(100) null,
-	dottedSkins bit,
-	roundedSkins bit,
-	greeting varchar(100) null,
-	resolution varchar(100) null,
-	refreshRate varchar(100) null,
-	layoutIds varchar(100) null,
-	comments varchar(1000) null,
-	loginDate datetime null,
-	loginIP varchar(100) null,
-	lastLoginDate datetime null,
-	lastLoginIP varchar(100) null,
-	failedLoginAttempts int,
-	agreedToTermsOfUse bit,
-	active_ bit
+    userId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    createDate datetime null,
+    mod_date   datetime null,
+    password_ NVARCHAR(MAX) null,
+    passwordEncrypted bit,
+    passwordExpirationDate datetime null,
+    passwordReset bit,
+    firstName NVARCHAR(100) null,
+    middleName NVARCHAR(100) null,
+    lastName NVARCHAR(100) null,
+    nickName NVARCHAR(100) null,
+    male bit,
+    birthday datetime null,
+    emailAddress NVARCHAR(100) null,
+    smsId NVARCHAR(100) null,
+    aimId NVARCHAR(100) null,
+    icqId NVARCHAR(100) null,
+    msnId NVARCHAR(100) null,
+    ymId NVARCHAR(100) null,
+    favoriteActivity NVARCHAR(100) null,
+    favoriteBibleVerse NVARCHAR(100) null,
+    favoriteFood NVARCHAR(100) null,
+    favoriteMovie NVARCHAR(100) null,
+    favoriteMusic NVARCHAR(100) null,
+    languageId NVARCHAR(100) null,
+    timeZoneId NVARCHAR(100) null,
+    skinId NVARCHAR(100) null,
+    dottedSkins bit,
+    roundedSkins bit,
+    greeting NVARCHAR(100) null,
+    resolution NVARCHAR(100) null,
+    refreshRate NVARCHAR(100) null,
+    layoutIds NVARCHAR(100) null,
+    comments NVARCHAR(1000) null,
+    loginDate datetime null,
+    loginIP NVARCHAR(100) null,
+    lastLoginDate datetime null,
+    lastLoginIP NVARCHAR(100) null,
+    failedLoginAttempts int,
+    agreedToTermsOfUse bit,
+    active_ bit,
+    delete_in_progress TINYINT DEFAULT 0,
+    delete_date DATETIME NULL
 );
 
 create table UserTracker (
-	userTrackerId varchar(100) not null primary key,
-	companyId varchar(100) not null,
-	userId varchar(100) not null,
-	modifiedDate datetime null,
-	remoteAddr varchar(100) null,
-	remoteHost varchar(100) null,
-	userAgent varchar(100) null
+    userTrackerId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    modifiedDate datetime null,
+    remoteAddr NVARCHAR(100) null,
+    remoteHost NVARCHAR(100) null,
+    userAgent NVARCHAR(100) null
 );
 
 create table UserTrackerPath (
-	userTrackerPathId varchar(100) not null primary key,
-	userTrackerId varchar(100) not null,
-	path varchar(1000) not null,
-	pathDate datetime not null
+    userTrackerPathId NVARCHAR(100) not null primary key,
+    userTrackerId NVARCHAR(100) not null,
+    path NVARCHAR(1000) not null,
+    pathDate datetime not null
 );
 
 --
@@ -231,75 +233,75 @@ insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, 
 insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, nickName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('liferay.com.1', 'liferay.com', GetDate(), 'test', '0', '0', 'John', '', 'Wayne', 'Duke', '1', '19700101', 'test@liferay.com', '01', '0', '1', 'Welcome John Wayne!', '1,', GetDate(), 0, '1', '1');
 
 CREATE TABLE [dbo].[QRTZ_CALENDARS] (
-  [CALENDAR_NAME] [VARCHAR] (80)  NOT NULL ,
+  [CALENDAR_NAME] [NVARCHAR] (80)  NOT NULL ,
   [CALENDAR] [IMAGE] NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_CRON_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [CRON_EXPRESSION] [VARCHAR] (80)  NOT NULL ,
-  [TIME_ZONE_ID] [VARCHAR] (80)
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [CRON_EXPRESSION] [NVARCHAR] (80)  NOT NULL ,
+  [TIME_ZONE_ID] [NVARCHAR] (80)
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_FIRED_TRIGGERS] (
-  [ENTRY_ID] [VARCHAR] (95)  NOT NULL ,
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [IS_VOLATILE] [VARCHAR] (1)  NOT NULL ,
-  [INSTANCE_NAME] [VARCHAR] (80)  NOT NULL ,
+  [ENTRY_ID] [NVARCHAR] (95)  NOT NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [IS_VOLATILE] [NVARCHAR] (1)  NOT NULL ,
+  [INSTANCE_NAME] [NVARCHAR] (80)  NOT NULL ,
   [FIRED_TIME] [BIGINT] NOT NULL ,
   [PRIORITY] [INTEGER] NOT NULL ,
-  [STATE] [VARCHAR] (16)  NOT NULL,
-  [JOB_NAME] [VARCHAR] (80)  NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NULL ,
-  [IS_STATEFUL] [VARCHAR] (1)  NULL ,
-  [REQUESTS_RECOVERY] [VARCHAR] (1)  NULL
+  [STATE] [NVARCHAR] (16)  NOT NULL,
+  [JOB_NAME] [NVARCHAR] (80)  NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NULL ,
+  [IS_STATEFUL] [NVARCHAR] (1)  NULL ,
+  [REQUESTS_RECOVERY] [NVARCHAR] (1)  NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_PAUSED_TRIGGER_GRPS] (
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_SCHEDULER_STATE] (
-  [INSTANCE_NAME] [VARCHAR] (80)  NOT NULL ,
+  [INSTANCE_NAME] [NVARCHAR] (80)  NOT NULL ,
   [LAST_CHECKIN_TIME] [BIGINT] NOT NULL ,
   [CHECKIN_INTERVAL] [BIGINT] NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_LOCKS] (
-  [LOCK_NAME] [VARCHAR] (40)  NOT NULL
+  [LOCK_NAME] [NVARCHAR] (40)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_JOB_DETAILS] (
-  [JOB_NAME] [VARCHAR] (80)  NOT NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [DESCRIPTION] [VARCHAR] (120) NULL ,
-  [JOB_CLASS_NAME] [VARCHAR] (128)  NOT NULL ,
-  [IS_DURABLE] [VARCHAR] (1)  NOT NULL ,
-  [IS_VOLATILE] [VARCHAR] (1)  NOT NULL ,
-  [IS_STATEFUL] [VARCHAR] (1)  NOT NULL ,
-  [REQUESTS_RECOVERY] [VARCHAR] (1)  NOT NULL ,
+  [JOB_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [DESCRIPTION] [NVARCHAR] (120) NULL ,
+  [JOB_CLASS_NAME] [NVARCHAR] (128)  NOT NULL ,
+  [IS_DURABLE] [NVARCHAR] (1)  NOT NULL ,
+  [IS_VOLATILE] [NVARCHAR] (1)  NOT NULL ,
+  [IS_STATEFUL] [NVARCHAR] (1)  NOT NULL ,
+  [REQUESTS_RECOVERY] [NVARCHAR] (1)  NOT NULL ,
   [JOB_DATA] [IMAGE] NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_JOB_LISTENERS] (
-  [JOB_NAME] [VARCHAR] (80)  NOT NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [JOB_LISTENER] [VARCHAR] (80)  NOT NULL
+  [JOB_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_LISTENER] [NVARCHAR] (80)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
   [REPEAT_COUNT] [BIGINT] NOT NULL ,
   [REPEAT_INTERVAL] [BIGINT] NOT NULL ,
   [TIMES_TRIGGERED] [BIGINT] NOT NULL
@@ -307,34 +309,34 @@ CREATE TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS] (
 GO
 
 CREATE TABLE [dbo].[QRTZ_BLOB_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
   [BLOB_DATA] [IMAGE] NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_TRIGGER_LISTENERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_LISTENER] [VARCHAR] (80)  NOT NULL
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_LISTENER] [NVARCHAR] (80)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [JOB_NAME] [VARCHAR] (80)  NOT NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [IS_VOLATILE] [VARCHAR] (1)  NOT NULL ,
-  [DESCRIPTION] [VARCHAR] (120) NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [IS_VOLATILE] [NVARCHAR] (1)  NOT NULL ,
+  [DESCRIPTION] [NVARCHAR] (120) NULL ,
   [NEXT_FIRE_TIME] [BIGINT] NULL ,
   [PREV_FIRE_TIME] [BIGINT] NULL ,
   [PRIORITY] [INTEGER] NULL ,
-  [TRIGGER_STATE] [VARCHAR] (16)  NOT NULL ,
-  [TRIGGER_TYPE] [VARCHAR] (8)  NOT NULL ,
+  [TRIGGER_STATE] [NVARCHAR] (16)  NOT NULL ,
+  [TRIGGER_TYPE] [NVARCHAR] (8)  NOT NULL ,
   [START_TIME] [BIGINT] NOT NULL ,
   [END_TIME] [BIGINT] NULL ,
-  [CALENDAR_NAME] [VARCHAR] (80)  NULL ,
+  [CALENDAR_NAME] [NVARCHAR] (80)  NULL ,
   [MISFIRE_INSTR] [SMALLINT] NULL ,
   [JOB_DATA] [IMAGE] NULL
 )
@@ -487,75 +489,75 @@ INSERT INTO [dbo].[QRTZ_LOCKS] VALUES('STATE_ACCESS');
 INSERT INTO [dbo].[QRTZ_LOCKS] VALUES('MISFIRE_ACCESS');
 
 CREATE TABLE [dbo].[QRTZ_EXCL_CALENDARS] (
-  [CALENDAR_NAME] [VARCHAR] (80)  NOT NULL ,
+  [CALENDAR_NAME] [NVARCHAR] (80)  NOT NULL ,
   [CALENDAR] [IMAGE] NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_CRON_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [CRON_EXPRESSION] [VARCHAR] (80)  NOT NULL ,
-  [TIME_ZONE_ID] [VARCHAR] (80)
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [CRON_EXPRESSION] [NVARCHAR] (80)  NOT NULL ,
+  [TIME_ZONE_ID] [NVARCHAR] (80)
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_FIRED_TRIGGERS] (
-  [ENTRY_ID] [VARCHAR] (95)  NOT NULL ,
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [IS_VOLATILE] [VARCHAR] (1)  NOT NULL ,
-  [INSTANCE_NAME] [VARCHAR] (80)  NOT NULL ,
+  [ENTRY_ID] [NVARCHAR] (95)  NOT NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [IS_VOLATILE] [NVARCHAR] (1)  NOT NULL ,
+  [INSTANCE_NAME] [NVARCHAR] (80)  NOT NULL ,
   [FIRED_TIME] [BIGINT] NOT NULL ,
   [PRIORITY] [INTEGER] NOT NULL ,
-  [STATE] [VARCHAR] (16)  NOT NULL,
-  [JOB_NAME] [VARCHAR] (80)  NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NULL ,
-  [IS_STATEFUL] [VARCHAR] (1)  NULL ,
-  [REQUESTS_RECOVERY] [VARCHAR] (1)  NULL
+  [STATE] [NVARCHAR] (16)  NOT NULL,
+  [JOB_NAME] [NVARCHAR] (80)  NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NULL ,
+  [IS_STATEFUL] [NVARCHAR] (1)  NULL ,
+  [REQUESTS_RECOVERY] [NVARCHAR] (1)  NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_PAUSED_TRIGGER_GRPS] (
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_SCHEDULER_STATE] (
-  [INSTANCE_NAME] [VARCHAR] (80)  NOT NULL ,
+  [INSTANCE_NAME] [NVARCHAR] (80)  NOT NULL ,
   [LAST_CHECKIN_TIME] [BIGINT] NOT NULL ,
   [CHECKIN_INTERVAL] [BIGINT] NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_LOCKS] (
-  [LOCK_NAME] [VARCHAR] (40)  NOT NULL
+  [LOCK_NAME] [NVARCHAR] (40)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_JOB_DETAILS] (
-  [JOB_NAME] [VARCHAR] (80)  NOT NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [DESCRIPTION] [VARCHAR] (120) NULL ,
-  [JOB_CLASS_NAME] [VARCHAR] (128)  NOT NULL ,
-  [IS_DURABLE] [VARCHAR] (1)  NOT NULL ,
-  [IS_VOLATILE] [VARCHAR] (1)  NOT NULL ,
-  [IS_STATEFUL] [VARCHAR] (1)  NOT NULL ,
-  [REQUESTS_RECOVERY] [VARCHAR] (1)  NOT NULL ,
+  [JOB_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [DESCRIPTION] [NVARCHAR] (120) NULL ,
+  [JOB_CLASS_NAME] [NVARCHAR] (128)  NOT NULL ,
+  [IS_DURABLE] [NVARCHAR] (1)  NOT NULL ,
+  [IS_VOLATILE] [NVARCHAR] (1)  NOT NULL ,
+  [IS_STATEFUL] [NVARCHAR] (1)  NOT NULL ,
+  [REQUESTS_RECOVERY] [NVARCHAR] (1)  NOT NULL ,
   [JOB_DATA] [IMAGE] NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_JOB_LISTENERS] (
-  [JOB_NAME] [VARCHAR] (80)  NOT NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [JOB_LISTENER] [VARCHAR] (80)  NOT NULL
+  [JOB_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_LISTENER] [NVARCHAR] (80)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_SIMPLE_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
   [REPEAT_COUNT] [BIGINT] NOT NULL ,
   [REPEAT_INTERVAL] [BIGINT] NOT NULL ,
   [TIMES_TRIGGERED] [BIGINT] NOT NULL
@@ -563,34 +565,34 @@ CREATE TABLE [dbo].[QRTZ_EXCL_SIMPLE_TRIGGERS] (
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_BLOB_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
   [BLOB_DATA] [IMAGE] NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_TRIGGER_LISTENERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_LISTENER] [VARCHAR] (80)  NOT NULL
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_LISTENER] [NVARCHAR] (80)  NOT NULL
 )
 GO
 
 CREATE TABLE [dbo].[QRTZ_EXCL_TRIGGERS] (
-  [TRIGGER_NAME] [VARCHAR] (80)  NOT NULL ,
-  [TRIGGER_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [JOB_NAME] [VARCHAR] (80)  NOT NULL ,
-  [JOB_GROUP] [VARCHAR] (80)  NOT NULL ,
-  [IS_VOLATILE] [VARCHAR] (1)  NOT NULL ,
-  [DESCRIPTION] [VARCHAR] (120) NULL ,
+  [TRIGGER_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [TRIGGER_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_NAME] [NVARCHAR] (80)  NOT NULL ,
+  [JOB_GROUP] [NVARCHAR] (80)  NOT NULL ,
+  [IS_VOLATILE] [NVARCHAR] (1)  NOT NULL ,
+  [DESCRIPTION] [NVARCHAR] (120) NULL ,
   [NEXT_FIRE_TIME] [BIGINT] NULL ,
   [PREV_FIRE_TIME] [BIGINT] NULL ,
   [PRIORITY] [INTEGER] NULL ,
-  [TRIGGER_STATE] [VARCHAR] (16)  NOT NULL ,
-  [TRIGGER_TYPE] [VARCHAR] (8)  NOT NULL ,
+  [TRIGGER_STATE] [NVARCHAR] (16)  NOT NULL ,
+  [TRIGGER_TYPE] [NVARCHAR] (8)  NOT NULL ,
   [START_TIME] [BIGINT] NOT NULL ,
   [END_TIME] [BIGINT] NULL ,
-  [CALENDAR_NAME] [VARCHAR] (80)  NULL ,
+  [CALENDAR_NAME] [NVARCHAR] (80)  NULL ,
   [MISFIRE_INSTR] [SMALLINT] NULL ,
   [JOB_DATA] [IMAGE] NULL
 )
@@ -742,146 +744,146 @@ INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('CALENDAR_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('STATE_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('MISFIRE_ACCESS');
 create table calendar_reminder (
-   user_id varchar(255) not null,
-   event_id varchar(36) not null,
+   user_id NVARCHAR(255) not null,
+   event_id NVARCHAR(36) not null,
    send_date datetime not null,
    primary key (user_id, event_id, send_date)
 );
 create table analytic_summary_pages (
    id numeric(19,0) identity not null,
    summary_id numeric(19,0) not null,
-   inode varchar(255) null,
+   inode NVARCHAR(255) null,
    hits numeric(19,0) null,
-   uri varchar(255) null,
+   uri NVARCHAR(255) null,
    primary key (id)
 );
 create table tag (
-   tag_id varchar(100) not null,
-   tagname nvarchar(255) not null,
-   host_id varchar(255) null,
-   user_id varchar(255) null,
+   tag_id NVARCHAR(100) not null,
+   tagname NVARCHAR(255) not null,
+   host_id NVARCHAR(255) null,
+   user_id NVARCHAR(255) null,
    persona tinyint default 0,
    mod_date datetime null,
    primary key (tag_id)
 );
 create table user_comments (
-   inode varchar(36) not null,
-   user_id varchar(255) null,
+   inode NVARCHAR(36) not null,
+   user_id NVARCHAR(255) null,
    cdate datetime null,
-   comment_user_id varchar(100) null,
-   type varchar(255) null,
-   method varchar(255) null,
-   subject varchar(255) null,
-   ucomment text null,
-   communication_id varchar(36) null,
+   comment_user_id NVARCHAR(100) null,
+   type NVARCHAR(255) null,
+   method NVARCHAR(255) null,
+   subject NVARCHAR(255) null,
+   ucomment NVARCHAR(MAX) null,
+   communication_id NVARCHAR(36) null,
    primary key (inode)
 );
 create table permission_reference (
    id numeric(19,0) identity not null,
-   asset_id varchar(36) null,
-   reference_id varchar(36) null,
-   permission_type varchar(100) null,
+   asset_id NVARCHAR(36) null,
+   reference_id NVARCHAR(36) null,
+   permission_type NVARCHAR(100) null,
    primary key (id),
    unique (asset_id)
 );
 create table contentlet_version_info (
-   identifier varchar(36) not null,
+   identifier NVARCHAR(36) not null,
    lang numeric(19,0) not null,
-   working_inode varchar(36) not null,
-   live_inode varchar(36) null,
+   working_inode NVARCHAR(36) not null,
+   live_inode NVARCHAR(36) null,
    deleted tinyint not null,
-   locked_by varchar(100) null,
+   locked_by NVARCHAR(100) null,
    locked_on datetime null,
    version_ts datetime not null,
    primary key (identifier, lang)
 );
 create table fixes_audit (
-   id varchar(36) not null,
-   table_name varchar(255) null,
-   action varchar(255) null,
+   id NVARCHAR(36) not null,
+   table_name NVARCHAR(255) null,
+   action NVARCHAR(255) null,
    records_altered int null,
    datetime datetime null,
    primary key (id)
 );
 create table container_version_info (
-   identifier varchar(36) not null,
-   working_inode varchar(36) not null,
-   live_inode varchar(36) null,
+   identifier NVARCHAR(36) not null,
+   working_inode NVARCHAR(36) not null,
+   live_inode NVARCHAR(36) null,
    deleted tinyint not null,
-   locked_by varchar(100) null,
+   locked_by NVARCHAR(100) null,
    locked_on datetime null,
    version_ts datetime not null,
    primary key (identifier)
 );
 create table trackback (
    id numeric(19,0) identity not null,
-   asset_identifier varchar(36) null,
-   title varchar(255) null,
-   excerpt varchar(255) null,
-   url varchar(255) null,
-   blog_name varchar(255) null,
+   asset_identifier NVARCHAR(36) null,
+   title NVARCHAR(255) null,
+   excerpt NVARCHAR(255) null,
+   url NVARCHAR(255) null,
+   blog_name NVARCHAR(255) null,
    track_date datetime not null,
    primary key (id)
 );
 create table plugin (
-   id varchar(255) not null,
-   plugin_name varchar(255) not null,
-   plugin_version varchar(255) not null,
-   author varchar(255) not null,
+   id NVARCHAR(255) not null,
+   plugin_name NVARCHAR(255) not null,
+   plugin_version NVARCHAR(255) not null,
+   author NVARCHAR(255) not null,
    first_deployed_date datetime not null,
    last_deployed_date datetime not null,
    primary key (id)
 );
 create table mailing_list (
-   inode varchar(36) not null,
-   title varchar(255) null,
+   inode NVARCHAR(36) not null,
+   title NVARCHAR(255) null,
    public_list tinyint null,
-   user_id varchar(255) null,
+   user_id NVARCHAR(255) null,
    primary key (inode)
 );
 create table recipient (
-   inode varchar(36) not null,
-   name varchar(255) null,
-   lastname varchar(255) null,
-   email varchar(255) null,
+   inode NVARCHAR(36) not null,
+   name NVARCHAR(255) null,
+   lastname NVARCHAR(255) null,
+   email NVARCHAR(255) null,
    sent datetime null,
    opened datetime null,
    last_result int null,
-   last_message varchar(255) null,
-   user_id varchar(100) null,
+   last_message NVARCHAR(255) null,
+   user_id NVARCHAR(100) null,
    primary key (inode)
 );
 create table web_form (
-   web_form_id varchar(36) not null,
-   form_type varchar(255) null,
+   web_form_id NVARCHAR(36) not null,
+   form_type NVARCHAR(255) null,
    submit_date datetime null,
-   prefix varchar(255) null,
-   first_name varchar(255) null,
-   middle_initial varchar(255) null,
-   middle_name varchar(255) null,
-   full_name varchar(255) null,
-   organization varchar(255) null,
-   title varchar(255) null,
-   last_name varchar(255) null,
-   address varchar(255) null,
-   address1 varchar(255) null,
-   address2 varchar(255) null,
-   city varchar(255) null,
-   state varchar(255) null,
-   zip varchar(255) null,
-   country varchar(255) null,
-   phone varchar(255) null,
-   email varchar(255) null,
-   custom_fields text null,
-   user_inode varchar(36) null,
-   categories varchar(255) null,
+   prefix NVARCHAR(255) null,
+   first_name NVARCHAR(255) null,
+   middle_initial NVARCHAR(255) null,
+   middle_name NVARCHAR(255) null,
+   full_name NVARCHAR(255) null,
+   organization NVARCHAR(255) null,
+   title NVARCHAR(255) null,
+   last_name NVARCHAR(255) null,
+   address NVARCHAR(255) null,
+   address1 NVARCHAR(255) null,
+   address2 NVARCHAR(255) null,
+   city NVARCHAR(255) null,
+   state NVARCHAR(255) null,
+   zip NVARCHAR(255) null,
+   country NVARCHAR(255) null,
+   phone NVARCHAR(255) null,
+   email NVARCHAR(255) null,
+   custom_fields NVARCHAR(MAX) null,
+   user_inode NVARCHAR(36) null,
+   categories NVARCHAR(255) null,
    primary key (web_form_id)
 );
 create table virtual_link (
-   inode varchar(36) not null,
-   title varchar(255) null,
-   url varchar(255) null,
-   uri varchar(255) null,
+   inode NVARCHAR(36) not null,
+   title NVARCHAR(255) null,
+   url NVARCHAR(255) null,
+   uri NVARCHAR(255) null,
    active tinyint null,
    primary key (inode)
 );
@@ -891,23 +893,23 @@ create table analytic_summary_period (
    day int null,
    week int null,
    month int null,
-   year varchar(255) null,
-   dayname varchar(50) not null,
-   monthname varchar(50) not null,
+   year NVARCHAR(255) null,
+   dayname NVARCHAR(50) not null,
+   monthname NVARCHAR(50) not null,
    primary key (id),
    unique (full_date)
 );
 create table tree (
-   child varchar(36) not null,
-   parent varchar(36) not null,
-   relation_type varchar(64) not null,
+   child NVARCHAR(36) not null,
+   parent NVARCHAR(36) not null,
+   relation_type NVARCHAR(64) not null,
    tree_order int null,
    primary key (child, parent, relation_type)
 );
 create table analytic_summary (
    id numeric(19,0) identity not null,
    summary_period_id numeric(19,0) not null,
-   host_id varchar(36) not null,
+   host_id NVARCHAR(36) not null,
    visits numeric(19,0) null,
    page_views numeric(19,0) null,
    unique_visits numeric(19,0) null,
@@ -921,68 +923,68 @@ create table analytic_summary (
    unique (summary_period_id, host_id)
 );
 create table users_cms_roles (
-   id varchar(36) not null,
-   user_id varchar(100) not null,
-   role_id varchar(36) not null,
+   id NVARCHAR(36) not null,
+   user_id NVARCHAR(100) not null,
+   role_id NVARCHAR(36) not null,
    primary key (id)
 );
 create table template (
-   inode varchar(36) not null,
+   inode NVARCHAR(36) not null,
    show_on_menu tinyint null,
-   title varchar(255) null,
+   title NVARCHAR(255) null,
    mod_date datetime null,
-   mod_user varchar(100) null,
+   mod_user NVARCHAR(100) null,
    sort_order int null,
-   friendly_name varchar(255) null,
-   body text null,
-   header text null,
-   footer text null,
-   image varchar(36) null,
-   identifier varchar(36) null,
+   friendly_name NVARCHAR(255) null,
+   body NVARCHAR(MAX) null,
+   header NVARCHAR(MAX) null,
+   footer NVARCHAR(MAX) null,
+   image NVARCHAR(36) null,
+   identifier NVARCHAR(36) null,
    drawed tinyint null,
-   drawed_body text null,
+   drawed_body NVARCHAR(MAX) null,
    add_container_links int null,
    containers_added int null,
-   head_code text null,
-   theme varchar(255) null,
+   head_code NVARCHAR(MAX) null,
+   theme NVARCHAR(255) null,
    primary key (inode)
 );
 create table analytic_summary_content (
    id numeric(19,0) identity not null,
    summary_id numeric(19,0) not null,
-   inode varchar(255) null,
+   inode NVARCHAR(255) null,
    hits numeric(19,0) null,
-   uri varchar(255) null,
-   title varchar(255) null,
+   uri NVARCHAR(255) null,
+   title NVARCHAR(255) null,
    primary key (id)
 );
 create table structure (
-   inode varchar(36) not null,
-   name varchar(255) null,
-   description varchar(255) null,
+   inode NVARCHAR(36) not null,
+   name NVARCHAR(255) null,
+   description NVARCHAR(255) null,
    default_structure tinyint null,
-   review_interval varchar(255) null,
-   reviewer_role varchar(255) null,
-   page_detail varchar(36) null,
+   review_interval NVARCHAR(255) null,
+   reviewer_role NVARCHAR(255) null,
+   page_detail NVARCHAR(36) null,
    structuretype int null,
    system tinyint null,
    fixed tinyint not null,
-   velocity_var_name varchar(255) null,
-   url_map_pattern varchar(512) null,
-   host varchar(36) not null,
-   folder varchar(36) not null,
-   expire_date_var varchar(255) null,
-   publish_date_var varchar(255) null,
+   velocity_var_name NVARCHAR(255) null,
+   url_map_pattern NVARCHAR(512) null,
+   host NVARCHAR(36) not null,
+   folder NVARCHAR(36) not null,
+   expire_date_var NVARCHAR(255) null,
+   publish_date_var NVARCHAR(255) null,
    mod_date datetime null,
    primary key (inode)
 );
 create table cms_role (
-   id varchar(36) not null,
-   role_name varchar(255) not null,
-   description text null,
-   role_key varchar(255) null,
-   db_fqn varchar(1000) not null,
-   parent varchar(36) not null,
+   id NVARCHAR(36) not null,
+   role_name NVARCHAR(255) not null,
+   description NVARCHAR(MAX) null,
+   role_key NVARCHAR(255) null,
+   db_fqn NVARCHAR(1000) not null,
+   parent NVARCHAR(36) not null,
    edit_permissions tinyint null,
    edit_users tinyint null,
    edit_layouts tinyint null,
@@ -991,303 +993,303 @@ create table cms_role (
    primary key (id)
 );
 create table container_structures (
-   id varchar(36) not null,
-   container_id varchar(36) not null,
-   container_inode varchar(36) not null,
-   structure_id varchar(36) not null,
-   code text null,
+   id NVARCHAR(36) not null,
+   container_id NVARCHAR(36) not null,
+   container_inode NVARCHAR(36) not null,
+   structure_id NVARCHAR(36) not null,
+   code NVARCHAR(MAX) null,
    primary key (id)
 );
 create table permission (
    id numeric(19,0) identity not null,
-   permission_type varchar(100) null,
-   inode_id varchar(36) null,
-   roleid varchar(36) null,
+   permission_type NVARCHAR(100) null,
+   inode_id NVARCHAR(36) null,
+   roleid NVARCHAR(36) null,
    permission int null,
    primary key (id),
    unique (permission_type, inode_id, roleid)
 );
-	create table contentlet (inode varchar(36) not null,
-	show_on_menu tinyint null,
-	title varchar(255) null,
-	mod_date datetime null,
-	mod_user varchar(100) null,
-	sort_order int null,
-	friendly_name varchar(255) null,
-	structure_inode varchar(36) null,
-	last_review datetime null,
-	next_review datetime null,
-	review_interval varchar(255) null,
-	disabled_wysiwyg varchar(255) null,
-	identifier varchar(36) null,
-	language_id numeric(19,0) null,
-	date1 datetime null,
-	date2 datetime null,
-	date3 datetime null,
-	date4 datetime null,
-	date5 datetime null,
-	date6 datetime null,
-	date7 datetime null,
-	date8 datetime null,
-	date9 datetime null,
-	date10 datetime null,
-	date11 datetime null,
-	date12 datetime null,
-	date13 datetime null,
-	date14 datetime null,
-	date15 datetime null,
-	date16 datetime null,
-	date17 datetime null,
-	date18 datetime null,
-	date19 datetime null,
-	date20 datetime null,
-	date21 datetime null,
-	date22 datetime null,
-	date23 datetime null,
-	date24 datetime null,
-	date25 datetime null,
-	text1 varchar(255) null,
-	text2 varchar(255) null,
-	text3 varchar(255) null,
-	text4 varchar(255) null,
-	text5 varchar(255) null,
-	text6 varchar(255) null,
-	text7 varchar(255) null,
-	text8 varchar(255) null,
-	text9 varchar(255) null,
-	text10 varchar(255) null,
-	text11 varchar(255) null,
-	text12 varchar(255) null,
-	text13 varchar(255) null,
-	text14 varchar(255) null,
-	text15 varchar(255) null,
-	text16 varchar(255) null,
-	text17 varchar(255) null,
-	text18 varchar(255) null,
-	text19 varchar(255) null,
-	text20 varchar(255) null,
-	text21 varchar(255) null,
-	text22 varchar(255) null,
-	text23 varchar(255) null,
-	text24 varchar(255) null,
-	text25 varchar(255) null,
-	text_area1 text null,
-	text_area2 text null,
-	text_area3 text null,
-	text_area4 text null,
-	text_area5 text null,
-	text_area6 text null,
-	text_area7 text null,
-	text_area8 text null,
-	text_area9 text null,
-	text_area10 text null,
-	text_area11 text null,
-	text_area12 text null,
-	text_area13 text null,
-	text_area14 text null,
-	text_area15 text null,
-	text_area16 text null,
-	text_area17 text null,
-	text_area18 text null,
-	text_area19 text null,
-	text_area20 text null,
-	text_area21 text null,
-	text_area22 text null,
-	text_area23 text null,
-	text_area24 text null,
-	text_area25 text null,
-	integer1 numeric(19,0) null,
-	integer2 numeric(19,0) null,
-	integer3 numeric(19,0) null,
-	integer4 numeric(19,0) null,
-	integer5 numeric(19,0) null,
-	integer6 numeric(19,0) null,
-	integer7 numeric(19,0) null,
-	integer8 numeric(19,0) null,
-	integer9 numeric(19,0) null,
-	integer10 numeric(19,0) null,
-	integer11 numeric(19,0) null,
-	integer12 numeric(19,0) null,
-	integer13 numeric(19,0) null,
-	integer14 numeric(19,0) null,
-	integer15 numeric(19,0) null,
-	integer16 numeric(19,0) null,
-	integer17 numeric(19,0) null,
-	integer18 numeric(19,0) null,
-	integer19 numeric(19,0) null,
-	integer20 numeric(19,0) null,
-	integer21 numeric(19,0) null,
-	integer22 numeric(19,0) null,
-	integer23 numeric(19,0) null,
-	integer24 numeric(19,0) null,
-	integer25 numeric(19,0) null,
-	"float1" float null,
-	"float2" float null,
-	"float3" float null,
-	"float4" float null,
-	"float5" float null,
-	"float6" float null,
-	"float7" float null,
-	"float8" float null,
-	"float9" float null,
-	"float10" float null,
-	"float11" float null,
-	"float12" float null,
-	"float13" float null,
-	"float14" float null,
-	"float15" float null,
-	"float16" float null,
-	"float17" float null,
-	"float18" float null,
-	"float19" float null,
-	"float20" float null,
-	"float21" float null,
-	"float22" float null,
-	"float23" float null,
-	"float24" float null,
-	"float25" float null,
-	bool1 tinyint null,
-	bool2 tinyint null,
-	bool3 tinyint null,
-	bool4 tinyint null,
-	bool5 tinyint null,
-	bool6 tinyint null,
-	bool7 tinyint null,
-	bool8 tinyint null,
-	bool9 tinyint null,
-	bool10 tinyint null,
-	bool11 tinyint null,
-	bool12 tinyint null,
-	bool13 tinyint null,
-	bool14 tinyint null,
-	bool15 tinyint null,
-	bool16 tinyint null,
-	bool17 tinyint null,
-	bool18 tinyint null,
-	bool19 tinyint null,
-	bool20 tinyint null,
-	bool21 tinyint null,
-	bool22 tinyint null,
-	bool23 tinyint null,
-	bool24 tinyint null,
-	bool25 tinyint null,
-	primary key (inode));
+    create table contentlet (inode NVARCHAR(36) not null,
+    show_on_menu tinyint null,
+    title NVARCHAR(255) null,
+    mod_date datetime null,
+    mod_user NVARCHAR(100) null,
+    sort_order int null,
+    friendly_name NVARCHAR(255) null,
+    structure_inode NVARCHAR(36) null,
+    last_review datetime null,
+    next_review datetime null,
+    review_interval NVARCHAR(255) null,
+    disabled_wysiwyg NVARCHAR(255) null,
+    identifier NVARCHAR(36) null,
+    language_id numeric(19,0) null,
+    date1 datetime null,
+    date2 datetime null,
+    date3 datetime null,
+    date4 datetime null,
+    date5 datetime null,
+    date6 datetime null,
+    date7 datetime null,
+    date8 datetime null,
+    date9 datetime null,
+    date10 datetime null,
+    date11 datetime null,
+    date12 datetime null,
+    date13 datetime null,
+    date14 datetime null,
+    date15 datetime null,
+    date16 datetime null,
+    date17 datetime null,
+    date18 datetime null,
+    date19 datetime null,
+    date20 datetime null,
+    date21 datetime null,
+    date22 datetime null,
+    date23 datetime null,
+    date24 datetime null,
+    date25 datetime null,
+    text1 NVARCHAR(255) null,
+    text2 NVARCHAR(255) null,
+    text3 NVARCHAR(255) null,
+    text4 NVARCHAR(255) null,
+    text5 NVARCHAR(255) null,
+    text6 NVARCHAR(255) null,
+    text7 NVARCHAR(255) null,
+    text8 NVARCHAR(255) null,
+    text9 NVARCHAR(255) null,
+    text10 NVARCHAR(255) null,
+    text11 NVARCHAR(255) null,
+    text12 NVARCHAR(255) null,
+    text13 NVARCHAR(255) null,
+    text14 NVARCHAR(255) null,
+    text15 NVARCHAR(255) null,
+    text16 NVARCHAR(255) null,
+    text17 NVARCHAR(255) null,
+    text18 NVARCHAR(255) null,
+    text19 NVARCHAR(255) null,
+    text20 NVARCHAR(255) null,
+    text21 NVARCHAR(255) null,
+    text22 NVARCHAR(255) null,
+    text23 NVARCHAR(255) null,
+    text24 NVARCHAR(255) null,
+    text25 NVARCHAR(255) null,
+    text_area1 NVARCHAR(MAX) null,
+    text_area2 NVARCHAR(MAX) null,
+    text_area3 NVARCHAR(MAX) null,
+    text_area4 NVARCHAR(MAX) null,
+    text_area5 NVARCHAR(MAX) null,
+    text_area6 NVARCHAR(MAX) null,
+    text_area7 NVARCHAR(MAX) null,
+    text_area8 NVARCHAR(MAX) null,
+    text_area9 NVARCHAR(MAX) null,
+    text_area10 NVARCHAR(MAX) null,
+    text_area11 NVARCHAR(MAX) null,
+    text_area12 NVARCHAR(MAX) null,
+    text_area13 NVARCHAR(MAX) null,
+    text_area14 NVARCHAR(MAX) null,
+    text_area15 NVARCHAR(MAX) null,
+    text_area16 NVARCHAR(MAX) null,
+    text_area17 NVARCHAR(MAX) null,
+    text_area18 NVARCHAR(MAX) null,
+    text_area19 NVARCHAR(MAX) null,
+    text_area20 NVARCHAR(MAX) null,
+    text_area21 NVARCHAR(MAX) null,
+    text_area22 NVARCHAR(MAX) null,
+    text_area23 NVARCHAR(MAX) null,
+    text_area24 NVARCHAR(MAX) null,
+    text_area25 NVARCHAR(MAX) null,
+    integer1 numeric(19,0) null,
+    integer2 numeric(19,0) null,
+    integer3 numeric(19,0) null,
+    integer4 numeric(19,0) null,
+    integer5 numeric(19,0) null,
+    integer6 numeric(19,0) null,
+    integer7 numeric(19,0) null,
+    integer8 numeric(19,0) null,
+    integer9 numeric(19,0) null,
+    integer10 numeric(19,0) null,
+    integer11 numeric(19,0) null,
+    integer12 numeric(19,0) null,
+    integer13 numeric(19,0) null,
+    integer14 numeric(19,0) null,
+    integer15 numeric(19,0) null,
+    integer16 numeric(19,0) null,
+    integer17 numeric(19,0) null,
+    integer18 numeric(19,0) null,
+    integer19 numeric(19,0) null,
+    integer20 numeric(19,0) null,
+    integer21 numeric(19,0) null,
+    integer22 numeric(19,0) null,
+    integer23 numeric(19,0) null,
+    integer24 numeric(19,0) null,
+    integer25 numeric(19,0) null,
+    "float1" float null,
+    "float2" float null,
+    "float3" float null,
+    "float4" float null,
+    "float5" float null,
+    "float6" float null,
+    "float7" float null,
+    "float8" float null,
+    "float9" float null,
+    "float10" float null,
+    "float11" float null,
+    "float12" float null,
+    "float13" float null,
+    "float14" float null,
+    "float15" float null,
+    "float16" float null,
+    "float17" float null,
+    "float18" float null,
+    "float19" float null,
+    "float20" float null,
+    "float21" float null,
+    "float22" float null,
+    "float23" float null,
+    "float24" float null,
+    "float25" float null,
+    bool1 tinyint null,
+    bool2 tinyint null,
+    bool3 tinyint null,
+    bool4 tinyint null,
+    bool5 tinyint null,
+    bool6 tinyint null,
+    bool7 tinyint null,
+    bool8 tinyint null,
+    bool9 tinyint null,
+    bool10 tinyint null,
+    bool11 tinyint null,
+    bool12 tinyint null,
+    bool13 tinyint null,
+    bool14 tinyint null,
+    bool15 tinyint null,
+    bool16 tinyint null,
+    bool17 tinyint null,
+    bool18 tinyint null,
+    bool19 tinyint null,
+    bool20 tinyint null,
+    bool21 tinyint null,
+    bool22 tinyint null,
+    bool23 tinyint null,
+    bool24 tinyint null,
+    bool25 tinyint null,
+    primary key (inode));
 create table analytic_summary_404 (
    id numeric(19,0) identity not null,
    summary_period_id numeric(19,0) not null,
-   host_id varchar(36) null,
-   uri varchar(255) null,
-   referer_uri varchar(255) null,
+   host_id NVARCHAR(36) null,
+   uri NVARCHAR(255) null,
+   referer_uri NVARCHAR(255) null,
    primary key (id)
 );
 create table cms_layouts_portlets (
-   id varchar(36) not null,
-   layout_id varchar(36) not null,
-   portlet_id varchar(100) not null,
+   id NVARCHAR(36) not null,
+   layout_id NVARCHAR(36) not null,
+   portlet_id NVARCHAR(100) not null,
    portlet_order int null,
    primary key (id)
 );
 create table report_asset (
-   inode varchar(36) not null,
-   report_name varchar(255) not null,
-   report_description varchar(1000) not null,
+   inode NVARCHAR(36) not null,
+   report_name NVARCHAR(255) not null,
+   report_description NVARCHAR(1000) not null,
    requires_input tinyint null,
-   ds varchar(100) not null,
+   ds NVARCHAR(100) not null,
    web_form_report tinyint null,
    primary key (inode)
 );
 create table workflow_comment (
-   id varchar(36) not null,
+   id NVARCHAR(36) not null,
    creation_date datetime null,
-   posted_by varchar(255) null,
-   wf_comment text null,
-   workflowtask_id varchar(36) null,
+   posted_by NVARCHAR(255) null,
+   wf_comment NVARCHAR(MAX) null,
+   workflowtask_id NVARCHAR(36) null,
    primary key (id)
 );
 create table category (
-   inode varchar(36) not null,
-   category_name varchar(255) null,
-   category_key varchar(255) null,
+   inode NVARCHAR(36) not null,
+   category_name NVARCHAR(255) null,
+   category_key NVARCHAR(255) null,
    sort_order int null,
    active tinyint null,
-   keywords text null,
-   category_velocity_var_name varchar(255) null,
+   keywords NVARCHAR(MAX) null,
+   category_velocity_var_name NVARCHAR(255) null,
    mod_date datetime null,
    primary key (inode)
 );
 create table htmlpage (
-   inode varchar(36) not null,
+   inode NVARCHAR(36) not null,
    show_on_menu tinyint null,
-   title varchar(255) null,
+   title NVARCHAR(255) null,
    mod_date datetime null,
-   mod_user varchar(100) null,
+   mod_user NVARCHAR(100) null,
    sort_order int null,
-   friendly_name varchar(255) null,
-   metadata text null,
+   friendly_name NVARCHAR(255) null,
+   metadata NVARCHAR(MAX) null,
    start_date datetime null,
    end_date datetime null,
-   page_url varchar(255) null,
+   page_url NVARCHAR(255) null,
    https_required tinyint null,
-   redirect varchar(255) null,
-   identifier varchar(36) null,
-   seo_description text null,
-   seo_keywords text null,
+   redirect NVARCHAR(255) null,
+   identifier NVARCHAR(36) null,
+   seo_description NVARCHAR(MAX) null,
+   seo_keywords NVARCHAR(MAX) null,
    cache_ttl numeric(19,0) null,
-   template_id varchar(36) null,
+   template_id NVARCHAR(36) null,
    primary key (inode)
 );
 create table chain_link_code (
    id numeric(19,0) identity not null,
-   class_name varchar(255) null unique,
-   code text not null,
+   class_name NVARCHAR(255) null unique,
+   code NVARCHAR(MAX) not null,
    last_mod_date datetime not null,
-   language varchar(255) not null,
+   language NVARCHAR(255) not null,
    primary key (id)
 );
 create table analytic_summary_visits (
    id numeric(19,0) identity not null,
    summary_period_id numeric(19,0) not null,
-   host_id varchar(36) null,
+   host_id NVARCHAR(36) null,
    visit_time datetime null,
    visits numeric(19,0) null,
    primary key (id)
 );
 create table template_version_info (
-   identifier varchar(36) not null,
-   working_inode varchar(36) not null,
-   live_inode varchar(36) null,
+   identifier NVARCHAR(36) not null,
+   working_inode NVARCHAR(36) not null,
+   live_inode NVARCHAR(36) null,
    deleted tinyint not null,
-   locked_by varchar(100) null,
+   locked_by NVARCHAR(100) null,
    locked_on datetime null,
    version_ts datetime not null,
    primary key (identifier)
 );
 create table user_preferences (
    id numeric(19,0) identity not null,
-   user_id varchar(100) not null,
-   preference varchar(255) null,
-   pref_value text null,
+   user_id NVARCHAR(100) not null,
+   preference NVARCHAR(255) null,
+   pref_value NVARCHAR(MAX) null,
    primary key (id)
 );
 create table language (
    id numeric(19,0) identity not null,
-   language_code varchar(5) null,
-   country_code varchar(255) null,
-   language varchar(255) null,
-   country varchar(255) null,
+   language_code NVARCHAR(5) null,
+   country_code NVARCHAR(255) null,
+   language NVARCHAR(255) null,
+   country NVARCHAR(255) null,
    primary key (id)
 );
 create table users_to_delete (
    id numeric(19,0) identity not null,
-   user_id varchar(255) null,
+   user_id NVARCHAR(255) null,
    primary key (id)
 );
 create table identifier (
-   id varchar(36) not null,
-   parent_path varchar(255) null,
-   asset_name varchar(255) null,
-   host_inode varchar(36) null,
-   asset_type varchar(64) null,
+   id NVARCHAR(36) not null,
+   parent_path NVARCHAR(255) null,
+   asset_name NVARCHAR(255) null,
+   host_inode NVARCHAR(36) null,
+   asset_type NVARCHAR(64) null,
    syspublish_date datetime null,
    sysexpire_date datetime null,
    primary key (id),
@@ -1295,113 +1297,113 @@ create table identifier (
 );
 create table clickstream (
    clickstream_id numeric(19,0) identity not null,
-   cookie_id varchar(255) null,
-   user_id varchar(255) null,
+   cookie_id NVARCHAR(255) null,
+   user_id NVARCHAR(255) null,
    start_date datetime null,
    end_date datetime null,
-   referer varchar(255) null,
-   remote_address varchar(255) null,
-   remote_hostname varchar(255) null,
-   user_agent varchar(255) null,
+   referer NVARCHAR(255) null,
+   remote_address NVARCHAR(255) null,
+   remote_hostname NVARCHAR(255) null,
+   user_agent NVARCHAR(255) null,
    bot tinyint null,
    number_of_requests int null,
-   host_id varchar(36) null,
-   last_page_id varchar(50) null,
-   first_page_id varchar(50) null,
-   operating_system varchar(50) null,
-   browser_name varchar(50) null,
-   browser_version varchar(50) null,
+   host_id NVARCHAR(36) null,
+   last_page_id NVARCHAR(50) null,
+   first_page_id NVARCHAR(50) null,
+   operating_system NVARCHAR(50) null,
+   browser_name NVARCHAR(50) null,
+   browser_version NVARCHAR(50) null,
    mobile_device tinyint null,
    primary key (clickstream_id)
 );
 create table multi_tree (
-   child varchar(36) not null,
-   parent1 varchar(36) not null,
-   parent2 varchar(36) not null,
-   relation_type varchar(64) null,
+   child NVARCHAR(36) not null,
+   parent1 NVARCHAR(36) not null,
+   parent2 NVARCHAR(36) not null,
+   relation_type NVARCHAR(64) null,
    tree_order int null,
    primary key (child, parent1, parent2)
 );
 create table workflow_task (
-   id varchar(36) not null,
+   id NVARCHAR(36) not null,
    creation_date datetime null,
    mod_date datetime null,
    due_date datetime null,
-   created_by varchar(255) null,
-   assigned_to varchar(255) null,
-   belongs_to varchar(255) null,
-   title varchar(255) null,
-   description text null,
-   status varchar(255) null,
-   webasset varchar(255) null,
+   created_by NVARCHAR(255) null,
+   assigned_to NVARCHAR(255) null,
+   belongs_to NVARCHAR(255) null,
+   title NVARCHAR(255) null,
+   description NVARCHAR(MAX) null,
+   status NVARCHAR(255) null,
+   webasset NVARCHAR(255) null,
    primary key (id)
 );
 create table tag_inode (
-   tag_id varchar(100) not null,
-   inode varchar(100) not null,
-	 field_var_name varchar(255),
+   tag_id NVARCHAR(100) not null,
+   inode NVARCHAR(100) not null,
+   field_var_name NVARCHAR(255),
    mod_date datetime null,
    primary key (tag_id, inode)
 );
 create table click (
-   inode varchar(36) not null,
-   link varchar(255) null,
+   inode NVARCHAR(36) not null,
+   link NVARCHAR(255) null,
    click_count int null,
    primary key (inode)
 );
 create table challenge_question (
    cquestionid numeric(19,0) not null,
-   cqtext varchar(255) null,
+   cqtext NVARCHAR(255) null,
    primary key (cquestionid)
 );
 create table file_asset (
-   inode varchar(36) not null,
-   file_name varchar(255) null,
+   inode NVARCHAR(36) not null,
+   file_name NVARCHAR(255) null,
    file_size int null,
    width int null,
    height int null,
-   mime_type varchar(255) null,
-   author varchar(255) null,
+   mime_type NVARCHAR(255) null,
+   author NVARCHAR(255) null,
    publish_date datetime null,
    show_on_menu tinyint null,
-   title varchar(255) null,
-   friendly_name varchar(255) null,
+   title NVARCHAR(255) null,
+   friendly_name NVARCHAR(255) null,
    mod_date datetime null,
-   mod_user varchar(100) null,
+   mod_user NVARCHAR(100) null,
    sort_order int null,
-   identifier varchar(36) null,
+   identifier NVARCHAR(36) null,
    primary key (inode)
 );
 create table layouts_cms_roles (
-   id varchar(36) not null,
-   layout_id varchar(36) not null,
-   role_id varchar(36) not null,
+   id NVARCHAR(36) not null,
+   layout_id NVARCHAR(36) not null,
+   role_id NVARCHAR(36) not null,
    primary key (id)
 );
 create table clickstream_request (
    clickstream_request_id numeric(19,0) identity not null,
    clickstream_id numeric(19,0) null,
-   server_name varchar(255) null,
-   protocol varchar(255) null,
+   server_name NVARCHAR(255) null,
+   protocol NVARCHAR(255) null,
    server_port int null,
-   request_uri varchar(255) null,
+   request_uri NVARCHAR(255) null,
    request_order int null,
-   query_string text null,
+   query_string NVARCHAR(MAX) null,
    language_id numeric(19,0) null,
    timestampper datetime null,
-   host_id varchar(36) null,
-   associated_identifier varchar(36) null,
+   host_id NVARCHAR(36) null,
+   associated_identifier NVARCHAR(36) null,
    primary key (clickstream_request_id)
 );
 create table content_rating (
    id numeric(19,0) identity not null,
    rating float null,
-   user_id varchar(255) null,
-   session_id varchar(255) null,
-   identifier varchar(36) null,
+   user_id NVARCHAR(255) null,
+   session_id NVARCHAR(255) null,
+   identifier NVARCHAR(36) null,
    rating_date datetime null,
-   user_ip varchar(255) null,
-   long_live_cookie_id varchar(255) null,
+   user_ip NVARCHAR(255) null,
+   long_live_cookie_id NVARCHAR(255) null,
    primary key (id)
 );
 create table chain_state (
@@ -1413,222 +1415,222 @@ create table chain_state (
 );
 create table analytic_summary_workstream (
    id numeric(19,0) identity not null,
-   inode varchar(255) null,
-   asset_type varchar(255) null,
-   mod_user_id varchar(255) null,
-   host_id varchar(36) null,
+   inode NVARCHAR(255) null,
+   asset_type NVARCHAR(255) null,
+   mod_user_id NVARCHAR(255) null,
+   host_id NVARCHAR(36) null,
    mod_date datetime null,
-   action varchar(255) null,
-   name varchar(255) null,
+   action NVARCHAR(255) null,
+   name NVARCHAR(255) null,
    primary key (id)
 );
 create table dashboard_user_preferences (
    id numeric(19,0) identity not null,
    summary_404_id numeric(19,0) null,
-   user_id varchar(255) null,
+   user_id NVARCHAR(255) null,
    ignored tinyint null,
    mod_date datetime null,
    primary key (id)
 );
 create table campaign (
-   inode varchar(36) not null,
-   title varchar(255) null,
-   from_email varchar(255) null,
-   from_name varchar(255) null,
-   subject varchar(255) null,
-   message text null,
-   user_id varchar(255) null,
+   inode NVARCHAR(36) not null,
+   title NVARCHAR(255) null,
+   from_email NVARCHAR(255) null,
+   from_name NVARCHAR(255) null,
+   subject NVARCHAR(255) null,
+   message NVARCHAR(MAX) null,
+   user_id NVARCHAR(255) null,
    start_date datetime null,
    completed_date datetime null,
    active tinyint null,
    locked tinyint null,
-   sends_per_hour varchar(15) null,
+   sends_per_hour NVARCHAR(15) null,
    sendemail tinyint null,
-   communicationinode varchar(36) null,
-   userfilterinode varchar(36) null,
-   sendto varchar(15) null,
+   communicationinode NVARCHAR(36) null,
+   userfilterinode NVARCHAR(36) null,
+   sendto NVARCHAR(15) null,
    isrecurrent tinyint null,
    wassent tinyint null,
    expiration_date datetime null,
-   parent_campaign varchar(36) null,
+   parent_campaign NVARCHAR(36) null,
    primary key (inode)
 );
 create table htmlpage_version_info (
-   identifier varchar(36) not null,
-   working_inode varchar(36) not null,
-   live_inode varchar(36) null,
+   identifier NVARCHAR(36) not null,
+   working_inode NVARCHAR(36) not null,
+   live_inode NVARCHAR(36) null,
    deleted tinyint not null,
-   locked_by varchar(100) null,
+   locked_by NVARCHAR(100) null,
    locked_on datetime null,
    version_ts datetime not null,
    primary key (identifier)
 );
 create table workflowtask_files (
-   id varchar(36) not null,
-   workflowtask_id varchar(36) not null,
-   file_inode varchar(36) not null,
+   id NVARCHAR(36) not null,
+   workflowtask_id NVARCHAR(36) not null,
+   file_inode NVARCHAR(36) not null,
    primary key (id)
 );
 create table analytic_summary_referer (
    id numeric(19,0) identity not null,
    summary_id numeric(19,0) not null,
    hits numeric(19,0) null,
-   uri varchar(255) null,
+   uri NVARCHAR(255) null,
    primary key (id)
 );
 create table dot_containers (
-   inode varchar(36) not null,
-   code text null,
-   pre_loop text null,
-   post_loop text null,
+   inode NVARCHAR(36) not null,
+   code NVARCHAR(MAX) null,
+   pre_loop NVARCHAR(MAX) null,
+   post_loop NVARCHAR(MAX) null,
    show_on_menu tinyint null,
-   title varchar(255) null,
+   title NVARCHAR(255) null,
    mod_date datetime null,
-   mod_user varchar(100) null,
+   mod_user NVARCHAR(100) null,
    sort_order int null,
-   friendly_name varchar(255) null,
+   friendly_name NVARCHAR(255) null,
    max_contentlets int null,
    use_div tinyint null,
    staticify tinyint null,
-   sort_contentlets_by varchar(255) null,
-   lucene_query text null,
-   notes varchar(255) null,
-   identifier varchar(36) null,
+   sort_contentlets_by NVARCHAR(255) null,
+   lucene_query NVARCHAR(MAX) null,
+   notes NVARCHAR(255) null,
+   identifier NVARCHAR(36) null,
    primary key (inode)
 );
 create table communication (
-   inode varchar(36) not null,
-   title varchar(255) null,
-   trackback_link_inode varchar(36) null,
-   communication_type varchar(255) null,
-   from_name varchar(255) null,
-   from_email varchar(255) null,
-   email_subject varchar(255) null,
-   html_page_inode varchar(36) null,
-   text_message text null,
+   inode NVARCHAR(36) not null,
+   title NVARCHAR(255) null,
+   trackback_link_inode NVARCHAR(36) null,
+   communication_type NVARCHAR(255) null,
+   from_name NVARCHAR(255) null,
+   from_email NVARCHAR(255) null,
+   email_subject NVARCHAR(255) null,
+   html_page_inode NVARCHAR(36) null,
+   text_message NVARCHAR(MAX) null,
    mod_date datetime null,
-   modified_by varchar(255) null,
-   ext_comm_id varchar(255) null,
+   modified_by NVARCHAR(255) null,
+   ext_comm_id NVARCHAR(255) null,
    primary key (inode)
 );
 create table fileasset_version_info (
-   identifier varchar(36) not null,
-   working_inode varchar(36) not null,
-   live_inode varchar(36) null,
+   identifier NVARCHAR(36) not null,
+   working_inode NVARCHAR(36) not null,
+   live_inode NVARCHAR(36) null,
    deleted tinyint not null,
-   locked_by varchar(100) null,
+   locked_by NVARCHAR(100) null,
    locked_on datetime not null,
    version_ts datetime not null,
    primary key (identifier)
 );
 create table workflow_history (
-   id varchar(36) not null,
+   id NVARCHAR(36) not null,
    creation_date datetime null,
-   made_by varchar(255) null,
-   change_desc text null,
-   workflowtask_id varchar(36) null,
-   workflow_action_id varchar(36) null,
-   workflow_step_id varchar(36) null,
+   made_by NVARCHAR(255) null,
+   change_desc NVARCHAR(MAX) null,
+   workflowtask_id NVARCHAR(36) null,
+   workflow_action_id NVARCHAR(36) null,
+   workflow_step_id NVARCHAR(36) null,
    primary key (id)
 );
 create table host_variable (
-   id varchar(36) not null,
-   host_id varchar(36) null,
-   variable_name varchar(255) null,
-   variable_key varchar(255) null,
-   variable_value varchar(255) null,
-   user_id varchar(255) null,
+   id NVARCHAR(36) not null,
+   host_id NVARCHAR(36) null,
+   variable_name NVARCHAR(255) null,
+   variable_key NVARCHAR(255) null,
+   variable_value NVARCHAR(255) null,
+   user_id NVARCHAR(255) null,
    last_mod_date datetime null,
    primary key (id)
 );
 create table links (
-   inode varchar(36) not null,
+   inode NVARCHAR(36) not null,
    show_on_menu tinyint null,
-   title varchar(255) null,
+   title NVARCHAR(255) null,
    mod_date datetime null,
-   mod_user varchar(100) null,
+   mod_user NVARCHAR(100) null,
    sort_order int null,
-   friendly_name varchar(255) null,
-   protocal varchar(100) null,
-   url varchar(255) null,
-   target varchar(100) null,
-   internal_link_identifier varchar(36) null,
-   link_type varchar(255) null,
-   link_code text null,
-   identifier varchar(36) null,
+   friendly_name NVARCHAR(255) null,
+   protocal NVARCHAR(100) null,
+   url NVARCHAR(255) null,
+   target NVARCHAR(100) null,
+   internal_link_identifier NVARCHAR(36) null,
+   link_type NVARCHAR(255) null,
+   link_code NVARCHAR(MAX) null,
+   identifier NVARCHAR(36) null,
    primary key (inode)
 );
 create table user_proxy (
-   inode varchar(36) not null,
-   user_id varchar(255) null,
-   prefix varchar(255) null,
-   suffix varchar(255) null,
-   title varchar(255) null,
-   school varchar(255) null,
-   how_heard varchar(255) null,
-   company varchar(255) null,
-   long_lived_cookie varchar(255) null,
-   website varchar(255) null,
+   inode NVARCHAR(36) not null,
+   user_id NVARCHAR(255) null,
+   prefix NVARCHAR(255) null,
+   suffix NVARCHAR(255) null,
+   title NVARCHAR(255) null,
+   school NVARCHAR(255) null,
+   how_heard NVARCHAR(255) null,
+   company NVARCHAR(255) null,
+   long_lived_cookie NVARCHAR(255) null,
+   website NVARCHAR(255) null,
    graduation_year int null,
-   organization varchar(255) null,
+   organization NVARCHAR(255) null,
    mail_subscription tinyint null,
-   var1 varchar(255) null,
-   var2 varchar(255) null,
-   var3 varchar(255) null,
-   var4 varchar(255) null,
-   var5 varchar(255) null,
-   var6 varchar(255) null,
-   var7 varchar(255) null,
-   var8 varchar(255) null,
-   var9 varchar(255) null,
-   var10 varchar(255) null,
-   var11 varchar(255) null,
-   var12 varchar(255) null,
-   var13 varchar(255) null,
-   var14 varchar(255) null,
-   var15 varchar(255) null,
-   var16 varchar(255) null,
-   var17 varchar(255) null,
-   var18 varchar(255) null,
-   var19 varchar(255) null,
-   var20 varchar(255) null,
-   var21 varchar(255) null,
-   var22 varchar(255) null,
-   var23 varchar(255) null,
-   var24 varchar(255) null,
-   var25 varchar(255) null,
+   var1 NVARCHAR(255) null,
+   var2 NVARCHAR(255) null,
+   var3 NVARCHAR(255) null,
+   var4 NVARCHAR(255) null,
+   var5 NVARCHAR(255) null,
+   var6 NVARCHAR(255) null,
+   var7 NVARCHAR(255) null,
+   var8 NVARCHAR(255) null,
+   var9 NVARCHAR(255) null,
+   var10 NVARCHAR(255) null,
+   var11 NVARCHAR(255) null,
+   var12 NVARCHAR(255) null,
+   var13 NVARCHAR(255) null,
+   var14 NVARCHAR(255) null,
+   var15 NVARCHAR(255) null,
+   var16 NVARCHAR(255) null,
+   var17 NVARCHAR(255) null,
+   var18 NVARCHAR(255) null,
+   var19 NVARCHAR(255) null,
+   var20 NVARCHAR(255) null,
+   var21 NVARCHAR(255) null,
+   var22 NVARCHAR(255) null,
+   var23 NVARCHAR(255) null,
+   var24 NVARCHAR(255) null,
+   var25 NVARCHAR(255) null,
    last_result int null,
-   last_message varchar(255) null,
+   last_message NVARCHAR(255) null,
    no_click_tracking tinyint null,
-   cquestionid varchar(255) null,
-   cqanswer varchar(255) null,
-   chapter_officer varchar(255) null,
+   cquestionid NVARCHAR(255) null,
+   cqanswer NVARCHAR(255) null,
+   chapter_officer NVARCHAR(255) null,
    primary key (inode),
    unique (user_id)
 );
 create table chain_state_parameter (
    id numeric(19,0) identity not null,
    chain_state_id numeric(19,0) not null,
-   name varchar(255) not null,
-   value varchar(255) not null,
+   name NVARCHAR(255) not null,
+   value NVARCHAR(255) not null,
    primary key (id)
 );
 create table field (
-   inode varchar(36) not null,
-   structure_inode varchar(255) null,
-   field_name varchar(255) null,
-   field_type varchar(255) null,
-   field_relation_type varchar(255) null,
-   field_contentlet varchar(255) null,
+   inode NVARCHAR(36) not null,
+   structure_inode NVARCHAR(255) null,
+   field_name NVARCHAR(255) null,
+   field_type NVARCHAR(255) null,
+   field_relation_type NVARCHAR(255) null,
+   field_contentlet NVARCHAR(255) null,
    required tinyint null,
    indexed tinyint null,
    listed tinyint null,
-   velocity_var_name varchar(255) null,
+   velocity_var_name NVARCHAR(255) null,
    sort_order int null,
-   field_values text null,
-   regex_check varchar(255) null,
-   hint varchar(255) null,
-   default_value varchar(255) null,
+   field_values NVARCHAR(MAX) null,
+   regex_check NVARCHAR(255) null,
+   hint NVARCHAR(255) null,
+   default_value NVARCHAR(255) null,
    fixed tinyint null,
    read_only tinyint null,
    searchable tinyint null,
@@ -1637,12 +1639,12 @@ create table field (
    primary key (inode)
 );
 create table relationship (
-   inode varchar(36) not null,
-   parent_structure_inode varchar(255) null,
-   child_structure_inode varchar(255) null,
-   parent_relation_name varchar(255) null,
-   child_relation_name varchar(255) null,
-   relation_type_value varchar(255) null,
+   inode NVARCHAR(36) not null,
+   parent_structure_inode NVARCHAR(255) null,
+   child_structure_inode NVARCHAR(255) null,
+   parent_relation_name NVARCHAR(255) null,
+   child_relation_name NVARCHAR(255) null,
+   relation_type_value NVARCHAR(255) null,
    cardinality int null,
    parent_required tinyint null,
    child_required tinyint null,
@@ -1650,143 +1652,143 @@ create table relationship (
    primary key (inode)
 );
 create table folder (
-   inode varchar(36) not null,
-   name varchar(255) null,
-   title varchar(255) not null,
+   inode NVARCHAR(36) not null,
+   name NVARCHAR(255) null,
+   title NVARCHAR(255) not null,
    show_on_menu tinyint null,
    sort_order int null,
-   files_masks varchar(255) null,
-   identifier varchar(36) null,
-   default_file_type varchar(36) null,
+   files_masks NVARCHAR(255) null,
+   identifier NVARCHAR(36) null,
+   default_file_type NVARCHAR(36) null,
    mod_date datetime null,
    primary key (inode)
 );
 create table clickstream_404 (
    clickstream_404_id numeric(19,0) identity not null,
-   referer_uri varchar(255) null,
-   query_string text null,
-   request_uri varchar(255) null,
-   user_id varchar(255) null,
-   host_id varchar(36) null,
+   referer_uri NVARCHAR(255) null,
+   query_string NVARCHAR(MAX) null,
+   request_uri NVARCHAR(255) null,
+   user_id NVARCHAR(255) null,
+   host_id NVARCHAR(36) null,
    timestampper datetime null,
    primary key (clickstream_404_id)
 );
 create table cms_layout (
-   id varchar(36) not null,
-   layout_name varchar(255) not null,
-   description varchar(255) null,
+   id NVARCHAR(36) not null,
+   layout_name NVARCHAR(255) not null,
+   description NVARCHAR(255) null,
    tab_order int null,
    primary key (id)
 );
 create table field_variable (
-   id varchar(36) not null,
-   field_id varchar(36) null,
-   variable_name varchar(255) null,
-   variable_key varchar(255) null,
-   variable_value text null,
-   user_id varchar(255) null,
+   id NVARCHAR(36) not null,
+   field_id NVARCHAR(36) null,
+   variable_name NVARCHAR(255) null,
+   variable_key NVARCHAR(255) null,
+   variable_value NVARCHAR(MAX) null,
+   user_id NVARCHAR(255) null,
    last_mod_date datetime null,
    primary key (id)
 );
 create table report_parameter (
-   inode varchar(36) not null,
-   report_inode varchar(36) null,
-   parameter_description varchar(1000) null,
-   parameter_name varchar(255) null,
-   class_type varchar(250) null,
-   default_value varchar(4000) null,
+   inode NVARCHAR(36) not null,
+   report_inode NVARCHAR(36) null,
+   parameter_description NVARCHAR(1000) null,
+   parameter_name NVARCHAR(255) null,
+   class_type NVARCHAR(250) null,
+   default_value NVARCHAR(4000) null,
    primary key (inode),
    unique (report_inode, parameter_name)
 );
 create table chain (
    id numeric(19,0) identity not null,
-   key_name varchar(255) null unique,
-   name varchar(255) not null,
-   success_value varchar(255) not null,
-   failure_value varchar(255) not null,
+   key_name NVARCHAR(255) null unique,
+   name NVARCHAR(255) not null,
+   success_value NVARCHAR(255) not null,
+   failure_value NVARCHAR(255) not null,
    primary key (id)
 );
 create table link_version_info (
-   identifier varchar(36) not null,
-   working_inode varchar(36) not null,
-   live_inode varchar(36) null,
+   identifier NVARCHAR(36) not null,
+   working_inode NVARCHAR(36) not null,
+   live_inode NVARCHAR(36) null,
    deleted tinyint not null,
-   locked_by varchar(100) null,
+   locked_by NVARCHAR(100) null,
    locked_on datetime null,
    version_ts datetime not null,
    primary key (identifier)
 );
 create table template_containers (
-   id varchar(36) not null,
-   template_id varchar(36) not null,
-   container_id varchar(36) not null,
+   id NVARCHAR(36) not null,
+   template_id NVARCHAR(36) not null,
+   container_id NVARCHAR(36) not null,
    primary key (id)
 );
 create table user_filter (
-   inode varchar(36) not null,
-   title varchar(255) null,
-   firstname varchar(100) null,
-   middlename varchar(100) null,
-   lastname varchar(100) null,
-   emailaddress varchar(100) null,
-   birthdaytypesearch varchar(100) null,
+   inode NVARCHAR(36) not null,
+   title NVARCHAR(255) null,
+   firstname NVARCHAR(100) null,
+   middlename NVARCHAR(100) null,
+   lastname NVARCHAR(100) null,
+   emailaddress NVARCHAR(100) null,
+   birthdaytypesearch NVARCHAR(100) null,
    birthday datetime null,
    birthdayfrom datetime null,
    birthdayto datetime null,
-   lastlogintypesearch varchar(100) null,
-   lastloginsince varchar(100) null,
+   lastlogintypesearch NVARCHAR(100) null,
+   lastloginsince NVARCHAR(100) null,
    loginfrom datetime null,
    loginto datetime null,
-   createdtypesearch varchar(100) null,
-   createdsince varchar(100) null,
+   createdtypesearch NVARCHAR(100) null,
+   createdsince NVARCHAR(100) null,
    createdfrom datetime null,
    createdto datetime null,
-   lastvisittypesearch varchar(100) null,
-   lastvisitsince varchar(100) null,
+   lastvisittypesearch NVARCHAR(100) null,
+   lastvisitsince NVARCHAR(100) null,
    lastvisitfrom datetime null,
    lastvisitto datetime null,
-   city varchar(100) null,
-   state varchar(100) null,
-   country varchar(100) null,
-   zip varchar(100) null,
-   cell varchar(100) null,
-   phone varchar(100) null,
-   fax varchar(100) null,
-   active_ varchar(255) null,
-   tagname varchar(255) null,
-   var1 varchar(255) null,
-   var2 varchar(255) null,
-   var3 varchar(255) null,
-   var4 varchar(255) null,
-   var5 varchar(255) null,
-   var6 varchar(255) null,
-   var7 varchar(255) null,
-   var8 varchar(255) null,
-   var9 varchar(255) null,
-   var10 varchar(255) null,
-   var11 varchar(255) null,
-   var12 varchar(255) null,
-   var13 varchar(255) null,
-   var14 varchar(255) null,
-   var15 varchar(255) null,
-   var16 varchar(255) null,
-   var17 varchar(255) null,
-   var18 varchar(255) null,
-   var19 varchar(255) null,
-   var20 varchar(255) null,
-   var21 varchar(255) null,
-   var22 varchar(255) null,
-   var23 varchar(255) null,
-   var24 varchar(255) null,
-   var25 varchar(255) null,
-   categories varchar(255) null,
+   city NVARCHAR(100) null,
+   state NVARCHAR(100) null,
+   country NVARCHAR(100) null,
+   zip NVARCHAR(100) null,
+   cell NVARCHAR(100) null,
+   phone NVARCHAR(100) null,
+   fax NVARCHAR(100) null,
+   active_ NVARCHAR(255) null,
+   tagname NVARCHAR(255) null,
+   var1 NVARCHAR(255) null,
+   var2 NVARCHAR(255) null,
+   var3 NVARCHAR(255) null,
+   var4 NVARCHAR(255) null,
+   var5 NVARCHAR(255) null,
+   var6 NVARCHAR(255) null,
+   var7 NVARCHAR(255) null,
+   var8 NVARCHAR(255) null,
+   var9 NVARCHAR(255) null,
+   var10 NVARCHAR(255) null,
+   var11 NVARCHAR(255) null,
+   var12 NVARCHAR(255) null,
+   var13 NVARCHAR(255) null,
+   var14 NVARCHAR(255) null,
+   var15 NVARCHAR(255) null,
+   var16 NVARCHAR(255) null,
+   var17 NVARCHAR(255) null,
+   var18 NVARCHAR(255) null,
+   var19 NVARCHAR(255) null,
+   var20 NVARCHAR(255) null,
+   var21 NVARCHAR(255) null,
+   var22 NVARCHAR(255) null,
+   var23 NVARCHAR(255) null,
+   var24 NVARCHAR(255) null,
+   var25 NVARCHAR(255) null,
+   categories NVARCHAR(255) null,
    primary key (inode)
 );
 create table inode (
-   inode varchar(36) not null,
-   owner varchar(255) null,
+   inode NVARCHAR(36) not null,
+   owner NVARCHAR(255) null,
    idate datetime null,
-   type varchar(64) null,
+   type NVARCHAR(64) null,
    primary key (inode)
 );
 alter table analytic_summary_pages add constraint fka1ad33b9ed30e054 foreign key (summary_id) references analytic_summary;
@@ -1930,10 +1932,10 @@ create index tag_is_persona_index on tag(persona);
 create index tag_inode_tagid on tag_inode(tag_id);
 create index tag_inode_inode on tag_inode(inode);
 CREATE TABLE dist_journal
-	   (
+       (
        id bigint NOT NULL IDENTITY (1, 1),
-       object_to_index VARCHAR(1024) NOT NULL,
-       serverid varchar(64) NOT NULL,
+       object_to_index NVARCHAR(1024) NOT NULL,
+       serverid NVARCHAR(64) NOT NULL,
        journal_type int NOT NULL,
        time_entered datetime NOT NULL
        ) ;
@@ -1952,20 +1954,20 @@ ALTER TABLE dist_journal ADD CONSTRAINT
        serverid,
        journal_type
        );
-CREATE TABLE dist_process ( id bigint NOT NULL IDENTITY (1, 1), object_to_index varchar(1024) NOT NULL, serverid varchar(64) NOT NULL, journal_type int NOT NULL, time_entered datetime NOT NULL ) ;
+CREATE TABLE dist_process ( id bigint NOT NULL IDENTITY (1, 1), object_to_index NVARCHAR(1024) NOT NULL, serverid NVARCHAR(64) NOT NULL, journal_type int NOT NULL, time_entered datetime NOT NULL ) ;
 ALTER TABLE dist_process ADD CONSTRAINT PK_dist_process PRIMARY KEY CLUSTERED ( id);
 
 create table plugin_property (
-   plugin_id varchar(255) not null,
-   propkey varchar(255) not null,
-   original_value varchar(255) not null,
-   current_value varchar(255) not null,
+   plugin_id NVARCHAR(255) not null,
+   propkey NVARCHAR(255) not null,
+   original_value NVARCHAR(255) not null,
+   current_value NVARCHAR(255) not null,
    primary key (plugin_id, propkey)
 );
 
 alter table plugin_property add constraint fk_plugin_plugin_property foreign key (plugin_id) references plugin(id);
 
-CREATE TABLE dist_reindex_journal ( id bigint NOT NULL IDENTITY (1, 1), inode_to_index varchar(100) NOT NULL,ident_to_index varchar(100) NOT NULL, serverid varchar(64), priority int NOT NULL, time_entered datetime DEFAULT getDate(), index_val varchar(325),dist_action integer NOT NULL DEFAULT 1);
+CREATE TABLE dist_reindex_journal ( id bigint NOT NULL IDENTITY (1, 1), inode_to_index NVARCHAR(100) NOT NULL,ident_to_index NVARCHAR(100) NOT NULL, serverid NVARCHAR(64), priority int NOT NULL, time_entered datetime DEFAULT getDate(), index_val NVARCHAR(325),dist_action integer NOT NULL DEFAULT 1);
 
 CREATE INDEX dist_reindex_index1 on dist_reindex_journal (inode_to_index);
 CREATE INDEX dist_reindex_index2 on dist_reindex_journal (dist_action);
@@ -1977,13 +1979,13 @@ CREATE INDEX dist_reindex_index6 ON dist_reindex_journal (priority);
 
 ALTER TABLE dist_reindex_journal ADD CONSTRAINT PK_dist_reindex_journal PRIMARY KEY CLUSTERED ( id);
 
-CREATE TABLE quartz_log ( id bigint NOT NULL IDENTITY (1, 1), JOB_NAME varchar(255) NOT NULL, serverid varchar(64) , time_started datetime NOT NULL, primary key (id));
+CREATE TABLE quartz_log ( id bigint NOT NULL IDENTITY (1, 1), JOB_NAME NVARCHAR(255) NOT NULL, serverid NVARCHAR(64) , time_started datetime NOT NULL, primary key (id));
 
 CREATE TRIGGER check_role_key_uniqueness
 ON cms_role
 FOR INSERT, UPDATE
 AS
-DECLARE @c varchar(100)
+DECLARE @c NVARCHAR(100)
 SELECT @c = count(*)
 FROM cms_role e INNER JOIN inserted i ON i.role_key = e.role_key WHERE i.role_key IS NOT NULL AND i.id <> e.id
 IF (@c > 0)
@@ -1995,8 +1997,8 @@ END;
 CREATE TRIGGER check_identifier_host_inode
 ON identifier
 FOR INSERT, UPDATE AS
-DECLARE @assetType varchar(10)
-DECLARE @hostInode varchar(50)
+DECLARE @assetType NVARCHAR(10)
+DECLARE @hostInode NVARCHAR(50)
 DECLARE cur_Inserted cursor
 LOCAL FAST_FORWARD for
  Select asset_type, host_inode
@@ -2008,8 +2010,8 @@ while @@FETCH_STATUS <> -1
 BEGIN
  IF(@assetType <> 'content' AND (@hostInode is null OR @hostInode = ''))
  BEGIN
-	RAISERROR (N'Cannot insert/update a null or empty host inode for this kind of identifier', 10, 1)
-	ROLLBACK WORK
+    RAISERROR (N'Cannot insert/update a null or empty host inode for this kind of identifier', 10, 1)
+    ROLLBACK WORK
  END
 fetch next from cur_Inserted into @assetType,@hostInode
 END;
@@ -2048,38 +2050,38 @@ insert into dist_reindex_lock (dummy) values (1);
 insert into dist_lock (dummy) values (1);
 
 create table import_audit (
-	id bigint not null,
-	start_date datetime,
-	userid varchar(255),
-	filename varchar(512),
-	status int,
-	last_inode varchar(100),
-	records_to_import bigint,
-	serverid varchar(255),
-	primary key (id)
-	);
+    id bigint not null,
+    start_date datetime,
+    userid NVARCHAR(255),
+    filename NVARCHAR(512),
+    status int,
+    last_inode NVARCHAR(100),
+    records_to_import bigint,
+    serverid NVARCHAR(255),
+    primary key (id)
+    );
 
-alter table category alter column category_velocity_var_name varchar(255) not null;
+alter table category alter column category_velocity_var_name NVARCHAR(255) not null;
 
-alter table import_audit add warnings text,
-	errors text,
-	results text,
-	messages text;
+alter table import_audit add warnings NVARCHAR(MAX),
+    errors NVARCHAR(MAX),
+    results NVARCHAR(MAX),
+    messages NVARCHAR(MAX);
 
 alter table structure add CONSTRAINT [DF_structure_host] DEFAULT 'SYSTEM_HOST' for host;
 alter table structure add CONSTRAINT [DF_structure_folder] DEFAULT 'SYSTEM_FOLDER' for folder;
 alter table structure add CONSTRAINT [CK_structure_host] CHECK(host <> '' AND host IS NOT NULL)
 alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
-alter table structure alter column velocity_var_name varchar(255) not null;
+alter table structure alter column velocity_var_name NVARCHAR(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 
 CREATE TRIGGER structure_host_folder_trigger
 ON structure
 FOR INSERT, UPDATE AS
-DECLARE @newFolder varchar(100)
-DECLARE @newHost varchar(100)
-DECLARE @folderInode varchar(100)
-DECLARE @hostInode varchar(100)
+DECLARE @newFolder NVARCHAR(100)
+DECLARE @newHost NVARCHAR(100)
+DECLARE @folderInode NVARCHAR(100)
+DECLARE @hostInode NVARCHAR(100)
 DECLARE cur_Inserted cursor
 LOCAL FAST_FORWARD for
  Select folder, host
@@ -2091,17 +2093,17 @@ while @@FETCH_STATUS <> -1
 BEGIN
    IF (@newHost <> 'SYSTEM_HOST' AND @newFolder <> 'SYSTEM_FOLDER')
    BEGIN
-	  SELECT @hostInode = identifier.host_inode, @folderInode = folder.inode from folder,identifier where folder.identifier = identifier.id and folder.inode = @newFolder
+      SELECT @hostInode = identifier.host_inode, @folderInode = folder.inode from folder,identifier where folder.identifier = identifier.id and folder.inode = @newFolder
       IF (@folderInode IS NULL OR @folderInode = '' OR @newHost <> @hostInode)
       BEGIN
-	    RAISERROR (N'Cannot assign host/folder to structure, folder does not belong to given host', 10, 1)
-	    ROLLBACK WORK
-	  END
+        RAISERROR (N'Cannot assign host/folder to structure, folder does not belong to given host', 10, 1)
+        ROLLBACK WORK
+      END
   END
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
 
-CREATE PROCEDURE load_records_to_index(@server_id VARCHAR(100), @records_to_fetch INT, @priority_level INT)
+CREATE PROCEDURE load_records_to_index(@server_id NVARCHAR(100), @records_to_fetch INT, @priority_level INT)
 AS
 BEGIN
 WITH cte AS (
@@ -2120,7 +2122,7 @@ CREATE Trigger check_file_versions
 ON file_asset
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)
+ DECLARE @identifier NVARCHAR(100)
  DECLARE file_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
   from deleted
@@ -2140,7 +2142,7 @@ CREATE Trigger check_content_versions
 ON contentlet
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)
+ DECLARE @identifier NVARCHAR(100)
  DECLARE content_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
   from deleted
@@ -2161,7 +2163,7 @@ CREATE Trigger check_link_versions
 ON links
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)
+ DECLARE @identifier NVARCHAR(100)
  DECLARE link_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
   from deleted
@@ -2182,7 +2184,7 @@ CREATE Trigger check_container_versions
 ON dot_containers
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)
+ DECLARE @identifier NVARCHAR(100)
  DECLARE container_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
   from deleted
@@ -2204,7 +2206,7 @@ CREATE Trigger check_template_versions
 ON template
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)
+ DECLARE @identifier NVARCHAR(100)
  DECLARE template_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
   from deleted
@@ -2225,7 +2227,7 @@ CREATE Trigger check_htmlpage_versions
 ON htmlpage
 FOR DELETE AS
  DECLARE @totalCount int
- DECLARE @identifier varchar(100)
+ DECLARE @identifier NVARCHAR(100)
  DECLARE htmlpage_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
   from deleted
@@ -2245,11 +2247,11 @@ END;
 CREATE Trigger check_identifier_parent_path
  ON identifier
  FOR INSERT,UPDATE AS
- DECLARE @folderId varchar(100)
- DECLARE @id varchar(100)
- DECLARE @assetType varchar(100)
- DECLARE @parentPath varchar(255)
- DECLARE @hostInode varchar(100)
+ DECLARE @folderId NVARCHAR(100)
+ DECLARE @id NVARCHAR(100)
+ DECLARE @assetType NVARCHAR(100)
+ DECLARE @parentPath NVARCHAR(255)
+ DECLARE @hostInode NVARCHAR(100)
  DECLARE cur_Inserted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,parent_path,host_inode
   from inserted
@@ -2285,8 +2287,8 @@ ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) ref
 CREATE Trigger check_template_identifier
 ON htmlpage
 FOR INSERT,UPDATE AS
-DECLARE @templateId varchar(100)
-DECLARE @tempIdentifier varchar(100)
+DECLARE @templateId NVARCHAR(100)
+DECLARE @tempIdentifier NVARCHAR(100)
 DECLARE htmlpage_cur_Inserted cursor LOCAL FAST_FORWARD for
  Select template_id
  from inserted
@@ -2308,7 +2310,7 @@ CREATE Trigger folder_identifier_check
 ON folder
 FOR DELETE AS
 DECLARE @totalCount int
-DECLARE @identifier varchar(100)
+DECLARE @identifier NVARCHAR(100)
 DECLARE folder_cur_Deleted cursor LOCAL FAST_FORWARD for
  Select identifier
  from deleted
@@ -2340,11 +2342,11 @@ CREATE Trigger check_child_assets
 on identifier
 FOR DELETE AS
 DECLARE @pathCount int
-DECLARE @identifier varchar(100)
-DECLARE @assetType varchar(100)
-DECLARE @assetName varchar(255)
-DECLARE @parentPath varchar(255)
-DECLARE @hostInode varchar(100)
+DECLARE @identifier NVARCHAR(100)
+DECLARE @assetType NVARCHAR(100)
+DECLARE @assetName NVARCHAR(255)
+DECLARE @parentPath NVARCHAR(255)
+DECLARE @hostInode NVARCHAR(100)
 DECLARE cur_Deleted cursor LOCAL FAST_FORWARD for
  Select id,asset_type,asset_name,parent_path,host_inode
   from deleted
@@ -2369,12 +2371,12 @@ DECLARE cur_Deleted cursor LOCAL FAST_FORWARD for
 fetch next from cur_Deleted into @identifier,@assetType,@assetName,@parentPath,@hostInode
 END;
 
-CREATE PROCEDURE renameFolderChildren @oldPath varchar(255),@newPath varchar(255),@hostInode varchar(100) AS
-DECLARE @newFolderPath varchar(255)
-DECLARE @oldFolderPath varchar(255)
-DECLARE @assetName varchar(255)
+CREATE PROCEDURE renameFolderChildren @oldPath NVARCHAR(255),@newPath NVARCHAR(255),@hostInode NVARCHAR(100) AS
+DECLARE @newFolderPath NVARCHAR(255)
+DECLARE @oldFolderPath NVARCHAR(255)
+DECLARE @assetName NVARCHAR(255)
 DECLARE @folderPathLength INT
-DECLARE @errorMsg VARCHAR(1000)
+DECLARE @errorMsg NVARCHAR(1000)
 UPDATE identifier SET  parent_path  = @newPath where parent_path = @oldPath and host_inode = @hostInode
 DECLARE folder_data_cursor CURSOR LOCAL FAST_FORWARD for
 select asset_name from identifier where asset_type='folder' and parent_path = @newPath and host_inode = @hostInode
@@ -2382,15 +2384,15 @@ OPEN folder_data_cursor
 FETCH NEXT FROM folder_data_cursor INTO @assetName
 while @@FETCH_STATUS <> -1
 BEGIN
-	 SET @folderPathLength = 0
+     SET @folderPathLength = 0
      SET @newFolderPath = @newPath + @assetName + '/'
      SET @folderPathLength = LEN(@newPath) + LEN(@assetName) + 1
      IF (@folderPathLength > 255)
         BEGIN
-	        SET @errorMsg = 'Folder path ' + @newPath + @assetName + '/' + ' is longer than 255 characters'
-	        RAISERROR (@errorMsg, 16, 1)
-	        ROLLBACK WORK
-	        RETURN
+            SET @errorMsg = 'Folder path ' + @newPath + @assetName + '/' + ' is longer than 255 characters'
+            RAISERROR (@errorMsg, 16, 1)
+            ROLLBACK WORK
+            RETURN
         END 
      SET @oldFolderPath = @oldPath + @assetName + '/'
      EXEC renameFolderChildren @oldFolderPath,@newFolderPath,@hostInode
@@ -2400,13 +2402,13 @@ END;
 CREATE Trigger rename_folder_assets_trigger
 on Folder
 FOR UPDATE AS
-DECLARE @oldPath varchar(255)
-DECLARE @newPath varchar(255)
-DECLARE @newName varchar(255)
-DECLARE @hostInode varchar(100)
-DECLARE @ident varchar(100)
+DECLARE @oldPath NVARCHAR(255)
+DECLARE @newPath NVARCHAR(255)
+DECLARE @newName NVARCHAR(255)
+DECLARE @hostInode NVARCHAR(100)
+DECLARE @ident NVARCHAR(100)
 DECLARE @folderPathLength INT
-DECLARE @errorMsg VARCHAR(1000)
+DECLARE @errorMsg NVARCHAR(1000)
 DECLARE folder_cur_Updated cursor LOCAL FAST_FORWARD for
  Select inserted.identifier,inserted.name
  from inserted join deleted on (inserted.inode=deleted.inode)
@@ -2421,18 +2423,18 @@ BEGIN
   SET @folderPathLength = LEN(@newPath)
   IF (@folderPathLength > 255)
     BEGIN
-	    SET @errorMsg = 'Folder path ' + @newPath + ' is longer than 255 characters'
-	    RAISERROR (@errorMsg, 16, 1)
-	    ROLLBACK WORK
-	    RETURN
+        SET @errorMsg = 'Folder path ' + @newPath + ' is longer than 255 characters'
+        RAISERROR (@errorMsg, 16, 1)
+        ROLLBACK WORK
+        RETURN
     END 
   UPDATE identifier SET asset_name = @newName where id = @ident
   EXEC renameFolderChildren @oldPath,@newPath,@hostInode
 fetch next from folder_cur_Updated into @ident,@newName
 END;
 
-CREATE FUNCTION dbo.dotFolderPath(@parent_path varchar(36), @asset_name varchar(36))
-RETURNS varchar(36)
+CREATE FUNCTION dbo.dotFolderPath(@parent_path NVARCHAR(36), @asset_name NVARCHAR(36))
+RETURNS NVARCHAR(36)
 BEGIN
   IF(@parent_path='/System folder')
   BEGIN
@@ -2474,70 +2476,70 @@ alter table workflow_history add constraint workflowtask_id_history_FK foreign k
 alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id);
 
 create table workflow_scheme(
-    id varchar(36) primary key,
-    name varchar(255) not null,
-    description varchar(255),
+    id NVARCHAR(36) primary key,
+    name NVARCHAR(255) not null,
+    description NVARCHAR(255),
     archived tinyint default 0,
     mandatory tinyint default 0,
     default_scheme tinyint default 0,
-    entry_action_id varchar(36),
+    entry_action_id NVARCHAR(36),
     mod_date datetime
 );
 alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name);
 
 create table workflow_step(
-    id varchar(36) primary key,
-    name varchar(255) not null,
-    scheme_id varchar(36) references workflow_scheme(id),
+    id NVARCHAR(36) primary key,
+    name NVARCHAR(255) not null,
+    scheme_id NVARCHAR(36) references workflow_scheme(id),
     my_order int default 0,
     resolved tinyint default 0,
     escalation_enable tinyint default 0,
-    escalation_action varchar(36),
+    escalation_action NVARCHAR(36),
     escalation_time int default 0
 );
 create index workflow_idx_step_scheme on workflow_step(scheme_id);
 
 -- Permissionable ---
 create table workflow_action(
-    id varchar(36) primary key,
-    step_id varchar(36) not null  references workflow_step(id),
-    name varchar(255) not null,
-    condition_to_progress text,
-    next_step_id varchar(36) not null references workflow_step(id),
-    next_assign varchar(36) not null references cms_role(id),
+    id NVARCHAR(36) primary key,
+    step_id NVARCHAR(36) not null  references workflow_step(id),
+    name NVARCHAR(255) not null,
+    condition_to_progress NVARCHAR(MAX),
+    next_step_id NVARCHAR(36) not null references workflow_step(id),
+    next_assign NVARCHAR(36) not null references cms_role(id),
     my_order int default 0,
     assignable tinyint default 0,
     commentable tinyint default 0,
     requires_checkout tinyint default 0,
-    icon varchar(255) default 'defaultWfIcon',
+    icon NVARCHAR(255) default 'defaultWfIcon',
     use_role_hierarchy_assign tinyint default 0
 );
 create index workflow_idx_action_step on workflow_action(step_id);
 
 
 create table workflow_action_class(
-    id varchar(36) primary key,
-    action_id varchar(36) references workflow_action(id),
-    name varchar(255) not null,
+    id NVARCHAR(36) primary key,
+    action_id NVARCHAR(36) references workflow_action(id),
+    name NVARCHAR(255) not null,
     my_order int default 0,
-    clazz text
+    clazz NVARCHAR(MAX)
 );
 create index workflow_idx_action_class_action on workflow_action_class(action_id);
 
 create table workflow_action_class_pars(
-    id varchar(36) primary key,
-    workflow_action_class_id varchar(36) not null references workflow_action_class(id),
-    "key" varchar(255) not null,
-    value text
+    id NVARCHAR(36) primary key,
+    workflow_action_class_id NVARCHAR(36) not null references workflow_action_class(id),
+    "key" NVARCHAR(255) not null,
+    value NVARCHAR(MAX)
 );
 create index workflow_idx_action_class_param_action on
     workflow_action_class_pars(workflow_action_class_id);
 
 
 create table workflow_scheme_x_structure(
-    id varchar(36) primary key,
-    scheme_id varchar(36) references workflow_scheme(id),
-    structure_id varchar(36) references structure(inode)
+    id NVARCHAR(36) primary key,
+    scheme_id NVARCHAR(36) references workflow_scheme(id),
+    structure_id NVARCHAR(36) references structure(inode)
 );
 create index workflow_idx_scheme_structure_1 on
     workflow_scheme_x_structure(structure_id);
@@ -2559,19 +2561,19 @@ alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
 
 drop index tag_user_id_index on tag;
-alter table tag alter column user_id text;
+alter table tag alter column user_id NVARCHAR(MAX);
 
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name varchar(30) primary key,
-  index_type varchar(16) not null unique
+  index_name NVARCHAR(30) primary key,
+  index_type NVARCHAR(16) not null unique
 );
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
-    enabled   	 numeric(1,0) not null,
-    log_name 	 varchar(30) not null,
-    description  varchar(50) not null,
+    enabled      numeric(1,0) not null,
+    log_name     NVARCHAR(30) not null,
+    description  NVARCHAR(50) not null,
     primary key (log_name)
   );
 
@@ -2584,11 +2586,11 @@ create table indicies (
 create index idx_identifier_perm on identifier (asset_type,host_inode);
 
 CREATE TABLE broken_link (
-   id VARCHAR(36) PRIMARY KEY,
-   inode VARCHAR(36) NOT NULL,
-   field VARCHAR(36) NOT NULL,
-   link VARCHAR(255) NOT NULL,
-   title VARCHAR(255) NOT NULL,
+   id NVARCHAR(36) PRIMARY KEY,
+   inode NVARCHAR(36) NOT NULL,
+   field NVARCHAR(36) NOT NULL,
+   link NVARCHAR(255) NOT NULL,
+   title NVARCHAR(255) NOT NULL,
    status_code bigint NOT NULL
 );
 
@@ -2599,98 +2601,87 @@ alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
 
 -- ****** Content Publishing Framework *******
-CREATE TABLE publishing_queue
-(id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
-operation numeric(19,0), asset VARCHAR(2000) NOT NULL,
-language_id numeric(19,0) NOT NULL, entered_date DATETIME,
-last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0,
-in_error tinyint DEFAULT 0, last_results TEXT,
-publish_date DATETIME, server_id VARCHAR(256),
-type VARCHAR(256), bundle_id VARCHAR(256), target text);
+CREATE TABLE publishing_queue (
+    id BIGINT IDENTITY (1, 1) PRIMARY KEY NOT NULL,
+    operation NUMERIC(19,0),
+    asset NVARCHAR(2000) NOT NULL,
+    language_id NUMERIC(19,0) NOT NULL,
+    entered_date DATETIME,
+    publish_date DATETIME,
+    type NVARCHAR(256),
+    bundle_id NVARCHAR(256)
+);
 
 CREATE TABLE publishing_queue_audit
-(bundle_id VARCHAR(256) PRIMARY KEY NOT NULL,
+(bundle_id NVARCHAR(256) PRIMARY KEY NOT NULL,
 status INTEGER,
-status_pojo text,
+status_pojo NVARCHAR(MAX),
 status_updated DATETIME,
 create_date DATETIME);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
-	id varchar(36) PRIMARY KEY,
-	group_id varchar(700),
-	server_name varchar(700) unique,
-	address varchar(250),
-	port varchar(10),
-	protocol varchar(10),
-	enabled tinyint DEFAULT 0,
-	auth_key text,
-	sending tinyint DEFAULT 0);
+    id NVARCHAR(36) PRIMARY KEY,
+    group_id NVARCHAR(700),
+    server_name NVARCHAR(700) unique,
+    address NVARCHAR(250),
+    port NVARCHAR(10),
+    protocol NVARCHAR(10),
+    enabled tinyint DEFAULT 0,
+    auth_key NVARCHAR(MAX),
+    sending tinyint DEFAULT 0);
 
 create table publishing_environment(
-	id varchar(36) NOT NULL  primary key,
-	name varchar(255) NOT NULL unique,
-	push_to_all tinyint NOT NULL
+    id NVARCHAR(36) NOT NULL  primary key,
+    name NVARCHAR(255) NOT NULL unique,
+    push_to_all tinyint NOT NULL
 );
 
 
 create table sitesearch_audit (
-    job_id varchar(36),
-    job_name varchar(255) not null,
+    job_id NVARCHAR(36),
+    job_name NVARCHAR(255) not null,
     fire_date DATETIME not null,
     incremental tinyint not null,
     start_date DATETIME,
     end_date DATETIME,
-    host_list varchar(500) not null,
+    host_list NVARCHAR(500) not null,
     all_hosts tinyint not null,
-    lang_list varchar(500) not null,
-    path varchar(500) not null,
+    lang_list NVARCHAR(500) not null,
+    path NVARCHAR(500) not null,
     path_include tinyint not null,
     files_count numeric(19,0) not null,
     pages_count numeric(19,0) not null,
     urlmaps_count numeric(19,0) not null,
-    index_name varchar(100) not null,
+    index_name NVARCHAR(100) not null,
     primary key(job_id,fire_date)
 );
 
-drop table publishing_queue;
-
-CREATE TABLE publishing_queue (
-      id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
-      operation numeric(19,0),
-      asset VARCHAR(2000) NOT NULL,
-      language_id numeric(19,0) NOT NULL,
-      entered_date DATETIME,
-      publish_date DATETIME,
-      type VARCHAR(256),
-      bundle_id VARCHAR(256)
-);
-
 create table publishing_bundle(
-	id varchar(36) NOT NULL  primary key,
-	name varchar(255) NOT NULL,
-	publish_date DATETIME,
-	expire_date DATETIME,
-	owner varchar(100)
+    id NVARCHAR(36) NOT NULL  primary key,
+    name NVARCHAR(255) NOT NULL,
+    publish_date DATETIME,
+    expire_date DATETIME,
+    owner NVARCHAR(100)
 );
 
 ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
 
 create table publishing_bundle_environment(
-	id varchar(36) NOT NULL primary key,
-	bundle_id varchar(36) NOT NULL,
-	environment_id varchar(36) NOT NULL
+    id NVARCHAR(36) NOT NULL primary key,
+    bundle_id NVARCHAR(36) NOT NULL,
+    environment_id NVARCHAR(36) NOT NULL
 );
 
 alter table publishing_bundle_environment add constraint FK_bundle_id foreign key (bundle_id) references publishing_bundle(id);
 alter table publishing_bundle_environment add constraint FK_environment_id foreign key (environment_id) references publishing_environment(id);
 
 create table publishing_pushed_assets(
-	bundle_id varchar(36) NOT NULL,
-	asset_id varchar(36) NOT NULL,
-	asset_type varchar(255) NOT NULL,
-	push_date DATETIME,
-	environment_id varchar(36) NOT NULL
+    bundle_id NVARCHAR(36) NOT NULL,
+    asset_id NVARCHAR(36) NOT NULL,
+    asset_type NVARCHAR(255) NOT NULL,
+    push_date DATETIME,
+    environment_id NVARCHAR(36) NOT NULL
 );
 
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
@@ -2703,24 +2694,25 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 
 --Cluster Tables
 
-CREATE TABLE dot_cluster(cluster_id varchar(36), PRIMARY KEY (cluster_id) );
-CREATE TABLE cluster_server(server_id varchar(36) NOT NULL, cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar(100), PRIMARY KEY (server_id) );
+CREATE TABLE dot_cluster(cluster_id NVARCHAR(36), PRIMARY KEY (cluster_id) );
+CREATE TABLE cluster_server(server_id NVARCHAR(36) NOT NULL, cluster_id NVARCHAR(36) NOT NULL, name NVARCHAR(100), ip_address NVARCHAR(39) NOT NULL, host NVARCHAR(36), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ NVARCHAR(100), PRIMARY KEY (server_id) );
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
-CREATE TABLE cluster_server_uptime(id varchar(36) NOT NULL, server_id varchar(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );
+CREATE TABLE cluster_server_uptime(id NVARCHAR(36) NOT NULL, server_id NVARCHAR(36) NOT NULL, startup datetime null, heartbeat datetime null, PRIMARY KEY (id) );
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- Notifications Table
-  CREATE TABLE notification (
-    group_id           VARCHAR(36)  NOT NULL,
-    user_id            VARCHAR(255) NOT NULL,
-    message            TEXT         NOT NULL,
-    notification_type  VARCHAR(100),
-    notification_level VARCHAR(100),
-    time_sent          DATETIME     NOT NULL,
-    was_read           TINYINT DEFAULT 0,
-    PRIMARY KEY (group_id, user_id)
-  );
-create index idx_not_read ON notification (was_read);
+CREATE TABLE notification (
+    group_id NVARCHAR(36) NOT NULL,
+    user_id NVARCHAR(255) NOT NULL,
+    message NVARCHAR(MAX) NOT NULL,
+    notification_type NVARCHAR(100),
+    notification_level NVARCHAR(100),
+    time_sent DATETIME NOT NULL,
+    was_read TINYINT
+);
+ALTER TABLE notification ADD CONSTRAINT pk_notification PRIMARY KEY (group_id, user_id);
+ALTER TABLE notification ADD CONSTRAINT df_notification_was_read DEFAULT ((0)) FOR was_read;
+CREATE INDEX idx_not_read ON notification (was_read);
 
 -- indices for version_info tables on version_ts
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
@@ -2737,15 +2729,15 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 
 
 -- license repo
-create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping datetime not null);
+create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), license NVARCHAR(MAX) not null, lastping datetime not null);
 
 -- Integrity Checker
-create table folders_ir(folder varchar(255), local_inode varchar(36), remote_inode varchar(36), local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
-create table structures_ir(velocity_name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
-create table schemes_ir(name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
-create table htmlpages_ir(html_page varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-create table fileassets_ir(file_name varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-create table cms_roles_ir(name varchar(1000), role_key varchar(255), local_role_id varchar(36), remote_role_id varchar(36), local_role_fqn varchar(1000), remote_role_fqn varchar(1000), endpoint_id varchar(36), PRIMARY KEY (local_role_id, endpoint_id));
+create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
+create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
+create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
+create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table fileassets_ir(file_name NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table cms_roles_ir(name NVARCHAR(1000), role_key NVARCHAR(255), local_role_id NVARCHAR(36), remote_role_id NVARCHAR(36), local_role_fqn NVARCHAR(1000), remote_role_fqn NVARCHAR(1000), endpoint_id NVARCHAR(36), PRIMARY KEY (local_role_id, endpoint_id));
 
 alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
@@ -2756,36 +2748,32 @@ alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint
 
 ---Server Action
 create table cluster_server_action(
-	server_action_id varchar(36) not null, 
-	originator_id varchar(36) not null, 
-	server_id varchar(36) not null, 
-	failed bit not null, 
-	response varchar(2048), 
-	action_id varchar(1024) not null,
-	completed bit not null, 
-	entered_date datetime not null,
-	time_out_seconds bigint not null,
-	PRIMARY KEY (server_action_id)
+    server_action_id NVARCHAR(36) not null, 
+    originator_id NVARCHAR(36) not null, 
+    server_id NVARCHAR(36) not null, 
+    failed bit not null, 
+    response NVARCHAR(2048), 
+    action_id NVARCHAR(1024) not null,
+    completed bit not null, 
+    entered_date datetime not null,
+    time_out_seconds bigint not null,
+    PRIMARY KEY (server_action_id)
 );
 
 -- Rules Engine
-create table dot_rule(id varchar(36) primary key,name varchar(255) not null,fire_on varchar(20),short_circuit tinyint default 0,parent_id varchar(36) not null,folder varchar(36) not null,priority int default 0,enabled tinyint default 0,mod_date datetime);
-create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),operator varchar(10) not null,priority int default 0,mod_date datetime);
-create table rule_condition(id varchar(36) primary key,conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date datetime);
-create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), paramkey varchar(255) not null, value text,priority int default 0);
-create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
-create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
+create table dot_rule(id NVARCHAR(36) primary key,name NVARCHAR(255) not null,fire_on NVARCHAR(20),short_circuit tinyint default 0,parent_id NVARCHAR(36) not null,folder NVARCHAR(36) not null,priority int default 0,enabled tinyint default 0,mod_date datetime);
+create table rule_condition_group(id NVARCHAR(36) primary key,rule_id NVARCHAR(36) references dot_rule(id),operator NVARCHAR(10) not null,priority int default 0,mod_date datetime);
+create table rule_condition(id NVARCHAR(36) primary key,conditionlet NVARCHAR(MAX) not null,condition_group NVARCHAR(36) references rule_condition_group(id),comparison NVARCHAR(36) not null,operator NVARCHAR(10) not null,priority int default 0,mod_date datetime);
+create table rule_condition_value (id NVARCHAR(36) primary key,condition_id NVARCHAR(36) references rule_condition(id), paramkey NVARCHAR(255) not null, value NVARCHAR(MAX),priority int default 0);
+create table rule_action (id NVARCHAR(36) primary key,rule_id NVARCHAR(36) references dot_rule(id),priority int default 0,actionlet NVARCHAR(MAX) not null,mod_date datetime);
+create table rule_action_pars(id NVARCHAR(36) primary key,rule_action_id NVARCHAR(36) references rule_action(id), paramkey NVARCHAR(255) not null,value NVARCHAR(MAX));
 create index idx_rules_fire_on on dot_rule (fire_on);
 
 CREATE TABLE system_event (
-    identifier VARCHAR(36) NOT NULL,
-    event_type VARCHAR(50) NOT NULL,
-    payload TEXT NOT NULL,
-    created BIGINT NOT NULL,
-    PRIMARY KEY (identifier)
+    identifier NVARCHAR(36) NOT NULL,
+    event_type NVARCHAR(50) NOT NULL,
+    payload NVARCHAR(MAX) NOT NULL,
+    created BIGINT NOT NULL
 );
+ALTER TABLE system_event ADD CONSTRAINT pk_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
-
-  -- Delete User
-  ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;
-  ALTER TABLE user_ ADD delete_date DATETIME NULL;

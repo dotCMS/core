@@ -7,7 +7,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,7 +38,7 @@ import com.liferay.portal.model.User;
  * @author oswaldogallango
  *
  */
-public class WorkflowAPITest extends TestBase{
+public class WorkflowAPITest extends IntegrationTestBase{
 
 	/**
 	 * This Test validate that a workflow step could not be deleted if depends of another step or

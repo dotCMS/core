@@ -17,7 +17,7 @@ import com.dotmarketing.startup.StartupTask;
  * @author oswaldogallango
  *
  */
-public class Task03730UpdatePortletsIds implements StartupTask {
+public class Task03735UpdatePortletsIds implements StartupTask {
 
 	private Map<String, String> portletIds = new HashMap<String,String>();
 

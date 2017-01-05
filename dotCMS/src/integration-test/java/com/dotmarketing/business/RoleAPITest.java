@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
  * @author Jonathan Gamba
  *         Date: 6/20/13
  */
-public class RoleAPITest extends TestBase {
+public class RoleAPITest extends IntegrationTestBase {
 
     private static DotCacheAdministrator cache;
     private static User systemUser;

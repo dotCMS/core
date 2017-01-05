@@ -7,8 +7,8 @@ import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -61,7 +61,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-public class ContentResourceTest extends TestBase {
+public class ContentResourceTest extends IntegrationTestBase {
     Client client;
     WebTarget webTarget;
     String authheader="Authorization";

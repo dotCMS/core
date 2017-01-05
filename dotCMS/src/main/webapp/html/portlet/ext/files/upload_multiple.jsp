@@ -20,7 +20,8 @@
 <%
 //gets referer
 String referer = (request.getParameter("referer") != null ) ? request.getParameter("referer") : "" ;
-String selectedStructure = (request.getParameter("selectedStructure") != null ) ? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
+String selectedStructure = (request.getParameter("selectedStructure") != null &&  request.getParameter("selectedStructure").trim().length() > 0)
+		? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
 WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(s);

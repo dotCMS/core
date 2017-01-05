@@ -2,14 +2,14 @@ package com.dotmarketing.util;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 
 import static org.junit.Assert.*;
 
 /**
  * Unit test for {@link UtilMethods}
  */
-public class UtilMethodsTest extends TestBase {
+public class UtilMethodsTest extends UnitTestBase {
 
 	@Test
     public void testValidateFileName_Valid() {

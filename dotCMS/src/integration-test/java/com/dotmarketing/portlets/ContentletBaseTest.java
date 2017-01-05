@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -74,7 +74,7 @@ import java.util.Random;
  * Date: 3/19/12
  * Time: 11:36 AM
  */
-public class ContentletBaseTest extends TestBase {
+public class ContentletBaseTest extends IntegrationTestBase {
 
     protected static ContentletAPI contentletAPI;
     protected static Host defaultHost;
