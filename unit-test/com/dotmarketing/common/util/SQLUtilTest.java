@@ -138,6 +138,114 @@ public class SQLUtilTest {
     }
 
     @Test
+    public void testValidSelectBox3SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx select_box xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx select_box xxx", s);
+    }
+
+    @Test
+    public void testValidSelectBox4SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx select_ xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx select_ xxx", s);
+    }
+
+    @Test
+    public void testValidSelectBox5SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx _select xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx _select xxx", s);
+    }
+
+    @Test
+    public void testValidSelectBox6SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx _select_ xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx _select_ xxx", s);
+    }
+
+
+    @Test
+    public void testValidSelectBox7SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx _select_box_ xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx _select_box_ xxx", s);
+    }
+
+
+
+    @Test
+    public void testValidSelectBox8SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx select-box xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx select-box xxx", s);
+    }
+
+    @Test
+    public void testValidSelectBox9SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx select- xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx select- xxx", s);
+    }
+
+    @Test
+    public void testValidSelectBox10SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx -select xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx -select xxx", s);
+    }
+
+    @Test
+    public void testValidSelectBox11SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx -select- xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx -select- xxx", s);
+    }
+
+
+    @Test
+    public void testValidSelectBox12SanitizeParameter() throws Exception {
+
+        SQLUtil.enableLog(false);
+        final String s = SQLUtil.sanitizeParameter("xxx -select-box- xxx");
+
+        assertNotNull(s);
+        assertEquals("xxx -select-box- xxx", s);
+    }
+
+
+
+
+
+    @Test
     public void testValidTableSelectSanitizeParameter() throws Exception {
 
         SQLUtil.enableLog(false);
