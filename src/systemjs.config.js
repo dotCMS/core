@@ -29,10 +29,6 @@
         '@angular/http': 'n:@angular/http/bundles/http.umd.js',
         '@angular/router': 'n:@angular/router/bundles/router.umd.js',
         '@angular/forms': 'n:@angular/forms/bundles/forms.umd.js',
-        '@angular/material': 'n:@angular/material/material.umd.js',
-
-        // angular-material
-        '@angular2-material': 'n:@angular2-material',
 
         // PrimeNG Components
         'primeng': 'n:primeng',
