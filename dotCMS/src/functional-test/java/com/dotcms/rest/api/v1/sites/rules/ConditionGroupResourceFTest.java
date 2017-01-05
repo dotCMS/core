@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -16,7 +16,7 @@ import com.dotmarketing.util.json.JSONObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ConditionGroupResourceFTest extends TestBase {
+public class ConditionGroupResourceFTest extends IntegrationTestBase {
 
     private final FunctionalTestConfig config;
 

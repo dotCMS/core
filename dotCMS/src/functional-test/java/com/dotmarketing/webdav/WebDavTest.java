@@ -11,7 +11,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import junit.framework.Assert;
@@ -39,7 +39,7 @@ import com.ettrema.httpclient.InternalServerError;
 import com.ettrema.httpclient.Resource;
 import com.liferay.portal.model.User;
 
-public class WebDavTest extends TestBase {
+public class WebDavTest extends IntegrationTestBase {
 	
 	@Before
 	public void before () {
