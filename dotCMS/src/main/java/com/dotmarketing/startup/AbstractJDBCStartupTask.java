@@ -758,9 +758,10 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		}
 		finally {
 		    try {
-		        conn.close();
-		    }
-		    catch(SQLException ex) {
+		    	if (conn != null) {
+		    		conn.close();
+		    	}
+		    } catch(SQLException ex) {
 		        throw new DotDataException(ex.getMessage(), ex);
 		    }
 		}
