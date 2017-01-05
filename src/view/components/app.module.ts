@@ -1,7 +1,6 @@
 import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpModule} from '@angular/http';
-import {MaterialModule} from '@angular/material';
 import {NgModule} from '@angular/core';
 
 // ROUTING
@@ -42,6 +41,7 @@ import {UserModel} from '../../api/auth/UserModel';
 // CUSTOM COMPONENTS
 import {AppComponent} from './app';
 import {Accordion, AccordionGroup} from './common/accordion/accordion';
+import {DotLoadingIndicator} from './common/dot-loading-indicator/dot-loading-indicator';
 import {CustomTimeComponent} from './common/custom-time/custom-time';
 import {DropdownComponent} from './common/dropdown-component/dropdown-component';
 import {ForgotPasswordComponent} from './common/login/forgot-password-component/forgot-password-component';
@@ -123,6 +123,7 @@ const COMPONENTS = [
     AccordionGroup,
     AppComponent,
     CustomTimeComponent,
+    DotLoadingIndicator,
     DropdownComponent,
     ForgotPasswordComponent,
     ForgotPasswordContainer,
@@ -201,7 +202,6 @@ const NGFACES_MODULES = [
         BrowserModule,
         FormsModule,
         HttpModule,
-        MaterialModule.forRoot(),
         ReactiveFormsModule,
         routing,
         ...NGFACES_MODULES,

@@ -83,7 +83,6 @@ var project = {
     gulp.src([
         '@angular/**/*.js',
         'lodash/lodash.js',
-        '@angular2-material/**/*.js',
         'primeng/**/*.js',
         'rxjs/**',
         'moment/moment.js'
@@ -154,7 +153,6 @@ var project = {
 
   copyCssThemes: function(cb) {
     gulp.src([
-      '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
       'primeng/resources/primeng.min.css'
     ], {cwd: 'node_modules/**'}) /* Glob required here. */
         .pipe(flatten())
