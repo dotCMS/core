@@ -1,4 +1,4 @@
-import {Component, ElementRef, ViewEncapsulation} from '@angular/core';
+import {Component, ElementRef, ViewEncapsulation, ViewChild} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
 import {ActivatedRoute} from '@angular/router';
 import {RoutingService} from '../../../../api/services/routing-service';
@@ -27,6 +27,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     ngOnInit(): void {
+        // TODO there is a weird 4px bug here that make unnecessary scroll, need to look into it.
+        this.element.nativeElement.style.height = (window.innerHeight - 64) + 'px';
         this.iframeElement = this.element.nativeElement.querySelector('iframe');
 
         this.initComponent();

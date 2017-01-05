@@ -2,7 +2,7 @@
     <nav>
         <template ngFor let-menu [ngForOf]="menuItems">
             <accordion-group [heading]="menu.tabName" [icon]="menuIcons[menu.tabName]">
-                <div class="md-nav-list__submenu">
+                <div class="main-nav__submenu">
                     <template ngFor let-menuItem [ngForOf]="menu.menuItems">
                         <a [routerLink]="['portlet/' + menuItem.id]" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
                             {{menuItem.name}}

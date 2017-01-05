@@ -5,14 +5,11 @@ $sidebar-width: 190px;
 
 .layout {
   background-color: $gray-lightest;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: $toolbar-height;
+  padding-top: $toolbar-height;
 }
 
 .layout__main {
-  margin: $toolbar-height 0 0 $sidebar-width;
+  margin-left: $sidebar-width;
   transition: margin-left $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
 
   .collapsed & {
@@ -48,10 +45,6 @@ $sidebar-width: 190px;
 }
 
 .toolbar__host {
-  .md-underline {
-    display: none;
-  }
-
   // TODO: should we add a param for not hover state in the dot-select?
   .dot-select.is-active .dot-select__icon {
     color: $white;

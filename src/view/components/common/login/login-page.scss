@@ -34,26 +34,24 @@
 
   .login__container {
     @include box_shadow(5);
+    border-radius: $border-radius;
     background-color: $white;
     display: flex;
-    padding: 30px 60px;
+    padding: $basic-padding * 4;
 
     &.forgot-password__container {
+      display: block;
       margin: 0 auto;
       padding: 30px;
       width: 500px;
     }
   }
 
-  .login__form-line {
-    padding: 8px 0;
-  }
-
   .login__title {
     color: $brand-primary;
-    font-size: rem-cal(48px);
+    font-size: rem-cal(24px);
     font-weight: normal;
-    margin: 0;
+    margin: 0 0 rem-cal($basic-padding * 2);
   }
 
   .signin {
@@ -76,15 +74,4 @@
     }
 
   }
-
-  .singin__language {
-    float: right;
-  }
-
-  .app-spinner {
-    height: 30px;
-    width: 30px;
-    display: inline-block;
-  }
-
 }
