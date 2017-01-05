@@ -106,7 +106,7 @@ public class MenuHelper implements Serializable {
             if (MenuResource.App.CORE.equals( appFrom )) {
                 return "/spring/portlet/" + menuContext.getPortletId();
             }else{
-                return "/p/" + menuContext.getPortletId();
+                return "/" + menuContext.getPortletId();
             }
         }
 

@@ -69,7 +69,7 @@
   
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/dotadmin/#/fromCore/rules?" + localeParam + "&" + siteParam;
+  document.getElementById("rulesIframe").src = "/dotAdmin/#/fromCore/rules?" + localeParam + "&" + siteParam;
 
 	function  resizeIframe(){
 

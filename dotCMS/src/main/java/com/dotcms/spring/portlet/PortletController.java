@@ -32,7 +32,7 @@ public class PortletController implements Portlet {
 		//TODO include user validation
 		
 		Logger.debug(PortletController.class, "PortletController.renderPortlet");
-		return "redirect:/dotadmin/?id=" + portletId;
+		return "redirect:/dotAdmin/?id=" + portletId;
 	}
 
 	@Override

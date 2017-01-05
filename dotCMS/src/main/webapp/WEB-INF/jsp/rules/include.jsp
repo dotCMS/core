@@ -48,7 +48,7 @@
 
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/dotadmin/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
+  document.getElementById("rulesIframe").src = "/dotAdmin/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
   
 
 

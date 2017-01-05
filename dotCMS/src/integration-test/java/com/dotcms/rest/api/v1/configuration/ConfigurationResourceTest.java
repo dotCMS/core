@@ -45,7 +45,7 @@ public class ConfigurationResourceTest {
 	public void testVerifyConfigurationData() {
 		final ConfigurationResource resource = new ConfigurationResource();
 		final HttpServletRequest request = mock(HttpServletRequest.class);
-		when(request.getRequestURL()).thenReturn(new StringBuffer("http://" + HOST_NAME + "/dotadmin/"));
+		when(request.getRequestURL()).thenReturn(new StringBuffer("http://" + HOST_NAME + "/dotAdmin/"));
 		final Response response = resource.list(request);
 		assertNotNull(response);
 		assertEquals(response.getStatus(), 200);
