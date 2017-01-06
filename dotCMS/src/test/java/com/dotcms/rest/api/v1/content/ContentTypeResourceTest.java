@@ -13,9 +13,9 @@ import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.UnitTestBase;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -34,7 +34,7 @@ import com.liferay.portal.model.User;
 /**
  * Test for the {@link ContentTypeResource}
  */
-public class ContentTypeResourceTest extends TestBase {
+public class ContentTypeResourceTest extends UnitTestBase {
 
     @Test
     public void testNoContentLetTypes() throws Exception {
