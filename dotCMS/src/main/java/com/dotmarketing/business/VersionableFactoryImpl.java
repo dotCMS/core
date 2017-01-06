@@ -1,8 +1,11 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.util.CollectionsUtils.set;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.business.LazyFileAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -82,7 +85,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		Versionable ver = null;
 		User user = this.userApi.getSystemUser();
 		String workingInode = vinfo.getWorkingInode();
-		List<Class<?>> versionableWhitelist = getVersionableWhitelist();
+		Set<Class<?>> versionableWhitelist = getVersionableWhitelist();
 		// Ignore Links, WorkflowMessages and Inode
 		if (versionableWhitelist.contains(clazz)) {
 			try {
@@ -133,7 +136,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if(UtilMethods.isSet(vinfo)) {
 			if(UtilMethods.isSet(vinfo.getLiveInode())){
 				String liveInode = vinfo.getLiveInode();
-				List<Class<?>> versionableWhitelist = getVersionableWhitelist();
+				Set<Class<?>> versionableWhitelist = getVersionableWhitelist();
 				// Ignore Links, WorkflowMessages and Inode
 				if (versionableWhitelist.contains(clazz)) {
 					try {
@@ -398,22 +401,17 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	}
 
 	/**
-	 * Returns the list of dotCMS objects whose information can be looked up via
+	 * Returns the set of dotCMS objects whose information can be looked up via
 	 * APIs before performing a database lookup. This approach allows the
 	 * information to be obtained by checking the cache first instead of going
 	 * directly to the database, which is more expensive.
 	 * 
-	 * @return The list of classes representing the objects that need to be
+	 * @return The set of classes representing the objects that need to be
 	 *         looked up using their respective APIs before performing a
 	 *         database query.
 	 */
-	private List<Class<?>> getVersionableWhitelist() {
-		List<Class<?>> whitelist = new ArrayList<>();
-		whitelist.add(Container.class);
-		whitelist.add(Template.class);
-		whitelist.add(File.class);
-		whitelist.add(HTMLPage.class);
-		return whitelist;
+	private Set<Class<?>> getVersionableWhitelist() {
+		return set(Container.class, Template.class, File.class, HTMLPage.class);
 	}
 
 }
