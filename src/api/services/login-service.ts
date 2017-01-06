@@ -10,6 +10,7 @@ import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
 import {Router} from '@angular/router';
 import {Subject} from 'rxjs/Subject';
+import {DotcmsEventsService} from "./dotcms-events-service";
 
 
 /**
