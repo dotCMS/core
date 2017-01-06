@@ -2321,6 +2321,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
             }
+        } else if (field.getFieldContentlet().contains("text")){
+            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
+                    .append(" NOT LIKE ");
         } else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                     .append(" != ");
