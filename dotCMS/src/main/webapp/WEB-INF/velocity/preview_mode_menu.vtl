@@ -17,9 +17,6 @@
     #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.wiki.contentlet.url"))
 #end
 
-#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
-#set($angularFrame = "$!request.getSession().getAttribute('frame')")
-
 #set($wfScheme = $workflowtool.findSchemeForStruct($dotPageContent.structure))
 
 #set($wfStep = $workflowtool.findStepByContentlet($dotPageContent.contentObject))
@@ -30,9 +27,7 @@
 			
 
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<html>
 <head>
 
 <meta http-equiv="cache-control" content="max-age=0" />
@@ -43,7 +38,7 @@
 
 
 <style type="text/css">
-	@import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+    @import "/html/js/dojo/release/dojo/dijit/themes/dijit.css";
 	@import "/html/css/dijit-dotcms/dotcms.css?b=3.7.0";
 </style>
 
@@ -202,20 +197,20 @@
 
     	if(_lastUrl!=newUrl){
 	    	_lastUrl=newUrl;
+	    	
+			var win = this.window;
+			do {
+				win=win.parent;
+			}
+			while (win.name != "detailFrame" && win != window.top);
+	    	
 
-    	    if(window.top.${angularFrame} != undefined){
-    	    	if(window.top.${angularFrame}.frameMain != undefined ){
-    	    		window.top.${angularFrame}.frameMain.location  = newUrl;
-    	    	}else{
-    	    		window.top.${angularFrame}.contentWindow.frameMain.location  = newUrl;
-    	    	}
-    	    }else{
-    			if(window.${angularFrame}.frameMain != undefined ){
-    				window.${angularFrame}.frameMain.location  = newUrl;
-    			}else{
-    				window.${angularFrame}.contentWindow.frameMain.location  = newUrl;
-    			}	    			
-    		}
+   			if(win.frameMain != undefined ){
+   				win.frameMain.location  = newUrl;
+   			}else{
+   				window.top.contentWindow.frameMain.location  = newUrl;
+   			}	    			
+    		
 
    	 	}
     }
@@ -294,9 +289,7 @@
     function publishAll(){
         if(confirm("$languagewebapi.getFromUserLanguage("message.confirm.modes.publish.page")")){
             document.getElementById('cmd').value="publishHTMLPage";
-            #if($isAngularFrame)
             document.getElementById('submitParent').target="_parent";
-            #end
             document.getElementById('submitParent').submit();
         }
     }
@@ -697,7 +690,7 @@
 </div>
 
 <div style="display:none">
-<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="_parent" #else target="_top" #end >
+<form action="${directorURL}" id="submitParent" method="post" target="_parent" >
     <input type="hidden" name="referer" id="referer" value="$referer">
     <input type="hidden" name="taskInode" id="taskInode" value="">
     <input type="hidden" name="cmd" id="cmd" value="addChild">
