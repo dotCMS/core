@@ -2321,13 +2321,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
             }
-        } else if (field.getFieldContentlet().contains("text")){
-            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
-                    .append(" NOT LIKE ");
         } else {
-            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
-                    .append(" != ");
+            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
+            if (!DbConnectionFactory.isMsSql()){
+                whereField.append(field.getFieldContentlet()).append(" != ");
+            } else {
+                //Specific logic for text(varchar) and textarea (text) fields
+                if (field.getFieldContentlet().contains("text_area")){
+                    whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+                } else{
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
+            }
         }
+            
+
 
         if (!DbConnectionFactory.isMySql()) {
             update.append(field.getFieldContentlet()).append(" = ");
@@ -2348,8 +2356,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(0);
             whereField.append(0);
         } else {
-            update.append("''");
-            whereField.append("''");
+            if (!DbConnectionFactory.isMsSql()){
+                update.append("''");
+                whereField.append("''");
+            } else {
+                //Specific logic for text(varchar) and textarea (text) fields
+                if (field.getFieldContentlet().contains("text_area")){
+                    update.append("''");
+                    whereField.append(" > 0");
+                } else{
+                    update.append("''");
+                    whereField.append("''");
+                }
+            }
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
