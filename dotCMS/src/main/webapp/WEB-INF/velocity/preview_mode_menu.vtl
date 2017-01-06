@@ -1,7 +1,3 @@
-#if(!$ADMIN_MODE)
-	#stop
-#end
-
 #if($request.getAttribute('archive'))
     #set($archive = $request.getAttribute('archive'))
 #end
@@ -139,25 +135,6 @@
         Insertion.Bottom(element,code);
     }
 
-    function backToCMS(){
-        #if(${isAngularFrame})
-        	#if($UtilMethods.isSet(${viewBrowserURL}))
-        	if(window.top.${angularFrame}.src !== undefined){
-        		window.top.${angularFrame}.src = "${viewBrowserURL}";
-        	}else{
-        		window.top.${angularFrame}.location = "${viewBrowserURL}";
-        	}
-	    	#else
-	        window.top.${angularFrame}.src = "/c/";
-	    	#end
-        #else
-            #if($UtilMethods.isSet(${viewBrowserURL}))
-	            window.top.location  = "${viewBrowserURL}";
-	        #else
-	            window.top.location  = "/c/";
-	        #end
-        #end
-    }
 
     function livePage(){
 		console.log("livePage");
@@ -225,23 +202,21 @@
 
     	if(_lastUrl!=newUrl){
 	    	_lastUrl=newUrl;
-	    	 #if(${isAngularFrame})
-	    	    if(window.top.${angularFrame} != undefined){
-	    	    	if(window.top.${angularFrame}.frameMain != undefined ){
-	    	    		window.top.${angularFrame}.frameMain.location  = newUrl;
-	    	    	}else{
-	    	    		window.top.${angularFrame}.contentWindow.frameMain.location  = newUrl;
-	    	    	}
-	    	    }else{
-	    			if(window.${angularFrame}.frameMain != undefined ){
-	    				window.${angularFrame}.frameMain.location  = newUrl;
-	    			}else{
-	    				window.${angularFrame}.contentWindow.frameMain.location  = newUrl;
-	    			}	    			
-	    		}
-	    	#else
-	    		window.top.frameMain.location  = newUrl;
-	    	#end
+
+    	    if(window.top.${angularFrame} != undefined){
+    	    	if(window.top.${angularFrame}.frameMain != undefined ){
+    	    		window.top.${angularFrame}.frameMain.location  = newUrl;
+    	    	}else{
+    	    		window.top.${angularFrame}.contentWindow.frameMain.location  = newUrl;
+    	    	}
+    	    }else{
+    			if(window.${angularFrame}.frameMain != undefined ){
+    				window.${angularFrame}.frameMain.location  = newUrl;
+    			}else{
+    				window.${angularFrame}.contentWindow.frameMain.location  = newUrl;
+    			}	    			
+    		}
+
    	 	}
     }
     

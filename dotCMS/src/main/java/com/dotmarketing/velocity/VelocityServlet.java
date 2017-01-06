@@ -106,6 +106,10 @@ public abstract class VelocityServlet extends HttpServlet {
 	
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
+	private final String PREVIEW_MODE_VTL= "preview_mode.vtl";
+    private final String PREVIEW_MODE_MENU_VTL= "preview_mode_menu.vtl";
+    
+    
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(
@@ -348,11 +352,11 @@ public abstract class VelocityServlet extends HttpServlet {
 		Template template = null;
 
 		if (request.getParameter("leftMenu") != null) {
-			template = VelocityUtil.getEngine().getTemplate("/preview_left_menu.vl");
+			template = VelocityUtil.getEngine().getTemplate(PREVIEW_MODE_MENU_VTL);
 		} else if (request.getParameter("mainFrame") != null) {
-			template = VelocityUtil.getEngine().getTemplate("/live/" + id.getInode() + languageStr + "." + VELOCITY_HTMLPAGE_EXTENSION);
+			template = VelocityUtil.getEngine().getTemplate("/live/" + id.getId() + languageStr + "." + VELOCITY_HTMLPAGE_EXTENSION);
 		} else {
-			template = VelocityUtil.getEngine().getTemplate("/preview_mode.vl");
+			template = VelocityUtil.getEngine().getTemplate(PREVIEW_MODE_VTL);
 		}
 
 		Logger.debug(VelocityServlet.class, "Got the template!!!!" + id.getInode());
@@ -837,7 +841,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				context.put("vmessages", mymessages);
 			}
 
-			template = VelocityUtil.getEngine().getTemplate("/preview_left_menu.vl");
+			template = VelocityUtil.getEngine().getTemplate(PREVIEW_MODE_MENU_VTL);
 		} else if (request.getParameter("mainFrame") != null) {
 			hostVariablesTemplate = VelocityUtil.getEngine().getTemplate("/working/" + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION"));
 
@@ -853,7 +857,7 @@ public abstract class VelocityServlet extends HttpServlet {
             }
 
 		} else {
-			template = VelocityUtil.getEngine().getTemplate("/preview_mode.vl");
+			template = VelocityUtil.getEngine().getTemplate(PREVIEW_MODE_VTL);
 		}
 
 		PrintWriter out = response.getWriter();
@@ -1117,7 +1121,7 @@ public abstract class VelocityServlet extends HttpServlet {
                 context.put( "vmessages", mymessages );
             }
 
-            template = VelocityUtil.getEngine().getTemplate( "/preview_left_menu.vl" );
+            template = VelocityUtil.getEngine().getTemplate(PREVIEW_MODE_MENU_VTL );
         } else if ( request.getParameter( "mainFrame" ) != null ) {
             hostVariablesTemplate = VelocityUtil.getEngine().getTemplate( "/working/" + host.getIdentifier() + "." + Config.getStringProperty( "VELOCITY_HOST_EXTENSION" ) );
 
@@ -1136,7 +1140,7 @@ public abstract class VelocityServlet extends HttpServlet {
             // not try to load the frames
             if ( !InodeUtils.isSet( templateIdentifier.getInode() ) )
                 throw new ResourceNotFoundException( "" );
-            template = VelocityUtil.getEngine().getTemplate( "/preview_mode.vl" );
+            template = VelocityUtil.getEngine().getTemplate( PREVIEW_MODE_VTL );
         }
 
         PrintWriter out = response.getWriter();
