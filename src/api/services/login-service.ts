@@ -50,8 +50,7 @@ export class LoginService {
         // when the session is expired/destroyed
         dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pluck('data').subscribe( date => {
 
-            // log ("session was destroyed at: " + date + ", doing logout");
-            this.logOutUser();
+            this.logOutUser().subscribe(() => {});
         });
     }
 
