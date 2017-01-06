@@ -15,7 +15,7 @@ accordion {
 
     .accordion-group__title {
         border-left: solid 3px transparent;
-        padding: 10px 20px;
+        padding: ($basic-padding * 2) 10px ($basic-padding * 2) 20px;
         transition: background-color 0.15s ease-in;
 
         &:hover {
@@ -27,6 +27,10 @@ accordion {
             border-left: solid 3px $brand-primary;
             font-weight: bold;
         }
+
+        .fa {
+            font-size: $font-size-large;
+        }
     }
 
 
@@ -35,7 +39,7 @@ accordion {
     }
 
     .main-nav__submenu {
-        padding: 0 30px 10px 42px;
+        padding: 0 30px 10px 47px;
 
         a {
             color: $gray-dark;
