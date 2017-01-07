@@ -7,7 +7,12 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
-import com.dotcms.content.elasticsearch.business.*;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -30,6 +35,8 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.ReflectionUtils;
@@ -39,12 +46,8 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
-import com.dotmarketing.cms.polls.business.PollsAPI;
-import com.dotmarketing.cms.polls.business.PollsAPILiferayImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -336,14 +339,6 @@ public class APILocator extends Locator<APIIndex>{
 		return (CalendarReminderAPI) getInstance(APIIndex.CALENDAR_REMINDER_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link PollsAPI} class.
-	 * 
-	 * @return The {@link PollsAPI} class.
-	 */
-	public static PollsAPI getPollAPI(){
-		return (PollsAPI) getInstance(APIIndex.POLL_API);
-	}
 
 	/**
 	 * Creates a single instance of the {@link ChainAPI} class.
@@ -868,7 +863,6 @@ enum APIIndex
 		case PORTLET_API: return new PortletAPIImpl();
 		case WIDGET_API: return new WidgetAPIImpl();
 		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
-		case POLL_API: return new PollsAPILiferayImpl();
 		case CHAIN_API: return new ChainAPIImpl();
 		case PLUGIN_API: return new PluginAPIImpl();
 		case LANGUAGE_API: return new LanguageAPIImpl();

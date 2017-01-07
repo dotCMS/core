@@ -47,11 +47,7 @@
 		<filter-name>URLMapFilter</filter-name>
 		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
 	</filter>
-	 <filter>
-		<filter-name>CacheImagesFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.CacheImagesFilter</filter-class>
-	</filter>
-	
+
 	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
@@ -66,11 +62,6 @@
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 	</filter>
-	<filter>
-		<filter-name>NoCacheFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.NoCacheFilter</filter-class>
-	</filter>
-	
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -138,11 +129,7 @@
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	<filter-mapping>
-		<filter-name>NoCacheFilter</filter-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</filter-mapping>
-	
+
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>

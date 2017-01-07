@@ -5,6 +5,103 @@
 #end
 
 
+##Contents macros
+#macro( getContentDetail $inode )
+	#getContentIdentifier($inode)
+	#getContentByIdentifier($content_id false)
+#end
+
+#macro( getContentDetailByIdentifier $id )
+	#getContentMapDetailByIdentifier($id false)
+#end
+
+#macro(getContentIdentifier $inode)
+	#set($content_id = "")
+	#set($content_id = $inode.identifier)
+
+	## only hit the db if we need it
+	## (we need to start saving the identifier right on the web asset)
+   
+	#if(!$InodeUtils.isSet($content_id))
+   		#set($content_id = $webapi.getIdentifierInode("$inode"))
+	#end
+#end
+
+##ContentObject macros
+#macro( getContentMapDetail $inode )
+	
+    #getContentIdentifier($inode)
+	#if($InodeUtils.isSet($content_id))
+	    #getContentByIdentifier($content_id true)
+	#end
+#end
+
+#macro(getContent $inode)
+    #getContentIdentifier($inode)
+	#getContentMapDetailByIdentifier($content_id)
+#end
+
+#macro( getContentByIdentifier $id $map)
+   #set($content = "")
+   #set($lang = 1)
+   #if ($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+      #set($lang = $request.session.getAttribute("com.dotmarketing.htmlpage.language"))
+   #elseif($request.getAttribute("com.dotmarketing.htmlpage.language"))
+      #set($lang = $request.getAttribute("com.dotmarketing.htmlpage.language"))
+   #end
+   #if($EDIT_MODE || $PREVIEW_MODE || $_show_working_)
+		#if($map)
+			#set($content_path="working/${id}_${lang}.contentMap")
+		#else
+			#set($content_path="working/${id}_${lang}.content")
+		#end
+   #else
+		#if($map)
+			#set($content_path="live/${id}_${lang}.contentMap")
+		#else
+			#set($content_path="live/${id}_${lang}.content")
+		#end
+   #end
+   #set($conExists = $velutil.doesVelocityResourceExist($content_path))
+   #if($conExists) 
+   		#set($CONTENT_INODE = '')
+   		$velutil.mergeTemplate($content_path)
+   		#if($map)
+			#set($content = $context.get("dotcms_content_${id}"))
+   		#end   
+   #elseif($conExists == false && !$InodeUtils.isSet($content.inode) && $languagewebapi.canDefaultContentToDefaultLanguage())
+	   	#set($lang = $languagewebapi.getDefaultLanguage().getId())
+	   	#if($EDIT_MODE || $PREVIEW_MODE)
+			#if($map)
+				#set($content_path="working/${id}_${lang}.contentMap")
+			#else
+				#set($content_path="working/${id}_${lang}.content")
+			#end
+	   	#else
+			#if($map)
+				#set($content_path="live/${id}_${lang}.contentMap")
+			#else
+				#set($content_path="live/${id}_${lang}.content")
+			#end
+	   	#end
+	   	$velutil.mergeTemplate($content_path)
+	   	#if($map)
+			#set($content = $context.get("dotcms_content_${id}"))
+   		#end
+   #end
+    
+	#set($_noContentletMap = "")
+#end
+
+#macro( getContentMapDetailByIdentifier $id )
+	#if($UtilMethods.isSet($_noContentletMap))
+		#getContentByIdentifier($id false)
+    #else
+	    #getContentByIdentifier($id true)
+    #end    
+	#set($_noContentletMap = "")
+#end
+
 
 ##dot parse
 #macro(dotParse $_dotParsePath)
@@ -89,6 +186,37 @@
   #end
 #end
 
+##parse
+#macro( parseContainer $containerIdentifier )
+   #if($EDIT_MODE || $PREVIEW_MODE)
+		$velutil.mergeTemplate("/working/${containerIdentifier}.container")
+   #else
+		$velutil.mergeTemplate("/live/${containerIdentifier}.container")
+   #end
+#end
+
+#macro(editContentlet $CONTENT_INODE)
+	## No container inode is passed because a contentlet is edited no added to the container
+	#set($_containerInode = "")
+	#if($EDIT_MODE)
+		#set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
+		#if($_hasPermission)
+			<a href="javascript:parent.editContentlet('$_containerInode', '$CONTENT_INODE'); " class="dotEditListBox">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
+		#end
+	#end
+#end
+
+#macro(addContentlet $STRUCTURE_INODE $CONTENT_NAME)
+	#if($EDIT_MODE)
+	    <a href="javascript:parent.addContentletChapter('$STRUCTURE_INODE'); "><img src="/html/images/icons/page.png" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
+	#end
+#end
+
+#macro(editEvent $EVENT_INODE)
+	#if($EDIT_MODE)
+		<a href="javascript:parent.editEvent('$EVENT_INODE'); "><img src="/html/images/preview/btn_edit_active.gif" alt="" width="15" height="15" border="0"></a>
+	#end
+#end
 
 ##dotInclude
 #macro(dotInclude $_dotParsePath)
@@ -168,104 +296,3 @@
     #set ($content = $_dotParseContentHeap.remove($math.sub($_dotParseContentHeap.size(), 1)))
   #end
 #end
-
-
-
-##parseContainer
-#macro( parseContainer $containerIdentifier )
-   #if($EDIT_MODE || $PREVIEW_MODE)
-		$velutil.mergeTemplate("/working/${containerIdentifier}.container")
-   #else
-		$velutil.mergeTemplate("/live/${containerIdentifier}.container")
-   #end
-#end
-
-#macro(editContentlet $CONTENT_INODE)
-	## No container inode is passed because a contentlet is edited no added to the container
-	#set($_containerInode = "")
-	#if($EDIT_MODE)
-		#set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
-		#if($_hasPermission)
-			<a href="javascript:parent.editContentlet('$_containerInode', '$CONTENT_INODE'); " class="dotEditListBox">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
-		#end
-	#end
-#end
-
-#macro(addContentlet $STRUCTURE_INODE $CONTENT_NAME)
-	#if($EDIT_MODE)
-	    <a href="javascript:parent.addContentletChapter('$STRUCTURE_INODE'); "><img src="/html/images/icons/page.png" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
-	#end
-#end
-
-#macro(editEvent $EVENT_INODE)
-	#if($EDIT_MODE)
-		<a href="javascript:parent.editEvent('$EVENT_INODE'); "><img src="/html/images/preview/btn_edit_active.gif" alt="" width="15" height="15" border="0"></a>
-	#end
-#end
-
-
-
-#macro (pullRSSFeed $url)
-
-   #if(!$UtilMethods.isSet($rssFilter))
-      #set($rssFilter = [''])
-   #end
-   
-   #if(!$UtilMethods.isSet($rssTotal))
-      #set($rssTotal = -1)
-   #end
-   
-   #if(!$UtilMethods.isSet($ingesterName))
-      #set($ingesterName = 'RSSIngester')
-   #end
-   
-   #if(!$UtilMethods.isSet($rssUserAgent))
-      #set($rssUserAgent = '')
-   #end
-	
-   #set($rssFile = $rssapi.getFile($url,$ingesterName,$rssUserAgent))
-
-   $velutil.mergeTemplate($rssFile) 
-
-   #set($list = $rssapi.filterAndTop($list,$rssFilter,$rssTotal))
-
-#end
-
-#macro (getResultsFromXMLFeed)
-   
-   #if(!$UtilMethods.isSet($rssFilter))
-      #set($rssFilter = [''])
-   #end
-   
-   #set($rssTotal = $limit)
-   #if(!$UtilMethods.isSet($rssTotal))
-      #set($rssTotal = -1)
-   #end
-   
-   #if($parameters)
-      #if($url.indexOf('?') == -1)
-         #set($url = "${url}?${parameters}")
-      #else
-         #set($url = "${url}&${parameters}")
-      #end
-   #end
-
-   #if(!$UtilMethods.isSet($ingesterName))
-      #set($ingesterName = 'RSSIngester')
-   #end
-   
-   #if(!$UtilMethods.isSet($rssUserAgent))
-         #set($rssUserAgent = '')
-   #end
-   
-   #set($rssFile = $rssapi.getFile($url,$ingesterName,$rssUserAgent))
-
-   $velutil.mergeTemplate($rssFile)
-
-   #set($list = $rssapi.filterAndTop($list,$rssFilter,$rssTotal))
-   #if($orderBy)
-      #set($list = $sorter.sort($list,$orderBy))
-   #end
-   
-#end
-
