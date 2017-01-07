@@ -13,14 +13,26 @@
 	<html>
 		<head>
 			<script>
+			
+			    function listFrames(win){
+			    	console.log("name:" + win.name);
+			    	for(i=0;i<win.frames.length;i++){
+			    		console.log("frames:" + win.frames[i].name);
+			    	}
+			    }
+			
 				var win = this.window;
-				do {
+				while (win.frameMain == undefined && win.frameMenu==undefined && win != window.top && win.name !="detailFrame"){
+					//listFrames(win);
 					win=win.parent;
 				}
-				while (win.name != "detailFrame" && win != window.top);
+				
+				console.log("winner:" + win.name);
+				
 				win.location.replace("${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end");
 			</script>
 		</head>
+		<body style="background:white url()"></body>
 	</html>
 	#stop
 #end
@@ -62,7 +74,7 @@
 			dojo.connect(window, 'onresize', this, resetFrameWidth);
 		</script>		
 	</head>
-	<body style="border:0;margin:0;padding:0;">
+	<body style="border:0;margin:0;padding:0;background:white url()">
 
 		<div id="controlsdiv" style="position:absolute; top:0; left:0; padding:0; margin:0; border:0; width:0;height: 0;z-index: 0;"></div>
 		<table style="border:0;padding:0;width:100%;overflow:hidden;" width="100%" cellspacing="0" cellpadding="0" border="0">
