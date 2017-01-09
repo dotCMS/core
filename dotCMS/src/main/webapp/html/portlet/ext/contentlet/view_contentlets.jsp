@@ -19,6 +19,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
+<iframe id="AjaxActionJackson" name="AjaxActionJackson" style="width:0px; height:0px;"></iframe>
 <%
 	List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
 	List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
@@ -315,7 +316,6 @@
 
     });
 </script>
-
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
     <input type="hidden" name="fullCommand" id="fullCommand" value="">
