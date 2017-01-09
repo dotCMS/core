@@ -12,6 +12,7 @@ staging/
 /typings/
 !staging/.gitkeep
 /semantic/
+y/
 
 
 #NodeJs / Package Manager dirs
