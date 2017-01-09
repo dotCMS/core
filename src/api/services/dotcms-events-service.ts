@@ -26,36 +26,30 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(private dotcmsConfig: DotcmsConfig, loginService: LoginService) {
+    constructor(private dotcmsConfig: DotcmsConfig) {
         dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
             this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
         });
+    }
 
-        // Subscribe to changes on the logged user, only start the socket connection when the user is authenticated
-        loginService.watchUser(auth => {
-            if (auth.user) {
-                // The user exist, lets try to create the socket connection
-                this.connectWithSocket();
-            }
-        });
+    /**
+     * Close the socket
+     */
+    close() : void {
 
-        // Subscribe to changes in order to know when there is not a logged user
-        loginService.logout$.subscribe(() => {
+        // On logout, meaning no authenticated user lets try to close the socket
+        if (this.ws) {
 
-            // On logout, meaning no authenticated user lets try to close the socket
-            if (this.ws) {
-
-                /*
-                 We need to turn on this closedOnLogout flag in order to avoid reconnections as we explicitly
-                 closed the socket
-                 */
-                this.closedOnLogout = true;
-                this.ws.close(true);
-            }
-        });
+            /*
+             We need to turn on this closedOnLogout flag in order to avoid reconnections as we explicitly
+             closed the socket
+             */
+            this.closedOnLogout = true;
+            this.ws.close(true);
+        }
     }
 
     /**
