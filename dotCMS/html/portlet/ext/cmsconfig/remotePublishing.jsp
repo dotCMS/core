@@ -915,7 +915,7 @@ function deleteEnvPushHistory(envId) {
                 <div style="padding:10px;border-bottom:1px solid silver;margin-bottom:-1px">
                     <div class="buttonsGroup">
 
-                        <%if(environment.getPushToAll() || i == 0){%>
+                        <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
                         <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
                             <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
                                 <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
@@ -950,7 +950,35 @@ function deleteEnvPushHistory(envId) {
                         </div>
                         <div>
                             <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
-                            <i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+                            <%if (!"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                            	<i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+	                        <%} else {
+	                        	String endpointString = "aws-s3";
+								try {
+									java.util.Properties props = new java.util.Properties();
+									props.load(
+										new java.io.StringReader(
+											com.dotmarketing.cms.factories.PublicEncryptionFactory.decryptString(
+												endpoint.getAuthKey().toString()
+											)
+										)
+									);
+
+									String bucketID = props.getProperty("dotcms.push.aws.s3.bucketID");
+									if (com.dotmarketing.util.UtilMethods.isSet(bucketID)) {
+
+										endpointString += "://" + bucketID;
+
+										String bucketPrefix = props.getProperty("dotcms.push.aws.s3.bucketPrefix");
+										if (com.dotmarketing.util.UtilMethods.isSet(bucketPrefix)) {
+
+											endpointString += "/" + bucketPrefix;
+										}
+									}
+								} catch (Exception ex) {}
+	                		%>
+                            	<i style="color:#888;"><%=endpointString%></i>
+	                        <%}%>
                         </div>
                     </div>
                 </div>
