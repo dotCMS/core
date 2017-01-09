@@ -1402,7 +1402,7 @@ html, body {
   height: 42px;
   background-color: #fff;
   color: #161616;
-  padding: 0 16px;
+  padding: 0 24px;
   position: relative;
   border-width: 5px 1px 0 0;
   border-style: solid;
@@ -1418,7 +1418,7 @@ html, body {
   padding-right: 32px;
 }
 .dijitTabPaneWrapper .dijitContentPane {
-  padding: 16px;
+  padding: 24px;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
@@ -1590,7 +1590,7 @@ html, body {
 }
 .dijitTabContainerNested .dijitTabContainerTop-container {
   border: none;
-  padding: 0 16px;
+  padding: 0 24px;
 }
 
 .dijitTooltipContainer {
@@ -3115,14 +3115,14 @@ select[multiple]:hover {
 .listingTable {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
-  margin: 0 auto;
+  margin: 0 auto 16px auto;
   width: 100%;
 }
 .listingTable tr .selected {
   background-color: #E0E9F6;
 }
 .listingTable th, .listingTable td {
-  padding: 8px;
+  padding: 10px 8px;
   border-bottom: 1px solid #ECEDEE;
 }
 .listingTable th:first-child, .listingTable td:first-child {
@@ -6800,6 +6800,10 @@ a.category_higlighted, a.tag_higlighted {
   border: 1px solid #d0d0d0;
   padding: 8px;
   text-align: center;
+}
+
+.edit-mode__side-nav .dijitTab {
+  padding: 0 16px;
 }
 
 .file-selector-tree .dijitDialogPaneContent {
