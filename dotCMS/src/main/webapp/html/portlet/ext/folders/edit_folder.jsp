@@ -17,7 +17,7 @@
 	String thispage = java.net.URLEncoder.encode(CTX_PATH + "/ext/folders/edit_folder?inode=" + folder.getInode() +
 			(parentFolder == null?"&phostId=" + parentHost.getIdentifier():"&pfolderId=" + parentFolder.getInode()) + "&openNodes=" + request.getParameter("openNodes") + "&view=" + request.getParameter("view") + "&content=" + request.getParameter("content"),"UTF-8");
 	String referer = request.getParameter("referer");
-	Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+	Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 %>
 
 
