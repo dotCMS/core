@@ -754,7 +754,7 @@ public class DotInitScheduler {
             String jobGroup = DOTCMS_JOB_GROUP_NAME;
             String triggerName = "trigger23";
             String triggerGroup = "group23";
-            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)) {
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true) &&  Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true )) {
 				try {
 					isNew = false;
 					
@@ -777,10 +777,14 @@ public class DotInitScheduler {
 						sched.scheduleJob(trigger);
 					else
 						sched.rescheduleJob(triggerName, triggerGroup, trigger);
+
+					Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob on");
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
+				Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob off");
+
 				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
 					sched.deleteJob(jobName, jobGroup);
 				}
