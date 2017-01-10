@@ -19,8 +19,8 @@
 	if(currentEndpoint ==null){
 		currentEndpoint = new PublishingEndPoint();
 		currentEndpoint.setEnabled(true);
-		currentEndpoint.setPort("80");
-		currentEndpoint.setProtocol("http");
+		currentEndpoint.setPort("");
+		currentEndpoint.setProtocol("");
 		currentEndpoint.setSending(false);
 
 		if(currentEnvironment!=null)
@@ -32,6 +32,10 @@
 %>
 
 <script type="text/javascript">
+
+	// if it is aws s3 selected, the password should be displayed.
+	var currentProtocol = "<%= currentEndpoint.getProtocol() %>";
+
 	require(["dojo/parser", "dijit/form/SimpleTextarea"]);
 	function saveEndpoint(){
 
@@ -59,9 +63,9 @@
 					}
 					else{
 						<% if (UtilMethods.isSet(environmentId)) { %>
-							backToEnvironmentList(true);
+						backToEnvironmentList(true);
 						<% } else {%>
-							backToEndpointsList();
+						backToEndpointsList();
 						<%}%>
 					}
 				},
@@ -106,7 +110,80 @@
 		}
 	}
 
+	function setAddressRow(changedType) {
+
+		if (currentProtocol === "awss3") {
+
+			if (changedType) {
+				dijit.byId("address").set("value", "s3.aws.amazon.com");
+				dijit.byId("port").set("value", "80");
+
+				dojo.byId("addressRow").hide();
+			}
+		} else {
+
+			if (changedType) {
+				dijit.byId("address").set("value", "");
+				dijit.byId("port").set("value", "");
+
+				dojo.byId("addressRow").show();
+			}
+		}
+	}
+
+	function setAuthPropertiesRow(changedType) {
+		if (currentProtocol === "awss3") {
+
+			dojo.style("authKeyHttpSpan", "display", "none");
+			dojo.style("authKeyAwsS3Span", "display", "");
+
+			if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
+
+				dijit.byId("authKey").set("value",
+					"dotcms.push.aws.s3.token=myToken\n" +
+					"dotcms.push.aws.s3.secret=mySecret\n" +
+					"dotcms.push.aws.s3.bucketID=myBucketId\n" +
+					"dotcms.push.aws.s3.bucketPrefix=myBucketPrefix"
+				);
+			}
+		} else {
+
+			dojo.style("authKeyHttpSpan", "display", "");
+			dojo.style("authKeyAwsS3Span", "display", "none");
+
+			if (changedType) {
+
+				dijit.byId("authKey").set("value", "");
+			}
+		}
+
+		if (changedType) {
+			dojo.byId("authPropertiesRow").show();
+		}
+	}
+
+
+	function onChangeProtocolTypeSelectCheck() {
+		currentProtocol = dijit.byId("protocol").value;
+
+		setAddressRow(true);		
+		setAuthPropertiesRow(true);
+	}
+
 	dojo.ready( function(){
+
+		<% if( ! com.dotmarketing.util.UtilMethods.isSet( currentEndpoint.getProtocol() ) ) { %>
+			dojo.byId("addressRow").hide();
+			dojo.byId("authPropertiesRow").hide();
+		<% } %>
+
+		if (currentProtocol === "awss3") {
+			dojo.byId("addressRow").hide();				
+		}
+
+		setAddressRow(false);
+		setAuthPropertiesRow(false);
+
 		toggleServerType('<%=isSender%>');
 	});
 
@@ -143,15 +220,30 @@
 				</td>
 				<td>
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
-							  name="serverName"
-							  id="serverName"
-							  style="width:300px;"
-							  value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
-							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
-							  />
+						   name="serverName"
+						   id="serverName"
+						   style="width:300px;"
+						   value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
+						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
+					/>
 				</td>
 			</tr>
 
+			<tr>
+				<td align="right" width="40%">
+					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %>:
+				</td>
+				<td>
+					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;" onchange="onChangeProtocolTypeSelectCheck();">
+						<% if( ! com.dotmarketing.util.UtilMethods.isSet( currentEndpoint.getProtocol() ) ) { %>
+							<option disabled="disabled" selected="selected" value=""><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_placeholder") %></option>
+						<%} %>
+						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_http") %></option>
+						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_https") %></option>
+						<option value="awss3" <%=("awss3".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_awss3") %></option>
+					</select>
+				</td>
+			</tr>
 
 
 			<tr>
@@ -170,42 +262,33 @@
 						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %>:
 					</span>
 				</td>
-				<td>
+				<td nowrap="nowrap">
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
 						   name="address"
 						   id="address"
 						   style="width:300px"
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
-						   />
-						   <div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
-				</td>
-			</tr>
+					/>
 
-
-			<tr id="portRow">
-				<td align="right"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</td>
-				<td nowrap="nowrap">
-
+					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
 						   name="port" id="port" style="width:50px"
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
-					&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
 
-
-					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;">
-						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>http</option>
-						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>https</option>
-					</select>
-
+					<div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
 				</td>
 			</tr>
 
-			<tr id="authKeyRow">
+			<tr id="authPropertiesRow">
 				<td align="right">
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
+					<span id="authKeyHttpSpan">
+						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %>:
+					</span>
+					<span id="authKeyAwsS3Span" style="display:none;">
+						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_awss3") %>:
+					</span>
 				</td>
 				<td>
 					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;height:105px;"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
@@ -229,8 +312,8 @@
 					&nbsp;
 					<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 
-			    </td>
-		    </tr>
-	   </table>
+				</td>
+			</tr>
+		</table>
 	</div>
 </div>

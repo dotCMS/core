@@ -1,17 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.TestBase;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -29,6 +18,14 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba
@@ -47,6 +44,149 @@ public class CategoryAPITest extends TestBase {
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = hostAPI.findDefaultHost( user, false );
+    }
+
+    /**
+     * Testing {@link CategoryAPI#findTopLevelCategories(User, boolean, int, int, String, String)},
+     * {@link CategoryAPI#findTopLevelCategories(User, boolean)} and {@link CategoryAPI#findTopLevelCategories(User, boolean, String)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void findTopLevelCategories() throws DotSecurityException, DotDataException {
+
+        CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+
+        //***************************************************************
+        int start = 0;
+        int count = 10;//TODO: A -1 or 0 wont work in order to request all que records
+        String filter = null;
+        String sort = null;
+
+        //Test the category API
+        PaginatedCategories categories = categoryAPI.findTopLevelCategories(user, false, start, count, filter, sort);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        //***************************************************************
+        filter = "event";
+        sort = null;
+
+        //Test the category API
+        categories = categoryAPI.findTopLevelCategories(user, false, start, count, filter, sort);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        //***************************************************************
+        filter = null;
+        sort = "mod_date";
+
+        //Test the category API
+        categories = categoryAPI.findTopLevelCategories(user, false, start, count, filter, sort);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        //***************************************************************
+        filter = null;
+
+        //Test the category API
+        List<Category> categoriesList = categoryAPI.findTopLevelCategories(user, false, filter);
+
+        //Apply some validations
+        assertNotNull(categoriesList);
+        assertFalse(categoriesList.isEmpty());
+        assertTrue(categoriesList.size() > 0);
+
+        //***************************************************************
+        //Test the category API
+        categoriesList = categoryAPI.findTopLevelCategories(user, false);
+
+        //Apply some validations
+        assertNotNull(categoriesList);
+        assertFalse(categoriesList.isEmpty());
+        assertTrue(categoriesList.size() > 0);
+    }
+
+    /**
+     * Testing {@link CategoryAPI#findChildren(User, String, boolean, int, int, String, String)} and
+     * {@link CategoryAPI#findChildren(User, String, boolean, String)}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void findChildren() throws DotSecurityException, DotDataException {
+
+        CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+
+        //Find a parent category
+        PaginatedCategories categories = categoryAPI.findTopLevelCategories(user, false, 0, 10, "event", null);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        String inode = categories.getCategories().get(0).getInode();
+
+        //***************************************************************
+        int start = 0;
+        int count = 10;//TODO: A -1 or 0 wont work in order to request all que records
+        String filter = null;
+        String sort = null;
+
+        //Test the category API
+        categories = categoryAPI.findChildren(user, inode, false, start, count, filter, sort);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        //***************************************************************
+        filter = "release";
+        sort = null;
+
+        //Test the category API
+        categories = categoryAPI.findChildren(user, inode, false, start, count, filter, sort);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        //***************************************************************
+        filter = null;
+        sort = "mod_date";
+
+        //Test the category API
+        categories = categoryAPI.findChildren(user, inode, false, start, count, filter, sort);
+
+        //Apply some validations
+        assertNotNull(categories.getCategories());
+        assertFalse(categories.getCategories().isEmpty());
+        assertTrue(categories.getTotalCount() > 0);
+
+        //***************************************************************
+        filter = "release";
+
+        //Test the category API
+        List<Category> categoriesList = categoryAPI.findChildren(user, inode, false, filter);
+
+        //Apply some validations
+        assertNotNull(categoriesList);
+        assertFalse(categoriesList.isEmpty());
+        assertTrue(categoriesList.size() > 0);
     }
 
     /**

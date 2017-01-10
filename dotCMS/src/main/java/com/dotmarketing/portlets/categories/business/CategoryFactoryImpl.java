@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.categories.business;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -481,18 +482,62 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return findTopLevelCategoriesByFilter(null, null);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException {
 		filter = SQLUtil.sanitizeParameter(filter);
 		sort = SQLUtil.sanitizeSortBy(sort);
-		HibernateUtil dh = new HibernateUtil(Category.class);
-		StringBuilder sql = new StringBuilder();
-		sql.append("SELECT {category.*} from category category left join tree tree on category.inode = tree.child, ");
-		sql.append("inode category_1_ where tree.child is null and category_1_.inode = category.inode and category_1_.type = 'category' ");
-		sql.append(getFilterAndSortSQL(filter, sort));
-		dh.setSQLQuery(sql.toString());
-		return (List<Category>) dh.list();
+		String selectQuery = "SELECT * FROM category LEFT JOIN tree ON category.inode = tree.child, inode "
+				+ "WHERE tree.child IS NULL AND inode.inode = category.inode AND inode.type = 'category'";
+		if (UtilMethods.isSet(filter)) {
+			filter = filter.toLowerCase();
+			selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
+					+ "OR LOWER(category.category_velocity_var_name) LIKE ? ) ";
+		}
+		if (UtilMethods.isSet(sort)) {
+			String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
+			sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
+			if (DbConnectionFactory.isMsSql()) {
+				selectQuery += " ORDER BY category." + sort + sortDirection;
+			} else {
+				selectQuery += " ORDER BY ?" + sortDirection;
+			}
+		} else {
+			selectQuery += " ORDER BY category.sort_order, category.category_name";
+		}
+		List<Category> categories = new ArrayList<>();
+		try (Connection conn = DbConnectionFactory.getConnection()) {
+			PreparedStatement stmt = conn.prepareStatement(selectQuery);
+			if (UtilMethods.isSet(filter) && !UtilMethods.isSet(sort)) {
+				stmt.setString(1, "%" + filter + "%");
+				stmt.setString(2, "%" + filter + "%");
+				stmt.setString(3, "%" + filter + "%");
+			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter) && !DbConnectionFactory.isMsSql()) {
+				stmt.setString(1, "category." + sort);
+			} else if (UtilMethods.isSet(filter) && UtilMethods.isSet(sort)) {
+				stmt.setString(1, "%" + filter + "%");
+				stmt.setString(2, "%" + filter + "%");
+				stmt.setString(3, "%" + filter + "%");
+				if (!DbConnectionFactory.isMsSql()) {
+					stmt.setString(4, "category." + sort);
+				}
+			}
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				Category category = new Category();
+				category.setInode(rs.getString("inode"));
+				category.setCategoryName(rs.getString("category_name"));
+				category.setKey(rs.getString("category_key"));
+				category.setSortOrder(rs.getInt("sort_order"));
+				category.setActive(DbConnectionFactory.isDBTrue(rs.getString("active")));
+				category.setKeywords(rs.getString("keywords"));
+				category.setCategoryVelocityVarName(rs.getString("category_velocity_var_name"));
+				category.setModDate(rs.getDate("mod_date"));
+				categories.add(category);
+			}
+		} catch (SQLException e) {
+			throw new DotDataException("An error occurred when filtering the top level categories.", e);
+		}
+		return categories;
 	}
 
 	@Override
@@ -530,46 +575,66 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
 		}
 	}
-	@SuppressWarnings("unchecked")
+
 	@Override
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
 		inode = SQLUtil.sanitizeParameter(inode);
 		filter = SQLUtil.sanitizeParameter(filter);
 		sort = SQLUtil.sanitizeSortBy(sort);
-
-		HibernateUtil dh = new HibernateUtil(Category.class);
-		StringBuilder sql = new StringBuilder();
-		sql.append("select {category.*} from inode category_1_, category, tree where ");
-		sql.append("category.inode = tree.child and tree.parent = '").append(inode).append("' and category_1_.inode = category.inode ");
-		sql.append("and category_1_.type = 'category'  ");
-		sql.append(getFilterAndSortSQL(filter, sort));
-		dh.setSQLQuery(sql.toString());
-		return (List<Category>) dh.list();
-	}
-
-	private String getFilterAndSortSQL(String filter, String sort) {
-		filter = SQLUtil.sanitizeParameter(filter);
-		sort = SQLUtil.sanitizeSortBy(sort);
-
-		StringBuilder sb = new StringBuilder();
-
-		if(UtilMethods.isSet(filter)) {
+		String selectQuery = "SELECT * FROM inode, category, tree WHERE category.inode = tree.child AND tree.parent = ? "
+				+ "AND inode.inode = category.inode AND inode.type = 'category'";
+		if (UtilMethods.isSet(filter)) {
 			filter = filter.toLowerCase();
-			sb.append("and (lower(category.category_name) like '%").append(filter).append("%' or lower(category.category_key) like '%"+filter+"%'" +
-				"or lower(category.category_velocity_var_name) like '%").append(filter).append("%' ) ");
+			selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
+					+ "OR LOWER(category.category_velocity_var_name) LIKE ? ) ";
 		}
-
-		if(UtilMethods.isSet(sort)) {
-			String sortDirection = sort.startsWith("-")?"desc":"asc";
-			sort = sort.startsWith("-")?sort.substring(1,sort.length()):sort;
-			sb.append("order by category.").append(sort).append(" ").append(sortDirection);
+		if (UtilMethods.isSet(sort)) {
+			String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
+			sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
+			if (DbConnectionFactory.isMsSql()) {
+				selectQuery += " ORDER BY category." + sort + sortDirection;
+			} else {
+				selectQuery += " ORDER BY ?" + sortDirection;
+			}
 		} else {
-			sb.append("order by category.sort_order, category.category_name");
+			selectQuery += " ORDER BY category.sort_order, category.category_name";
 		}
-
-		return sb.toString();
+		List<Category> children = new ArrayList<>();
+		try (Connection conn = DbConnectionFactory.getConnection()) {
+			PreparedStatement stmt = conn.prepareStatement(selectQuery);
+			stmt.setString(1, inode);
+			if (UtilMethods.isSet(filter) && !UtilMethods.isSet(sort)) {
+				stmt.setString(2, "%" + filter + "%");
+				stmt.setString(3, "%" + filter + "%");
+				stmt.setString(4, "%" + filter + "%");
+			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter) && !DbConnectionFactory.isMsSql()) {
+				stmt.setString(2, "category." + sort);
+			} else if (UtilMethods.isSet(filter) && UtilMethods.isSet(sort)) {
+				stmt.setString(2, "%" + filter + "%");
+				stmt.setString(3, "%" + filter + "%");
+				stmt.setString(4, "%" + filter + "%");
+				if (!DbConnectionFactory.isMsSql()) {
+					stmt.setString(5, "category." + sort);
+				}
+			}
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				Category category = new Category();
+				category.setInode(rs.getString("inode"));
+				category.setCategoryName(rs.getString("category_name"));
+				category.setKey(rs.getString("category_key"));
+				category.setSortOrder(rs.getInt("sort_order"));
+				category.setActive(DbConnectionFactory.isDBTrue(rs.getString("active")));
+				category.setKeywords(rs.getString("keywords"));
+				category.setCategoryVelocityVarName(rs.getString("category_velocity_var_name"));
+				category.setModDate(rs.getDate("mod_date"));
+				children.add(category);
+			}
+		} catch (SQLException e) {
+			throw new DotDataException("An error occurred when filtering child categories for inode '" + inode + "'.", e);
+		}
+		return children;
 	}
-
 
 	@Override
 	protected void clearCache() {

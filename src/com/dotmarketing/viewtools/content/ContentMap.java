@@ -124,16 +124,16 @@ public class ContentMap {
 			Object ret = null;
 			Field f = retriveField(fieldVariableName);
 			if(f==null){
-				if(fieldVariableName.equalsIgnoreCase("host")){
+				if("host".equalsIgnoreCase(fieldVariableName)){
 					try{
 						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
 					}catch (IndexOutOfBoundsException e) {
 						Logger.debug(this, "Unable to get host on content");
 						return null;
 					}
-				}else if(fieldVariableName.equalsIgnoreCase("title")){
+				}else if("title".equalsIgnoreCase(fieldVariableName)){
 					ret =  getContentletsTitle();
-				}else if(fieldVariableName.equalsIgnoreCase("structure")){
+				}else if("structure".equalsIgnoreCase(fieldVariableName) || "contenttype".equalsIgnoreCase(fieldVariableName)){
 					return getStructure();
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033
 				}else if(fieldVariableName.contains("FileURI")){
@@ -148,9 +148,9 @@ public class ContentMap {
 						IFileAsset file = null;
 						String p = "";
 						if (EDIT_OR_PREVIEW_MODE){
-							p = WorkingCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+							p = WorkingCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 						}else{
-							p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+							p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 						}
 						p = p.substring(5, p.lastIndexOf("."));
 						if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
@@ -185,7 +185,7 @@ public class ContentMap {
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
 				IFileAsset file = null;
 				if (EDIT_OR_PREVIEW_MODE){
-					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
@@ -200,7 +200,7 @@ public class ContentMap {
 						file = fileAPI.find(p,user,true);
 					}
 				}else{
-					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
+					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
@@ -233,7 +233,7 @@ public class ContentMap {
 
                 // Field value is not present in fieldValueMap hashmap
                 if (content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
-                        && f.getVelocityVarName().equalsIgnoreCase("fileasset")) {
+                        && "fileasset".equalsIgnoreCase(f.getVelocityVarName())) {
                     // http://jira.dotmarketing.net/browse/DOTCMS-7406
                     FileAssetMap fam = FileAssetMap.of(content);
 
@@ -248,7 +248,7 @@ public class ContentMap {
                     return bm;
                 }
 			//if the property being served is URL and the structure is a page show URL using the identifier information
-			}else if(fieldVariableName.equalsIgnoreCase("url") && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			}else if("url".equalsIgnoreCase(fieldVariableName) && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
 					// asset name only keeps the page name and not the full path, the full path is obtained by concatenating the parent path and the asset name

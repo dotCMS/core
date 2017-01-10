@@ -129,7 +129,7 @@ public class BundlePublisher extends Publisher {
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
         if ( LicenseUtil.getLevel() < 300 ) {
-            throw new RuntimeException( "need an enterprise licence to run this" );
+            throw new RuntimeException( "need an enterprise license to run this" );
         }
 
         String bundleName = config.getId();

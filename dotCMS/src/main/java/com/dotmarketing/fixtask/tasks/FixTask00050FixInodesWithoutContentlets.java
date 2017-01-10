@@ -34,8 +34,8 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 
 	private List <Map<String, String>> modifiedData= new  ArrayList <Map<String, String>>();
 	/* Queries */
-	private static final String selectInodeContentletWithoutContent = "select inode from inode where type = 'contentlet' and inode not in (select inode from contentlet)";
-	private static final String selectIdentifierContentletWithoutContent = "select id from identifier where asset_type = 'contentlet' and id not in (select identifier from contentlet)";
+	private static final String selectInodeContentletWithoutContent = "select inode from inode i where type = 'contentlet' and not exists (select 1 from contentlet where i.inode = inode)";
+	private static final String selectIdentifierContentletWithoutContent = "select id from identifier i where asset_type = 'contentlet' and not exists (select 1 from contentlet where i.id = identifier)";
 	//private static final String cleanInodeContentletWithoutContentTree="delete from tree where parent=? or child=?";
 	private static final String cleanInodeContentletWithoutContentPermission="delete from permission where inode_id=?";
 	private static final String cleanInodeContentletWithoutContentPermissionReference="delete from permission_reference where asset_id=?";
