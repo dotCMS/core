@@ -2323,15 +2323,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
         } else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
-            if (!DbConnectionFactory.isMsSql()){
-                whereField.append(field.getFieldContentlet()).append(" != ");
+            if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
+                whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
             } else {
-                //Specific logic for text(varchar) and textarea (text) fields
-                if (field.getFieldContentlet().contains("text_area")){
-                    whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
-                } else{
-                    whereField.append(field.getFieldContentlet()).append(" != ");
-                }
+                whereField.append(field.getFieldContentlet()).append(" != ");
             }
         }
             
