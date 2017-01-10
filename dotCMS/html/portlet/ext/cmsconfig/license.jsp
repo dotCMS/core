@@ -70,7 +70,7 @@
 	    isCommunity		:"<%=isCommunity%>",
 	    
 	    requestTrial : function(){
-	    	var data = {"licenseLevel":"400","licenseType":"trial"};
+	    	var data = {"licenseLevel":"500","licenseType":"trial"};
 	   		
 	   	    dojo.xhrPost({
 	   	        url: "/api/license/requestCode/",
@@ -240,6 +240,7 @@
 		        case 200: return "Professional"; break;
 		        case 300: return "Enterprise"; break;
 		        case 400: return "Prime"; break;
+                case 500: return "Platform"; break;
 		        default: return "-";
 		    }
 		},
@@ -647,6 +648,7 @@
 											                    <option value="200"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
 											                    <option value="300"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
 											                    <option value="400"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
+																<option value="500"><%= LanguageUtil.get(pageContext, "request-license-platform") %></option>
 											                </select>
 														</td>
 													</tr>
