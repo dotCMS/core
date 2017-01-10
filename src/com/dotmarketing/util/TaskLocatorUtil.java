@@ -46,6 +46,7 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00009CheckContentletsInexistentInodes.class);
 		ret.add(FixTask00011RenameHostInFieldVariableName.class);
 		ret.add(FixTask00012UpdateAssetsHosts.class);
+		ret.add(FixTask00015FixAssetTypesInIdentifiers.class);
 		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);
 		ret.add(FixTask00030DeleteOrphanedAssets.class);
 		ret.add(FixTask00040CheckFileAssetsMimeType.class);
