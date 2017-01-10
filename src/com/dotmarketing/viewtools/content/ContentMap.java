@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.viewtools.content;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -76,7 +77,7 @@ public class ContentMap {
 		this.host = host;
 		this.context = context;
 	}
-	
+
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
@@ -102,22 +103,22 @@ public class ContentMap {
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object get(String fieldVariableName) {
 		return get(fieldVariableName, true);
 	}
-	
+
 	/**
 	 * Use to get an unparsed value of the field on a content returned from the ContentTool Viewtool, even if it contains velocity code
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object getRaw(String fieldVariableName) {
 		return get(fieldVariableName, false);
 	}
 
-	
+
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
 			Object ret = null;
@@ -176,7 +177,7 @@ public class ContentMap {
                 if (fieldvalue != null) {
                     return fieldvalue;
                 }
-			    
+
 			    final String fid = (String)conAPI.getFieldValue(content, f);
 				if(!UtilMethods.isSet(fid)){
 					return null;
@@ -336,6 +337,63 @@ public class ContentMap {
 			return null;
 		}
 	}
+
+    /**
+     * Returns the returns the identifier based URI for the
+     * first doc/file on a piece of content
+     * EXAMPLE : $mycontent.shorty
+     * @return
+     * @throws IOException
+     */
+    public String getShorty() throws IOException{
+        return getShorty(content.getIdentifier());
+    }
+
+
+    /**
+     * Returns the returns the identifier based URI for the
+     * first doc/file on a piece of content
+     * EXAMPLE : $mycontent.shortyInode
+     * @return
+     * @throws IOException
+     */
+    public String getShortyInode() throws IOException{
+        return getShorty(content.getInode());
+    }
+
+
+
+    private String getShorty(final String idInode) throws IOException{
+        String tryField=getFileField();
+        java.io.File file=content.getBinary(getFileField());
+
+        StringBuilder sb = new StringBuilder("/dA/").append(APILocator.getShortyAPI().shortify(idInode));
+        if(!"fileAsset".equals(tryField)){
+            sb.append("/").append(tryField);
+        }
+        sb.append("/").append(file.getName()) ;
+
+        return sb.toString();
+    }
+
+    private String getFileField() throws IOException{
+        String tryField="fileAsset";
+        java.io.File file=content.getBinary(tryField);
+
+        if(file!=null &&  file.exists()){
+            return tryField;
+        }
+
+        for (Field f : FieldsCache.getFieldsByStructureInode(content.getStructureInode())) {
+            if ("binary".equals(f.getFieldType())) {
+                file=content.getBinary(f.getVelocityVarName());
+                if(file!=null &&  file.exists()){
+                    return f.getVelocityVarName();
+                }
+            }
+        }
+        return null;
+    }
 
 	/**
 	 * Returns the URLMap if it exists for a piece of content. <br/>

@@ -3498,19 +3498,15 @@ public class UtilMethods {
         return sw.getBuffer().toString();
     }
 
+    /**
+     *  {@link  DbConnectionFactory#closeSilently()}
+     */
+    @Deprecated
     public static void closeDbSilently() {
-        try {
-            HibernateUtil.closeSession();
-        } catch (Exception e) {
 
-        } finally {
-            try {
 
-                DbConnectionFactory.closeConnection();
-            } catch (Exception e) {
+        DbConnectionFactory.closeSilently();
 
-            }
-        }
     }
 
     public static boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){

@@ -261,7 +261,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
         DotConnect dc = new DotConnect();
-        StringBuilder sql=new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
+        StringBuilder sql=new StringBuilder().append("DELETE FROM dist_reindex_journal where id in (");
         boolean first=true;
         for(IndexJournal<T> idx : recordsToDelete) {
             if(!first) sql.append(','); else first=false;
