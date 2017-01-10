@@ -75,6 +75,11 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 		} else
 			return "";
 	}
+	
+	public boolean exists(){
+	   return !("".equals(getId()));
+	}
+	
 
 	public void setId(String id) {
 		if(id == null||id == "")
