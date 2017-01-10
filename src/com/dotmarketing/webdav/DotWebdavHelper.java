@@ -838,13 +838,13 @@ public class DotWebdavHelper {
 		}
 
 	}
-	 
+	
 	private java.io.File writeDataIfEmptyFile(Folder folder, String fileName, java.io.File fileData) throws IOException{
-	    if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
-	        Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
-	        FileUtil.write(fileData, emptyFileData);
-	    }
-	    return fileData;
+		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+			Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
+			FileUtil.write(fileData, emptyFileData);
+		}
+		return fileData;
 	}
 
 	public void setResourceContent(String resourceUri, InputStream content,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
@@ -932,9 +932,9 @@ public class DotWebdavHelper {
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
                 
                 //Avoid uploading an empty file
-                if(HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
-                    fileData = writeDataIfEmptyFile(folder, fileName, fileData);
-                }
+				if(HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
+				}
 
 				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
 				fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
@@ -948,12 +948,12 @@ public class DotWebdavHelper {
 
 				//Validate if the user have the right permission before
 				if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
-				    conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-				    conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 					throw new DotSecurityException("User does not have permission to publish contentlets");
 		        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
-		            conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-		            conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+		        	conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 					throw new DotSecurityException("User does not have permission to edit contentlets");
 		        }
 				if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
@@ -979,10 +979,10 @@ public class DotWebdavHelper {
                 final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
                 FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
                 Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
-
-                //Avoid uploading an empty file
-                fileData = writeDataIfEmptyFile(folder, fileName, fileData);
                 
+                //Avoid uploading an empty file
+				fileData = writeDataIfEmptyFile(folder, fileName, fileData);
+
 				if(destinationFile instanceof File){
 				    // Save the file size
                     File file = fileAPI.getFileByURI(path, host, false, user, false);
@@ -1029,12 +1029,12 @@ public class DotWebdavHelper {
 				//Wipe out empty versions that Finder creates
 				List<Contentlet> versions = conAPI.findAllVersions(identifier, user, false);
 				for(Contentlet c : versions){
-				    Logger.debug(this, "inode " + c.getInode() + " size: " + c.getBinary(FileAssetAPI.BINARY_FIELD).length());
-				    if(c.getBinary(FileAssetAPI.BINARY_FIELD).length() == 0){
-				        Logger.debug(this, "deleting version " + c.getInode());
-				        conAPI.deleteVersion(c, user, false);
-				        break;
-				    }
+					Logger.debug(this, "inode " + c.getInode() + " size: " + c.getBinary(FileAssetAPI.BINARY_FIELD).length());
+					if(c.getBinary(FileAssetAPI.BINARY_FIELD).length() == 0){
+						Logger.debug(this, "deleting version " + c.getInode());
+						conAPI.deleteVersion(c, user, false);
+						break;
+					}
 				}
 			}
 		}
@@ -1134,6 +1134,7 @@ public class DotWebdavHelper {
 	}
 
 	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
+	    String resourceFromPath = fromPath;
 		fromPath = stripMapping(fromPath);
 		toPath = stripMapping(toPath);
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
@@ -1153,7 +1154,7 @@ public class DotWebdavHelper {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
 		}
-		if (isResource(fromPath,user)) {
+		if (isResource(resourceFromPath,user)) {
 			try {
 				if (!perAPI.doesUserHavePermission(toParentFolder,
 						PermissionAPI.PERMISSION_READ, user, false)) {
@@ -1333,6 +1334,7 @@ public class DotWebdavHelper {
 	}
 
 	public void removeObject(String uri, User user) throws IOException, DotDataException, DotSecurityException {
+	    String resourceUri = uri;
 		uri = stripMapping(uri);
 		Logger.debug(this.getClass(), "In the removeObject Method");
 		String hostName = getHostname(uri);
@@ -1350,7 +1352,7 @@ public class DotWebdavHelper {
 			throw new IOException(e.getMessage());
 		}
 		Folder folder = folderAPI.findFolderByPath(folderName, host,user,false);
-		if (isResource(uri,user)) {
+		if (isResource(resourceUri,user)) {
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 
 			Long timeOfPublishing = fileResourceCache.get(uri + "|" + user.getUserId());
@@ -1375,7 +1377,7 @@ public class DotWebdavHelper {
 			    			&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
 
 			    	try{
-			    	    conAPI.archive(fileAssetCont, user, false);
+				        conAPI.archive(fileAssetCont, user, false);
 				    }catch (Exception e) {
 				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				        throw new DotDataException(e.getMessage(), e);
@@ -1400,7 +1402,7 @@ public class DotWebdavHelper {
 			    LiveCache.removeAssetFromCache(webAsset);
 			}
 
-		} else if (isFolder(uri,user)) {
+		} else if (isFolder(resourceUri,user)) {
 			if(!path.endsWith("/"))
 				path += "/";
 			folder = folderAPI.findFolderByPath(path, host,user,false);
@@ -1550,8 +1552,8 @@ public class DotWebdavHelper {
 				r = uri.substring(uri.indexOf(splitUri[3])+splitUri[3].length(), uri.length());
 
 			} else {
-			    Logger.warn(DotWebdavHelper.class, "URI already stripped: " + uri);
-			    r = uri;
+				Logger.warn(DotWebdavHelper.class, "URI already stripped: " + uri);
+				r = uri;
 			}
 		}
 
