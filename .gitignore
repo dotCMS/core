@@ -13,7 +13,6 @@ staging/
 !staging/.gitkeep
 /semantic/
 
-
 #NodeJs / Package Manager dirs
 node_modules/
 bower_components/

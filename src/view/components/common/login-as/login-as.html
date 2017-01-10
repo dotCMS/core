@@ -1,8 +1,8 @@
-<p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="visible" appendTo="body" modal="modal" width="300" responsive="true" class="login-as">
+<p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="visible" appendTo="body" modal="modal" resizable class="login-as">
     <!--TODO: manage errors on required fields and errors messages -->
     <form #loginAsForm="ngForm" class="login-as">
         <div class="form-group">
-            <p-autoComplete ngModel required
+            <p-autoComplete ngModel required field="label"
                 name="user" id="userId" [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" size="30"
                 (onSelect)="userSelectedHandler($event)" minLength="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
                 [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
