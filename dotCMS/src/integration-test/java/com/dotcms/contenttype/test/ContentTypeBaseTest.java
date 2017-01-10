@@ -2,9 +2,9 @@ package com.dotcms.contenttype.test;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.IntegrationTestBase;
 import org.junit.BeforeClass;
 
-import com.dotcms.TestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeApiImpl;
 import com.dotcms.contenttype.business.ContentTypeFactory;
@@ -19,7 +19,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.liferay.portal.model.User;
 
-public class ContentTypeBaseTest extends TestBase {
+public class ContentTypeBaseTest extends IntegrationTestBase {
 
 	protected static User user;
 	protected static ContentTypeFactory contentTypeFactory;
