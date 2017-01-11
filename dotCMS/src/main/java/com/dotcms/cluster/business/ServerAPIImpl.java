@@ -40,8 +40,6 @@ public class ServerAPIImpl implements ServerAPI {
 
 		String realPath = ConfigUtils.getDynamicContentPath() + java.io.File.separator + "server_id.dat";
 
-		Logger.debug(ServerAPIImpl.class, "Reading " + realPath);
-
 		BufferedReader br = null;
 		String serverId = null;
 		try {
@@ -59,8 +57,6 @@ public class ServerAPIImpl implements ServerAPI {
 				Logger.error(ServerAPIImpl.class, "Could not close BufferedReader for Server File", e);
 			}
 		}
-
-		Logger.debug(ServerAPIImpl.class, "ServerID: " + serverId);
 
         return serverId;
 
