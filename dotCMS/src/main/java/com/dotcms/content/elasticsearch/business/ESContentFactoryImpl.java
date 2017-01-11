@@ -1943,7 +1943,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     tempStructureVarName = clause.substring(0, clause.indexOf('.'));
                     tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
 
-                    List<Field> tempStructureFields = FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName());
+                    List<Field> tempStructureFields = new ArrayList<>(FieldsCache.getFieldsByStructureVariableName(tempStructure.getVelocityVarName()));
 
                     for (int pos = 0; pos < tempStructureFields.size();) {
 
