@@ -289,6 +289,12 @@ public class EditFieldAction extends DotPortletAction {
 						SessionMessages.add(req, "error", "message.structure.duplicate.host_or_folder.field");
 						return false;
 					}
+					// https://github.com/dotCMS/core/issues/9684
+					if (f.getFieldType().equalsIgnoreCase(fieldForm.getFieldType())
+							&& f.getFieldType().equalsIgnoreCase(Field.FieldType.TAG.toString())) {
+						SessionMessages.add(req, "error", "message.structure.duplicate.tag.field");
+						return false;
+					}
 					if (f.getSortOrder() > sortOrder)
 						sortOrder = f.getSortOrder();
 				}
