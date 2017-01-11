@@ -59,12 +59,18 @@ export class RoutingService {
     public isPortlet(url: string): boolean {
         let urlSplit = url.split('/');
         let id = urlSplit[urlSplit.length - 1];
+        if(id.indexOf('?') >= 0){
+            id = id.substr(0, id.indexOf('?'))
+        }
         return this.portlets.has(id);
     }
 
     public setCurrentPortlet(url: string): void {
         let urlSplit = url.split('/');
         let id = urlSplit[urlSplit.length - 1];
+        if(id.indexOf('?') >= 0){
+            id = id.substr(0, id.indexOf('?'))
+        }
         this._currentPortletId = id;
     }
 
@@ -79,7 +85,7 @@ export class RoutingService {
                 for (let k = 0; k < menu.menuItems.length; k++) {
                     let subMenuItem = menu.menuItems[k];
                     if (subMenuItem.angular) {
-                        subMenuItem.url = '/c/a/' + subMenuItem.url;
+                        subMenuItem.url = '/c/a' + subMenuItem.url;
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
                     } else {
                         this.portlets.set(subMenuItem.id, subMenuItem.url);

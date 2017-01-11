@@ -18,6 +18,11 @@ export class ApiRoot {
     this.authToken = ApiRoot.createAuthToken(authUser)
     try {
       let query = document.location.search.substring(1);
+      if(query === ''){
+        if(document.location.hash.indexOf('?') >= 0) {
+          query = document.location.hash.substr(document.location.hash.indexOf('?') + 1);
+        }
+      }
       let siteId = ApiRoot.parseQueryParam(query, "realmId");
       if (siteId) {
         this.siteId = siteId
