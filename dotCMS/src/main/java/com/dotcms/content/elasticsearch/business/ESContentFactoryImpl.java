@@ -2312,14 +2312,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         StringBuilder whereField = new StringBuilder();
 
         if (field.getFieldContentlet().contains("float")) {
-            if (!DbConnectionFactory.isMySql()) {
-                select.append(field.getFieldContentlet());
-                whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
-                        .append(" != ");
-            } else {
+            if (DbConnectionFactory.isMySql()) {
                 select.append("`").append(field.getFieldContentlet()).append("`");
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
+            } else if (DbConnectionFactory.isH2()) {
+                select.append("\"").append(field.getFieldContentlet()).append("\"");
+                whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
+                        .append(field.getFieldContentlet()).append("\" != ");
+            } else {
+                select.append(field.getFieldContentlet());
+                whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
+                        .append(" != ");
             }
         } else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
@@ -2332,10 +2336,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             
 
 
-        if (!DbConnectionFactory.isMySql()) {
-            update.append(field.getFieldContentlet()).append(" = ");
-        }else{
+        if (DbConnectionFactory.isMySql()) {
             update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
+        }else if (DbConnectionFactory.isH2()) {
+            update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
+        }else{
+            update.append(field.getFieldContentlet()).append(" = ");
         }
 
         if (field.getFieldContentlet().contains("bool")) {
