@@ -50,6 +50,7 @@ import com.liferay.portal.model.User;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2155,8 +2156,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
+	 * @deprecated Use savePermission(permission) instead.
 	 */
 	@Override
+    @Deprecated
 	protected void assignPermissions(List<Permission> permissions, Permissionable permissionable) throws DotDataException {
 
 		boolean updateReferencesOnDelete = false;
@@ -2208,11 +2211,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			contAPI.refresh((Structure)permissionable);
 		} else if(permissionable instanceof Contentlet) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
+			((Contentlet)permissionable).setLowIndexPriority(true);
 			contAPI.refresh((Contentlet)permissionable);
-		}
-		//DOTCMS-4959
-		if(permissionable instanceof Host) {
-		    if(((Host)permissionable).isSystemHost()){
+		} else if(permissionable instanceof Host) {
+			//DOTCMS-4959
+			if(((Host)permissionable).isSystemHost()){
 		        ContentletAPI contAPI = APILocator.getContentletAPI();
 	            contAPI.refresh(((Host)permissionable).getStructure());
 	            //http://jira.dotmarketing.net/browse/DOTCMS-5768
@@ -2230,42 +2233,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * @see com.dotmarketing.business.PermissionFactory#savePermission(com.dotmarketing.beans.Permission)
 	 */
 	@Override
-	protected Permission savePermission(Permission p, Permissionable permissionable) throws DotDataException {
+	protected Permission savePermission(Permission permission, Permissionable permissionable) throws DotDataException {
 
-		if(!p.getInode().equals(permissionable.getPermissionId()))
+		if(!permission.getInode().equals(permissionable.getPermissionId()))
 			throw new DotDataException("You cannot update permissions of a different permissionable id than the one you are passing to the method");
 
-		PersistResult result = persistPermission(p);
-		if (!p.isIndividualPermission()) {
-			switch(result) {
-			case NEW:
-				updatePermissionReferencesOnAdd(permissionable);
-				break;
-			case REMOVED:
-				updatePermissionReferencesOnRemove(permissionable);
-				break;
-			case UPDATED:
-				clearReferencesCache(permissionable);
-				break;
-			}
-		} else {
-			if(result == PersistResult.NEW) {
-				removePermissionsReference(permissionable);
-			}
-		}
+		assignPermissions( Arrays.asList(new Permission[]{ permission }), permissionable );
 
-		permissionCache.remove(permissionable.getPermissionId());
-
-		if(permissionable instanceof Structure) {
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh((Structure)permissionable);
-		} else if(permissionable instanceof Contentlet) {
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			((Contentlet)permissionable).setLowIndexPriority(true);
-			contAPI.refresh((Contentlet)permissionable);
-		}
-
-		return findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
+		return findPermissionByInodeAndRole(permission.getInode(), permission.getRoleId(), permission.getType());
 	}
 
 	/* (non-Javadoc)
