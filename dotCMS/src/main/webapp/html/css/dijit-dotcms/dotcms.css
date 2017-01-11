@@ -6666,6 +6666,19 @@ a.category_higlighted, a.tag_higlighted {
   float: right;
 }
 
+.portlet-sidebar .portlet-sidebar__input-spacer {
+  height: 6px;
+}
+
+.portlet-sidebar .dijitCheckBox {
+  position: relative;
+  bottom: 2px;
+}
+
+.dijitContentPane .buttonRow {
+  margin-bottom: 15px;
+}
+
 .view-categories .dijitDropDownActionButton {
   position: absolute;
   right: 30px;
