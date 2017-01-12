@@ -17,6 +17,13 @@ configurations.all({
     resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
     // changing: e.g. 'version 2.0.0-SNAPSHOT'
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+
+    /*POM relocation to an other version number is not fully supported in Gradle : xml-apis#xml-apis;2.0.2 relocated to xml-apis#xml-apis;1.0.b2.
+            Please update your dependency to directly use the correct version 'xml-apis#xml-apis;1.0.b2'.
+    Resolution will only pick dependencies of the relocated element.  Artifacts and other metadata will be ignored.*/
+    resolutionStrategy {
+        force 'xml-apis:xml-apis:1.4.01'
+    }
 })
 
 repositories {
