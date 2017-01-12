@@ -173,7 +173,9 @@ create table User_ (
 	lastLoginIP varchar(100) null,
 	failedLoginAttempts integer,
 	agreedToTermsOfUse tinyint,
-	active_ tinyint
+	active_ tinyint,
+  delete_in_progress BOOLEAN DEFAULT FALSE,
+  delete_date DATETIME
 );
 
 create table UserTracker (
@@ -2270,10 +2272,16 @@ alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
 
 -- ****** Content Publishing Framework *******
-create table publishing_queue (id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL, operation bigint, asset VARCHAR(2000) NOT NULL, language_id bigint NOT NULL,
-entered_date DATETIME,last_try DATETIME, num_of_tries bigint NOT NULL DEFAULT 0, in_error tinyint(1) DEFAULT '0', last_results LONGTEXT,
-publish_date DATETIME, server_id VARCHAR(256),
-type VARCHAR(256), bundle_id VARCHAR(256) , target text);
+CREATE TABLE publishing_queue (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    operation bigint,
+    asset VARCHAR(2000) NOT NULL,
+    language_id bigint NOT NULL,
+    entered_date DATETIME,
+    publish_date DATETIME,
+    type VARCHAR(256),
+    bundle_id VARCHAR(256)
+);
 
 CREATE TABLE IF NOT EXISTS publishing_queue_audit (
 	bundle_id VARCHAR(36) PRIMARY KEY NOT NULL,
@@ -2318,19 +2326,6 @@ create table sitesearch_audit (
     urlmaps_count integer not null,
     index_name varchar(100) not null,
     primary key(job_id,fire_date)
-);
-
-drop table publishing_queue;
-
-CREATE TABLE publishing_queue (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-    operation bigint,
-    asset VARCHAR(2000) NOT NULL,
-    language_id bigint NOT NULL,
-    entered_date DATETIME,
-    publish_date DATETIME,
-    type VARCHAR(256),
-    bundle_id VARCHAR(256)
 );
 
 create table publishing_bundle(
@@ -2423,8 +2418,3 @@ create table rule_condition_value (id varchar(36) primary key,
 create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
-
--- Delete User
-ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;
-ALTER TABLE user_ ADD delete_date DATETIME;
-

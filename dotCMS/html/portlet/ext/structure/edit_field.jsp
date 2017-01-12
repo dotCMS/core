@@ -131,7 +131,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	function disableSelect(){
 		var form = document.getElementById("field");
 		var fieldinode='<%=request.getParameter("inode")%>';
-		if(fieldinode!="null"){
+		if(fieldinode!="null" && fieldinode!=""){
 			dijit.byId("elementSelectBox").setDisabled(true);
 			//document.getElementById('fieldVarLink').style.display = "";
 		}
