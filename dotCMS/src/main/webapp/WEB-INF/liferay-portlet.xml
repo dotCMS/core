@@ -70,7 +70,8 @@
 	<portlet id="EXT_1" struts-path="ext/inodes" narrow="true" />
 	<portlet id="EXT_2" struts-path="ext/banners" />
 	<portlet id="categories" struts-path="ext/categories"  narrow="true"  />
-ß	<portlet id="site-browser" struts-path="ext/browser" />
+	<portlet id="folders" struts-path="ext/folders" />
+	<portlet id="site-browser" struts-path="ext/browser" />
 	<portlet id="content" struts-path="ext/contentlet" narrow="true"/>
 	<!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
 	<portlet id="publishing-queue" struts-path="ext/content/publishing" narrow="true" />

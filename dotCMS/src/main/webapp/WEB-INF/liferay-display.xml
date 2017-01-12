@@ -130,6 +130,7 @@
 		<portlet id="categories" />
 		<portlet id="site-browser" />
 		<portlet id="content" />
+		<portlet id="folders" />
 		<portlet id="containers" />
 		<portlet id="templates" />
 		<portlet id="links" />
