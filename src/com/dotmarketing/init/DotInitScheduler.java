@@ -769,7 +769,7 @@ public class DotInitScheduler {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
-				Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob off”);
+				Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob off");
 				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
 					sched.deleteJob(jobName, jobGroup);
 				}
