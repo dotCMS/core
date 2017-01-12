@@ -41,7 +41,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
         ];
 
         this.dotcmsEventsService.subscribeToEvents(events).subscribe( content => {
-            if (this.routingService.currentPortletId === 'EXT_BROWSER') {
+            if (this.routingService.currentPortletId === 'site-browser') {
 
                 if (confirm(this.i18nMessages['ask-reload-page-message'])) {
                     this.iframeElement.contentWindow.location.reload();
@@ -61,7 +61,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
     changeSiteReload(): void {
         if (this.iframeElement && this.iframeElement.contentWindow
-            && this.routingService.currentPortletId !== 'EXT_HOSTADMIN') {
+            && this.routingService.currentPortletId !== 'sites') {
 
             this.loadingInProgress = true;
             this.iframeElement.contentWindow.location.reload();
