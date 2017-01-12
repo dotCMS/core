@@ -2322,9 +2322,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         .append(field.getFieldContentlet()).append("` != ");
             }
         } else {
-            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
-                    .append(" != ");
+            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
+            if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
+                whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+            } else {
+                whereField.append(field.getFieldContentlet()).append(" != ");
+            }
         }
+            
+
 
         if (!DbConnectionFactory.isMySql()) {
             update.append(field.getFieldContentlet()).append(" = ");
@@ -2345,8 +2351,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(0);
             whereField.append(0);
         } else {
-            update.append("''");
-            whereField.append("''");
+            if (DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")){
+                update.append("''");
+                whereField.append(" > 0");
+            }else {
+                update.append("''");
+                whereField.append("''");
+            }
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
