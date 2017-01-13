@@ -1,7 +1,3 @@
-#if(!$ADMIN_MODE)
-	#stop
-#end
-
 #if($request.getAttribute('archive'))
     #set($archive = $request.getAttribute('archive'))
 #end
@@ -21,9 +17,6 @@
     #set($VTLSERVLET_URI =  $request.getAttribute("com.dotmarketing.wiki.contentlet.url"))
 #end
 
-#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
-#set($angularFrame = "$!request.getSession().getAttribute('frame')")
-
 #set($wfScheme = $workflowtool.findSchemeForStruct($dotPageContent.structure))
 
 #set($wfStep = $workflowtool.findStepByContentlet($dotPageContent.contentObject))
@@ -34,9 +27,7 @@
 			
 
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<html>
 <head>
 
 <meta http-equiv="cache-control" content="max-age=0" />
@@ -47,7 +38,7 @@
 
 
 <style type="text/css">
-	@import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+    @import "/html/js/dojo/release/dojo/dijit/themes/dijit.css";
 	@import "/html/css/dijit-dotcms/dotcms.css?b=3.7.0";
 </style>
 
@@ -139,25 +130,6 @@
         Insertion.Bottom(element,code);
     }
 
-    function backToCMS(){
-        #if(${isAngularFrame})
-        	#if($UtilMethods.isSet(${viewBrowserURL}))
-        	if(window.top.${angularFrame}.src !== undefined){
-        		window.top.${angularFrame}.src = "${viewBrowserURL}";
-        	}else{
-        		window.top.${angularFrame}.location = "${viewBrowserURL}";
-        	}
-	    	#else
-	        window.top.${angularFrame}.src = "/c/";
-	    	#end
-        #else
-            #if($UtilMethods.isSet(${viewBrowserURL}))
-	            window.top.location  = "${viewBrowserURL}";
-	        #else
-	            window.top.location  = "/c/";
-	        #end
-        #end
-    }
 
     function livePage(){
 		console.log("livePage");
@@ -225,25 +197,29 @@
 
     	if(_lastUrl!=newUrl){
 	    	_lastUrl=newUrl;
-	    	 #if(${isAngularFrame})
-	    	    if(window.top.${angularFrame} != undefined){
-	    	    	if(window.top.${angularFrame}.frameMain != undefined ){
-	    	    		window.top.${angularFrame}.frameMain.location  = newUrl;
-	    	    	}else{
-	    	    		window.top.${angularFrame}.contentWindow.frameMain.location  = newUrl;
-	    	    	}
-	    	    }else{
-	    			if(window.${angularFrame}.frameMain != undefined ){
-	    				window.${angularFrame}.frameMain.location  = newUrl;
-	    			}else{
-	    				window.${angularFrame}.contentWindow.frameMain.location  = newUrl;
-	    			}	    			
-	    		}
-	    	#else
-	    		window.top.frameMain.location  = newUrl;
-	    	#end
+	    	
+			var win = this.window;
+			
+			do {
+				listFrames(win);
+				win=win.parent;
+
+			}
+			while (win.frameMain == undefined && win.menuFrame==frameMenu && win != window.top);
+	    	
+			console.log("name3:" + win.name);
+
+   			win.frameMain.location  = newUrl;
    	 	}
     }
+    
+    function listFrames(win){
+    	console.log("name:" + win.name);
+    	for(i=0;i<win.frames.length;i++){
+    		console.log("frames:" + win.frames[i].name);
+    	}
+    }
+    
     
     
 
@@ -319,9 +295,7 @@
     function publishAll(){
         if(confirm("$languagewebapi.getFromUserLanguage("message.confirm.modes.publish.page")")){
             document.getElementById('cmd').value="publishHTMLPage";
-            #if($isAngularFrame)
-            document.getElementById('submitParent').target="_parent";
-            #end
+
             document.getElementById('submitParent').submit();
         }
     }
@@ -722,7 +696,7 @@
 </div>
 
 <div style="display:none">
-<form action="${directorURL}" id="submitParent" method="post" #if($isAngularFrame) target="_parent" #else target="_top" #end >
+<form action="${directorURL}" id="submitParent" method="post" target="_parent" >
     <input type="hidden" name="referer" id="referer" value="$referer">
     <input type="hidden" name="taskInode" id="taskInode" value="">
     <input type="hidden" name="cmd" id="cmd" value="addChild">

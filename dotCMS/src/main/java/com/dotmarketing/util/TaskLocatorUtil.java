@@ -218,13 +218,13 @@ public class TaskLocatorUtil {
 		ret.add(Task03555AddFlagToDeleteUsers.class);
 		ret.add(Task03560TemplateLayoutCanonicalName.class);
 		ret.add(Task03565FixContainerVersionsCheck.class);
+		ret.add(Task03600UpdateMssqlVarcharTextColumns.class);
         ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
         ret.add(Task03705AddingSystemEventTable.class);
         ret.add(Task03710AddFKForIntegrityCheckerTables.class);
         ret.add(Task03715AddFKForPublishingBundleTable.class);
         ret.add(Task03720AddRolesIntegrityCheckerTable.class);
         ret.add(Task03725NewNotificationTable.class);
-        ret.add(Task03730UpdateMssqlVarcharTextColumns.class);
         return ret;
     }
 
