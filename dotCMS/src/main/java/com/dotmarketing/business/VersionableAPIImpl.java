@@ -347,37 +347,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 throw new DotStateException( "No version info. Call setWorking first" );
             }
             info.setLiveInode( versionable.getInode() );
-            this.saveVersionInformation( info );
-        }
-    }
-
-    private void saveVersionInformation (final VersionInfo info) throws DotDataException {
-
-        boolean localTransaction = false;
-
-        try {
-
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
             this.vfac.saveVersionInfo( info, true );
-
-            if(localTransaction) {
-
-                HibernateUtil.commitTransaction();
-            }
-        } catch(Exception e){
-
-            Logger.error(WebAssetFactory.class, e.getMessage(), e);
-
-            if(localTransaction){
-
-                HibernateUtil.rollbackTransaction();
-            }
-        } finally {
-
-            if(localTransaction) {
-                DbConnectionFactory.closeConnection();
-            }
         }
     }
 

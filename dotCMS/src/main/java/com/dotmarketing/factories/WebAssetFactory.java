@@ -505,10 +505,11 @@ public class WebAssetFactory {
 		boolean localTransaction = false;
 		try {
 
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
 			// sets new working to live
 			APILocator.getVersionableAPI().setLive(workingwebasset);
 
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
 			if(isNewVersion){
 
@@ -517,7 +518,7 @@ public class WebAssetFactory {
 			}
 
 			// persists the webasset
-			HibernateUtil.saveOrUpdate(workingwebasset);
+			HibernateUtil.merge(workingwebasset);
 
 			if(localTransaction) {
 
