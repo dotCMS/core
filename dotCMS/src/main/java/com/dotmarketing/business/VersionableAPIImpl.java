@@ -1,20 +1,24 @@
 
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class VersionableAPIImpl implements VersionableAPI {
 
@@ -343,7 +347,37 @@ public class VersionableAPIImpl implements VersionableAPI {
                 throw new DotStateException( "No version info. Call setWorking first" );
             }
             info.setLiveInode( versionable.getInode() );
-            vfac.saveVersionInfo( info, true );
+            this.saveVersionInformation( info );
+        }
+    }
+
+    private void saveVersionInformation (final VersionInfo info) throws DotDataException {
+
+        boolean localTransaction = false;
+
+        try {
+
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+            this.vfac.saveVersionInfo( info, true );
+
+            if(localTransaction) {
+
+                HibernateUtil.commitTransaction();
+            }
+        } catch(Exception e){
+
+            Logger.error(WebAssetFactory.class, e.getMessage(), e);
+
+            if(localTransaction){
+
+                HibernateUtil.rollbackTransaction();
+            }
+        } finally {
+
+            if(localTransaction) {
+                DbConnectionFactory.closeConnection();
+            }
         }
     }
 
