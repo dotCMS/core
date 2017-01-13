@@ -13,7 +13,7 @@ import java.util.*;
 public class PublisherConfig implements Map<String, Object> {
 
 	private enum Config {
-		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
+		START_DATE, END_DATE, HOSTS, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
@@ -428,5 +428,17 @@ public class PublisherConfig implements Map<String, Object> {
 		} else {
 			params.remove(Config.NOT_NEW_NOT_INCREMENTAL.name());
 		}
+	}
+
+	public Set<String> getLanguages() {
+		if(get(Config.LANGUAGES.name()) == null){
+			Set<String> languagesToBuild =   new HashSet<>();
+			put(Config.LANGUAGES.name(), languagesToBuild);
+		}
+		return (Set<String>) get(Config.LANGUAGES.name());
+	}
+
+	public void setLanguages(Set<String> languages) {
+		put(Config.LANGUAGES.name(), languages);
 	}
 }

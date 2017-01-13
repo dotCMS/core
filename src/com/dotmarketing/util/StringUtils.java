@@ -1,19 +1,20 @@
 package com.dotmarketing.util;
 
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.liferay.util.StringPool;
 
-import static com.dotmarketing.util.RegEX.find;
-import static javafx.scene.input.KeyCode.V;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.HashMap;
+
+import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.split;
 
 public class StringUtils {
+
+	public static final char COMMA = ',';
 
 	public static String formatPhoneNumber(String phoneNumber) {
 		try {
@@ -77,6 +78,17 @@ public class StringUtils {
 		}
 	}
 
+	/**
+	 * Split the string by commans
+	 * Pre: string argument must be not null
+	 * @param string {@link String}
+	 * @return String array
+     */
+	public static String [] splitByCommas (final String string) {
+
+		return split(string, COMMA);
+	} // splitByComma.
+
 	// this the pattern for replace variables, such as {xxx} @see interpolate method
 	private static final String ALPHA_VARIABLE_REGEX = "(\\{\\w+\\})";
 
@@ -132,7 +144,40 @@ public class StringUtils {
 		return interpolatedBuilder.toString();
 	} // interpolate.
 
+	/**
+	 * Retrieve a map with all the expresion that successfully found a match in the parametersMap.
+	 *
+	 * @param expression {@link String}
+	 * @param parametersMap {@link Map}
+	 * @return Map with all matches, key is the variable and value is the match for that variable.
+	 */
+	public static Map<String, Object> getInterpolateMatches(final String expression,
+															final Map<String, Object> parametersMap){
+		Map<String, Object> interpolateMatches = new HashMap<>();
+		// PRECONDITIONS
+		if (null != expression && null != parametersMap && parametersMap.size() != 0) {
+			final List<RegExMatch> regExMatches = RegEX.find(expression, ALPHA_VARIABLE_REGEX);
 
+			if ((null != regExMatches) && (regExMatches.size() > 0)) {
+				// we need to start replacing from the end, to avoid conflicts with the shift chars.
+				Collections.reverse(regExMatches);
+
+				for (RegExMatch regExMatch : regExMatches) {
+
+					if (null != regExMatch.getMatch() && regExMatch.getMatch().length() > 2) {
+						// removes from the match the curly braces {}
+						String normalizeMatch = regExMatch.getMatch().substring(1, regExMatch.getMatch().length() - 1);
+
+						if (null != parametersMap.get(normalizeMatch)) {
+							interpolateMatches.put(normalizeMatch, parametersMap.get(normalizeMatch).toString());
+						}
+					}
+				}
+			}
+		}
+
+		return interpolateMatches;
+	}
 
 
 }

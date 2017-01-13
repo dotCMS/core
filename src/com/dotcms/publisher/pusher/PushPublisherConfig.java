@@ -161,15 +161,6 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.WORKFLOWS.name());
 	}
 
-	@SuppressWarnings("unchecked")
-	public Set<String> getLanguages() {
-		if(get(AssetTypes.LANGUAGES.name()) == null){
-			Set<String> languagesToBuild =   new HashSet<String>();
-			put(AssetTypes.LANGUAGES.name(), languagesToBuild);
-		}
-		return (Set<String>) get(AssetTypes.LANGUAGES.name());
-	}
-
 	/**
 	 * Gets the list of {@link Rule} objects that will be pushed to the
 	 * destination end-point.
@@ -218,9 +209,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		put(AssetTypes.WORKFLOWS.name(), workflows);
 	}
 
-	public void setLanguages(Set<String> languages) {
-		put(AssetTypes.LANGUAGES.name(), languages);
-	}
+
 
 	/**
 	 * Sets the list of {@link Rule} objects that will be pushed to the
