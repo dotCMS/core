@@ -804,6 +804,7 @@ public class RoleAjax {
 
 
 			if ( permissionsToSave.size() > 0 ) {
+				// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 				permissionAPI.assignPermissions(permissionsToSave, permissionable, systemUser, respectFrontendRoles);
 			}
 

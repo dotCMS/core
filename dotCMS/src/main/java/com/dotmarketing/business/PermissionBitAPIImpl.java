@@ -647,15 +647,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			List<Permission> currentIndividualPermissions = getPermissions(permissionable, true, true);
 			if(currentIndividualPermissions.size() == 0) {
 				//We need to ensure locked roles get saved as permissions too
-				List<Permission> currentInheritedPermissions = getPermissions(permissionable, true);
-				for(Permission currentPerm : currentInheritedPermissions) {
+				List<Permission> excludingLockedRolePermissions = new ArrayList<>();
+				for(Permission currentPerm : getPermissions(permissionable, true)) {
 					Role permRole = roleAPI.loadRoleById(currentPerm.getRoleId());
 					if(permRole.isLocked()) {
-						Permission lockedPerm = new Permission(permissionable.getPermissionId(), currentPerm.getRoleId(), currentPerm.getPermission());
-						permissionFactory.savePermission(lockedPerm, permissionable);
+						excludingLockedRolePermissions.add(
+							new Permission(permissionable.getPermissionId(), currentPerm.getRoleId(), currentPerm.getPermission())
+						);
 					}
 				}
 
+				// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
+				permissionFactory.assignPermissions(excludingLockedRolePermissions, permissionable);
 			}
 
 			Permission p = permissionFactory.savePermission(permission, permissionable);
@@ -677,6 +680,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
+	 * @deprecated Use save(permission) instead.
+	 */
+	@Override
+    @Deprecated
 	public void assignPermissions(List<Permission> permissions, Permissionable permissionable, User user, boolean respectFrontendRoles)
 		throws DotDataException, DotSecurityException {
 
@@ -722,7 +731,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
-
+		// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
 		permissionFactory.assignPermissions(includingLockedRolePermissions, permissionable);
 
 		if(permissionable instanceof Host){	
@@ -730,7 +739,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
 					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
 		}
-		
+
 		AdminLogger.log(PermissionBitAPIImpl.class, "assign Permissions Action", "Assigning permissions to :"+permissionable.getPermissionId(),user);
 	}
 
@@ -1511,6 +1520,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
     	    if(!newSetOfPermissions.isEmpty()){
+    			// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
     	    	permissionFactory.assignPermissions(newSetOfPermissions,permissionable);
     	    }
     	}
