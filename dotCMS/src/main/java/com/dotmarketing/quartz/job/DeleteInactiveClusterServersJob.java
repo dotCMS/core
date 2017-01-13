@@ -28,6 +28,7 @@ public class DeleteInactiveClusterServersJob implements StatefulJob {
 	private final String DEFAULT_TIME="2W";
 
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+
 		try {
 			int amount;
 			String unit;
@@ -73,6 +74,8 @@ public class DeleteInactiveClusterServersJob implements StatefulJob {
 					long timeOff = currentDate.getTime() - lastBeat.getTime();
 					if(timeOff >= maxAmountOfTime){
 						APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId());
+						Logger.info(DeleteInactiveClusterServersJob.class,
+								String.format("Server %s was Removed", server.getKey()));
 					}
 				}
 			}

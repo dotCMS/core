@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -49,6 +50,7 @@ import com.liferay.portal.model.User;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1601,11 +1603,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(permissionable.getPermissionId());
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL(this.insertTemplateReferencesToAHostSQL);
-						dc.addParam(permissionable.getPermissionId());
-						dc.addParam(permissionable.getPermissionId());
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL(this.insertTemplateReferencesToAHostSQL);
+							dc.addParam(permissionable.getPermissionId());
+							dc.addParam(permissionable.getPermissionId());
+							dc.loadResult();
+						}
 
 						// Retrieving the list of templates changed to clear
 						// their caches
@@ -1625,11 +1629,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(permissionable.getPermissionId());
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL(this.insertContainerReferencesToAHostSQL);
-						dc.addParam(permissionable.getPermissionId());
-						dc.addParam(permissionable.getPermissionId());
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL(this.insertContainerReferencesToAHostSQL);
+							dc.addParam(permissionable.getPermissionId());
+							dc.addParam(permissionable.getPermissionId());
+							dc.loadResult();
+						}
 
 						// Retrieving the list of container changed to clear
 						// their caches
@@ -1653,14 +1659,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL(this.insertSubfolderReferencesSQL);
-						dc.addParam(permissionable.getPermissionId());
-						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
-						dc.addParam(isHost ? " " : path);
-						dc.addParam(path + "%");
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL(this.insertSubfolderReferencesSQL);
+							dc.addParam(permissionable.getPermissionId());
+							dc.addParam(parentHost.getPermissionId());
+							dc.addParam(path + "%");
+							dc.addParam(isHost ? " " : path);
+							dc.addParam(path + "%");
+							dc.loadResult();
+						}
 
 						// Retrieving the list of container changed to clear
 						// their caches
@@ -1690,18 +1698,20 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL( this.insertHTMLPageReferencesSQL );
-						// Insert new references pointing to the host
-						dc.addParam(permissionable.getPermissionId());
-						// Under the same host
-						dc.addParam(parentHost.getPermissionId());
-						// Under any folder
-						dc.addParam(path + "%");
-                        dc.addParam(parentHost.getPermissionId());
-                        dc.addParam(path + "%");
-						dc.addParam(path + "%");
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL( this.insertHTMLPageReferencesSQL );
+							// Insert new references pointing to the host
+							dc.addParam(permissionable.getPermissionId());
+							// Under the same host
+							dc.addParam(parentHost.getPermissionId());
+							// Under any folder
+							dc.addParam(path + "%");
+	                        dc.addParam(parentHost.getPermissionId());
+	                        dc.addParam(path + "%");
+							dc.addParam(path + "%");
+							dc.loadResult();
+						}
 
 						// Retrieving the list of pages changed to clear their
 						// caches
@@ -1731,16 +1741,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL(this.insertFileReferencesSQL);
-						// Insert new references pointing to the host
-						dc.addParam(permissionable.getPermissionId());
-						// For all the pages that belong to the host
-						dc.addParam(parentHost.getPermissionId());
-						// Under any folder
-						dc.addParam(path + "%");
-						dc.addParam(path + "%");
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL(this.insertFileReferencesSQL);
+							// Insert new references pointing to the host
+							dc.addParam(permissionable.getPermissionId());
+							// For all the pages that belong to the host
+							dc.addParam(parentHost.getPermissionId());
+							// Under any folder
+							dc.addParam(path + "%");
+							dc.addParam(path + "%");
+							dc.loadResult();
+						}
 
 						// Retrieving the list of files changed to clear their
 						// caches
@@ -1765,16 +1777,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL(this.insertLinkReferencesSQL);
-						// Insert new references pointing to the host
-						dc.addParam(permissionable.getPermissionId());
-						// For all the pages that belong to the host
-						dc.addParam(parentHost.getPermissionId());
-						// Under any folder
-						dc.addParam(path + "%");
-						dc.addParam(path + "%");
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL(this.insertLinkReferencesSQL);
+							// Insert new references pointing to the host
+							dc.addParam(permissionable.getPermissionId());
+							// For all the pages that belong to the host
+							dc.addParam(parentHost.getPermissionId());
+							// Under any folder
+							dc.addParam(path + "%");
+							dc.addParam(path + "%");
+							dc.loadResult();
+						}
 
 						// Retrieving the list of links changed to clear their
 						// caches
@@ -1801,16 +1815,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(path);
 						dc.loadResult();
 
-						// Adding new references to the new host
-						dc.setSQL(this.insertContentReferencesByPathSQL);
-						// Insert new references pointing to the host
-						dc.addParam(permissionable.getPermissionId());
-						// For all the content that belong to the host
-						dc.addParam(parentHost.getPermissionId());
-						// Under any folder
-						dc.addParam(path + "%");
-						dc.addParam(path + "%");
-						dc.loadResult();
+						if (shouldInsertPermissionReferencesEagerly()) {
+							// Adding new references to the new host
+							dc.setSQL(this.insertContentReferencesByPathSQL);
+							// Insert new references pointing to the host
+							dc.addParam(permissionable.getPermissionId());
+							// For all the content that belong to the host
+							dc.addParam(parentHost.getPermissionId());
+							// Under any folder
+							dc.addParam(path + "%");
+							dc.addParam(path + "%");
+							dc.loadResult();
+						}
 
 						// Retrieving the list of links changed to clear their
 						// caches
@@ -1837,15 +1853,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							dc.addParam(path);
 							dc.loadResult();
 
-							// Adding new references to the new host
-							// Insert new references pointing to the host
-							dc.setSQL(this.insertStructureReferencesByPathSQL);
-							dc.addParam(permissionable.getPermissionId());
-							dc.addParam(path + "%");
-							dc.addParam(parentHost.getPermissionId());
-							dc.addParam(parentHost.getPermissionId());
-							dc.addParam(path + "%");
-							dc.loadResult();
+							if (shouldInsertPermissionReferencesEagerly()) {
+								// Adding new references to the new host
+								// Insert new references pointing to the host
+								dc.setSQL(this.insertStructureReferencesByPathSQL);
+								dc.addParam(permissionable.getPermissionId());
+								dc.addParam(path + "%");
+								dc.addParam(parentHost.getPermissionId());
+								dc.addParam(parentHost.getPermissionId());
+								dc.addParam(path + "%");
+								dc.loadResult();
+							}
 
 							// Retrieving the list of structures changed to clear
 							// their caches
@@ -1867,14 +1885,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 							dc.addParam(path);
 							dc.loadResult();
 
-							// Adding new references to the new host
-							// Insert new references pointing to the host
-							dc.setSQL(this.insertStructureReferencesByPathSQLFolder);
-							dc.addParam(permissionable.getPermissionId());
-							dc.addParam(path + "%");
-							dc.addParam(parentHost.getPermissionId());
-							dc.addParam(path + "%");
-							dc.loadResult();
+							if (shouldInsertPermissionReferencesEagerly()) {
+								// Adding new references to the new host
+								// Insert new references pointing to the host
+								dc.setSQL(this.insertStructureReferencesByPathSQLFolder);
+								dc.addParam(permissionable.getPermissionId());
+								dc.addParam(path + "%");
+								dc.addParam(parentHost.getPermissionId());
+								dc.addParam(path + "%");
+								dc.loadResult();
+							}
 
 							// Retrieving the list of structures changed to clear
 							// their caches
@@ -2136,8 +2156,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
+	 * @deprecated Use savePermission(permission) instead.
 	 */
 	@Override
+    @Deprecated
 	protected void assignPermissions(List<Permission> permissions, Permissionable permissionable) throws DotDataException {
 
 		boolean updateReferencesOnDelete = false;
@@ -2189,11 +2211,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			contAPI.refresh((Structure)permissionable);
 		} else if(permissionable instanceof Contentlet) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
+			((Contentlet)permissionable).setLowIndexPriority(true);
 			contAPI.refresh((Contentlet)permissionable);
-		}
-		//DOTCMS-4959
-		if(permissionable instanceof Host) {
-		    if(((Host)permissionable).isSystemHost()){
+		} else if(permissionable instanceof Host) {
+			//DOTCMS-4959
+			if(((Host)permissionable).isSystemHost()){
 		        ContentletAPI contAPI = APILocator.getContentletAPI();
 	            contAPI.refresh(((Host)permissionable).getStructure());
 	            //http://jira.dotmarketing.net/browse/DOTCMS-5768
@@ -2211,42 +2233,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * @see com.dotmarketing.business.PermissionFactory#savePermission(com.dotmarketing.beans.Permission)
 	 */
 	@Override
-	protected Permission savePermission(Permission p, Permissionable permissionable) throws DotDataException {
+	protected Permission savePermission(Permission permission, Permissionable permissionable) throws DotDataException {
 
-		if(!p.getInode().equals(permissionable.getPermissionId()))
+		if(!permission.getInode().equals(permissionable.getPermissionId()))
 			throw new DotDataException("You cannot update permissions of a different permissionable id than the one you are passing to the method");
 
-		PersistResult result = persistPermission(p);
-		if (!p.isIndividualPermission()) {
-			switch(result) {
-			case NEW:
-				updatePermissionReferencesOnAdd(permissionable);
-				break;
-			case REMOVED:
-				updatePermissionReferencesOnRemove(permissionable);
-				break;
-			case UPDATED:
-				clearReferencesCache(permissionable);
-				break;
-			}
-		} else {
-			if(result == PersistResult.NEW) {
-				removePermissionsReference(permissionable);
-			}
-		}
+		assignPermissions( Arrays.asList(new Permission[]{ permission }), permissionable );
 
-		permissionCache.remove(permissionable.getPermissionId());
-
-		if(permissionable instanceof Structure) {
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh((Structure)permissionable);
-		} else if(permissionable instanceof Contentlet) {
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			((Contentlet)permissionable).setLowIndexPriority(true);
-			contAPI.refresh((Contentlet)permissionable);
-		}
-
-		return findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
+		return findPermissionByInodeAndRole(permission.getInode(), permission.getRoleId(), permission.getType());
 	}
 
 	/* (non-Javadoc)
@@ -2971,11 +2965,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(deleteTemplatePermissionsSQL);
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				//Pointing the children templates to reference the current host
-				dc.setSQL(insertTemplateReferencesToAHostSQL);
-				dc.addParam(host.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.loadResult();
+				if (shouldInsertPermissionReferencesEagerly()) {
+					//Pointing the children templates to reference the current host
+					dc.setSQL(insertTemplateReferencesToAHostSQL);
+					dc.addParam(host.getPermissionId());
+					dc.addParam(host.getPermissionId());
+					dc.loadResult();
+				}
 				//Retrieving the list of templates to clear their caches later
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
     				dc.setSQL(selectChildrenTemplateSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -2990,11 +2986,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(deleteContainerPermissionsSQL);
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				//Pointing the children containers to reference the current host
-				dc.setSQL(insertContainerReferencesToAHostSQL);
-				dc.addParam(host.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.loadResult();
+				if (shouldInsertPermissionReferencesEagerly()) {
+					//Pointing the children containers to reference the current host
+					dc.setSQL(insertContainerReferencesToAHostSQL);
+					dc.addParam(host.getPermissionId());
+					dc.addParam(host.getPermissionId());
+					dc.loadResult();
+				}
 				//Retrieving the list of containers to clear their caches later
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
     				dc.setSQL(selectChildrenContainerSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3018,14 +3016,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?" ":folderPath+"");
 			dc.loadResult();
-			//Pointing the children subfolders to reference the current host
-			dc.setSQL(insertSubfolderReferencesSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.addParam(isHost?" ":folderPath+"");
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.loadResult();
+			if (shouldInsertPermissionReferencesEagerly()) {
+				//Pointing the children subfolders to reference the current host
+				dc.setSQL(insertSubfolderReferencesSQL);
+				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(host.getPermissionId());
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.addParam(isHost?" ":folderPath+"");
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.loadResult();
+			}
 			//Retrieving the list of sub folders changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
     			dc.setSQL(selectChildrenFolderSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3048,15 +3048,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             dc.addParam( host.getPermissionId() );
             dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			//Pointing the children containers to reference the current host
-			dc.setSQL(insertHTMLPageReferencesSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-            dc.addParam(host.getPermissionId());
-            dc.addParam(isHost?"%":folderPath+"%");
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.loadResult();
+			if (shouldInsertPermissionReferencesEagerly()) {
+				//Pointing the children containers to reference the current host
+				dc.setSQL(insertHTMLPageReferencesSQL);
+				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(host.getPermissionId());
+				dc.addParam(isHost?"%":folderPath+"%");
+	            dc.addParam(host.getPermissionId());
+	            dc.addParam(isHost?"%":folderPath+"%");
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.loadResult();
+			}
 			//Retrieving the list of htmlpages changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
     			dc.setSQL(selectChildrenHTMLPageSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3076,13 +3078,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			//Pointing the children containers to reference the current host
-			dc.setSQL(insertFileReferencesSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.loadResult();
+			if (shouldInsertPermissionReferencesEagerly()) {
+				//Pointing the children containers to reference the current host
+				dc.setSQL(insertFileReferencesSQL);
+				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(host.getPermissionId());
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.loadResult();
+			}
 			//Retrieving the list of files changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
     			dc.setSQL(selectChildrenFileSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3100,13 +3104,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			//Pointing the children containers to reference the current host
-			dc.setSQL(insertLinkReferencesSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.loadResult();
+			if (shouldInsertPermissionReferencesEagerly()) {
+				//Pointing the children containers to reference the current host
+				dc.setSQL(insertLinkReferencesSQL);
+				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(host.getPermissionId());
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.loadResult();
+			}
 			//Retrieving the list of links changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
     			dc.setSQL(selectChildrenLinkSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3124,13 +3130,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
-			//Pointing the children containers to reference the current host
-			dc.setSQL(insertContentReferencesByPathSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(host.getPermissionId());
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.addParam(isHost?"%":folderPath+"%");
-			dc.loadResult();
+			if (shouldInsertPermissionReferencesEagerly()) {
+				//Pointing the children containers to reference the current host
+				dc.setSQL(insertContentReferencesByPathSQL);
+				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(host.getPermissionId());
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.addParam(isHost?"%":folderPath+"%");
+				dc.loadResult();
+			}
 			//Retrieving the list of content changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
     			dc.setSQL(selectChildrenContentByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3153,14 +3161,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				//Pointing the children structures to reference the current host
-				dc.setSQL(this.insertStructureReferencesByPathSQL);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(host.getPermissionId());
-				dc.addParam(host.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.loadResult();
+				if (shouldInsertPermissionReferencesEagerly()) {
+					//Pointing the children structures to reference the current host
+					dc.setSQL(this.insertStructureReferencesByPathSQL);
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost?"%":folderPath+"%");
+					dc.addParam(host.getPermissionId());
+					dc.addParam(host.getPermissionId());
+					dc.addParam(isHost?"%":folderPath+"%");
+					dc.loadResult();
+				}
 				// Retrieving the list of structures changed to clear their caches
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
     				dc.setSQL(this.selectChildrenStructureByPathSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3181,13 +3191,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.addParam(isHost?"%":folderPath+"%");
 				dc.addParam(host.getPermissionId());
 				dc.loadResult();
-				//Pointing the children structures to reference the current host
-				dc.setSQL(this.insertStructureReferencesByPathSQLFolder);
-				dc.addParam(permissionable.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.addParam(host.getPermissionId());
-				dc.addParam(isHost?"%":folderPath+"%");
-				dc.loadResult();
+				if (shouldInsertPermissionReferencesEagerly()) {
+					//Pointing the children structures to reference the current host
+					dc.setSQL(this.insertStructureReferencesByPathSQLFolder);
+					dc.addParam(permissionable.getPermissionId());
+					dc.addParam(isHost?"%":folderPath+"%");
+					dc.addParam(host.getPermissionId());
+					dc.addParam(isHost?"%":folderPath+"%");
+					dc.loadResult();
+				}
 				// Retrieving the list of structures changed to clear their caches
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
     				dc.setSQL(this.selectChildrenStructureByPathSQLFolder, MAX_IDS_CLEAR-idsToClear.size());
@@ -3207,11 +3219,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.setSQL(deleteContentPermissionsByStructureSQL);
 			dc.addParam(permissionable.getPermissionId());
 			dc.loadResult();
-			//Pointing the children containers to reference the current host
-			dc.setSQL(insertContentReferencesByStructureSQL);
-			dc.addParam(permissionable.getPermissionId());
-			dc.addParam(permissionable.getPermissionId());
-			dc.loadResult();
+			if (shouldInsertPermissionReferencesEagerly()) {
+				//Pointing the children containers to reference the current host
+				dc.setSQL(insertContentReferencesByStructureSQL);
+				dc.addParam(permissionable.getPermissionId());
+				dc.addParam(permissionable.getPermissionId());
+				dc.loadResult();
+			}
 			//Retrieving the list of content changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
     			dc.setSQL(selectChildrenContentByStructureSQL, MAX_IDS_CLEAR-idsToClear.size());
@@ -3743,5 +3757,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dc.addParam(permissionable.getPermissionId());
 		dc.loadResult();
 		return dc.getInt("cc")==0;
+	}
+
+	private boolean shouldInsertPermissionReferencesEagerly(){
+		return ! Config.getBooleanProperty("PERMISSIONS_REFERENCES_INSERT_LAZILY", true);
 	}
 }

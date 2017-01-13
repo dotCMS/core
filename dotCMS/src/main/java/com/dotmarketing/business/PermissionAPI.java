@@ -643,7 +643,9 @@ public interface PermissionAPI {
      * @param respectFrontendRoles indicates if should be respected front end roles
 	 * @throws DotDataException
 	 * @throws DotSecurityException
+	 * @deprecated Use save(permission) instead.
 	 */
+    @Deprecated
 	void assignPermissions(List<Permission> permission, Permissionable permissionable, User user, boolean respectFrontendRoles)
 		throws DotDataException, DotSecurityException;
 

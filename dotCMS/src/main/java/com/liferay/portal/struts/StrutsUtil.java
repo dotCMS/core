@@ -97,7 +97,7 @@ public class StrutsUtil {
 			}
 		}
 		else {
-			_log.warn(uri + " is already committed");
+			//_log.warn(uri + " is already committed");
 		}
 	}
 

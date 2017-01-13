@@ -547,6 +547,7 @@ bottom="/html/common/box_bottom.jsp">
 					<dt><label><%=LanguageUtil.get(pageContext, "Show")%>:</label></dt>
 					<dd>
 						<input dojoType="dijit.form.CheckBox" <%if(searcher.isOpen()){%> checked='checked' <%}%> type="checkbox" name="open" value="true" id="showOpen" onclick="doFilter()" /> <label for="showOpen"><%=LanguageUtil.get(pageContext, "open-tasks")%></label><br/>
+						<div class="portlet-sidebar__input-spacer"></div>
 						<input dojoType="dijit.form.CheckBox" <%if(searcher.isClosed()){%> checked='checked' <%}%> type="checkbox" name="closed" value="true" id="showClosed"  onclick="doFilter()"  /> <label for="showClosed"><%=LanguageUtil.get(pageContext, "resolved-tasks")%></label><br/>
 					</dd>
 					<div class="clear"></div>
