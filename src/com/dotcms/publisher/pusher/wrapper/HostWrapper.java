@@ -3,7 +3,7 @@ package com.dotcms.publisher.pusher.wrapper;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
