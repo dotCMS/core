@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
@@ -110,7 +111,10 @@ public class AuthenticationResource implements Serializable {
 
                 final HttpSession ses = request.getSession();
                 final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
-                res = Response.ok(new ResponseEntityView(user.toMap())).build(); // 200
+                final Map<String, Object> userMap = user.toMap();
+
+                userMap.put("loggedInDate", new Date());
+                res = Response.ok(new ResponseEntityView(userMap)).build(); // 200
                 request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
             } else {
 
@@ -154,6 +158,7 @@ public class AuthenticationResource implements Serializable {
 
         try {
             Map<String, Map> users = authenticationHelper.getUsers(request);
+            // todo: add here the loggedInDate???
             res = Response.ok(new ResponseEntityView(users)).build();
         } catch (Exception e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
