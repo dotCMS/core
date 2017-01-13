@@ -40,56 +40,103 @@
             <div class="section-buttons">
                 <h3 class="section__title">Buttons</h3>
                 <article>
-                    <h4 class="section__subtitle">Flat buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button md-button color="primary">Normal</button>
-                    <button md-button color="primary" disabled>Disabled</button>
-                </article>
-                <article>
                     <h4 class="section__subtitle">Normal buttons</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button md-raised-button>Normal</button>
-                    <button md-raised-button disabled>Disabled</button>
+                    <button pButton label="Normal"></button>
+                    <button pButton disabled label="Disabled"></button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Icon and label buttons</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button pButton label="Left" icon="fa-check" iconPos="left"></button>
+                    <button pButton label="Right" icon="fa-check" iconPos="right"></button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Icon buttons</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button pButton iconButton icon="fa-bell"></button>
+                    <button pButton iconButton icon="fa-user"></button>
+                    <button pButton iconButton icon="fa-plus"></button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Flat buttons</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <button pButton flat label="Flat"></button>
+                    <button pButton flat disabled label="Disabled"></button>
                 </article>
                 <article>
                     <h4 class="section__subtitle">Primary Button</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button md-raised-button color="primary">Normal</button>
-                    <button md-raised-button color="primary" disabled>Disabled</button>
+                    <button pButton primary label="Primary"></button>
+                    <button pButton primary disabled label="Disabled"></button>
                 </article>
                 <article>
                     <h4 class="section__subtitle">Negative Button</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button md-raised-button color="accent">Normal</button>
-                    <button md-raised-button color="accent" disabled>Disabled</button>
+                    <button pButton secondary label="Secondary"></button>
+                    <button pButton secondary disabled label="Disabled"></button>
                 </article>
             </div>
             <div class="section-fields">
                 <h3 class="section__title">TextFields</h3>
                 <article>
-                    <md-input placeholder="Placeholder" floatingPlaceholder="false"></md-input>
-                    <md-input placeholder="Disabled" floatingPlaceholder="false" disabled></md-input>
-                </article>
-                <article>
-                    <md-input placeholder="Placeholder / Label"></md-input>
-                    <md-input placeholder="Disabled" disabled></md-input>
+                    <input pInputText type="text" placeholder="Placeholder" />
+                    <input pInputText type="text" placeholder="Disabled" disabled />
                 </article>
 
+                <h3 class="section__title">DropDown</h3>
+                <article>
+                    <h4 class="section__subtitle">Normal</h4>
+                    <p-dropdown [options]="cities" [(ngModel)]="selectedCity"></p-dropdown>
+                </article>
+
+                <article>
+                    <h4 class="section__subtitle">With Filter</h4>
+                    <p-dropdown [options]="cities" [(ngModel)]="selectedCity" filter="filter"></p-dropdown>
+                </article>
 
                 <h3 class="section__title">Checkbox</h3>
                 <article>
-                    <p><md-checkbox>Checkbox</md-checkbox></p>
-                    <p><md-checkbox disabled="true">Disabled</md-checkbox></p>
+                    <p><p-checkbox name="checkboxNormal" value="val1" label="Checkbox" [(ngModel)]="checkBoxValues"></p-checkbox></p>
+                    <p><p-checkbox name="checkboxDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="checkBoxValues"></p-checkbox></p>
+                    <p><p-checkbox name="checkboxDisabledChecked" value="val3" label="Disabled/Checked" disabled="true" [(ngModel)]="checkBoxValues"></p-checkbox></p>
                 </article>
 
                 <h3 class="section__title">Radio Buttons</h3>
                 <article>
-                    <md-radio-group>
-                        <p><md-radio-button value="option_1">Option one</md-radio-button></p>
-                        <p><md-radio-button value="option_2">Option two</md-radio-button></p>
-                    </md-radio-group>
+                    <p><p-radioButton name="s" value="val1" label="RadioButton" [(ngModel)]="radioBoxValues"></p-radioButton></p>
+                    <p><p-radioButton name="radioDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="radioBoxValues"></p-radioButton></p>
+                    <p><p-radioButton name="radioDisabled" value="val" label="Disabled/Selected" disabled="true" [(ngModel)]="radioBoxDisabledValues"></p-radioButton></p>
                 </article>
 
+                <h3 class="section__title">Autocomplete</h3>
+                <article>
+                    <p-autoComplete
+                        [dropdown]="true"
+                        [suggestions]="autocompleteResults"
+                        (completeMethod)="autocompleteComplete($event)"
+                        (onDropdownClick)="autocompleteCompleteDropdownClick($event)">
+                    </p-autoComplete>
+                </article>
+
+                <h3 class="section__title">Dialog</h3>
+                <article>
+                    <p-dialog header="Godfather I" [(visible)]="displayDialog" modal="modal" width="300" responsive="true">
+                        <p>The story begins as Don Vito Corleone, the head of a New York Mafia family, oversees his daughter's wedding.
+                            His beloved son Michael has just come home from the war, but does not intend to become part of his father's business.
+                            Through Michael's life the nature of the family business becomes clear. The business of the family is just like the head of the family,
+                            kind and benevolent to those who give respect,
+                            but given to ruthless violence whenever anything stands against the good of the family.</p>
+                        <footer>
+                            <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+                                <button type="button" pButton icon="fa-check" (click)="display=false" label="Accept"></button>
+                                <button flat type="button" pButton icon="fa-close" (click)="display=false" label="Cancel"></button>
+                            </div>
+                        </footer>
+                    </p-dialog>
+
+                    <button type="text" (click)="showDialog()" pButton icon="fa-external-link-square" label="Show"></button>
+                </article>
 
                 <h3 class="section__title">Dropdown Buttons</h3>
                 <article>

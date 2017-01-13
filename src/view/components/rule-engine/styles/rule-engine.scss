@@ -10,7 +10,7 @@
 
   $text-emphasis: #fc7e1c;
   $warn: #c85a6a;
-  $primary-one: #209021;
+  $brand-primary-one: #209021;
 
   // generic transform
   @mixin transform($transforms) {
@@ -30,7 +30,7 @@
   }
 
   @mixin valid-and-dirty-or-touched-focused {
-    border-left: 5px solid $primary-one;
+    border-left: 5px solid $brand-primary-one;
     transition-property: border-left;
     transition-delay: 0s;
     transition-duration: 0s;
@@ -73,7 +73,7 @@
 
   .cw-saved {
     .ui.checkbox input:checked ~ .box:after, .ui.checkbox input:checked ~ label:after {
-      background-color: $primary-one;
+      background-color: $brand-primary-one;
       border: .5em solid white;
     }
     .cw-rule-status-text {
@@ -403,7 +403,7 @@
   }
 
   .cw-button-add-item i {
-    color: $primary-one;
+    color: $brand-primary-one;
   }
 
   .cw-spacer.cw-condition-operator {

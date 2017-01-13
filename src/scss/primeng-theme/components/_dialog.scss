@@ -1,0 +1,53 @@
+/*
+ * jQuery UI Dialog 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Dialog#theming
+ */
+
+.ui-dialog {
+    overflow: inherit;
+
+    &.ui-shadow {
+        box-shadow: $md-shadow-3;
+    }
+
+    .ui-dialog-titlebar,
+    .ui-dialog-content,
+    .ui-dialog-buttonpane {
+        margin: 0;
+        padding: $basic-padding * 2;
+    }
+
+    .ui-dialog-buttonpane {
+        text-align: center;
+
+        button {
+            margin: 0;
+            float: none;
+        }
+    }
+
+    .ui-dialog-content {
+        overflow: inherit;
+    }
+
+    .ui-dialog-title {
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .ui-dialog-titlebar-close,
+    .ui-dialog-titlebar-minimize,
+    .ui-dialog-titlebar-maximize {
+        margin-top: 0;
+        padding: 0;
+
+        &.ui-state-hover {
+            background: none;
+        }
+    }
+}

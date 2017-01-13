@@ -1,6 +1,6 @@
 import {BaseComponent} from '../common/_base/base-component';
 import {AccountService, AccountUser} from '../../../api/services/account-service';
-import {Component, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
+import {Component, EventEmitter, Output, ViewEncapsulation, Input} from '@angular/core';
 import {LoginService, User, Auth} from '../../../api/services/login-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {StringFormat} from '../../../api/util/stringFormat';
@@ -15,6 +15,7 @@ import {StringFormat} from '../../../api/util/stringFormat';
 
 export class MyAccountComponent extends BaseComponent {
     @Output() close  = new EventEmitter<>();
+    @Input() visible: boolean;
 
     private accountUser: AccountUser = {
         currentPassword: '',
@@ -31,7 +32,7 @@ export class MyAccountComponent extends BaseComponent {
 
     constructor(private loginService: LoginService, private accountService: AccountService,
                 private messageService: MessageService, private stringFormat: StringFormat) {
-        super(['modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
+        super(['my-account', 'modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
             'Last-Name', 'email-address', 'new-password', 're-enter-new-password', 'error.forgot.password.passwords.dont.match',
             'message.createaccount.success', 'Error-communicating-with-server-Please-try-again', 'change-password', 'current-password'], messageService);
         this.passwordMatch = false;

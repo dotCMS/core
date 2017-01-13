@@ -1,0 +1,199 @@
+@import "../../variables";
+
+// Common
+$field-animation-speed: .1s;
+$field-border-color: $gray-lighter;
+$field-border-radius: $border-radius;
+$field-border-size: 1px;
+$field-padding: $basic-padding;
+$field-placeholder-color: rgba($gray-dark, .4);
+
+$field-normal-bgcolor: $white;
+$field-normal-textcolor: $body-font-color;
+$field-normal-border: solid $field-border-size $gray-light;
+$field-normal-arrow-color: $gray;
+
+$field-hover-border-color: $brand-secondary;
+$field-hover-bgcolor: $white;
+$field-hover-textcolor: $body-font-color;
+$field-hover-border: solid $field-border-size $field-hover-border-color;
+$field-hover-arrow-color: $brand-secondary;
+
+$field-active-bgcolor: $brand-primary;
+$field-active-textcolor: $body-font-color;
+$field-active-border: solid 1px $body-font-color;
+$field-active-arrow-color: $brand-secondary;
+
+$field-disabled-bgcolor: $white;
+$field-disabled-textcolor: $gray-light;
+$field-disabled-border: solid $field-border-size #E3E4E6;
+$field-disabled-arrow-color: $gray-light;
+
+$field-focused-bgcolor: $gray-lighter;
+$field-focused-textcolor: $gray-dark;
+$field-focused-border: $field-hover-border;
+$field-focused-arrow-color: $brand-secondary;
+
+// BUTTONS
+$button-border: solid 1px transparent;
+$button-padding: $field-padding * 2;
+
+$buttons-map: (
+    basic: (
+        default: (
+            background: $white,
+            color: $field-normal-textcolor,
+            border: $button-border,
+            shadow: $md-shadow-1
+        ),
+        hover: (
+            background: $field-hover-bgcolor,
+            color: $field-hover-textcolor,
+            border: $button-border,
+            shadow: $md-shadow-2
+        ),
+        focus: (
+            background: $field-hover-bgcolor,
+            color: $field-hover-textcolor,
+            border: $button-border,
+            shadow: $md-shadow-2
+        ),
+        active: (
+            background: $white,
+            color: $field-normal-textcolor,
+            border: $button-border,
+            shadow: $md-shadow-1
+        ),
+        disabled: (
+            background: $gray-lighter,
+            color: $field-disabled-textcolor,
+            border: $button-border,
+            shadow: none
+        )
+    ),
+    flat: (
+        default: (
+            background: transparent,
+            color: $brand-primary,
+            border: $button-border,
+            shadow: none
+        ),
+        hover: (
+            background: $gray-lighter,
+            color: $body-font-color,
+            border: $button-border,
+            shadow: none
+        ),
+        focus: (
+            background: $gray-lighter,
+            color: $body-font-color,
+            border: $button-border,
+            shadow: none
+        ),
+        active: (
+            background: transparent,
+            color: $field-active-textcolor,
+            border: $button-border,
+            shadow: none
+        ),
+        disabled: (
+            background: transparent,
+            color: $field-disabled-textcolor,
+            border: $button-border,
+            shadow: none
+        ),
+    ),
+    primary: (
+        default: (
+            background: $brand-primary,
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-1
+        ),
+        hover: (
+            background: darken($brand-primary, 10%),
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-2
+        ),
+        focus: (
+            background: darken($brand-primary, 10%),
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-2
+        ),
+        active: (
+            background: darken($brand-primary, 20%),
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-1
+        ),
+        disabled: (
+            background: lighten($brand-primary, 50%),
+            color: lighten($brand-primary, 30%),
+            border: $button-border,
+            shadow: none
+        ),
+    ),
+    secondary: (
+        default: (
+            background: $brand-secondary,
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-1
+        ),
+        hover: (
+            background: darken($brand-secondary, 10%),
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-2
+        ),
+        focus: (
+            background: darken($brand-secondary, 10%),
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-2
+        ),
+        active: (
+            background: darken($brand-secondary, 20%),
+            color: $white,
+            border: $button-border,
+            shadow: $md-shadow-1
+        ),
+        disabled: (
+            background: lighten($brand-secondary, 50%),
+            color: lighten($brand-secondary, 30%),
+            border: $button-border,
+            shadow: none
+        ),
+    )
+);
+
+// CHECKBOX AND RADIO BUTTON
+$check-border-width: 1px;
+$check-radius: 2px;
+$check-size: 14px;
+
+$check-checked-bgcolor: $brand-primary;
+$check-checked-border: solid $check-border-width $black;
+$check-checked-color: $white;
+
+$check-disabled-border: solid $check-border-width $gray-light;
+$check-disabled-bgcolor: $gray-lighter;
+$check-disabled-color: $gray-light;
+$check-disabled-label-color: $gray-light;
+
+$check-normal-bgcolor: $white;
+$check-normal-border: $check-checked-border;
+
+$radio-checked-bgcolor: $white;
+$radio-checked-border: solid $check-border-width $brand-primary;
+$radio-checked-color: $brand-primary;
+
+$radio-disabled-border: solid $check-border-width $gray-light;
+$radio-disabled-bgcolor: $gray-lighter;
+$radio-disabled-color: $gray-light;
+$radio-disabled-label-color: $gray-light;
+
+$radio-normal-bgcolor: $white;
+$radio-normal-border: solid 1px $black;

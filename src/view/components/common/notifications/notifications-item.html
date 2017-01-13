@@ -1,10 +1,8 @@
 <li class="notification-item {{data.level | lowercase}}">
-    <button md-icon-button (click)="onClear()" class="notification-item__close" title="{{i18nMessages['notifications_dismiss']}}" id="{{'notification-item-button-close-' + data.id}}">
-        <md-icon class="md-24">close</md-icon>
-    </button>
+    <button pButton iconButton icon="fa-times" (click)="onClear()" class="notification-item__close" title="{{i18nMessages['notifications_dismiss']}}" id="{{'notification-item-button-close-' + data.id}}"></button>
 
     <div class="notification-item__wrapper">
-        <md-icon class="notification-item__icon">{{getIconName(data.level)}}</md-icon>
+        <i [class]="getIconName(data.level)"></i>
         <div class="notification-item__content">
             <h4 *ngIf="showTitleLinked" class="notification-item__title" id="{{'notification-item-title-' + data.id}}">
                 <a [href]="data.notificationData.actions[0].action" id="{{'notification-item-link-' + data.id}}">{{data.notificationData.title}}</a>

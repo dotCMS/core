@@ -1,0 +1,31 @@
+/* Inputs */
+
+.ui-inputtext {
+    @include placeholder($field-placeholder-color);
+    height: $field-height;
+    padding: 0 $field-padding;
+    transition: $field-animation-speed;
+
+    &.ui-state-hover,
+    &.ui-state-focus {
+        @extend #field-hover-state;
+    }
+}
+
+/* Validation */
+
+.ui-inputtext.ng-dirty.ng-invalid,
+p-autocomplete.ng-dirty.ng-invalid > .ui-autocomplete > .ui-inputtext,
+p-calendar.ng-dirty.ng-invalid .ui-inputtext,
+p-checkbox.ng-dirty.ng-invalid .ui-chkbox-box,
+p-dropdown.ng-dirty.ng-invalid > .ui-dropdown,
+p-inputmask.ng-dirty.ng-invalid > .ui-inputtext,
+p-inputswitch.ng-dirty.ng-invalid .ui-inputswitch,
+p-listbox.ng-dirty.ng-invalid .ui-inputtext,
+p-multiselect.ng-dirty.ng-invalid > .ui-multiselect,
+p-radiobutton.ng-dirty.ng-invalid .ui-radiobutton-box,
+p-selectbutton.ng-dirty.ng-invalid .ui-button,
+p-spinner.ng-dirty.ng-invalid > .ui-inputtext,
+p-togglebutton.ng-dirty.ng-invalid .ui-button {
+    border-bottom-color: #f44336;
+}

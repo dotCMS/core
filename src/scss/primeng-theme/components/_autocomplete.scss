@@ -1,0 +1,17 @@
+.ui-autocomplete {
+    .ui-autocomplete-dropdown.ui-state-default {
+        box-shadow: none;
+        background: none;
+    }
+}
+
+.ui-autocomplete-panel {
+    .ui-autocomplete-list {
+        padding: 0;
+    }
+
+    .ui-autocomplete-list-item {
+        margin: 0;
+        padding: $basic-padding;
+    }
+}
