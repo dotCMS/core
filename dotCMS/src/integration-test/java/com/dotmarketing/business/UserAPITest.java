@@ -172,6 +172,7 @@ public class UserAPITest extends IntegrationTestBase {
 			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser, false);
 		}
 
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 		APILocator.getPermissionAPI().assignPermissions(permissionsToSave, host, systemUser, false);
 
 		/**
@@ -199,6 +200,7 @@ public class UserAPITest extends IntegrationTestBase {
 		p1.setInode(pageStructure.getInode());
 		permissions.add(p1);
 
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 		perAPI.assignPermissions(permissions, pageStructure, systemUser, false);
 
 		/**

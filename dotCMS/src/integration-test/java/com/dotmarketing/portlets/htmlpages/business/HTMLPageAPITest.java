@@ -267,6 +267,8 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     				PermissionAPI.PERMISSION_READ, true));
 
     		PermissionAPI permAPI = APILocator.getPermissionAPI();
+
+    		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
     		permAPI.assignPermissions(newSetOfPermissions, folderWithPerms, sysuser, false);
 
     		APILocator.getHTMLPageAPI().movePage(page, folderWithPerms, sysuser, false);
