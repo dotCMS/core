@@ -1,22 +1,29 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.util.CollectionsUtils.set;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
+import com.dotcms.business.LazyFileAPIWrapper;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -24,62 +31,82 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
+ * Implementation class for the {@link VersionableFactory} class.
  *
- * @author will
+ * @author Will Ezell
+ * @version 1.0
+ * @since Mar 22, 2012
  *
  */
 public class VersionableFactoryImpl extends VersionableFactory {
 
+	private final String fourOhFour = "NOTFOUND";
+
 	IdentifierAPI iapi = null;
 	IdentifierCache icache = null;
+	UserAPI userApi = null;
+	ContainerAPI containerApi = null;
+	TemplateAPI templateApi = null;
+	FileAPI fileApi = null;
+	HTMLPageAPI htmlPageApi = null;
 
+	/**
+	 * Default class constructor.
+	 */
 	public VersionableFactoryImpl() {
-		iapi = APILocator.getIdentifierAPI();
-		icache = CacheLocator.getIdentifierCache();
+		this(APILocator.getIdentifierAPI(), CacheLocator.getIdentifierCache(), APILocator.getUserAPI(),
+				APILocator.getContainerAPI(), APILocator.getTemplateAPI(), new LazyFileAPIWrapper(),
+				APILocator.getHTMLPageAPI());
 	}
-	
-	
-	private final String fourOhFour="NOTFOUND";
+
+	@VisibleForTesting
+	public VersionableFactoryImpl(IdentifierAPI identifierApi, IdentifierCache identifierCache, UserAPI userApi,
+			ContainerAPI containerApi, TemplateAPI templateApi, FileAPI fileApi, HTMLPageAPI htmlPageApi) {
+		this.iapi = identifierApi;
+		this.icache = identifierCache;
+		this.userApi = userApi;
+		this.containerApi = containerApi;
+		this.templateApi = templateApi;
+		this.fileApi = fileApi;
+		this.htmlPageApi = htmlPageApi;
+	}
 
 	@Override
 	protected Versionable findWorkingVersion(String id) throws DotDataException, DotStateException {
-
-		Identifier identifier = iapi.find(id);
-		if(identifier==null || !InodeUtils.isSet(identifier.getInode())){
-			throw new DotDataException("identifier:" + id +" not found");
+		Identifier identifier = this.iapi.find(id);
+		if(identifier==null || !InodeUtils.isSet(identifier.getId())){
+			throw new DotDataException("Identifier: " + id + " not found.");
 		}
-		if(identifier.getAssetType().equals("contentlet"))
-		    throw new DotDataException("Contentlets could have working versions for each language");
-
+		if(identifier.getAssetType().equals("contentlet")) {
+		    throw new DotDataException("Contentlets could have working versions for each language.");
+		}
 		VersionInfo vinfo = getVersionInfo(identifier.getId());
-
-		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
-		
+		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		Versionable ver = null;
-		User user = APILocator.getUserAPI().getSystemUser();
+		User user = this.userApi.getSystemUser();
 		String workingInode = vinfo.getWorkingInode();
-		
-		try{
-			if(Container.class.equals(clazz)){
-				ver= APILocator.getContainerAPI().getWorkingContainerById(id, user, true);
+		Set<Class<?>> versionableWhitelist = getVersionableWhitelist();
+		// Ignore Links, WorkflowMessages and Inode
+		if (versionableWhitelist.contains(clazz)) {
+			try {
+				if (Container.class.equals(clazz)) {
+					ver = this.containerApi.getWorkingContainerById(id, user, true);
+				} else if (Template.class.equals(clazz)) {
+					ver = this.templateApi.find(workingInode, user, true);
+				} else if (File.class.equals(clazz)) {
+					ver = this.fileApi.find(workingInode, user, true);
+				} else if (HTMLPage.class.equals(clazz)) {
+					ver = this.htmlPageApi.loadWorkingPageById(id, user, true);
+				}
+				if (ver == null) {
+					Logger.warn(this.getClass(), "Versionable object is null when finding working version '" + clazz.getName()
+							+ "'. Trying old method.");
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Error finding the working version of '" + clazz + "', with Identifier: " + id);
 			}
-			else if(Template.class.equals(clazz)){
-				ver= APILocator.getTemplateAPI().find(workingInode, user, true);
-			}
-			else if(File.class.equals(clazz)){
-				ver= APILocator.getFileAPI().find(workingInode, user, true);
-			}
-			else if(HTMLPage.class.equals(clazz)){
-				ver= APILocator.getHTMLPageAPI().loadWorkingPageById(id, user, true);
-			}
-			// ignore Links, WorkflowMessages and Inode
-			} catch(Exception e){
-				Logger.error(this.getClass(), "Error finding the working version of " + clazz + ", with Identifier: " + id);
-			}
-		
-		
+		}
 		if(ver == null){
-			Logger.error(this.getClass(), "Versionable null when finding working version " + clazz.getName() + " Trying old method.");
 			HibernateUtil dh = new HibernateUtil(clazz);
 			dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
 			dh.setParam(vinfo.getWorkingInode());
@@ -91,48 +118,47 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotStateException("Invalid working version for identifier : " +id + " / working inode : " + vinfo.getWorkingInode());
 		}
 		return ver;
-
-
 	}
 
 	@Override
 	protected Versionable findLiveVersion(String id) throws DotDataException, DotStateException {
-		Identifier identifier = iapi.find(id);
-		if(identifier==null || !InodeUtils.isSet(identifier.getInode())){
-			throw new DotDataException("identifier:" + id +" not found");
+		Identifier identifier = this.iapi.find(id);
+		if(identifier==null || !InodeUtils.isSet(identifier.getId())){
+			throw new DotDataException("identifier: " + id + " not found.");
 		}
-		if(identifier.getAssetType().equals("contentlet"))
-            throw new DotDataException("Contentlets could have live versions for each language");
-
+		if(identifier.getAssetType().equals("contentlet")) {
+            throw new DotDataException("Contentlets could have live versions for each language.");
+		}
 		VersionInfo vinfo = getVersionInfo(identifier.getId());
-		
 		Versionable ver = null;
-		User user = APILocator.getUserAPI().getSystemUser();
-		
-		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+		User user = this.userApi.getSystemUser();
+		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		if(UtilMethods.isSet(vinfo)) {
 			if(UtilMethods.isSet(vinfo.getLiveInode())){
 				String liveInode = vinfo.getLiveInode();
-				try{
-					if(Container.class.equals(clazz)){
-						ver= APILocator.getContainerAPI().getLiveContainerById(id, user, true);
+				Set<Class<?>> versionableWhitelist = getVersionableWhitelist();
+				// Ignore Links, WorkflowMessages and Inode
+				if (versionableWhitelist.contains(clazz)) {
+					try {
+						if (Container.class.equals(clazz)) {
+							ver = this.containerApi.getLiveContainerById(id, user, true);
+						} else if (Template.class.equals(clazz)) {
+							ver = this.templateApi.find(liveInode, user, true);
+						} else if (File.class.equals(clazz)) {
+							ver = this.fileApi.find(liveInode, user, true);
+						} else if (HTMLPage.class.equals(clazz)) {
+							ver = this.htmlPageApi.loadLivePageById(id, user, true);
+						}
+						if (ver == null) {
+							Logger.warn(this.getClass(), "Versionable object is null when finding working version '" + clazz.getName()
+									+ "'. Trying old method.");
+						}
+					} catch (Exception e) {
+						Logger.error(this.getClass(),
+								"Error finding the live version of '" + clazz + "', with Identifier: " + id);
 					}
-					else if(Template.class.equals(clazz)){
-						ver= APILocator.getTemplateAPI().find(liveInode, user, true);
-					}
-					else if(File.class.equals(clazz)){
-						ver= APILocator.getFileAPI().find(liveInode, user, true);
-					}
-					else if(HTMLPage.class.equals(clazz)){
-						ver= APILocator.getHTMLPageAPI().loadLivePageById(id, user, true);
-					}
-				// ignore Links, WorkflowMessages and Inode
-				} catch(Exception e){
-					Logger.error(this.getClass(), "Error finding the live version of " + clazz + ", with Identifier: " + id);
 				}
-
 				if(ver==null){
-					Logger.error(this.getClass(), "Versionable null when finding live version " + clazz.getName() + " Trying old method.");
 					HibernateUtil dh = new HibernateUtil(clazz);
 					dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
 					dh.setParam(vinfo.getLiveInode());
@@ -150,7 +176,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if(identifier ==null){
 			throw new DotDataException("identifier:" + id +" not found");
 		}
-		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		HibernateUtil dh = new HibernateUtil(clazz);
 		dh.setQuery("from inode in class " + clazz.getName() + " where identifier = ? and inode.type='" + identifier.getAssetType() + "' and deleted="
 				+ DbConnectionFactory.getDBTrue());
@@ -158,13 +184,14 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		Logger.debug(this.getClass(), "findDeletedVersion query: " + dh.getQuery());
 		return (Versionable) dh.load();
 	}
+
 	@Override
 	protected List<Versionable> findAllVersions(String id) throws DotDataException, DotStateException {
-		Identifier identifier = iapi.find(id);
+		Identifier identifier = this.iapi.find(id);
 		if(identifier ==null){
 			throw new DotDataException("identifier:" + id +" not found");
 		}
-		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		if(clazz.equals(Inode.class))
 		    return new ArrayList<Versionable>(1);
 		HibernateUtil dh = new HibernateUtil(clazz);
@@ -177,12 +204,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
     @Override
     protected VersionInfo getVersionInfo(String identifier) throws DotDataException,
             DotStateException {
-        VersionInfo vi = icache.getVersionInfo(identifier);
+        VersionInfo vi = this.icache.getVersionInfo(identifier);
         if(vi==null || vi.getWorkingInode().equals(fourOhFour)) {
-            Identifier ident = APILocator.getIdentifierAPI().find(identifier);
+            Identifier ident = this.iapi.find(identifier);
             if(ident==null || !UtilMethods.isSet(ident.getId()))
                 return null;
-            Class clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
+            Class<?> clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
             HibernateUtil dh = new HibernateUtil(clazz);
             dh.setQuery("from "+clazz.getName()+" where identifier=?");
             dh.setParam(identifier);
@@ -192,25 +219,19 @@ public class VersionableFactoryImpl extends VersionableFactory {
             	vi.setIdentifier(identifier);
             	vi.setWorkingInode("NOTFOUND");
             }
-            icache.addVersionInfoToCache(vi);
+            this.icache.addVersionInfoToCache(vi);
         }
-        if(vi.getWorkingInode().equals("NOTFOUND"))
+        if(vi.getWorkingInode().equals("NOTFOUND")) {
             return null;
-        else
+        } else {
         	return vi;
+        }
     }
 
-	/**
-	 * reload versionInfo from db (JIRA-7203)
-	 * @param info
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotStateException
-	 */
     @Override
     protected VersionInfo findVersionInfoFromDb(Identifier identifer) throws DotDataException,
             DotStateException {
-            Class clazz = UtilMethods.getVersionInfoType(identifer.getAssetType());
+            Class<?> clazz = UtilMethods.getVersionInfoType(identifer.getAssetType());
             VersionInfo vi= null;
             if(clazz != null) {
 	            HibernateUtil dh = new HibernateUtil(clazz);
@@ -228,16 +249,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
             }
 
             return vi;
-
     }
-
-
 
     @Override
     protected void saveVersionInfo(VersionInfo info, boolean updateVersionTS) throws DotDataException, DotStateException {
 
     	//reload versionInfo from db (JIRA-7203)
-        Identifier ident = APILocator.getIdentifierAPI().find(info.getIdentifier());
+        Identifier ident = this.iapi.find(info.getIdentifier());
         VersionInfo vi=(VersionInfo) findVersionInfoFromDb(ident);
         boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
         try {
@@ -257,13 +275,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
             HibernateUtil.saveOrUpdate(vi);
         }
         HibernateUtil.flush();
-        icache.removeVersionInfoFromCache(vi.getIdentifier());
-
+        this.icache.removeVersionInfoFromCache(vi.getIdentifier());
     }
 
     @Override
     protected ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
-        ContentletVersionInfo contv = icache.getContentVersionInfo(identifier, lang);
+        ContentletVersionInfo contv = this.icache.getContentVersionInfo(identifier, lang);
         if(contv!=null && fourOhFour.equals(contv.getWorkingInode())) {
         	return null;
         }else if(contv!=null ){
@@ -272,13 +289,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
         
     	contv = findContentletVersionInfoInDB(identifier, lang);
         if(contv!=null && UtilMethods.isSet(contv.getIdentifier())){
-            icache.addContentletVersionInfoToCache(contv);
+        	this.icache.addContentletVersionInfoToCache(contv);
         }else{
         	contv = new ContentletVersionInfo();
         	contv.setIdentifier(identifier);
         	contv.setLang(lang);
         	contv.setWorkingInode(fourOhFour);
-        	icache.addContentletVersionInfoToCache(contv);
+        	this.icache.addContentletVersionInfoToCache(contv);
 			return null;
         }
         
@@ -299,7 +316,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
-    	Identifier ident = APILocator.getIdentifierAPI().find(cvInfo.getIdentifier());
+    	Identifier ident = this.iapi.find(cvInfo.getIdentifier());
     	ContentletVersionInfo vi= null;
     	if(ident!=null && InodeUtils.isSet(ident.getId())){
     		vi= findContentletVersionInfoInDB(ident.getId(), cvInfo.getLang());
@@ -320,8 +337,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             HibernateUtil.saveOrUpdate(vi);
         }
     	HibernateUtil.saveOrUpdate(vi);
-        icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
-
+    	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }
 
     @Override
@@ -341,7 +357,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected VersionInfo createVersionInfo(Identifier identifier, String workingInode) throws DotStateException, DotDataException {
-        Class clazz=UtilMethods.getVersionInfoType(identifier.getAssetType());
+        Class<?> clazz=UtilMethods.getVersionInfoType(identifier.getAssetType());
         VersionInfo ver;
         try {
             ver = (VersionInfo)clazz.newInstance();
@@ -360,14 +376,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	protected void deleteVersionInfo(String id) throws DotDataException {
-		icache.removeVersionInfoFromCache(id);
+		this.icache.removeVersionInfoFromCache(id);
 	    VersionInfo info = getVersionInfo(id);
 		if(info!=null && UtilMethods.isSet(info.getIdentifier())) {
 			String ident = info.getIdentifier();
 			HibernateUtil.delete(info);
-			icache.removeFromCacheByIdentifier(ident);
+			this.icache.removeFromCacheByIdentifier(ident);
 		}
-
 	}
 
 	@Override
@@ -381,12 +396,22 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
         if(UtilMethods.isSet(contv.getIdentifier())) {
         	HibernateUtil.delete(contv);
-        	icache.removeContentletVersionInfoToCache(id, lang);
+        	this.icache.removeContentletVersionInfoToCache(id, lang);
         }
 	}
-	
-	
 
-	
-	
+	/**
+	 * Returns the set of dotCMS objects whose information can be looked up via
+	 * APIs before performing a database lookup. This approach allows the
+	 * information to be obtained by checking the cache first instead of going
+	 * directly to the database, which is more expensive.
+	 * 
+	 * @return The set of classes representing the objects that need to be
+	 *         looked up using their respective APIs before performing a
+	 *         database query.
+	 */
+	private Set<Class<?>> getVersionableWhitelist() {
+		return set(Container.class, Template.class, File.class, HTMLPage.class);
+	}
+
 }
