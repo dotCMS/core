@@ -82,7 +82,7 @@
 	if (!InodeUtils.isSet(structure.getInode())){
 		structure = StructureFactory.getStructureByInode(request.getParameter("sibblingStructure"));
 	}
-	List<Field> fields = structure.getFields();
+	List<Field> fields = new ArrayList<>(structure.getFields());
 
 	//Categories
 	String[] selectedCategories = contentletForm.getCategories ();
