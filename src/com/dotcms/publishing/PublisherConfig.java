@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -12,12 +13,23 @@ import java.util.*;
 
 public class PublisherConfig implements Map<String, Object> {
 
-	private enum Config {
+	public enum Config {
 		START_DATE, END_DATE, HOSTS, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
 	}
+
+	public enum Operation {
+		PUBLISH,
+		UNPUBLISH
+	}
+
+	public enum MyConfig {
+		RUN_NOW,INDEX_NAME
+	}
+
+	private Operation operation;
 
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -440,5 +452,27 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setLanguages(Set<String> languages) {
 		put(Config.LANGUAGES.name(), languages);
+	}
+
+	/**
+	 * Returns the type of operation we will apply to the bundle (PUBLISH/UNPUBLISH).
+	 *
+	 * @return
+	 */
+	public Operation getOperation() {
+		return operation;
+	}
+
+	public void setOperation(Operation operation) {
+		this.operation = operation;
+	}
+
+	public boolean runNow(){
+		return this.get(PushPublisherConfig.MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(
+			PushPublisherConfig.MyConfig.RUN_NOW.toString()));
+	}
+
+	public void setRunNow(boolean once){
+		this.put(MyConfig.RUN_NOW.toString(), once);
 	}
 }

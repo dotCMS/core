@@ -3,10 +3,19 @@ package com.dotcms.publisher.business;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.org.apache.log4j.MDC;
@@ -43,6 +52,8 @@ public class PublisherQueueJob implements StatefulJob {
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
+    private EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
+    private PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
 
 	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
 
@@ -50,18 +61,18 @@ public class PublisherQueueJob implements StatefulJob {
 	 * Reads from the publishing queue table and depending of the publish date will send a bundle<br/>
 	 * to publish ({@link com.dotcms.publishing.PublisherAPI#publish(com.dotcms.publishing.PublisherConfig)}).
 	 *
-	 * @param arg0 Containing the current job context information
+	 * @param jobExecutionContext Containing the current job context information
 	 * @throws JobExecutionException if there is an exception while executing the job.
 	 * @see PublisherAPI
 	 * @see PublisherAPIImpl
 	 */
 	@SuppressWarnings("rawtypes")
-	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
 		try {
 
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
-			PublishDateUpdater.updatePublishExpireDates(arg0.getFireTime());
+			PublishDateUpdater.updatePublishExpireDates(jobExecutionContext.getFireTime());
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
@@ -74,9 +85,6 @@ public class PublisherQueueJob implements StatefulJob {
 
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 				PublisherAPI pubAPI = PublisherAPI.getInstance();
-
-				List<Class> clazz = new ArrayList<Class>();
-				clazz.add(PushPublisher.class);
 
 				List<Map<String, Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
 				List<PublishQueueElement> tempBundleContents;
@@ -108,7 +116,7 @@ public class PublisherQueueJob implements StatefulJob {
 							}
 							historyPojo.setAssets(assets);
 
-							PushPublisherConfig pconf = new PushPublisherConfig();
+							PublisherConfig pconf = new PublisherConfig();
 							pconf.setAssets(assetsToPublish);
 
 							//Status
@@ -125,14 +133,15 @@ public class PublisherQueueJob implements StatefulJob {
 							pconf.setStartDate(new Date());
 							pconf.runNow();
 
-							pconf.setPublishers(clazz);
-							//						pconf.setEndpoints(endpoints);
+							pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
 
 							if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
 								pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
 							} else {
 								pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
 							}
+
+							pconf = setUpConfigForPublisher(pconf);
 
 							PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
@@ -172,7 +181,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 	}
 
-	/**
+    /**
 	 * Method that updates the status of a Bundle in the job queue. This method also verifies and limit the number<br/>
 	 * of times a Bundle is allowed to try to be published in case of errors.
 	 *
@@ -322,5 +331,71 @@ public class PublisherQueueJob implements StatefulJob {
 			}
 		}
 	}
+
+    /**
+     * Get the Publisher needed depending on the protocol of the endpoints of the bundle.
+     *
+     * @param bundleId
+     * @return
+     */
+    private Set<Class> getPublishersForBundle(String bundleId){
+
+        Set<Class> publishersClasses = new HashSet<>();
+
+	    try{
+            Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
+            //TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
+            Set<Class> publishers = Sets.newHashSet(PushPublisher.class, StaticPublisher.class);
+
+            //Fill protocolPublisherMap with protocol -> publisher.
+            for (Class publisher : publishers) {
+                Publisher p = (Publisher)publisher.newInstance();
+                for (String protocol : p.getProtocols()) {
+                    protocolPublisherMap.put(protocol, publisher);
+                }
+            }
+
+            //For each environment in the bundle we need to get the endpoints.
+            List<Environment> environments = this.environmentAPI.findEnvironmentsByBundleId(bundleId);
+
+            for (Environment environment : environments) {
+                //For each endpoint we choose if run static or dynamic process (Static = StaticPublisher, Dynamic = PushPublisher)
+                List<PublishingEndPoint> endpoints = this.publisherEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
+
+                //For each endpoint we need include the Publisher depending on the type.
+                for (PublishingEndPoint endpoint : endpoints) {
+                    //Only if the endpoint is enabled.
+                    if (endpoint.isEnabled() && protocolPublisherMap.containsKey(endpoint.getProtocol())){
+                        publishersClasses.add(protocolPublisherMap.get(endpoint.getProtocol()));
+
+                    }
+                }
+            }
+        } catch (Exception e){
+	        Logger.error(this, "Error trying to get publishers from bundle id: " + bundleId, e);
+        }
+
+	    return publishersClasses;
+    }
+
+    /**
+     * Send the parameter {@link PublisherConfig} to each Publisher in use to be filled with the information necessary
+     * like extra languages, hosts, etc.
+     *
+     * @param pconf {@link PublisherConfig}
+     * @return
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
+    private PublisherConfig setUpConfigForPublisher(PublisherConfig pconf)
+        throws IllegalAccessException, InstantiationException {
+
+        final List<Class> publishers = pconf.getPublishers();
+        for (Class publisher : publishers) {
+            pconf = ((Publisher)publisher.newInstance()).setUpConfig(pconf);
+        }
+
+        return pconf;
+    }
 
 }

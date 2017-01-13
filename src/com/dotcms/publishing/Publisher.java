@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class Publisher implements IPublisher {
 
@@ -167,5 +169,12 @@ public abstract class Publisher implements IPublisher {
         return true;
     }
 
+	public Set<String> getProtocols(){
+    	return new HashSet<>();
+	}
+
+	public PublisherConfig setUpConfig(PublisherConfig config){
+		return config;
+	}
 
 }

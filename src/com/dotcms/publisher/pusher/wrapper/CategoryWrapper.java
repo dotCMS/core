@@ -2,7 +2,7 @@ package com.dotcms.publisher.pusher.wrapper;
 
 import java.util.Set;
 
-import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.portlets.categories.model.Category;
 
 /**
