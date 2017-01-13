@@ -656,6 +656,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 						);
 					}
 				}
+
+				// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
 				permissionFactory.assignPermissions(excludingLockedRolePermissions, permissionable);
 			}
 
@@ -729,7 +731,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
-
+		// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
 		permissionFactory.assignPermissions(includingLockedRolePermissions, permissionable);
 
 		if(permissionable instanceof Host){	
@@ -1518,6 +1520,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
     	    if(!newSetOfPermissions.isEmpty()){
+    			// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
     	    	permissionFactory.assignPermissions(newSetOfPermissions,permissionable);
     	    }
     	}
