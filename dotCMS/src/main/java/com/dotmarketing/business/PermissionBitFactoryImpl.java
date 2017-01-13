@@ -2238,7 +2238,36 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(!permission.getInode().equals(permissionable.getPermissionId()))
 			throw new DotDataException("You cannot update permissions of a different permissionable id than the one you are passing to the method");
 
-		assignPermissions( Arrays.asList(new Permission[]{ permission }), permissionable );
+		PersistResult result = persistPermission(permission);
+
+		if (!permission.isIndividualPermission()) {
+			switch(result) {
+				case NEW:
+					updatePermissionReferencesOnAdd(permissionable);
+					break;
+				case REMOVED:
+					updatePermissionReferencesOnRemove(permissionable);
+					break;
+				case UPDATED:
+					clearReferencesCache(permissionable);
+					break;
+				}
+		} else {
+			if(result == PersistResult.NEW) {
+				removePermissionsReference(permissionable);
+			}
+		}
+
+		permissionCache.remove(permissionable.getPermissionId());
+
+		if(permissionable instanceof Structure) {
+			ContentletAPI contAPI = APILocator.getContentletAPI();
+			contAPI.refresh((Structure)permissionable);
+		} else if(permissionable instanceof Contentlet) {
+			ContentletAPI contAPI = APILocator.getContentletAPI();
+			((Contentlet)permissionable).setLowIndexPriority(true);
+			contAPI.refresh((Contentlet)permissionable);
+		}
 
 		return findPermissionByInodeAndRole(permission.getInode(), permission.getRoleId(), permission.getType());
 	}

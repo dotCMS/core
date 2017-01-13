@@ -647,18 +647,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			List<Permission> currentIndividualPermissions = getPermissions(permissionable, true, true);
 			if(currentIndividualPermissions.size() == 0) {
 				//We need to ensure locked roles get saved as permissions too
-				List<Permission> excludingLockedRolePermissions = new ArrayList<>();
-				for(Permission currentPerm : getPermissions(permissionable, true)) {
+				List<Permission> currentInheritedPermissions = getPermissions(permissionable, true);
+				for(Permission currentPerm : currentInheritedPermissions) {
 					Role permRole = roleAPI.loadRoleById(currentPerm.getRoleId());
 					if(permRole.isLocked()) {
-						excludingLockedRolePermissions.add(
-							new Permission(permissionable.getPermissionId(), currentPerm.getRoleId(), currentPerm.getPermission())
-						);
+						Permission lockedPerm = new Permission(permissionable.getPermissionId(), currentPerm.getRoleId(), currentPerm.getPermission());
+						permissionFactory.savePermission(lockedPerm, permissionable);
 					}
 				}
-
-				// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
-				permissionFactory.assignPermissions(excludingLockedRolePermissions, permissionable);
 			}
 
 			Permission p = permissionFactory.savePermission(permission, permissionable);
