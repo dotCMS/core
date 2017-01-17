@@ -1,8 +1,8 @@
-import {ApiRoot} from '../../persistence/ApiRoot';
 import {CoreWebService} from "../core-web-service";
-import {Http, RequestMethod} from '@angular/http';
-import {Injectable} from '@angular/core';
-import {Observable, Observer} from 'rxjs/Rx';
+import {RequestMethod} from "@angular/http";
+import {Injectable} from "@angular/core";
+import {Observable, Observer} from "rxjs/Rx";
+import {LoggerService} from "../logger.service";
 
 /**
  * Created by josecastro on 7/29/16.
@@ -19,7 +19,7 @@ const DOTCMS_WEBSOCKET_BASEURL = 'dotcms.websocket.baseurl';
 const DOTCMS_WEBSOCKET_PROTOCOL = 'dotcms.websocket.protocol';
 
 @Injectable()
-export class DotcmsConfig extends CoreWebService {
+export class DotcmsConfig {
 
     private waiting: Observer[] = [];
     private configParams: any;
@@ -30,8 +30,7 @@ export class DotcmsConfig extends CoreWebService {
      *
      * @param configParams - The configuration properties for the current instance.
      */
-    constructor(apiRoot: ApiRoot, http: Http) {
-        super(apiRoot, http);
+    constructor(private coreWebService: CoreWebService, private loggerService: LoggerService) {
         this.configUrl = 'v1/appconfiguration';
         this.loadConfig();
     }
@@ -47,10 +46,16 @@ export class DotcmsConfig extends CoreWebService {
     }
 
     loadConfig(): void {
-        this.requestView({
+
+        this.loggerService.debug("Loading configuration on: " + this.configUrl);
+
+        this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.configUrl
         }).pluck('entity').subscribe(res => {
+
+            this.loggerService.debug("Configuration Loaded!");
+
             this.configParams = res;
             this.waiting.forEach(obs => obs.next(this));
             this.waiting = null;

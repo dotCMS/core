@@ -2,6 +2,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpModule} from '@angular/http';
 import {NgModule} from '@angular/core';
+import { Logger } from "angular2-logger/core";
 
 // ROUTING
 import {routing} from './app.routing';
@@ -207,6 +208,7 @@ const NGFACES_MODULES = [
         ...NGFACES_MODULES,
     ],
     providers: [
+        Logger,
         CoreWebService,
         NotLicensedService,
         AccountService,

@@ -26,8 +26,9 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(private dotcmsConfig: DotcmsConfig, loginService: LoginService) {
-        dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
+    constructor(private dotcmsConfig: DotcmsConfig, private loginService: LoginService) {
+
+        this.dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
@@ -35,7 +36,7 @@ export class DotcmsEventsService {
         });
 
         // Subscribe to changes on the logged user, only start the socket connection when the user is authenticated
-        loginService.watchUser(auth => {
+        this.loginService.watchUser(auth => {
             if (auth.user) {
                 // The user exist, lets try to create the socket connection
                 this.connectWithSocket();
@@ -43,7 +44,7 @@ export class DotcmsEventsService {
         });
 
         // Subscribe to changes in order to know when there is not a logged user
-        loginService.logout$.subscribe(() => {
+        this.loginService.logout$.subscribe(() => {
 
             // On logout, meaning no authenticated user lets try to close the socket
             if (this.ws) {
