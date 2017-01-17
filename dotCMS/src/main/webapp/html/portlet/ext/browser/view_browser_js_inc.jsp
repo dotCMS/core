@@ -1882,9 +1882,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
     function getSelectedfileAsset(folderInode, isMultiple){
         var selected = dijit.byId('defaultFileType');
-        if(!selected){
+
+        if(!selected || (selected + '').trim().length == 0){
+
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-file-asset-type")) %>');
+            return;
         }
+
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
             if(inFrame){

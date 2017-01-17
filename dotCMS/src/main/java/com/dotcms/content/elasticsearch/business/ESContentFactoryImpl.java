@@ -2370,27 +2370,39 @@ public class ESContentFactoryImpl extends ContentletFactory {
         StringBuilder whereField = new StringBuilder();
 
         if (field.getFieldContentlet().contains("float")) {
-            if (!DbConnectionFactory.isMySql()) {
-                select.append(field.getFieldContentlet());
-                whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
-                        .append(" != ");
-            } else {
+            if (DbConnectionFactory.isMySql()) {
                 select.append("`").append(field.getFieldContentlet()).append("`");
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
+            } else if (DbConnectionFactory.isH2()) {
+                select.append("\"").append(field.getFieldContentlet()).append("\"");
+                whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
+                        .append(field.getFieldContentlet()).append("\" != ");
+            } else {
+                select.append(field.getFieldContentlet());
+                whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
+                        .append(" != ");
             }
         //https://github.com/dotCMS/core/issues/10245
         }else if(!field.getFieldContentlet().startsWith("system_field")){
             update.append(field.getFieldContentlet()).append(" = ");
         } else {
-            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
-                    .append(" != ");
+            whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
+            if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
+                whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+            } else {
+                whereField.append(field.getFieldContentlet()).append(" != ");
+            }
         }
+            
 
-        if (!DbConnectionFactory.isMySql()) {
-            update.append(field.getFieldContentlet()).append(" = ");
-        }else{
+
+        if (DbConnectionFactory.isMySql()) {
             update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
+        }else if (DbConnectionFactory.isH2()) {
+            update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
+        }else{
+            update.append(field.getFieldContentlet()).append(" = ");
         }
 
         if (field.getFieldContentlet().contains("bool")) {
@@ -2406,8 +2418,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(0);
             whereField.append(0);
         } else {
-            update.append("''");
-            whereField.append("''");
+            if (DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")){
+                update.append("''");
+                whereField.append(" > 0");
+            }else {
+                update.append("''");
+                whereField.append("''");
+            }
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");

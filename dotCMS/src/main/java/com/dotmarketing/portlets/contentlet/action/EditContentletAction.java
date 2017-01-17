@@ -100,6 +100,7 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
+import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 
@@ -1022,7 +1023,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet = conAPI.find(inodeStr, user, false);
 		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
-		Structure contentType = contentlet.getStructure();
+		Structure contentType = contentlet.getStructure(); // todo
+		// : this is null, but the dialog if does not have any content type for the current user shouldn't be showed.
 
 		String selectedContentType = "";
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
@@ -1058,6 +1060,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 		}
 
+		if (null == contentType) {
+
+			this.handleContentTypeNull((ActionRequestImpl) req, inode);
+		}
 		// Checking permissions to add new content of selected content type
 		_checkWritePermissions(contentType, user, httpReq);
 
@@ -1137,6 +1143,26 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 	}
+
+	private void handleContentTypeNull(final ActionRequestImpl req, final String inode) {
+
+		Logger.info(this,
+                "The content type is null on adding new content with the inode: " + inode +
+                          ", throwing IllegalArgumentException");
+
+		final Locale locale = LocaleUtil.getLocale(req.getHttpServletRequest());
+		String message = null;
+
+		try {
+
+            message = LanguageUtil.format(locale, "edit-contentlet-content-type-null", (null == inode)?"null":inode);
+        } catch (LanguageException e) {
+
+            message = "The content type is null on adding new content with the inode: " + inode;
+        }
+
+		throw new IllegalArgumentException(message);
+	} // handleContentTypeNull.
 
 	/**
 	 * 

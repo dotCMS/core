@@ -125,6 +125,8 @@ ant.lifecycleLogLevel = "INFO"
 
 ext {
     // Open the Git repository in the current directory.
+
+    dotcmsReleaseVersion='4.1'
     dotcmsReleaseBuild = ''
     dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'
@@ -136,8 +138,12 @@ ext {
     dotcmsHome = serverFolder + webAppRootFolder
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')){
-        git = org.ajoberstar.grgit.Grgit.open(file('..'))
-        dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+        try {
+            git = org.ajoberstar.grgit.Grgit.open(file('..'))
+            dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+        } catch (Exception exception) {
+            //Do nothing, this will fail only if git is not installed on this machine
+        }
     }
 }
 
@@ -265,6 +271,7 @@ deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Dist
 //Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
 //(Useful for development)
 task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
+
 }
 deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
