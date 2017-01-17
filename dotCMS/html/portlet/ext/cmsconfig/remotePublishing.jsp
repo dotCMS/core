@@ -969,7 +969,7 @@ function deleteEnvPushHistory(envId) {
 
 										endpointString += "://" + bucketID;
 
-										String bucketPrefix = props.getProperty("dotcms.push.aws.s3.bucketPrefix");
+										String bucketPrefix = props.getProperty("dotcms.push.aws.s3.bucketRootPrefix");
 										if (com.dotmarketing.util.UtilMethods.isSet(bucketPrefix)) {
 
 											endpointString += "/" + bucketPrefix;

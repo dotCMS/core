@@ -143,7 +143,7 @@
 					"dotcms.push.aws.s3.token=myToken\n" +
 					"dotcms.push.aws.s3.secret=mySecret\n" +
 					"dotcms.push.aws.s3.bucketID=myBucketId\n" +
-					"dotcms.push.aws.s3.bucketPrefix=myBucketPrefix"
+					"dotcms.push.aws.s3.bucketRootPrefix=myBucketPrefix"
 				);
 			}
 		} else {
