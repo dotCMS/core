@@ -6,7 +6,7 @@ import {MessageService} from '../../../api/services/messages-service';
 import {BaseComponent} from '../common/_base/base-component';
 
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
+    encapsulation: ViewEncapsulation.None,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
