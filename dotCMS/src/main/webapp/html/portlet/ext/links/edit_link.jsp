@@ -261,8 +261,8 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 	
 	<!-- START Link Properties -->
 		<div id="fileBasicTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>" onShow="showEditButtonsRow()">
-	
-			<dl>
+
+			<div class="form-horizontal">
 	
 			<input name="referer" type="hidden" value="<%=referer%>">
 	
@@ -270,36 +270,46 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 			<input type="hidden" name="userId" value="<%= user.getUserId() %>">
 	
 			<%if(identifier!=null){%>
-				<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-				<dd><%= identifier.getId() %></dd>
+				<dl>
+					<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+					<dd><%= identifier.getId() %></dd>
+				</dl>
 			<%}%>
-	
+
+			<dl>
 				<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
 				<dd>
 					<input type="text" dojoType="dijit.form.TextBox" style="width:250px;" name="title" id="titleField" value="<%= UtilMethods.isSet(linkForm.getTitle()) ? linkForm.getTitle() : "" %>" />
 					<html:hidden  property="friendlyName" styleId="friendlyNameField"/>
 				</dd>
-	
+			</dl>
+			<dl>
 				<dt><%= LanguageUtil.get(pageContext, "Folder") %>:</dt>
 				<dd>
 					<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
 						<div id="folder" name="parent" onlySelectFolders="true" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" <%= UtilMethods.isSet(hostId)?"hostId=\"" + hostId + "\"":"" %>></div>
 					<% } else { %>
-						<input type="text" readonly="readonly" styleClass="form-text" value="<%= APILocator.getIdentifierAPI().find(folder).getPath() %>" />
+						<%= APILocator.getIdentifierAPI().find(folder).getPath() %>
 						<html:hidden styleClass="form-text" property="parent" styleId="parent" />
 					<% } %>
 				</dd>
-	
+			</dl>
+			<dl>
 				<dt><%= LanguageUtil.get(pageContext, "Type") %>:</dt>
 				<dd>
-					<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.INTERNAL.toString())?"checked":"" %> id="internalLinkType" name="linkType" value="<%= LinkType.INTERNAL.toString() %>" onclick="hideShowOptions()">
-					<label for="internalLinkType"><%= LanguageUtil.get(pageContext, "Internal-Link") %></label>
-	
-					<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.EXTERNAL.toString())?"checked":"" %> id="externalLinkType" name="linkType" value="<%= LinkType.EXTERNAL.toString() %>" onclick="hideShowOptions()">
-					<label for="externalLinkType"><%= LanguageUtil.get(pageContext, "External-Link") %></label>
-	
-					<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.CODE.toString())?"checked":"" %> id="codeLinkType" name="linkType" value="<%= LinkType.CODE.toString() %>" onclick="hideShowOptions()">
-					<label for="codeLinkType"><%= LanguageUtil.get(pageContext, "Code-Link") %></label>
+					<div class="radio">
+						<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.INTERNAL.toString())?"checked":"" %> id="internalLinkType" name="linkType" value="<%= LinkType.INTERNAL.toString() %>" onclick="hideShowOptions()">
+						<label for="internalLinkType"><%= LanguageUtil.get(pageContext, "Internal-Link") %></label>
+					</div>
+
+					<div class="radio">
+						<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.EXTERNAL.toString())?"checked":"" %> id="externalLinkType" name="linkType" value="<%= LinkType.EXTERNAL.toString() %>" onclick="hideShowOptions()">
+						<label for="externalLinkType"><%= LanguageUtil.get(pageContext, "External-Link") %></label>
+					</div>
+					<div class="radio">
+						<input dojoType="dijit.form.RadioButton" type="radio" <%= linkForm.getLinkType().equals(LinkType.CODE.toString())?"checked":"" %> id="codeLinkType" name="linkType" value="<%= LinkType.CODE.toString() %>" onclick="hideShowOptions()">
+						<label for="codeLinkType"><%= LanguageUtil.get(pageContext, "Code-Link") %></label>
+					</div>
 				</dd>
 			</dl>
 	
@@ -372,13 +382,17 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 			<dl>
 				<dt><%= LanguageUtil.get(pageContext, "sort-order") %>:</dt>
 				<dd><input type="text" dojoType="dijit.form.TextBox" name="sortOrder" style="width:50px;" id="sortOrder" size="3" value="<%= linkForm.getSortOrder() %>" /></dd>
-	
-				<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
+			</dl>
+			<dl>
+				<dt></dt>
 				<dd>
-					<!--<html:checkbox styleClass="form-text" property="showOnMenu" />-->
-					<input type="checkbox" dojoType="dijit.form.CheckBox" name="showOnMenu" id="showOnMenu" <%= linkForm.isShowOnMenu() ? "checked" : "" %> />
+					<div class="checkbox">
+						<input type="checkbox" dojoType="dijit.form.CheckBox" name="showOnMenu" id="showOnMenu" <%= linkForm.isShowOnMenu() ? "checked" : "" %> />
+						<label for="showOnMenu"><%= LanguageUtil.get(pageContext, "Show-on-Menu") %></label>
+					</div>
 				</dd>
 			</dl>
+			</div>
 	
 		</div>
 	<!-- END Link Properties -->
@@ -425,13 +439,13 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
 	
 		<% if( canUserWriteToLink ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
 		<% } %>
 	
 		<% if( canUserPublishLink ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 			</button>
 		<% } %>
@@ -453,12 +467,12 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<% } %>
 	
 		<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
-			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" class="dijitButtonDanger" iconClass="deleteIcon" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
 			</button>
 		<% } %>
-	
-		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  iconClass="cancelIcon" type="button">
+
+		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  class="dijitButtonFlat" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 		</button>
 	
