@@ -69,6 +69,7 @@
 
 	<portlet id="EXT_1" struts-path="ext/inodes" narrow="true" />
 	<portlet id="EXT_2" struts-path="ext/banners" />
+	<portlet id="files-legacy" struts-path="ext/files" narrow="true"/>
 	<portlet id="categories" struts-path="ext/categories"  narrow="true"  />
 	<portlet id="folders" struts-path="ext/folders" />
 	<portlet id="site-browser" struts-path="ext/browser" />

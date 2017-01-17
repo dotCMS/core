@@ -57,7 +57,7 @@ function uploadFiles(uploader, referer, operation) {
     document.getElementById("messageDiv").style.display = "";
 
     form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/upload_multiple" /></portlet:actionURL>';
-    form.<portlet:namespace />subcmd.value = operation;
+    form.subcmd.value = operation;
     form.cmd.value = "<%= Constants.ADD %>";
     dijit.byId('saveButton').setAttribute('disabled', true);
     if (dijit.byId('savePublishButton') != null) {

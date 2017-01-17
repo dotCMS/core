@@ -33,7 +33,7 @@
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_BROWSER )){
 			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "site-browser"), crumbTrailReferer));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_FILES )){	
-			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "EXT_3"), crumbTrailReferer));
+			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "files-legacy"), crumbTrailReferer));
 		}else if(UtilMethods.isSet(cmd) && cmd.equals(Constants.VIEW_PAGES )){	
 			crumbTrailEntries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + "html-pages"), crumbTrailReferer));
 		}else{

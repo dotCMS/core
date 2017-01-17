@@ -3572,7 +3572,7 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -660px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_3 a span {
+#menu ul.dropdown li.dotCMS_files-legacy a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -840px;
 }
 

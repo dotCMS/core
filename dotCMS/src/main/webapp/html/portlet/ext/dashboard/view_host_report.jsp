@@ -69,8 +69,8 @@ try {
 			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=users&p_p_action=0";
 		}else if (portletId.equals("html-pages")) {
 			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=html-pages&p_p_action=0";
-		}else if (portletId.equals("EXT_3")) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=0";
+		}else if (portletId.equals("files-legacy")) {
+			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=files-legacy&p_p_action=0";
 		}else if (portletId.equals("content")) {
 			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=content";
 		}

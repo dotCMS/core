@@ -42,8 +42,8 @@ try {
 			linkURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_1&p_p_action=1";
 		}else if (portletId.equals("html-pages")) {
 			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=html-pages&p_p_action=1";
-		}else if (portletId.equals("EXT_3")) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=1";
+		}else if (portletId.equals("files-legacy")) {
+			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=files-legacy&p_p_action=1";
 		}else if (portletId.equals("content")) {
 			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=content&p_p_action=1";
 		}
@@ -212,7 +212,7 @@ try {
       	}
 
        function editFile(contInode){
-    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_EXT_3_struts_action=%2Fext%2Ffiles%2Fedit_file&_EXT_3_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
+    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_files-legacy_struts_action=%2Fext%2Ffiles%2Fedit_file&_files-legacy_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
     	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
     	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
     		 window.location=href;	
