@@ -37,6 +37,7 @@ public class PublisherConfig implements Map<String, Object> {
 	
 	Map<String, Object> params;
 	private boolean liveOnly = true;
+	private boolean isStatic = false;
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
@@ -356,6 +357,13 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
+	public boolean isStatic() {
+		return isStatic;
+	}
+	public void setStatic(boolean isStatic) {
+		this.isStatic = isStatic;
+	}
+
 	public String getDestinationBundle() {
 		return (String) params.get(Config.DESTINATION_BUNDLE.name());
 	}
@@ -475,4 +483,6 @@ public class PublisherConfig implements Map<String, Object> {
 	public void setRunNow(boolean once){
 		this.put(MyConfig.RUN_NOW.toString(), once);
 	}
+
+	
 }

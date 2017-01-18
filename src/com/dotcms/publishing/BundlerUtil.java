@@ -40,8 +40,12 @@ public class BundlerUtil {
 		if(config.getId() ==null){
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId()+ File.separator + "bundle.xml";
 
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		if (config.isStatic()) {
+			bundlePath += "-static";
+		}
+		bundlePath += File.separator + "bundle.xml";
 
 		return new File(bundlePath).exists();
 	}
@@ -64,7 +68,11 @@ public class BundlerUtil {
 	 * @param config Config with the id of bundle
 	 */
 	public static File getBundleRoot(PublisherConfig config){
-		return getBundleRoot(config.getId());
+		if (config.isStatic()) {
+			return getBundleRoot(config.getId() + "-static");
+		} else {
+			return getBundleRoot(config.getId());			
+		}
 	}
 
 	/**
@@ -72,8 +80,7 @@ public class BundlerUtil {
 	 * @param config
 	 */
 	public static void writeBundleXML(PublisherConfig config){
-		getBundleRoot(config);
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		String bundlePath = getBundleRoot(config).getAbsolutePath();
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		objectToXML(config, xml);
 
@@ -86,8 +93,7 @@ public class BundlerUtil {
      * @return The Bundle configuration read from the mail Bundle xml file
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
-		getBundleRoot(config);
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+		String bundlePath = getBundleRoot(config).getAbsolutePath();
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		if(xml.exists()){
 			return (PublisherConfig) xmlToObject(xml);

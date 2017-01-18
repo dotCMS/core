@@ -76,7 +76,9 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
-			updateAuditStatus();
+			if (!isStaticPublish()) {
+				updateAuditStatus();
+			}
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 
 			//Verify if we have endpoints where to send the bundles
@@ -84,7 +86,6 @@ public class PublisherQueueJob implements StatefulJob {
 			if ( endpoints != null && endpoints.size() > 0 ) {
 
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
-				PublisherAPI pubAPI = PublisherAPI.getInstance();
 
 				List<Map<String, Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
 				List<PublishQueueElement> tempBundleContents;
@@ -178,7 +179,16 @@ public class PublisherQueueJob implements StatefulJob {
 				DbConnectionFactory.closeConnection();
 			}
 		}
+	}
 
+	private boolean isStaticPublish() throws DotPublisherException {
+		return pubAPI.getQueueBundleIdsToProcess().stream().map(bundle -> {
+			String tempBundleId = (String) bundle.get("bundle_id");
+			
+			return getPublishersForBundle(tempBundleId);
+		}).allMatch(
+			publishers -> publishers.size() == 1 && publishers.contains(StaticPublisher.class)
+		);
 	}
 
     /**
