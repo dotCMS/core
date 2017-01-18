@@ -6510,6 +6510,24 @@ a.category_higlighted, a.tag_higlighted {
   margin-bottom: 8px;
 }
 
+.view-roles__portlets-list {
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+}
+.view-roles__portlets-list ul {
+  margin: 0;
+}
+
+.view-roles__portlets-list-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: solid 1px #ECEDEE;
+  align-items: center;
+  padding-right: 2px;
+}
+
 .nameText {
   align-self: center;
   font-size: 18px;

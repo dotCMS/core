@@ -923,7 +923,7 @@
 			var gridBox = dojo.contentBox("roleLayoutsGrid");
 			var col1Width = parseInt(gridBox.w * 2 / 100);
 			var col2Width = parseInt(gridBox.w * 30 / 100);
-			var col3Width = parseInt(gridBox.w * 61 / 100);
+			var col3Width = parseInt(gridBox.w * 58 / 100);
 			var col4Width = gridBox.w - col1Width - col2Width - col3Width - 30;
 
 			var layoutsGridLayout = [
@@ -1035,15 +1035,9 @@
 	var currentLayout;
 
 	var portletListItemTemplate =
-	'<div id="listItem-${portletId}" class="portletItem">' +
-	'	<div class="yui-gc">' +
-	'		<div class="yui-u first portletTitle">' +
-	'			${portletTitle}' +
-	'		</div>' +
-	'		<div class="yui-u removePorletButton">' +
-	'			<button id="removePortletButton${portletId}" dojoType="dijit.form.Button" type="button">' + removeMsg + '</button>' +
-	'		</div>' +
-	'	</div>' +
+	'<div id="listItem-${portletId}" class="view-roles__portlets-list-item">' +
+	'	${portletTitle}' +
+	'	<button id="removePortletButton${portletId}" dojoType="dijit.form.Button" type="button">' + removeMsg + '</button>' +
 	'</div>';
 
 	var portletsListSource;
@@ -1073,18 +1067,6 @@
 		var handler = dojo.hitch(this, removePortletFromList.bind(this), portletId)
 		dojo.connect(button, 'onClick', this, handler)
 		portletsInLayout.push({ portletTitle: portletTitle, portletId: portletId });
-
-		setOverflow();
-
-	}
-
-	function setOverflow(){
-		var portletsListSourceTemp = new dojo.dnd.Source("portletsList");
-		if (portletsListSourceTemp && portletsListSourceTemp.getAllNodes().length > 7){
-			dojo.style("portletsListWrapper", "overflow", "auto");
-		} else{
-			dojo.style("portletsListWrapper", "overflow", "");
-		}
 	}
 
 	function editLayout(layoutId) {
@@ -1115,8 +1097,6 @@
 				var id = currentLayout.portletIds[i];
 				registerPortletItemButton(id, title);
 			}
-
-			setOverflow();
 
 			newLayout = false;
 			dojo.style('deleteLayoutButtonWrapper', {
@@ -1166,7 +1146,10 @@
             name: "portletList",
             searchAttr: "title",
             store: portletsStore,
-			required: false
+			required: false,
+			style: {
+				width: '241px'
+			}
         },
         "portletList");
 
@@ -1203,7 +1186,6 @@
 		dijit.registry.remove('removePortletButton' + portletId)
 		dojo.destroy(dojo.byId('listItem-' + portletId));
 
-		setOverflow();
 	}
 
 	function saveLayout() {
