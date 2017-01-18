@@ -45,7 +45,7 @@ public class LicenseResource {
     @Path("/all/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(@Context HttpServletRequest request, @PathParam("params") String params) {
-        webResource.init(params, true, request, true, "9");
+        webResource.init(params, true, request, true, "configuration");
         try {
             JSONArray array=new JSONArray();
 
@@ -85,7 +85,7 @@ public class LicenseResource {
     public Response putZipFile(@Context HttpServletRequest request, @PathParam("params") String params,
             @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail,
             @FormDataParam("return") String ret) {
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         try {
            
             if(inputFile!=null) {
@@ -112,7 +112,7 @@ public class LicenseResource {
     @DELETE
     @Path("/delete/{params:.*}")
     public Response delete(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         String id=initData.getParamsMap().get("id");
         try {
             if(UtilMethods.isSet(id)) {
@@ -141,7 +141,7 @@ public class LicenseResource {
     @POST
     @Path("/pick/{params:.*}")
     public Response pickLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         String serial = initData.getParamsMap().get("serial");
         
         final long currentLevel=LicenseUtil.getLevel();
@@ -182,7 +182,7 @@ public class LicenseResource {
     @POST
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         
         String localServerId = APILocator.getServerAPI().readServerId();
         String remoteServerId = initData.getParamsMap().get("serverid");
@@ -275,7 +275,7 @@ public class LicenseResource {
     public Response requestLicense(@Context HttpServletRequest request, 
     		@FormParam ("licenseLevel") String licenseLevel,
     		@FormParam ("licenseType") String licenseType) {
-        InitDataObject initData = webResource.init("", true, request, true, "9");
+        InitDataObject initData = webResource.init("", true, request, true, "configuration");
         try {
 
 	        
@@ -311,7 +311,7 @@ public class LicenseResource {
 
     		@FormParam ("licenseText") String licenseText) {
 
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         try {
 	        HttpSession session = request.getSession();
 
@@ -341,7 +341,7 @@ public class LicenseResource {
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response resetLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         try {
         	freeLicense(request, params);
         	

@@ -140,7 +140,7 @@
 					Map<String, String[]> params = new HashMap<String, String[]>();
 			    	params.put("struts_action",new String[] {"/ext/htmlpageviews/view_htmlpage_views"});
 			    	params.put("pageIdentifier",new String[] { idInode });
-					String url = PortletURLUtil.getRenderURL(request, layoutId, WindowState.MAXIMIZED.toString(), params, "EXT_USER_ADMIN");
+					String url = PortletURLUtil.getRenderURL(request, layoutId, WindowState.MAXIMIZED.toString(), params, "users");
 	        %>
 		        <a href="<%= url %>"><%= clickstreamRequest.getRequestURI() %></a>
 		    <% } else { %>

@@ -82,7 +82,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
-			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
 				String userName = map.get("u");
 				String password = map.get("p");
 				LoginFactory.doLogin(userName, password, false, request, response);
@@ -91,7 +91,7 @@ public class IndexAjaxAction extends AjaxAction {
 				    setUser(request);
                     user = getUser();
 				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
 					response.sendError(401);
 					return;
 				}

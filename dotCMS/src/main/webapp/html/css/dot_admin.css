@@ -309,57 +309,57 @@ a.fakeDojoButton:hover{background:#FFFFFF url(images/buttonHover.png) repeat-x s
 a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 /* NAV MENU ICONS 2.0 */
-#menu ul.dropdown li.dotCMS_EXT_SITESEARCH a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -60px;}
+#menu ul.dropdown li.dotCMS_site-search a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -60px;}
 #menu ul.dropdown li.dotCMS_EXT_16 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -180px;}
 #menu ul.dropdown li.dotCMS_EXT_LICENSE_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -300px;}
-#menu ul.dropdown li.dotCMS_EXT_HOSTADMIN a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -320px;}
-#menu ul.dropdown li.dotCMS_EXT_15 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -400px;}
-#menu ul.dropdown li.dotCMS_EXT_USER_ADMIN a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -440px;}
-#menu ul.dropdown li.dotCMS_EXT_ROLE_ADMIN a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -460px;}
-#menu ul.dropdown li.dotCMS_EXT_21 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -500px;}
-#menu ul.dropdown li.dotCMS_EXT_SCHEDULER a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -620px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_18 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -660px;}
-#menu ul.dropdown li.dotCMS_EXT_3 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;}
+#menu ul.dropdown li.dotCMS_sites a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -320px;}
+#menu ul.dropdown li.dotCMS_html-pages a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -400px;}
+#menu ul.dropdown li.dotCMS_users a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -440px;}
+#menu ul.dropdown li.dotCMS_roles a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -460px;}
+#menu ul.dropdown li.dotCMS_workflow a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -500px;}
+#menu ul.dropdown li.dotCMS_jobs a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -620px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_links a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -660px;}
+#menu ul.dropdown li.dotCMS_files-legacy a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;}
 #menu ul.dropdown li.dotCMS_EXT_PRODUCT a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1000px;}
 #menu ul.dropdown li.dotCMS_EXT_6 a span, .nodeAllIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1000px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_4 a span, .nodeInsertIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1020px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_CMS_MAINTENANCE a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1060px;}
-#menu ul.dropdown li.dotCMS_EXT_LANG a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1160px;}
-#menu ul.dropdown li.dotCMS_EXT_CALENDAR a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1120px;}
-#menu ul.dropdown li.dotCMS_EXT_LUCENE_TOOL a span{background: url(/html/images/icons/lucene.png) no-repeat }
+#menu ul.dropdown li.dotCMS_categories a span, .nodeInsertIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1020px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_maintenance a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1060px;}
+#menu ul.dropdown li.dotCMS_languages a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1160px;}
+#menu ul.dropdown li.dotCMS_calendar a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1120px;}
+#menu ul.dropdown li.dotCMS_query-tool a span{background: url(/html/images/icons/lucene.png) no-repeat }
 #menu ul.dropdown li.dotCMS_25 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1180px;}
 #menu ul.dropdown li.dotCMS_EXT_ECO_ORDER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1200px;}
-#menu ul.dropdown li.dotCMS_9 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_configuration a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
-#menu ul.dropdown li.dotCMS_EXT_12 a span, .container{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_containers a span, .container{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
-#menu ul.dropdown li.dotCMS_EXT_13 a span, .templateIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_templates a span, .templateIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_19 a span, .targetIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1240px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_COMMUNICATIONS_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1240px;}
-#menu ul.dropdown li.dotCMS_EXT_REPORTMANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1260px;}
-#menu ul.dropdown li.dotCMS_EXT_VIRTUAL_LINKS a span, .vlinksIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1260px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_BROWSER a span, .bowserIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_11 a span, .contentIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_reports a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1260px;}
+#menu ul.dropdown li.dotCMS_vanity-urls a span, .vlinksIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1260px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_site-browser a span, .bowserIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_content a span, .contentIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_DISCOUNTCODE a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;}
-#menu ul.dropdown li.dotCMS_EXT_DASHBOARD a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1300px;}
-#menu ul.dropdown li.dotCMS_EXT_STRUCTURE a span, .structureIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_FORM_HANDLER a span, .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_dashboard a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1300px;}
+#menu ul.dropdown li.dotCMS_content-types a span, .structureIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_forms a span, .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_CONTENTRATINGS a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1340px;}
-#menu ul.dropdown li.dotCMS_WORKFLOW_SCHEMES a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;}
-#menu ul.dropdown li.dotCMS_EXT_TAG_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-/*#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
-#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1860px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_workflow-schemes a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;}
+#menu ul.dropdown li.dotCMS_tags a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+/*#menu ul.dropdown li.dotCMS_dynamic-plugins a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
+#menu ul.dropdown li.dotCMS_dynamic-plugins a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1860px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 
-#menu ul.dropdown li.dotCMS_TIMEMACHINE a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_ES_SEARCH_PORTLET a span, .elasticsearchIcon{background: url(/html/images/icons/elasticsearch.png) no-repeat;width:18px;height:18px;-o-object-fit: contain;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_time-machine a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_link-checker a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_es-search a span, .elasticsearchIcon{background: url(/html/images/icons/elasticsearch.png) no-repeat;width:18px;height:18px;-o-object-fit: contain;display:inline-block;vertical-align:top;}
 
-#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_RULES_ENGINE_PORTLET a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
-#menu ul.dropdown li.dotCMS_RULES_ENGINE_PORTLET a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
+#menu ul.dropdown li.dotCMS_publishing-queue a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_rules a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
+#menu ul.dropdown li.dotCMS_rules a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
 
-#menu ul.dropdown li.dotCMS_PERSONAS_PORTLET a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -460px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_personas a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -460px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .personaIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -460px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 
@@ -1054,54 +1054,54 @@ a.fakeDojoButton:hover{background:#FFFFFF url(images/buttonHover.png) repeat-x s
 a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 /* NAV MENU ICONS 2.0 */
-#menu ul.dropdown li.dotCMS_EXT_SITESEARCH a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -60px;}
+#menu ul.dropdown li.dotCMS_site-search a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -60px;}
 #menu ul.dropdown li.dotCMS_EXT_16 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -180px;}
 #menu ul.dropdown li.dotCMS_EXT_LICENSE_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -300px;}
-#menu ul.dropdown li.dotCMS_EXT_HOSTADMIN a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -320px;}
-#menu ul.dropdown li.dotCMS_EXT_15 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -400px;}
-#menu ul.dropdown li.dotCMS_EXT_USER_ADMIN a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -440px;}
-#menu ul.dropdown li.dotCMS_EXT_ROLE_ADMIN a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -460px;}
-#menu ul.dropdown li.dotCMS_EXT_21 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -500px;}
-#menu ul.dropdown li.dotCMS_EXT_SCHEDULER a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -620px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_18 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -660px;}
-#menu ul.dropdown li.dotCMS_EXT_3 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;}
+#menu ul.dropdown li.dotCMS_sites a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -320px;}
+#menu ul.dropdown li.dotCMS_html-pages a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -400px;}
+#menu ul.dropdown li.dotCMS_users a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -440px;}
+#menu ul.dropdown li.dotCMS_roles a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -460px;}
+#menu ul.dropdown li.dotCMS_workflow a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -500px;}
+#menu ul.dropdown li.dotCMS_jobs a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -620px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_links a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -660px;}
+#menu ul.dropdown li.dotCMS_files-legacy a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -840px;}
 #menu ul.dropdown li.dotCMS_EXT_PRODUCT a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1000px;}
 #menu ul.dropdown li.dotCMS_EXT_6 a span, .nodeAllIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1000px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_4 a span, .nodeInsertIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1020px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_CMS_MAINTENANCE a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1060px;}
-#menu ul.dropdown li.dotCMS_EXT_LANG a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1160px;}
-#menu ul.dropdown li.dotCMS_EXT_CALENDAR a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1120px;}
-#menu ul.dropdown li.dotCMS_EXT_LUCENE_TOOL a span{background: url(/html/images/icons/lucene.png) no-repeat }
+#menu ul.dropdown li.dotCMS_categories a span, .nodeInsertIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1020px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_maintenance a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1060px;}
+#menu ul.dropdown li.dotCMS_languages a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1160px;}
+#menu ul.dropdown li.dotCMS_calendar a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1120px;}
+#menu ul.dropdown li.dotCMS_query-tool a span{background: url(/html/images/icons/lucene.png) no-repeat }
 #menu ul.dropdown li.dotCMS_25 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1180px;}
 #menu ul.dropdown li.dotCMS_EXT_ECO_ORDER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1200px;}
-#menu ul.dropdown li.dotCMS_9 a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_configuration a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -200px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
-#menu ul.dropdown li.dotCMS_EXT_12 a span, .container{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_containers a span, .container{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
-#menu ul.dropdown li.dotCMS_EXT_13 a span, .templateIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_templates a span, .templateIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1220px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_19 a span, .targetIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1240px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_COMMUNICATIONS_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1240px;}
-#menu ul.dropdown li.dotCMS_EXT_REPORTMANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1260px;}
-#menu ul.dropdown li.dotCMS_EXT_VIRTUAL_LINKS a span, .vlinksIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1260px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_BROWSER a span, .bowserIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_11 a span, .contentIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_reports a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1260px;}
+#menu ul.dropdown li.dotCMS_vanity-urls a span, .vlinksIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1260px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_site-browser a span, .bowserIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_content a span, .contentIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1280px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_DISCOUNTCODE a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;}
-#menu ul.dropdown li.dotCMS_EXT_DASHBOARD a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1300px;}
-#menu ul.dropdown li.dotCMS_EXT_STRUCTURE a span, .structureIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_FORM_HANDLER a span, .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_dashboard a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1300px;}
+#menu ul.dropdown li.dotCMS_content-types a span, .structureIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_forms a span, .formIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1320px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_CONTENTRATINGS a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1340px;}
-#menu ul.dropdown li.dotCMS_WORKFLOW_SCHEMES a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;}
-#menu ul.dropdown li.dotCMS_EXT_TAG_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-/*#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
-#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1860px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_workflow-schemes a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -520px;}
+#menu ul.dropdown li.dotCMS_tags a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1300px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+/*#menu ul.dropdown li.dotCMS_dynamic-plugins a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
+#menu ul.dropdown li.dotCMS_dynamic-plugins a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1860px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 
-#menu ul.dropdown li.dotCMS_TIMEMACHINE a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_ES_SEARCH_PORTLET a span, .elasticsearchIcon{background: url(/html/images/icons/elasticsearch.png) no-repeat;width:18px;height:18px;-o-object-fit: contain;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_time-machine a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_link-checker a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_es-search a span, .elasticsearchIcon{background: url(/html/images/icons/elasticsearch.png) no-repeat;width:18px;height:18px;-o-object-fit: contain;display:inline-block;vertical-align:top;}
 
-#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_RULES_ENGINE_PORTLET a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
+#menu ul.dropdown li.dotCMS_publishing-queue a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_rules a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
 
 
 /* Action Panel */

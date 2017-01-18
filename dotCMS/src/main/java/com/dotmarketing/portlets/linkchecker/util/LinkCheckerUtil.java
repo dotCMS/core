@@ -79,7 +79,7 @@ public class LinkCheckerUtil {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
 
-            String link = "http://" + host.getHostname() + Config.getStringProperty("WORKFLOWS_URL") + "&_EXT_21_inode="
+            String link = "http://" + host.getHostname() + Config.getStringProperty("WORKFLOWS_URL") + "&_workflow_inode="
                     + String.valueOf(processor.getTask().getId());
 
             HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();

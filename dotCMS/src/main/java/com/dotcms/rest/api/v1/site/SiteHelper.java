@@ -34,7 +34,7 @@ public class SiteHelper implements Serializable {
 	
 	private final HostAPI hostAPI;
 
-    public static final String EXT_HOSTADMIN = "EXT_HOSTADMIN";
+    public static final String EXT_HOSTADMIN = "sites";
     
     public static final String HAS_PREVIOUS = "hasPrevious";
     public static final String HAS_NEXT = "hasNext";

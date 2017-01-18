@@ -13,13 +13,13 @@
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.RULES_ENGINE_PORTLET")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.rules")%></a>
 				</li>
 
 			</ul>
 			<div class="clear"></div>
 		</div>
-		<jsp:include page="/WEB-INF/jsp/rules_engine_portlet/not_licensed.jsp"></jsp:include>
+		<jsp:include page="/WEB-INF/jsp/rules/not_licensed.jsp"></jsp:include>
 
 	</div>
 <%return;}%>
@@ -48,7 +48,7 @@
 
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/html/ng/fromCore/RULES_ENGINE_PORTLET?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
+  document.getElementById("rulesIframe").src = "/dotAdmin/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
   
 
 

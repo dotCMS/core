@@ -84,10 +84,6 @@
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
     </filter>
-	<filter>
-		<filter-name>AngularRoutingFilter</filter-name>
-		<filter-class>com.dotcms.filters.angular.AngularRoutingFilter</filter-class>
-	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -150,10 +146,6 @@
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>AngularRoutingFilter</filter-name>
-		<url-pattern>/html/ng/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	

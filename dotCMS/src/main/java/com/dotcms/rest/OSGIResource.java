@@ -70,7 +70,7 @@ public class OSGIResource  {
         //Verify if the user have access to the OSGI portlet
         User currentUser = initData.getUser();
         try {
-            if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "OSGI_MANAGER", currentUser ) ) {
+            if ( currentUser == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet( "dynamic-plugins", currentUser ) ) {
                 return responseResource.responseError( "User does not have access to the Dynamic Plugins Portlet", HttpStatus.SC_UNAUTHORIZED );
             }
         } catch ( DotDataException e ) {

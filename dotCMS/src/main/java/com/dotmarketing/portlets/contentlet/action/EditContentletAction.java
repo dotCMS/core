@@ -214,7 +214,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
-		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_11", user)){
+		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("content", user)){
 		  _sendToReferral(req, res, "/api/v1/logout");
 		  return;
 		}

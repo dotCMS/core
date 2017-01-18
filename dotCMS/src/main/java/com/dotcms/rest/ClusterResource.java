@@ -75,7 +75,7 @@ public class ClusterResource {
     @Produces ("application/json")
     public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = webResource.init( params, true, request, false, "9");
+        InitDataObject initData = webResource.init( params, true, request, false, "configuration");
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         
         ServerAPI serverAPI = APILocator.getServerAPI();
@@ -222,7 +222,7 @@ public class ClusterResource {
     @Produces ("application/json")
     public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = webResource.init( params, true, request, false, "9" );
+        InitDataObject initData = webResource.init( params, true, request, false, "configuration" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
 		String remoteServerID = paramsMap.get("id");
@@ -335,7 +335,7 @@ public class ClusterResource {
     @Produces ("application/json")
     public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = webResource.init( params, true, request, false, "9" );
+        InitDataObject initData = webResource.init( params, true, request, false, "configuration" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         JSONObject jsonNode = new JSONObject();
@@ -375,7 +375,7 @@ public class ClusterResource {
     @POST
     @Path("/remove/{params:.*}")
     public Response removeFromCluster(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "configuration");
         String serverId = initData.getParamsMap().get("serverid");
         try {
         	HibernateUtil.startTransaction();

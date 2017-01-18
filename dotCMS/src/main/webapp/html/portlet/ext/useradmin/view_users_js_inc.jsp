@@ -1,4 +1,7 @@
 
+<%@page import="com.dotmarketing.business.Layout"%>
+<%@page import="com.liferay.portal.util.WebKeys"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
@@ -1516,13 +1519,6 @@
 
 	function updateUserCategoriesCallback(){
 		showDotCMSSystemMessage(userCategoriesSavedMsg);
-	}
-
-	function addUserProxyEntity(inode)
-	{
-   		var url = '<liferay:actionURL portletName="EXT_6"><liferay:param name="struts_action" value="/ext/entities/edit_entity" /></liferay:actionURL>';
-   		url += '&inode=' + inode;
-		window.location.href = url;
 	}
 
 	function containsCategory(categories, id) {
