@@ -216,4 +216,10 @@ public abstract class PublisherAPI {
 	 */
 	public abstract void deleteAllElementsFromPublishQueueTable() throws DotPublisherException;
 
+	/*
+	 * This will immediately fire the publishing quartz job
+	 */
+	
+    public abstract void firePublisherQueueNow() ;
+
 }
