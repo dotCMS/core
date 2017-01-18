@@ -1,5 +1,6 @@
 import {Injectable} from "@angular/core";
 import {Logger} from "angular2-logger/core";
+import {CONSTANT} from "../../view/constant";
 
 /**
  * LoggerService to log.  Allows logger to be changed at runtime
@@ -9,6 +10,12 @@ import {Logger} from "angular2-logger/core";
 export class LoggerService {
 
     constructor(private logger: Logger) {
+
+        if (CONSTANT.env !== 'PROD') {
+
+            logger.level = logger.Level.LOG;
+        }
+
     }
 
     info(message : string){
