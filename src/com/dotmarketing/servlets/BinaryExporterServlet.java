@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
+import javax.imageio.ImageIO;
+import javax.imageio.spi.IIORegistry;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -48,6 +50,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.reader.SVGImageReaderSpi;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -137,6 +140,13 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 			}
 		}
+		ImageIO.scanForPlugins();
+        final IIORegistry registry = IIORegistry.getDefaultInstance();
+        registry.deregisterServiceProvider(registry.getServiceProviderByClass(com.twelvemonkeys.imageio.plugins.svg.SVGImageReaderSpi.class));
+        registry.registerServiceProvider(new SVGImageReaderSpi());
+        
+		
+		
 	}
 
 	private static final long serialVersionUID = 1L;

@@ -345,11 +345,29 @@ public class ContentMap {
     * @return
     * @throws IOException 
     */
-    public String getShorty() throws IOException{
-        return getShorty(content.getIdentifier());
+    public String getShortyUrl() throws IOException{
+        return getShortyUrl(content.getIdentifier());
     }
     
+    /**
+    * Returns the valid short version of the
+    * identifier 
+    * @return
+    * @throws IOException 
+    */
+    public String getShorty() throws IOException{
+        return APILocator.getShortyAPI().shortify(content.getIdentifier());
+    }
     
+    /**
+    * Returns the valid short version of the
+    * inode 
+    * @return
+    * @throws IOException 
+    */
+    public String getShortyInode() throws IOException{
+        return APILocator.getShortyAPI().shortify(content.getInode());
+    }
     /**
     * Returns the returns the identifier based URI for the 
     * first doc/file on a piece of content
@@ -357,39 +375,28 @@ public class ContentMap {
     * @return
     * @throws IOException 
     */
-    public String getShortyInode() throws IOException{
-        return getShorty(content.getInode());
+    public String getShortyUrlInode() throws IOException{
+        return getShortyUrl(content.getInode());
     }
 	
 	
 
-    private String getShorty(final String idInode) throws IOException{
+    private String getShortyUrl(final String idInode) throws IOException{
         String tryField=getFileField();
-        java.io.File file=content.getBinary(getFileField());
-
         StringBuilder sb = new StringBuilder("/dA/").append(APILocator.getShortyAPI().shortify(idInode));
-        if(!"fileAsset".equals(tryField)){
-            sb.append("/").append(tryField);
+        if(tryField!=null){
+          java.io.File f = content.getBinary(tryField);
+          if(f !=null && f.exists()){
+            sb.append("/").append(content.getBinary(tryField).getName()) ;
+          }
         }
-        sb.append("/").append(file.getName()) ;
-        
         return sb.toString();
     }
     
     private String getFileField() throws IOException{
-        String tryField="fileAsset";
-        java.io.File file=content.getBinary(tryField);
-
-        if(file!=null &&  file.exists()){
-            return tryField;
-        }
-
         for (Field f : FieldsCache.getFieldsByStructureInode(content.getStructureInode())) {
             if ("binary".equals(f.getFieldType())) {
-                file=content.getBinary(f.getVelocityVarName());
-                if(file!=null &&  file.exists()){
-                    return f.getVelocityVarName();
-                }
+                return f.getVelocityVarName();
             }
         }
         return null;
