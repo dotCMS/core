@@ -281,8 +281,8 @@ public class PublisherAPIImpl extends PublisherAPI{
         resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
         return resultMap;
     }
-    
-    private void firePublisherQueueNow(){
+    @Override
+    public void firePublisherQueueNow(){
       //SCHEDULE PUBLISH QUEUE JOB for NOW
       try {
         Scheduler sched = QuartzUtils.getStandardScheduler();
