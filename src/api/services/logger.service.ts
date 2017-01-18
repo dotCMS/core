@@ -11,8 +11,10 @@ export class LoggerService {
 
     constructor(private logger: Logger) {
 
+        console.log("Setting the logger");
         if (CONSTANT.env !== 'PROD') {
 
+            console.log("Developer mode logger on");
             logger.level = logger.Level.LOG;
         }
 
