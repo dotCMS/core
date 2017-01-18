@@ -8,7 +8,7 @@ export class DotRouterService {
     }
 
     public goToMain(): void {
-        this.router.navigate(['/dotCMS']);
+        this.router.navigate(['/c']);
     }
 
     public goToLogin(parameters: any): void {
@@ -44,7 +44,7 @@ export class DotRouterService {
     }
 
     public gotoPortlet(portletId: string): void {
-        this.router.navigate([`dotCMS/portlet/${portletId.replace(' ', '_')}`]);
+        this.router.navigate([`c/${portletId.replace(' ', '_')}`]);
     }
 
     public goToForgotPassword(): void {
@@ -52,6 +52,6 @@ export class DotRouterService {
     }
 
     public goToNotLicensed(): void {
-        this.router.navigate(['dotCMS/notLicensed']);
+        this.router.navigate(['c/notLicensed']);
     }
 }

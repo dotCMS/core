@@ -4,6 +4,7 @@ import {HttpModule} from '@angular/http';
 import {NgModule} from '@angular/core';
 
 // ROUTING
+import {LocationStrategy, HashLocationStrategy} from "@angular/common";
 import {routing} from './app.routing';
 
 // CUSTOM SERVICES
@@ -226,7 +227,8 @@ const NGFACES_MODULES = [
         SiteService,
         StringFormat,
         UserModel,
-        ...RULES_ENGINE_SERVICES
+        ...RULES_ENGINE_SERVICES,
+        {provide: LocationStrategy, useClass: HashLocationStrategy}
     ]
 })
 export class AppModule {

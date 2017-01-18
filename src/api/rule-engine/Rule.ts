@@ -309,22 +309,24 @@ export class RuleService {
     return this._rules$.asObservable();
   }
 
-  public requestRules(): Observable<any> {
-    if (this.siteService.currentSite) {
-      return this.sendLoadRulesRequest(this.siteService.currentSite);
+  public requestRules(siteId: string): Observable<any> {
+    if(siteId) {
+      return this.sendLoadRulesRequest(siteId);
+    } else if (this.siteService.currentSite) {
+      return this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
     }
   }
 
-  private sendLoadRulesRequest(site: Site): Observable<any> {
+  private sendLoadRulesRequest(siteId: string): Observable<any> {
     return this.coreWebService.request({
       method: RequestMethod.Get,
-      url: `${this._apiRoot.baseUrl}api/v1/sites/${site.identifier}/ruleengine/rules`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}/ruleengine/rules`
     }).map(ruleMap => {
       this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
       this._rules$.next(this.rules);
 
       this.siteService.switchSite$.subscribe(site => {
-        this.sendLoadRulesRequest(site);
+        this.sendLoadRulesRequest(site.identifier);
       });
 
       return RuleService.fromServerRulesTransformFn(ruleMap);

@@ -17,13 +17,13 @@ import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
 
 let angularComponents: any[] = [];
-angularComponents.push({component: RuleEngineContainer, id: 'RULES_ENGINE_PORTLET'});
+angularComponents.push({component: RuleEngineContainer, id: 'rules'});
 
 let mainComponentChildren = [
                                 {
                                     path: '',
                                     pathMatch: 'full',
-                                    redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'portlet/EXT_21',
+                                    redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'workflow',
                                 },
                                 {
                                     component: PatternLibrary,
@@ -36,7 +36,7 @@ let mainComponentChildren = [
                                 {
                                     canActivate: [RoutingPrivateAuthService],
                                     component: IframeLegacyComponent,
-                                    path: 'portlet/:id',
+                                    path: ':id',
                                 }
                             ];
 
@@ -46,7 +46,7 @@ angularComponents.forEach( component => {
     mainComponentChildren.push({
         canActivate: [RoutingPrivateAuthService],
         component: component.component,
-        path: `html/ng/p/${component.id}`
+        path: `a/${component.id}`
     });
 
     fromCoreChildren.push({
@@ -66,7 +66,7 @@ const appRoutes: Routes = [
         canActivate: [RoutingPrivateAuthService],
         children: mainComponentChildren,
         component: MainComponent,
-        path: 'dotCMS',
+        path: 'c',
     },
     {
         canActivate: [RoutingPublicAuthService],

@@ -47,7 +47,7 @@ export class RoutingPrivateAuthService implements CanActivate {
     private check(url: string): boolean {
         let isRouteLoaded = true;
 
-        if (url !== '/dotCMS/pl') {
+        if (url !== '/c/pl') {
             isRouteLoaded = this.routingService.isPortlet(url);
 
             if (!isRouteLoaded) {

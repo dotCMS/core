@@ -15,6 +15,7 @@ import {CwError} from "../../../api/system/http-response-util";
 import {BundleService, IPublishEnvironment} from "../../../api/services/bundle-service";
 import {SiteChangeListener} from "../../../api/util/site-change-listener";
 import {SiteService} from "../../../api/services/site-service";
+import {ActivatedRoute} from '@angular/router';
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
@@ -102,7 +103,8 @@ export class RuleEngineContainer {
               private _conditionGroupService:ConditionGroupService,
               private _conditionService:ConditionService,
               private _resources:I18nService,
-              public bundleService:BundleService
+              public bundleService:BundleService,
+              private route: ActivatedRoute
   ) {
     this.rules$.subscribe(( rules ) => {
       this.rules = rules;
@@ -121,8 +123,12 @@ export class RuleEngineContainer {
 
   private initRules(): void {
     this.state.loading = true;
-
-    this._ruleService.requestRules().subscribe( (rules: RuleModel[]) => {
+    
+    let siteId = '';
+    this.route.queryParams.subscribe(params => {
+      siteId = params['realmId'];
+    });
+    this._ruleService.requestRules(siteId).subscribe( (rules: RuleModel[]) => {
       console.log('requestRules success', rules);
       this.loadRules(rules);
 
