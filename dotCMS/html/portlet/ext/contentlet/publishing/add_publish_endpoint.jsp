@@ -5,6 +5,7 @@
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher" %>
 
 <%
 	String identifier = request.getParameter("id");
@@ -140,10 +141,11 @@
 			if (dijit.byId("authKey").value.trim().length == 0 || changedType) {
 
 				dijit.byId("authKey").set("value",
-					"dotcms.push.aws.s3.token=myToken\n" +
-					"dotcms.push.aws.s3.secret=mySecret\n" +
-					"dotcms.push.aws.s3.bucketID=myBucketId\n" +
-					"dotcms.push.aws.s3.bucketRootPrefix=myBucketPrefix"
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_TOKEN%>=myToken\n" +
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_SECRET%>=mySecret\n" +
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID%>=myBucketId\n" +
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION%>=myBucketRegion\n" +
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX%>=myBucketPrefix"
 				);
 			}
 		} else {
