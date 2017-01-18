@@ -28,11 +28,29 @@ export class DotcmsEventsService {
     constructor(private dotcmsConfig: DotcmsConfig) {
 
         this.dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
+
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
             this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
         });
+    }
+
+    /**
+     * Close the socket
+     */
+    close() : void {
+
+        // On logout, meaning no authenticated user lets try to close the socket
+        if (this.ws) {
+
+            /*
+             We need to turn on this closedOnLogout flag in order to avoid reconnections as we explicitly
+             closed the socket
+             */
+            this.closedOnLogout = true;
+            this.ws.close(true);
+        }
     }
 
     /**

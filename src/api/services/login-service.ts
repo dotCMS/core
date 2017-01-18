@@ -268,7 +268,6 @@ export class LoginService {
             };
 
             this.loggerService.debug("Processing the logOutUser");
-
             this.setAuth(nullAuth);
 
             // on logout close the websocket
