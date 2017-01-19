@@ -40,7 +40,7 @@ public class ServerAPIImpl implements ServerAPI {
 
 		String realPath = ConfigUtils.getDynamicContentPath() + java.io.File.separator + "server_id.dat";
 
-		Logger.debug(ServerAPIImpl.class, "Reading " + realPath);
+		Logger.info(ServerAPIImpl.class, "Reading " + realPath);
 
 		BufferedReader br = null;
 		String serverId = null;
@@ -60,7 +60,7 @@ public class ServerAPIImpl implements ServerAPI {
 			}
 		}
 
-		Logger.debug(ServerAPIImpl.class, "ServerID: " + serverId);
+		Logger.info(ServerAPIImpl.class, "ServerID: " + serverId);
 
         return serverId;
 
