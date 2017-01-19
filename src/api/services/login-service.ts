@@ -95,8 +95,12 @@ export class LoginService {
             method: RequestMethod.Get,
             url: this.urls.getAuth
         }).pluck('entity').map(auth => {
+
             if (auth) {
+
                 this.setAuth(auth);
+                // on authentication, we have to connect to the websocket
+                this.dotcmsEventsService.connectWithSocket();
             }
             return auth;
         });
