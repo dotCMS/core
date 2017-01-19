@@ -192,7 +192,7 @@ public class PublisherQueueJob implements StatefulJob {
 		Client client = RestClientBuilder.newClient();
 		List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
 		// For each bundle
-		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
+ 		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
 
 			MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
 
@@ -255,6 +255,8 @@ public class PublisherQueueJob implements StatefulJob {
 									PublishAuditStatus pas = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
 									if (pas != null && pas.getStatus() == PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY) {
 										countGroupFailed--;
+									} else if (pas != null && pas.getStatus().name().toLowerCase().startsWith("failed") && localHistory.getNumTries() >= MAX_NUM_TRIES) {
+										countGroupFailed++;
 									}
 								}
 							}
