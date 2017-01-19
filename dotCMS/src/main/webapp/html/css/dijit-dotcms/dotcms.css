@@ -6987,12 +6987,16 @@ a.category_higlighted, a.tag_higlighted {
   border: 1px solid #ECEDEE;
   min-width: 190px;
 }
+.context-menu .pop_divider {
+  border-bottom: 1px dotted silver;
+  background-color: #fff;
+}
 .context-menu a {
   display: block;
   font-size: 13px;
   height: 32px;
   line-height: 32px;
-  padding: 0px 26px;
+  padding: 0px 24px;
   color: #5B5B5B;
   text-decoration: none;
 }
