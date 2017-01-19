@@ -2663,9 +2663,5 @@ CREATE TABLE system_event (
 ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
 
--- Delete User
-ALTER TABLE user_ ADD delete_in_progress number(1,0) default 0;
-ALTER TABLE user_ ADD delete_date DATE;
-
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
