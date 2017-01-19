@@ -216,8 +216,8 @@
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>SpeedyAssetServlet2</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet2</servlet-class>
+		<servlet-name>ShortyServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>
 	
 	<servlet>
@@ -493,7 +493,7 @@
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<servlet-name>ShortyServlet</servlet-name>
 		<url-pattern>/dA/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>

@@ -53,7 +53,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
             return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
         } catch (ShortyException se) {
             
-            Logger.debug(this.getClass(), se.getMessage());
+            Logger.warn(this.getClass(), se.getMessage());
             return Optional.empty();
         }
     }
@@ -157,7 +157,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     }
 
     public void validShorty(final String test) {
-        if (test == null || test.length() < 8 || test.length()>36) {
+        if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) {
             throw new ShortyException(
                     "shorty " + test + " is not a short id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
         }

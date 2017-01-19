@@ -37,14 +37,16 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	public String readServerId() {
+
 		String realPath = ConfigUtils.getDynamicContentPath() + java.io.File.separator + "server_id.dat";
+
 		BufferedReader br = null;
 		String serverId = null;
 		try {
 			br = new BufferedReader(new FileReader(new File(realPath)));
 			serverId = br.readLine();
 		} catch (FileNotFoundException e) {
-			Logger.debug(ServerAPIImpl.class, "Server ID not found");
+			Logger.debug(ServerAPIImpl.class, "Server ID not found (" + realPath + " file doesn't exists)");
 		} catch (IOException e) {
 			Logger.error(ServerAPIImpl.class, "Could not read Server ID from File", e);
 		} finally {
@@ -55,7 +57,6 @@ public class ServerAPIImpl implements ServerAPI {
 				Logger.error(ServerAPIImpl.class, "Could not close BufferedReader for Server File", e);
 			}
 		}
-
 
         return serverId;
 
