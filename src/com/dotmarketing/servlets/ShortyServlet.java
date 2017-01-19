@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +35,10 @@ public class ShortyServlet extends HttpServlet {
 
   final static String NOT_FOUND = "fileAsset";
 
+  
+  public final static String SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
+  
+  
   protected void service(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     try {
@@ -44,7 +49,7 @@ public class ShortyServlet extends HttpServlet {
       DbConnectionFactory.closeSilently();
     }
   }
-
+  public final String SHORTY_SERVLET_FINAL_PATH = "shorty.servlet.final.path";
 
   private final static Pattern dimw = Pattern.compile("/\\d+[w]");
   private final static Pattern dimh = Pattern.compile("/\\d+[h]");
@@ -142,7 +147,14 @@ public class ShortyServlet extends HttpServlet {
       path += (h > 0) ? "/resize_h/" + h : "";
     }
 
-    request.getRequestDispatcher(path).forward(request, response);
+    request.setAttribute(SHORTY_SERVLET_FORWARD_PATH, path);
+    
+    
+    
+    RequestDispatcher dispatch = request.getRequestDispatcher(path);
+    if(dispatch!=null){
+      dispatch.forward(request, response);
+    }
   }
 
 
