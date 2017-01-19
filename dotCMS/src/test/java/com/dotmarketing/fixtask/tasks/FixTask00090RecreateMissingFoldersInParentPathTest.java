@@ -1,6 +1,6 @@
 package com.dotmarketing.fixtask.tasks;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath.LiteFolder;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-public class FixTask00090RecreateMissingFoldersInParentPathTest extends TestBase {
+public class FixTask00090RecreateMissingFoldersInParentPathTest extends UnitTestBase {
 
     private FixTask00090RecreateMissingFoldersInParentPath fixTask;
     private static final String aHostId = "host-id";

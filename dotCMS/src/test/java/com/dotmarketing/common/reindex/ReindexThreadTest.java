@@ -1,6 +1,6 @@
 package com.dotmarketing.common.reindex;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.PayloadVerifierFactory;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link ReindexThread}
  * @author jsanca
  */
-public class ReindexThreadTest extends TestBase {
+public class ReindexThreadTest extends UnitTestBase {
 
     private boolean testGenerateNotification = false;
     private PayloadVerifier originalRoleVerifier;

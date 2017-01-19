@@ -78,7 +78,7 @@ public class TimeMachineFilter implements Filter {
 
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
-				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("TIMEMACHINE", user)){
+				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("time-machine", user)){
 					throw new DotSecurityException("user does not have access to the timemachine portlet");
 				}
 			} catch (Exception e) {

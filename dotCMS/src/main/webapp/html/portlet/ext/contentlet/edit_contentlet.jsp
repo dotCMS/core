@@ -161,7 +161,7 @@
 
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("RULES_ENGINE_PORTLET", user)
+    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
@@ -570,7 +570,7 @@ var editButtonRow="editContentletButtonRow";
 	}
 </script>
 
-<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog">
+<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error">
 	<div dojoType="dijit.layout.ContentPane" id="exceptionData" hasShadow="true"></div>
 	<div class="formRow" style="text-align:center">
 		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button"><%= LanguageUtil.get(pageContext, "close") %></button>

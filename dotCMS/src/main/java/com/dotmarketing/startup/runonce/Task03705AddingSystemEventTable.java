@@ -80,9 +80,9 @@ public class Task03705AddingSystemEventTable extends AbstractJDBCStartupTask {
 	@Override
 	public String getMSSQLScript () {
 		return "CREATE TABLE system_event (\n" +
-					"identifier VARCHAR(36) NOT NULL,\n" +
-					"event_type VARCHAR(50) NOT NULL,\n" +
-					"payload TEXT NOT NULL,\n" +
+					"identifier NVARCHAR(36) NOT NULL,\n" +
+					"event_type NVARCHAR(50) NOT NULL,\n" +
+					"payload NVARCHAR(MAX) NOT NULL,\n" +
 					"created BIGINT NOT NULL,\n" +
 					"PRIMARY KEY (identifier)\n" +
 				");\n" +

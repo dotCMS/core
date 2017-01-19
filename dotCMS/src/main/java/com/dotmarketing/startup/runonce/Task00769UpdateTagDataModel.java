@@ -144,7 +144,7 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 						sb.append("insert into cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) ");
 						sb.append(" values('").append(UUIDGenerator.generateUuid()).append("', ");
 						sb.append(" '").append(layout.get("id")).append("', ");
-						sb.append(" UPPER('").append("EXT_TAG_MANAGER").append("'), ");
+						sb.append(" UPPER('").append("tags").append("'), ");
 						sb.append(" '").append(10).append("') ; ");
 					}
 				}

@@ -503,10 +503,10 @@
 	function viewUser(userId) {
 		<%
 			LayoutAPI lapi = APILocator.getLayoutAPI();
-			if(lapi.doesUserHaveAccessToPortlet("EXT_USER_ADMIN", user)) {
+			if(lapi.doesUserHaveAccessToPortlet("users", user)) {
 				Map<String, String[]> paramsMap = new HashMap<String, String[]>();
 				paramsMap.put("struts_action", new String[] { "/ext/useradmin/view_users" });
-				String viewUserURL = PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), paramsMap, "EXT_USER_ADMIN");
+				String viewUserURL = PortletURLUtil.getRenderURL(request, WindowState.MAXIMIZED.toString(), paramsMap, "users");
 		%>
 		var url = '<%=viewUserURL%>&userId=' + userId;
 		window.location = url;

@@ -85,8 +85,8 @@ public class Task03725NewNotificationTable extends AbstractJDBCStartupTask {
                 "    time_sent          DATETIME      NOT NULL,\n" +
                 "    was_read           TINYINT\n" +
                 "  );\n" +
-                "ALTER TABLE system_event ADD CONSTRAINT pk_notification PRIMARY KEY (group_id, user_id);\n" +
-                "ALTER TABLE system_event ADD CONSTRAINT df_notification_was_read DEFAULT ((0)) FOR was_read;\n" +
+                "ALTER TABLE notification ADD CONSTRAINT pk_notification PRIMARY KEY (group_id, user_id);\n" +
+                "ALTER TABLE notification ADD CONSTRAINT df_notification_was_read DEFAULT ((0)) FOR was_read;\n" +
                 "CREATE INDEX idx_not_read ON notification (was_read);";
     }
 

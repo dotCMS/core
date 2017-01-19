@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipFile;
@@ -28,9 +29,11 @@ import com.dotmarketing.util.Logger;
 public class ESIndexAPITest {
 
 	final private ESIndexAPI esIndexAPI;
+	final private ContentletIndexAPI contentletIndexAPI;
 
     public ESIndexAPITest() {
 		this.esIndexAPI = APILocator.getESIndexAPI();
+		this.contentletIndexAPI = APILocator.getContentletIndexAPI();
 	}
 
 	@BeforeClass
@@ -192,11 +195,21 @@ public class ESIndexAPITest {
 	private String getLiveIndex(){
 		Set<String> indexesList = esIndexAPI.listIndices();
 		for(String index: indexesList){
-			if(index.toLowerCase().startsWith("live")){
+			if(index.toLowerCase().startsWith(ESContentletIndexAPI.ES_LIVE_INDEX_NAME)){
 				return index;
 			}
 		}
-		return null;
+
+		// In case "live" index is not found, create and activate it
+        String timeStamp = String.valueOf( new Date().getTime() );
+        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        try {
+        	esIndexAPI.createIndex(liveIndex);
+        	contentletIndexAPI.activateIndex(liveIndex);
+        	return liveIndex;
+        } catch (Exception e) {
+        	return null;
+        }
 	}
 
 	@AfterClass

@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
@@ -28,7 +28,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.LayoutAPI;
 import com.liferay.portal.model.User;
 
-public class ESIndexResourceTest extends TestBase {
+public class ESIndexResourceTest extends UnitTestBase {
 
 
     public ESIndexResourceTest() {
@@ -67,7 +67,7 @@ public class ESIndexResourceTest extends TestBase {
         when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-        when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap,indexAPI)).thenReturn(liveIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
@@ -112,7 +112,7 @@ public class ESIndexResourceTest extends TestBase {
         when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-        when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn("live");
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
@@ -157,7 +157,7 @@ public class ESIndexResourceTest extends TestBase {
         when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-        when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
@@ -202,7 +202,7 @@ public class ESIndexResourceTest extends TestBase {
         when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-        when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
@@ -239,7 +239,7 @@ public class ESIndexResourceTest extends TestBase {
         when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-        when(layoutAPI.doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", initDataObject.getUser())).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(null);
         when(responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments")).thenReturn(Response.status(Status.BAD_REQUEST).build());
 

@@ -8,7 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.Config;
 
-public abstract class TestBase extends BaseMessageResources {
+public abstract class UnitTestBase extends BaseMessageResources {
 
 	public static class MyAPILocator extends APILocator {		
 	}

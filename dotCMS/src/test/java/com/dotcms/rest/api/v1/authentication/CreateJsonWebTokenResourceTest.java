@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * Test for {@link CreateJsonWebTokenResource}
  * @author jsanca
  */
-public class CreateJsonWebTokenResourceTest extends TestBase {
+public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
 
     @Before

@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
-public class SetRequestAttributeActionletTest extends TestBase {
+public class SetRequestAttributeActionletTest extends UnitTestBase {
 
     @Test
     public void testGeneralConfiguration() throws Exception {

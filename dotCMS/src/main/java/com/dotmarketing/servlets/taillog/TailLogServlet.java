@@ -39,7 +39,7 @@ public class TailLogServlet extends HttpServlet {
 			return;
 		}
 		try {
-			if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+			if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
 				response.sendError(403);
 				return;
 			}

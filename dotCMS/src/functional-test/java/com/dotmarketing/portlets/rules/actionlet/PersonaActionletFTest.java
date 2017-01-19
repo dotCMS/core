@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -51,7 +51,7 @@ import java.util.List;
  *
  */
 
-public class PersonaActionletFTest extends TestBase {
+public class PersonaActionletFTest extends IntegrationTestBase {
 
 	@BeforeClass
 	public static void prepare () throws Exception {

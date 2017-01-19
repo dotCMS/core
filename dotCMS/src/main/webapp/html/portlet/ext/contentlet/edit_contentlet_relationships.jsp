@@ -642,7 +642,7 @@
 					href += "<portlet:param name='cmd' value='new' />";					
 					href += "</portlet:actionURL>";
 
-					//href += "&_EXT_11_selectedStructure=" + structureInode ; 
+					//href += "&_content_selectedStructure=" + structureInode ; 
 					href += "&inode" + "";
 					href += "&selectedStructure=" + structureInode ;
 					href += "&lang=" + '<%= languageId %>';

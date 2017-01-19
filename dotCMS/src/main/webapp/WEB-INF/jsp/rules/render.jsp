@@ -7,7 +7,7 @@
 <%
 	request.setAttribute("SHOW_HOST_SELECTOR", new Boolean(true));
 
-	String portletId1 = "RULES_ENGINE_PORTLET";
+	String portletId1 = "rules";
 
 	
 	Portlet portlet1 = PortletManagerUtil.getPortletById(company.getCompanyId(), portletId1);
@@ -42,7 +42,7 @@
 
 		<%if( LicenseUtil.getLevel() < 200){ %>
 		
-			<jsp:include page="/WEB-INF/jsp/rules_engine_portlet/not_licensed.jsp"></jsp:include>
+			<jsp:include page="/WEB-INF/jsp/rules/not_licensed.jsp"></jsp:include>
 
 		<%return;}%>
 	</div>
@@ -69,7 +69,7 @@
   
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/html/ng/fromCore/RULES_ENGINE_PORTLET?" + localeParam + "&" + siteParam;
+  document.getElementById("rulesIframe").src = "/dotAdmin/#/fromCore/rules?" + localeParam + "&" + siteParam;
 
 	function  resizeIframe(){
 

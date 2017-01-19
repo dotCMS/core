@@ -13,7 +13,7 @@ import javax.servlet.http.HttpSession;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.util.ContentTypeUtil;
@@ -26,7 +26,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
-public class ContentTypeUtilTest extends TestBase {
+public class ContentTypeUtilTest extends UnitTestBase {
 
     @Test
     public void testGetActionUrl() throws DotDataException {

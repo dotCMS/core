@@ -3,7 +3,7 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%
-    String portletId1 = "EXT_CONTENT_PUBLISHING_TOOL";
+    String portletId1 = "publishing-queue";
     Portlet portlet1 = PortletManagerUtil.getPortletById(company.getCompanyId(), portletId1);
     String strutsAction = ParamUtil.get(request, "struts_action", null);
 

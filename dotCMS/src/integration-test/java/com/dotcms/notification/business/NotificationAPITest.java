@@ -1,6 +1,6 @@
 package com.dotcms.notification.business;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -36,7 +36,7 @@ import static org.junit.Assert.*;
  * @since Feb 5, 2014
  *
  */
-public class NotificationAPITest extends TestBase  {
+public class NotificationAPITest extends IntegrationTestBase  {
 	
 	@BeforeClass
 	public static void prepare() throws Exception{

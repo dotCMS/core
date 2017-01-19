@@ -489,6 +489,26 @@ public class HibernateUtil {
 		}
 	}
 
+	/**
+	 * Merge is pretty similar to saveOrUpdate method, but specially util for add/update detached objects (objects that are not longer in the current session or
+	 * objects that were loaded from JDBC)
+	 * @param obj Object
+	 * @throws DotHibernateException
+	 */
+	public static void merge(final Object obj)  throws DotHibernateException{
+		try{
+			forceDirtyObject.set(obj);
+			Session session = getSession();
+			session.saveOrUpdateCopy(obj);
+			session.flush();
+		}catch (Exception e) {
+			throw new DotHibernateException("Unable to merge Object to Hibernate Session ", e);
+		}
+		finally {
+			forceDirtyObject.remove();
+		}
+	}
+
 	public static void update(Object obj)  throws DotHibernateException{
 		try{
 		    forceDirtyObject.set(obj);

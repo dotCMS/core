@@ -6,7 +6,6 @@ import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,8 +30,7 @@ public class IntegrationTestInitService {
     }
 
     public void init() throws Exception {
-        if (!initCompleted.get() && (System.getProperty("TEST-RUNNER") == null || !System.getProperty("TEST-RUNNER")
-            .equals(ServletTestRunner.class.getCanonicalName()))) {
+        if (!initCompleted.get()) {
             TestingJndiDatasource.init();
             ConfigTestHelper._setupFakeTestingContext();
 

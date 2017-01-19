@@ -3,7 +3,7 @@
  */
 package com.dotcms.publisher.endpoint.business;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  * @author brent griffin
  *
  */
-public class PublishingEndPointAPITest extends TestBase{
+public class PublishingEndPointAPITest extends IntegrationTestBase{
 
 	private static PublishingEndPointAPI api;
 	private static ArrayList<PublishingEndPoint> _endPoints = new ArrayList<PublishingEndPoint>();

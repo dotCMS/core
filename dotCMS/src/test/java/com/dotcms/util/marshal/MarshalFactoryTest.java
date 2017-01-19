@@ -1,7 +1,7 @@
 package com.dotcms.util.marshal;
 
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
@@ -25,7 +25,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 
 
-public class MarshalFactoryTest extends TestBase {
+public class MarshalFactoryTest extends UnitTestBase {
 
     @Test
     public void marshalMapTest() throws ParseException, JSONException {

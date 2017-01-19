@@ -248,7 +248,7 @@
 	<!-- My Account -->
 
 	<definition name="portlet.my_account" extends="portal">
-		<put name="portlet_id" value="2" />
+		<put name="portlet_id" value="my-account" />
 		<put name="beta_title" value="none" />
 	</definition>
 

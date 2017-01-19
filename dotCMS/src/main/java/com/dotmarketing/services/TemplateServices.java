@@ -121,7 +121,7 @@ public class TemplateServices {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
         String filePath=folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION");
         java.io.File f  = new java.io.File(velocityRootPath + filePath);
-        f.delete();
+        f.delete(); // todo: check if the file exists before remove?
         DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
         vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
     }    

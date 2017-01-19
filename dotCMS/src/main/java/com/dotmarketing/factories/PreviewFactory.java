@@ -29,7 +29,7 @@ public class PreviewFactory {
 
 		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
-		portletId="EXT_BROWSER";
+		portletId="site-browser";
 		String viewBrowserURL = null;
 		try {
 			 viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
@@ -38,7 +38,7 @@ public class PreviewFactory {
 		}
 		session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
 
-		portletId="EXT_BROWSER";
+		portletId="site-browser";
 		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/htmlpages/preview_htmlpage"});
 		String previewPageURL = null;
@@ -65,18 +65,18 @@ public class PreviewFactory {
 		java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/director/direct"});
 		// director portlet
-		portletId="EXT_BROWSER";
+		portletId="site-browser";
 		String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
 		session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
 
 		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
-		portletId="EXT_BROWSER";
+		portletId="site-browser";
 		String viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
 		//iewBrowserURL =(UtilMethods.isSet(hreq.getParameter("referer"))?hreq.getParameter("referer"):viewBrowserURL);
 		session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
 
-		portletId="EXT_BROWSER";
+		portletId="site-browser";
 		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/htmlpages/preview_htmlpage"});
 		String previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params,portletId);

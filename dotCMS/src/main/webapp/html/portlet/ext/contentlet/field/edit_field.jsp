@@ -64,7 +64,6 @@
 <div class="fieldWrapper">
 
 	<div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
-
 		<% if (hint != null) {%>
 			<a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
 			<span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
@@ -166,7 +165,7 @@
         });
 </script>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
+    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:600px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
 <%
@@ -986,7 +985,7 @@
   List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
   for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
       List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-      if (portletIdsForLicenseManager.contains("9")) {
+      if (portletIdsForLicenseManager.contains("configuration")) {
           licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
           break;
       }
