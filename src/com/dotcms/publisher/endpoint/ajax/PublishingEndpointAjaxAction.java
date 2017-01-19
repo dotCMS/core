@@ -123,7 +123,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
         	String protocol = request.getParameter("protocol");
         	String authKey = request.getParameter("authKey");
-        	if ("awss3".equalsIgnoreCase(protocol)) {
+        	if (StaticPublisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
         		validatePublishingEndPointAWSS3(authKey);
         	}
 
@@ -168,7 +168,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
         	String protocol = request.getParameter("protocol");
         	String authKey = request.getParameter("authKey");
-        	if ("awss3".equalsIgnoreCase(protocol)) {
+        	if (StaticPublisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
         		validatePublishingEndPointAWSS3(authKey);
         	}
 

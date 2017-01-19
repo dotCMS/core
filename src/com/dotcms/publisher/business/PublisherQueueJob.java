@@ -76,9 +76,7 @@ public class PublisherQueueJob implements StatefulJob {
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
 
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
-			if (!isStaticPublish()) {
-				updateAuditStatus();
-			}
+			updateAuditStatus();
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
 
 			//Verify if we have endpoints where to send the bundles
@@ -181,16 +179,6 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 	}
 
-	private boolean isStaticPublish() throws DotPublisherException {
-		return pubAPI.getQueueBundleIdsToProcess().stream().map(bundle -> {
-			String tempBundleId = (String) bundle.get("bundle_id");
-			
-			return getPublishersForBundle(tempBundleId);
-		}).allMatch(
-			publishers -> publishers.size() == 1 && publishers.contains(StaticPublisher.class)
-		);
-	}
-
     /**
 	 * Method that updates the status of a Bundle in the job queue. This method also verifies and limit the number<br/>
 	 * of times a Bundle is allowed to try to be published in case of errors.
@@ -204,7 +192,7 @@ public class PublisherQueueJob implements StatefulJob {
 		Client client = RestClientBuilder.newClient();
 		List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
 		// For each bundle
-		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
+ 		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
 
 			MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
 
@@ -215,6 +203,11 @@ public class PublisherQueueJob implements StatefulJob {
 				Date publishEnd = null;
 				//There is no need to keep checking after MAX_NUM_TRIES.
 				if ( localHistory.getNumTries() <= (MAX_NUM_TRIES + 1) ) {
+
+					int countGroupOk = 0;
+					int countGroupPublishing = 0;
+					int countGroupFailed = 0;
+
 					Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
 					Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<String, Map<String, EndpointDetail>>();
 					// For each group (environment)
@@ -224,43 +217,52 @@ public class PublisherQueueJob implements StatefulJob {
 						for ( String endpointID : endpointsGroup.keySet() ) {
 							PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
 							if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
-								WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
-								try {
-									// Try to get the status of the remote endpoints to
-									// update the local history
-									PublishAuditHistory remoteHistory =
-											PublishAuditHistory.getObjectFromString(
-													webTarget
-															.path("get")
-															.path(bundleAudit.getBundleId()).request().get(String.class));
-									if ( remoteHistory != null ) {
-										publishStart = remoteHistory.getPublishStart();
-										publishEnd = remoteHistory.getPublishEnd();
-										endpointTrackingMap.putAll(remoteHistory
-												.getEndpointsMap());
-										for ( String remoteGroupId : remoteHistory
-												.getEndpointsMap().keySet() ) {
-											Map<String, EndpointDetail> remoteGroup = endpointTrackingMap
-													.get(remoteGroupId);
-											for ( String remoteEndpointId : remoteGroup
-													.keySet() ) {
-												EndpointDetail remoteDetail = remoteGroup
-														.get(remoteEndpointId);
-												localHistory.addOrUpdateEndpoint(
-														groupID, endpointID,
-														remoteDetail);
+
+								// Don't poll status for static publishing
+								if (!StaticPublisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())) {
+									WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
+									try {
+										// Try to get the status of the remote endpoints to
+										// update the local history
+										PublishAuditHistory remoteHistory =
+												PublishAuditHistory.getObjectFromString(
+														webTarget
+																.path("get")
+																.path(bundleAudit.getBundleId()).request().get(String.class));
+										if ( remoteHistory != null ) {
+											publishStart = remoteHistory.getPublishStart();
+											publishEnd = remoteHistory.getPublishEnd();
+											endpointTrackingMap.putAll(remoteHistory
+													.getEndpointsMap());
+											for ( String remoteGroupId : remoteHistory
+													.getEndpointsMap().keySet() ) {
+												Map<String, EndpointDetail> remoteGroup = endpointTrackingMap
+														.get(remoteGroupId);
+												for ( String remoteEndpointId : remoteGroup
+														.keySet() ) {
+													EndpointDetail remoteDetail = remoteGroup
+															.get(remoteEndpointId);
+													localHistory.addOrUpdateEndpoint(
+															groupID, endpointID,
+															remoteDetail);
+												}
 											}
 										}
+									} catch (Exception e) {
+										Logger.error(PublisherQueueJob.class, e.getMessage(), e);
 									}
-								} catch (Exception e) {
-									Logger.error(PublisherQueueJob.class, e.getMessage(), e);
+								} else {
+									PublishAuditStatus pas = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
+									if (pas != null && pas.getStatus() == PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY) {
+										countGroupFailed--;
+									} else if (pas != null && pas.getStatus().name().toLowerCase().startsWith("failed") && localHistory.getNumTries() >= MAX_NUM_TRIES) {
+										countGroupFailed++;
+									}
 								}
 							}
 						}
 					}
-					int countGroupOk = 0;
-					int countGroupPublishing = 0;
-					int countGroupFailed = 0;
+
 					// Check the push status in all groups (environments) to update the
 					// publish audit table with the latest info
 					for ( String groupId : endpointTrackingMap.keySet() ) {
