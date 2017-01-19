@@ -40,6 +40,7 @@
     "./src/api/services/site-service.ts",
     "./src/api/services/account-service.ts",
     "./src/api/services/contentlet-service.ts",
+    "./src/api/services/logger.service.ts",
     "./src/api/system/http-response-util.ts",
     "./src/api/system/locale/I18n.it-spec.ts",
     "./src/api/system/locale/I18n.ts",

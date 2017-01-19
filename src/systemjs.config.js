@@ -26,9 +26,10 @@
         '@angular/compiler': 'n:@angular/compiler/bundles/compiler.umd.js',
         '@angular/platform-browser': 'n:@angular/platform-browser/bundles/platform-browser.umd.js',
         '@angular/platform-browser-dynamic': 'n:@angular/platform-browser-dynamic/bundles/platform-browser-dynamic.umd.js',
-        '@angular/http': 'n:@angular/http/bundles/http.umd.js',
+        '@angular/http':   'n:@angular/http/bundles/http.umd.js',
         '@angular/router': 'n:@angular/router/bundles/router.umd.js',
-        '@angular/forms': 'n:@angular/forms/bundles/forms.umd.js',
+        '@angular/forms':  'n:@angular/forms/bundles/forms.umd.js',
+        'angular2-logger': 'n:angular2-logger',
 
         // PrimeNG Components
         'primeng': 'n:primeng',
@@ -56,6 +57,9 @@
             defaultExtension: 'js'
         },
         'primeng': {
+            defaultExtension: 'js'
+        },
+        'angular2-logger': {
             defaultExtension: 'js'
         },
     };

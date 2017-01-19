@@ -85,6 +85,7 @@ var project = {
         'lodash/lodash.js',
         'primeng/**/*.js',
         'rxjs/**',
+        'angular2-logger/**',
         'moment/moment.js'
         ], {cwd: 'node_modules/**'}) /* Glob required here. */
       .pipe(gulp.dest('build/thirdparty')).on('finish', cb);

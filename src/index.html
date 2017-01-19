@@ -20,7 +20,12 @@
   <script src="systemjs.config.js"></script>
   <script>
     System.import('view/main.js')
-            .catch(function(err) { console.error(err); });
+            .catch(function(err) {
+                console.error("Error on Init app");
+                console.error('Name:', JSON.stringify(err.name));
+                console.error('Message:', JSON.stringify(err.message));
+                console.error(err);
+            });
   </script>
 </head>
 

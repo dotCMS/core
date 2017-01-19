@@ -1,16 +1,14 @@
 /**
  * Created by oswaldogallango on 7/11/16.
  */
-
-import {ApiRoot} from '../persistence/ApiRoot';
-import {CoreWebService} from '../services/core-web-service';
-import {Http} from '@angular/http';
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs/Rx';
-import {RequestMethod} from '@angular/http';
-import {Router} from '@angular/router';
-import {Subject} from 'rxjs/Subject';
+import {CoreWebService} from "../services/core-web-service";
+import {RequestMethod} from "@angular/http";
+import {Injectable} from "@angular/core";
+import {Observable} from "rxjs/Rx";
+import {Router} from "@angular/router";
+import {Subject} from "rxjs/Subject";
 import {DotcmsEventsService} from "./dotcms-events-service";
+import {LoggerService} from "./logger.service";
 
 
 /**
@@ -29,7 +27,9 @@ export class LoginService {
     private loginAsUserList: User[];
     private urls: any;
 
-    constructor(private router: Router, private coreWebService: CoreWebService, private dotcmsEventsService: DotcmsEventsService) {
+    constructor(private router: Router, private coreWebService: CoreWebService,
+                private dotcmsEventsService: DotcmsEventsService,
+                private loggerService: LoggerService) {
 
         this._loginAsUsersList$ = <Subject<User[]>>new Subject();
         this.loginAsUserList = [];
@@ -50,7 +50,13 @@ export class LoginService {
         // when the session is expired/destroyed
         dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pluck('data').subscribe( date => {
 
-            this.logOutUser().subscribe(() => {});
+            this.loggerService.debug("Processing session destroyed: " + date);
+            this.loggerService.debug("User Logged In Date: " + this.auth.user.loggedInDate);
+            // if the destroyed event happens after the logged in date, so proceed!
+            if (this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate)) {
+
+                this.logOutUser().subscribe(() => {});
+            }
         });
     }
 
@@ -262,10 +268,13 @@ export class LoginService {
                 user: null
             };
 
+            this.loggerService.debug("Processing the logOutUser");
             this.setAuth(nullAuth);
 
             // on logout close the websocket
             this.dotcmsEventsService.close();
+
+            this.loggerService.debug("Navigating to Public Login");
 
             this.router.navigate(['/public/login']);
         });
@@ -362,6 +371,7 @@ export interface User {
     type?: string;
     userId: string;
     password?: string;
+    loggedInDate: number; // Timestamp
 }
 
 export interface Auth {

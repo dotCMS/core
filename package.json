@@ -87,6 +87,7 @@
     "@angular/router": "3.0.0",
     "@angular/upgrade": "2.0.0",
     "angular2-in-memory-web-api": "0.0.20",
+    "angular2-logger": "^0.5.1",
     "better-console": "^0.2.4",
     "bootstrap": "^3.3.6",
     "core-js": "^2.4.1",

@@ -2,6 +2,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpModule} from '@angular/http';
 import {NgModule} from '@angular/core';
+import { Logger } from "angular2-logger/core";
 
 // ROUTING
 import {LocationStrategy, HashLocationStrategy} from "@angular/common";
@@ -18,7 +19,6 @@ import {FormatDateService} from '../../api/services/format-date-service';
 import {LoginService} from '../../api/services/login-service';
 import {MessageService} from '../../api/services/messages-service';
 import {NotificationsService} from '../../api/services/notifications-service';
-import {CoreWebService} from '../../api/services/core-web-service';
 import {NotLicensedService} from '../../api/services/not-licensed-service';
 
 import {RoutingPublicAuthService} from '../../api/services/routing-public-auth-service';
@@ -178,6 +178,7 @@ import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {ToolbarModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
+import {LoggerService} from "../../api/services/logger.service";
 
 const NGFACES_MODULES = [
     InputTextModule,
@@ -208,6 +209,8 @@ const NGFACES_MODULES = [
         ...NGFACES_MODULES,
     ],
     providers: [
+        Logger,
+        LoggerService,
         CoreWebService,
         NotLicensedService,
         AccountService,

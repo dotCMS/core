@@ -1,9 +1,8 @@
-import {DotcmsConfig} from './system/dotcms-config';
-import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs/Rx';
-import {$WebSocket} from './websockets-service';
-import {LoginService} from './login-service';
-import {Subject} from 'rxjs/Subject';
+import {DotcmsConfig} from "./system/dotcms-config";
+import {Injectable} from "@angular/core";
+import {Observable} from "rxjs/Rx";
+import {$WebSocket} from "./websockets-service";
+import {Subject} from "rxjs/Subject";
 
 @Injectable()
 export class DotcmsEventsService {
@@ -27,7 +26,9 @@ export class DotcmsEventsService {
      *                        the Websocket parameters.
      */
     constructor(private dotcmsConfig: DotcmsConfig) {
-        dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
+
+        this.dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
+
             this.protocol = dotcmsConfig.getWebsocketProtocol();
             this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
             this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
