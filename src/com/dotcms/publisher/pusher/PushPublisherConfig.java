@@ -68,14 +68,6 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.put(MyConfig.INDEX_NAME.toString(), name);
 	}
 
-	@SuppressWarnings("rawtypes")
-	@Override
-	public List<Class> getPublishers(){
-		List<Class> clazz = new ArrayList<Class>();
-		clazz.add(PushPublisher.class);
-		return clazz;
-	}
-
 	@SuppressWarnings("unchecked")
 	public Set<String> getContainers() {
 		if(get(AssetTypes.CONTAINERS.name()) == null){

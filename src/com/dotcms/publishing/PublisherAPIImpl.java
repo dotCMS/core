@@ -50,7 +50,10 @@ public class PublisherAPIImpl implements PublisherAPI {
 
                 // Run bundlers
                 File bundleRoot = BundlerUtil.getBundleRoot( config );
-                BundlerUtil.writeBundleXML( config );
+
+                if (!config.isStatic()) {
+                	BundlerUtil.writeBundleXML( config );
+                }
 
                 for ( Class<IBundler> clazz : p.getBundlers() ) {
                     IBundler bundler = clazz.newInstance();
