@@ -44,7 +44,7 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.liferay.portal.NoSuchRoleException"%>
 <%@page import="com.dotmarketing.business.Role"%>
-<%request.setAttribute("requiredPortletAccess", "EXT_21"); %>
+<%request.setAttribute("requiredPortletAccess", "workflow"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css";
@@ -487,7 +487,7 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <!-- START Button Row -->
-<!-- <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_21")%> -->
+<!-- <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.workflow")%> -->
 
 <!-- END Button Row -->
 

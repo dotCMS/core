@@ -159,7 +159,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         assertTrue( foundLive );
 
         //Verify we just added two more indices
-        assertTrue( oldIndices + 2 == newIndices );
+        assertEquals( oldIndices + 2, newIndices );
 
         //***************************************************
         //Now lets delete the created indices
@@ -191,7 +191,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         assertFalse( foundLive );
 
         //Verify we just added two more indices
-        assertTrue( oldIndices == newIndices );
+        assertEquals( oldIndices, newIndices );
     }
 
     /**

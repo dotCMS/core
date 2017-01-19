@@ -16,7 +16,7 @@
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
-<%request.setAttribute("requiredPortletAccess", "EXT_21"); %>
+<%request.setAttribute("requiredPortletAccess", "workflow"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%
 

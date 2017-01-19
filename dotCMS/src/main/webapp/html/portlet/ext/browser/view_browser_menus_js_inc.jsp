@@ -99,8 +99,8 @@
 
 
 			if (addChildren) {
-				var containerperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
-				var templateperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_13", user)%>;
+				var containerperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("containers", user)%>;
+				var templateperm=<%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user)%>;
 
 				var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
 
@@ -984,8 +984,8 @@
 			if (addChildren) {
 				var objId = host.identifier;
 				var referer = unescape(encodeURIComponent(origReferer));
-				var containerperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
-				var templateperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_13", user)%>;
+				var containerperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("containers", user)%>;
+				var templateperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("templates", user)%>;
 			    var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
                 
                 if (isAdminUser || userRoles.folderModifiable) {

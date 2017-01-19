@@ -5,9 +5,9 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <%
-	try { //EXT_CMS_MAINTENANCE
+	try { //maintenance
 		String requiredPortletAccess = (String) request.getAttribute("requiredPortletAccess");
-		requiredPortletAccess = UtilMethods.isSet(requiredPortletAccess)?requiredPortletAccess:"EXT_CMS_MAINTENANCE";
+		requiredPortletAccess = UtilMethods.isSet(requiredPortletAccess)?requiredPortletAccess:"maintenance";
 
 		User userToCheck = com.liferay.portal.util.PortalUtil.getUser(request);
 		if(userToCheck == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(requiredPortletAccess, userToCheck)){

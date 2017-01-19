@@ -12,7 +12,7 @@
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action", new String[] {"/ext/structure/view_relationships"});
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
-	referer = referer + "&_EXT_STRUCTURE_structure_id="+request.getParameter("structure_id");
+	referer = referer + "&_content-types_structure_id="+request.getParameter("structure_id");
 	List<Relationship> relationships = (List<Relationship>) request.getAttribute(com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIPS);
 %>
 

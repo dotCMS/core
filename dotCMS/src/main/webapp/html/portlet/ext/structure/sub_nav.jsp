@@ -54,23 +54,23 @@ function allRelationshipsSubNav()
 	
 	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), null));
-	} else if (strutsAction.equals("/ext/structure/edit_structure") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {
+	} else if (strutsAction.equals("/ext/structure/edit_structure") && portlet1.getPortletId().equals("content-types")) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), "javascript: cancel();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Structure"), null));
-	} else if (strutsAction.equals("/ext/structure/edit_structure") && portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
+	} else if (strutsAction.equals("/ext/structure/edit_structure") && portlet1.getPortletId().equals("forms")) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Edit-Form"), null));
-	} else if (strutsAction.equals("/ext/structure/edit_field") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {
+	} else if (strutsAction.equals("/ext/structure/edit_field") && portlet1.getPortletId().equals("content-types")) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Structure"), "javascript: cancel();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Field"), null));
-	} else if (strutsAction.equals("/ext/structure/edit_field") && portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
+	} else if (strutsAction.equals("/ext/structure/edit_field") && portlet1.getPortletId().equals("forms")) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), "javascript: allStructureSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Edit-Form"), "javascript: cancel();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add-Edit-Field"), null));
-	} else if(strutsAction.equals("/ext/structure/view_relationships") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {
+	} else if(strutsAction.equals("/ext/structure/view_relationships") && portlet1.getPortletId().equals("content-types")) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Relationships"), null));
-	} else if(strutsAction.equals("/ext/structure/edit_relationship") && portlet1.getPortletId().equals("EXT_STRUCTURE")) {
+	} else if(strutsAction.equals("/ext/structure/edit_relationship") && portlet1.getPortletId().equals("content-types")) {
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Relationships"), "javascript: allRelationshipsSubNav();"));
 		entries.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "Add/Edit-Relationship"), null));
 	}

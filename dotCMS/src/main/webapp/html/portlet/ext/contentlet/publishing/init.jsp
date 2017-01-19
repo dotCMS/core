@@ -8,7 +8,7 @@
 	
 	for(Layout l : myLayouts){
 		List<String> ports = l.getPortletIds();	
-		if(ports.contains("EXT_CONTENT_PUBLISHING_TOOL")){
+		if(ports.contains("publishing-queue")){
 			layout = l;
 			layoutId=l.getId();
 			break;
@@ -26,7 +26,7 @@ if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCM
 	userIsAdmin=true;
 }
 
-String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=EXT_CONTENT_PUBLISHING_TOOL&");%>
+String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=publishing-queue&");%>
 <%	if(LicenseUtil.getLevel()<300){ %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
 <%return;} %>

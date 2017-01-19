@@ -69,8 +69,8 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("EXT_BROWSER")) {
-			browserURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_BROWSER&p_p_action=0";
+		if (portletId.equals("site-browser")) {
+			browserURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=site-browser&p_p_action=0";
 			break;
 		}
 	  }

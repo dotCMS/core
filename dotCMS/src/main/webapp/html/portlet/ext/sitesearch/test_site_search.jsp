@@ -50,7 +50,7 @@ if(testQuery != null && testIndex != null){
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)){
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)){
 		throw new DotSecurityException("Invalid user accessing index_stats.jsp - is user '" + user + "' logged in?");
 	}
 } catch (Exception e) {

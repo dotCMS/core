@@ -986,7 +986,7 @@
   List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
   for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
       List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-      if (portletIdsForLicenseManager.contains("9")) {
+      if (portletIdsForLicenseManager.contains("configuration")) {
           licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
           break;
       }

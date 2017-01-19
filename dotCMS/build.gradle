@@ -207,7 +207,7 @@ war {
     }
 
     from (zipTree(configurations.coreWeb.files.toArray()[0])) {
-        into rulesEngineFolder
+        into angularFolder
     }
 }
 war.finalizedBy 'undeployPlugins'

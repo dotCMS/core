@@ -33,15 +33,15 @@ public class PortletAPIImpl implements PortletAPI {
     }
     
     public boolean hasUserAdminRights(User user) {
-        return hasPortletRights(user,"EXT_USER_ADMIN");
+        return hasPortletRights(user,"users");
     }
 
 	public boolean hasContainerManagerRights(User user) {
-		return hasPortletRights(user,"EXT_12");
+		return hasPortletRights(user,"containers");
 	}
 
 	public boolean hasTemplateManagerRights(User user) {
-	    return hasPortletRights(user,"EXT_13");
+	    return hasPortletRights(user,"templates");
 	}
 
 	public Portlet findPortlet(String portletId) {

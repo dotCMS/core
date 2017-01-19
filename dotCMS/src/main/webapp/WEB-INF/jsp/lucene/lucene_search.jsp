@@ -29,7 +29,7 @@ String query = request.getParameter("query");
 if(!UtilMethods.isSet(query)){
 	query = "";
 }
-String submitURL = com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"EXT_LUCENE_TOOL");
+String submitURL = com.dotmarketing.util.PortletURLUtil.getRenderURL(request,null,null,"query-tool");
 String translatedQuery = "";
 String sortBy = request.getParameter("sort");
 String offset = request.getParameter("offset");
@@ -110,7 +110,7 @@ if(query == null){
 
 Layout layout = (Layout) request.getAttribute(WebKeys.LAYOUT);
 
-String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=EXT_LUCENE_TOOL&");
+String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=query-tool&");
 
 query = Xss.strip(query);
 %>
@@ -246,7 +246,7 @@ query = Xss.strip(query);
 								<th><strong><%= counter %>.</th>
 								<th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
 								<th>
-									<a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
+									<a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
 										<%=c.getTitle() %>
 									</a>
 								</th>
