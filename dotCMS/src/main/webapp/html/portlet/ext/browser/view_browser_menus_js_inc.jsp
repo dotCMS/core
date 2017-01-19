@@ -73,7 +73,7 @@
 
 			var strHTML = '';
 
-			strHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu">';
+			strHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu">';
 
 			if (write) {
 				strHTML += '<a class="contextPopupMenu" href="javascript: editHost(\'' + objInode + '\',\''+referer+'\')">';
@@ -204,7 +204,7 @@
 
 
 		if($('context_menu_popup_'+objId) == null) {
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu" style="display:none;"></div>';
+			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu" style="display:none;"></div>';
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		var div = $('context_menu_popup_'+objId);
@@ -284,7 +284,7 @@
 		Element.update ('context_menu_popup_'+objId, strHTML);
 
 		if($('context_child_menu_popup_'+objId) == null) {
-			var divHTML = '<div id="context_child_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu" style="display:none;"></div>';
+			var divHTML = '<div id="context_child_menu_popup_'+objId+'" class="context-menu" style="display:none;"></div>';
 			new Insertion.Bottom ('popups', divHTML);
 		}
 
@@ -389,7 +389,7 @@
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu"></div>';
+			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu"></div>';
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		if(fileWfActionAssign != null  && cmsAdminUser){
@@ -551,7 +551,7 @@
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu"></div>';
+			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu"></div>';
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		var div = $('context_menu_popup_'+objId);
@@ -686,7 +686,7 @@
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu"></div>';
+			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu"></div>';
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		var div = $('context_menu_popup_'+objId);
