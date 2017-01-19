@@ -80,7 +80,8 @@ public abstract class Publisher implements IPublisher {
 
 			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
             List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-            String host = path.get(path.indexOf(config.getId())+2);
+
+            String host = path.get(path.indexOf(config.getName())+2);
 
 			return APILocator.getHostAPI().resolveHostName(host, APILocator.getUserAPI().getSystemUser(), true);
 		}
@@ -98,7 +99,8 @@ public abstract class Publisher implements IPublisher {
 
 			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
 			List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-			String language = path.get(path.indexOf(config.getId())+3);
+
+			String language = path.get(path.indexOf(config.getName())+3);
 
 			return APILocator.getLanguageAPI().getLanguage(language);
 		}
@@ -117,7 +119,7 @@ public abstract class Publisher implements IPublisher {
 
 			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
             List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-            path = path.subList(path.indexOf(config.getId())+4, path.size());
+            path = path.subList(path.indexOf(config.getName())+4, path.size());
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){
 				bob.append("/" + x);

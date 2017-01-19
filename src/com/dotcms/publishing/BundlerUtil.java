@@ -1,30 +1,21 @@
 package com.dotcms.publishing;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -41,10 +32,7 @@ public class BundlerUtil {
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
 
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
-		if (config.isStatic()) {
-			bundlePath += "-static";
-		}
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
 		bundlePath += File.separator + "bundle.xml";
 
 		return new File(bundlePath).exists();
@@ -68,11 +56,7 @@ public class BundlerUtil {
 	 * @param config Config with the id of bundle
 	 */
 	public static File getBundleRoot(PublisherConfig config){
-		if (config.isStatic()) {
-			return getBundleRoot(config.getId() + "-static");
-		} else {
-			return getBundleRoot(config.getId());			
-		}
+		return getBundleRoot(config.getName());
 	}
 
 	/**
@@ -80,10 +64,12 @@ public class BundlerUtil {
 	 * @param config
 	 */
 	public static void writeBundleXML(PublisherConfig config){
-		String bundlePath = getBundleRoot(config).getAbsolutePath();
+		getBundleRoot(config);
+
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		objectToXML(config, xml);
-
 	}
 
     /**
@@ -93,7 +79,10 @@ public class BundlerUtil {
      * @return The Bundle configuration read from the mail Bundle xml file
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
-		String bundlePath = getBundleRoot(config).getAbsolutePath();
+		getBundleRoot(config);
+
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		if(xml.exists()){
 			return (PublisherConfig) xmlToObject(xml);

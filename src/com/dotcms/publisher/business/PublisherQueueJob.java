@@ -117,7 +117,7 @@ public class PublisherQueueJob implements StatefulJob {
 							}
 							historyPojo.setAssets(assets);
 
-							PublisherConfig pconf = new PublisherConfig();
+							PublisherConfig pconf = new PushPublisherConfig();
 							pconf.setAssets(assetsToPublish);
 
 							//Status
