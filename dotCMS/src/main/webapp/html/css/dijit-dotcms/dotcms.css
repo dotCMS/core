@@ -927,6 +927,11 @@ html, body {
   border: solid 1px #C5C5C5;
   padding: 0 0 0 8px;
 }
+.dijitComboBox input {
+  height: auto;
+  line-height: 30px;
+  padding: 0;
+}
 .dijitComboBox .dijitArrowButton {
   height: 30px;
   width: 32px;
@@ -4124,21 +4129,6 @@ table.sTypeTable.sTypeItem {
   background: url("http://localhost:8080/html/js/dotcms-utils/overlay.png");
 }
 
-/* permission hacks */
-.permissionTableTitle td {
-  text-align: center;
-  width: 12%;
-  font-size: 11px;
-  line-height: 22px;
-}
-
-.permissionTable th.permissionTitle {
-  padding: 0 0 0 10px;
-  font-weight: bold;
-  line-height: 22px;
-  font-size: 11px;
-}
-
 /* Host folders selector */
 .dijitHostFoldersTreeWrapper {
   max-height: 250px;
@@ -4729,7 +4719,6 @@ div#_dotHelpMenu {
 .encryptIcon,
 .exclamationIcon,
 .exclamation-redIcon,
-.femaleIcon,
 .fileMultiIcon,
 .fileNewIcon,
 .fixIcon,
@@ -4814,7 +4803,6 @@ div#_dotHelpMenu {
 .unlockIcon,
 .unpublishIcon,
 .uploadIcon,
-.userIcon,
 .windowsIcon,
 .workflowIcon,
 .workStreamIcon,
@@ -5025,7 +5013,7 @@ div#_dotHelpMenu {
 }
 
 .femaleIcon:before {
-  content: "";
+  content: "";
 }
 
 .fileIcon:before {
@@ -5401,7 +5389,7 @@ div#_dotHelpMenu {
 }
 
 .userIcon:before {
-  content: "";
+  content: "";
 }
 
 .vtlIcon:before {
@@ -6900,44 +6888,6 @@ a.category_higlighted, a.tag_higlighted {
   overflow-y: hidden !important;
 }
 
-.permissionLabelTable, .permissionTable {
-  width: 100%;
-}
-
-.permissionTableWrapper {
-  padding: 0 0 0 3px;
-}
-
-.permissionLabelsWrapper {
-  padding: 15px 15px 10px 9px;
-}
-
-.permissionTable td,
-.permissionTableTitle td {
-  padding: 4px 0;
-  width: 12%;
-  text-align: center;
-}
-.permissionTable td.permissionType,
-.permissionTableTitle td.permissionType {
-  width: 28%;
-  text-align: right;
-  padding: 3px 35px 3px 0;
-}
-
-.permissionTableTitle {
-  width: 100%;
-  margin: 0;
-}
-.permissionTableTitle td.folderName {
-  vertical-align: middle;
-  width: 28%;
-  text-align: left;
-}
-.permissionTableTitle td.folderName img {
-  vertical-align: middle;
-}
-
 .hostSelectorButton {
   margin: 0;
 }
@@ -6971,6 +6921,81 @@ a.category_higlighted, a.tag_higlighted {
 #rolePermissionsMsg {
   color: #E84048;
   text-align: center;
+}
+
+.permissions__bar-user-role {
+  background-color: #FAFAFA;
+  border-radius: 2px;
+  border: solid 1px #ECEDEE;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 8px;
+}
+.permissions__bar-user-role .femaleIcon,
+.permissions__bar-user-role .userIcon {
+  margin-right: 8px;
+}
+.permissions__bar-user-role .inline-form {
+  margin-right: 32px;
+}
+
+.permissions__bar-user-role-actions,
+.permissions__bar-user-role-main {
+  align-items: center;
+  display: flex;
+}
+
+.permissions__button-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+.permissions__button-row .checkbox {
+  margin-left: 16px;
+}
+
+.permissionWrapper {
+  background: none;
+  padding: 0;
+  margin: 0 auto;
+  width: 90%;
+}
+.permissionWrapper .dijitAccordionTitle {
+  padding: 0;
+}
+
+.permissionTable,
+.accordionEntry {
+  width: 100%;
+}
+.permissionTable td, .permissionTable th,
+.accordionEntry td,
+.accordionEntry th {
+  width: 10%;
+  text-align: center;
+}
+.permissionTable th,
+.accordionEntry th {
+  font-weight: bold;
+}
+.permissionTable th.permissionType,
+.accordionEntry th.permissionType {
+  width: 40%;
+  font-weight: normal;
+  padding-left: 8px;
+  text-align: left;
+}
+.permissionTable th.permissionTitle,
+.accordionEntry th.permissionTitle {
+  font-weight: bold;
+}
+
+#assetPermissionsMessageWrapper {
+  padding-top: 15px;
+  color: red;
+  text-align: center;
+  font-weight: bolder;
 }
 
 .related-content-dialog {
