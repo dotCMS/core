@@ -187,7 +187,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 <div id="statusDiv" align="left" style="width: 100%; display: none; height: 100px; overflow: auto;"></div>
 
-<div id="popups" class="site-browser__context-menus"></div>
+<div id="popups"></div>
 
 
 <script type="text/javascript">
