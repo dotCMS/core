@@ -1,20 +1,11 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.Serializable;
-import java.util.*;
-
 import com.dotcms.api.system.event.*;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
-import com.dotcms.repackage.org.apache.bsf.util.MethodUtils;
-import com.dotcms.rest.api.v1.content.ContentTypeView;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -36,7 +27,6 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -48,7 +38,11 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import javax.servlet.http.HttpServletRequest;
+import java.io.Serializable;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * Provides access to information related to Content Types and the different
@@ -562,10 +556,12 @@ public class StructureFactory {
 		pushSaveUpdateEvent(structure, isNew);
 	}
 
-	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
+	private static void pushSaveUpdateEvent(final Structure structure, final boolean isNew) {
 
 		final DotSubmitter dotSubmitter =
 				SystemEventsFactory.getInstance().getDotSubmitter();
+
+		final String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
 
 		dotSubmitter.execute(() -> {
 
@@ -573,7 +569,7 @@ public class StructureFactory {
 					SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
 
 			try {
-				String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
+
 				ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 				systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
 						PermissionAPI.PERMISSION_READ));
@@ -600,7 +596,7 @@ public class StructureFactory {
 		deleteStructure(structure);
 	}
 
-	public static void deleteStructure(Structure structure) throws DotDataException
+	public static void deleteStructure(final Structure structure) throws DotDataException
 	{
 
 		final DotSubmitter dotSubmitter =
@@ -612,10 +608,12 @@ public class StructureFactory {
 
 			if (null != dotSubmitter) {
 
+				final String actionUrl = contentTypeUtil.getActionUrl(structure);
+
 				dotSubmitter.execute(() -> {
 
 					try {
-						String actionUrl = contentTypeUtil.getActionUrl(structure);
+
 						ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
 						systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper, Visibility.PERMISSION,
 								PermissionAPI.PERMISSION_READ));
