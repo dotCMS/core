@@ -49,6 +49,11 @@
         &.ui-state-hover {
             background: rgba($black, 0.1);
         }
+
+        &.ui-state-disabled {
+            color: $body-font-color;
+            opacity: 0.5;
+        }
     }
 }
 
