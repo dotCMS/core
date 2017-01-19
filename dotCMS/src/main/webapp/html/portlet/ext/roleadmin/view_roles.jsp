@@ -134,7 +134,7 @@
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="view-roles">
 
 	<!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px" class="portlet-sidebar-wrapper">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 260px" class="portlet-sidebar-wrapper">
 		<div class="portlet-sidebar">
 			<div id="loadingRolesWrapper"><img src="/html/images/icons/processing.gif" /></div>
 

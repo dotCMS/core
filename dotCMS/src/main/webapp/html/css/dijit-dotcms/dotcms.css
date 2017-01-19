@@ -6471,6 +6471,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-roles .dijitTabPaneWrapper .dijitContentPane {
   box-sizing: content-box;
+  overflow: auto;
 }
 .view-roles .portlet-main {
   height: 100%;
@@ -6965,10 +6966,6 @@ a.category_higlighted, a.tag_higlighted {
 #loadingPermissionsAccordion {
   padding-top: 25px;
   text-align: center;
-}
-
-#permissionsTab {
-  margin-bottom: 5px;
 }
 
 #rolePermissionsMsg {
