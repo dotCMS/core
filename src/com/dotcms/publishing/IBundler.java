@@ -1,5 +1,10 @@
 package com.dotcms.publishing;
 
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
+import com.dotcms.enterprise.publishing.timemachine.TimeMachineConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotmarketing.util.Constants;
+
 import java.io.File;
 import java.io.FileFilter;
 
@@ -10,9 +15,9 @@ import java.io.FileFilter;
  */
 public interface IBundler {
 
-    public String getName ();
+    String getName ();
 
-    public void setConfig ( PublisherConfig pc );
+    void setConfig ( PublisherConfig pc );
 
     /**
      * Generates depending of the type of content this Bundler handles parts and objects that will be add it later
@@ -22,8 +27,27 @@ public interface IBundler {
      * @param status     Object to keep track of the generation process inside this Bundler
      * @throws DotBundleException If there is an exception while this Bundles is generating the Bundle content
      */
-    public void generate ( File bundleRoot, BundlerStatus status ) throws DotBundleException;
+    void generate ( File bundleRoot, BundlerStatus status ) throws DotBundleException;
 
-    public FileFilter getFileFilter ();
+    FileFilter getFileFilter ();
+
+    /**
+     * Returs the Agent Browser depending on the instance of the Push Publisher.
+     *
+     * @param publisherConfig
+     * @return
+     */
+    default String getUserAgent(PublisherConfig publisherConfig){
+        if (publisherConfig instanceof SiteSearchConfig){
+            return Constants.USER_AGENT_DOTCMS_SITESEARCH;
+        }
+        if (publisherConfig instanceof TimeMachineConfig){
+            return Constants.USER_AGENT_DOTCMS_TIMEMACHINE;
+        }
+        if (publisherConfig instanceof PushPublisherConfig){
+            return Constants.USER_AGENT_DOTCMS_PUSH_PUBLISH;
+        }
+        return Constants.USER_AGENT_DOTCMS_BROWSER;
+    }
 
 }
