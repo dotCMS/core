@@ -38,7 +38,7 @@
 <div class="contentIdentifier">
 <%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
 </div>
-<table class="listingTable">
+<table class="listingTable content-edit__table-zebra">
 	<tr>
 		<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
 		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
@@ -53,7 +53,6 @@
 	</tr>
 <%
     Iterator<Contentlet> versionsIt = versions.iterator();
-	int kmod = 0;
 	boolean isAlreadyLocked = false;
 	while (versionsIt.hasNext()) {
 		Contentlet ver = versionsIt.next();
@@ -66,17 +65,8 @@
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
 		Date modDate = ver.getModDate();
-
-		String str_style = "";
-		if ((kmod % 2) == 0) {
-			str_style = "class='alternate_1'";
-		}
-		else{
-			str_style = "class='alternate_2'";
-		}
-		kmod++;
 %>
-	<tr  <%=str_style%>>
+	<tr>
 		<td nowrap="nowrap" width="50" align="center">
 			<%=UtilHTML.getVersionStatusIcons(c) %>
 		</td>

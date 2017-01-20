@@ -474,10 +474,10 @@ var editButtonRow="editContentletButtonRow";
 		}%>
 
 		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
-			<div id="contentletVersionsDiv" style="height:100%;">
+			<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
 			</div>
-
-			<div>
+			<hr class="content-edit__divider">
+			<div class="content-edit__history-status">
 			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 			</div>
 		</div>

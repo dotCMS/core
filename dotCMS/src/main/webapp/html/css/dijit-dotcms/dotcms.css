@@ -6395,7 +6395,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-edit__dialog-error {
-  background: #ffffff;
+  background: #fff;
   padding: 0px;
   border: 0px;
   width: 300px;
@@ -6403,6 +6403,26 @@ a.category_higlighted, a.tag_higlighted {
 .content-edit__dialog-error .dijitDialogTitleBar {
   height: 0;
   z-index: 1;
+}
+
+.content-edit__history-version .dijitContentPane {
+  padding: 0px;
+}
+.content-edit__history-version .dijitContentPane .contentIdentifier {
+  font-weight: bold;
+}
+
+.content-edit__divider {
+  background-color: #ECEDEE;
+  margin: 20px 0;
+}
+
+.content-edit__cell-aling-center {
+  text-align: center;
+}
+
+.content-edit__table-zebra tr:nth-child(odd) {
+  background-color: #FAFAFA;
 }
 
 .advanced-search-button {
