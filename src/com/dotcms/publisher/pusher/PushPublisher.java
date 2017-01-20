@@ -124,7 +124,6 @@ public class PushPublisher extends Publisher {
 				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
 				
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
-				//TODO update the harcode code
 				for(PublishingEndPoint ep : allEndpoints) {
 					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
 						endpoints.add(ep);

@@ -11,10 +11,10 @@ import com.liferay.portal.model.User;
 
 import java.util.*;
 
-public class PublisherConfig implements Map<String, Object> {
+public class PublisherConfig implements Map<String, Object>, Cloneable {
 
 	public enum Config {
-		START_DATE, END_DATE, HOSTS, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
+		START_DATE, END_DATE, HOSTS, HOST_SET, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
@@ -37,6 +37,7 @@ public class PublisherConfig implements Map<String, Object> {
 	
 	Map<String, Object> params;
 	private boolean liveOnly = true;
+	private boolean isStatic = false;
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
@@ -105,15 +106,15 @@ public class PublisherConfig implements Map<String, Object> {
 
     @SuppressWarnings("unchecked")
 	public Set<String> getHostSet() {
-		if(get(Config.HOSTS.name()) == null){
+		if(get(Config.HOST_SET.name()) == null){
 			Set<String> hostsToBuild =   new HashSet<String>();
-			params.put(Config.HOSTS.name(), hostsToBuild);
+			params.put(Config.HOST_SET.name(), hostsToBuild);
 		}
-		return (Set<String>) params.get(Config.HOSTS.name());
+		return (Set<String>) params.get(Config.HOST_SET.name());
 	}
 
 	public void setHostSet(Set<String> hosts) {
-		params.put(Config.HOSTS.name(), hosts);
+		params.put(Config.HOST_SET.name(), hosts);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -356,6 +357,23 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
+	public boolean isStatic() {
+		return isStatic;
+	}
+	public void setStatic(boolean isStatic) {
+		this.isStatic = isStatic;
+	}
+
+	public String getName(){
+		String result = getId();
+
+		if (isStatic()){
+			result += "-static";
+		}
+
+		return result;
+	}
+
 	public String getDestinationBundle() {
 		return (String) params.get(Config.DESTINATION_BUNDLE.name());
 	}
@@ -474,5 +492,10 @@ public class PublisherConfig implements Map<String, Object> {
 
 	public void setRunNow(boolean once){
 		this.put(MyConfig.RUN_NOW.toString(), once);
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 }

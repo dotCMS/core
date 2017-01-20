@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -79,7 +80,8 @@ public abstract class Publisher implements IPublisher {
 
 			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
             List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-            String host = path.get(path.indexOf(config.getId())+2);
+
+            String host = path.get(path.indexOf(config.getName())+2);
 
 			return APILocator.getHostAPI().resolveHostName(host, APILocator.getUserAPI().getSystemUser(), true);
 		}
@@ -87,6 +89,24 @@ public abstract class Publisher implements IPublisher {
 			throw new DotPublishingException("error getting host:" + e.getMessage());
 		}
 
+	}
+
+	public Language getLanguageFromFilePath(File file) throws DotPublishingException{
+		try{
+			if(!file.getAbsolutePath().contains(config.getId())){
+				throw new DotPublishingException("no bundle file found");
+			}
+
+			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
+			List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
+
+			String language = path.get(path.indexOf(config.getName())+3);
+
+			return APILocator.getLanguageAPI().getLanguage(language);
+		}
+		catch(Exception e){
+			throw new DotPublishingException("Error getting Language:" + e.getMessage());
+		}
 	}
 
 	public String getUriFromFilePath(File file) throws DotPublishingException{
@@ -99,7 +119,7 @@ public abstract class Publisher implements IPublisher {
 
 			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
             List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-            path = path.subList(path.indexOf(config.getId())+4, path.size());
+            path = path.subList(path.indexOf(config.getName())+4, path.size());
 			StringBuilder bob = new StringBuilder();
 			for(String x:path){
 				bob.append("/" + x);

@@ -282,7 +282,7 @@ public class PublisherAPIImpl extends PublisherAPI{
         return resultMap;
     }
     
-    private void firePublisherQueueNow(){
+    public void firePublisherQueueNow(){
       //SCHEDULE PUBLISH QUEUE JOB for NOW
       try {
         Scheduler sched = QuartzUtils.getStandardScheduler();
