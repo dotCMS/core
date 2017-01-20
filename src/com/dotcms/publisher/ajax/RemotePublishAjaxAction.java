@@ -578,7 +578,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             bundler.setConfig( pconf );
             BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
             //Generate the bundler
+            Logger.info(this, "Start of Bundler: " + c.getName());
             bundler.generate( bundleRoot, bundlerStatus );
+            Logger.info(this, "Start of Bundler: " + c.getName());
         }
 
         pconf.setBundlers( confBundlers );
