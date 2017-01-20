@@ -62,9 +62,9 @@ public class PublisherAPIImpl implements PublisherAPI {
                     BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
                     status.addToBs( bs );
                     //Generate the bundler
-                    Logger.info(this, "Start of Bundler: " + clazz.getName());
+                    Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
                     bundler.generate( bundleRoot, bs );
-                    Logger.info(this, "Start of Bundler: " + clazz.getName());
+                    Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                 }
 
                 p.process( status );
