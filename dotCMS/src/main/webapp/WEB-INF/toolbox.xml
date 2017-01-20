@@ -384,6 +384,7 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.ESContentTool</class>
 	</tool>
+
 	<tool>
 		<key>sql</key>
 		<scope>request</scope>
