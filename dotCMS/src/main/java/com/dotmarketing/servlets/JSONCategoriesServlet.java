@@ -29,6 +29,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -37,6 +38,7 @@ import com.liferay.portal.model.User;
 public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 
 	private static final long serialVersionUID = 1L;
+	private static final String JSON_CATEGORIES_SERVLET_AUTHENTICATION_NEEDED = "json.categories.servlet.authentication.needed";
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -47,7 +49,14 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 
 		try {
 
-			user = uWebAPI.getLoggedInUser(request);
+			final boolean isAuthenticationNeeded = Config.getBooleanProperty
+					(JSON_CATEGORIES_SERVLET_AUTHENTICATION_NEEDED, true);
+			if ((user = uWebAPI.getLoggedInUser(request)) == null && isAuthenticationNeeded) {
+
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				return;
+			}
+
 			String inode = request.getParameter("inode");
 			String action = request.getParameter("action");
 			String q = request.getParameter("q");
