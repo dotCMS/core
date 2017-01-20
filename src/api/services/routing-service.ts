@@ -85,9 +85,9 @@ export class RoutingService {
                 for (let k = 0; k < menu.menuItems.length; k++) {
                     let subMenuItem = menu.menuItems[k];
                     if (subMenuItem.angular) {
-                        subMenuItem.url = subMenuItem.url;
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
                     } else {
+                        subMenuItem.menuLink = '/c/' + subMenuItem.id;
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
                     }
                 }
