@@ -90,7 +90,7 @@ public class StringUtils {
 	} // splitByComma.
 
 	// this the pattern for replace variables, such as {xxx} @see interpolate method
-	private static final String ALPHA_VARIABLE_REGEX = "(\\{\\w+\\})";
+	private static final String ALPHA_HYPHEN_VARIABLE_REGEX = "(\\{[\\w\\-]+\\})";
 
 	/**
 	 * Replace any expression with {?} by the right value in the context Map (interpolation)
@@ -117,7 +117,7 @@ public class StringUtils {
 				new StringBuilder(expression);
 		String normalizeMatch = null;
 		final List<RegExMatch> regExMatches =
-				RegEX.find(expression, ALPHA_VARIABLE_REGEX);
+				RegEX.find(expression, ALPHA_HYPHEN_VARIABLE_REGEX);
 
 		if ((null != regExMatches) && (regExMatches.size() > 0)) {
 
@@ -156,7 +156,7 @@ public class StringUtils {
 		Map<String, Object> interpolateMatches = new HashMap<>();
 		// PRECONDITIONS
 		if (null != expression && null != parametersMap && parametersMap.size() != 0) {
-			final List<RegExMatch> regExMatches = RegEX.find(expression, ALPHA_VARIABLE_REGEX);
+			final List<RegExMatch> regExMatches = RegEX.find(expression, ALPHA_HYPHEN_VARIABLE_REGEX);
 
 			if ((null != regExMatches) && (regExMatches.size() > 0)) {
 				// we need to start replacing from the end, to avoid conflicts with the shift chars.
