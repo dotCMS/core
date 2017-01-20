@@ -71,8 +71,19 @@ public class ShortyServlet extends HttpServlet {
       return;
     }
 
-    final String uri = request.getRequestURI().toLowerCase();
+    String uri = request.getRequestURI();
+    
+    
+    StringTokenizer tokens = new StringTokenizer(uri, "/");
+    if (tokens.countTokens() < 2) {
+      response.sendError(404);
+      return;
+    }
 
+    tokens.nextToken();
+    String id = tokens.nextToken();
+    String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : NOT_FOUND;
+    uri=uri.toLowerCase();
 
     int w = 0;
     int h = 0;
@@ -93,15 +104,6 @@ public class ShortyServlet extends HttpServlet {
     
     
     
-    StringTokenizer tokens = new StringTokenizer(uri, "/");
-    if (tokens.countTokens() < 2) {
-      response.sendError(404);
-      return;
-    }
-
-    tokens.nextToken();
-    String id = tokens.nextToken();
-    String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : NOT_FOUND;
 
 
     Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(id);

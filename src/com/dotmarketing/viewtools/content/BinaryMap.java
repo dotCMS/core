@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.awt.Dimension;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.ImageUtil;
@@ -80,6 +81,26 @@ public class BinaryMap {
 		return rawUri;
 	}
 
+	
+	
+	
+    public String getShortyUrl() {
+
+      String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
+      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName(); 
+
+    }
+	
+    public String getShortyUrlInode() {
+
+      String shorty = APILocator.getShortyAPI().shortify(content.getInode());
+      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName(); 
+
+    }
+	
+	
+	
+	
 	/**
 	 * This is a convince method/helper method to build the URI for the resize exporter.  
 	 * You may pass any of the parameters as null, or 0 

@@ -36,4 +36,22 @@ public class FileAssetMap extends FileAsset {
 
         return fam;
     }
+    
+    
+    
+    
+    public String getShortyUrl() {
+
+      String shorty = APILocator.getShortyAPI().shortify(getIdentifier());
+      return "/dA/"+shorty+"/" + getFileAsset().getName(); 
+
+    }
+    
+    public String getShortyUrlInode() {
+
+      String shorty = APILocator.getShortyAPI().shortify(getInode());
+      return "/dA/"+shorty+"/" + getFileAsset().getName(); 
+
+    }
+    
 }
