@@ -7,6 +7,9 @@ import {DotcmsConfig} from './system/dotcms-config';
 import {LoginService} from './login-service';
 import {DotRouterService} from './dot-router-service';
 
+/**
+ * TODO: This service is not used any more. Maybe should be deleted
+ */
 @Injectable()
 export class RoutingRootAuthService implements CanActivate {
 
