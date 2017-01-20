@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
-import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
@@ -219,7 +219,7 @@ public class PublisherQueueJob implements StatefulJob {
 							if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
 
 								// Don't poll status for static publishing
-								if (!StaticPublisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())) {
+								if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())) {
 									WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
 									try {
 										// Try to get the status of the remote endpoints to
@@ -357,7 +357,7 @@ public class PublisherQueueJob implements StatefulJob {
 	    try{
             Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
             //TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
-            Set<Class> publishers = Sets.newHashSet(PushPublisher.class, StaticPublisher.class);
+            Set<Class> publishers = Sets.newHashSet(PushPublisher.class, AWSS3Publisher.class);
 
             //Fill protocolPublisherMap with protocol -> publisher.
             for (Class publisher : publishers) {
@@ -371,7 +371,7 @@ public class PublisherQueueJob implements StatefulJob {
             List<Environment> environments = this.environmentAPI.findEnvironmentsByBundleId(bundleId);
 
             for (Environment environment : environments) {
-                //For each endpoint we choose if run static or dynamic process (Static = StaticPublisher, Dynamic = PushPublisher)
+                //For each endpoint we choose if run static or dynamic process (Static = AWSS3Publisher, Dynamic = PushPublisher)
                 List<PublishingEndPoint> endpoints = this.publisherEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
 
                 //For each endpoint we need include the Publisher depending on the type.
