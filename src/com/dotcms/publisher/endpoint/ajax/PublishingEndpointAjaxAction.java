@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
-import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
@@ -123,7 +123,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
         	String protocol = request.getParameter("protocol");
         	String authKey = request.getParameter("authKey");
-        	if (StaticPublisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
+        	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
         		validatePublishingEndPointAWSS3(authKey);
         	}
 
@@ -168,7 +168,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
         	String protocol = request.getParameter("protocol");
         	String authKey = request.getParameter("authKey");
-        	if (StaticPublisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
+        	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
         		validatePublishingEndPointAWSS3(authKey);
         	}
 
@@ -207,10 +207,10 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
 
 		// Validate provision of all mandatory AWS S3 properties
-		String token = props.getProperty(StaticPublisher.DOTCMS_PUSH_AWS_S3_TOKEN);
-		String secret = props.getProperty(StaticPublisher.DOTCMS_PUSH_AWS_S3_SECRET);
-		String bucketID = props.getProperty(StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
-		String bucketRegion = props.getProperty(StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION);
+		String token = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_TOKEN);
+		String secret = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_SECRET);
+		String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
+		String bucketRegion = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION);
 
 		if (!UtilMethods.isSet(token)
 			|| !UtilMethods.isSet(secret)

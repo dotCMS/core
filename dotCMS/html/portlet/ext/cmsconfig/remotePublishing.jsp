@@ -9,9 +9,8 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
-<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
-<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher" %>
+<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
 <%	if( LicenseUtil.getLevel()<300){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
@@ -965,12 +964,12 @@ function deleteEnvPushHistory(envId) {
 										)
 									);
 
-									String bucketID = props.getProperty(StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
+									String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
 									if (com.dotmarketing.util.UtilMethods.isSet(bucketID)) {
 
 										endpointString += "://" + bucketID;
 
-										String bucketPrefix = props.getProperty(StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX);
+										String bucketPrefix = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX);
 										if (com.dotmarketing.util.UtilMethods.isSet(bucketPrefix)) {
 
 											endpointString += "/" + bucketPrefix;
