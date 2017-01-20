@@ -293,39 +293,6 @@
 
 					</div>
 					<!-- END Additional Info Tab -->
-
-					<!-- START Marketing Tab -->
-					<div dojoType="dijit.layout.ContentPane" id="marketingInfoTab" title="<%= LanguageUtil.get(pageContext, "Marketing") %>" class="view-users__marketing">
-
-						<h3 id="fullUserName" class="fullUserName"></h3>
-
-						<div id="marketingInfoWrapper">
-
-							<div class="view-users__section-break">
-								<h4><span class="statisticsIcon"></span> <%= LanguageUtil.get(pageContext, "Click-Tracking") %></h4>
-								<div class="checkbox">
-									<input type="checkbox" dojoType="dijit.form.CheckBox" name="userClickTrackingCheck" id="userClickTrackingCheck" onClick="userClicktrackingChanged()" />
-									<label for="userClickTrackingCheck"><%= LanguageUtil.get(pageContext, "Disable-click-tracking") %></label>
-								</div>
-							</div>
-							<div class="view-users__section-content">
-								<button dojoType="dijit.form.Button" onClick="viewFullClickHistory();"><%= LanguageUtil.get(pageContext, "Full-Visit-History") %></button>
-							</div>
-
-							<div class="view-users__section-break">
-								<h4><span class="tagIcon"></span> <%= LanguageUtil.get(pageContext, "User-Tags") %></h4>
-							</div>
-							<div class="view-users__section-content">
-								<%@ include file="/html/portlet/ext/useradmin/view_users_tags_inc.jsp" %>
-							</div>
-
-							<div id="userClickHistoryDialog" title="<%= LanguageUtil.get(pageContext, "user-clicks-history") %>" dojoType="dijit.Dialog" style="display: none">
-								<div id="userClickHistoryPane"></div>
-								<div id="userClickHistoryDetailPane" style="display:none; overflow:auto;"></div>
-							</div>
-						</div>
-					</div>
-					<!-- END Marketing Tab -->
 				</div>
 				<!-- END User Tabs -->
 			</div>
