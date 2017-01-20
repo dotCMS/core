@@ -143,9 +143,8 @@
 				dijit.byId("authKey").set("value",
 					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_TOKEN%>=myToken\n" +
 					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_SECRET%>=mySecret\n" +
-					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID%>=myBucketId\n" +
-					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION%>=myBucketRegion\n" +
-					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX%>=myBucketPrefix"
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID%>=dotcms-bucket-{hostname}-{languageIso}\n" +
+					"<%=StaticPublisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION%>=us-west-2"
 				);
 			}
 		} else {
