@@ -41,12 +41,31 @@ let mainComponentChildren = [
                             ];
 
 let fromCoreChildren: any[] = [];
-
+let angularChildren: any[] = [
+    {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'c/pl' : 'c/workflow',
+    },
+    {
+        component: PatternLibrary,
+        path: 'c/pl'
+    },
+    {
+        component: NotLicensedComponent,
+        path: 'c/notLicensed'
+    },
+    {
+        canActivate: [RoutingPrivateAuthService],
+        component: IframeLegacyComponent,
+        path: 'c/:id',
+    }
+];
 angularComponents.forEach( component => {
-    mainComponentChildren.push({
+    angularChildren.push({
         canActivate: [RoutingPrivateAuthService],
         component: component.component,
-        path: `a/${component.id}`
+        path: component.id
     });
 
     fromCoreChildren.push({
@@ -58,9 +77,10 @@ angularComponents.forEach( component => {
 
 const appRoutes: Routes = [
     {
-        canActivate: [RoutingRootAuthService],
-        component: AppComponent,
-        path: ''
+        canActivate: [RoutingPrivateAuthService],
+        children: angularChildren,
+        component: MainComponent,
+        path: '',
     },
     {
         canActivate: [RoutingPrivateAuthService],
