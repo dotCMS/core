@@ -11,6 +11,9 @@
 }
 
 .ui-autocomplete-panel {
+    // TODO: get rid of this z-index when this is fixed: https://github.com/primefaces/primeng/issues/745
+    z-index: 1;
+
     .ui-autocomplete-list {
         padding: 0;
     }

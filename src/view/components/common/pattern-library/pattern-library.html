@@ -118,7 +118,9 @@
 
                 <h3 class="section__title">Autocomplete</h3>
                 <article>
+                    <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
                     <p-autoComplete
+                        let autoComplete
                         [dropdown]="true"
                         [suggestions]="autocompleteResults"
                         (completeMethod)="autocompleteComplete($event)"
