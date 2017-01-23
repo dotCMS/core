@@ -18,6 +18,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 public class PDFImageFilter extends ImageFilter {
@@ -45,8 +46,8 @@ public class PDFImageFilter extends ImageFilter {
         
     resultFile.delete();
     try {
-
-      System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
+      
+      System.setProperty("sun.java2d.cmm", Config.getStringProperty("IMAGE_COLOR_MANAGEMENT_SYSTEM",  "sun.java2d.cmm.kcms.KcmsServiceProvider"));
       PDDocument document = PDDocument.load(file);
       PDFRenderer pdfRenderer = new PDFRenderer(document);
 
