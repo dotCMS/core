@@ -105,7 +105,8 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public Date modDate() {
-				return new Date(((Date) map.get("mod_date")).getTime());
+				Date modDate = (Date) map.get("mod_date");
+				return modDate!=null?new Date(modDate.getTime()):super.modDate();
 			}
 
 			@Override
