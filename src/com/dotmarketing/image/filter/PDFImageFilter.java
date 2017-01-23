@@ -30,7 +30,7 @@ public class PDFImageFilter extends ImageFilter {
 
   public File runFilter(File file, Map<String, String[]> parameters) {
 
-    System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
+
     File resultFile = getResultsFile(file, parameters);
 
     if (!overwrite(resultFile, parameters)) {
@@ -46,7 +46,7 @@ public class PDFImageFilter extends ImageFilter {
     resultFile.delete();
     try {
 
-
+      System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
       PDDocument document = PDDocument.load(file);
       PDFRenderer pdfRenderer = new PDFRenderer(document);
 
