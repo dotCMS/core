@@ -409,16 +409,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                     + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
+
+            //Generate a System Event for this publish operation
+            contentletSystemEventUtil.pushPublishEvent(contentlet);
+
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
         }catch(Exception e){
             Logger.error(this, e.getMessage(), e);
 
             if(localTransaction){
                 HibernateUtil.rollbackTransaction();
-            }
-        }
-        finally{
-            if(localTransaction){
-                HibernateUtil.commitTransaction();
             }
         }
     }
@@ -2486,7 +2489,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentRelationships = new HashMap<Relationship, List<Contentlet>>();
         if(workingCon == null)
             workingCon = contentlet;
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, false);
     }
 
     @Override
@@ -2524,7 +2527,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+    public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats , List<Permission> permissions, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
+        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, false);
+    }
+
+    private Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
+                               List<Category> cats, List<Permission> permissions, User user, boolean respectFrontendRoles,
+                               boolean generateSystemEvent)
+            throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
@@ -2536,12 +2547,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
         }
-        return checkin(contentlet, relationshipsData, cats, permissions, user, respectFrontendRoles);
+
+        return checkin(contentlet, relationshipsData, cats, permissions, user, respectFrontendRoles, true, generateSystemEvent);
     }
 
     @Override
     public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, true);
+        return checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, true, false);
+    }
+
+    public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships,
+                              List<Category> cats, List<Permission> selectedPermissions, User user,
+                              boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
+            DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+        return checkin(contentlet, contentRelationships, cats, selectedPermissions, user, respectFrontendRoles, true, generateSystemEvent);
     }
 
     @Override
@@ -2557,26 +2576,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             records.setRecords(relEntry.getValue());
             relationshipsRecords.add(records);
         }
-        return checkin(contentlet, relationshipsData, cats , permissions, user, respectFrontendRoles, false);
+        return checkin(contentlet, relationshipsData, cats, permissions, user, respectFrontendRoles, false, false);
     }
 
-    /**
-     *
-     * @param contentlet
-     * @param contentRelationships
-     * @param cats
-     * @param permissions
-     * @param user
-     * @param respectFrontendRoles
-     * @param createNewVersion
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotContentletStateException
-     * @throws DotContentletValidationException
-     */
     private Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats, List<Permission> permissions,
-            User user, boolean respectFrontendRoles, boolean createNewVersion) throws DotDataException, DotSecurityException, DotContentletStateException,
+                               User user, boolean respectFrontendRoles, boolean createNewVersion, boolean generateSystemEvent) throws DotDataException, DotSecurityException, DotContentletStateException,
             DotContentletValidationException {
 
     	boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
@@ -3271,7 +3275,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
          		+ "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
         //Create a System event for this contentlet
-        contentletSystemEventUtil.pushSaveEvent(contentlet, createNewVersion);
+        if ( generateSystemEvent ) {
+            contentletSystemEventUtil.pushSaveEvent(contentlet, createNewVersion);
+        }
 
         return contentlet;
     }
