@@ -3,11 +3,6 @@
  */
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -32,6 +27,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -986,6 +986,26 @@ public interface ContentletAPI {
 	 * @return
 	 */
 	public Contentlet checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles)  throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
+
+	/**
+	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
+	 * This version of checkin contains a more complex structure to pass the relationship in order
+	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
+	 * in that case you have to specify if the role of the content is the parent of the child of the relatioship.
+	 * Note that the contentlet argument must be obtained using checkout methods.
+	 *
+	 * @param currentContentlet    - The inode of your contentlet must be 0.
+	 * @param relationshipsData    -
+	 * @param cats
+	 * @param selectedPermissions
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param generateSystemEvent  true in order to generate a system event for this checking operation
+	 * @return
+	 */
+	public Contentlet checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData,
+							  List<Category> cats, List<Permission> selectedPermissions, User user,
+							  boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -1064,7 +1084,7 @@ public interface ContentletAPI {
 	 * @throws DotContentletValidationException If content is not valid
 	 */
 	public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
-	
+
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.
 	 * Note that the contentlet argument must be obtained using checkout methods.  
