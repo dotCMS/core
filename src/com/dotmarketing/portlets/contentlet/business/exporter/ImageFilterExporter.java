@@ -53,12 +53,12 @@ public class ImageFilterExporter implements BinaryContentExporter {
 	         filters.remove("PDF");
 	         filters.add(0, "PDF");
            }
-	       /*
+	       
 	       else if(filters.size()== 0 ){
 	         filters.remove("Png");
 	         filters.add(0, "Png");
 	       }
-			*/
+			
 
            parameters.put("filter", filters.toArray(new String[filters.size()]));
            parameters.put("filters", filters.toArray(new String[filters.size()]));
