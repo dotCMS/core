@@ -1,9 +1,10 @@
-import {Component, ViewEncapsulation} from '@angular/core';
+import {Component, ViewEncapsulation, ViewChild} from '@angular/core';
 import {DotcmsConfig} from '../../../api/services/system/dotcms-config';
 import {Site} from '../../../api/services/site-service';
 import {SiteService} from '../../../api/services/site-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {BaseComponent} from '../common/_base/base-component';
+import {AutoComplete} from "primeng/primeng";
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -23,6 +24,8 @@ export class SiteSelectorComponent extends BaseComponent {
     private paginationPage: number = 1;
     private paginationPerPage: number;
     private paginationQuery: string = '';
+
+    @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
     constructor(private siteService: SiteService, messageService: MessageService, config: DotcmsConfig) {
         super(['updated-current-site-message', 'archived-current-site-message', 'modes.Close'], messageService);
@@ -90,7 +93,12 @@ export class SiteSelectorComponent extends BaseComponent {
      *
      * @param event - The click event to display the dropdown options
      */
-    handleSitesDropdownClick(event): void {
+    handleSitesDropdownClick(event: {originalEvent: Event, query: string}): void {
+        // TODO: get rid of this three lines when this is fixed: https://github.com/primefaces/primeng/issues/745
+        event.originalEvent.preventDefault();
+        event.originalEvent.stopPropagation();
+        this.autoCompleteComponent.panelVisible = !this.autoCompleteComponent.panelVisible;
+
         this.filteredSitesResults = [];
         this.paginationPage = 1;
         this.paginationQuery = 'all';

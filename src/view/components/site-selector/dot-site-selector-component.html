@@ -1,4 +1,5 @@
-<p-autoComplete *ngIf="sitesCounter > 1"  id="selectedSite" name="selectedSite" [(ngModel)]="currentSite"
+<!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
+<p-autoComplete let autoComplete *ngIf="sitesCounter > 1"  id="selectedSite" name="selectedSite" [(ngModel)]="currentSite"
                 [suggestions]="filteredSitesResults" (completeMethod)="filterSites($event)" [size]="30"
                 (onSelect)="switchSite($event)" field="label" [minLength]="1"
                 [dropdown]="true" (onDropdownClick)="handleSitesDropdownClick($event)"
