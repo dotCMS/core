@@ -68,12 +68,12 @@ function deletePushHistory() {
 	</div>
 </div>
 
-<table class="listingTable content-edit__table-zebra">
+<table class="listingTable">
 	<tr>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_pushed_by") %></th>
-		<th width="20%" class="content-edit__cell-aling-center"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
+		<th width="20%" style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_Environment") %></th>
-		<th width="40%" nowrap class="content-edit__cell-aling-center"><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
+		<th width="40%" nowrap style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
 	</tr>
 <%
 	for(PushedAsset pushedAsset: pushedAssets) {

@@ -3118,6 +3118,9 @@ select[multiple]:hover {
   margin: 0 auto 16px auto;
   width: 100%;
 }
+.listingTable tr:nth-child(odd) {
+  background-color: #FAFAFA;
+}
 .listingTable tr .selected {
   background-color: #E0E9F6;
 }
@@ -6415,14 +6418,6 @@ a.category_higlighted, a.tag_higlighted {
 .content-edit__divider {
   background-color: #ECEDEE;
   margin: 20px 0;
-}
-
-.content-edit__cell-aling-center {
-  text-align: center;
-}
-
-.content-edit__table-zebra tr:nth-child(odd) {
-  background-color: #FAFAFA;
 }
 
 .advanced-search-button {

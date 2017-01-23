@@ -38,7 +38,7 @@
 <div class="contentIdentifier">
 <%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
 </div>
-<table class="listingTable content-edit__table-zebra">
+<table class="listingTable">
 	<tr>
 		<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
 		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
