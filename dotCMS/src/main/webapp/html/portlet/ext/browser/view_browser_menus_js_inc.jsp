@@ -433,8 +433,6 @@
 			    strHTML += '</a>';
    			}
 		}
-		console.log(file);
-		//console.log(file.wfActionMapList);
 
 		strHTML += wfActionsMenu(objId, file);
 		
