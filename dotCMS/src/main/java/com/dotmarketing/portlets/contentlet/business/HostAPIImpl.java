@@ -1006,9 +1006,9 @@ public class HostAPIImpl implements HostAPI {
 			String condition="";
 			
 			if(showArchived){
-				condition=" +(working:true deleted:true)";
+				condition=" +deleted:true";
 			}else {
-				condition=" +working:true";
+				condition=" +deleted:false";
 			}
 			
 			if(UtilMethods.isSet(filter)){
