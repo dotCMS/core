@@ -34,8 +34,8 @@ export class SiteService {
 
             this.loggerService.debug('Capturing Site event [SAVE_SITE]', site);
 
-            this.sites.push(site);
-            this._sites$.next(this.sites);
+            // Update the sites list
+            this.loadSites();
         });
 
         dotcmsEventsService.subscribeTo('PUBLISH_SITE').pluck('data').subscribe( site => {
