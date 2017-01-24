@@ -423,6 +423,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(localTransaction){
                 HibernateUtil.rollbackTransaction();
             }
+        } finally {
+            if ( localTransaction ) {
+                HibernateUtil.closeSession();
+            }
         }
     }
 
