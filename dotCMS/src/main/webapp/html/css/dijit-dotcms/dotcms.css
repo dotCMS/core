@@ -6411,14 +6411,6 @@ a.category_higlighted, a.tag_higlighted {
 .content-edit__history-version .dijitContentPane {
   padding: 0px;
 }
-.content-edit__history-version .dijitContentPane .contentIdentifier {
-  font-weight: bold;
-}
-
-.content-edit__divider {
-  background-color: #ECEDEE;
-  margin: 20px 0;
-}
 
 .advanced-search-button {
   display: block;
@@ -7021,6 +7013,14 @@ a.category_higlighted, a.tag_higlighted {
 .context-menu a span {
   margin-top: 5px;
   margin-right: 5px;
+}
+
+.history .contentIdentifier {
+  font-weight: bold;
+}
+.history .history__divider {
+  background-color: #ECEDEE;
+  margin: 20px 0;
 }
 
 #iFrameWrapper {
