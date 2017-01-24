@@ -4,7 +4,7 @@ import {Site} from '../../../api/services/site-service';
 import {SiteService} from '../../../api/services/site-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {BaseComponent} from '../common/_base/base-component';
-import {AutoComplete} from "primeng/primeng";
+import {AutoComplete} from 'primeng/primeng';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -34,17 +34,11 @@ export class SiteSelectorComponent extends BaseComponent {
 
     ngOnInit(): void {
         this.siteService.switchSite$.subscribe(site => this.currentSite = {
-            label: site.hostname,
+            label: site.hostName,
             value: site.identifier,
         });
         this.siteService.sites$.subscribe(sites => this.sites = sites);
         this.siteService.sitesCounter$.subscribe(counter => this.sitesCounter = counter);
-        this.siteService.archivedCurrentSite$.subscribe(site => {
-            this.message = this.i18nMessages['archived-current-site-message'];
-        });
-        this.siteService.updatedCurrentSite$.subscribe(site => {
-            this.message = this.i18nMessages['updated-current-site-message'];
-        });
     }
 
     /**
@@ -115,9 +109,9 @@ export class SiteSelectorComponent extends BaseComponent {
          * Call the web resource to get the subset of site results
          */
         this.siteService.paginateSites(this.paginationQuery, false, this.paginationPage, this.paginationPerPage).subscribe(response => {
-            /**
-            * Include the sites results for the current pagination page
-            */
+            /*
+             Include the sites results for the current pagination page
+             */
             response.sites.results.forEach(site => {
                 this.filteredSitesResults.push( {
                     label: site.hostname,

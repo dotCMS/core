@@ -44,9 +44,9 @@ export class IframeLegacyComponent extends SiteChangeListener {
             'MOVE_FILE_ASSET', 'COPY_FILE_ASSET', 'MOVE_PAGE_ASSET', 'COPY_PAGE_ASSET'
         ];
 
-        this.dotcmsEventsService.subscribeToEvents(events).subscribe( content => {
+        this.dotcmsEventsService.subscribeToEvents(events).subscribe( eventTypeWrapper => {
             if (this.routingService.currentPortletId === 'site-browser') {
-                this.loggerService.debug('Capturing Site Browser event', content);
+                this.loggerService.debug('Capturing Site Browser event', eventTypeWrapper.eventType, eventTypeWrapper.data);
                 // TODO: When we finish the migration of the site browser this event will be handle.....
             }
         });

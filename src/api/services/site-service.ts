@@ -9,18 +9,17 @@ import {LoggerService} from './logger.service';
 
 @Injectable()
 export class SiteService {
-    private _sites$: Subject<Site[]> = new Subject();
-    private _switchSite$: Subject<Site> = new Subject();
-    private site: Site;
     private sites: Site[];
     private sitesCounter: number;
-
-    private _switchSite$: Subject<Site> = new Subject();
-    private _sites$: Subject<Site[]> = new Subject();
-    private _updatedCurrentSite$: Subject<Site> = new Subject();
-    private _archivedCurrentSite$: Subject<Site> = new Subject();
-    private _sitesCounter$: Subject<number> = new Subject();
+    private selectedSite: Site;
     private urls: any;
+
+    private _switchSite$: Subject<Site> = new Subject<Site>();
+    private _sites$: Subject<Site[]> = new Subject<Site[]>();
+    private _sitesCounter$: Subject<number> = new Subject<number>();
+
+    private events: string[] = ['SAVE_SITE', 'PUBLISH_SITE', 'UN_ARCHIVE_SITE',
+        'UPDATE_SITE_PERMISSIONS', 'UPDATE_SITE', 'ARCHIVE_SITE'];
 
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
                 private coreWebService: CoreWebService, private loggerService: LoggerService) {
@@ -30,78 +29,21 @@ export class SiteService {
             switchSiteUrl: 'v1/site/switch'
         };
 
-        dotcmsEventsService.subscribeTo('SAVE_SITE').pluck('data').subscribe( site => {
+        dotcmsEventsService.subscribeToEvents(this.events).subscribe(eventTypeWrapper => {
 
-            this.loggerService.debug('Capturing Site event [SAVE_SITE]', site);
-
-            // Update the sites list
-            this.loadSites();
-        });
-
-        dotcmsEventsService.subscribeTo('PUBLISH_SITE').pluck('data').subscribe( site => {
-
-            this.loggerService.debug('Capturing Site event [PUBLISH_SITE]', site);
+            this.loggerService.debug('Capturing Site event', eventTypeWrapper.eventType, eventTypeWrapper.data);
 
             // Update the sites list
-            this.loadSites();
-        });
-
-        dotcmsEventsService.subscribeTo('UPDATE_SITE').pluck('data').subscribe(updatedSite => {
-
-            this.loggerService.debug('Capturing Site event [UPDATE_SITE]', updatedSite);
-
-            this.sites = this.sites.map(site => site.identifier === updatedSite.identifier ? updatedSite : site);
-            this._sites$.next(this.sites);
-
-            if (this.site.identifier === updatedSite.identifier) {
-                this.site = updatedSite;
-
-                if (loginService.auth.user.userId !== updatedSite.modUser) {
-                    this._updatedCurrentSite$.next(updatedSite);
-                }
-            }
-        });
-
-        dotcmsEventsService.subscribeTo('ARCHIVE_SITE').pluck('data').subscribe( archivedSite => {
-
-            this.loggerService.debug('Capturing Site event [ARCHIVE_SITE]', archivedSite);
-
-            this.sites = this.sites.filter(site => site.identifier !== archivedSite.identifier);
-            this._sites$.next(this.sites);
-
-            if (this.site.identifier === archivedSite.identifier) {
-
-                if (loginService.auth.user.userId !== archivedSite.modUser) {
-                    this._archivedCurrentSite$.next(archivedSite);
-                }
-
-                this.site = this.sites[0];
-                this._switchSite$.next(this.site);
-            }
-
-            // Update the sites list
-            this.loadSites();
-        });
-
-        dotcmsEventsService.subscribeTo('UN_ARCHIVE_SITE').pluck('data').subscribe( site => {
-
-            this.loggerService.debug('Capturing Site event [UN_ARCHIVE_SITE]', site);
-
-            // Update the sites list
-            this.loadSites();
-        });
-
-        dotcmsEventsService.subscribeTo('UPDATE_SITE_PERMISSIONS').pluck('data').subscribe(updatedSite => {
-
-            this.loggerService.debug('Capturing Site event [UPDATE_SITE_PERMISSIONS]', updatedSite);
-
             this.loadSites();
         });
 
         loginService.watchUser(this.loadSites.bind(this));
     }
 
-    switchSite(siteId: String): Observable<any> {
+    switchSite(siteId: string): Observable<any> {
+
+        this.loggerService.debug('Applying a Site Switch', siteId);
+
         return this.coreWebService.requestView({
             method: RequestMethod.Put,
             url: `${this.urls.switchSiteUrl}/${siteId}`,
@@ -123,17 +65,43 @@ export class SiteService {
         return this._sitesCounter$.asObservable();
     }
 
-    get updatedCurrentSite$(): Observable<Site> {
-        return this._updatedCurrentSite$.asObservable();
+    get currentSite(): Site {
+        return this.selectedSite;
     }
 
-    get archivedCurrentSite$(): Observable<Site> {
-        return this._archivedCurrentSite$.asObservable();
+    /**
+     * Return the sites available for an user paginated and filtered.
+     *
+     * @param filter (String) Text to filter the site names
+     * @param archived (Boolean) Indicate if the results should include the archived sites
+     * @param page (Int) Number of the page to display
+     * @param count (Int) number of sites to show per page
+     * @returns {Observable<R>} return a map with the list of paginated sites and if there
+     * is a previous and next page that can be displayed
+     */
+    paginateSites(filter: string, archived: boolean, page: number, count: number): Observable<any> {
+        return this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: `${this.urls.sitesUrl}?filter=${filter}&archived=${archived}&page=${page}&count=${count}`,
+        }).map(response => {
+            this.setSites(response.entity.sites.results);
+            return response.entity;
+        });
     }
 
     private setCurrentSiteIdentifier(siteIdentifier: string): void {
-        this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
-        this._switchSite$.next(this.site);
+
+        let foundFirstObject = Object.assign({}, this.sites.filter(site => site.identifier === siteIdentifier)[0]);
+        let applySwitch = true;
+
+        if (this.selectedSite.identifier === foundFirstObject.identifier) {// Same id, we don't need to force the switch
+            applySwitch = false;
+        }
+
+        this.selectedSite = foundFirstObject;
+        if (applySwitch) {
+            this._switchSite$.next(this.selectedSite);
+        }
     }
 
     private loadSites(): void {
@@ -156,29 +124,7 @@ export class SiteService {
         this.sitesCounter = counter;
         this._sitesCounter$.next(this.sitesCounter);
     }
-    get currentSite(): Site{
-        return this.site;
-    }
 
-    /**
-     * Return the sites available for an user paginated and filtered.
-     *
-     * @param filter (String) Text to filter the site names
-     * @param archived (Boolean) Indicate if the results should include the archived sites
-     * @param page (Int) Number of the page to display
-     * @param count (Int) number of sites to show per page
-     * @returns {Observable<R>} return a map with the list of paginated sites and if there
-     * is a previous and next page that can be displayed
-     */
-    paginateSites(filter: string, archived: boolean, page: number, count: number): Observable<any> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: `${this.urls.sitesUrl}?filter=${filter}&archived=${archived}&page=${page}&count=${count}`,
-        }).map(response => {
-            this.setSites(response.entity.sites.results);
-            return response.entity;
-        });
-    }
 }
 
 export interface Site {

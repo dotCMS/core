@@ -1,8 +1,8 @@
-import {DotcmsConfig} from "./system/dotcms-config";
-import {Injectable} from "@angular/core";
-import {Observable} from "rxjs/Rx";
-import {$WebSocket} from "./websockets-service";
-import {Subject} from "rxjs/Subject";
+import {DotcmsConfig} from './system/dotcms-config';
+import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs/Rx';
+import {$WebSocket} from './websockets-service';
+import {Subject} from 'rxjs/Subject';
 
 @Injectable()
 export class DotcmsEventsService {
@@ -39,7 +39,7 @@ export class DotcmsEventsService {
     /**
      * Close the socket
      */
-    close() : void {
+    close(): void {
 
         // On logout, meaning no authenticated user lets try to close the socket
         if (this.ws) {
@@ -111,10 +111,13 @@ export class DotcmsEventsService {
         return this.subjects[clientEventType].asObservable();
     }
 
-    subscribeToEvents(clientEventTypes: string[]): Observable<any> {
-        let subject: Subject = new Subject();
+    subscribeToEvents(clientEventTypes: string[]): Observable<EventTypeWrapper> {
+        let subject: Subject<EventTypeWrapper> = new Subject<EventTypeWrapper>();
 
-        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data =>  subject.next(data)) );
+        clientEventTypes.forEach(eventType => this.subscribeTo(eventType).subscribe(data => subject.next({
+            data: data,
+            eventType: eventType
+        })));
 
         return subject.asObservable();
     }
@@ -123,4 +126,9 @@ export class DotcmsEventsService {
         this.ws = null;
         this.connectWithSocket();
     }
+}
+
+interface EventTypeWrapper {
+    data: any;
+    eventType: string;
 }
