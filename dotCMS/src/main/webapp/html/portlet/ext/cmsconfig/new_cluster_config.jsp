@@ -295,7 +295,7 @@
                 sync: true,
                 load : function(data) {
                     nodeList = data;
-                    var nodesTableHTML = "<table class='listingTable actionTable'> "
+                    var nodesTableHTML = "<table class='listingTable actionTable network__listing'> "
                         + "<tr>"
                             + "<th width='7%'>&nbsp;</th>"
                             + "<th width='7%'>&nbsp;</th>"
@@ -329,13 +329,13 @@
 
                             nodesTableHTML += ""
                             + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
-                                + "<td align='center'><img src='/html/images/skin/icon-server.png'></td>"
-                                + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='fa fa-user fa-3x'></i>":"")+"</td>"
+                                + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
+                                + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='userIcon'></i>":"")+"</td>"
                                 + "<td>" + item.displayServerId + "</td>"
                                 + "<td>" + item.friendlyName + "</td>"
                                 + "<td align='left'>"+item.ipAddress+"</td>"
                                 + "<td align='left'>"+item.contacted+"</td>"
-                                + "<td align='center'><i class='fa fa-circle fa-2x "+item.status+"'></i></td>"
+                                + "<td align='center'><i class='statusIcon " + item.status + "'></i></td>"
                                 + deleteServer
                                 + "<td id='td-"+index+"'></td>"
                             + "</tr>";
@@ -414,10 +414,6 @@
                 }
             });
         }
-
-        function showCacheDialog(){
-           
-        }
         
 </script>
 
@@ -425,11 +421,9 @@
     <div id="myCacheDialogName"></div>
 </div>
 
-<div id="doc3">
-    <div id="container">
-        <div id="actionPanel" class="hideMe">
-            <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
-            <div id="actionPanelContent" style="overflow:auto;"></div>
-        </div>
+<div id="container">
+    <div id="actionPanel" class="hideMe">
+        <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
+        <div id="actionPanelContent" style="overflow:auto;"></div>
     </div>
 </div>
