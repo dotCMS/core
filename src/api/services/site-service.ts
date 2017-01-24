@@ -1,11 +1,11 @@
 import {Injectable} from '@angular/core';
-import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod, Http} from '@angular/http';
 import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
 import {DotcmsEventsService} from './dotcms-events-service';
+import {LoggerService} from './logger.service';
 
 @Injectable()
 export class SiteService {
@@ -23,19 +23,33 @@ export class SiteService {
     private urls: any;
 
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
-                private coreWebService: CoreWebService) {
+                private coreWebService: CoreWebService, private loggerService: LoggerService) {
         this.urls = {
             allSiteUrl: 'v1/site/currentSite',
-            switchSiteUrl: 'v1/site/switch',
-            sitesUrl: 'v1/site'
+            sitesUrl: 'v1/site',
+            switchSiteUrl: 'v1/site/switch'
         };
 
         dotcmsEventsService.subscribeTo('SAVE_SITE').pluck('data').subscribe( site => {
+
+            this.loggerService.debug('Capturing Site event [SAVE_SITE]', site);
+
             this.sites.push(site);
             this._sites$.next(this.sites);
         });
 
+        dotcmsEventsService.subscribeTo('PUBLISH_SITE').pluck('data').subscribe( site => {
+
+            this.loggerService.debug('Capturing Site event [PUBLISH_SITE]', site);
+
+            // Update the sites list
+            this.loadSites();
+        });
+
         dotcmsEventsService.subscribeTo('UPDATE_SITE').pluck('data').subscribe(updatedSite => {
+
+            this.loggerService.debug('Capturing Site event [UPDATE_SITE]', updatedSite);
+
             this.sites = this.sites.map(site => site.identifier === updatedSite.identifier ? updatedSite : site);
             this._sites$.next(this.sites);
 
@@ -49,6 +63,9 @@ export class SiteService {
         });
 
         dotcmsEventsService.subscribeTo('ARCHIVE_SITE').pluck('data').subscribe( archivedSite => {
+
+            this.loggerService.debug('Capturing Site event [ARCHIVE_SITE]', archivedSite);
+
             this.sites = this.sites.filter(site => site.identifier !== archivedSite.identifier);
             this._sites$.next(this.sites);
 
@@ -61,14 +78,23 @@ export class SiteService {
                 this.site = this.sites[0];
                 this._switchSite$.next(this.site);
             }
+
+            // Update the sites list
+            this.loadSites();
         });
 
         dotcmsEventsService.subscribeTo('UN_ARCHIVE_SITE').pluck('data').subscribe( site => {
-            this.sites.push(site);
-            this._sites$.next(this.sites);
+
+            this.loggerService.debug('Capturing Site event [UN_ARCHIVE_SITE]', site);
+
+            // Update the sites list
+            this.loadSites();
         });
 
         dotcmsEventsService.subscribeTo('UPDATE_SITE_PERMISSIONS').pluck('data').subscribe(updatedSite => {
+
+            this.loggerService.debug('Capturing Site event [UPDATE_SITE_PERMISSIONS]', updatedSite);
+
             this.loadSites();
         });
 
