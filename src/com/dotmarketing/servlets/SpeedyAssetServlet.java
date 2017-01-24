@@ -353,10 +353,11 @@ public class SpeedyAssetServlet extends HttpServlet {
         	 * without having to hit cache or db
         	 */
             
+			String referrer = "/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true";
 
             if (!canRead) {
             	if(user == null){
-            		request.getSession(true).setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, request.getRequestURI());//DOTCMS-5682
+            		request.getSession(true).setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, referrer);//DOTCMS-5682            		
             		//Sending user to unauthorized the might send him to login
             		response.sendError(401, "The requested file is unauthorized");
             	}else{
@@ -367,7 +368,7 @@ public class SpeedyAssetServlet extends HttpServlet {
             }
             
 
-            request.getRequestDispatcher("/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true").forward(request, response);
+            request.getRequestDispatcher(referrer).forward(request, response);
 
 
 		} catch (Exception e) {
