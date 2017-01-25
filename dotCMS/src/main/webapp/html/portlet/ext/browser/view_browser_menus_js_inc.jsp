@@ -204,11 +204,7 @@
 
 
 		if($('context_menu_popup_'+objId) == null) {
-<<<<<<< HEAD
 			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu" style="display:none;"></div>';
-=======
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu" style="display:none;"></div>';
->>>>>>> 47e342a... #10400 popup menus styles fixed, js error on link selector and form style
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		var div = $('context_menu_popup_'+objId);
@@ -288,11 +284,7 @@
 		Element.update ('context_menu_popup_'+objId, strHTML);
 
 		if($('context_child_menu_popup_'+objId) == null) {
-<<<<<<< HEAD
 			var divHTML = '<div id="context_child_menu_popup_'+objId+'" class="context-menu" style="display:none;"></div>';
-=======
-			var divHTML = '<div id="context_child_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu" style="display:none;"></div>';
->>>>>>> 47e342a... #10400 popup menus styles fixed, js error on link selector and form style
 			new Insertion.Bottom ('popups', divHTML);
 		}
 
@@ -397,11 +389,7 @@
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
-<<<<<<< HEAD
 			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu"></div>';
-=======
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu"></div>';
->>>>>>> 47e342a... #10400 popup menus styles fixed, js error on link selector and form style
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		if(fileWfActionAssign != null  && cmsAdminUser){
@@ -561,11 +549,7 @@
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
-<<<<<<< HEAD
 			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu"></div>';
-=======
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu"></div>';
->>>>>>> 47e342a... #10400 popup menus styles fixed, js error on link selector and form style
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		var div = $('context_menu_popup_'+objId);
@@ -700,11 +684,7 @@
 		var referer = encodeURIComponent(origReferer);
 
 		if($('context_menu_popup_'+objId) == null) {
-<<<<<<< HEAD
 			var divHTML = '<div id="context_menu_popup_'+objId+'" class="context-menu"></div>';
-=======
-			var divHTML = '<div id="context_menu_popup_'+objId+'" class="contextPopupMenuBox site-browser__context-menu"></div>';
->>>>>>> 47e342a... #10400 popup menus styles fixed, js error on link selector and form style
 			new Insertion.Bottom ('popups', divHTML);
 		}
 		var div = $('context_menu_popup_'+objId);
