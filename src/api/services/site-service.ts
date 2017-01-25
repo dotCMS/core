@@ -107,7 +107,7 @@ export class SiteService {
         this._switchSite$.next(this.selectedSite);
 
         this.switchSite(this.selectedSite.identifier).subscribe(response => {
-
+            // For now do nothing....
         });
     }
 
