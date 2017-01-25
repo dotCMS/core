@@ -2,6 +2,7 @@ import {DotcmsConfig} from './system/dotcms-config';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
 import {$WebSocket} from './websockets-service';
+import {LoggerService} from './logger.service';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
@@ -25,7 +26,7 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(private dotcmsConfig: DotcmsConfig) {
+    constructor(private dotcmsConfig: DotcmsConfig, private loggerService: LoggerService) {
 
         this.dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
 
@@ -57,7 +58,10 @@ export class DotcmsEventsService {
      * Opens the Websocket connection with the System Events end-point.
      */
     connectWithSocket(): void {
-        if (!this.ws) {
+        if (!this.ws && this.protocol && this.baseUrl && this.endPoint) {
+
+            this.loggerService.debug('Creating a new Web Socket connection', this.protocol, this.baseUrl, this.endPoint);
+
             this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}`);
             this.ws.connect();
 

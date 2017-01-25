@@ -28,7 +28,7 @@ export class $WebSocket {
     constructor(private url:string, private protocols?:Array<string>, private config?:WebSocketConfig  ) {
         var match = new RegExp('wss?:\/\/').test(url);
         if (!match) {
-            throw new Error('Invalid url provided');
+            throw new Error('Invalid url provided [' + url + ']');
         }
         this.config = config || { initialTimeout: 500, maxTimeout : 300000, reconnectIfNotNormalClose : false };
         this.dataStream = new Subject();

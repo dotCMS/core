@@ -18,8 +18,8 @@ export class SiteService {
     private _sites$: Subject<Site[]> = new Subject<Site[]>();
     private _sitesCounter$: Subject<number> = new Subject<number>();
 
-    private events: string[] = ['SAVE_SITE', 'PUBLISH_SITE', 'UN_ARCHIVE_SITE',
-        'UPDATE_SITE_PERMISSIONS', 'UPDATE_SITE', 'ARCHIVE_SITE'];
+    private events: string[] = ['SAVE_SITE', 'PUBLISH_SITE', 'UPDATE_SITE_PERMISSIONS', 'UN_ARCHIVE_SITE', 'UPDATE_SITE'];
+    private eventsWithSwitch: string[] = ['ARCHIVE_SITE'];
 
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
                 private coreWebService: CoreWebService, private loggerService: LoggerService) {
@@ -37,20 +37,15 @@ export class SiteService {
             this.loadSites();
         });
 
-        loginService.watchUser(this.loadSites.bind(this));
-    }
+        dotcmsEventsService.subscribeToEvents(this.eventsWithSwitch).subscribe(eventTypeWrapper => {
 
-    switchSite(siteId: string): Observable<any> {
+            this.loggerService.debug('Capturing Site event', eventTypeWrapper.eventType, eventTypeWrapper.data);
 
-        this.loggerService.debug('Applying a Site Switch', siteId);
-
-        return this.coreWebService.requestView({
-            method: RequestMethod.Put,
-            url: `${this.urls.switchSiteUrl}/${siteId}`,
-        }).map(response => {
-            this.setCurrentSiteIdentifier(siteId);
-            return response;
+            // Update the sites list
+            this.loadSitesAndSwitch(eventTypeWrapper.data.data.identifier);
         });
+
+        loginService.watchUser(this.loadSites.bind(this));
     }
 
     get switchSite$(): Observable<Site> {
@@ -89,19 +84,31 @@ export class SiteService {
         });
     }
 
+    switchSite(siteId: string): Observable<any> {
+
+        this.loggerService.debug('Applying a Site Switch', siteId);
+
+        return this.coreWebService.requestView({
+            method: RequestMethod.Put,
+            url: `${this.urls.switchSiteUrl}/${siteId}`,
+        }).map(response => {
+            this.setCurrentSiteIdentifier(siteId);
+            return response;
+        });
+    }
+
     private setCurrentSiteIdentifier(siteIdentifier: string): void {
+        this.selectedSite = Object.assign({}, this.sites.filter(site => site.identifier === siteIdentifier)[0]);
+        this._switchSite$.next(this.selectedSite);
+    }
 
-        let foundFirstObject = Object.assign({}, this.sites.filter(site => site.identifier === siteIdentifier)[0]);
-        let applySwitch = true;
+    private setNextAndSwitchSite(siteIdentifier: string): void {
+        this.selectedSite = Object.assign({}, this.sites.filter(site => site.identifier !== siteIdentifier)[0]);
+        this._switchSite$.next(this.selectedSite);
 
-        if (this.selectedSite.identifier === foundFirstObject.identifier) {// Same id, we don't need to force the switch
-            applySwitch = false;
-        }
+        this.switchSite(this.selectedSite.identifier).subscribe(response => {
 
-        this.selectedSite = foundFirstObject;
-        if (applySwitch) {
-            this._switchSite$.next(this.selectedSite);
-        }
+        });
     }
 
     private loadSites(): void {
@@ -112,6 +119,22 @@ export class SiteService {
             this.setSites(response.entity.sites);
             this.setSitesCounter(response.entity.sitesCounter);
             this.setCurrentSiteIdentifier(response.entity.currentSite);
+        });
+    }
+
+    private loadSitesAndSwitch(siteToExclude: string): void {
+        this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: this.urls.allSiteUrl,
+        }).subscribe(response => {
+            this.setSites(response.entity.sites);
+            this.setSitesCounter(response.entity.sitesCounter);
+
+            if (siteToExclude === this.selectedSite.identifier) {// Only if the option we want to excluded is selected
+                this.setNextAndSwitchSite(siteToExclude);
+            } else {
+                this.setCurrentSiteIdentifier(response.entity.currentSite);
+            }
         });
     }
 
@@ -128,7 +151,7 @@ export class SiteService {
 }
 
 export interface Site {
-    hostName: string;
+    hostname: string;
     type: string;
     identifier: string;
 }
