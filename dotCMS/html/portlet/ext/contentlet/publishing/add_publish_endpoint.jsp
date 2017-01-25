@@ -113,7 +113,7 @@
 
 	function setAddressRow(changedType) {
 
-		if (currentProtocol === "awss3") {
+		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
 
 			if (changedType) {
 				dijit.byId("address").set("value", "s3.aws.amazon.com");
@@ -123,7 +123,7 @@
 			}
 		} else {
 
-			if (changedType) {
+			if (changedType || !isPlatformLicenseLevel()) {
 				dijit.byId("address").set("value", "");
 				dijit.byId("port").set("value", "");
 
@@ -133,7 +133,8 @@
 	}
 
 	function setAuthPropertiesRow(changedType) {
-		if (currentProtocol === "awss3") {
+
+		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
 
 			dojo.style("authKeyHttpSpan", "display", "none");
 			dojo.style("authKeyAwsS3Span", "display", "");
@@ -152,7 +153,7 @@
 			dojo.style("authKeyHttpSpan", "display", "");
 			dojo.style("authKeyAwsS3Span", "display", "none");
 
-			if (changedType) {
+			if (changedType || !isPlatformLicenseLevel()) {
 
 				dijit.byId("authKey").set("value", "");
 			}
@@ -171,6 +172,14 @@
 		setAuthPropertiesRow(true);
 	}
 
+	function isPlatformLicenseLevel() {
+		<% if(LicenseUtil.getLevel()>400){ %>
+			return true;
+		<%} else { %>
+			return false;
+		<%} %>
+	}
+
 	dojo.ready( function(){
 
 		<% if( ! com.dotmarketing.util.UtilMethods.isSet( currentEndpoint.getProtocol() ) ) { %>
@@ -178,7 +187,7 @@
 			dojo.byId("authPropertiesRow").hide();
 		<% } %>
 
-		if (currentProtocol === "awss3") {
+		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
 			dojo.byId("addressRow").hide();				
 		}
 
