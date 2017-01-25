@@ -214,8 +214,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
 		if (!UtilMethods.isSet(token)
 			|| !UtilMethods.isSet(secret)
-			|| !UtilMethods.isSet(bucketID)
-			|| !UtilMethods.isSet(bucketRegion)) {
+			|| !UtilMethods.isSet(bucketID)) {
 
 			throw new DotDataException(
 				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_missing_properties" )
