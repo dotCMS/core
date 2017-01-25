@@ -24,8 +24,9 @@ public enum DataTypes {
 	}
 
 	public static DataTypes getDataType (String value) {
-	    if(value.contains("_divider") || value.contains("binary")|| value.contains("_tab") || value.contains("constant")){
-	        return SYSTEM;
+		if (value.isEmpty() || value.contains("_divider") || value.contains("binary") || value.contains("_tab") || value
+			.contains("constant")) {
+			return SYSTEM;
 	    }
 		DataTypes[] types = DataTypes.values();
 		for (DataTypes type : types) {
