@@ -360,6 +360,15 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	public boolean isStatic() {
 		return isStatic;
 	}
+
+	/**
+	 * Specifies if the configuration wants the bundler to manage each dependency. For example to check the
+	 * Force Push feature as part of the bundle process.
+	 */
+	public boolean shouldManageDependencies(){
+		return isStatic();
+	}
+
 	public void setStatic(boolean isStatic) {
 		this.isStatic = isStatic;
 	}
