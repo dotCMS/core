@@ -48,7 +48,6 @@ public class SystemEventsJob implements Runnable, Job { //extends DotJob {
 	//public void run(JobExecutionContext jobContext) throws JobExecutionException {
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		final List<JobDelegate<JobDelegateDataBean>> delegateList = this.getDelegates();
-		System.out.println("Running system events" + new Date());
 		if (delegateList != null && !delegateList.isEmpty()) {
 			if (lastCallback != null && lastCallback.get() > 0) {
 				for (JobDelegate<JobDelegateDataBean> delegate : delegateList) {
