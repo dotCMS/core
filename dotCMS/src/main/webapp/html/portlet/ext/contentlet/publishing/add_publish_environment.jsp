@@ -50,7 +50,6 @@
                 handleAs: "text",
                 load: function (data) {
                     if (data.indexOf("FAILURE") > -1) {
-
                         alert(data);
                     }
                     else {
@@ -87,6 +86,7 @@
             name: "whoCanUseSelect",
             store: myRoleReadStore,
             maxHeight:400,
+			width:200,
             pageSize:30,
             searchDelay:300,
             required:false,
@@ -121,64 +121,49 @@
 
 </script>
 
-<style>
-	.myTable tr td{padding: 5px !important;}
-	#addressRow {}
-	#portRow {display:none;}
-
-</style>
-
-<div style="margin:20px; width:580px; height:280px; overflow:auto;">
-	<div dojoType="dijit.form.Form"  name="formSaveEnvironment"  id="formSaveEnvironment" onsubmit="return false;">
-		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getId())) %>">
-		<table class="listingTable" border=0 style="margin: auto" align="center">
-			<tr>
-				<td align="right" width="30%">
-					<%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>:
-				</td>
-				<td>
-					<input type="text" dojoType="dijit.form.ValidationTextBox"
-							  name="environmentName"
-							  id="environmentName"
-							  style="width:200px;"
-							  value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getName())) %>"
-							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Environment_name_required") %>"
-							  />
-				</td>
-			</tr>
-			<tr>
-				<td align="right"><%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>:</td>
-				<td>
-					<div class="inline-form">
-						<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToOne" checked="<%=!currentEnvironment.getPushToAll()%>" id="pushToOne" />
-						<label for="pushToOne"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %></label>
-	
-						&nbsp;
-						&nbsp;
-	
-						<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToAll"  checked="<%=currentEnvironment.getPushToAll()%>"  id="pushToAll" />
-						<label for="pushToAll"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %></label>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td align="right" style="vertical-align: top; white-space: nowrap;"><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</td>
-				<td>
-					<input id="actionWhoCanUseSelect" />
-					<div class="wfWhoCanUseDiv">
-						<table class="myTable" id="whoCanUseTbl" style="height: 90px;overflow-y: scroll;display: block;overflow: auto;"></table>
-					</div>
-
-					<input type="hidden" name="whoCanUse" id="whoCanUse" value="">
-
-				</td>
-			</tr>
-		</table>
-
-		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEnvironment()"><%= LanguageUtil.get(pageContext, "Save") %></button>
-			<button dojoType="dijit.form.Button" onClick="backToEnvironmentList(false)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
-		</div>
-
+<div dojoType="dijit.form.Form"  name="formSaveEnvironment"  id="formSaveEnvironment" onsubmit="return false;">
+	<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getId())) %>">
+	<div class="form-horizontal">
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>:</dt>
+			<dd>
+				<input type="text" dojoType="dijit.form.ValidationTextBox"
+					name="environmentName"
+					id="environmentName"
+					style="width:200px;"
+					value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getName())) %>"
+					promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Environment_name_required") %>"
+					/>
+			</dd>
+		</dl>
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>:</dt>
+			<dd>
+				<div class="checkbox">
+					<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToOne" checked="<%=!currentEnvironment.getPushToAll()%>" id="pushToOne" />
+					<label for="pushToOne"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %></label>
+				</div>
+				<div class="checkbox">
+					<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToAll"  checked="<%=currentEnvironment.getPushToAll()%>"  id="pushToAll" />
+					<label for="pushToAll"><%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %></label>
+				</div>
+			</dd>
+		</dl>
+		<dl>
+			<dt><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</dt>
+			<dd>
+				<input id="actionWhoCanUseSelect" />
+				<div class="who-can-use">
+					<table class="who-can-use__list" id="whoCanUseTbl" style="overflow-y: scroll;display: block;overflow: auto;"></table>
+				</div>
+				<input type="hidden" name="whoCanUse" id="whoCanUse">
+			</dd>
+		</dl>
 	</div>
+
+	<div class="buttonRow">
+		<button dojoType="dijit.form.Button" type="submit" id="save" onclick="saveEnvironment()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+		<button dojoType="dijit.form.Button" onClick="backToEnvironmentList(false)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+	</div>
+
 </div>

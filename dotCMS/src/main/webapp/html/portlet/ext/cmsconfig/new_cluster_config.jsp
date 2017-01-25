@@ -228,7 +228,6 @@
 
                 dojo.removeClass("actionPanel", "hideMe");
 
-                //dojo.parser.parse("actionPanel");
                 dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
 
             },
@@ -270,16 +269,9 @@
                 var panelPage = dojo.position(document.getElementById("actionPanel").parentNode,true);
                 var panelMinHeight = document.getElementById("actionPanel").parentNode.style.minHeight;
                 dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
-                if(panelPage.h < panelMinHeight){
-                    dojo.style("actionPanel", "height", panelMinHeight - tableHeader.h + "px");
-                }
-                else{
-                    dojo.style("actionPanel", "height", panelPage.h - tableHeader.h + "px");
-                }
                 require(["dojo/window"], function(win){
-                       var vs = win.getBox();
-                        dojo.style("actionPanelContent", "height", panelPage.h - tableHeader.h + "px");
-                    });
+                    dojo.style("actionPanelContent", "height", panelPage.h + "px");
+                });
                 actionPanelTable.placeActionPanel();
             }
         });
@@ -308,7 +300,7 @@
                             <!-- /Add these up to 100% -->
 
                             <%-- the width of the inner div is the only thing you have to set to change the width --%>
-                            + "<th id='actionPanelTableHeader'><div style='width:400px;'></div></th>"
+                            + "<th id='actionPanelTableHeader' network-action__header><div style='width:400px;'></div></th>"
                         + "</tr>";
 
                         dojo.forEach(nodeList, function(item, index){
@@ -350,7 +342,7 @@
                         dojo.empty(dojo.byId("container"));
                         dojo.place(nodesTable, dojo.byId("container"));
 
-                        var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "hideMe" });
+                        var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "network-action hideMe" });
                         var arrowDiv = dojo.create("div", { id: "arrow", innerHtml: "<img src='/html/images/skin/arrow.png'/>" });
                         var actionPanelContentDiv = dojo.create("div", { id: "actionPanelContent", style: "overflow:auto" });
 
@@ -422,7 +414,7 @@
 </div>
 
 <div id="container">
-    <div id="actionPanel" class="hideMe">
+    <div id="actionPanel" class="network-action hideMe">
         <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
         <div id="actionPanelContent" style="overflow:auto;"></div>
     </div>
