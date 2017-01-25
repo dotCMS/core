@@ -874,7 +874,7 @@ function deleteEnvPushHistory(envId) {
                 <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
             </th>
             <th nowrap="nowrap" width="100%" >
-                <%= LanguageUtil.get(pageContext, "Servers") %>
+                <%= LanguageUtil.get(pageContext, "publisher_Endpoints") %>
             </th>
             <th nowrap="nowrap">
                 <%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>
@@ -1041,7 +1041,7 @@ function deleteEnvPushHistory(envId) {
     </div>
     <div class="yui-u" style="text-align:right;">
         <button dojoType="dijit.form.Button" onClick="goToAddEndpoint(null, 'true');" iconClass="plusIcon">
-            <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
+            <%= LanguageUtil.get(pageContext, "publisher_Add_Server") %>
         </button>
     </div>
 </div>
