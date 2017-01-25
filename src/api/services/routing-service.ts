@@ -17,6 +17,9 @@ export class RoutingService {
     private portlets: Map<string, string>;
     private _currentPortletId: string;
 
+    private _portletUrlSource$ = new Subject<string>();
+
+
     // TODO: I think we should be able to remove the routing injection
     constructor(loginService: LoginService, private router: DotRouterService,
                 private coreWebService: CoreWebService, dotcmsEventsService: DotcmsEventsService) {
@@ -41,6 +44,10 @@ export class RoutingService {
 
     get menusChange$(): Observable<Menu[]> {
         return this._menusChange$.asObservable();
+    }
+
+    get portletUrl$(): Observable<string> {
+        return this._portletUrlSource$.asObservable();
     }
 
     public addPortletURL(portletId: string, url: string): void {
@@ -95,6 +102,14 @@ export class RoutingService {
 
             this._menusChange$.next(this.menus);
         }
+    }
+
+    /**
+     * Refresh the portlet displayed. with the
+     * @param url portlet url
+     */
+    public changeRefreshPortlet(url: string): void {
+        this._portletUrlSource$.next(url);
     }
 
     private loadMenus(): void {
