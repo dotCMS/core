@@ -5,6 +5,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.quartz.job.ContentReindexerThread;
+import com.dotmarketing.util.Logger;
+import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
@@ -28,20 +33,22 @@ import com.dotmarketing.quartz.DotJob;
  * ): Set the appropriate cron expression for the execution of this Job. By
  * default, this job checks for new System Events every 5 seconds.</li>
  * </ul>
- * 
+ *
  * @author Jose Castro
  * @version 3.7
  * @since Jul 11, 2016
  *
  */
-public class SystemEventsJob extends DotJob {
+public class SystemEventsJob implements Runnable, Job { //extends DotJob {
 
 	private static volatile AtomicLong lastCallback;
 	private static List<JobDelegate<JobDelegateDataBean>> delegates;
 
 	@Override
-	public void run(JobExecutionContext jobContext) throws JobExecutionException {
+	//public void run(JobExecutionContext jobContext) throws JobExecutionException {
+	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		final List<JobDelegate<JobDelegateDataBean>> delegateList = this.getDelegates();
+		System.out.println("Running system events" + new Date());
 		if (delegateList != null && !delegateList.isEmpty()) {
 			if (lastCallback != null && lastCallback.get() > 0) {
 				for (JobDelegate<JobDelegateDataBean> delegate : delegateList) {
@@ -56,7 +63,7 @@ public class SystemEventsJob extends DotJob {
 	/**
 	 * Returns the list of delegate classes. These classes will handle all the
 	 * business logic that this Quartz Job is triggering.
-	 * 
+	 *
 	 * @return The list of {@link JobDelegate} classes.
 	 */
 	protected List<JobDelegate<JobDelegateDataBean>> getDelegates() {
@@ -67,4 +74,20 @@ public class SystemEventsJob extends DotJob {
 		return delegates;
 	}
 
+	@Override
+	public void run() {
+
+		try {
+			this.execute(null);
+		} catch (Exception e) {
+
+			Logger.info(this, e.toString());
+		} finally {
+			try {
+				HibernateUtil.closeSession();
+			} catch (DotHibernateException e) {
+				Logger.error(ContentReindexerThread.class, e.getMessage(), e);
+			}
+		}
+	} // run.
 }
