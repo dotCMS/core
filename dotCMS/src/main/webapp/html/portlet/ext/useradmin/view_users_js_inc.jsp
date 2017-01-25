@@ -260,7 +260,7 @@
 		dojo.byId('loadingUserProfile').style.display = 'none';
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
-			deleteButton.parentNode.show();
+			deleteButton.parentNode.parentNode.show();
 		}
 		
 		initStructures();
@@ -343,8 +343,7 @@
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
 			//to avoid the display of a square when the delete button is hide
-			deleteButton.parentNode.hide();
-			
+			deleteButton.parentNode.parentNode.hide();
 		}
 	}
 

@@ -55,16 +55,6 @@
 	visibility: hidden;
 }
 
-#portletsList {
-	margin: 10px 0 0 0;
-	border-bottom: 1px solid #CCCCCC;
-}	
-
-#portletsList li {
-	padding: 2px 5px;
-	border-top: 1px solid #CCCCCC;
-}
-
 .removePorletButton {
 	text-align: right;
 }

@@ -128,7 +128,7 @@ function pageSelected(page) {
 </script>
 
 <div class="portlet-main">
-	<div class="form-horizontal content-type__properties">
+	<div class="form-horizontal">
 		
 		<html:form action="/ext/virtuallinks/edit_virtuallink" styleId="fm">
 		<input name="<%= Constants.CMD %>" type="hidden" value="">
