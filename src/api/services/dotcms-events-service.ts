@@ -114,7 +114,10 @@ export class DotcmsEventsService {
     subscribeToEvents(clientEventTypes: string[]): Observable<any> {
         let subject: Subject = new Subject();
 
-        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data =>  subject.next(data)) );
+        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data =>  subject.next({
+            data: data,
+            eventType: eventType
+        })) );
 
         return subject.asObservable();
     }
@@ -123,4 +126,9 @@ export class DotcmsEventsService {
         this.ws = null;
         this.connectWithSocket();
     }
+}
+
+interface AAAA {
+    data: any;
+    eventType: string;
 }

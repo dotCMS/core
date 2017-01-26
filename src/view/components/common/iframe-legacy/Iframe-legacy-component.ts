@@ -55,10 +55,17 @@ export class IframeLegacyComponent extends SiteChangeListener {
     initComponent(): void {
         this.route.params.pluck<string>('id').subscribe(id => {
             setTimeout(() => {
-                    this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
-                },
-            1);
+                    this.iframe = this.loadURL(this.routingService.getPortletURL(id));
+                }, 1);
         });
+
+        this.route.queryParams.pluck<string>('url').subscribe( url => {
+            console.log('URL', url);
+            setTimeout(() => {
+                this.iframe = this.loadURL(url);
+            }, 1);
+            console.log('this.iframe', this.iframe);
+        } );
     }
 
     changeSiteReload(): void {
@@ -71,8 +78,15 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     loadURL(url: string): SafeResourceUrl {
+
+        let urlWithParameters = url;
+
         this.loadingInProgress = true;
-        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+        urlWithParameters += urlWithParameters.indexOf('?') === -1 ? '?' : '&';
+        urlWithParameters += urlWithParameters.indexOf('in_frame') === -1 ? 'in_frame=true&frame=detailFrame&not_redirect=true' : '';
+
+        return this.sanitizer.bypassSecurityTrustResourceUrl(urlWithParameters);
     }
 
     /**
