@@ -100,17 +100,20 @@ public class MenuResource implements Serializable {
 				String tabDescription = LanguageUtil.get(user, layout.getDescription());
 				List<String> portletIds = layout.getPortletIds();
 
-				menuContext.setLayout(layout);
-				menuContext.setPortletId(portletIds.get(0));
-				menuContext.setLayoutIndex(layoutIndex);
+				if (null != portletIds && portletIds.size() > 0) {
 
-				final String url = this.menuHelper.getUrl(menuContext);
-				final Menu menu = new Menu( tabName, tabDescription, url );
+					menuContext.setLayout(layout);
+					menuContext.setPortletId(portletIds.get(0));
+					menuContext.setLayoutIndex(layoutIndex);
 
-				final List<MenuItem> menuItems = this.menuHelper.getMenuItems(menuContext);
+					final String url = this.menuHelper.getUrl(menuContext);
+					final Menu menu = new Menu(tabName, tabDescription, url);
 
-				menu.setMenuItems( menuItems );
-				menus.add( menu  );
+					final List<MenuItem> menuItems = this.menuHelper.getMenuItems(menuContext);
+
+					menu.setMenuItems(menuItems);
+					menus.add(menu);
+				}
 			}
 
 			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
