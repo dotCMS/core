@@ -50,6 +50,9 @@ public class PortletURLUtil {
 				}
 				Layout layout = layouts.get(0);
 				List<String> portletIds = layout.getPortletIds();
+				if(portletIds.size()==0){
+					return null;
+				}
 				portletName = portletIds.get(0);
 				return getActionURL(req, layout.getId(), _windowState, _params, portletName);
 			} catch (Exception e) {

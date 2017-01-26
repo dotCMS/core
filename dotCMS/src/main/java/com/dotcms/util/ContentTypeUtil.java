@@ -94,19 +94,22 @@ public class ContentTypeUtil {
 
                 final Layout layout = layouts.get(0);
                 final List<String> portletIds = layout.getPortletIds();
-                final String portletName = portletIds.get(0);
-                final PortletURL portletURL = new PortletURLImpl(request, portletName, layout.getId(), true);
+                if (0 != portletIds.size()) {
+                	
+                	final String portletName = portletIds.get(0);
+                	final PortletURL portletURL = new PortletURLImpl(request, portletName, layout.getId(), true);
 
-                portletURL.setWindowState(WindowState.MAXIMIZED);
+                	portletURL.setWindowState(WindowState.MAXIMIZED);
 
-                portletURL.setParameters(map(
+	                portletURL.setParameters(map(
                         "struts_action", new String[]{"/ext/contentlet/edit_contentlet"},
                         "cmd", new String[]{"new"},
                         "inode", new String[]{""}
-                ));
+    	            ));
 
-                actionUrl = portletURL.toString() + "&selectedStructure=" + structureInode +
+        	        actionUrl = portletURL.toString() + "&selectedStructure=" + structureInode +
                         "&lang=" + this.getLanguageId(user.getLanguageId(), languageAPI);
+               }
             }
         } catch (Exception e) {
 
