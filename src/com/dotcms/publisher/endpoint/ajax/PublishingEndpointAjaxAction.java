@@ -210,7 +210,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		String token = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_TOKEN);
 		String secret = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_SECRET);
 		String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
-		String bucketRegion = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_REGION);
+		String bucketValidationName = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_VALIDATION_NAME);
 
 		if (!UtilMethods.isSet(token)
 			|| !UtilMethods.isSet(secret)
@@ -226,7 +226,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		AWSS3Configuration awss3Config =
 			new AWSS3Configuration.Builder().accessKey(token).secretKey(secret).build();
 
-		if (! new AWSS3EndPointPublisher(awss3Config).canConnectSuccessfully()) {
+		if (! new AWSS3EndPointPublisher(awss3Config).canConnectSuccessfully(bucketValidationName)) {
 			throw new DotDataException(
 				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_properties_invalid" )
 			);
