@@ -429,13 +429,13 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
 	
 		<% if( canUserWriteToLink ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
 		<% } %>
 	
 		<% if( canUserPublishLink ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 			</button>
 		<% } %>
@@ -457,12 +457,12 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<% } %>
 	
 		<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
-			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" class="dijitButtonDanger" iconClass="deleteIcon" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
 			</button>
 		<% } %>
-	
-		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  iconClass="cancelIcon" type="button">
+
+		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  class="dijitButtonFlat" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 		</button>
 	

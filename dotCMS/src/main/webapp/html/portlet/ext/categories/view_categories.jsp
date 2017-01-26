@@ -47,24 +47,7 @@ filter: alpha(opacity: 0);
 opacity: 0;
 -moz-opacity: 0;
 z-index:4;
-}	
-
-.permissionWrapper{background:none;padding:0;margin:0 auto;width:90%;}
-
-.permissionTable{width:100%;margin:0;}
-.permissionTable td, .permissionTable th{font-size:88%;width:10%;text-align:center;vertical-align:middle;font-weight:bold;padding:3px 0 0 0;}
-.permissionTable th.permissionType {width:40%;padding: 0 0 0 30px;font-weight:normal;text-align:left;}
-.permissionTable th.permissionTitle {padding: 0 0 0 10px;font-weight:bold;}
-
-.accordionEntry{width:100%;margin:0;visibility:hidden}
-.accordionEntry td, .accordionEntry th{font-size:88%;width:10%;text-align:center;vertical-align:middle;font-weight:bold;padding:3px 0 0 0;}
-.accordionEntry th.permissionType {width:40%;padding: 0 0 0 30px;font-weight:normal;text-align:left;}
-.accordionEntry th.permissionTitle {padding: 0 0 0 10px;font-weight:bold;}
-
-.dotCMSRolesFilteringSelect{width:200px;overflow:hidden;display:inline;}
-#assetPermissionsMessageWrapper{padding-top: 15px;color: red;text-align: center;font-weight: bolder;}
-
-td {font-size: 100%;}
+}
 
 </style>
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>

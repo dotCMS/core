@@ -7,66 +7,42 @@
 <div id="assetPermissionsMessageWrapper" display="none"></div>
 <!-- END Message -->
 <div id="assetPermissionsWrapper">
-	<div style="padding-left:20px;padding-bottom:10px;white-space: nowrap;font-size:88%;" class="permissionType">
+	<p class="permissionType">
 		<%= LanguageUtil.get(pageContext, "Category") %>: <b><span id="permCatName"></span></b>
-	</div>
+	</p>
 	<!-- START Button Row -->
-	<div id="inheritingFrom" class="callOutBox2" style="display: none;">
-		<div class="yui-g">
-			<div class="yui-u first" style="text-align:left;">
-				<b><%= LanguageUtil.get(pageContext, "Inheriting-Permissions-From") %>:</b>
-				<span id="inheritingFromSources"></span>
-			</div>
-			
-			<div class="yui-u" style="text-align:right;">
-				<span id="resetPermissionActions">
-					<span id="permissionIndividuallyButtonWrapper" style="display:none;">
-						<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
-					</span>
-					<div id="resetInheritanceMess" style="display: none;"></div>
-				</span>
-			</div>
+	<div id="inheritingFrom" class="permissions__bar-user-role" style="display: none;">
+		<div class="permissions__bar-user-role-main">
+			<b><%= LanguageUtil.get(pageContext, "Inheriting-Permissions-From") %>:</b>&nbsp;
+			<span id="inheritingFromSources"></span>
+		</div>
+		<div class="permissions__bar-user-role-actions">
+			<span id="permissionIndividuallyButtonWrapper" style="display:none;">
+				<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
+			</span>
+			<div id="resetInheritanceMess" style="display: none;"></div>
 		</div>
 	</div>
-	<div id="permissionsTabFt" class="callOutBox2">
-		<table width="100%">
-			<tr>
-				<td >
-					<div style="float:left;white-space:nowrap;margin:0 30px 0 0;">
-						<div style="float:left;margin:2px 5px 0 10px;">
-							<span class="femaleIcon"></span>
-						</div>
-						<div style="float:left;">
-							<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
-						</div>
-						<div style="float:left;">
-							<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
-						</div>
-						<div class="clear"></div>
-					</div>
-					
-					<div style="float:left;white-space:nowrap;margin:0 30px 0 0;">
-						<div style="float:left;margin:2px 5px 0 10px;">
-							<span class="userIcon"></span>
-						</div>
-						<div style="float:left;">
-							<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div> 
-				   			<select id="permissionsUserSelector" name="permissionsUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select> 
-						</div>
-						<div style="float:left;">
-							<button dojoType="dijit.form.Button" onclick="addUserToPermissions();return false;" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
-						</div>
-						<div class="clear"></div>
-					</div>
-				</td>
-				<td align="right" nowrap="nowrap">
-				
-					<span id="resetPermissionButtonWrapper" style="display:none;">
-						<button dojoType="dijit.form.Button" onclick="resetPermissions()" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "reset-permissions") %></button>
-					</span>
-				</td>
-			</tr>
-		</table>
+	<div id="permissionsTabFt" class="permissions__bar-user-role">
+
+		<div class="permissions__bar-user-role-main">
+			<div class="inline-form">
+				<span class="femaleIcon"></span>
+				<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
+				<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
+			</div>
+			<div class="inline-form">
+				<span class="userIcon"></span>
+				<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false" style="margin: 0"></div>
+				<select id="permissionsUserSelector" name="permissionsUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
+				<button dojoType="dijit.form.Button" onclick="addUserToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
+			</div>
+		</div>
+		<div class="permissions__bar-user-role-actions">
+			<span id="resetPermissionButtonWrapper" style="display:none;">
+				<button dojoType="dijit.form.Button" onclick="resetPermissions()" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "reset-permissions") %></button>
+			</span>
+		</div>
 	</div>
 <!-- END Button Row -->
 <!-- START Permission Rows -->
@@ -91,15 +67,19 @@
 	
 	<div class="clear"></div>
 	
-	<div class="buttonRow" id="permissionsActions">
+	<div class="permissions__button-row" id="permissionsActions">
 		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton" onClick="applyPermissionChanges('${id}')">
 			<%= LanguageUtil.get(pageContext, "Apply-Changes") %>
 		</button>
 		
-		<span id="cascadeChangesChkWrapper" style="display:none; vertical-align:middle;">
-			<input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox" /> 
-			<%= LanguageUtil.get(pageContext, "Reset-Children-Permissions") %><a href="javascript: ;" id="resetPermissionsHintHook">?</a>
-			<span dojoType="dijit.Tooltip" connectId="resetPermissionsHintHook" id="resetPermissionsHint" class="fieldHint"><%= LanguageUtil.get(pageContext, "Reset-Children-Permissions-Hint") %></span>
+		<span id="cascadeChangesChkWrapper" style="display:none;">
+			<div class="checkbox">
+				<input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox" />
+				<label for="cascadeChangesCheckbox">
+					<%= LanguageUtil.get(pageContext, "Reset-Children-Permissions") %>&nbsp;<a href="javascript: ;" id="resetPermissionsHintHook">?</a>
+				</label>
+				<span dojoType="dijit.Tooltip" connectId="resetPermissionsHintHook" id="resetPermissionsHint" class="fieldHint"><%= LanguageUtil.get(pageContext, "Reset-Children-Permissions-Hint") %></span>
+			</div>
 		</span>
 	</div>
 		

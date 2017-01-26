@@ -50,10 +50,10 @@
 		        <button dojoType="dijit.form.Button" onclick="hostAdmin.clearFilter()" class="dijitButtonFlat">
 		            <%=LanguageUtil.get(pageContext, "Reset")%>
 		        </button>
-		        
-		        <input type="checkbox" dojoType="dijit.form.CheckBox" name="showDeleted" id="showDeleted" onClick="hostAdmin.filterHosts();" <%=(showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : ""%> value="true" />
-				<label for="showDeleted"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
-				
+		        <div class="checkbox">
+		        	<input type="checkbox" dojoType="dijit.form.CheckBox" name="showDeleted" id="showDeleted" onClick="hostAdmin.filterHosts();" <%=(showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : ""%> value="true" />
+					<label for="showDeleted"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
+				</div>
 			</div>
 		</div>
 		<div class="portlet-toolbar__info">
