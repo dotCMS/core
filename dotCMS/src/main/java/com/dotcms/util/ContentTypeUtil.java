@@ -65,6 +65,12 @@ public class ContentTypeUtil {
         HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
         User user = loginService.getLoggedInUser(request);
 
+        //It is ok not to have a logged in user all the time as this can be called by a plugin or by a Unit test
+        if ( user == null ) {
+            Logger.debug(this, "No Logged in User found when calling ContentTypeUtil.getActionUrl");
+            return null;
+        }
+
         return getActionUrl(request, structure, user);
     }
     /**
