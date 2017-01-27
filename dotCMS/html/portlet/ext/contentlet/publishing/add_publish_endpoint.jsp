@@ -44,12 +44,14 @@
 
 		dijit.byId("serverName").setAttribute('required',true);
 		dijit.byId("address").setAttribute('required',true);
-		if(dojo.byId("sending").value=='true'){
+
+		if(dojo.byId("sending").value=='false'){
 			dijit.byId("port").setAttribute('required',true);
 		}
 		else{
 			dijit.byId("port").setAttribute('required',false);
 		}
+		
 		if (form.validate()) {
 
 
@@ -99,15 +101,15 @@
 		if(sending=='false'){
 			dojo.style("addressFromSpan", "display", "none");
 			dojo.style("addressToSpan", "display", "");
-			dojo.style("portRow", "display", "table-row");
+			
 			dojo.style("sendGroupRow", "display", "table-row");
 		}
 		else{
+			dojo.style("protocolRow", "display", "none");
+			dojo.style("portSpan", "display", "none");
+			dojo.style("addressRow", "display", "");
+			dojo.style("authPropertiesRow", "display", "");
 
-			dojo.style("addressFromSpan", "display", "");
-			dojo.style("addressToSpan", "display", "none");
-			dojo.style("portRow", "display", "none");
-			dojo.style("sendGroupRow", "display", "none");
 		}
 	}
 
@@ -203,26 +205,25 @@
 	.myTable {margin:20px;padding:10px;}
 	.myTable tr td{padding:5px;vertical-align: top;}
 	#addressRow {}
-	#portRow {display:none;}
 
 </style>
 
+
 <div style="margin:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
+		<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
 		<table class="myTable" border=0 style="margin: auto" align="center">
 			<%if(currentEnvironment!=null) { %>
-
-			<tr id="sendGroupRow">
-				<td align="right">
-					<%= LanguageUtil.get(pageContext, "publisher_Environment") %>:
-				</td>
-				<td>
-					<%=currentEnvironment.getName() %>
-					<input type="hidden" id="environmentId" name="environmentId" value="<%=currentEnvironment.getId() %>">
-				</td>
-			</tr>
-
+				<tr id="sendGroupRow">
+					<td align="right" width="40%">
+						<%= LanguageUtil.get(pageContext, "publisher_Environment") %>:
+					</td>
+					<td>
+						<%=currentEnvironment.getName() %>
+						<input type="hidden" id="environmentId" name="environmentId" value="<%=currentEnvironment.getId() %>">
+					</td>
+				</tr>
 			<%} %>
 			<tr>
 				<td align="right" width="40%">
@@ -239,7 +240,7 @@
 				</td>
 			</tr>
 
-			<tr>
+			<tr id="protocolRow">
 				<td align="right" width="40%">
 					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %>:
 				</td>
@@ -260,11 +261,7 @@
 			</tr>
 
 
-			<tr>
-				<td align="center" colspan=2>
-					<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
-				</td>
-			</tr>
+			
 
 
 			<tr id="addressRow">
@@ -284,13 +281,13 @@
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
 					/>
-
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
-					<input type="text" dojoType="dijit.form.ValidationTextBox"
-						   name="port" id="port" style="width:50px"
-						   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
-						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
-
+					<span id="portSpan">
+						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
+						<input type="text" dojoType="dijit.form.ValidationTextBox"
+							   name="port" id="port" style="width:50px"
+							   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
+							   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
+					</span>
 					<div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
 				</td>
 			</tr>
