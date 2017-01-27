@@ -82,6 +82,7 @@ public class CalendarWebAPI implements ViewTool {
 		Event parentEv = eventAPI.find(parentEvent, true, user, respectCMSAnon);
 		List<Event> events = eventAPI.findRelatedEvents(parentEv, fromDate, toDate, true, user, respectCMSAnon);
 		for(Event ev : events) {
+			ev.setTags();
 			eventsList.add(ev);
 		}
 		return eventsList;
@@ -108,6 +109,7 @@ public class CalendarWebAPI implements ViewTool {
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
 		Event event = eventAPI.find(id, true, user, respectCMSAnon);
+		event.setTags();
 		return event;	
 	}
 	
@@ -138,6 +140,9 @@ public class CalendarWebAPI implements ViewTool {
 			keywords[0] = keyword;
 		}
 		List<Event> toReturn = eventAPI.find(hostId, fromDate, toDate, tags, keywords, categories, true, false, offset, limit, user, respectCMSAnon);
+		for(Event event: toReturn){
+			event.setTags();
+		}
 		if(UtilMethods.isSet(sortBy)){
 			final boolean isDesc = sortBy.contains("desc");
 			Collections.sort(toReturn, new Comparator<Event>(){
