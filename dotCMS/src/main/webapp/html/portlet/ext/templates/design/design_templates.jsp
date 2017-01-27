@@ -505,39 +505,41 @@
 						</div>
 		
 		
-						<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-						<div id="contentletActionsHanger">
-							<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
-								<% if ( canUserWriteToTemplate ) { %>
-								<a onClick="submitfm(document.getElementById('fm'),'')" class="advanced-search-button">
-									<span class="saveIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-								</a>
+						<!--<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>-->
+						<div class="content-edit-actions">
+							<div id="contentletActionsHanger">
+								<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
+									<% if ( canUserWriteToTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'')">
+										<span class="saveIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+									</a>
+									<% } %>
+								<%
+								if ( canUserPublishTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'publish')">
+										<span class="publishIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+									</a>
 								<% } %>
-							<%
-							if ( canUserPublishTemplate ) { %>
-								<a onClick="submitfm(document.getElementById('fm'),'publish')" class="advanced-search-button">
-									<span class="publishIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-								</a>
-							<% } %>
-		
-							<% } else if (InodeUtils.isSet(template.getInode())) { %>
-								<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')" class="advanced-search-button">
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-								</a>
-							<% } %>
-		
-							<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
-								<a onClick="submitfmDelete()" class="advanced-search-button">
-									<span class="deleteIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
-								</a>
-							<% } %>
-								<a onClick="cancelEdit()" class="advanced-search-button">
-									<span class="cancelIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-								</a>
+			
+								<% } else if (InodeUtils.isSet(template.getInode())) { %>
+									<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
+										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
+									</a>
+								<% } %>
+			
+								<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
+									<a onClick="submitfmDelete()">
+										<span class="deleteIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
+									</a>
+								<% } %>
+									<a onClick="cancelEdit()">
+										<span class="cancelIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+									</a>
+							</div>
 						</div>
 					</div>
 				<%
@@ -545,13 +547,11 @@
 				%>
 					<div class="portlet-sidebar">
 						<div class="fieldWrapperSide">
-							<div class="leftProperties">
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Theme") %>:</dt>
-									<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true></div>
-									</dd>
-								</dl>
-							</div>
+							<dl class="vertical">
+								<dt><%= LanguageUtil.get(pageContext, "Theme") %>:</dt>
+								<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true></div>
+								</dd>
+							</dl>
 						</div>
 						<input type="hidden" name="theme" id="theme">
 						<input type="hidden" name="themeName" id="themeName">
@@ -559,16 +559,16 @@
 						<div class="clear"></div>
 		
 						<div class="hidden">
-							<div class="leftProperties">
-								<dl>
+							<div class="fieldWrapperSide">
+								<dl class="vertical">
 									<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
-									<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
+									<dd>
+										<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
 											<%--<option value="doc-template">750px</option>--%>
 											<%--<option value="doc2-template">950px</option>--%>
 											<option value="resp-template" selected="selected">Responsive</option>
 											<option value="doc4-template">975px</option>
 											<option value="doc3-template">100%</option>
-		
 										</select>
 									</dd>
 								</dl>
@@ -578,49 +578,38 @@
 						<div class="clear"></div>
 		
 						<div class="fieldWrapperSide">
-							<div class="leftProperties">
-								<dl>
-									<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
-									<dd>
-										<select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
-											<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
-											<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
-											<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
-											<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
-											<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
-											<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
-											<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
-										</select>
-									</dd>
-								</dl>
-							</div>
+							<dl class="vertical">
+								<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
+								<dd>
+									<select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
+										<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
+										<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
+										<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
+										<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
+										<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
+										<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
+										<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
+									</select>
+								</dd>
+							</dl>
 						</div>
 		
 						<div class="clear"></div>
-		
-						<div class="fieldWrapperSide">
-							<div class="leftProperties">
-								<dl>
-									<dt><%=LanguageUtil.get(pageContext, "Header") %>:</dt>
-									<dd>
-										<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" checked="checked"/>
-									</dd>
-								</dl>
-								<div class="clear"></div>
-								<dl>
-									<dt><%=LanguageUtil.get(pageContext, "Footer") %>:</dt>
-									<dd>
-										<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" checked="checked"/>
-									</dd>
-								</dl>
-							</div>
-							<div class="clear"></div>
+
+						<div class="checkbox">
+							<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" checked="checked"/>
+							<label for=""><%=LanguageUtil.get(pageContext, "Header") %></label>
 						</div>
+						<div class="clear"></div>
+						<div class="checkbox">
+							<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" checked="checked"/>
+							<label for=""><%=LanguageUtil.get(pageContext, "Footer") %></label>
+						</div>
+		
 		
 						<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
 						<div class="fieldWrapperSide">
-							<div class="leftProperties">
-								<dl>
+								<dl class="vertical">
 									<dt id="tableContainer">
 										<table id="splitBodyTable" cellspacing="4" cellpadding="2">
 											<tr id="_selectRow0" class="spaceUnder">
@@ -647,43 +636,43 @@
 										<%=LanguageUtil.get(pageContext, "add-row") %>
 									</button>
 								</div>
-							</div>
 							<div class="clear"></div>
 						</div>
 		
-						<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-						<div id="contentletActionsHanger">
-							<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
-								<% if ( canUserWriteToTemplate ) { %>
-								<a onClick="submitfm(document.getElementById('fm'),'')">
-									<span class="saveIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-								</a>
+						<div class="content-edit-actions">
+							<div id="contentletActionsHanger">
+								<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
+									<% if ( canUserWriteToTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'')">
+										<span class="saveIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+									</a>
+									<% } %>
+								<%
+								if ( canUserPublishTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'publish')">
+										<span class="publishIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+									</a>
 								<% } %>
-							<%
-							if ( canUserPublishTemplate ) { %>
-								<a onClick="submitfm(document.getElementById('fm'),'publish')">
-									<span class="publishIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-								</a>
-							<% } %>
-		
-							<% } else if (InodeUtils.isSet(template.getInode())) { %>
-								<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-								</a>
-							<% } %>
-		
-							<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
-								<a onClick="submitfmDelete()">
-									<span class="deleteIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
-								</a>
-							<% } %>
-								<a onClick="cancelEdit()">
-									<span class="cancelIcon"></span>
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-								</a>
+			
+								<% } else if (InodeUtils.isSet(template.getInode())) { %>
+									<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
+										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
+									</a>
+								<% } %>
+			
+								<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
+									<a onClick="submitfmDelete()">
+										<span class="deleteIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
+									</a>
+								<% } %>
+									<a onClick="cancelEdit()">
+										<span class="cancelIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+									</a>
+							</div>
 						</div>
 					</div>
 				<%

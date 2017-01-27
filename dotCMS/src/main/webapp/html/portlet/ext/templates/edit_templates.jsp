@@ -436,7 +436,7 @@
 
 </div>
 
-<!-- Button Row --->
+<!-- Button Row -->
 <div class="buttonRow" id="editTemplateButtonRow">
 
 	<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>

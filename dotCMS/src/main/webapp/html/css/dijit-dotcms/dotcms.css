@@ -5991,6 +5991,8 @@ dd .buttonCaption {
 
 .buttonRow {
   text-align: center;
+  margin-bottom: 8px;
+  padding-top: 8px;
 }
 .buttonRow .dijitButton,
 .buttonRow .fakeDojoButton {
@@ -6385,13 +6387,8 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0px;
 }
 
-.content-edit__history-version .dijitContentPane .contentIdentifier {
-  font-weight: bold;
-}
-
-.content-edit__divider {
-  background-color: #ECEDEE;
-  margin: 20px 0;
+.portlet-sidebar {
+  width: 220px;
 }
 
 .advanced-search-button {

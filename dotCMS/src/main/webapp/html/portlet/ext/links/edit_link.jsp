@@ -284,7 +284,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 						<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
 							<div id="folder" name="parent" onlySelectFolders="true" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" <%= UtilMethods.isSet(hostId)?"hostId=\"" + hostId + "\"":"" %>></div>
 						<% } else { %>
-							<input type="text" readonly="readonly" styleClass="form-text" value="<%= APILocator.getIdentifierAPI().find(folder).getPath() %>" />
+							<%= APILocator.getIdentifierAPI().find(folder).getPath() %>
 							<html:hidden styleClass="form-text" property="parent" styleId="parent" />
 						<% } %>
 					</dd>
@@ -418,7 +418,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 
 
 
-	<!-- Button Row --->
+	<!-- Button Row -->
 	<div class="buttonRow" id="editLinkButtonRow">
 		<%
 			if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
