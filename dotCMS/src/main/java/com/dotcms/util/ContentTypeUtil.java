@@ -109,7 +109,14 @@ public class ContentTypeUtil {
 
         	        actionUrl = portletURL.toString() + "&selectedStructure=" + structureInode +
                         "&lang=" + this.getLanguageId(user.getLanguageId(), languageAPI);
+               } else {
+               
+                   Logger.info(this, "Portlets are empty for the Layout: " + 
+                   		layout.getId());
                }
+            } else {
+            
+            	Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
             }
         } catch (Exception e) {
 
