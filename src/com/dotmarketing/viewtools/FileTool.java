@@ -7,6 +7,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -14,6 +15,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -58,13 +60,32 @@ public class FileTool implements ViewTool {
         p = p.substring(5, p.lastIndexOf("."));
         IFileAsset file = null;
 		try {
+			final long defaultLanguageId = languageAPI.getDefaultLanguage().getId();
 			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-				Contentlet cont = contentletAPI.findContentletByIdentifier(
-					id.getId(),
-					live,
-					languageId != -1 ? languageId : languageAPI.getDefaultLanguage().getId(),
-					userAPI.getSystemUser(),
-					false);
+				long languageIdForLookup = languageId != -1 ? languageId : defaultLanguageId;
+				Contentlet cont;
+				try {
+					cont = contentletAPI.findContentletByIdentifier(
+						id.getId(),
+						live,
+						languageIdForLookup,
+						userAPI.getSystemUser(),
+						false);
+				} catch (DotContentletStateException e) {
+					if (languageIdForLookup != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+						// try looking for the File in the default language (when DEFAULT_FILE_TO_DEFAULT_LANGUAGE = true)
+						cont = contentletAPI.findContentletByIdentifier(
+							id.getId(),
+							live,
+							defaultLanguageId,
+							userAPI.getSystemUser(),
+							false);
+					} else {
+						Logger.error(FileTool.class,e.getMessage(),e);
+						cont = null;
+					}
+				}
+
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					file = fileAssetAPI.fromContentlet(cont);
 				}
