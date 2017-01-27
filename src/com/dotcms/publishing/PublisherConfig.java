@@ -13,6 +13,8 @@ import java.util.*;
 
 public class PublisherConfig implements Map<String, Object>, Cloneable {
 
+	static public String STATIC_SUFFIX = "-static";
+
 	public enum Config {
 		START_DATE, END_DATE, HOSTS, HOST_SET, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
@@ -377,7 +379,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		String result = getId();
 
 		if (isStatic()){
-			result += "-static";
+			result += STATIC_SUFFIX;
 		}
 
 		return result;
