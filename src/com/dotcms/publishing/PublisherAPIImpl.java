@@ -51,8 +51,16 @@ public class PublisherAPIImpl implements PublisherAPI {
                 // Run bundlers
                 File bundleRoot = BundlerUtil.getBundleRoot( config );
 
-                if (!config.isStatic()) {
-                	BundlerUtil.writeBundleXML( config );
+                if (config.isStatic()) {
+                    //If static we just want to save the things that we need,
+                    // at this point only the id, static and operation.
+                	PublisherConfig pcClone = new PublisherConfig();
+                	pcClone.setId(config.getId());
+                	pcClone.setStatic(true);
+                	pcClone.setOperation(config.getOperation());
+                    BundlerUtil.writeBundleXML( pcClone );
+                } else {
+                    BundlerUtil.writeBundleXML( config );
                 }
 
                 for ( Class<IBundler> clazz : p.getBundlers() ) {

@@ -302,8 +302,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
             if ( bundleStaticFile.exists() ) {
                 AWSS3Publisher awss3Publisher = new AWSS3Publisher();
 
-                PushPublisherConfig configStatic = new PushPublisherConfig();
+                File readBundle = new File(bundleStaticFile.getAbsolutePath() + File.separator + "bundle.xml");
+                PublisherConfig readConfig = (PublisherConfig) BundlerUtil.xmlToObject( readBundle );
+
+                PublisherConfig configStatic = new PublisherConfig();
                 configStatic.setId(bundleId);
+                configStatic.setOperation(readConfig.getOperation());
 
                 try{
                     awss3Publisher.init(configStatic);
