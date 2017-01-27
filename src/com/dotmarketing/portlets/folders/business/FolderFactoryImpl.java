@@ -990,6 +990,12 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		HibernateUtil.getSession().clear();
 
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            public void run() {
+                APILocator.getContentletAPI().refreshContentUnderFolder(ff);
+            }
+        });
+
 		return true;
 	}
 
