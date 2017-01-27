@@ -38,15 +38,16 @@ public class BundlerUtil {
 		return new File(bundlePath).exists();
 	}
 
-	/**
-	 * This method takes a config and will create the bundle directory and
-	 * write the bundle.xml file to it
-	 * @param name Name of bundle
-	 */
-	public static File getBundleRoot(String name) {
+    public static File getBundleRoot(String name) {
+        return getBundleRoot(name, true);
+    }
+
+	public static File getBundleRoot(String name, boolean createDir) {
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + name;
 		File dir = new File(bundlePath);
-		dir.mkdirs();
+		if (createDir){
+            dir.mkdirs();
+        }
 		return dir;
 	}
 

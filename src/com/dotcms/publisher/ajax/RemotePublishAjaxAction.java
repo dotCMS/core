@@ -276,7 +276,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
             PublisherConfig basicConfig = new PublisherConfig();
             basicConfig.setId( bundleId );
-            File bundleRoot = BundlerUtil.getBundleRoot( basicConfig );
+            File bundleRoot = BundlerUtil.getBundleRoot( basicConfig.getName(), false );
 
             //Get the audit records related to this bundle
             PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
@@ -298,7 +298,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
             //We need to check both Static and Push Publish for each bundle.
             //Checking static publish.
-            File bundleStaticFile = new File(bundleRoot + PublisherConfig.STATIC_SUFFIX);
+            File bundleStaticFile = new File(bundleRoot.getAbsolutePath() + PublisherConfig.STATIC_SUFFIX);
             if ( bundleStaticFile.exists() ) {
                 AWSS3Publisher awss3Publisher = new AWSS3Publisher();
 
@@ -308,6 +308,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 PublisherConfig configStatic = new PublisherConfig();
                 configStatic.setId(bundleId);
                 configStatic.setOperation(readConfig.getOperation());
+
+                //Clean the number of tries, we want to try it again
+                auditHistory.setNumTries( 0 );
+                publishAuditAPI.updatePublishAuditStatus( configStatic.getId(), status.getStatus(), auditHistory, true );
 
                 try{
                     awss3Publisher.init(configStatic);
