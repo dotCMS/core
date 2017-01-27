@@ -1,5 +1,6 @@
 package com.dotcms.publisher.ajax;
 
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
@@ -295,13 +296,39 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 continue;
             }
 
+            //We need to check both Static and Push Publish for each bundle.
+            //Checking static publish.
+            File bundleStaticFile = new File(bundleRoot + PublisherConfig.STATIC_SUFFIX);
+            if ( bundleStaticFile.exists() ) {
+                AWSS3Publisher awss3Publisher = new AWSS3Publisher();
+
+                PushPublisherConfig configStatic = new PushPublisherConfig();
+                configStatic.setId(bundleId);
+
+                try{
+                    awss3Publisher.init(configStatic);
+                    awss3Publisher.process(null);
+
+                    //Success...
+                    appendMessage( responseMessage, "publisher_retry.success",
+                        bundleId + PublisherConfig.STATIC_SUFFIX, false );
+                } catch (DotPublishingException e){
+                    Logger.error( this.getClass(), "Error trying to add bundle id: "
+                        + bundleId + PublisherConfig.STATIC_SUFFIX + " to the AWSS3Publisher.", e );
+                    appendMessage( responseMessage, "publisher_retry.error.adding.to.queue",
+                        bundleId + PublisherConfig.STATIC_SUFFIX, true );
+                }
+
+            }
+
+            //Checking push publish.
             /*
             Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
             something happened on the creation of the bundle.
              */
             File bundleFile = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
             if ( !bundleFile.exists() ) {
-                Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
+                Logger.warn( this.getClass(), "No Push Publish Bundle with id: " + bundleId + " found." );
                 appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
                 continue;
             }
