@@ -1212,7 +1212,7 @@
 	}
 
 	function getPortletsList() {
-		var list = dojo.query('#portletsList li div.portletItem');
+        var list = dojo.query('#portletsList li > div');
 		var portletIds = [];
 		dojo.forEach(list, function (elem) {
 			var id = elem.id.split('-')[1];

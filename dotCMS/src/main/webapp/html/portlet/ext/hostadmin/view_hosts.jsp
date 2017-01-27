@@ -72,38 +72,39 @@
     	</div>
    </div>
    <!-- END Toolbar -->
-</div>
 
-<table class="listingTable">
-	<thead id="hostsTableHeader"></thead>
-	<tbody id="hostsTableBody"></tbody>
-	<tbody id="noResultsSection">
-	    <tr class="alternate_1" id="rowNoResults">
-	        <td colspan="5">
-	            <div class="noResultsMessage">
-	            	<%=LanguageUtil.get(pageContext, "No-Results-Found")%>
-	            </div>
-	        </td>
-	    </tr>
-	</tbody>
-</table>
+	<table class="listingTable host-list">
+		<thead id="hostsTableHeader"></thead>
+		<tbody id="hostsTableBody"></tbody>
+		<tbody id="noResultsSection">
+			<tr class="alternate_1" id="rowNoResults">
+				<td colspan="5">
+					<div class="noResultsMessage">
+						<%=LanguageUtil.get(pageContext, "No-Results-Found")%>
+					</div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
 
-<div id="hostContextMenues"></div>
+	<div id="hostContextMenues"></div>
 
-<div class="yui-gb buttonRow">
-    <div class="yui-u first" style="text-align: left;" id="buttonPreviousResultsWrapper">
-        <button dojoType="dijit.form.Button" id="buttonPreviousResults" onclick="hostAdmin.gotoPreviousPage()" iconClass="previousIcon">
-            <%=LanguageUtil.get(pageContext, "Previous")%>
-        </button>
-    </div>
-    <div class="yui-u" style="text-align: center;" id="resultsSummary">
-        <%=LanguageUtil.get(pageContext, "Viewing-Results-From")%>
-    </div>
-    <div class="yui-u" style="text-align: right;" id="buttonNextResultsWrapper">
-        <button dojoType="dijit.form.Button" id="buttonNextResults" onclick="hostAdmin.gotoNextPage()" iconClass="nextIcon">
-            <%=LanguageUtil.get(pageContext, "Next")%>
-        </button>
-    </div>
+	<div class="yui-gb buttonRow">
+		<div class="yui-u first" style="text-align: left;" id="buttonPreviousResultsWrapper">
+			<button dojoType="dijit.form.Button" id="buttonPreviousResults" onclick="hostAdmin.gotoPreviousPage()" iconClass="previousIcon">
+				<%=LanguageUtil.get(pageContext, "Previous")%>
+			</button>
+		</div>
+		<div class="yui-u" style="text-align: center;" id="resultsSummary">
+			<%=LanguageUtil.get(pageContext, "Viewing-Results-From")%>
+		</div>
+		<div class="yui-u" style="text-align: right;" id="buttonNextResultsWrapper">
+			<button dojoType="dijit.form.Button" id="buttonNextResults" onclick="hostAdmin.gotoNextPage()" iconClass="nextIcon">
+				<%=LanguageUtil.get(pageContext, "Next")%>
+			</button>
+		</div>
+	</div>
+
 </div>
 
 <!-- Add Host Dialog -->

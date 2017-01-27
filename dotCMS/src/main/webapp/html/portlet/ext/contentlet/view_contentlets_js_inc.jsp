@@ -291,7 +291,7 @@
               editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
             }
 
-            var ref = "<table class='contentletInnerTable'><tr>";
+            var ref = "<div class='contentletInnerTable'><tr>";
                 if(publish == "1") {
 
 	                if(dijit.byId(checkId)){
@@ -321,7 +321,7 @@
                 ref+=   text;
                 ref+=   "</a>";
                 ref+=   "</td>";
-                ref+=   "</tr></table>";
+                ref+=   "</tr></div>";
                 return ref;
         }
 
