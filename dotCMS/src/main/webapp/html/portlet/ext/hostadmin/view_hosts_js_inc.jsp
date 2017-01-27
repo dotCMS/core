@@ -95,19 +95,16 @@
 
         tableHeaderColumnTemplate: '<th>{fieldName}</th>',
 
-        tableRowTemplate: '<tr class="{alternateClass}" id="row{identifier}">\
+        tableRowTemplate: '<tr id="row{identifier}">\
             		<td width="25%">\
-            			<div style="float:left" id="hostName{identifier}">\
-            				<table style="border:1px" width="100%">\
-            				<tr style="border:0px"><td style="border:0px">\
-            				<span class="{imgSrc}"></span></td>\
-            				<td style="border:0px" nowrap=true><a href="javascript: hostAdmin.editHost(\'{identifier}\', \'{inode}\')">{hostName}</a>\
-            				</td></tr></table>\
-            				</div>\
-                		<div style="float:left; padding-left: 15px;">\
-            				<div dojoType="dijit.ProgressBar" style="width:100px; display:none;" jsId="{identifier}SetupProgress" id="{identifier}SetupProgress">\
-            				</div>\
-           				</div>\
+            			<div class="host-list__item" id="hostName{identifier}">\
+            				<span class="{imgSrc}"></span>\
+            				<a href="javascript: hostAdmin.editHost(\'{identifier}\', \'{inode}\')">{hostName}</a>\
+                            <div class="host-list__item-loader">\
+                                <div dojoType="dijit.ProgressBar" style="width:100px; display:none;" jsId="{identifier}SetupProgress" id="{identifier}SetupProgress">\
+                                </div>\
+                            </div>\
+                        </div>\
             		</td>\
     				{rowColumns}\
     		    </tr>',
@@ -384,7 +381,6 @@
                     });
                 }
 
-                content.alternateClass = "alternate_" + ((i % 1) + 1);
                 if(content.isDefault && content.live)
                     content.imgSrc = 'hostDefaultIcon';
                 else if (content.live)
