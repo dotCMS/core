@@ -7097,7 +7097,6 @@ a.category_higlighted, a.tag_higlighted {
   width: 900px;
 }
 
-<<<<<<< HEAD
 .context-menu {
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
   position: absolute;
@@ -7110,7 +7109,7 @@ a.category_higlighted, a.tag_higlighted {
   background-color: #fff;
 }
 
-.content-menu__item {
+.context-menu__item {
   color: #5B5B5B;
   cursor: pointer;
   display: block;
@@ -7121,10 +7120,10 @@ a.category_higlighted, a.tag_higlighted {
   position: relative;
   text-decoration: none;
 }
-.content-menu__item:hover {
+.context-menu__item:hover {
   background-color: #FAFAFA;
 }
-.content-menu__item .arrowRightIcon {
+.context-menu__item .arrowRightIcon {
   font-size: 12px;
   margin-top: -6px;
   position: absolute;
@@ -7140,8 +7139,6 @@ a.category_higlighted, a.tag_higlighted {
   margin: 20px 0;
 }
 
-=======
->>>>>>> 096608be9ab831a365bb4b092df5952bd7caf1b4
 #iFrameWrapper {
   position: absolute;
   left: 0px;
