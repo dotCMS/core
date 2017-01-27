@@ -258,12 +258,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
-        if(languageId<=0) {
-            languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+	final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+	if(languageId<=0) {
+            languageId=defaultLanguageId;
         }
 
         try {
             ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+
+            // Fallback to the default language version of the file (when DEFAULT_FILE_TO_DEFAULT_LANGUAGE = true)
+            if(clvi == null && languageId != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+                Logger.error(this.getClass(), String.format("Unable to find contentlet %s in language %d - trying with default language %d", identifier, languageId, defaultLanguageId));
+                clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
+            }
+
             if(clvi ==null){
                 throw new DotContentletStateException("No contenlet found for given identifier");
             }
