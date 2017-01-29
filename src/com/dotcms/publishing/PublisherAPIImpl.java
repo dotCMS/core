@@ -67,6 +67,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                     IBundler bundler = clazz.newInstance();
                     confBundlers.add( bundler );
                     bundler.setConfig( config );
+                    bundler.setPublisher(p);
                     BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
                     status.addToBs( bs );
                     //Generate the bundler
