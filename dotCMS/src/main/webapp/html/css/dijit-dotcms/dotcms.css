@@ -6387,10 +6387,6 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0px;
 }
 
-.portlet-sidebar {
-  width: 220px;
-}
-
 .advanced-search-button {
   display: block;
   background: #ECEDEE;
@@ -6742,6 +6738,9 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
   top: 0px;
   left: 0px;
+}
+.design-template__sidebar-wrapper .portlet-sidebar {
+  width: 220px;
 }
 
 /* PORTLET STYLES 2.0 */
