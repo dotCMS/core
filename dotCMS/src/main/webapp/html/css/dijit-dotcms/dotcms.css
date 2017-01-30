@@ -6490,6 +6490,10 @@ a.category_higlighted, a.tag_higlighted {
   text-align: center;
 }
 
+.job-scheduler__host-list {
+  margin-top: 16px;
+}
+
 .view-roles,
 .view-roles .portlet-sidebar {
   height: 100%;
@@ -6829,11 +6833,17 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .callOutBox2 {
-  background-color: #f0f0f0;
+  background-color: #ECEDEE;
   border-radius: 2px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #C5C5C5;
   padding: 8px;
   text-align: center;
+}
+.callOutBox2 h3 {
+  margin-bottom: 16px;
+}
+.callOutBox2 p:last-child {
+  margin-bottom: 0;
 }
 
 .context-menu {
@@ -7417,12 +7427,12 @@ Resize Handle
   height: 100%;
 }
 
-#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions {
+#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions {
   text-align: center;
   width: 65px;
   white-space: nowrap;
 }
-#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a {
+#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a {
   display: inline-block;
   margin: 0 4px;
   text-decoration: none;
