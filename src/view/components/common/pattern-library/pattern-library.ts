@@ -36,10 +36,16 @@ export class PatternLibrary {
     }
 
     autocompleteCompleteDropdownClick(event: {originalEvent: Event, query: string}) {
-        // TODO: get rid of this three lines when this is fixed: https://github.com/primefaces/primeng/issues/745
+        // TODO: get rid of this lines when this is fixed: https://github.com/primefaces/primeng/issues/745
         event.originalEvent.preventDefault();
         event.originalEvent.stopPropagation();
-        this.autoCompleteComponent.panelVisible = !this.autoCompleteComponent.panelVisible;
+        if (this.autoCompleteComponent.panelVisible) {
+            this.autoCompleteComponent.onDropdownBlur();
+            this.autoCompleteComponent.hide();
+        } else {
+            this.autoCompleteComponent.onDropdownFocus();
+            this.autoCompleteComponent.show();
+        }
 
         this.autocompleteResults = ['Hello', 'World'];
 

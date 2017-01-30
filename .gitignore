@@ -12,6 +12,7 @@ staging/
 /typings/
 !staging/.gitkeep
 /semantic/
+src/**/*.css
 
 #NodeJs / Package Manager dirs
 node_modules/
@@ -73,6 +74,12 @@ local.properties
 *.suo
 *.user
 *.sln.docstates
+
+#################
+## Visual Studio Code
+#################
+
+.vscode
 
 # Build results
 
