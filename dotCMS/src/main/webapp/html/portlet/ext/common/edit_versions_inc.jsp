@@ -65,7 +65,7 @@
 <div class="contentIdentifier">
 	<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=(ident!=null?ident.getId():"") %>
 </div>
-<div>
+<div class="history__status">
 	<table class="listingTable">
 		<tr>
 			<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>

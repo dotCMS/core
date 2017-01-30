@@ -7144,7 +7144,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .history .history__divider {
   background-color: #ECEDEE;
-  margin: 20px 0;
+  margin: 24px 0;
+}
+.history .history__status {
+  overflow: hidden;
 }
 
 #iFrameWrapper {
