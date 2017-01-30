@@ -34,6 +34,11 @@ public abstract class Publisher implements IPublisher {
 	abstract public PublisherConfig process(PublishStatus status) throws DotPublishingException ;
 
 
+	@Override
+    public boolean shouldForcePush(String hostId, long languageId) {
+    	return false;
+    }
+
 
 	protected void processDirectory(Folder folder) {
 

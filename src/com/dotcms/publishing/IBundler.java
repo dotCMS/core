@@ -19,6 +19,8 @@ public interface IBundler {
 
     void setConfig ( PublisherConfig pc );
 
+    void setPublisher ( IPublisher publisher );
+
     /**
      * Generates depending of the type of content this Bundler handles parts and objects that will be add it later
      * to a Bundle.
